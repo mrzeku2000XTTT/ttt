@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff, Camera, Repeat } from "lucide-react";
+import { Plus, Play, Pause, Trash2, Video, Loader2, SkipBack, Film, Wand2, Layers, Replace, Eye, EyeOff, Camera, Repeat, Scissors, Scissors as SplitIcon } from "lucide-react";
 import { MOTION_PRESETS } from "./motionPresets";
 import { CAMERA_PRESETS } from "./cameraPresets";
 
@@ -217,6 +217,102 @@ const MockTimeline = forwardRef(function MockTimeline({
 
   const toggleTrackVisibility = (itemId) => {
     setHiddenTracks((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
+  };
+
+  // ── Split / Delete segment at playhead ─────────────────────────────────
+  // Splitting inserts a tiny pair of sampled keyframes around the playhead
+  // (epsilon = 0.02s) so the curve "freezes" at that point — creating a
+  // clean segment boundary that the user can later delete.
+  const SPLIT_EPS = 0.02;
+
+  const splitTrackAtPlayhead = (itemId) => {
+    const kfs = tracks[itemId] || [];
+    if (kfs.length < 1) return;
+    const t = playhead;
+    const v = sample(t, kfs);
+    if (!v) return;
+    const before = { t: Math.max(0, t - SPLIT_EPS), rotX: v.rotX, rotY: v.rotY, scale: v.scale };
+    const after = { t: Math.min(duration, t + SPLIT_EPS), rotX: v.rotX, rotY: v.rotY, scale: v.scale };
+    if (typeof v.x === "number") { before.x = v.x; after.x = v.x; }
+    if (typeof v.y === "number") { before.y = v.y; after.y = v.y; }
+    setTracks((prev) => {
+      const cur = prev[itemId] || [];
+      // Drop any existing kf within the split window so we don't pile up
+      const kept = cur.filter((k) => Math.abs(k.t - t) > SPLIT_EPS * 1.5);
+      return { ...prev, [itemId]: [...kept, before, after].sort((a, b) => a.t - b.t) };
+    });
+  };
+
+  const splitCameraAtPlayhead = () => {
+    if (cameraTrack.length < 1) return;
+    const t = playhead;
+    const v = sampleCamera(t, cameraTrack);
+    if (!v) return;
+    const before = { t: Math.max(0, t - SPLIT_EPS), zoom: v.zoom, x: v.x, y: v.y };
+    const after = { t: Math.min(duration, t + SPLIT_EPS), zoom: v.zoom, x: v.x, y: v.y };
+    setCameraTrack((prev) => {
+      const kept = prev.filter((k) => Math.abs(k.t - t) > SPLIT_EPS * 1.5);
+      return [...kept, before, after].sort((a, b) => a.t - b.t);
+    });
+  };
+
+  // Delete the segment containing the playhead. Finds the nearest gap
+  // (>3×eps) on each side and removes all keyframes in between.
+  const findSegmentBounds = (kfs, t) => {
+    const sorted = [...kfs].sort((a, b) => a.t - b.t);
+    if (!sorted.length) return null;
+    const gap = SPLIT_EPS * 3;
+    let segStart = 0;
+    let segEnd = duration;
+    // Walk left from playhead — segment starts after the closest gap to the left
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const a = sorted[i], b = sorted[i + 1];
+      if (a.t <= t && b.t >= t) {
+        // Look left for nearest gap
+        let s = a.t;
+        for (let j = i; j > 0; j--) {
+          if (sorted[j].t - sorted[j - 1].t > gap) { s = sorted[j].t; break; }
+          s = sorted[j - 1].t;
+        }
+        // Look right for nearest gap
+        let e = b.t;
+        for (let j = i + 1; j < sorted.length - 1; j++) {
+          if (sorted[j + 1].t - sorted[j].t > gap) { e = sorted[j].t; break; }
+          e = sorted[j + 1].t;
+        }
+        segStart = s; segEnd = e;
+        return { start: segStart, end: segEnd };
+      }
+    }
+    // Playhead is before all keys, after all keys, or matches edge — just nuke nearest cluster
+    if (t <= sorted[0].t) return { start: sorted[0].t - SPLIT_EPS, end: sorted[0].t + SPLIT_EPS };
+    if (t >= sorted[sorted.length - 1].t) {
+      const last = sorted[sorted.length - 1].t;
+      return { start: last - SPLIT_EPS, end: last + SPLIT_EPS };
+    }
+    return null;
+  };
+
+  const deleteSegmentAtPlayhead = (itemId) => {
+    const cur = tracks[itemId] || [];
+    if (!cur.length) return;
+    const bounds = findSegmentBounds(cur, playhead);
+    if (!bounds) return;
+    setTracks((prev) => {
+      const k = prev[itemId] || [];
+      const kept = k.filter((kf) => kf.t < bounds.start - SPLIT_EPS || kf.t > bounds.end + SPLIT_EPS);
+      const out = { ...prev };
+      if (kept.length === 0) delete out[itemId];
+      else out[itemId] = kept;
+      return out;
+    });
+  };
+
+  const deleteCameraSegmentAtPlayhead = () => {
+    if (!cameraTrack.length) return;
+    const bounds = findSegmentBounds(cameraTrack, playhead);
+    if (!bounds) return;
+    setCameraTrack((prev) => prev.filter((kf) => kf.t < bounds.start - SPLIT_EPS || kf.t > bounds.end + SPLIT_EPS));
   };
 
   const jumpToKey = (itemId, kf) => {
@@ -939,9 +1035,23 @@ const MockTimeline = forwardRef(function MockTimeline({
               {cameraHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
             </button>
             <button
+              onClick={splitCameraAtPlayhead}
+              className="w-5 h-5 flex items-center justify-center rounded hover:bg-cyan-500/30 text-white/50 hover:text-cyan-300"
+              title="Split camera track at playhead"
+            >
+              <Scissors className="w-3 h-3" />
+            </button>
+            <button
+              onClick={deleteCameraSegmentAtPlayhead}
+              className="w-5 h-5 flex items-center justify-center rounded hover:bg-orange-500/30 text-white/50 hover:text-orange-300"
+              title="Delete segment at playhead"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+            <button
               onClick={clearCameraTrack}
               className="w-5 h-5 flex items-center justify-center rounded hover:bg-red-500/30 text-white/50 hover:text-red-300"
-              title="Delete camera track"
+              title="Delete entire camera track"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -1088,9 +1198,23 @@ const MockTimeline = forwardRef(function MockTimeline({
                     {hidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                   </button>
                   <button
+                    onClick={() => splitTrackAtPlayhead(itemId)}
+                    className="w-5 h-5 flex items-center justify-center rounded hover:bg-cyan-500/30 text-white/50 hover:text-cyan-300"
+                    title="Split at playhead"
+                  >
+                    <Scissors className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => deleteSegmentAtPlayhead(itemId)}
+                    className="w-5 h-5 flex items-center justify-center rounded hover:bg-orange-500/30 text-white/50 hover:text-orange-300"
+                    title="Delete segment at playhead"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                  <button
                     onClick={() => removeTrack(itemId)}
                     className="w-5 h-5 flex items-center justify-center rounded hover:bg-red-500/30 text-white/50 hover:text-red-300"
-                    title="Delete track"
+                    title="Delete entire track"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -1152,7 +1276,7 @@ const MockTimeline = forwardRef(function MockTimeline({
       )}
 
       <p className="text-[10px] text-white/30">
-        💡 Multi-track: every item gets its own lane. The <span className="text-pink-300 font-bold">Camera</span> lane animates the whole preview. <span className="text-orange-300 font-bold">Drag any preset chip onto a lane</span> to apply it there — drop position sets the chain start time. Right-click a diamond to delete.
+        💡 Multi-track: every item gets its own lane. <span className="text-cyan-300 font-bold">✂ Split</span> at the playhead to cut a track into segments, then <span className="text-orange-300 font-bold">🗑 Delete</span> the segment containing the playhead. <span className="text-orange-300 font-bold">Drag preset chips</span> onto a lane to chain at the drop point. Right-click a diamond to delete it individually.
       </p>
     </div>
   );
