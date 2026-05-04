@@ -2,34 +2,35 @@ import React from "react";
 import { motion } from "framer-motion";
 
 /**
- * LaserLines — pure UI laser-themed overlay.
- * Crisscrossing animated laser beams + corner brackets. No interaction.
+ * LaserLines — ultra bright neon laser overlay.
+ * Pure UI, no interaction. Crisscrossing high-intensity beams + crosshair.
  */
 export default function LaserLines() {
   const beams = [
-    { angle: -18, top: "22%", color: "rgba(255,40,40,0.9)", delay: 0, dur: 3.2 },
-    { angle: 12, top: "38%", color: "rgba(255,80,80,0.7)", delay: 0.6, dur: 4 },
-    { angle: -8, top: "58%", color: "rgba(80,255,180,0.85)", delay: 1.1, dur: 3.6 },
-    { angle: 22, top: "74%", color: "rgba(120,255,200,0.7)", delay: 0.3, dur: 4.4 },
+    { angle: -18, top: "18%", color: "255,30,80", delay: 0, dur: 2.6 },
+    { angle: 14, top: "32%", color: "255,80,180", delay: 0.4, dur: 3.2 },
+    { angle: -6, top: "48%", color: "80,255,220", delay: 0.9, dur: 2.8 },
+    { angle: 20, top: "64%", color: "120,200,255", delay: 0.2, dur: 3.4 },
+    { angle: -22, top: "80%", color: "180,80,255", delay: 1.3, dur: 3.0 },
   ];
 
   return (
     <div className="absolute inset-0 z-[16] pointer-events-none overflow-hidden">
-      {/* Laser beams */}
+      {/* Bright neon laser beams */}
       {beams.map((b, i) => (
         <div
           key={i}
-          className="absolute left-[-10%] right-[-10%]"
+          className="absolute left-[-15%] right-[-15%]"
           style={{ top: b.top, transform: `rotate(${b.angle}deg)` }}
         >
-          {/* Beam core */}
+          {/* Outer glow halo */}
           <motion.div
-            className="h-[1px] w-full"
+            className="h-[6px] w-full"
             style={{
-              background: `linear-gradient(90deg, transparent 0%, ${b.color} 50%, transparent 100%)`,
-              boxShadow: `0 0 8px ${b.color}, 0 0 18px ${b.color}`,
+              background: `linear-gradient(90deg, transparent 0%, rgba(${b.color},0.45) 50%, transparent 100%)`,
+              filter: "blur(6px)",
             }}
-            animate={{ opacity: [0.2, 1, 0.2] }}
+            animate={{ opacity: [0.4, 1, 0.4] }}
             transition={{
               duration: b.dur,
               repeat: Infinity,
@@ -37,17 +38,32 @@ export default function LaserLines() {
               delay: b.delay,
             }}
           />
-          {/* Traveling photon */}
+          {/* Beam core — razor sharp */}
           <motion.div
-            className="absolute top-1/2 -translate-y-1/2 w-12 h-[2px] rounded-full"
+            className="absolute top-1/2 -translate-y-1/2 h-[2px] w-full"
             style={{
-              background: `linear-gradient(90deg, transparent, ${b.color}, transparent)`,
-              boxShadow: `0 0 14px ${b.color}`,
+              background: `linear-gradient(90deg, transparent 0%, rgba(${b.color},1) 50%, transparent 100%)`,
+              boxShadow: `0 0 12px rgba(${b.color},1), 0 0 24px rgba(${b.color},0.9), 0 0 48px rgba(${b.color},0.7), 0 0 96px rgba(${b.color},0.5)`,
             }}
-            initial={{ left: "-10%" }}
-            animate={{ left: ["-10%", "110%"] }}
+            animate={{ opacity: [0.7, 1, 0.7] }}
             transition={{
-              duration: b.dur * 0.9,
+              duration: b.dur,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: b.delay,
+            }}
+          />
+          {/* Traveling photon pulse */}
+          <motion.div
+            className="absolute top-1/2 -translate-y-1/2 w-24 h-[3px] rounded-full"
+            style={{
+              background: `linear-gradient(90deg, transparent, rgba(${b.color},1) 50%, transparent)`,
+              boxShadow: `0 0 20px rgba(${b.color},1), 0 0 40px rgba(${b.color},0.8)`,
+            }}
+            initial={{ left: "-15%" }}
+            animate={{ left: ["-15%", "115%"] }}
+            transition={{
+              duration: b.dur * 0.85,
               repeat: Infinity,
               ease: "linear",
               delay: b.delay,
@@ -65,15 +81,25 @@ export default function LaserLines() {
       ].map((c, i) => (
         <motion.div
           key={`c-${i}`}
-          className="absolute w-8 h-8"
+          className="absolute w-10 h-10"
           style={{ ...c, transform: `rotate(${c.rot}deg)` }}
-          animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
         >
-          <div className="absolute top-0 left-0 w-full h-[2px] bg-red-500"
-            style={{ boxShadow: "0 0 8px rgba(255,40,40,0.9)" }} />
-          <div className="absolute top-0 left-0 w-[2px] h-full bg-red-500"
-            style={{ boxShadow: "0 0 8px rgba(255,40,40,0.9)" }} />
+          <div
+            className="absolute top-0 left-0 w-full h-[2px]"
+            style={{
+              background: "rgb(255,40,80)",
+              boxShadow: "0 0 12px rgba(255,40,80,1), 0 0 24px rgba(255,40,80,0.8)",
+            }}
+          />
+          <div
+            className="absolute top-0 left-0 w-[2px] h-full"
+            style={{
+              background: "rgb(255,40,80)",
+              boxShadow: "0 0 12px rgba(255,40,80,1), 0 0 24px rgba(255,40,80,0.8)",
+            }}
+          />
         </motion.div>
       ))}
 
@@ -81,25 +107,34 @@ export default function LaserLines() {
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
           className="relative"
-          style={{ width: 120, height: 120 }}
+          style={{ width: 140, height: 140 }}
           animate={{ rotate: 360 }}
-          transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
         >
-          <div className="absolute top-1/2 left-0 w-full h-[1px] -translate-y-1/2"
+          <div
+            className="absolute top-1/2 left-0 w-full h-[2px] -translate-y-1/2"
             style={{
-              background: "linear-gradient(90deg, transparent, rgba(255,40,40,0.9), transparent)",
-              boxShadow: "0 0 6px rgba(255,40,40,0.7)",
-            }} />
-          <div className="absolute left-1/2 top-0 h-full w-[1px] -translate-x-1/2"
+              background: "linear-gradient(90deg, transparent, rgba(255,40,80,1), transparent)",
+              boxShadow: "0 0 12px rgba(255,40,80,1), 0 0 24px rgba(255,40,80,0.8)",
+            }}
+          />
+          <div
+            className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2"
             style={{
-              background: "linear-gradient(180deg, transparent, rgba(80,255,180,0.9), transparent)",
-              boxShadow: "0 0 6px rgba(80,255,180,0.7)",
-            }} />
+              background: "linear-gradient(180deg, transparent, rgba(80,255,220,1), transparent)",
+              boxShadow: "0 0 12px rgba(80,255,220,1), 0 0 24px rgba(80,255,220,0.8)",
+            }}
+          />
           <motion.div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30"
-            style={{ width: 14, height: 14 }}
-            animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              width: 16,
+              height: 16,
+              border: "2px solid rgba(255,255,255,0.9)",
+              boxShadow: "0 0 16px rgba(255,255,255,1), 0 0 32px rgba(255,80,180,0.8)",
+            }}
+            animate={{ scale: [1, 1.5, 1], opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
           />
         </motion.div>
       </div>
