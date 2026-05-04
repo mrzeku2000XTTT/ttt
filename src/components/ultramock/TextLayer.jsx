@@ -2,6 +2,22 @@ import React, { useEffect, useState } from "react";
 import { X, Move } from "lucide-react";
 import ResizeHandles from "./ResizeHandles";
 
+// Build a stacked text-shadow string that simulates 3D extrusion.
+// Each layer is darker than the base color, with a soft cast shadow at the end.
+function build3DShadow(depth, baseColor) {
+  const d = Math.max(1, Math.min(40, Number(depth) || 8));
+  const layers = [];
+  for (let i = 1; i <= d; i++) {
+    // Fade from solid base color into black for depth
+    const t = i / d;
+    const shade = `rgba(0,0,0,${0.35 + t * 0.35})`;
+    layers.push(`${i}px ${i}px 0 ${shade}`);
+  }
+  // Soft ambient shadow under the whole thing
+  layers.push(`${d + 4}px ${d + 6}px 16px rgba(0,0,0,0.5)`);
+  return layers.join(", ");
+}
+
 /**
  * Renders a draggable text overlay on the FreeCanvas.
  * Supports a "typewriter" animation that loops every `loopDelay` seconds.
@@ -23,6 +39,31 @@ export default function TextLayer({
   onUpdateItem,
 }) {
   const [displayed, setDisplayed] = useState(item.text || "");
+  // Word-pop animation state — number of words currently visible
+  const [popVisible, setPopVisible] = useState(0);
+
+  // Word-pop loop: reveals one word at a time, then loops.
+  useEffect(() => {
+    if (item.animation !== "pop") return;
+    const words = (item.text || "").split(/\s+/).filter(Boolean);
+    if (!words.length) return;
+    const stepMs = Math.max(50, (Number(item.popDelay) || 0.25) * 1000);
+    const loopMs = Math.max(0, (Number(item.loopDelay) ?? 1.5) * 1000);
+    let cancelled = false;
+    let timeouts = [];
+
+    const runOnce = () => {
+      setPopVisible(0);
+      for (let i = 1; i <= words.length; i++) {
+        const t = setTimeout(() => { if (!cancelled) setPopVisible(i); }, i * stepMs);
+        timeouts.push(t);
+      }
+      const restart = setTimeout(() => { if (!cancelled) runOnce(); }, words.length * stepMs + loopMs);
+      timeouts.push(restart);
+    };
+    runOnce();
+    return () => { cancelled = true; timeouts.forEach(clearTimeout); };
+  }, [item.text, item.animation, item.popDelay, item.loopDelay]);
 
   useEffect(() => {
     if (item.animation !== "typewriter") {
@@ -115,32 +156,98 @@ export default function TextLayer({
           )}
         </>
       )}
-      <div
-        style={{
-          fontSize: item.fontSize,
-          color: item.color,
-          fontWeight: item.fontWeight,
-          fontFamily: item.fontFamily || "ui-sans-serif, system-ui, sans-serif",
-          textAlign: "center",
-          textShadow: "0 2px 12px rgba(0,0,0,0.35)",
-          whiteSpace: "pre-wrap",
-          lineHeight: 1.15,
-          letterSpacing: "-0.01em",
-        }}
-      >
-        {displayed}
-        {item.animation === "typewriter" && (
-          <span
-            className="inline-block w-[0.08em] align-baseline"
+      {item.animation === "3d" ? (
+        // 3D extruded text — stacked layered shadows + perspective tilt
+        <div
+          style={{
+            perspective: "800px",
+            textAlign: "center",
+          }}
+        >
+          <div
             style={{
-              backgroundColor: item.color,
-              height: "1em",
-              marginLeft: "0.05em",
-              animation: "ultramock-blink 1s steps(2) infinite",
+              fontSize: item.fontSize,
+              color: item.color,
+              fontWeight: item.fontWeight,
+              fontFamily: item.fontFamily || "ui-sans-serif, system-ui, sans-serif",
+              textAlign: "center",
+              whiteSpace: "pre-wrap",
+              lineHeight: 1.05,
+              letterSpacing: "-0.02em",
+              transform: `rotateX(${item.tilt ?? 12}deg)`,
+              transformOrigin: "50% 100%",
+              textShadow: build3DShadow(item.depth ?? 8, item.color),
+              filter: "drop-shadow(0 12px 24px rgba(0,0,0,0.45))",
             }}
-          />
-        )}
-      </div>
+          >
+            {item.text}
+          </div>
+        </div>
+      ) : item.animation === "pop" ? (
+        // Word pop-in — each word scales/fades in sequentially
+        <div
+          style={{
+            fontSize: item.fontSize,
+            color: item.color,
+            fontWeight: item.fontWeight,
+            fontFamily: item.fontFamily || "ui-sans-serif, system-ui, sans-serif",
+            textAlign: "center",
+            textShadow: "0 4px 18px rgba(0,0,0,0.55), 0 0 28px rgba(0,0,0,0.35)",
+            whiteSpace: "pre-wrap",
+            lineHeight: 1.15,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {(item.text || "").split(/(\s+)/).map((chunk, i, arr) => {
+            // Count word index (skip whitespace chunks)
+            const wordsBefore = arr.slice(0, i).filter((c) => c.trim().length > 0).length;
+            const isWord = chunk.trim().length > 0;
+            const visible = !isWord || wordsBefore < popVisible;
+            return (
+              <span
+                key={i}
+                style={{
+                  display: "inline-block",
+                  whiteSpace: "pre",
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? "scale(1)" : "scale(0.4)",
+                  transition: "opacity 0.25s ease-out, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  filter: visible ? "blur(0)" : "blur(6px)",
+                }}
+              >
+                {chunk}
+              </span>
+            );
+          })}
+        </div>
+      ) : (
+        <div
+          style={{
+            fontSize: item.fontSize,
+            color: item.color,
+            fontWeight: item.fontWeight,
+            fontFamily: item.fontFamily || "ui-sans-serif, system-ui, sans-serif",
+            textAlign: "center",
+            textShadow: "0 2px 12px rgba(0,0,0,0.35)",
+            whiteSpace: "pre-wrap",
+            lineHeight: 1.15,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {displayed}
+          {item.animation === "typewriter" && (
+            <span
+              className="inline-block w-[0.08em] align-baseline"
+              style={{
+                backgroundColor: item.color,
+                height: "1em",
+                marginLeft: "0.05em",
+                animation: "ultramock-blink 1s steps(2) infinite",
+              }}
+            />
+          )}
+        </div>
+      )}
       <style>{`
         @keyframes ultramock-blink { 50% { opacity: 0; } }
       `}</style>

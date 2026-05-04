@@ -44,26 +44,24 @@ export default function TextControls({ selected, onUpdate, onRemove }) {
 
       <Section title="Animation">
         <div className="grid grid-cols-2 gap-1.5">
-          <button
-            onClick={() => onUpdate({ animation: "none" })}
-            className={`px-3 py-2 rounded-lg text-xs font-bold ${
-              selected.animation === "none"
-                ? "bg-white text-black"
-                : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/10"
-            }`}
-          >
-            Static
-          </button>
-          <button
-            onClick={() => onUpdate({ animation: "typewriter" })}
-            className={`px-3 py-2 rounded-lg text-xs font-bold ${
-              selected.animation === "typewriter"
-                ? "bg-white text-black"
-                : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/10"
-            }`}
-          >
-            Typewriter
-          </button>
+          {[
+            { v: "none", l: "Static" },
+            { v: "typewriter", l: "Typewriter" },
+            { v: "pop", l: "Word Pop" },
+            { v: "3d", l: "3D Extrude" },
+          ].map((a) => (
+            <button
+              key={a.v}
+              onClick={() => onUpdate({ animation: a.v })}
+              className={`px-3 py-2 rounded-lg text-xs font-bold ${
+                selected.animation === a.v
+                  ? "bg-white text-black"
+                  : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/10"
+              }`}
+            >
+              {a.l}
+            </button>
+          ))}
         </div>
         {selected.animation === "typewriter" && (
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -82,6 +80,50 @@ export default function TextControls({ selected, onUpdate, onRemove }) {
                 type="number" min="0" max="10" step="0.5"
                 value={selected.loopDelay}
                 onChange={(e) => onUpdate({ loopDelay: Number(e.target.value) || 0 })}
+                className="mt-1 w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs outline-none focus:border-cyan-400"
+              />
+            </label>
+          </div>
+        )}
+        {selected.animation === "pop" && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <label className="text-[10px] text-white/50">
+              Word delay (s)
+              <input
+                type="number" min="0.05" max="2" step="0.05"
+                value={selected.popDelay ?? 0.25}
+                onChange={(e) => onUpdate({ popDelay: Number(e.target.value) || 0.25 })}
+                className="mt-1 w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs outline-none focus:border-cyan-400"
+              />
+            </label>
+            <label className="text-[10px] text-white/50">
+              Loop delay (s)
+              <input
+                type="number" min="0" max="10" step="0.5"
+                value={selected.loopDelay ?? 1.5}
+                onChange={(e) => onUpdate({ loopDelay: Number(e.target.value) || 0 })}
+                className="mt-1 w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs outline-none focus:border-cyan-400"
+              />
+            </label>
+          </div>
+        )}
+        {selected.animation === "3d" && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <label className="text-[10px] text-white/50">
+              Depth (px)
+              <input
+                type="number" min="1" max="40" step="1"
+                value={selected.depth ?? 8}
+                onChange={(e) => onUpdate({ depth: Number(e.target.value) || 8 })}
+                className="mt-1 w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs outline-none focus:border-cyan-400"
+              />
+            </label>
+            <label className="text-[10px] text-white/50">
+              Tilt (deg)
+              <input
+                type="number" min="-45" max="45" step="1"
+                value={selected.tilt ?? 12}
+                onChange={(e) => onUpdate({ tilt: Number(e.target.value) || 0 })}
                 className="mt-1 w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs outline-none focus:border-cyan-400"
               />
             </label>
