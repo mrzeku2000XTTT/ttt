@@ -57,25 +57,7 @@ export default function LaserLines() {
           animate={{ left: ["-20%", "120%"] }}
           transition={{ duration: 2.6, repeat: Infinity, ease: "linear" }}
         />
-        {/* Sparks at the cut edges */}
-        <motion.div
-          className="absolute top-1/2 left-0 -translate-y-1/2 w-2 h-2 rounded-full"
-          style={{
-            background: "white",
-            boxShadow: "0 0 20px rgba(255,255,255,1), 0 0 40px rgba(255,80,180,1)",
-          }}
-          animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.6, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-1/2 right-0 -translate-y-1/2 w-2 h-2 rounded-full"
-          style={{
-            background: "white",
-            boxShadow: "0 0 20px rgba(255,255,255,1), 0 0 40px rgba(255,80,180,1)",
-          }}
-          animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.6, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-        />
+
       </div>
 
     </div>
