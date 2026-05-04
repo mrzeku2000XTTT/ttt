@@ -35,25 +35,59 @@ export default function TTTGatePage() {
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden select-none">
-      {/* Hero image — animated zoom toward the logo on transition */}
+      {/* Hero image — SPLIT into two halves with a laser cut at 50% */}
+      {/* Black void revealed between the two halves */}
+      <div className="absolute inset-0 bg-black" />
+
+      {/* TOP half — clipped above the cut, pulled up slightly */}
       <motion.div
         className="absolute inset-0"
         initial={false}
         animate={
-          phase === "zoom" || phase === "flash" || phase === "fade"
-            ? { scale: 3.4, opacity: phase === "fade" ? 0 : 1 }
-            : { scale: 1, opacity: 1 }
+          phase === "idle"
+            ? { y: -10, scale: 1, opacity: 1 }
+            : { y: 0, scale: 3.4, opacity: phase === "fade" ? 0 : 1 }
         }
         transition={{
+          y: { duration: 1.6, ease: "easeOut" },
           scale: { duration: 1.4, ease: [0.6, 0.05, 0.3, 1] },
           opacity: { duration: 0.6, ease: "easeOut" },
         }}
         style={{
-          // Origin = the logo's location on the building (roughly 50%, 38%)
           transformOrigin: "50% 38%",
           backgroundImage: `url(${HERO_IMAGE})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          clipPath: "inset(0 0 50% 0)",
+          filter: phase === "idle"
+            ? "drop-shadow(0 6px 16px rgba(255,80,180,0.55))"
+            : "none",
+        }}
+      />
+
+      {/* BOTTOM half — clipped below the cut, pulled down slightly */}
+      <motion.div
+        className="absolute inset-0"
+        initial={false}
+        animate={
+          phase === "idle"
+            ? { y: 10, scale: 1, opacity: 1 }
+            : { y: 0, scale: 3.4, opacity: phase === "fade" ? 0 : 1 }
+        }
+        transition={{
+          y: { duration: 1.6, ease: "easeOut" },
+          scale: { duration: 1.4, ease: [0.6, 0.05, 0.3, 1] },
+          opacity: { duration: 0.6, ease: "easeOut" },
+        }}
+        style={{
+          transformOrigin: "50% 38%",
+          backgroundImage: `url(${HERO_IMAGE})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          clipPath: "inset(50% 0 0 0)",
+          filter: phase === "idle"
+            ? "drop-shadow(0 -6px 16px rgba(255,80,180,0.55))"
+            : "none",
         }}
       />
 
