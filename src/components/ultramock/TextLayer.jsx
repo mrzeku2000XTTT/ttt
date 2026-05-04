@@ -98,8 +98,16 @@ export default function TextLayer({
               cameraZoom={cameraZoom}
               viewZoom={viewZoom}
               onResize={({ widthPct }) => {
+                // Scale BOTH the box width AND the font size proportionally
+                // so corner drag actually grows/shrinks the visible text.
+                const oldW = item.boxWidth ?? 90;
+                const newW = Math.max(10, Math.min(100, widthPct));
+                const ratio = newW / oldW;
+                const oldFs = Number(item.fontSize) || 32;
+                const newFs = Math.max(8, Math.min(400, oldFs * ratio));
                 onUpdateItem(item.id, {
-                  boxWidth: Math.max(10, Math.min(100, widthPct)),
+                  boxWidth: newW,
+                  fontSize: newFs,
                 });
               }}
               minPct={10}
