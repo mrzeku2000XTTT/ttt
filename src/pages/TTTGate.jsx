@@ -26,11 +26,11 @@ export default function TTTGatePage() {
 
   const triggerTransition = () => {
     if (phase !== "idle") return;
-    setPhase("zoom");
-    // Phase timings: zoom 1.4s → flash 0.35s → fade 0.6s → navigate
-    setTimeout(() => setPhase("flash"), 1400);
-    setTimeout(() => setPhase("fade"), 1750);
-    setTimeout(() => navigate("/TTTV2"), 2350);
+    setPhase("split");
+    // Phase timings: split open 1.2s → flash 0.3s → fade 0.5s → navigate
+    setTimeout(() => setPhase("flash"), 1200);
+    setTimeout(() => setPhase("fade"), 1500);
+    setTimeout(() => navigate("/TTTV2"), 2000);
   };
 
   return (
@@ -39,22 +39,19 @@ export default function TTTGatePage() {
       {/* Black void revealed between the two halves */}
       <div className="absolute inset-0 bg-black" />
 
-      {/* TOP half — clipped above the cut, pulled up slightly */}
+      {/* TOP half — slides UP off-screen on transition */}
       <motion.div
         className="absolute inset-0"
         initial={false}
         animate={
           phase === "idle"
-            ? { y: -10, scale: 1, opacity: 1 }
-            : { y: 0, scale: 3.4, opacity: phase === "fade" ? 0 : 1 }
+            ? { y: -10 }
+            : { y: "-100%" }
         }
         transition={{
-          y: { duration: 1.6, ease: "easeOut" },
-          scale: { duration: 1.4, ease: [0.6, 0.05, 0.3, 1] },
-          opacity: { duration: 0.6, ease: "easeOut" },
+          y: { duration: 1.2, ease: [0.6, 0.05, 0.3, 1] },
         }}
         style={{
-          transformOrigin: "50% 38%",
           backgroundImage: `url(${HERO_IMAGE})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -65,22 +62,19 @@ export default function TTTGatePage() {
         }}
       />
 
-      {/* BOTTOM half — clipped below the cut, pulled down slightly */}
+      {/* BOTTOM half — slides DOWN off-screen on transition */}
       <motion.div
         className="absolute inset-0"
         initial={false}
         animate={
           phase === "idle"
-            ? { y: 10, scale: 1, opacity: 1 }
-            : { y: 0, scale: 3.4, opacity: phase === "fade" ? 0 : 1 }
+            ? { y: 10 }
+            : { y: "100%" }
         }
         transition={{
-          y: { duration: 1.6, ease: "easeOut" },
-          scale: { duration: 1.4, ease: [0.6, 0.05, 0.3, 1] },
-          opacity: { duration: 0.6, ease: "easeOut" },
+          y: { duration: 1.2, ease: [0.6, 0.05, 0.3, 1] },
         }}
         style={{
-          transformOrigin: "50% 38%",
           backgroundImage: `url(${HERO_IMAGE})`,
           backgroundSize: "cover",
           backgroundPosition: "center",

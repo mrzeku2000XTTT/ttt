@@ -78,36 +78,6 @@ export default function LaserLines() {
         />
       </div>
 
-      {/* Corner targeting brackets */}
-      {[
-        { top: 16, left: 16, rot: 0 },
-        { top: 16, right: 16, rot: 90 },
-        { bottom: 16, right: 16, rot: 180 },
-        { bottom: 16, left: 16, rot: 270 },
-      ].map((c, i) => (
-        <motion.div
-          key={`c-${i}`}
-          className="absolute w-10 h-10"
-          style={{ ...c, transform: `rotate(${c.rot}deg)` }}
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
-        >
-          <div
-            className="absolute top-0 left-0 w-full h-[2px]"
-            style={{
-              background: "rgb(255,40,80)",
-              boxShadow: "0 0 12px rgba(255,40,80,1), 0 0 24px rgba(255,40,80,0.8)",
-            }}
-          />
-          <div
-            className="absolute top-0 left-0 w-[2px] h-full"
-            style={{
-              background: "rgb(255,40,80)",
-              boxShadow: "0 0 12px rgba(255,40,80,1), 0 0 24px rgba(255,40,80,0.8)",
-            }}
-          />
-        </motion.div>
-      ))}
     </div>
   );
 }
