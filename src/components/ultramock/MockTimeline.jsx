@@ -213,37 +213,19 @@ const MockTimeline = forwardRef(function MockTimeline({
   const addCameraKeyframeAt = (t) => {
     if (!camera) return;
     const tt = Math.max(0, Math.min(Math.min(duration, CAMERA_MAX_START), Math.round(t * 100) / 100));
-    // Start from the camera's CURRENT visible state
-    let zoom = camera.zoom;
-    let x = camera.x;
-    let y = camera.y;
-    // If this matches the nearest existing keyframe (no motion would happen),
-    // nudge the values so the new keyframe creates a visible camera change.
-    // We cycle through a small set of offsets based on how many keys exist
-    // already, so each successive click produces a distinct movement.
-    const nearest = cameraTrack.length
-      ? [...cameraTrack].sort((a, b) => Math.abs(a.t - tt) - Math.abs(b.t - tt))[0]
-      : null;
-    const matchesNearest = nearest &&
-      Math.abs(nearest.zoom - zoom) < 0.02 &&
-      Math.abs(nearest.x - x) < 0.5 &&
-      Math.abs(nearest.y - y) < 0.5;
-    if (matchesNearest) {
-      // Cycle: zoom in → pan right → zoom out → pan left → up → down …
-      const idx = cameraTrack.length % 6;
-      const offsets = [
-        { dz: 0.4,  dx: 0,   dy: 0   }, // zoom in
-        { dz: 0,    dx: 15,  dy: 0   }, // pan right
-        { dz: -0.3, dx: 0,   dy: 0   }, // zoom out
-        { dz: 0,    dx: -15, dy: 0   }, // pan left
-        { dz: 0.2,  dx: 0,   dy: -10 }, // up + slight zoom
-        { dz: 0.2,  dx: 0,   dy: 10  }, // down + slight zoom
-      ];
-      const o = offsets[idx];
-      zoom = Math.max(0.3, Math.min(3, zoom + o.dz));
-      x = Math.max(0, Math.min(100, x + o.dx));
-      y = Math.max(0, Math.min(100, y + o.dy));
-    }
+    // Always force REAL movement by cycling through distinct camera positions.
+    // Each new keyframe gets a different offset so the camera actually travels
+    // between keyframes instead of sitting still on the current position.
+    const idx = cameraTrack.length % 6;
+    const cycle = [
+      { zoom: 1.4, x: 50, y: 50 }, // zoom in to center
+      { zoom: 1.0, x: 75, y: 50 }, // pan right
+      { zoom: 0.8, x: 50, y: 50 }, // zoom out
+      { zoom: 1.0, x: 25, y: 50 }, // pan left
+      { zoom: 1.2, x: 50, y: 30 }, // tilt up + zoom
+      { zoom: 1.2, x: 50, y: 70 }, // tilt down + zoom
+    ];
+    const { zoom, x, y } = cycle[idx];
     setCameraTrack((prev) => {
       const filtered = prev.filter((k) => Math.abs(k.t - tt) > 0.01);
       return [...filtered, { t: tt, zoom, x, y }].sort((a, b) => a.t - b.t);
