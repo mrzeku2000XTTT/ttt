@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import GateOverlay from "@/components/tttgate/GateOverlay";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9542c3e8a_image.png";
 
@@ -57,6 +58,9 @@ export default function TTTGatePage() {
 
       {/* Subtle vignette + atmospheric red flicker */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.65)_100%)]" />
+
+      {/* Animated themed overlay — robotic red / nature green / Kaspa AI core */}
+      {phase === "idle" && <GateOverlay />}
 
       {/* Invisible click hotspot — sits on top of the TTT mark in the image */}
       <button
