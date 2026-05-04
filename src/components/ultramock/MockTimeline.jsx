@@ -188,7 +188,13 @@ const MockTimeline = forwardRef(function MockTimeline({
     setTracks((prev) => {
       const cur = prev[selected.id] || [];
       const filtered = cur.filter((k) => Math.abs(k.t - t) > 0.01);
-      const carriesPos = cur.some((k) => typeof k.x === "number" || typeof k.y === "number");
+      // Always carry x/y for text and overlay items so position animates from
+      // the very first keyframe. For devices, only carry pos if existing keys
+      // already have it (preserves existing motion-preset behavior).
+      const carriesPos =
+        selected.kind === "text" ||
+        selected.kind === "overlay" ||
+        cur.some((k) => typeof k.x === "number" || typeof k.y === "number");
       const next = {
         t,
         rotX: selected.rotX || 0,
