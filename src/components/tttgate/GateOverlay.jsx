@@ -134,68 +134,6 @@ export default function GateOverlay() {
         ))}
       </div>
 
-      {/* CENTER — Kaspa Currency AI orb */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          className="relative"
-          style={{ width: "min(22vw, 22vh)", height: "min(22vw, 22vh)" }}
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        >
-          {/* Outer rotating ring */}
-          <motion.div
-            className="absolute inset-0 rounded-full border-2 border-cyan-300/50"
-            style={{ borderStyle: "dashed" }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          />
-          {/* Counter-rotating ring */}
-          <motion.div
-            className="absolute inset-3 rounded-full border border-teal-300/40"
-            animate={{ rotate: -360 }}
-            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          />
-          {/* Orb glow */}
-          <motion.div
-            className="absolute inset-6 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(112,240,204,0.95) 0%, rgba(38,177,152,0.7) 40%, rgba(11,27,24,0.9) 100%)",
-              boxShadow:
-                "0 0 60px rgba(112,240,204,0.7), inset 0 0 30px rgba(112,240,204,0.5)",
-            }}
-            animate={{ scale: [1, 1.06, 1] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          />
-          {/* Kaspa K mark */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <svg
-              viewBox="0 0 100 100"
-              className="w-1/2 h-1/2 drop-shadow-[0_0_12px_rgba(112,240,204,0.9)]"
-            >
-              <path
-                d="M35 25 L35 75 M35 50 L65 25 M35 50 L65 75"
-                stroke="#0b1b18"
-                strokeWidth="9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
-          </div>
-          {/* AI label */}
-          <motion.div
-            className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <span className="text-cyan-300 text-[10px] sm:text-xs font-bold tracking-[0.4em] uppercase"
-              style={{ textShadow: "0 0 10px rgba(112,240,204,0.8)" }}>
-              Kaspa · AI
-            </span>
-          </motion.div>
-        </motion.div>
-      </div>
     </div>
   );
 }
