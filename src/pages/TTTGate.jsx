@@ -57,7 +57,7 @@ export default function TTTGatePage() {
           backgroundPosition: "center",
           clipPath: "inset(0 0 50% 0)",
           filter: phase === "idle"
-            ? "drop-shadow(0 6px 16px rgba(255,80,180,0.55))"
+            ? "drop-shadow(0 6px 16px rgba(255,30,30,0.55))"
             : "none",
         }}
       />
@@ -80,7 +80,7 @@ export default function TTTGatePage() {
           backgroundPosition: "center",
           clipPath: "inset(50% 0 0 0)",
           filter: phase === "idle"
-            ? "drop-shadow(0 -6px 16px rgba(255,80,180,0.55))"
+            ? "drop-shadow(0 -6px 16px rgba(255,30,30,0.55))"
             : "none",
         }}
       />
