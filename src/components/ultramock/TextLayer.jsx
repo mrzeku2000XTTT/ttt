@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, Move } from "lucide-react";
+import ResizeHandles from "./ResizeHandles";
 
 /**
  * Renders a draggable text overlay on the FreeCanvas.
@@ -16,6 +17,10 @@ export default function TextLayer({
   onRemove,
   onPointerDown, // (e, item) — drag handler from parent
   isDragging,
+  surfaceRef,
+  cameraZoom = 1,
+  viewZoom = 1,
+  onUpdateItem,
 }) {
   const [displayed, setDisplayed] = useState(item.text || "");
 
@@ -85,6 +90,21 @@ export default function TextLayer({
             className="absolute -inset-2 ring-2 ring-cyan-400/70 rounded-lg pointer-events-none"
             style={{ boxShadow: "0 0 0 4px rgba(34,211,238,0.1)" }}
           />
+          {onUpdateItem && surfaceRef && (
+            <ResizeHandles
+              surfaceRef={surfaceRef}
+              item={item}
+              widthPct={item.boxWidth ?? 90}
+              cameraZoom={cameraZoom}
+              viewZoom={viewZoom}
+              onResize={({ widthPct }) => {
+                onUpdateItem(item.id, {
+                  boxWidth: Math.max(10, Math.min(100, widthPct)),
+                });
+              }}
+              minPct={10}
+            />
+          )}
         </>
       )}
       <div

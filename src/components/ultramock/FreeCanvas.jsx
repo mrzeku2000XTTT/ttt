@@ -2,6 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import DeviceFrame from "./DeviceFrame";
 import TextLayer from "./TextLayer";
 import OverlayLayer from "./OverlayLayer";
+import ResizeHandles from "./ResizeHandles";
 import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock, Expand, Minimize, Play, Pause, EyeOff, Eye } from "lucide-react";
 
 /**
@@ -430,6 +431,10 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                 onRemove={onRemove}
                 onPointerDown={startDrag}
                 isDragging={dragState.current?.id === item.id}
+                surfaceRef={surfaceRef}
+                cameraZoom={camera?.zoom || 1}
+                viewZoom={zoom}
+                onUpdateItem={onUpdateItem}
               />
             );
           }
@@ -444,6 +449,10 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                 onRemove={onRemove}
                 onPointerDown={startDrag}
                 isDragging={dragState.current?.id === item.id}
+                surfaceRef={surfaceRef}
+                cameraZoom={camera?.zoom || 1}
+                viewZoom={zoom}
+                onUpdateItem={onUpdateItem}
               />
             );
           }
@@ -467,7 +476,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                 <>
                   <div
                     className="absolute inset-0 ring-2 ring-cyan-400 rounded-[2.5rem] pointer-events-none"
-                    style={{ boxShadow: "0 0 0 4px rgba(34,211,238,0.15)" }}
+                    style={{ boxShadow: "0 0 0 4px rgba(34,211,228,0.15)" }}
                   />
                   <button
                     onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
@@ -479,6 +488,20 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                   <div className="absolute -top-3 -left-3 z-30 w-7 h-7 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
                     <Move className="w-3.5 h-3.5" />
                   </div>
+                  {/* Corner resize handles — drive the device's `scale` field */}
+                  <ResizeHandles
+                    surfaceRef={surfaceRef}
+                    item={item}
+                    widthPct={(item.scale ?? 1) * 30}
+                    aspect={1}
+                    cameraZoom={camera?.zoom || 1}
+                    viewZoom={zoom}
+                    onResize={({ widthPct }) => {
+                      const newScale = Math.max(0.2, Math.min(3, widthPct / 30));
+                      onUpdateItem(item.id, { scale: newScale });
+                    }}
+                    minPct={6}
+                  />
                 </>
               )}
               {/* 3D rotation per item */}

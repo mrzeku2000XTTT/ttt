@@ -1,6 +1,7 @@
 import React from "react";
 import { X, Move } from "lucide-react";
 import { OVERLAY_PRESETS } from "./overlayPresets";
+import ResizeHandles from "./ResizeHandles";
 
 /**
  * Renders an overlay item (preset SVG or AI-generated image) on the canvas.
@@ -15,6 +16,7 @@ import { OVERLAY_PRESETS } from "./overlayPresets";
  */
 export default function OverlayLayer({
   item, selected, onSelect, onRemove, onPointerDown, isDragging,
+  surfaceRef, cameraZoom = 1, viewZoom = 1, onUpdateItem,
 }) {
   const isPreset = item.overlayType === "preset";
   const preset = isPreset ? OVERLAY_PRESETS.find((p) => p.id === item.presetId) : null;
@@ -60,6 +62,22 @@ export default function OverlayLayer({
             className="absolute -inset-2 ring-2 ring-cyan-400/70 rounded-lg pointer-events-none"
             style={{ boxShadow: "0 0 0 4px rgba(34,211,238,0.1)" }}
           />
+          {onUpdateItem && surfaceRef && (
+            <ResizeHandles
+              surfaceRef={surfaceRef}
+              item={item}
+              widthPct={item.widthPct ?? 30}
+              aspect={aspect}
+              cameraZoom={cameraZoom}
+              viewZoom={viewZoom}
+              onResize={({ widthPct }) => {
+                onUpdateItem(item.id, {
+                  widthPct: Math.max(4, Math.min(200, widthPct)),
+                });
+              }}
+              minPct={4}
+            />
+          )}
         </>
       )}
 
