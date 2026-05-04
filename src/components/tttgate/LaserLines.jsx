@@ -103,41 +103,6 @@ export default function LaserLines() {
         </motion.div>
       ))}
 
-      {/* Center crosshair */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          className="relative"
-          style={{ width: 140, height: 140 }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        >
-          <div
-            className="absolute top-1/2 left-0 w-full h-[2px] -translate-y-1/2"
-            style={{
-              background: "linear-gradient(90deg, transparent, rgba(255,40,80,1), transparent)",
-              boxShadow: "0 0 12px rgba(255,40,80,1), 0 0 24px rgba(255,40,80,0.8)",
-            }}
-          />
-          <div
-            className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2"
-            style={{
-              background: "linear-gradient(180deg, transparent, rgba(80,255,220,1), transparent)",
-              boxShadow: "0 0 12px rgba(80,255,220,1), 0 0 24px rgba(80,255,220,0.8)",
-            }}
-          />
-          <motion.div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              width: 16,
-              height: 16,
-              border: "2px solid rgba(255,255,255,0.9)",
-              boxShadow: "0 0 16px rgba(255,255,255,1), 0 0 32px rgba(255,80,180,0.8)",
-            }}
-            animate={{ scale: [1, 1.5, 1], opacity: [0.6, 1, 0.6] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </motion.div>
-      </div>
     </div>
   );
 }
