@@ -182,6 +182,44 @@ const MockTimeline = forwardRef(function MockTimeline({
   }, [playing]);
 
   // ── Keyframe operations on the SELECTED item ────────────────────────────
+  // Add a keyframe for a specific item at a specific time (used by both the
+  // top toolbar button and lane click-to-add).
+  const addKeyframeAt = (itemId, t) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+    const tt = Math.max(0, Math.min(duration, Math.round(t * 100) / 100));
+    setTracks((prev) => {
+      const cur = prev[itemId] || [];
+      const filtered = cur.filter((k) => Math.abs(k.t - tt) > 0.01);
+      const carriesPos =
+        item.kind === "text" ||
+        item.kind === "overlay" ||
+        cur.some((k) => typeof k.x === "number" || typeof k.y === "number");
+      const next = {
+        t: tt,
+        rotX: item.rotX || 0,
+        rotY: item.rotY || 0,
+        scale: item.scale ?? 1,
+      };
+      if (carriesPos && typeof item.x === "number" && typeof item.y === "number") {
+        next.x = item.x;
+        next.y = item.y;
+      }
+      return { ...prev, [itemId]: [...filtered, next].sort((a, b) => a.t - b.t) };
+    });
+    setPlayhead(tt);
+  };
+
+  const addCameraKeyframeAt = (t) => {
+    if (!camera) return;
+    const tt = Math.max(0, Math.min(Math.min(duration, CAMERA_MAX_START), Math.round(t * 100) / 100));
+    setCameraTrack((prev) => {
+      const filtered = prev.filter((k) => Math.abs(k.t - tt) > 0.01);
+      return [...filtered, { t: tt, zoom: camera.zoom, x: camera.x, y: camera.y }].sort((a, b) => a.t - b.t);
+    });
+    setPlayhead(tt);
+  };
+
   const addKeyframe = () => {
     if (!selected) return;
     const t = Math.round(playhead * 100) / 100;
@@ -1227,7 +1265,15 @@ const MockTimeline = forwardRef(function MockTimeline({
           </div>
           <div
             ref={(el) => { if (el) el.dataset.lane = "camera"; }}
-            className={`relative flex-1 h-8 my-0.5 rounded ${cameraHidden ? "opacity-30" : ""}`}
+            onClick={(e) => {
+              // Click empty area = add camera keyframe at clicked time
+              if (recording) return;
+              if (e.target !== e.currentTarget) return; // ignore clicks on diamonds
+              const rect = e.currentTarget.getBoundingClientRect();
+              const t = ((e.clientX - rect.left) / rect.width) * duration;
+              addCameraKeyframeAt(t);
+            }}
+            className={`relative flex-1 h-8 my-0.5 rounded cursor-copy ${cameraHidden ? "opacity-30" : ""}`}
             style={{ background: "rgba(236,72,153,0.07)" }}
           >
             {cameraTrack.length >= 2 && (() => {
@@ -1391,7 +1437,15 @@ const MockTimeline = forwardRef(function MockTimeline({
 
                 {/* Track lane */}
                 <div
-                  className={`relative flex-1 h-8 my-0.5 rounded ${hidden ? "opacity-30" : ""}`}
+                  onClick={(e) => {
+                    // Click empty area = add keyframe at clicked time for THIS track's item
+                    if (recording) return;
+                    if (e.target !== e.currentTarget) return; // ignore clicks on diamonds
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const t = ((e.clientX - rect.left) / rect.width) * duration;
+                    addKeyframeAt(itemId, t);
+                  }}
+                  className={`relative flex-1 h-8 my-0.5 rounded cursor-copy ${hidden ? "opacity-30" : ""}`}
                   style={{ background: `${color}10` }}
                 >
                   {/* Bar from first to last keyframe */}
