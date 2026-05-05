@@ -11,6 +11,8 @@ export const TOOL_LIST = [
   { name: "select_item", desc: "Select an item by id or by index (0-based)", args: "{ id?: string, index?: number }" },
   { name: "remove_item", desc: "Remove an item by id (or selected if no id)", args: "{ id?: string }" },
   { name: "set_background", desc: "Change the canvas background preset", args: "{ background: 'sunset'|'ocean'|'forest'|'peach'|'mono'|'ivory'|'midnight'|'candy'|'white'|'black' }" },
+  { name: "generate_background", desc: "Generate a custom AI image to use as the canvas background. Use this when the user asks for a specific scene, vibe, photo, texture, or anything not covered by presets (e.g. 'a foggy mountain at sunrise', 'cyberpunk neon street', 'soft pastel clouds'). The image fills the canvas behind all devices/text/overlays. Always write a detailed, cinematic, high-quality prompt — describe the scene, lighting, mood, color palette, and composition. The image should be wide (16:10 friendly) with content that doesn't fight the foreground devices.", args: "{ prompt: string }" },
+  { name: "clear_custom_background", desc: "Remove the AI-generated background image and revert to the active preset gradient.", args: "{}" },
   { name: "set_padding", desc: "Change canvas padding in pixels (20-160)", args: "{ padding: number }" },
   { name: "set_duration", desc: "Set total animation duration in seconds (1-30)", args: "{ seconds: number }" },
   { name: "apply_preset", desc: "Apply a motion preset to the timeline of the SELECTED device. mode 'replace' wipes & sets across full duration; 'chain' appends at playhead.", args: "{ preset_id: string, mode?: 'replace'|'chain' }" },
@@ -81,6 +83,7 @@ RESPONSE FORMAT — strict JSON only:
 RULES:
 - Always reply with valid JSON. No markdown. No code fences. No prose outside the JSON.
 - Tools execute in order. Plan multi-step edits as a list.
+- 🖼️ BACKGROUNDS — when the user asks for a specific scene, photo, texture, vibe, or anything not in the preset list (sunset/ocean/forest/peach/mono/ivory/midnight/candy/white/black), call generate_background({ prompt }) with a detailed, cinematic prompt. Examples that need generate_background: "make the background a cherry blossom forest", "neon cyberpunk alley", "studio backdrop with soft lighting", "a beach at golden hour". Only use set_background for the listed preset gradients.
 - 📺 YOUTUBE LINKS — if the user pastes a youtube.com or youtu.be URL, or asks "make it look like <YouTube>", call analyze_youtube({ url, focus_hint }) FIRST and let it auto-build the scene. It already applies the recommended background, duration, motion presets and camera moves itself, so don't queue duplicate set_background / chain_presets calls after it. Just call analyze_youtube and (only if the user explicitly asked) optionally render_mp4.
 - 🚨 REUSE WHAT'S ALREADY ON THE CANVAS. Look at CURRENT STATE.items FIRST. If a device or text layer already exists, DO NOT add a new one — select_item by index/id and animate THAT one. Only call add_device or add_text when there is NO suitable existing item to use.
 - Example: user says "animate this" or "make it spin" and items already has a device → select_item({ index: <device index> }) then apply_preset. Do NOT add_device.

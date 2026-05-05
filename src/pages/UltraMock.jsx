@@ -95,6 +95,10 @@ export default function UltraMockPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [placementMode, setPlacementMode] = useState(false);
   const [background, setBackground] = useState("sunset");
+  // Optional AI-generated image URL that overrides the preset gradient.
+  // When set, MockBackground / FreeCanvas paint this image instead of the preset CSS.
+  const [customBackground, setCustomBackground] = useState(null);
+  const [generatingBackground, setGeneratingBackground] = useState(false);
   const [padding, setPadding] = useState(60);
   const [duration, setDuration] = useState(4);
   // Camera state — animated by the timeline's camera track
@@ -116,8 +120,12 @@ export default function UltraMockPage() {
   const selected = items.find((i) => i.id === selectedId) || null;
 
   const backgroundCss = useMemo(() => {
+    if (customBackground) {
+      // CSS background shorthand for an image: cover the whole canvas, centered.
+      return `url("${customBackground}") center/cover no-repeat`;
+    }
     return (BACKGROUND_PRESETS.find((b) => b.id === background) || BACKGROUND_PRESETS[0]).css;
-  }, [background]);
+  }, [background, customBackground]);
 
   const updateItem = useCallback((id, partial) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...partial } : it)));
@@ -260,6 +268,7 @@ export default function UltraMockPage() {
     setSelectedId(null);
     setPlacementMode(false);
     setBackground("sunset");
+    setCustomBackground(null);
     setPadding(60);
   };
 
@@ -376,6 +385,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
   // Snapshot of state for the agent's vision/context
   const getStateSnapshot = useCallback(() => ({
     background,
+    custom_background_url: customBackground || null,
     padding,
     duration,
     selected_id: selectedId,
@@ -387,7 +397,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
         ? { text: it.text, x: it.x, y: it.y, fontSize: it.fontSize, color: it.color, animation: it.animation, boxWidth: it.boxWidth }
         : { device: it.device, x: it.x, y: it.y, scale: it.scale, rotX: it.rotX, rotY: it.rotY, cornerRadius: it.cornerRadius, has_media: !!it.media }),
     })),
-  }), [items, selectedId, background, padding, duration]);
+  }), [items, selectedId, background, customBackground, padding, duration, camera]);
 
   // Agent tool handlers — bind tool names → page state mutations
   const agentHandlers = useMemo(() => ({
@@ -434,7 +444,32 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
       removeItem(id);
       return { id };
     },
-    set_background: (a = {}) => { if (a.background) setBackground(a.background); return { background: a.background }; },
+    set_background: (a = {}) => {
+      if (a.background) setBackground(a.background);
+      // Switching to a preset gradient should drop any custom AI image
+      setCustomBackground(null);
+      return { background: a.background };
+    },
+    generate_background: async (a = {}) => {
+      const prompt = (a.prompt || "").trim();
+      if (!prompt) throw new Error("prompt is required");
+      setGeneratingBackground(true);
+      try {
+        const { base44 } = await import("@/api/base44Client");
+        const fullPrompt = `Wide cinematic 16:10 background image for a device mockup scene. ${prompt}. High quality, detailed, professional, dramatic lighting. The image will sit behind device mockups so keep the focal subject offset/balanced and avoid putting critical detail in the dead center.`;
+        const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+        const url = res?.url;
+        if (!url) throw new Error("image generation returned no URL");
+        setCustomBackground(url);
+        return { url, prompt };
+      } finally {
+        setGeneratingBackground(false);
+      }
+    },
+    clear_custom_background: () => {
+      setCustomBackground(null);
+      return { ok: true };
+    },
     set_padding: (a = {}) => { if (typeof a.padding === "number") setPadding(Math.max(20, Math.min(160, a.padding))); return { padding: a.padding }; },
     set_duration: (a = {}) => { if (typeof a.seconds === "number") setDuration(Math.max(1, Math.min(30, a.seconds))); return { duration: a.seconds }; },
     apply_preset: async (a = {}) => {
@@ -773,6 +808,14 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
 
       {/* Auto-render progress overlay (shown when triggered by NODA workflow) */}
       <AutoRenderStatus status={autoStatus} />
+
+      {/* AI background generation indicator */}
+      {generatingBackground && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-orange-500 text-white text-xs font-bold shadow-2xl shadow-fuchsia-500/40">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          Generating AI background…
+        </div>
+      )}
     </div>
   );
 }
