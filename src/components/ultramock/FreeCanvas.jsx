@@ -50,21 +50,73 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
 
   // Track native fullscreen state so the icon stays in sync (Esc, F11, etc.)
   useEffect(() => {
-    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    const onFsChange = () => {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      setIsFullscreen(!!fsEl || document.body.classList.contains("ultramock-pseudo-fs"));
+    };
     document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+    };
   }, []);
 
   const toggleFullscreen = () => {
     const el = typeof ref === "function" ? null : ref?.current;
     const target = el || surfaceRef.current?.parentElement;
     if (!target) return;
-    if (!document.fullscreenElement) {
-      target.requestFullscreen?.().catch(() => {});
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    const isPseudo = document.body.classList.contains("ultramock-pseudo-fs");
+
+    if (!fsEl && !isPseudo) {
+      // Try native fullscreen first (desktop + Android Chrome/Firefox)
+      const req = target.requestFullscreen || target.webkitRequestFullscreen || target.webkitEnterFullscreen;
+      if (req) {
+        try {
+          const p = req.call(target);
+          if (p && p.catch) p.catch(() => enterPseudoFullscreen(target));
+          return;
+        } catch {
+          enterPseudoFullscreen(target);
+          return;
+        }
+      }
+      // iOS Safari fallback: native fullscreen unavailable on divs → use CSS pseudo-fullscreen
+      enterPseudoFullscreen(target);
     } else {
-      document.exitFullscreen?.().catch(() => {});
+      if (fsEl) {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        try { exit?.call(document); } catch {}
+      }
+      if (isPseudo) exitPseudoFullscreen(target);
     }
   };
+
+  const enterPseudoFullscreen = (target) => {
+    document.body.classList.add("ultramock-pseudo-fs");
+    target.classList.add("ultramock-pseudo-fs-target");
+    setIsFullscreen(true);
+  };
+
+  const exitPseudoFullscreen = (target) => {
+    document.body.classList.remove("ultramock-pseudo-fs");
+    target?.classList.remove("ultramock-pseudo-fs-target");
+    setIsFullscreen(false);
+  };
+
+  // Allow Esc key to exit pseudo-fullscreen on iOS
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && document.body.classList.contains("ultramock-pseudo-fs")) {
+        const el = typeof ref === "function" ? null : ref?.current;
+        const target = el || surfaceRef.current?.parentElement;
+        exitPseudoFullscreen(target);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [ref]);
 
   const clampZoom = (z) => Math.max(0.25, Math.min(2, z));
   const zoomIn = () => setZoom((z) => clampZoom(z + 0.1));
@@ -306,6 +358,21 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         touchAction: "none",
       }}
     >
+      {/* iOS Safari pseudo-fullscreen styles (native FS unavailable on divs there) */}
+      <style>{`
+        body.ultramock-pseudo-fs { overflow: hidden !important; }
+        .ultramock-pseudo-fs-target {
+          position: fixed !important;
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          z-index: 9999 !important;
+          aspect-ratio: auto !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+      `}</style>
       {/* Locked indicator (replaces zoom controls when preview is locked) */}
       {locked && (
         <div className="absolute top-3 right-3 z-40 flex items-center gap-1.5 bg-orange-500/90 text-black px-3 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase shadow-lg">
