@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "型紙 Katagami", path: "Katagami", cat: "Education", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/15c852849_generated_image.png", desc: "Motion design masterclass", admin: true },
   { name: "Cháoxiào", path: "UltraMock", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/15c852849_generated_image.png", desc: "Cheeky device mockups", admin: true },
   { name: "APEX", path: "APEX", cat: "Security", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/de2e1af61_generated_image.png", desc: "ZK proof for NODA runs" },
   { name: "NODA", path: "NODA", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4a4455642_generated_image.png", desc: "Node-based AI workflows" },
