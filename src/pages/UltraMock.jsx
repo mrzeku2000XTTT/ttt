@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type, Bot } from "lucide-react";
+import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type, Bot, Globe } from "lucide-react";
 import html2canvas from "html2canvas";
 import { BACKGROUND_PRESETS } from "@/components/ultramock/MockBackground";
 import MockControls from "@/components/ultramock/MockControls";
@@ -15,6 +15,7 @@ import MockMobileBar from "@/components/ultramock/MockMobileBar";
 import MockBottomSheet from "@/components/ultramock/MockBottomSheet";
 import AutoRenderStatus from "@/components/ultramock/AutoRenderStatus";
 import ScreenRecorder from "@/components/ultramock/ScreenRecorder";
+import UrlResearchModal from "@/components/ultramock/UrlResearchModal";
 
 const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -110,6 +111,7 @@ export default function UltraMockPage() {
   const [agentOpen, setAgentOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
+  const [urlResearchOpen, setUrlResearchOpen] = useState(false);
   const [locked, setLocked] = useState(false);
   // Pinch-to-zoom on by default on mobile so users can frame the canvas with 2 fingers
   const [pinchEnabled, setPinchEnabled] = useState(() => {
@@ -160,6 +162,63 @@ export default function UltraMockPage() {
     setItems((prev) => [...prev, item]);
     setSelectedId(item.id);
   }, []);
+
+  // Insert N researched images into the editor.
+  // - "timeline" mode: each image gets a sequential [appearAt, disappearAt]
+  //   window so they appear ONE AT A TIME during playback (slide-show feel).
+  // - "stack" mode: drop them all on canvas at slightly offset positions
+  //   so the user can manually arrange them.
+  const insertResearchedImages = useCallback((researched, mode = "timeline") => {
+    if (!Array.isArray(researched) || researched.length === 0) return;
+
+    // Smart non-overlapping positions around the canvas — used in both modes
+    // (timeline mode: each beat has its own slot, but offsetting by role
+    // also helps when the user later disables windows). Avoids the device
+    // center (~50, ~55).
+    const positions = [
+      { x: 22, y: 30 }, { x: 78, y: 30 },
+      { x: 18, y: 70 }, { x: 82, y: 70 },
+      { x: 50, y: 22 }, { x: 50, y: 82 },
+      { x: 30, y: 50 }, { x: 70, y: 50 },
+      { x: 35, y: 35 }, { x: 65, y: 65 },
+    ];
+
+    const total = researched.length;
+    const segLen = duration / Math.max(1, total);
+
+    const newItems = researched.map((img, i) => {
+      const pos = positions[i % positions.length];
+      const base = {
+        overlayType: "image",
+        imageUrl: img.url,
+        aspect: 1,
+        widthPct: 30,
+        x: pos.x,
+        y: pos.y,
+        opacity: 1,
+        // Tag the item with research metadata so it can be inspected later
+        researchRole: img.role,
+        researchLabel: img.label,
+      };
+      if (mode === "timeline") {
+        const appearAt = i * segLen;
+        const disappearAt = Math.min(duration, (i + 1) * segLen);
+        return makeOverlay({
+          ...base,
+          // In timeline mode, overlay fills the frame for slide-show feel
+          x: 50,
+          y: 50,
+          widthPct: 70,
+          appearAt,
+          disappearAt,
+        });
+      }
+      return makeOverlay(base);
+    });
+
+    setItems((prev) => [...prev, ...newItems]);
+    if (newItems[0]) setSelectedId(newItems[0].id);
+  }, [duration]);
 
   // Add an overlay from an AI-generated / uploaded image URL
   const addOverlayImage = useCallback(({ url }) => {
@@ -838,6 +897,13 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
             <Sparkles className="w-3.5 h-3.5" /> Overlay
           </button>
           <button
+            onClick={() => setUrlResearchOpen(true)}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-gradient-to-r from-cyan-500 to-violet-500 hover:opacity-90 text-white text-xs font-bold shadow-lg shadow-violet-500/30"
+            title="Drop a URL — AI deeply researches it and generates 10 themed slide images"
+          >
+            <Globe className="w-3.5 h-3.5" /> URL → 10 Images
+          </button>
+          <button
             onClick={addText}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
           >
@@ -1018,6 +1084,14 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
         onClose={() => setOverlayPickerOpen(false)}
         onPickPreset={addOverlayPreset}
         onPickImage={addOverlayImage}
+      />
+
+      {/* URL → 10 researched images modal */}
+      <UrlResearchModal
+        open={urlResearchOpen}
+        onClose={() => setUrlResearchOpen(false)}
+        onInsertImages={insertResearchedImages}
+        currentDuration={duration}
       />
 
       <MockAgent
