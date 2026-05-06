@@ -34,6 +34,11 @@ export default function BeatCutPage() {
   const template = useMemo(() => getTemplate(templateId), [templateId]);
 
   useEffect(() => {
+    if (track?.beatsData) {
+      setBeatsData(track.beatsData);
+      setAnalyzing(false);
+      return;
+    }
     if (!track?.file) {
       setBeatsData(null);
       return;
