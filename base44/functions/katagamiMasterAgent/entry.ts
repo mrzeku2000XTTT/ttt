@@ -279,6 +279,86 @@ Return JSON:
           total_duration: totalDur,
           segment_count: segCount,
         },
+        // For long-form ads we run an extra "sequence" pass that lets a
+        // master director reorder all chained presets into a globally
+        // coherent narrative arc before critique.
+        next_step: 'sequence',
+      });
+    }
+
+    // ── STEP 4.6: SEQUENCE (master director reorder) ───────────────────
+    // Sub-agents only see their own beat. This step gives a SINGLE master
+    // director the full list of chained presets and asks it to decide the
+    // BEST GLOBAL ORDER — opener → build → climax → close — so the ad
+    // feels intentional instead of like 10 disconnected mini-loops.
+    if (step === 'sequence') {
+      const { choreograph, vibe, research, analysis } = state;
+      if (!choreograph?.segments?.length) {
+        // Nothing to reorder — skip straight to critique
+        return Response.json({ step: 'sequence', output: null, next_step: 'critique' });
+      }
+
+      // Flatten all chained presets into one ordered list with their origin beat
+      const flat = [];
+      choreograph.segments.forEach((seg, beatIdx) => {
+        const ids = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
+        ids.forEach((id, slot) => {
+          if (MOTION_PRESETS.includes(id)) flat.push({ id, beat: beatIdx + 1, slot });
+        });
+      });
+
+      const directorOutput = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are the MASTER director of a long-form motion ad. ${choreograph.segment_count} sub-agents each picked 2 presets for their beat. Now YOU decide the BEST GLOBAL ORDER for all ${flat.length} presets so the final ad has a coherent narrative arc.
+
+OVERALL VIBE: "${vibe}"
+SUBJECT: ${analysis?.subject || ''}
+PACE: ${research?.recommended_pace || 'medium'}
+TOTAL DURATION: ${choreograph.total_duration}s
+
+CURRENT SUB-AGENT CHAIN (in beat order):
+${flat.map((f, i) => `${i + 1}. ${f.id} (from beat ${f.beat})`).join('\n')}
+
+Your job: pick the optimal play order. Reasoning to apply:
+- OPENING (first 20%): grab attention with a strong entrance — slide-in-*, drop-in, fly-across, zoomin, reveal
+- BUILD (20-60%): rhythmic motion that holds interest — pop, bounce, wobble, tilt, float, showcase
+- CLIMAX (60-85%): peak energy — spin, barrel, orbit, swoop, shake, flip
+- RESOLUTION (last 15%): land the message confidently — showcase, chat-zoom, zoomout, tilt-up, pop
+
+Avoid putting two identical presets back-to-back. Vary direction (left/right/up/down). Don't drift in one direction the whole time.
+
+Return JSON:
+- ordered_preset_ids: array of EXACTLY ${flat.length} preset ids — must be a permutation of the input list (every input preset appears exactly once)
+- reasoning: 1-2 sentences on the narrative arc you chose`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            ordered_preset_ids: { type: 'array', items: { type: 'string' } },
+            reasoning: { type: 'string' },
+          },
+          required: ['ordered_preset_ids'],
+        },
+      });
+
+      // Validate: every returned id must be a real preset, and the multiset
+      // must match the input (so nothing is dropped/duplicated). If invalid,
+      // fall back to the original sub-agent order.
+      const inputCounts = {};
+      flat.forEach(f => { inputCounts[f.id] = (inputCounts[f.id] || 0) + 1; });
+      const proposed = (directorOutput.ordered_preset_ids || []).filter(id => MOTION_PRESETS.includes(id));
+      const proposedCounts = {};
+      proposed.forEach(id => { proposedCounts[id] = (proposedCounts[id] || 0) + 1; });
+      const isValidPermutation = proposed.length === flat.length &&
+        Object.keys(inputCounts).every(k => inputCounts[k] === proposedCounts[k]);
+
+      const finalOrder = isValidPermutation ? proposed : flat.map(f => f.id);
+
+      return Response.json({
+        step: 'sequence',
+        output: {
+          ordered_preset_ids: finalOrder,
+          reasoning: directorOutput.reasoning || '',
+          used_director_order: isValidPermutation,
+        },
         next_step: 'critique',
       });
     }
@@ -331,7 +411,7 @@ Return the FINAL JSON plan with the same shape:
 
     // ── STEP 6: DONE — build render URL ────────────────────────────────
     if (step === 'done') {
-      const { plan, media_url, email, choreograph, speed } = state;
+      const { plan, media_url, email, choreograph, sequence, speed } = state;
       if (!plan || !media_url) {
         return Response.json({ error: 'Missing plan or media_url for done step' }, { status: 400 });
       }
@@ -353,13 +433,19 @@ Return the FINAL JSON plan with the same shape:
       });
 
       if (choreograph?.segments?.length) {
-        // Flatten each beat's [primary, secondary] presets into one long chain.
-        // 10 beats × 2 presets = 20 chained presets → 50+ keyframes total.
-        const chainIds = [];
-        for (const seg of choreograph.segments) {
-          const ids = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
-          for (const id of ids) {
-            chainIds.push(MOTION_PRESETS.includes(id) ? id : 'showcase');
+        // Prefer the master director's globally-sequenced order if available.
+        // Otherwise fall back to the raw sub-agent beat order.
+        let chainIds;
+        if (Array.isArray(sequence?.ordered_preset_ids) && sequence.ordered_preset_ids.length > 0) {
+          chainIds = sequence.ordered_preset_ids
+            .map(id => MOTION_PRESETS.includes(id) ? id : 'showcase');
+        } else {
+          chainIds = [];
+          for (const seg of choreograph.segments) {
+            const ids = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
+            for (const id of ids) {
+              chainIds.push(MOTION_PRESETS.includes(id) ? id : 'showcase');
+            }
           }
         }
         const chain = chainIds.join(',');

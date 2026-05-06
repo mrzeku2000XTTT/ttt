@@ -50,7 +50,7 @@ const QUICK_PRESETS = [
  */
 
 const SHORT_STEPS = ["research", "analyze_media", "plan", "critique", "refine", "done"];
-const LONG_STEPS  = ["research", "analyze_media", "plan", "choreograph", "critique", "refine", "done"];
+const LONG_STEPS  = ["research", "analyze_media", "plan", "choreograph", "sequence", "critique", "refine", "done"];
 
 const SPEED_OPTIONS = [
   { value: 0.5, label: "0.5×", desc: "Slow / cinematic" },
@@ -152,6 +152,7 @@ export default function KatagamiAIEditor() {
         else if (step === "analyze_media") state = { ...state, analysis: data.output };
         else if (step === "plan")          state = { ...state, plan: data.output };
         else if (step === "choreograph")   state = { ...state, choreograph: data.output };
+        else if (step === "sequence")      state = { ...state, sequence: data.output };
         else if (step === "critique")      state = { ...state, critique: data.output };
         else if (step === "refine")        state = { ...state, plan: data.output };
         else if (step === "done" && data.render_url) setRenderUrl(data.render_url);

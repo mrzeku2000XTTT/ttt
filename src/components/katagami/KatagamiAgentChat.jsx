@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Eye, Wand2, Gavel, Sparkles, CheckCircle2, Loader2,
-  Film, ExternalLink, AlertCircle, Bot, ChevronDown, ChevronRight, Layers
+  Film, ExternalLink, AlertCircle, Bot, ChevronDown, ChevronRight, Layers, ListOrdered
 } from "lucide-react";
 
 /**
@@ -16,6 +16,7 @@ const STEP_META = {
   analyze_media: { icon: Eye,       label: "Analyzing your media",              color: "from-violet-500 to-fuchsia-500" },
   plan:          { icon: Wand2,     label: "Designing v1 motion plan",          color: "from-fuchsia-500 to-pink-500" },
   choreograph:   { icon: Layers,    label: "Sub-agents choreographing beats",   color: "from-indigo-500 to-purple-500" },
+  sequence:      { icon: ListOrdered, label: "Master director sequencing beats", color: "from-purple-500 to-pink-500" },
   critique:      { icon: Gavel,     label: "Self-critique pass",                color: "from-orange-500 to-red-500" },
   refine:        { icon: Sparkles,  label: "Refining into final plan",          color: "from-amber-400 to-orange-500" },
   done:          { icon: CheckCircle2, label: "Final cut ready",                color: "from-emerald-500 to-cyan-500" },
@@ -298,6 +299,28 @@ function StepBody({ step, output }) {
             );
           })}
         </div>
+      </div>
+    );
+  }
+
+  if (step === "sequence") {
+    const ids = output.ordered_preset_ids || [];
+    return (
+      <div className="space-y-2">
+        <div className="text-[10px] text-white/50">
+          {ids.length} presets reordered into a global narrative arc {output.used_director_order === false ? "(fallback to beat order)" : ""}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {ids.map((id, i) => (
+            <div key={i} className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-[10px] text-purple-100">
+              <span className="text-purple-300/60 font-mono">{i + 1}.</span>
+              <span className="font-bold">{id}</span>
+            </div>
+          ))}
+        </div>
+        {output.reasoning && (
+          <div className="text-[11px] text-white/60 italic">"{output.reasoning}"</div>
+        )}
       </div>
     );
   }
