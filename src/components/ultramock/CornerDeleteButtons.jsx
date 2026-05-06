@@ -12,9 +12,6 @@ import { X } from "lucide-react";
 export default function CornerDeleteButtons({ onRemove, title = "Remove" }) {
   const corners = [
     { className: "-top-3 -right-3" },
-    { className: "-top-3 -left-3" },
-    { className: "-bottom-3 -right-3" },
-    { className: "-bottom-3 -left-3" },
   ];
   return (
     <>

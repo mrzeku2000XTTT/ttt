@@ -1124,21 +1124,24 @@ const MockTimeline = forwardRef(function MockTimeline({
           <div className="flex-shrink-0 flex items-center gap-1 text-[10px] text-violet-300/80 font-bold uppercase tracking-wider pr-1">
             <Film className="w-3 h-3" /> Slides
           </div>
-          {slides.map((s) => {
+          {slides.map((s, sIdx) => {
             const isActive = activeSlideId === s.id;
             return (
               <div
                 key={s.id}
-                className={`group flex-shrink-0 flex items-center gap-1 pl-2.5 pr-1 h-7 rounded-full text-[11px] font-bold transition-colors border ${
+                className={`group flex-shrink-0 flex items-center gap-1 pl-1 pr-1 h-7 rounded-full text-[11px] font-bold transition-colors border ${
                   isActive
                     ? "bg-violet-500 text-white border-violet-400 shadow-lg shadow-violet-500/30"
                     : "bg-white/5 hover:bg-white/15 border-white/10 text-white/70 hover:text-white"
                 }`}
               >
+                <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-mono font-black ${
+                  isActive ? "bg-white text-violet-600" : "bg-violet-500/20 text-violet-200"
+                }`}>{sIdx + 1}</span>
                 <button
                   onClick={() => loadSlide(s.id)}
-                  className="truncate max-w-[100px]"
-                  title={`Load "${s.name}"`}
+                  className="truncate max-w-[100px] px-1"
+                  title={`Slide ${sIdx + 1}: "${s.name}"`}
                 >
                   {s.name}
                 </button>
@@ -1330,7 +1333,7 @@ const MockTimeline = forwardRef(function MockTimeline({
               : "border-pink-500/40 bg-pink-500/5"
           }`}
         >
-          <div className="flex items-center gap-1 px-2 py-1.5 w-36 flex-shrink-0 border-r border-white/10">
+          <div className="flex items-center gap-1 px-2 py-1.5 w-40 flex-shrink-0 border-r border-white/10">
             <Camera className="w-3 h-3 text-pink-400 flex-shrink-0" />
             <span className="text-[10px] font-bold text-pink-200 truncate flex-1" title="Camera">
               Camera
@@ -1455,7 +1458,7 @@ const MockTimeline = forwardRef(function MockTimeline({
           {/* Ghost lanes: show items WITHOUT tracks during a motion drag so user can drop onto them */}
           {dragPreset?.kind === "motion" && items
             .filter((it) => !tracks[it.id])
-            .map((it) => {
+            .map((it, gIdx) => {
               const isDropHere = dropTarget === it.id;
               return (
                 <div
@@ -1468,7 +1471,10 @@ const MockTimeline = forwardRef(function MockTimeline({
                     isDropHere ? "border-orange-400 bg-orange-400/15" : "border-white/15 bg-white/[0.01]"
                   }`}
                 >
-                  <div className="flex items-center gap-1 px-2 py-1.5 w-36 flex-shrink-0 border-r border-white/10">
+                  <div className="flex items-center gap-1 px-2 py-1.5 w-40 flex-shrink-0 border-r border-white/10">
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white/10 text-white/40 text-[10px] font-mono font-black flex-shrink-0">
+                      +
+                    </span>
                     <span className="text-[10px] font-bold text-white/50 truncate flex-1" title={labelFor(it)}>
                       {labelFor(it)}
                     </span>
@@ -1501,8 +1507,14 @@ const MockTimeline = forwardRef(function MockTimeline({
                 }`}
               >
                 {/* Track header */}
-                <div className="flex items-center gap-1 px-2 py-1.5 w-36 flex-shrink-0 border-r border-white/10">
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                <div className="flex items-center gap-1 px-2 py-1.5 w-40 flex-shrink-0 border-r border-white/10">
+                  <span
+                    className="flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0 text-[10px] font-mono font-black text-black shadow"
+                    style={{ background: color }}
+                    title={`Track #${rowIdx + 1}`}
+                  >
+                    {rowIdx + 1}
+                  </span>
                   <span className="text-[10px] font-bold text-white/80 truncate flex-1" title={labelFor(item)}>
                     {labelFor(item)}
                   </span>

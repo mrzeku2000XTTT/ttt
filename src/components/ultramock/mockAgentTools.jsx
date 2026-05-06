@@ -8,7 +8,9 @@ export const TOOL_LIST = [
   { name: "add_device", desc: "Add a new device to the canvas", args: "{ device?: 'iphone'|'android'|'ipad'|'macbook'|'imac'|'browser'|'none', x?: 0-100, y?: 0-100 }" },
   { name: "add_text", desc: "Add a text layer", args: "{ text: string, x?: 0-100, y?: 0-100, fontSize?: 14-120, color?: hex, animation?: 'none'|'typewriter' }" },
   { name: "update_item", desc: "Update the currently-selected item (or by id) — change device type, scale, rotation, corner radius, position, text, color, animation, etc.", args: "{ id?: string, device?: ..., scale?: 0.3-1.4, rotX?: -180..180, rotY?: -180..180, cornerRadius?: 0-2, x?: 0-100, y?: 0-100, text?: string, fontSize?: number, color?: hex, fontWeight?: 400|700|900, animation?: 'none'|'typewriter', boxWidth?: 15-100 }" },
-  { name: "select_item", desc: "Select an item by id or by index (0-based)", args: "{ id?: string, index?: number }" },
+  { name: "select_item", desc: "Select an item by id, by index (0-based), OR by slide_number (1-based, matches the number shown on the timeline track header)", args: "{ id?: string, index?: number, slide_number?: number }" },
+  { name: "update_slide", desc: "Update the item on a specific slide by its 1-based slide_number — change text, position, color, scale, rotation, etc., without needing to select first.", args: "{ slide_number: number, text?: string, x?: 0-100, y?: 0-100, fontSize?: number, color?: hex, scale?: number, rotX?: number, rotY?: number, animation?: string }" },
+  { name: "apply_preset_to_slide", desc: "Apply a motion preset DIRECTLY to a specific slide by its 1-based slide_number. Doesn't change the user's current selection. Best way to animate slide N when the user says 'animate slide 2', 'spin the third one', etc.", args: "{ slide_number: number, preset_id: string, mode?: 'replace'|'chain' }" },
   { name: "remove_item", desc: "Remove an item by id (or selected if no id)", args: "{ id?: string }" },
   { name: "set_background", desc: "Change the canvas background preset", args: "{ background: 'sunset'|'ocean'|'forest'|'peach'|'mono'|'ivory'|'midnight'|'candy'|'white'|'black' }" },
   { name: "generate_background", desc: "Generate a custom AI image to use as the canvas background. Use this when the user asks for a specific scene, vibe, photo, texture, or anything not covered by presets (e.g. 'a foggy mountain at sunrise', 'cyberpunk neon street', 'soft pastel clouds'). The image fills the canvas behind all devices/text/overlays. Always write a detailed, cinematic, high-quality prompt — describe the scene, lighting, mood, color palette, and composition. The image should be wide (16:10 friendly) with content that doesn't fight the foreground devices.", args: "{ prompt: string }" },
@@ -58,6 +60,12 @@ ${presetCatalog}
 
 AVAILABLE CAMERA PRESETS (animate the WHOLE preview — uses the selected item's position as focus target):
 ${cameraCatalog}
+
+🔢 SLIDE NUMBERS — every item on the canvas has a 1-based slide_number (visible on the timeline track header as a colored circle). When the user says "animate slide 2", "spin the 3rd one", "make slide 1 bounce", or "change slide 4 text to ...", USE THE NUMBERED TOOLS:
+- apply_preset_to_slide({ slide_number: N, preset_id: '...' }) — animate slide N without changing selection
+- update_slide({ slide_number: N, ...changes }) — edit slide N's properties (text, color, position…)
+- select_item({ slide_number: N }) — focus slide N as the active selection
+This is FAR more reliable than guessing indexes. Always prefer slide_number when the user references a number.
 
 🎯 PRESETS WORK ON ANY ITEM TYPE:
 - Motion presets (apply_preset / chain_presets) animate WHATEVER is selected — a device, a text/word layer, or an overlay. "Spin this word" → select the text item, then apply_preset spin. "Bounce this overlay" → same flow with bounce.

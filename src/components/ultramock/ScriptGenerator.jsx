@@ -1,6 +1,19 @@
-import React, { useState } from "react";
-import { Sparkles, Loader2, PenTool, Plus, Wand2, RefreshCw } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Sparkles, Loader2, PenTool, Plus, Wand2, RefreshCw, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+
+// Persist generated script across remounts/page reloads so the user never loses
+// their AI-written lines when switching slides or selecting different items.
+const STORAGE_KEY = "ultramock_script_generator_v1";
+const loadStored = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+const saveStored = (data) => {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+};
 
 /**
  * ScriptGenerator
@@ -28,12 +41,19 @@ const VIBE_CHIPS = [
 ];
 
 export default function ScriptGenerator({ currentText, onApplyToCurrent, onAddAsNewSlide }) {
-  const [brief, setBrief] = useState("");
-  const [vibe, setVibe] = useState("hook");
-  const [lines, setLines] = useState([]);
+  const stored = loadStored() || {};
+  const [brief, setBrief] = useState(stored.brief || "");
+  const [vibe, setVibe] = useState(stored.vibe || "hook");
+  const [lines, setLines] = useState(stored.lines || []);
+  const [usedIdx, setUsedIdx] = useState(stored.usedIdx ?? -1); // last line index user inserted — drives auto-advance
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(stored.lines?.length > 0);
+
+  // Persist on any change so script survives remounts
+  useEffect(() => {
+    saveStored({ brief, vibe, lines, usedIdx });
+  }, [brief, vibe, lines, usedIdx]);
 
   const generate = async () => {
     if (loading) return;
@@ -74,6 +94,7 @@ Return JSON: { "lines": [string, string, string, string] }`,
       const out = Array.isArray(res?.lines) ? res.lines.map((l) => String(l).trim()).filter(Boolean) : [];
       if (out.length === 0) throw new Error("No lines returned");
       setLines(out.slice(0, 4));
+      setUsedIdx(-1);
     } catch (e) {
       setError(e?.message || "Generation failed");
     } finally {
@@ -89,6 +110,11 @@ Return JSON: { "lines": [string, string, string, string] }`,
       >
         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-violet-300">
           <PenTool className="w-3 h-3" /> Script Generator
+          {lines.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-100 text-[9px]">
+              {lines.length} saved
+            </span>
+          )}
         </div>
         <span className="text-[10px] text-white/40">{open ? "▲" : "▼"}</span>
       </button>
@@ -149,36 +175,71 @@ Return JSON: { "lines": [string, string, string, string] }`,
           {/* Generated lines */}
           {lines.length > 0 && (
             <div className="space-y-1.5">
-              {lines.map((line, i) => (
-                <div
-                  key={i}
-                  className="group flex items-center gap-1.5 p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+              {/* Quick chain: insert the NEXT unused line as a new slide */}
+              {usedIdx < lines.length - 1 && (
+                <button
+                  onClick={() => {
+                    const nextIdx = usedIdx + 1;
+                    onAddAsNewSlide?.(lines[nextIdx]);
+                    setUsedIdx(nextIdx);
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 h-8 rounded-lg bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:opacity-90 text-white text-[11px] font-black shadow-lg shadow-fuchsia-500/30"
+                  title={`Insert line ${usedIdx + 2} as a new slide`}
                 >
-                  <span className="text-[9px] font-mono text-white/30 w-4 flex-shrink-0">{i + 1}</span>
-                  <span className="flex-1 text-xs text-white font-bold truncate" title={line}>
-                    {line}
-                  </span>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => onApplyToCurrent?.(line)}
-                      className="px-2 h-6 rounded-md bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-400/40 text-cyan-200 text-[10px] font-bold"
-                      title="Replace current text with this line"
-                    >
-                      Use
-                    </button>
-                    <button
-                      onClick={() => onAddAsNewSlide?.(line)}
-                      className="flex items-center gap-0.5 px-2 h-6 rounded-md bg-fuchsia-500/20 hover:bg-fuchsia-500/40 border border-fuchsia-400/40 text-fuchsia-200 text-[10px] font-bold"
-                      title="Add as a new text item for the next slide"
-                    >
-                      <Plus className="w-2.5 h-2.5" /> Slide
-                    </button>
+                  <Plus className="w-3 h-3" /> Next Slide → "{lines[usedIdx + 1]?.slice(0, 28)}"
+                </button>
+              )}
+              {lines.map((line, i) => {
+                const isNext = i === usedIdx + 1;
+                const isUsed = i <= usedIdx;
+                return (
+                  <div
+                    key={i}
+                    className={`group flex items-center gap-1.5 p-2 rounded-lg border ${
+                      isNext
+                        ? "bg-fuchsia-500/15 border-fuchsia-400/50 ring-1 ring-fuchsia-400/30"
+                        : isUsed
+                          ? "bg-white/[0.02] border-white/5 opacity-60"
+                          : "bg-white/5 hover:bg-white/10 border-white/10"
+                    }`}
+                  >
+                    <span className={`text-[9px] font-mono w-4 flex-shrink-0 ${
+                      isNext ? "text-fuchsia-300 font-bold" : "text-white/30"
+                    }`}>{i + 1}</span>
+                    <span className="flex-1 text-xs text-white font-bold truncate" title={line}>
+                      {line}
+                    </span>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => { onApplyToCurrent?.(line); setUsedIdx(i); }}
+                        className="px-2 h-6 rounded-md bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-400/40 text-cyan-200 text-[10px] font-bold"
+                        title="Replace current text with this line"
+                      >
+                        Use
+                      </button>
+                      <button
+                        onClick={() => { onAddAsNewSlide?.(line); setUsedIdx(i); }}
+                        className="flex items-center gap-0.5 px-2 h-6 rounded-md bg-fuchsia-500/20 hover:bg-fuchsia-500/40 border border-fuchsia-400/40 text-fuchsia-200 text-[10px] font-bold"
+                        title="Add as a new text item for the next slide"
+                      >
+                        <Plus className="w-2.5 h-2.5" /> Slide
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <div className="text-[9px] text-white/30 text-center pt-0.5">
-                <Sparkles className="w-2.5 h-2.5 inline -mt-0.5 mr-0.5" />
-                "Use" replaces this text · "+ Slide" creates a new text item for the next beat
+                );
+              })}
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <span className="text-[9px] text-white/30">
+                  <Sparkles className="w-2.5 h-2.5 inline -mt-0.5 mr-0.5" />
+                  Auto-saved · survives reloads
+                </span>
+                <button
+                  onClick={() => { setLines([]); setUsedIdx(-1); }}
+                  className="flex items-center gap-1 text-[9px] text-white/40 hover:text-red-300"
+                  title="Clear saved script"
+                >
+                  <Trash2 className="w-2.5 h-2.5" /> Clear
+                </button>
               </div>
             </div>
           )}

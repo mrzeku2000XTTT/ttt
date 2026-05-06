@@ -699,15 +699,19 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
     run();
   }, []);
 
-  // Snapshot of state for the agent's vision/context
+  // Snapshot of state for the agent's vision/context.
+  // Each item gets a `slide_number` (1-based) — its position in the items list —
+  // so the AI can target slides by their visible number on the timeline.
   const getStateSnapshot = useCallback(() => ({
     background,
     custom_background_url: customBackground || null,
     padding,
     duration,
     selected_id: selectedId,
+    selected_slide_number: selectedId ? items.findIndex((it) => it.id === selectedId) + 1 : null,
     camera: { zoom: camera.zoom, x: camera.x, y: camera.y },
-    items: items.map((it) => ({
+    items: items.map((it, idx) => ({
+      slide_number: idx + 1,
       id: it.id,
       kind: it.kind,
       ...(it.kind === "text"
@@ -751,9 +755,40 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
     select_item: (a = {}) => {
       let id = a.id;
       if (!id && typeof a.index === "number" && items[a.index]) id = items[a.index].id;
+      // Allow targeting by slide_number (1-based) for clearer AI instructions
+      if (!id && typeof a.slide_number === "number" && items[a.slide_number - 1]) {
+        id = items[a.slide_number - 1].id;
+      }
       if (!id) throw new Error("item not found");
       setSelectedId(id);
       return { id };
+    },
+    // Update a slide by its 1-based number — convenient shorthand for the AI
+    update_slide: (a = {}) => {
+      const { slide_number, ...partial } = a;
+      const target = items[(slide_number || 1) - 1];
+      if (!target) throw new Error(`slide ${slide_number} not found`);
+      updateItem(target.id, partial);
+      return { id: target.id, slide_number };
+    },
+    // Apply a motion preset to a specific slide WITHOUT changing selection.
+    // Lets the AI animate any slide by its number in one tool call.
+    apply_preset_to_slide: async (a = {}) => {
+      const { slide_number, preset_id, mode = "replace" } = a;
+      const target = items[(slide_number || 1) - 1];
+      if (!target) throw new Error(`slide ${slide_number} not found`);
+      if (!timelineRef.current) throw new Error("no timeline available");
+      // Temporarily select so applyPresetById hits the right item, then restore
+      const prevSelected = selectedId;
+      setSelectedId(target.id);
+      await new Promise((r) => setTimeout(r, 80));
+      const ok = timelineRef.current.applyPresetById(preset_id, mode === "chain" ? "append" : "replace");
+      if (prevSelected) {
+        await new Promise((r) => setTimeout(r, 50));
+        setSelectedId(prevSelected);
+      }
+      if (!ok) throw new Error(`failed to apply ${preset_id} to slide ${slide_number}`);
+      return { applied: preset_id, slide_number };
     },
     remove_item: (a = {}) => {
       const id = a.id || selectedId;
