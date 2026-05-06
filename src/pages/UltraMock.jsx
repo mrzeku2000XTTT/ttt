@@ -149,6 +149,15 @@ export default function UltraMockPage() {
     setPlacementMode(false);
   }, []);
 
+  // Add a NEW text item carrying a script-generated line, ready to drop into
+  // the next slide of the timeline. Used by TextControls' ScriptGenerator.
+  const addTextSlide = useCallback((line) => {
+    if (!line) return;
+    const item = makeText({ text: line });
+    setItems((prev) => [...prev, item]);
+    setSelectedId(item.id);
+  }, []);
+
   // Add an overlay from a library preset
   const addOverlayPreset = useCallback((preset) => {
     const item = makeOverlay({
@@ -1056,6 +1065,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
               selected={selected}
               onUpdate={(partial) => updateItem(selected.id, partial)}
               onRemove={() => removeItem(selected.id)}
+              onAddAsNewSlide={addTextSlide}
             />
           ) : selected?.kind === "overlay" ? (
             <OverlayControls
@@ -1092,6 +1102,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
             selected={selected}
             onUpdate={(partial) => updateItem(selected.id, partial)}
             onRemove={() => { removeItem(selected.id); setMobileSheetOpen(false); }}
+            onAddAsNewSlide={addTextSlide}
           />
         ) : selected?.kind === "overlay" ? (
           <OverlayControls

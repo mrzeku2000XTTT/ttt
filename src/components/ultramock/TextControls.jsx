@@ -1,5 +1,6 @@
 import React from "react";
 import { Type, RotateCcw } from "lucide-react";
+import ScriptGenerator from "./ScriptGenerator";
 
 const PRESET_POSITIONS = [
   { id: "tl", label: "Top L",     x: 20, y: 15 },
@@ -15,7 +16,7 @@ const PRESET_POSITIONS = [
 
 const COLORS = ["#ffffff", "#000000", "#fbbf24", "#f472b6", "#22d3ee", "#a78bfa", "#34d399", "#fb923c"];
 
-export default function TextControls({ selected, onUpdate, onRemove }) {
+export default function TextControls({ selected, onUpdate, onRemove, onAddAsNewSlide }) {
   if (!selected || selected.kind !== "text") return null;
 
   return (
@@ -41,6 +42,14 @@ export default function TextControls({ selected, onUpdate, onRemove }) {
           placeholder="Your text…"
         />
       </Section>
+
+      {/* AI script generator — write real ad lines on demand */}
+      <ScriptGenerator
+        currentText={selected.text}
+        onApplyToCurrent={(line) => onUpdate({ text: line })}
+        onAddAsNewSlide={(line) => onAddAsNewSlide?.(line)}
+      />
+
 
       <Section title="Animation">
         <div className="grid grid-cols-2 gap-1.5">
