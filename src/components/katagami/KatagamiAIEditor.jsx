@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge, Zap, Film, Megaphone, Users, Layers } from "lucide-react";
+import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge, Zap, Film, Megaphone, Users, Layers, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import KatagamiAgentChat from "./KatagamiAgentChat";
 
@@ -82,8 +82,32 @@ export default function KatagamiAIEditor() {
   const [error, setError] = useState(null);
   const [renderUrl, setRenderUrl] = useState(null);
   const [running, setRunning] = useState(false);
+  const [openingStudio, setOpeningStudio] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
+
+  // Hand off the current setup to UltraMock (Cháoxiào嘲笑) studio for manual editing.
+  // Uploads the file (if any), then opens /UltraMock with vibe/duration/speed
+  // prefilled as URL params so the user can keep tweaking by hand.
+  const openInChaoxiao = async () => {
+    if (openingStudio || running) return;
+    setOpeningStudio(true);
+    try {
+      const params = new URLSearchParams();
+      if (vibe) params.set("text", vibe.split("\n")[0].slice(0, 80));
+      params.set("duration", String(duration));
+      if (speed !== 1) params.set("speed", String(speed));
+      if (file) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        if (file_url) params.set("media", file_url);
+      }
+      window.open(`/UltraMock?${params.toString()}`, "_blank");
+    } catch (e) {
+      setError(e.message || "Could not open studio");
+    } finally {
+      setOpeningStudio(false);
+    }
+  };
 
   const handleFile = useCallback((f) => {
     if (!f) return;
@@ -416,6 +440,24 @@ export default function KatagamiAIEditor() {
               <><Loader2 className="w-4 h-4 animate-spin" /> Agent at work…</>
             ) : (
               <><Wand2 className="w-4 h-4" /> Auto-Edit with AI Agent</>
+            )}
+          </button>
+
+          {/* Open in Cháoxiào — hand off to the manual UltraMock studio */}
+          <button
+            onClick={openInChaoxiao}
+            disabled={running || openingStudio}
+            title="Open this setup in the Cháoxiào (嘲笑) studio for manual editing"
+            className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-fuchsia-400/40 disabled:opacity-40 disabled:cursor-not-allowed text-white/90 font-bold text-xs tracking-wide flex items-center justify-center gap-2"
+          >
+            {openingStudio ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Opening…</>
+            ) : (
+              <>
+                <span className="text-base leading-none">嘲笑</span>
+                Open in Cháoxiào
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </>
             )}
           </button>
         </div>
