@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, CornerDownLeft } from "lucide-react";
 
 const SUGGESTIONS = ["sugar", "loneliness", "the ocean", "AI", "sleep", "money", "the moon", "extinction"];
 
@@ -49,11 +49,21 @@ export default function DoomSearch({ onSearch, loading }) {
             placeholder="enter a topic…"
             disabled={loading}
             autoFocus
-            className="w-full h-14 pl-12 pr-4 bg-white/5 border border-white/10 rounded-full text-white text-base placeholder:text-white/20 focus:border-red-500/50 focus:bg-white/10 outline-none transition-all"
+            className="w-full h-14 pl-12 pr-28 bg-white/5 border border-white/10 rounded-full text-white text-base placeholder:text-white/20 focus:border-red-500/50 focus:bg-white/10 outline-none transition-all"
           />
-          {loading && (
-            <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500 animate-spin" />
-          )}
+          <button
+            type="submit"
+            disabled={loading || !value.trim()}
+            className="group absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 h-10 px-3 rounded-lg bg-gradient-to-b from-zinc-700 to-zinc-900 hover:from-red-600 hover:to-red-900 border border-white/20 border-b-2 border-b-black/60 active:border-b active:translate-y-[calc(-50%+1px)] shadow-[0_2px_0_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            title="Enter"
+          >
+            <span className="text-white text-[10px] font-bold tracking-wider uppercase">Enter</span>
+            {loading ? (
+              <Loader2 className="w-3.5 h-3.5 text-red-400 animate-spin" />
+            ) : (
+              <CornerDownLeft className="w-3.5 h-3.5 text-white/80 group-hover:text-white" />
+            )}
+          </button>
         </form>
 
         <div className="flex flex-wrap justify-center gap-2 mt-8">
