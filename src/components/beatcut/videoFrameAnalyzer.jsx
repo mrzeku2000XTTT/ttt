@@ -1,5 +1,7 @@
-export async function analyzeVideoFrames(videoFileOrUrl, maxDuration = 10) {
+export async function analyzeVideoFrames(videoFileOrUrl, maxDuration = 10, onLog) {
+  const log = (text, done = false) => onLog?.({ text, done });
   const url = typeof videoFileOrUrl === "string" ? videoFileOrUrl : URL.createObjectURL(videoFileOrUrl);
+  log("Loading video metadata…");
   const video = document.createElement("video");
   video.src = url;
   video.muted = true;
@@ -12,6 +14,7 @@ export async function analyzeVideoFrames(videoFileOrUrl, maxDuration = 10) {
   });
 
   const duration = Math.min(maxDuration, video.duration || maxDuration);
+  log(`Analyzing first ${duration.toFixed(1)} seconds at 4 samples/sec…`);
   const canvas = document.createElement("canvas");
   canvas.width = 160;
   canvas.height = 90;
@@ -36,16 +39,21 @@ export async function analyzeVideoFrames(videoFileOrUrl, maxDuration = 10) {
     const count = data.length / 16;
     const gray = new Float32Array(data.length / 4);
     for (let i = 0, j = 0; i < data.length; i += 4, j++) gray[j] = (data[i] + data[i + 1] + data[i + 2]) / 3;
-    samples.push({
+    const sample = {
       t: Number(t.toFixed(2)),
       brightness: brightness / count,
       motion: previous ? motion / count : 0,
-    });
+    };
+    samples.push(sample);
+    log(`Frame ${samples.length}: ${sample.t.toFixed(2)}s · motion ${sample.motion.toFixed(1)} · light ${sample.brightness.toFixed(0)}`);
     previous = gray;
   }
 
   if (typeof videoFileOrUrl !== "string") URL.revokeObjectURL(url);
-  return buildEffectPlan(samples, duration);
+  log("Building animated effect plan from frame data…");
+  const plan = buildEffectPlan(samples, duration);
+  log(`Done: ${plan.effects.length} effect segments generated.`, true);
+  return plan;
 }
 
 function buildEffectPlan(samples, duration) {

@@ -6,6 +6,7 @@ import html2canvas from "html2canvas";
 import { base44 } from "@/api/base44Client";
 import SingleVideoPicker from "@/components/beatcut/SingleVideoPicker";
 import VideoEffectPreview from "@/components/beatcut/VideoEffectPreview";
+import AnalysisLogPanel from "@/components/beatcut/AnalysisLogPanel";
 import { analyzeVideoFrames } from "@/components/beatcut/videoFrameAnalyzer";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/80ea7b3ed_generated_image.png";
@@ -15,6 +16,7 @@ export default function BeatCutPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [video, setVideo] = useState(null);
   const [analysis, setAnalysis] = useState(null);
+  const [analysisLogs, setAnalysisLogs] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [rendering, setRendering] = useState(false);
   const previewRef = useRef(null);
@@ -28,8 +30,11 @@ export default function BeatCutPage() {
   const handleVideoSet = async (nextVideo) => {
     setVideo(nextVideo);
     setAnalysis(null);
+    setAnalysisLogs([{ text: "Video received. Starting frame scan…" }]);
     setAnalyzing(true);
-    const result = await analyzeVideoFrames(nextVideo.file, 10);
+    const result = await analyzeVideoFrames(nextVideo.file, 10, (entry) => {
+      setAnalysisLogs((prev) => [...prev, entry]);
+    });
     setAnalysis(result);
     setAnalyzing(false);
   };
@@ -37,6 +42,7 @@ export default function BeatCutPage() {
   const clearVideo = () => {
     setVideo(null);
     setAnalysis(null);
+    setAnalysisLogs([]);
   };
 
   const handleExport = async () => {
@@ -112,11 +118,12 @@ export default function BeatCutPage() {
                 <div className="text-[11px] font-bold uppercase tracking-wider text-white/60">Frame analysis</div>
                 {analyzing && <Loader2 className="w-4 h-4 text-fuchsia-300 animate-spin" />}
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 mb-3">
                 <Stat icon={ScanLine} label="Frames" value={analysis?.samples?.length || "—"} />
                 <Stat icon={Zap} label="Effects" value={analysis?.effects?.length || "—"} />
                 <Stat icon={Film} label="Length" value={analysis ? `${analysis.duration.toFixed(1)}s` : "10s"} />
               </div>
+              <AnalysisLogPanel logs={analysisLogs} active={analyzing} />
             </Panel>
           </section>
 
