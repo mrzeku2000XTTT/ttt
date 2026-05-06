@@ -275,13 +275,20 @@ export default function UltraMockPage() {
   // Auto-render from URL params (used by NODA's "UltraMock MP4" node)
   // Reads ?auto=1&text=...&device=...&background=...&preset=...&duration=...&media=...&email=...
   // Then auto-builds the canvas, applies the preset, triggers MP4 download, and emails it.
+  //
+  // `apply=1` mode (used by Katagami's "Open in Cháoxiào" handoff): same build
+  // + chain-apply pipeline as auto, but skips render-mode + skips recording.
+  // The user lands in the editor with every sub-agent keyframe already on the
+  // timeline, ready for manual tweaking.
   const [autoStatus, setAutoStatus] = useState(null); // { phase, message, error }
   const [renderMode, setRenderMode] = useState(false); // hides UI overlays for clean recording
   const autoRanRef = useRef(false);
   useEffect(() => {
     if (autoRanRef.current) return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("auto") !== "1") return;
+    const isAuto = params.get("auto") === "1";
+    const isApplyOnly = params.get("apply") === "1";
+    if (!isAuto && !isApplyOnly) return;
     autoRanRef.current = true;
 
     const autoText = params.get("text") || "";
@@ -296,8 +303,9 @@ export default function UltraMockPage() {
     // Multi-segment chain: comma-separated preset ids ("slide-in-left,zoomin,bounce")
     const autoChain = (params.get("chain") || "").split(",").map(s => s.trim()).filter(Boolean);
 
-    // Render-mode hides outlines, ×, zoom controls, mobile bar — clean recording
-    setRenderMode(true);
+    // Render-mode hides outlines, ×, zoom controls, mobile bar — clean recording.
+    // For apply-only mode (Katagami handoff) we WANT the editor UI visible.
+    if (isAuto) setRenderMode(true);
     setBackground(autoBackground);
     setDuration(autoDuration);
 
@@ -350,8 +358,22 @@ export default function UltraMockPage() {
           timelineRef.current.applyCameraPresetById(autoCamera, "replace");
         }
       } catch (e) { console.warn("preset apply failed", e); }
-      // Wait for keyframes to commit, deselect to clear outline, then start recording
+      // Wait for keyframes to commit
       await new Promise((r) => setTimeout(r, 200));
+
+      // APPLY-ONLY MODE: stop here. Keyframes are on the timeline, the editor
+      // is visible, the user can preview/tweak/record manually.
+      if (isApplyOnly) {
+        setAutoStatus({
+          phase: "done",
+          message: `✅ Applied ${autoChain.length || 1} keyframes — preview & edit below`,
+        });
+        // Auto-clear status after a few seconds so it doesn't linger
+        setTimeout(() => setAutoStatus(null), 4000);
+        return;
+      }
+
+      // Deselect to clear outline before recording
       setSelectedId(null);
       await new Promise((r) => setTimeout(r, 400));
 

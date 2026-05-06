@@ -83,24 +83,71 @@ export default function KatagamiAIEditor() {
   const [renderUrl, setRenderUrl] = useState(null);
   const [running, setRunning] = useState(false);
   const [openingStudio, setOpeningStudio] = useState(false);
+  // Captured outputs from the agent loop — used to pass the full keyframe
+  // chain into Cháoxiào when "Open in Cháoxiào" is clicked.
+  const [choreograph, setChoreograph] = useState(null);
+  const [sequence, setSequence] = useState(null);
+  const [finalPlan, setFinalPlan] = useState(null);
+  const [uploadedMediaUrl, setUploadedMediaUrl] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
 
-  // Hand off the current setup to UltraMock (Cháoxiào嘲笑) studio for manual editing.
-  // Uploads the file (if any), then opens /UltraMock with vibe/duration/speed
-  // prefilled as URL params so the user can keep tweaking by hand.
+  // Hand off the current setup to UltraMock (Cháoxiào嘲笑) studio.
+  //
+  // If the agent loop has already produced a choreograph (and optional sequence),
+  // we pass the FULL ordered preset chain via `chain=` so UltraMock's auto-render
+  // flow applies every sub-agent keyframe to the timeline on load — that way
+  // the preview tab shows all keyframes immediately, ready for manual tweaking.
+  //
+  // Note: UltraMock's auto-render currently auto-records on load. We override
+  // that by passing `apply=1` instead of `auto=1` so the user lands in the
+  // editor with everything pre-applied (no auto-recording).
   const openInChaoxiao = async () => {
     if (openingStudio || running) return;
     setOpeningStudio(true);
     try {
       const params = new URLSearchParams();
-      if (vibe) params.set("text", vibe.split("\n")[0].slice(0, 80));
-      params.set("duration", String(duration));
+      const headline = (finalPlan?.tagline || vibe.split("\n")[0] || "").slice(0, 80);
+      if (headline) params.set("text", headline);
+
+      // Use the choreograph total when present, otherwise fall back to the user's slider value
+      const totalDur = choreograph?.total_duration || duration;
+      params.set("duration", String(totalDur));
       if (speed !== 1) params.set("speed", String(speed));
-      if (file) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        if (file_url) params.set("media", file_url);
+
+      // Background, device, camera from the refined plan when available
+      if (finalPlan?.background) params.set("background", finalPlan.background);
+      if (finalPlan?.device) params.set("device", finalPlan.device);
+      if (finalPlan?.camera_preset) params.set("camera", finalPlan.camera_preset);
+
+      // Build the chain: prefer the master director's globally-sequenced order,
+      // fall back to the raw sub-agent beat order.
+      let chainIds = [];
+      if (Array.isArray(sequence?.ordered_preset_ids) && sequence.ordered_preset_ids.length > 0) {
+        chainIds = sequence.ordered_preset_ids;
+      } else if (choreograph?.segments?.length) {
+        for (const seg of choreograph.segments) {
+          const ids = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
+          chainIds.push(...ids);
+        }
+      } else if (finalPlan?.preset_id) {
+        chainIds = [finalPlan.preset_id];
       }
+      if (chainIds.length > 0) params.set("chain", chainIds.join(","));
+
+      // Media — reuse already-uploaded URL when available, otherwise upload now
+      let mediaUrl = uploadedMediaUrl;
+      if (!mediaUrl && file) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        mediaUrl = file_url;
+      }
+      if (mediaUrl) params.set("media", mediaUrl);
+
+      // `auto=1` triggers UltraMock to apply chain → record → download. For the
+      // "open for editing" handoff we want the chain applied but no recording,
+      // so we pass `apply=1` (handled in UltraMock's auto-apply branch).
+      if (chainIds.length > 0 || mediaUrl) params.set("apply", "1");
+
       window.open(`/UltraMock?${params.toString()}`, "_blank");
     } catch (e) {
       setError(e.message || "Could not open studio");
@@ -122,6 +169,10 @@ export default function KatagamiAIEditor() {
     setPreviewUrl(URL.createObjectURL(f));
     setMessages([]);
     setRenderUrl(null);
+    setChoreograph(null);
+    setSequence(null);
+    setFinalPlan(null);
+    setUploadedMediaUrl(null);
   }, []);
 
   const onDrop = (e) => {
@@ -140,6 +191,10 @@ export default function KatagamiAIEditor() {
     setRenderUrl(null);
     setWorking(null);
     setRunning(false);
+    setChoreograph(null);
+    setSequence(null);
+    setFinalPlan(null);
+    setUploadedMediaUrl(null);
   };
 
   const runAgentLoop = async () => {
@@ -154,6 +209,7 @@ export default function KatagamiAIEditor() {
       setWorking("upload");
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       if (!file_url) throw new Error("Upload failed");
+      setUploadedMediaUrl(file_url);
 
       const media_type = file.type.startsWith("video/") ? "video" : "image";
       // Long-form mode is ON whenever the user wants more than 1 slide.
@@ -187,10 +243,10 @@ export default function KatagamiAIEditor() {
         if (step === "research")           state = { ...state, research: data.output };
         else if (step === "analyze_media") state = { ...state, analysis: data.output };
         else if (step === "plan")          state = { ...state, plan: data.output };
-        else if (step === "choreograph")   state = { ...state, choreograph: data.output };
-        else if (step === "sequence")      state = { ...state, sequence: data.output };
+        else if (step === "choreograph")   { state = { ...state, choreograph: data.output }; setChoreograph(data.output); }
+        else if (step === "sequence")      { state = { ...state, sequence: data.output };    setSequence(data.output); }
         else if (step === "critique")      state = { ...state, critique: data.output };
-        else if (step === "refine")        state = { ...state, plan: data.output };
+        else if (step === "refine")        { state = { ...state, plan: data.output };        setFinalPlan(data.output); }
         else if (step === "done" && data.render_url) setRenderUrl(data.render_url);
       }
     } catch (e) {
