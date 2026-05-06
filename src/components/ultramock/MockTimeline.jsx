@@ -933,12 +933,13 @@ const MockTimeline = forwardRef(function MockTimeline({
       setRecordProgress(0);
       return { blob, ext, mime: mime || (isMp4 ? "video/mp4" : "video/webm") };
     } catch (err) {
-      console.error("Recording failed:", err);
-      alert("Recording failed: " + err.message);
+      console.error("[recordVideo] Recording failed:", err?.message, err?.stack);
       try { await wakeLock?.release?.(); } catch { /* ignore */ }
       setRecording(false);
       setRecordProgress(0);
-      return null;
+      // Re-throw so the caller (auto-render flow) can surface the actual error
+      // to the user instead of getting a silent null back.
+      throw err;
     }
   };
 

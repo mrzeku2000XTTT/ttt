@@ -353,16 +353,26 @@ export default function UltraMockPage() {
       try {
         if (timelineRef.current?.recordVideo) {
           result = await timelineRef.current.recordVideo({ speed: autoSpeed });
+        } else {
+          throw new Error("Timeline not ready");
         }
       } catch (e) {
-        console.error("auto-record failed", e);
-        setAutoStatus({ phase: "error", message: "Recording failed", error: e?.message || "unknown" });
+        console.error("[ultramock auto] recording failed:", e?.message, e?.stack);
+        setAutoStatus({
+          phase: "error",
+          message: "Recording failed",
+          error: e?.message || String(e) || "unknown error",
+        });
         return;
       }
 
       if (!result?.blob) {
         console.error("[ultramock auto] recording returned no blob", result);
-        setAutoStatus({ phase: "error", message: "Recording produced no video", error: "Empty result" });
+        setAutoStatus({
+          phase: "error",
+          message: "Recording produced no video",
+          error: "MediaRecorder returned an empty blob. The canvas may not have rendered any frames — check browser console.",
+        });
         return;
       }
 
@@ -734,20 +744,24 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
               <span>Pinch to zoom · Drag empty area to pan · Tap device to select</span>
             </div>
 
-            {/* Multi-track timeline — hidden during auto-render to keep frame clean */}
-            {showTimeline && !renderMode && (
-              <MockTimeline
-                ref={timelineRef}
-                items={items}
-                selectedId={selectedId}
-                updateItem={updateItem}
-                duration={duration}
-                setDuration={setDuration}
-                captureFrame={captureFrame}
-                camera={camera}
-                setCamera={setCamera}
-                onPlayingChange={setPreviewPlaying}
-              />
+            {/* Multi-track timeline — visually hidden during auto-render so the
+                recording frame stays clean, but STILL MOUNTED so timelineRef
+                exposes applyPresetById/recordVideo to the auto-render flow. */}
+            {showTimeline && (
+              <div className={renderMode ? "hidden" : ""}>
+                <MockTimeline
+                  ref={timelineRef}
+                  items={items}
+                  selectedId={selectedId}
+                  updateItem={updateItem}
+                  duration={duration}
+                  setDuration={setDuration}
+                  captureFrame={captureFrame}
+                  camera={camera}
+                  setCamera={setCamera}
+                  onPlayingChange={setPreviewPlaying}
+                />
+              </div>
             )}
           </motion.div>
         </div>
