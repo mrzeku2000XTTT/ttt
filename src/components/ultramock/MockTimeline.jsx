@@ -790,9 +790,14 @@ const MockTimeline = forwardRef(function MockTimeline({
       const isMp4 = mime.startsWith("video/mp4");
       const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
       const chunks = [];
-      recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
       const done = new Promise((resolve) => {
-        recorder.onstop = () => resolve(new Blob(chunks, { type: mime || (isMp4 ? "video/mp4" : "video/webm") }));
+        recorder.onstop = () => {
+          // Wait one extra tick to make sure final dataavailable fires before sealing
+          setTimeout(() => resolve(new Blob(chunks, { type: mime || (isMp4 ? "video/mp4" : "video/webm") })), 50);
+        };
       });
 
       // ── PRERENDER → PLAYBACK STRATEGY ────────────────────────────────────
@@ -843,14 +848,24 @@ const MockTimeline = forwardRef(function MockTimeline({
       // For speed control we keep recorder FPS at 30 but stretch/compress wall-clock time:
       //   outputDurationMs = (duration / speed) * 1000
       //   each pre-rendered frame is held for (outputDurationMs / totalFrames) ms
-      recorder.start();
+      //
+      // Start recorder with a 100ms timeslice so chunks flow CONTINUOUSLY into
+      // the chunks array — without timeslice, chunks only flush on stop() and
+      // a race between requestData/stop can leave the blob empty.
+      recorder.start(100);
+      // Tiny delay so recorder is fully "recording" state before we draw
+      await new Promise((r) => setTimeout(r, 50));
+
       const playbackStart = performance.now();
       const outputDurationMs = (duration / speed) * 1000;
       const frameHoldMs = outputDurationMs / totalFrames;
       let lastFrameDrawn = -1;
 
+      // Use setInterval at the actual frame interval for reliability — RAF can
+      // skip frames when the tab is busy. setInterval guarantees the canvas
+      // gets updated even under load, so the captureStream sees real motion.
       await new Promise((resolve) => {
-        const playLoop = () => {
+        let interval = setInterval(() => {
           const elapsed = performance.now() - playbackStart;
           const frameIdx = Math.min(totalFrames - 1, Math.floor(elapsed / frameHoldMs));
           if (frameIdx !== lastFrameDrawn) {
@@ -862,22 +877,38 @@ const MockTimeline = forwardRef(function MockTimeline({
             lastFrameDrawn = frameIdx;
             setRecordProgress(0.8 + (frameIdx / totalFrames) * 0.2);
           }
-          if (elapsed >= outputDurationMs + 100) {
+          if (elapsed >= outputDurationMs) {
+            clearInterval(interval);
             resolve();
-            return;
           }
-          requestAnimationFrame(playLoop);
-        };
-        requestAnimationFrame(playLoop);
+        }, Math.max(8, frameHoldMs / 2)); // sample at 2× frame rate for smoothness
       });
 
-      // Hold last frame briefly so recorder catches it
-      await new Promise((r) => setTimeout(r, 200));
+      // Hold last frame for 500ms and keep redrawing — gives encoder time to
+      // flush the final GOP. Without this, MP4 codecs can drop the last
+      // chunk and produce a 0-byte file.
+      const tailStart = performance.now();
+      await new Promise((resolve) => {
+        const tailInterval = setInterval(() => {
+          // Keep redrawing the last frame so captureStream sees motion ticks
+          const lastBm = frames[totalFrames - 1];
+          if (lastBm) {
+            ctx.clearRect(0, 0, W, H);
+            ctx.drawImage(lastBm, 0, 0, W, H);
+          }
+          if (performance.now() - tailStart >= 600) {
+            clearInterval(tailInterval);
+            resolve();
+          }
+        }, 33);
+      });
 
       setRecordProgress(1);
+      // Force a final data flush, then stop. Order matters: requestData first,
+      // wait a beat for ondataavailable, THEN stop.
       try { recorder.requestData(); } catch { /* ignore */ }
-      await new Promise((r) => setTimeout(r, 100));
-      recorder.stop();
+      await new Promise((r) => setTimeout(r, 200));
+      if (recorder.state !== "inactive") recorder.stop();
 
       // Free bitmaps
       frames.forEach((bm) => { try { bm?.close?.(); } catch {} });

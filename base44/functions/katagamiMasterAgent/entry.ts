@@ -216,7 +216,8 @@ Return JSON:
     // multi-segment preset chain the timeline can play back-to-back.
     if (step === 'choreograph') {
       const { plan, research, analysis, vibe, target_duration, segment_count } = state;
-      const segCount = Math.max(2, Math.min(10, parseInt(segment_count) || 4));
+      // Always spawn at least 10 sub-agents for long-form ads — fewer beats = boring.
+      const segCount = Math.max(10, Math.min(20, parseInt(segment_count) || 10));
       const totalDur = Math.max(8, Math.min(60, parseInt(target_duration) || 12));
       const segLen = totalDur / segCount;
 

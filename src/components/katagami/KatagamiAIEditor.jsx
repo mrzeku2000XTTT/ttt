@@ -86,8 +86,9 @@ export default function KatagamiAIEditor() {
 
       const media_type = file.type.startsWith("video/") ? "video" : "image";
       const isLong = duration > 8;
-      // For long-form: ~2s per beat → 4-10 sub-agent segments
-      const segmentCount = isLong ? Math.max(4, Math.min(10, Math.round(duration / 2))) : 0;
+      // Long-form ALWAYS spawns 10 sub-agents (one per beat). They share the
+      // total duration so each beat is `duration / 10` seconds long.
+      const segmentCount = isLong ? 10 : 0;
       const STEPS = isLong ? LONG_STEPS : SHORT_STEPS;
 
       let state = {
@@ -225,7 +226,7 @@ export default function KatagamiAIEditor() {
                 <span className="text-white font-mono text-xs tabular-nums w-8 text-right">{duration}s</span>
               </div>
               <div className="text-[10px] text-white/40 mt-1">
-                {duration > 8 ? `🤖 Multi-agent · ${Math.max(4, Math.min(10, Math.round(duration / 2)))} sub-agents` : "Single-shot"}
+                {duration > 8 ? `🤖 Multi-agent · 10 sub-agents (${(duration / 10).toFixed(1)}s/beat)` : "Single-shot"}
               </div>
             </div>
 
