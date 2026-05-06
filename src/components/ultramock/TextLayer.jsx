@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { X, Move } from "lucide-react";
+import { Move } from "lucide-react";
 import ResizeHandles from "./ResizeHandles";
+import CornerDeleteButtons from "./CornerDeleteButtons";
 
 // Build a stacked text-shadow string that simulates 3D extrusion.
 // Each layer is darker than the base color, with a soft cast shadow at the end.
@@ -137,14 +138,8 @@ export default function TextLayer({
     >
       {selected && (
         <>
-          <button
-            onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
-            className="absolute -top-3 -right-3 z-30 w-6 h-6 rounded-full bg-red-500 hover:bg-red-400 text-white flex items-center justify-center shadow-lg"
-            title="Remove text"
-          >
-            <X className="w-3 h-3" />
-          </button>
-          <div className="absolute -top-3 -left-3 z-30 w-6 h-6 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
+          <CornerDeleteButtons onRemove={() => onRemove(item.id)} title="Remove text" />
+          <div className="absolute top-1/2 -left-7 -translate-y-1/2 z-30 w-6 h-6 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
             <Move className="w-3 h-3" />
           </div>
           <div

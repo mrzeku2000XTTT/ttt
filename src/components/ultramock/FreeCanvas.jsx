@@ -3,6 +3,7 @@ import DeviceFrame from "./DeviceFrame";
 import TextLayer from "./TextLayer";
 import OverlayLayer from "./OverlayLayer";
 import ResizeHandles from "./ResizeHandles";
+import CornerDeleteButtons from "./CornerDeleteButtons";
 import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock, Expand, Minimize, Play, Pause, EyeOff, Eye } from "lucide-react";
 
 /**
@@ -565,14 +566,8 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                     className="absolute inset-0 ring-2 ring-cyan-400 rounded-[2.5rem] pointer-events-none"
                     style={{ boxShadow: "0 0 0 4px rgba(34,211,228,0.15)" }}
                   />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
-                    className="absolute -top-3 -right-3 z-30 w-7 h-7 rounded-full bg-red-500 hover:bg-red-400 text-white flex items-center justify-center shadow-lg"
-                    title="Remove device"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                  <div className="absolute -top-3 -left-3 z-30 w-7 h-7 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
+                  <CornerDeleteButtons onRemove={() => onRemove(item.id)} title="Remove device" />
+                  <div className="absolute top-1/2 -left-8 -translate-y-1/2 z-30 w-7 h-7 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
                     <Move className="w-3.5 h-3.5" />
                   </div>
                   {/* Corner resize handles — drive the device's `scale` field */}

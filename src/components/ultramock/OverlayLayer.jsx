@@ -1,7 +1,8 @@
 import React from "react";
-import { X, Move } from "lucide-react";
+import { Move } from "lucide-react";
 import { OVERLAY_PRESETS } from "./overlayPresets";
 import ResizeHandles from "./ResizeHandles";
+import CornerDeleteButtons from "./CornerDeleteButtons";
 
 /**
  * Renders an overlay item (preset SVG or AI-generated image) on the canvas.
@@ -48,14 +49,8 @@ export default function OverlayLayer({
     >
       {selected && (
         <>
-          <button
-            onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
-            className="absolute -top-3 -right-3 z-30 w-6 h-6 rounded-full bg-red-500 hover:bg-red-400 text-white flex items-center justify-center shadow-lg"
-            title="Remove overlay"
-          >
-            <X className="w-3 h-3" />
-          </button>
-          <div className="absolute -top-3 -left-3 z-30 w-6 h-6 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
+          <CornerDeleteButtons onRemove={() => onRemove(item.id)} title="Remove overlay" />
+          <div className="absolute top-1/2 -left-7 -translate-y-1/2 z-30 w-6 h-6 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
             <Move className="w-3 h-3" />
           </div>
           <div
