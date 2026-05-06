@@ -12,15 +12,19 @@ import {
  */
 
 const STEP_META = {
-  research:      { icon: Search,    label: "Researching motion ad trends",      color: "from-cyan-500 to-blue-500" },
-  analyze_media: { icon: Eye,       label: "Analyzing your media",              color: "from-violet-500 to-fuchsia-500" },
-  plan:          { icon: Wand2,     label: "Designing v1 motion plan",          color: "from-fuchsia-500 to-pink-500" },
-  choreograph:   { icon: Layers,    label: "Sub-agents choreographing beats",   color: "from-indigo-500 to-purple-500" },
-  sequence:      { icon: ListOrdered, label: "Master director sequencing beats", color: "from-purple-500 to-pink-500" },
-  camera_director: { icon: Camera,  label: "Cinematographer planning camera cuts", color: "from-pink-500 to-rose-500" },
-  critique:      { icon: Gavel,     label: "Self-critique pass",                color: "from-orange-500 to-red-500" },
-  refine:        { icon: Sparkles,  label: "Refining into final plan",          color: "from-amber-400 to-orange-500" },
-  done:          { icon: CheckCircle2, label: "Final cut ready",                color: "from-emerald-500 to-cyan-500" },
+  research:           { icon: Search,    label: "Researching motion ad trends",       color: "from-cyan-500 to-blue-500" },
+  analyze_media:      { icon: Eye,       label: "Analyzing your media",               color: "from-violet-500 to-fuchsia-500" },
+  plan:               { icon: Wand2,     label: "Designing v1 motion plan",           color: "from-fuchsia-500 to-pink-500" },
+  choreograph_setup:  { icon: Layers,    label: "Copywriter drafting beat lines",     color: "from-indigo-500 to-purple-500" },
+  choreograph_beats:  { icon: Layers,    label: "Sub-agents deciding beats live",     color: "from-indigo-500 to-purple-500" },
+  choreograph_finalize:{ icon: Layers,   label: "Assembling final choreography",      color: "from-indigo-500 to-purple-500" },
+  // Legacy single-step fallback (still supported in the renderer)
+  choreograph:        { icon: Layers,    label: "Sub-agents choreographing beats",    color: "from-indigo-500 to-purple-500" },
+  sequence:           { icon: ListOrdered, label: "Master director sequencing beats", color: "from-purple-500 to-pink-500" },
+  camera_director:    { icon: Camera,    label: "Cinematographer planning camera cuts", color: "from-pink-500 to-rose-500" },
+  critique:           { icon: Gavel,     label: "Self-critique pass",                 color: "from-orange-500 to-red-500" },
+  refine:             { icon: Sparkles,  label: "Refining into final plan",           color: "from-amber-400 to-orange-500" },
+  done:               { icon: CheckCircle2, label: "Final cut ready",                 color: "from-emerald-500 to-cyan-500" },
 };
 
 export default function KatagamiAgentChat({ messages, working, error, renderUrl, onOpenRender }) {
@@ -102,7 +106,14 @@ export default function KatagamiAgentChat({ messages, working, error, renderUrl,
 }
 
 function ThinkingBubble({ step }) {
-  const meta = STEP_META[step] || { icon: Loader2, label: step, color: "from-white/40 to-white/20" };
+  // Per-beat working step looks like "choreograph_beat_3" — extract the beat
+  // number and show a friendlier label so the user sees "Sub-agent 3 deciding".
+  let meta = STEP_META[step];
+  if (!meta && typeof step === "string" && step.startsWith("choreograph_beat_")) {
+    const n = step.split("_").pop();
+    meta = { icon: Layers, label: `Sub-agent ${n} deciding beat`, color: "from-indigo-500 to-purple-500" };
+  }
+  if (!meta) meta = { icon: Loader2, label: step, color: "from-white/40 to-white/20" };
   const Icon = meta.icon;
   return (
     <motion.div
@@ -271,6 +282,74 @@ function StepBody({ step, output }) {
         {output.verdict && (
           <div className="text-[11px] text-white/60 italic">"{output.verdict}"</div>
         )}
+      </div>
+    );
+  }
+
+  if (step === "choreograph_beats") {
+    // Live-streaming bubble — segments fill in one-by-one as each sub-agent
+    // commits its decision. `output.in_progress` is true while still streaming.
+    const segs = output.segments || [];
+    const total = output.segment_count || segs.length;
+    const inProgress = !!output.in_progress;
+    return (
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[10px] text-white/50">
+          <span>{segs.length}/{total} sub-agents committed</span>
+          {inProgress && <span className="text-fuchsia-300 flex items-center gap-1"><Loader2 className="w-2.5 h-2.5 animate-spin" /> deciding…</span>}
+        </div>
+        <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-fuchsia-500 to-orange-500 transition-all"
+            style={{ width: `${total ? (segs.length / total) * 100 : 0}%` }}
+          />
+        </div>
+        <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
+          {segs.map((seg, i) => {
+            const presets = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="px-2 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20"
+              >
+                <div className="flex items-center gap-2 mb-0.5">
+                  <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
+                    {seg.beat}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] text-white font-bold truncate">
+                      {presets.join(" → ")}{seg.camera_preset ? ` + ${seg.camera_preset}` : ""}
+                    </div>
+                  </div>
+                </div>
+                {seg.text && (
+                  <div className="ml-7 text-[11px] text-fuchsia-200 italic truncate">"{seg.text}"</div>
+                )}
+                <div className="ml-7 flex items-center gap-1.5 flex-wrap text-[9px] text-white/50">
+                  {seg.text_animation && <span className="px-1.5 py-0.5 rounded bg-white/10 font-bold">{seg.text_animation}</span>}
+                  {seg.text_position_id && <span className="px-1.5 py-0.5 rounded bg-white/5">@ {seg.text_position_id}</span>}
+                  {seg.phase && <span className="px-1.5 py-0.5 rounded bg-white/5 uppercase tracking-wider">{seg.phase}</span>}
+                </div>
+              </motion.div>
+            );
+          })}
+          {inProgress && segs.length < total && (
+            <div className="px-2 py-2 rounded-lg bg-white/5 border border-dashed border-white/10 flex items-center gap-2 text-[11px] text-white/50">
+              <Loader2 className="w-3 h-3 animate-spin text-fuchsia-300" />
+              Sub-agent {segs.length + 1} reading recent beats…
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "choreograph_finalize") {
+    return (
+      <div className="text-[11px] text-emerald-300">
+        ✓ {output.segment_count || (output.segments || []).length} beats locked · {output.total_duration}s total
       </div>
     );
   }

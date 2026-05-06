@@ -6,19 +6,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 // chat UI can stream every thought / search / critique to the user.
 //
 // Steps:
-//   research        — websearch motion ad references for the vibe
-//   analyze_media   — vision-pass on the uploaded media (subject, mood, palette)
-//   plan            — design v1 motion plan (preset, camera, tagline, bg, duration)
-//   choreograph     — multi-step sub-agent loop (LONG ads only):
-//                     each sub-agent writes its own line of script, picks a
-//                     non-overlapping position, varies the animation, and may
-//                     request a generated image overlay. Master agent guarantees
-//                     no two beats reuse the same text or animation.
-//   sequence        — global director reorders all chained presets into an arc
-//   camera_director — single director designs a real camera-cut plan
-//   critique        — pro motion-ad director scores the plan
-//   refine          — produce final v2 plan based on critique
-//   done            — return render URL
+//   research             — websearch motion ad references for the vibe
+//   analyze_media        — vision-pass on the uploaded media (subject, mood, palette)
+//   plan                 — design v1 motion plan (preset, camera, tagline, bg, duration)
+//   choreograph_setup    — copywriter drafts ALL beat lines (returns script_lines + plan)
+//   choreograph_beat     — ONE sub-agent designs ONE beat (called repeatedly by frontend
+//                          with `beat_index` and the running `segments` array, so the
+//                          UI can render each beat live and the user can adjust speed)
+//   choreograph_finalize — assemble segments[] into a `choreograph` output blob
+//   sequence             — global director reorders all chained presets into an arc
+//   camera_director      — single director designs a real camera-cut plan
+//   critique             — pro motion-ad director scores the plan
+//   refine               — produce final v2 plan based on critique
+//   done                 — return render URL
 
 const MOTION_PRESETS = [
   "spin","tilt","pop","float","reveal","flip","wobble","zoomin","zoomout",
@@ -225,18 +225,23 @@ Return JSON:
       return Response.json({ step: 'critique', output: critique, next_step: 'refine' });
     }
 
-    // ── STEP 4.5: CHOREOGRAPH (multi-step sub-agent loop) ─────────────
-    // Each sub-agent does FOUR things in one call:
-    //   1. Pick `kfPerSeg` motion presets for this beat (chained)
-    //   2. Write a UNIQUE line of script that tells part of the story
-    //      (no other beat has used this line — full ad reads as a story)
-    //   3. Pick a TEXT-SAFE position that doesn't overlap the device
-    //   4. Pick a TEXT ANIMATION that's different from the previous beats
-    //   5. Optionally request a generated image overlay (background scene
-    //      or supporting visual) when it would strengthen the beat
-    if (step === 'choreograph') {
+    // Beat-position preset palettes — force narrative arc.
+    // Used by both choreograph_setup (to inform the writer) and
+    // choreograph_beat (to constrain each sub-agent).
+    const PALETTES = {
+      opener:  ['slide-in-left', 'slide-in-right', 'slide-up', 'drop-in', 'fly-across', 'swoop', 'reveal', 'zoomin'],
+      build:   ['pop', 'bounce', 'wobble', 'tilt', 'float', 'showcase', 'pendulum', 'tilt-up'],
+      climax:  ['spin', 'barrel', 'orbit', 'shake', 'flip', 'chat-zoom', 'fly-across'],
+      resolve: ['showcase', 'tilt-up', 'zoomout', 'pop', 'float', 'chat-zoom', 'tilt'],
+    };
+
+    // ── STEP 4.5a: CHOREOGRAPH SETUP (copywriter drafts all beat lines) ──
+    // Runs ONCE before the per-beat loop. Returns the full script + the
+    // computed segment count, total duration, segment length, and kfs/seg
+    // so the frontend can iterate `choreograph_beat` for each line.
+    if (step === 'choreograph_setup') {
       const {
-        plan, research, analysis, vibe, target_duration,
+        plan, analysis, vibe, target_duration,
         segment_count, keyframes_per_segment,
       } = state;
 
@@ -245,21 +250,8 @@ Return JSON:
       const segLen = totalDur / segCount;
       const kfPerSeg = Math.max(1, Math.min(6, parseInt(keyframes_per_segment) || 3));
 
-      // Beat-position preset palettes — force narrative arc
-      const PALETTES = {
-        opener:  ['slide-in-left', 'slide-in-right', 'slide-up', 'drop-in', 'fly-across', 'swoop', 'reveal', 'zoomin'],
-        build:   ['pop', 'bounce', 'wobble', 'tilt', 'float', 'showcase', 'pendulum', 'tilt-up'],
-        climax:  ['spin', 'barrel', 'orbit', 'shake', 'flip', 'chat-zoom', 'fly-across'],
-        resolve: ['showcase', 'tilt-up', 'zoomout', 'pop', 'float', 'chat-zoom', 'tilt'],
-      };
-
-      // ── Pre-script writer ──────────────────────────────────────────
-      // BEFORE running sub-agents, ask one writer to draft the FULL ad
-      // copy — segCount distinct lines that together tell a coherent
-      // story. Each sub-agent will then claim its own line. This guarantees
-      // no two beats repeat the same words.
       const scriptWriter = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are the COPYWRITER for a 30-second motion ad. Write ${segCount} short lines that together tell a complete story arc for this product.
+        prompt: `You are the COPYWRITER for a ${totalDur}-second motion ad. Write ${segCount} short lines that together tell a complete story arc for this product.
 
 PRODUCT: ${analysis?.subject || ''} (${analysis?.product_category || ''})
 SELLING POINTS: ${(analysis?.key_selling_points || []).join(' · ')}
@@ -289,43 +281,70 @@ Return JSON: { "lines": ["line1", "line2", ...] }  with exactly ${segCount} entr
       const scriptLines = (Array.isArray(scriptWriter?.lines) ? scriptWriter.lines : []).slice(0, segCount);
       while (scriptLines.length < segCount) scriptLines.push('');
 
-      // ── Sub-agent loop ────────────────────────────────────────────
-      const segments = [];
-      const usedAnimations = []; // track recent animations so we vary
+      return Response.json({
+        step: 'choreograph_setup',
+        output: {
+          script_lines: scriptLines,
+          segment_count: segCount,
+          total_duration: totalDur,
+          segment_length: segLen,
+          keyframes_per_segment: kfPerSeg,
+        },
+        next_step: 'choreograph_beat',
+      });
+    }
 
-      for (let i = 0; i < segCount; i++) {
-        const progress = i / Math.max(1, segCount - 1);
-        const phase = progress < 0.2 ? 'opener'
-          : progress < 0.6 ? 'build'
-          : progress < 0.85 ? 'climax'
-          : 'resolve';
-        const palette = PALETTES[phase];
-        const previous = segments.slice(-3).map((s, idx) =>
-          `Beat ${segments.length - 3 + idx + 1}: presets=[${s.preset_ids.join('+')}] text="${s.text}" anim=${s.text_animation} pos=${s.text_position_id}`
-        ).join('\n');
+    // ── STEP 4.5b: CHOREOGRAPH BEAT (one sub-agent per call) ────────────
+    // Frontend invokes this once per beat with `beat_index` and the running
+    // `segments` array. We design ONE beat using context from prior beats
+    // (so each sub-agent makes a real-time decision, not a batch).
+    if (step === 'choreograph_beat') {
+      const {
+        beat_index, segments = [],
+        choreograph_setup, vibe, analysis, research,
+      } = state;
 
-        // Tally overused presets
-        const overused = (() => {
-          const counts = {};
-          segments.forEach(s => s.preset_ids.forEach(id => { counts[id] = (counts[id] || 0) + 1; }));
-          const max = segCount * kfPerSeg / 6;
-          return Object.entries(counts).filter(([, c]) => c >= max).map(([id]) => id);
-        })();
+      if (!choreograph_setup) {
+        return Response.json({ error: 'Missing choreograph_setup state' }, { status: 400 });
+      }
+      const i = parseInt(beat_index);
+      if (Number.isNaN(i) || i < 0) {
+        return Response.json({ error: 'Invalid beat_index' }, { status: 400 });
+      }
 
-        // Used positions — try to vary per beat
-        const usedPositions = segments.slice(-3).map(s => s.text_position_id).filter(Boolean);
-        // Last 2 animations — must avoid these
-        const recentAnims = usedAnimations.slice(-2);
+      const {
+        script_lines = [],
+        segment_count: segCount,
+        segment_length: segLen,
+        keyframes_per_segment: kfPerSeg,
+      } = choreograph_setup;
 
-        // The sub-agent's pre-assigned script line (writer stage)
-        const myLine = scriptLines[i] || '';
+      const progress = i / Math.max(1, segCount - 1);
+      const phase = progress < 0.2 ? 'opener'
+        : progress < 0.6 ? 'build'
+        : progress < 0.85 ? 'climax'
+        : 'resolve';
+      const palette = PALETTES[phase];
 
-        // Should this beat get a generated background image? Only ~1 in 4
-        // beats — too many feels noisy. Sub-agent decides based on phase.
-        const shouldOfferImage = (i % 4 === 0) && i > 0;
+      const previous = segments.slice(-3).map((s, idx) =>
+        `Beat ${segments.length - 3 + idx + 1}: presets=[${(s.preset_ids || []).join('+')}] text="${s.text}" anim=${s.text_animation} pos=${s.text_position_id}`
+      ).join('\n');
 
-        const subAgent = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing one beat of a motion ad. Make it distinct from the recent beats.
+      // Tally overused presets across all prior beats
+      const counts = {};
+      segments.forEach(s => (s.preset_ids || []).forEach(id => { counts[id] = (counts[id] || 0) + 1; }));
+      const overusedMax = segCount * kfPerSeg / 6;
+      const overused = Object.entries(counts).filter(([, c]) => c >= overusedMax).map(([id]) => id);
+
+      const usedPositions = segments.slice(-3).map(s => s.text_position_id).filter(Boolean);
+      const usedAnimations = segments.map(s => s.text_animation).filter(Boolean);
+      const recentAnims = usedAnimations.slice(-2);
+
+      const myLine = script_lines[i] || '';
+      const shouldOfferImage = (i % 4 === 0) && i > 0;
+
+      const subAgent = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing one beat of a motion ad. Make it distinct from the recent beats.
 
 OVERALL VIBE: "${vibe}"
 SUBJECT: ${analysis?.subject || ''}
@@ -367,84 +386,91 @@ RECENT BEATS:
 ${previous || '(this is the first beat)'}
 
 Return JSON with: preset_ids, intent, camera_preset, text_animation, text_position_id, image_prompt, image_role.`,
-          response_json_schema: {
-            type: 'object',
-            properties: {
-              preset_ids: { type: 'array', items: { type: 'string' } },
-              intent: { type: 'string' },
-              camera_preset: { type: 'string' },
-              text_animation: { type: 'string' },
-              text_position_id: { type: 'string' },
-              image_prompt: { type: 'string' },
-              image_role: { type: 'string' },
-            },
-            required: ['preset_ids', 'intent', 'text_animation', 'text_position_id'],
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            preset_ids: { type: 'array', items: { type: 'string' } },
+            intent: { type: 'string' },
+            camera_preset: { type: 'string' },
+            text_animation: { type: 'string' },
+            text_position_id: { type: 'string' },
+            image_prompt: { type: 'string' },
+            image_role: { type: 'string' },
           },
-        });
+          required: ['preset_ids', 'intent', 'text_animation', 'text_position_id'],
+        },
+      });
 
-        // ── Sanitize sub-agent output ────────────────────────────────
-        const fallbacks = ['showcase', 'pop', 'float', 'tilt', 'reveal', 'bounce'];
-        let ids = (Array.isArray(subAgent.preset_ids) ? subAgent.preset_ids : [])
-          .map(id => MOTION_PRESETS.includes(id) ? id : null)
-          .filter(Boolean);
-        let fb = 0;
-        while (ids.length < kfPerSeg) {
-          const cand = fallbacks[fb++ % fallbacks.length];
-          if (ids[ids.length - 1] !== cand) ids.push(cand);
+      // ── Sanitize sub-agent output ────────────────────────────────
+      const fallbacks = ['showcase', 'pop', 'float', 'tilt', 'reveal', 'bounce'];
+      let ids = (Array.isArray(subAgent.preset_ids) ? subAgent.preset_ids : [])
+        .map(id => MOTION_PRESETS.includes(id) ? id : null)
+        .filter(Boolean);
+      let fb = 0;
+      while (ids.length < kfPerSeg) {
+        const cand = fallbacks[fb++ % fallbacks.length];
+        if (ids[ids.length - 1] !== cand) ids.push(cand);
+      }
+      ids = ids.slice(0, kfPerSeg);
+      for (let j = 1; j < ids.length; j++) {
+        if (ids[j] === ids[j - 1]) {
+          ids[j] = fallbacks.find(f => f !== ids[j - 1]) || 'pop';
         }
-        ids = ids.slice(0, kfPerSeg);
-        for (let j = 1; j < ids.length; j++) {
-          if (ids[j] === ids[j - 1]) {
-            ids[j] = fallbacks.find(f => f !== ids[j - 1]) || 'pop';
-          }
-        }
-
-        // Animation: must be valid AND not match the last one
-        let anim = TEXT_ANIMATIONS.includes(subAgent.text_animation) ? subAgent.text_animation : 'pop';
-        if (recentAnims[recentAnims.length - 1] === anim) {
-          anim = TEXT_ANIMATIONS.find(a => a !== anim) || 'pop';
-        }
-        usedAnimations.push(anim);
-
-        // Position: validate, fall back to a varied one if invalid
-        let posId = subAgent.text_position_id;
-        let pos = TEXT_POSITIONS.find(p => p.id === posId);
-        if (!pos) {
-          // pick the first position not used recently
-          pos = TEXT_POSITIONS.find(p => !usedPositions.includes(p.id)) || TEXT_POSITIONS[i % TEXT_POSITIONS.length];
-          posId = pos.id;
-        }
-
-        segments.push({
-          beat: i + 1,
-          phase,
-          preset_ids: ids,
-          preset_id: ids[0],
-          intent: subAgent.intent || '',
-          camera_preset: CAMERA_PRESETS.includes(subAgent.camera_preset) ? subAgent.camera_preset : '',
-          duration: segLen,
-          keyframes_per_slide: kfPerSeg,
-          // Story / text
-          text: myLine,
-          text_animation: anim,
-          text_position_id: posId,
-          text_x: pos.x,
-          text_y: pos.y,
-          // Optional image overlay (only on every 4th beat at most)
-          image_prompt: shouldOfferImage && subAgent.image_prompt ? subAgent.image_prompt : '',
-          image_role: shouldOfferImage && (subAgent.image_role === 'background' || subAgent.image_role === 'accent')
-            ? subAgent.image_role : '',
-        });
       }
 
+      let anim = TEXT_ANIMATIONS.includes(subAgent.text_animation) ? subAgent.text_animation : 'pop';
+      if (recentAnims[recentAnims.length - 1] === anim) {
+        anim = TEXT_ANIMATIONS.find(a => a !== anim) || 'pop';
+      }
+
+      let posId = subAgent.text_position_id;
+      let pos = TEXT_POSITIONS.find(p => p.id === posId);
+      if (!pos) {
+        pos = TEXT_POSITIONS.find(p => !usedPositions.includes(p.id)) || TEXT_POSITIONS[i % TEXT_POSITIONS.length];
+        posId = pos.id;
+      }
+
+      const segment = {
+        beat: i + 1,
+        phase,
+        preset_ids: ids,
+        preset_id: ids[0],
+        intent: subAgent.intent || '',
+        camera_preset: CAMERA_PRESETS.includes(subAgent.camera_preset) ? subAgent.camera_preset : '',
+        duration: segLen,
+        keyframes_per_slide: kfPerSeg,
+        text: myLine,
+        text_animation: anim,
+        text_position_id: posId,
+        text_x: pos.x,
+        text_y: pos.y,
+        image_prompt: shouldOfferImage && subAgent.image_prompt ? subAgent.image_prompt : '',
+        image_role: shouldOfferImage && (subAgent.image_role === 'background' || subAgent.image_role === 'accent')
+          ? subAgent.image_role : '',
+      };
+
+      const isLast = (i + 1) >= segCount;
       return Response.json({
-        step: 'choreograph',
+        step: 'choreograph_beat',
+        output: { segment, beat_index: i, is_last: isLast, segment_count: segCount },
+        next_step: isLast ? 'choreograph_finalize' : 'choreograph_beat',
+      });
+    }
+
+    // ── STEP 4.5c: CHOREOGRAPH FINALIZE (assemble segments into output) ──
+    if (step === 'choreograph_finalize') {
+      const { segments = [], choreograph_setup } = state;
+      if (!choreograph_setup) {
+        return Response.json({ error: 'Missing choreograph_setup state' }, { status: 400 });
+      }
+      return Response.json({
+        step: 'choreograph_finalize',
         output: {
           segments,
-          script_lines: scriptLines,
-          total_duration: totalDur,
-          segment_count: segCount,
-          keyframes_per_segment: kfPerSeg,
+          script_lines: choreograph_setup.script_lines || [],
+          total_duration: choreograph_setup.total_duration,
+          segment_count: choreograph_setup.segment_count,
+          keyframes_per_segment: choreograph_setup.keyframes_per_segment,
         },
         next_step: 'sequence',
       });

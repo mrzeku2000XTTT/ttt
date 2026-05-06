@@ -66,12 +66,26 @@ CRAFT RULES: every motion uses ease-out or ease-in-out (NEVER linear). Text is A
  */
 
 const SHORT_STEPS = ["research", "analyze_media", "plan", "critique", "refine", "done"];
-const LONG_STEPS  = ["research", "analyze_media", "plan", "choreograph", "sequence", "camera_director", "critique", "refine", "done"];
+// LONG flow: choreograph is split into 3 streaming sub-steps. choreograph_beat
+// is invoked ONCE PER BEAT by the frontend so each sub-agent makes a real-time
+// decision based on what previous sub-agents already produced. The `agentPace`
+// slider inserts a delay between each beat call so the user can watch them
+// stream in (or speed-run them).
+const LONG_STEPS  = ["research", "analyze_media", "plan", "choreograph_setup", "choreograph_beats", "choreograph_finalize", "sequence", "camera_director", "critique", "refine", "done"];
 
 const SPEED_OPTIONS = [
   { value: 0.5, label: "0.5×", desc: "Slow / cinematic" },
   { value: 1,   label: "1×",   desc: "Real-time" },
   { value: 2,   label: "2×",   desc: "Fast / punchy" },
+];
+
+// Agent pace = how long to wait between each sub-agent decision.
+// Lower = faster batch. Higher = visible streaming, easier to follow.
+const AGENT_PACE_OPTIONS = [
+  { value: 0,    label: "Instant", desc: "No delay between agents" },
+  { value: 250,  label: "Fast",    desc: "0.25s between agents" },
+  { value: 600,  label: "Live",    desc: "0.6s between agents (default)" },
+  { value: 1500, label: "Cinema",  desc: "1.5s — watch each agent think" },
 ];
 
 export default function KatagamiAIEditor() {
@@ -86,6 +100,7 @@ export default function KatagamiAIEditor() {
   // controls how many chained motion presets that beat gets.
   const [slideCount, setSlideCount] = useState(20);    // 4–30 slides (sub-agents)
   const [kfPerSlide, setKfPerSlide] = useState(3);     // 1–6 keyframes per slide
+  const [agentPace, setAgentPace] = useState(600);     // ms delay between sub-agents (real-time decision pacing)
 
   const [working, setWorking] = useState(null);   // current step name while in-flight
   const [messages, setMessages] = useState([]);   // [{step, output}]
@@ -266,25 +281,75 @@ export default function KatagamiAIEditor() {
         speed,
       };
 
-      // Walk through every step
-      for (const step of STEPS) {
+      // Helper: invoke a single agent step.
+      const invokeStep = async (step, extraState = {}) => {
         setWorking(step);
-        const res = await base44.functions.invoke("katagamiMasterAgent", { step, state });
+        const res = await base44.functions.invoke("katagamiMasterAgent", { step, state: { ...state, ...extraState } });
         const data = res?.data;
         if (!data || data.error) throw new Error(data?.error || `Step ${step} failed`);
+        return data;
+      };
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-        // Append the step output to the transcript
-        setMessages((prev) => [...prev, { step, output: data.output }]);
+      // Walk through every step. `choreograph_beats` is a virtual step that
+      // expands into N real `choreograph_beat` calls — one per sub-agent —
+      // each producing a streaming live update.
+      for (const step of STEPS) {
+        if (step === "choreograph_beats") {
+          // Pull setup info that choreograph_setup just returned
+          const setup = state.choreograph_setup;
+          if (!setup) continue;
+          const segCount = setup.segment_count;
+          const segments = [];
+
+          // Show a progress bubble in the transcript that we'll update as each
+          // sub-agent commits.
+          setMessages((prev) => [...prev, {
+            step: "choreograph_beats",
+            output: { segments: [], segment_count: segCount, in_progress: true },
+          }]);
+
+          for (let i = 0; i < segCount; i++) {
+            setWorking(`choreograph_beat_${i + 1}`);
+            const data = await invokeStep("choreograph_beat", { beat_index: i, segments });
+            const seg = data.output?.segment;
+            if (seg) segments.push(seg);
+
+            // Live-update the in-progress bubble with the new segment
+            setMessages((prev) => prev.map((m, idx) => (
+              idx === prev.length - 1 && m.step === "choreograph_beats"
+                ? { ...m, output: { ...m.output, segments: [...segments], in_progress: i + 1 < segCount } }
+                : m
+            )));
+
+            // Real-time decision pacing — let the user actually watch the agents
+            if (agentPace > 0 && i + 1 < segCount) await sleep(agentPace);
+          }
+
+          state = { ...state, segments };
+          continue;
+        }
+
+        const data = await invokeStep(step);
+        // Append step output to transcript (skip choreograph_setup since the
+        // beats stream their own bubble; we still merge its output into state).
+        if (step !== "choreograph_setup") {
+          setMessages((prev) => [...prev, { step, output: data.output }]);
+        }
 
         // Merge step output into running state under that step's key
-        if (step === "research")           state = { ...state, research: data.output };
-        else if (step === "analyze_media") state = { ...state, analysis: data.output };
-        else if (step === "plan")          state = { ...state, plan: data.output };
-        else if (step === "choreograph")   { state = { ...state, choreograph: data.output }; setChoreograph(data.output); }
-        else if (step === "sequence")      { state = { ...state, sequence: data.output };    setSequence(data.output); }
-        else if (step === "camera_director") { state = { ...state, camera_director: data.output }; setCameraPlan(data.output); }
-        else if (step === "critique")      state = { ...state, critique: data.output };
-        else if (step === "refine")        { state = { ...state, plan: data.output };        setFinalPlan(data.output); }
+        if (step === "research")                state = { ...state, research: data.output };
+        else if (step === "analyze_media")      state = { ...state, analysis: data.output };
+        else if (step === "plan")               state = { ...state, plan: data.output };
+        else if (step === "choreograph_setup")  state = { ...state, choreograph_setup: data.output };
+        else if (step === "choreograph_finalize") {
+          state = { ...state, choreograph: data.output };
+          setChoreograph(data.output);
+        }
+        else if (step === "sequence")           { state = { ...state, sequence: data.output };    setSequence(data.output); }
+        else if (step === "camera_director")    { state = { ...state, camera_director: data.output }; setCameraPlan(data.output); }
+        else if (step === "critique")           state = { ...state, critique: data.output };
+        else if (step === "refine")             { state = { ...state, plan: data.output };        setFinalPlan(data.output); }
         else if (step === "done" && data.render_url) setRenderUrl(data.render_url);
       }
     } catch (e) {
@@ -483,6 +548,31 @@ export default function KatagamiAIEditor() {
                 <span>~{(duration / slideCount).toFixed(2)}s per slide</span>
                 <span>~{((duration / slideCount) / kfPerSlide).toFixed(2)}s per keyframe</span>
               </div>
+            </div>
+          </div>
+
+          {/* Agent pace — controls the delay between sub-agents during real-time decisions */}
+          <div>
+            <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <Users className="w-3 h-3" /> Agent pace <span className="text-white/30 normal-case font-normal text-[10px]">— how fast sub-agents stream their decisions</span>
+            </label>
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-lg bg-white/5 border border-white/10">
+              {AGENT_PACE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setAgentPace(opt.value)}
+                  disabled={running}
+                  title={opt.desc}
+                  className={`h-8 rounded-md text-[10px] font-bold transition-colors ${
+                    agentPace === opt.value
+                      ? "bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/30"
+                      : "text-white/60 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
