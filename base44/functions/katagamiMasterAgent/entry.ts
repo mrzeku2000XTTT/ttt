@@ -120,7 +120,7 @@ Return JSON:
 
     // ── STEP 3: PLAN V1 ────────────────────────────────────────────────
     if (step === 'plan') {
-      const { vibe, research, analysis } = state;
+      const { vibe, research, analysis, target_duration } = state;
 
       const plan = await base44.integrations.Core.InvokeLLM({
         prompt: `You are designing v1 of a motion ad. Use the research and media analysis below.
@@ -162,9 +162,14 @@ Design a motion ad plan. Return JSON:
         },
       });
 
+      // For long-form ads (target_duration > 8), override the LLM's 3-8s suggestion
+      // with the user's actual target duration so the plan card shows the truth.
+      const planDuration = target_duration && target_duration > 8 ? target_duration : plan.duration;
+      const finalPlan = { ...plan, duration: planDuration };
+
       return Response.json({
         step: 'plan',
-        output: plan,
+        output: finalPlan,
         next_step: 'critique',
       });
     }
@@ -458,7 +463,7 @@ Return JSON:
 
     // ── STEP 5: REFINE ─────────────────────────────────────────────────
     if (step === 'refine') {
-      const { plan, critique, vibe } = state;
+      const { plan, critique, vibe, choreograph, target_duration } = state;
 
       const refined = await base44.integrations.Core.InvokeLLM({
         prompt: `Apply the director's critique and produce v2 of the plan. Keep what works; fix every issue called out.
@@ -495,9 +500,15 @@ Return the FINAL JSON plan with the same shape:
         },
       });
 
+      // For long-form ads, the refine LLM only knows about the v1 single-preset
+      // duration (3-8s). Override with the REAL total duration from choreograph
+      // so the plan card shows the truth (e.g. 30s, not 4s).
+      const realDuration = choreograph?.total_duration || target_duration || refined.duration;
+      const finalRefined = { ...refined, duration: realDuration };
+
       return Response.json({
         step: 'refine',
-        output: refined,
+        output: finalRefined,
         next_step: 'done',
       });
     }
