@@ -72,13 +72,24 @@ export default function KatagamiAgentChat({ messages, working, error, renderUrl,
               <CheckCircle2 className="w-4 h-4 text-emerald-300" />
               <div className="text-xs font-black text-white">READY TO RENDER</div>
             </div>
-            <button
-              onClick={onOpenRender}
+            {/* Use a real <a> with target=_blank — works inside sandboxed iframes
+                where window.open() silently fails. The href is the absolute path
+                so it always navigates correctly. */}
+            <a
+              href={renderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-white text-black font-black text-sm hover:bg-white/90"
             >
               <Film className="w-4 h-4" /> Render & Download MP4
               <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-            </button>
+            </a>
+            <a
+              href={renderUrl}
+              className="block mt-2 text-center text-[10px] text-emerald-200/70 hover:text-emerald-200 underline"
+            >
+              Or open in this window
+            </a>
           </motion.div>
         )}
 
