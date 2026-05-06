@@ -21,8 +21,16 @@ Deno.serve(async (req) => {
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; TTT-Bot/1.0)',
-        'Accept': 'text/html'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Upgrade-Insecure-Requests': '1'
       }
     });
 
@@ -30,7 +38,8 @@ Deno.serve(async (req) => {
       if (response.status === 404) {
         return Response.json({ found: false, message: `No Grokipedia article found for "${query}"` });
       }
-      throw new Error(`Grokipedia error: ${response.status}`);
+      // 403 / blocked — let caller fall back to web search
+      return Response.json({ found: false, blocked: true, status: response.status, message: `Grokipedia blocked request (${response.status})` });
     }
 
     const html = await response.text();

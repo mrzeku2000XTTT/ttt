@@ -13,35 +13,45 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing query' }, { status: 400 });
     }
 
-    // 1) Fetch Grokipedia article
-    const grokResp = await base44.functions.invoke('grokipediaSearch', { query });
-    const grokData = grokResp?.data || {};
-    if (!grokData.found) {
-      return Response.json({ found: false, message: grokData.message || `No article for "${query}"` });
+    // 1) Try to fetch Grokipedia article (best source). If blocked / 404, fall back to web search.
+    let sourceContent = '';
+    let title = query;
+    let sourceUrl = '';
+    let usedFallback = false;
+
+    try {
+      const grokResp = await base44.functions.invoke('grokipediaSearch', { query });
+      const grokData = grokResp?.data || {};
+      if (grokData.found) {
+        sourceContent = grokData.content || '';
+        title = grokData.title || query;
+        sourceUrl = grokData.url || '';
+      } else {
+        usedFallback = true;
+      }
+    } catch (_) {
+      usedFallback = true;
     }
 
-    const sourceContent = grokData.content || '';
-    const title = grokData.title || query;
-    const sourceUrl = grokData.url;
-
-    // 2) Ask LLM to extract dark/fascinating facts from the content
-    const llmRes = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are extracting facts for a "doom scroll" app — endless feed of dark, fascinating, mind-bending truths about a topic.
+    // 2) Generate facts. If we have Grokipedia content, ground in it. Otherwise use web search.
+    const basePrompt = `You are creating content for a "doom scroll" app — an endless feed of dark, fascinating, mind-bending truths about a topic.
 
 TOPIC: "${title}"
-
-SOURCE CONTENT (from Grokipedia):
-${sourceContent}
-
-Generate ${count} distinct facts from this content. Each fact must be:
+${sourceContent ? `\nSOURCE CONTENT:\n${sourceContent}\n` : ''}
+Generate ${count} distinct facts about this topic. Each fact must be:
 - ONE punchy sentence (max 25 words)
 - Genuinely dark, surprising, unsettling, or mind-blowing
-- Real and grounded in the source content (not made up)
+- Real and factually accurate
 - No "Did you know" prefixes — just the raw fact
 
-For each fact, also write a short cinematic image prompt (12-20 words) describing a haunting, atmospheric, photorealistic image that visualizes that fact. Dark mood, cinematic lighting, no text in image.
+For each fact, also write a short cinematic image prompt (12-20 words) describing a haunting, atmospheric, photorealistic image. Dark mood, cinematic lighting, no text in image.
 
-Return JSON.`,
+Return JSON.`;
+
+    const llmRes = await base44.integrations.Core.InvokeLLM({
+      prompt: basePrompt,
+      add_context_from_internet: usedFallback || !sourceContent,
+      model: usedFallback ? 'gemini_3_flash' : undefined,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -63,10 +73,15 @@ Return JSON.`,
 
     const facts = (llmRes?.facts || []).filter((f) => f.fact && f.image_prompt);
 
+    if (facts.length === 0) {
+      return Response.json({ found: false, message: `Couldn't pull anything on "${query}". Try another topic.` });
+    }
+
     return Response.json({
       found: true,
       title,
       source_url: sourceUrl,
+      fallback: usedFallback,
       facts,
     });
   } catch (error) {
