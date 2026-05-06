@@ -6,14 +6,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 // chat UI can stream every thought / search / critique to the user.
 //
 // Steps:
-//   1. research        — websearch motion ad references for the vibe
-//   2. analyze_media   — vision-pass on the uploaded media (subject, mood, palette)
-//   3. plan            — design v1 motion plan (preset, camera, tagline, bg, duration)
-//   4. critique        — score the plan against pro motion-ad principles
-//   5. refine          — produce final v2 plan based on critique
-//   6. done            — return render URL
-//
-// Each step returns { step, output, next_step, render_url? }.
+//   research        — websearch motion ad references for the vibe
+//   analyze_media   — vision-pass on the uploaded media (subject, mood, palette)
+//   plan            — design v1 motion plan (preset, camera, tagline, bg, duration)
+//   choreograph     — multi-step sub-agent loop (LONG ads only):
+//                     each sub-agent writes its own line of script, picks a
+//                     non-overlapping position, varies the animation, and may
+//                     request a generated image overlay. Master agent guarantees
+//                     no two beats reuse the same text or animation.
+//   sequence        — global director reorders all chained presets into an arc
+//   camera_director — single director designs a real camera-cut plan
+//   critique        — pro motion-ad director scores the plan
+//   refine          — produce final v2 plan based on critique
+//   done            — return render URL
 
 const MOTION_PRESETS = [
   "spin","tilt","pop","float","reveal","flip","wobble","zoomin","zoomout",
@@ -26,6 +31,24 @@ const CAMERA_PRESETS = [
 ];
 const BACKGROUNDS = ["sunset","ocean","forest","midnight","neon","cosmos","pastel","mono"];
 const DEVICES = ["iphone","android","macbook","ipad"];
+
+// Text-animation variants the sub-agents can pick from. Each one renders
+// VERY differently so consecutive beats feel distinct.
+const TEXT_ANIMATIONS = ["typewriter","pop","3d","none"];
+
+// Safe text positions — these AVOID the device that sits in the middle of
+// the frame (roughly x:30-70, y:35-75). Each beat picks ONE so text never
+// overlaps the product.
+const TEXT_POSITIONS = [
+  { id: "top_center",     x: 50, y: 10 },
+  { id: "top_left",       x: 22, y: 12 },
+  { id: "top_right",      x: 78, y: 12 },
+  { id: "bottom_center",  x: 50, y: 90 },
+  { id: "bottom_left",    x: 22, y: 88 },
+  { id: "bottom_right",   x: 78, y: 88 },
+  { id: "left_middle",    x: 12, y: 50 },
+  { id: "right_middle",   x: 88, y: 50 },
+];
 
 Deno.serve(async (req) => {
   try {
@@ -48,11 +71,11 @@ MEDIA TYPE: ${media_type || 'image'}
 Search the web (YouTube, ad galleries, motion design blogs) for current trends in motion ads matching this vibe. Identify what makes top-performing motion ads work in 2025.
 
 Return JSON:
-- trends: array of 4-6 short trend bullets (e.g. "punchy 0.4s text pops", "dolly-in into product hero")
+- trends: array of 4-6 short trend bullets
 - references: array of 3 example references (title + why it works)
-- key_principles: array of 3-5 craft rules to follow (timing, easing, hierarchy)
+- key_principles: array of 3-5 craft rules
 - recommended_pace: "fast" | "medium" | "slow"
-- recommended_mood: short phrase (e.g. "moody cinematic", "energetic playful")`,
+- recommended_mood: short phrase`,
         add_context_from_internet: true,
         model: 'gemini_3_flash',
         response_json_schema: {
@@ -74,11 +97,7 @@ Return JSON:
         },
       });
 
-      return Response.json({
-        step: 'research',
-        output: research,
-        next_step: 'analyze_media',
-      });
+      return Response.json({ step: 'research', output: research, next_step: 'analyze_media' });
     }
 
     // ── STEP 2: ANALYZE MEDIA ──────────────────────────────────────────
@@ -87,40 +106,40 @@ Return JSON:
       if (!media_url) return Response.json({ error: 'Missing media_url' }, { status: 400 });
 
       const analysis = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this ${media_type || 'image'} for a motion ad. Look at composition, subject, mood, palette, and what makes it visually interesting.
+        prompt: `Analyze this ${media_type || 'image'} for a motion ad. Look at composition, subject, mood, palette.
 
 Return JSON:
 - subject: what is the main subject (1 short phrase)
-- mood: dominant mood (1 phrase)
+- product_category: best guess of product category (1-2 words, e.g. "fitness app", "luxury watch", "AI tool")
+- mood: dominant mood
 - palette: 3-4 dominant colors as descriptive names
-- composition: short phrase (centered, off-center, full-bleed, etc)
-- best_motion_angle: which animation style would best showcase this (1 sentence)
-- suggested_focal_point: where the eye should land first`,
+- composition: short phrase
+- best_motion_angle: which animation style would best showcase this
+- suggested_focal_point: where the eye should land first
+- key_selling_points: array of 3-5 implied selling points / features the ad copy could highlight`,
         file_urls: [media_url],
         response_json_schema: {
           type: 'object',
           properties: {
             subject: { type: 'string' },
+            product_category: { type: 'string' },
             mood: { type: 'string' },
             palette: { type: 'array', items: { type: 'string' } },
             composition: { type: 'string' },
             best_motion_angle: { type: 'string' },
             suggested_focal_point: { type: 'string' },
+            key_selling_points: { type: 'array', items: { type: 'string' } },
           },
           required: ['subject', 'mood', 'best_motion_angle'],
         },
       });
 
-      return Response.json({
-        step: 'analyze_media',
-        output: analysis,
-        next_step: 'plan',
-      });
+      return Response.json({ step: 'analyze_media', output: analysis, next_step: 'plan' });
     }
 
     // ── STEP 3: PLAN V1 ────────────────────────────────────────────────
     if (step === 'plan') {
-      const { vibe, research, analysis, target_duration } = state;
+      const { vibe, research, analysis, target_duration, segment_count } = state;
 
       const plan = await base44.integrations.Core.InvokeLLM({
         prompt: `You are designing v1 of a motion ad. Use the research and media analysis below.
@@ -135,18 +154,20 @@ RESEARCH FINDINGS:
 
 MEDIA ANALYSIS:
 - Subject: ${analysis?.subject || ''}
-- Mood: ${analysis?.mood || ''}
+- Product category: ${analysis?.product_category || ''}
+- Selling points: ${(analysis?.key_selling_points || []).join(' · ')}
 - Best motion angle: ${analysis?.best_motion_angle || ''}
-- Focal point: ${analysis?.suggested_focal_point || ''}
 
-Design a motion ad plan. Return JSON:
-- tagline: punchy 2-6 word headline (or empty string)
+You will be writing the MASTER tagline / hero claim for the ad. Sub-agents will write per-beat lines later, so this should be the SINGLE BIGGEST line — punchy, 2-6 words.
+
+Return JSON:
+- tagline: punchy 2-6 word headline
 - preset_id: ONE of: ${MOTION_PRESETS.join(', ')}
-- camera_preset: ONE of: ${CAMERA_PRESETS.join(', ')} (or empty for none)
+- camera_preset: ONE of: ${CAMERA_PRESETS.join(', ')}
 - background: ONE of: ${BACKGROUNDS.join(', ')}
 - device: ONE of: ${DEVICES.join(', ')}
-- duration: integer 3-8 (seconds)
-- reasoning: one sentence on why this combo serves the goal`,
+- duration: integer 3-8
+- reasoning: one sentence`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -162,16 +183,10 @@ Design a motion ad plan. Return JSON:
         },
       });
 
-      // For long-form ads (target_duration > 8), override the LLM's 3-8s suggestion
-      // with the user's actual target duration so the plan card shows the truth.
       const planDuration = target_duration && target_duration > 8 ? target_duration : plan.duration;
       const finalPlan = { ...plan, duration: planDuration };
 
-      return Response.json({
-        step: 'plan',
-        output: finalPlan,
-        next_step: 'critique',
-      });
+      return Response.json({ step: 'plan', output: finalPlan, next_step: 'critique' });
     }
 
     // ── STEP 4: CRITIQUE ───────────────────────────────────────────────
@@ -183,16 +198,16 @@ Design a motion ad plan. Return JSON:
 
 GOAL VIBE: "${vibe}"
 SUBJECT: "${analysis?.subject}"
-PRINCIPLES TO HONOR: ${(research?.key_principles || []).join(' · ')}
+PRINCIPLES: ${(research?.key_principles || []).join(' · ')}
 
 THE PLAN:
 ${JSON.stringify(plan, null, 2)}
 
 Return JSON:
 - score: integer 0-100
-- strengths: array of 2-3 short bullets
-- issues: array of 2-4 short bullets identifying weak choices (timing, preset fit, background mood, tagline punch, camera choice)
-- improvements: array of 2-4 concrete fixes (e.g. "swap preset to slide-in-left for stronger reveal", "shorten to 4s for ad pacing", "drop camera_preset — it competes with subject motion")
+- strengths: 2-3 short bullets
+- issues: 2-4 short bullets identifying weak choices
+- improvements: 2-4 concrete fixes
 - verdict: one sentence`,
         response_json_schema: {
           type: 'object',
@@ -207,41 +222,77 @@ Return JSON:
         },
       });
 
-      return Response.json({
-        step: 'critique',
-        output: critique,
-        next_step: 'refine',
-      });
+      return Response.json({ step: 'critique', output: critique, next_step: 'refine' });
     }
 
-    // ── STEP 4.5: CHOREOGRAPH (sub-agent loop) ────────────────────────
-    // Spawned by the master when the user wants a LONGER ad. Each sub-agent
-    // designs ONE segment (4-10 keyframes worth of motion). We loop, calling
-    // a fresh sub-agent for every beat, and stitch their outputs into a
-    // multi-segment preset chain the timeline can play back-to-back.
+    // ── STEP 4.5: CHOREOGRAPH (multi-step sub-agent loop) ─────────────
+    // Each sub-agent does FOUR things in one call:
+    //   1. Pick `kfPerSeg` motion presets for this beat (chained)
+    //   2. Write a UNIQUE line of script that tells part of the story
+    //      (no other beat has used this line — full ad reads as a story)
+    //   3. Pick a TEXT-SAFE position that doesn't overlap the device
+    //   4. Pick a TEXT ANIMATION that's different from the previous beats
+    //   5. Optionally request a generated image overlay (background scene
+    //      or supporting visual) when it would strengthen the beat
     if (step === 'choreograph') {
-      const { plan, research, analysis, vibe, target_duration, segment_count, keyframes_per_segment } = state;
-      // User-controlled: 4–30 sub-agents (slides). Default 20.
+      const {
+        plan, research, analysis, vibe, target_duration,
+        segment_count, keyframes_per_segment,
+      } = state;
+
       const segCount = Math.max(4, Math.min(30, parseInt(segment_count) || 20));
       const totalDur = Math.max(4, Math.min(60, parseInt(target_duration) || 12));
       const segLen = totalDur / segCount;
-      // Keyframes per slide — controls how many chained motion presets each
-      // sub-agent picks. 1 = simple single move, 6 = rich multi-flourish.
       const kfPerSeg = Math.max(1, Math.min(6, parseInt(keyframes_per_segment) || 3));
 
-      // ── Beat-position preset palettes ────────────────────────────────
-      // Force each sub-agent to pick from a DIFFERENT pool depending on its
-      // position in the narrative arc. Without this, every sub-agent picks
-      // the same generic "pop → tilt → zoomin → reveal" pattern.
+      // Beat-position preset palettes — force narrative arc
       const PALETTES = {
         opener:  ['slide-in-left', 'slide-in-right', 'slide-up', 'drop-in', 'fly-across', 'swoop', 'reveal', 'zoomin'],
         build:   ['pop', 'bounce', 'wobble', 'tilt', 'float', 'showcase', 'pendulum', 'tilt-up'],
-        climax:  ['spin', 'barrel', 'orbit', 'shake', 'flip', 'zigzag', 'chat-zoom', 'fly-across'],
+        climax:  ['spin', 'barrel', 'orbit', 'shake', 'flip', 'chat-zoom', 'fly-across'],
         resolve: ['showcase', 'tilt-up', 'zoomout', 'pop', 'float', 'chat-zoom', 'tilt'],
       };
+
+      // ── Pre-script writer ──────────────────────────────────────────
+      // BEFORE running sub-agents, ask one writer to draft the FULL ad
+      // copy — segCount distinct lines that together tell a coherent
+      // story. Each sub-agent will then claim its own line. This guarantees
+      // no two beats repeat the same words.
+      const scriptWriter = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are the COPYWRITER for a 30-second motion ad. Write ${segCount} short lines that together tell a complete story arc for this product.
+
+PRODUCT: ${analysis?.subject || ''} (${analysis?.product_category || ''})
+SELLING POINTS: ${(analysis?.key_selling_points || []).join(' · ')}
+HERO TAGLINE (already used as the final beat): "${plan?.tagline || ''}"
+VIBE: ${vibe}
+
+REQUIREMENTS:
+- Write ${segCount} UNIQUE lines, in NARRATIVE ORDER (opener → build → climax → resolve).
+- Each line is 2–6 words. Punchy. Ad-grade copy. NO fluff. NO repetition.
+- Beat 1 = the HOOK (a question, a tease, a bold claim).
+- Middle beats = build curiosity / reveal features (one feature per line).
+- Climax beats = emotional peak / value proposition.
+- Final beat = a strong CTA or echo of the hero tagline.
+- DO NOT repeat any word combination across lines. DO NOT reuse the hero tagline verbatim.
+- Together these lines must read like a real commercial script.
+
+Return JSON: { "lines": ["line1", "line2", ...] }  with exactly ${segCount} entries.`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            lines: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['lines'],
+        },
+      });
+
+      const scriptLines = (Array.isArray(scriptWriter?.lines) ? scriptWriter.lines : []).slice(0, segCount);
+      while (scriptLines.length < segCount) scriptLines.push('');
+
+      // ── Sub-agent loop ────────────────────────────────────────────
       const segments = [];
-      // Sub-agent loop — each call is a fresh director designing ONE beat
-      // with `kfPerSeg` chained motion presets, so each beat has rich motion.
+      const usedAnimations = []; // track recent animations so we vary
+
       for (let i = 0; i < segCount; i++) {
         const progress = i / Math.max(1, segCount - 1);
         const phase = progress < 0.2 ? 'opener'
@@ -249,83 +300,140 @@ Return JSON:
           : progress < 0.85 ? 'climax'
           : 'resolve';
         const palette = PALETTES[phase];
-        const previous = segments.slice(-3).map((s, idx) => `Beat ${segments.length - 3 + idx + 1}: ${s.preset_ids.join('+')}`).join(' · ');
-        // Tally most-overused presets so far so we can ban them in this beat
+        const previous = segments.slice(-3).map((s, idx) =>
+          `Beat ${segments.length - 3 + idx + 1}: presets=[${s.preset_ids.join('+')}] text="${s.text}" anim=${s.text_animation} pos=${s.text_position_id}`
+        ).join('\n');
+
+        // Tally overused presets
         const overused = (() => {
           const counts = {};
           segments.forEach(s => s.preset_ids.forEach(id => { counts[id] = (counts[id] || 0) + 1; }));
-          const max = segCount * kfPerSeg / 6; // rough cap
+          const max = segCount * kfPerSeg / 6;
           return Object.entries(counts).filter(([, c]) => c >= max).map(([id]) => id);
         })();
 
+        // Used positions — try to vary per beat
+        const usedPositions = segments.slice(-3).map(s => s.text_position_id).filter(Boolean);
+        // Last 2 animations — must avoid these
+        const recentAnims = usedAnimations.slice(-2);
+
+        // The sub-agent's pre-assigned script line (writer stage)
+        const myLine = scriptLines[i] || '';
+
+        // Should this beat get a generated background image? Only ~1 in 4
+        // beats — too many feels noisy. Sub-agent decides based on phase.
+        const shouldOfferImage = (i % 4 === 0) && i > 0;
+
         const subAgent = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing one beat of a long-form motion ad. Design beat ${i + 1} with EXACTLY ${kfPerSeg} chained motion preset${kfPerSeg === 1 ? '' : 's'}.
+          prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing one beat of a motion ad. Make it distinct from the recent beats.
 
 OVERALL VIBE: "${vibe}"
 SUBJECT: ${analysis?.subject || ''}
 PACE: ${research?.recommended_pace || 'medium'}
 
-NARRATIVE PHASE: ${phase.toUpperCase()} (${i + 1}/${segCount}, progress ${(progress * 100).toFixed(0)}%)
-${phase === 'opener' ? '→ This is the HOOK. Make it ENTER from off-screen with energy. Use motion that introduces the subject.' : ''}
-${phase === 'build' ? '→ This is the DEVELOPMENT. The subject is on-screen — keep it alive with rhythmic in-place motion.' : ''}
-${phase === 'climax' ? '→ This is the PEAK. Maximum energy — bold rotations, fast motion, dramatic flourishes.' : ''}
-${phase === 'resolve' ? '→ This is the RESOLUTION. Settle confidently — final showcase, calmer motion, end on a hold.' : ''}
+NARRATIVE PHASE: ${phase.toUpperCase()} (${i + 1}/${segCount})
+${phase === 'opener' ? '→ HOOK: subject ENTERS from off-screen. Energetic.' : ''}
+${phase === 'build' ? '→ BUILD: subject is on-screen — rhythmic in-place motion.' : ''}
+${phase === 'climax' ? '→ PEAK: bold rotations, max energy.' : ''}
+${phase === 'resolve' ? '→ RESOLUTION: settle into a confident showcase pose.' : ''}
 
-PRIMARY POOL FOR THIS PHASE (pick MOST of your presets from here):
-${palette.join(', ')}
+TASK: Choose all of the following for this beat:
 
-RECENT BEATS (avoid repeating these exact patterns):
+1) MOTION PRESETS — pick EXACTLY ${kfPerSeg} ids from this pool (most must come from the primary pool):
+   PRIMARY POOL (this phase): ${palette.join(', ')}
+   FALLBACK POOL (use sparingly): ${MOTION_PRESETS.filter(p => !palette.includes(p)).join(', ')}
+   - No two consecutive presets identical.
+   - Avoid these (overused): ${overused.length ? overused.join(', ') : '(none yet)'}
+
+2) TEXT — your beat's script line is ALREADY WRITTEN: "${myLine}". Use it verbatim. Do not change it.
+
+3) TEXT ANIMATION — pick ONE that is DIFFERENT from the last two beats (${recentAnims.length ? recentAnims.join(', ') : 'none yet'}):
+   - "typewriter" — types out char-by-char (best for setup/teaser lines)
+   - "pop" — pops one word at a time (best for punchy callouts)
+   - "3d" — bold extruded 3D text (best for dramatic claims, climax)
+   - "none" — instant on (best for very short hits, less than 3 words)
+
+4) TEXT POSITION — pick ONE from this list. AVOID positions used in the last 3 beats (${usedPositions.length ? usedPositions.join(', ') : 'none yet'}). The device is in the center, so NEVER pick "center". Pick from:
+   ${TEXT_POSITIONS.map(p => `${p.id} (x:${p.x}, y:${p.y})`).join(', ')}
+
+5) CAMERA (optional) — empty string or one of: cam_dolly_in, cam_zoom_to_target, cam_pull_back, cam_pan_lr, cam_pan_rl, cam_orbit, cam_punch_in, cam_handheld
+
+${shouldOfferImage ? `6) IMAGE OVERLAY (optional but encouraged for THIS beat) — to add cinematic depth, you may request a generated image overlay. If you want one, fill these:
+   - image_prompt: a detailed cinematic prompt for the supporting image (mood / texture / abstract — NOT the product itself)
+   - image_role: "background" (full canvas behind device) or "accent" (small overlay floating in a corner)
+   Otherwise leave both empty.` : '6) IMAGE OVERLAY — leave empty for this beat.'}
+
+RECENT BEATS:
 ${previous || '(this is the first beat)'}
 
-${overused.length > 0 ? `OVERUSED — DO NOT PICK: ${overused.join(', ')}` : ''}
-
-Hard rules:
-- Pick EXACTLY ${kfPerSeg} preset${kfPerSeg === 1 ? '' : 's'} in play order.
-- At least ${Math.max(1, Math.ceil(kfPerSeg * 0.7))} must come from the PRIMARY POOL above.
-- No two consecutive presets can be identical.
-- Make this beat VISUALLY DIFFERENT from the recent beats above.
-
-Return JSON:
-- preset_ids: array of EXACTLY ${kfPerSeg} preset ids
-- intent: 1 short phrase describing this beat
-- camera_preset: optional camera move from: cam_dolly_in, cam_zoom_to_target, cam_pull_back, cam_pan_lr, cam_pan_rl, cam_orbit, cam_punch_in, cam_handheld (or empty)`,
+Return JSON with: preset_ids, intent, camera_preset, text_animation, text_position_id, image_prompt, image_role.`,
           response_json_schema: {
             type: 'object',
             properties: {
               preset_ids: { type: 'array', items: { type: 'string' } },
               intent: { type: 'string' },
               camera_preset: { type: 'string' },
+              text_animation: { type: 'string' },
+              text_position_id: { type: 'string' },
+              image_prompt: { type: 'string' },
+              image_role: { type: 'string' },
             },
-            required: ['preset_ids', 'intent'],
+            required: ['preset_ids', 'intent', 'text_animation', 'text_position_id'],
           },
         });
-        // Sanitize: ensure exactly kfPerSeg valid, non-repeating-adjacent presets
+
+        // ── Sanitize sub-agent output ────────────────────────────────
         const fallbacks = ['showcase', 'pop', 'float', 'tilt', 'reveal', 'bounce'];
         let ids = (Array.isArray(subAgent.preset_ids) ? subAgent.preset_ids : [])
           .map(id => MOTION_PRESETS.includes(id) ? id : null)
           .filter(Boolean);
-        // Pad with fallbacks if LLM returned too few
         let fb = 0;
         while (ids.length < kfPerSeg) {
           const cand = fallbacks[fb++ % fallbacks.length];
           if (ids[ids.length - 1] !== cand) ids.push(cand);
         }
-        // Trim if too many
         ids = ids.slice(0, kfPerSeg);
-        // Break adjacent duplicates
         for (let j = 1; j < ids.length; j++) {
           if (ids[j] === ids[j - 1]) {
             ids[j] = fallbacks.find(f => f !== ids[j - 1]) || 'pop';
           }
         }
+
+        // Animation: must be valid AND not match the last one
+        let anim = TEXT_ANIMATIONS.includes(subAgent.text_animation) ? subAgent.text_animation : 'pop';
+        if (recentAnims[recentAnims.length - 1] === anim) {
+          anim = TEXT_ANIMATIONS.find(a => a !== anim) || 'pop';
+        }
+        usedAnimations.push(anim);
+
+        // Position: validate, fall back to a varied one if invalid
+        let posId = subAgent.text_position_id;
+        let pos = TEXT_POSITIONS.find(p => p.id === posId);
+        if (!pos) {
+          // pick the first position not used recently
+          pos = TEXT_POSITIONS.find(p => !usedPositions.includes(p.id)) || TEXT_POSITIONS[i % TEXT_POSITIONS.length];
+          posId = pos.id;
+        }
+
         segments.push({
           beat: i + 1,
+          phase,
           preset_ids: ids,
           preset_id: ids[0],
           intent: subAgent.intent || '',
           camera_preset: CAMERA_PRESETS.includes(subAgent.camera_preset) ? subAgent.camera_preset : '',
           duration: segLen,
           keyframes_per_slide: kfPerSeg,
+          // Story / text
+          text: myLine,
+          text_animation: anim,
+          text_position_id: posId,
+          text_x: pos.x,
+          text_y: pos.y,
+          // Optional image overlay (only on every 4th beat at most)
+          image_prompt: shouldOfferImage && subAgent.image_prompt ? subAgent.image_prompt : '',
+          image_role: shouldOfferImage && (subAgent.image_role === 'background' || subAgent.image_role === 'accent')
+            ? subAgent.image_role : '',
         });
       }
 
@@ -333,30 +441,22 @@ Return JSON:
         step: 'choreograph',
         output: {
           segments,
+          script_lines: scriptLines,
           total_duration: totalDur,
           segment_count: segCount,
           keyframes_per_segment: kfPerSeg,
         },
-        // For long-form ads we run an extra "sequence" pass that lets a
-        // master director reorder all chained presets into a globally
-        // coherent narrative arc before critique.
         next_step: 'sequence',
       });
     }
 
     // ── STEP 4.6: SEQUENCE (master director reorder) ───────────────────
-    // Sub-agents only see their own beat. This step gives a SINGLE master
-    // director the full list of chained presets and asks it to decide the
-    // BEST GLOBAL ORDER — opener → build → climax → close — so the ad
-    // feels intentional instead of like 10 disconnected mini-loops.
     if (step === 'sequence') {
       const { choreograph, vibe, research, analysis } = state;
       if (!choreograph?.segments?.length) {
-        // Nothing to reorder — skip straight to critique
-        return Response.json({ step: 'sequence', output: null, next_step: 'critique' });
+        return Response.json({ step: 'sequence', output: null, next_step: 'camera_director' });
       }
 
-      // Flatten all chained presets into one ordered list with their origin beat
       const flat = [];
       choreograph.segments.forEach((seg, beatIdx) => {
         const ids = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
@@ -366,27 +466,27 @@ Return JSON:
       });
 
       const directorOutput = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are the MASTER director of a long-form motion ad. ${choreograph.segment_count} sub-agents each picked 2 presets for their beat. Now YOU decide the BEST GLOBAL ORDER for all ${flat.length} presets so the final ad has a coherent narrative arc.
+        prompt: `You are the MASTER director of a long-form motion ad. Decide the best GLOBAL order for all ${flat.length} chained presets to give a coherent narrative arc.
 
-OVERALL VIBE: "${vibe}"
+VIBE: "${vibe}"
 SUBJECT: ${analysis?.subject || ''}
 PACE: ${research?.recommended_pace || 'medium'}
 TOTAL DURATION: ${choreograph.total_duration}s
 
-CURRENT SUB-AGENT CHAIN (in beat order):
+CURRENT CHAIN (sub-agent order):
 ${flat.map((f, i) => `${i + 1}. ${f.id} (from beat ${f.beat})`).join('\n')}
 
-Your job: pick the optimal play order. Reasoning to apply:
-- OPENING (first 20%): grab attention with a strong entrance — slide-in-*, drop-in, fly-across, zoomin, reveal
-- BUILD (20-60%): rhythmic motion that holds interest — pop, bounce, wobble, tilt, float, showcase
-- CLIMAX (60-85%): peak energy — spin, barrel, orbit, swoop, shake, flip
-- RESOLUTION (last 15%): land the message confidently — showcase, chat-zoom, zoomout, tilt-up, pop
+ARC RULES:
+- OPENING (first 20%): slide-in-*, drop-in, fly-across, zoomin, reveal
+- BUILD (20-60%): pop, bounce, wobble, tilt, float, showcase
+- CLIMAX (60-85%): spin, barrel, orbit, swoop, shake, flip
+- RESOLUTION (last 15%): showcase, chat-zoom, zoomout, tilt-up, pop
 
-Avoid putting two identical presets back-to-back. Vary direction (left/right/up/down). Don't drift in one direction the whole time.
+No two identical presets back-to-back. Vary direction.
 
 Return JSON:
-- ordered_preset_ids: array of EXACTLY ${flat.length} preset ids — must be a permutation of the input list (every input preset appears exactly once)
-- reasoning: 1-2 sentences on the narrative arc you chose`,
+- ordered_preset_ids: permutation of input list (every input appears exactly once)
+- reasoning: 1-2 sentences`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -397,9 +497,6 @@ Return JSON:
         },
       });
 
-      // Validate: every returned id must be a real preset, and the multiset
-      // must match the input (so nothing is dropped/duplicated). If invalid,
-      // fall back to the original sub-agent order.
       const inputCounts = {};
       flat.forEach(f => { inputCounts[f.id] = (inputCounts[f.id] || 0) + 1; });
       const proposed = (directorOutput.ordered_preset_ids || []).filter(id => MOTION_PRESETS.includes(id));
@@ -408,24 +505,19 @@ Return JSON:
       const isValidPermutation = proposed.length === flat.length &&
         Object.keys(inputCounts).every(k => inputCounts[k] === proposedCounts[k]);
 
-      // Deterministic narrative-arc fallback: if the LLM's permutation is invalid,
-      // bucket every preset into opener/build/climax/resolve by its identity, then
-      // lay them out across the timeline in narrative order. This GUARANTEES the
-      // final ad has variety even when the LLM director fails.
       const arcFallback = () => {
         const POOL = {
           opener:  new Set(['slide-in-left', 'slide-in-right', 'slide-up', 'drop-in', 'fly-across', 'swoop', 'reveal', 'zoomin']),
-          climax:  new Set(['spin', 'barrel', 'orbit', 'shake', 'flip', 'zigzag', 'chat-zoom']),
+          climax:  new Set(['spin', 'barrel', 'orbit', 'shake', 'flip', 'chat-zoom']),
           resolve: new Set(['showcase', 'tilt-up', 'zoomout']),
         };
         const buckets = { opener: [], build: [], climax: [], resolve: [] };
         flat.forEach(f => {
-          if (POOL.opener.has(f.id))      buckets.opener.push(f.id);
+          if (POOL.opener.has(f.id)) buckets.opener.push(f.id);
           else if (POOL.climax.has(f.id)) buckets.climax.push(f.id);
-          else if (POOL.resolve.has(f.id))buckets.resolve.push(f.id);
-          else                             buckets.build.push(f.id);
+          else if (POOL.resolve.has(f.id)) buckets.resolve.push(f.id);
+          else buckets.build.push(f.id);
         });
-        // Splay each bucket so identical presets aren't back-to-back
         const splay = (arr) => {
           const groups = {};
           arr.forEach(id => { (groups[id] ||= []).push(id); });
@@ -439,12 +531,7 @@ Return JSON:
           }
           return out;
         };
-        return [
-          ...splay(buckets.opener),
-          ...splay(buckets.build),
-          ...splay(buckets.climax),
-          ...splay(buckets.resolve),
-        ];
+        return [...splay(buckets.opener), ...splay(buckets.build), ...splay(buckets.climax), ...splay(buckets.resolve)];
       };
       const finalOrder = isValidPermutation ? proposed : arcFallback();
 
@@ -454,10 +541,108 @@ Return JSON:
           ordered_preset_ids: finalOrder,
           reasoning: isValidPermutation
             ? (directorOutput.reasoning || '')
-            : 'Director permutation invalid — applied deterministic narrative arc (opener → build → climax → resolve).',
+            : 'Director permutation invalid — applied deterministic narrative arc.',
           used_director_order: isValidPermutation,
         },
-        next_step: 'critique',
+        next_step: 'camera_director',
+      });
+    }
+
+    // ── STEP 4.7: CAMERA DIRECTOR ──────────────────────────────────────
+    // A single director designs a real camera plan: 4-8 cinematic cuts with
+    // intentional pacing. Sub-agents can request camera moves, but the
+    // director has the final say on the GLOBAL camera arc.
+    if (step === 'camera_director') {
+      const { choreograph, vibe, research, analysis } = state;
+      const totalDur = choreograph?.total_duration || 12;
+      const segCount = choreograph?.segment_count || 8;
+
+      // How many camera cuts? ~1 cut per ~5s, min 4, max 8
+      const cutCount = Math.max(4, Math.min(8, Math.round(totalDur / 4)));
+
+      const director = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are the CINEMATOGRAPHER for a ${totalDur}-second motion ad. Design a professional ${cutCount}-cut camera plan.
+
+VIBE: "${vibe}"
+SUBJECT: ${analysis?.subject || ''}
+PACE: ${research?.recommended_pace || 'medium'}
+
+You have these camera presets:
+- cam_dolly_in: slow forward push (great for openers / hero reveals)
+- cam_zoom_to_target: punchy zoom into the focal point
+- cam_pull_back: reveal the wider scene (great for resolutions)
+- cam_pan_lr: pan left → right (great for builds)
+- cam_pan_rl: pan right → left (great for builds, alternates with lr)
+- cam_orbit: circle around the subject (great for climax)
+- cam_punch_in: sudden zoom-in (great for impacts at the climax)
+- cam_handheld: subtle shake (great for energetic builds)
+
+PROFESSIONAL CINEMATOGRAPHY RULES:
+- OPEN with a movement that introduces the subject (dolly_in or zoom_to_target).
+- BUILD with horizontal movement or handheld energy.
+- CLIMAX with one bold move (orbit, punch_in).
+- RESOLVE with stillness or a slow pull_back.
+- Never repeat the same cut back-to-back.
+- Vary cut LENGTHS — don't make every cut the same duration. Quick cuts (1-2s) build energy, slow cuts (4-6s) breathe.
+- Cuts must total exactly ${totalDur}s.
+
+Return JSON:
+- cuts: array of EXACTLY ${cutCount} entries, each:
+  { camera_preset, duration_sec (number), intent (1 short phrase) }
+- reasoning: 1 sentence on the overall cinematic arc.
+
+The cuts must be in PLAYBACK ORDER and their durations must sum to ${totalDur}s.`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            cuts: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  camera_preset: { type: 'string' },
+                  duration_sec: { type: 'number' },
+                  intent: { type: 'string' },
+                },
+                required: ['camera_preset', 'duration_sec'],
+              },
+            },
+            reasoning: { type: 'string' },
+          },
+          required: ['cuts'],
+        },
+      });
+
+      // Sanitize: keep only valid cuts, normalize durations to fit totalDur
+      let cuts = (director.cuts || [])
+        .filter(c => CAMERA_PRESETS.includes(c.camera_preset) && c.duration_sec > 0);
+      if (cuts.length === 0) {
+        // Deterministic fallback
+        cuts = [
+          { camera_preset: 'cam_dolly_in', duration_sec: totalDur * 0.25, intent: 'open' },
+          { camera_preset: 'cam_pan_lr',   duration_sec: totalDur * 0.25, intent: 'build' },
+          { camera_preset: 'cam_orbit',    duration_sec: totalDur * 0.25, intent: 'climax' },
+          { camera_preset: 'cam_pull_back',duration_sec: totalDur * 0.25, intent: 'resolve' },
+        ];
+      }
+      // Avoid back-to-back duplicates
+      for (let i = 1; i < cuts.length; i++) {
+        if (cuts[i].camera_preset === cuts[i - 1].camera_preset) {
+          const alt = CAMERA_PRESETS.find(c => c !== cuts[i - 1].camera_preset);
+          cuts[i] = { ...cuts[i], camera_preset: alt };
+        }
+      }
+      // Normalize durations to sum to totalDur
+      const sum = cuts.reduce((a, c) => a + c.duration_sec, 0);
+      if (sum > 0 && Math.abs(sum - totalDur) > 0.1) {
+        const scale = totalDur / sum;
+        cuts = cuts.map(c => ({ ...c, duration_sec: c.duration_sec * scale }));
+      }
+
+      return Response.json({
+        step: 'camera_director',
+        output: { cuts, reasoning: director.reasoning || '' },
+        next_step: 'refine',
       });
     }
 
@@ -466,7 +651,7 @@ Return JSON:
       const { plan, critique, vibe, choreograph, target_duration } = state;
 
       const refined = await base44.integrations.Core.InvokeLLM({
-        prompt: `Apply the director's critique and produce v2 of the plan. Keep what works; fix every issue called out.
+        prompt: `Apply the director's critique and produce v2 of the plan.
 
 ORIGINAL PLAN:
 ${JSON.stringify(plan, null, 2)}
@@ -477,14 +662,14 @@ CRITIQUE:
 
 Goal vibe: "${vibe}"
 
-Return the FINAL JSON plan with the same shape:
-- tagline: 2-6 words or empty
+Return final JSON with the same shape:
+- tagline: 2-6 words
 - preset_id: ONE of: ${MOTION_PRESETS.join(', ')}
 - camera_preset: ONE of: ${CAMERA_PRESETS.join(', ')} (or empty)
 - background: ONE of: ${BACKGROUNDS.join(', ')}
 - device: ONE of: ${DEVICES.join(', ')}
 - duration: integer 3-8
-- reasoning: one sentence on what changed and why it's now better`,
+- reasoning: one sentence`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -500,33 +685,24 @@ Return the FINAL JSON plan with the same shape:
         },
       });
 
-      // For long-form ads, the refine LLM only knows about the v1 single-preset
-      // duration (3-8s). Override with the REAL total duration from choreograph
-      // so the plan card shows the truth (e.g. 30s, not 4s).
       const realDuration = choreograph?.total_duration || target_duration || refined.duration;
       const finalRefined = { ...refined, duration: realDuration };
 
-      return Response.json({
-        step: 'refine',
-        output: finalRefined,
-        next_step: 'done',
-      });
+      return Response.json({ step: 'refine', output: finalRefined, next_step: 'done' });
     }
 
-    // ── STEP 6: DONE — build render URL ────────────────────────────────
+    // ── STEP 6: DONE ───────────────────────────────────────────────────
     if (step === 'done') {
       const { plan, media_url, email, choreograph, sequence, speed } = state;
       if (!plan || !media_url) {
-        return Response.json({ error: 'Missing plan or media_url for done step' }, { status: 400 });
+        return Response.json({ error: 'Missing plan or media_url' }, { status: 400 });
       }
 
-      // Sanitize against allowed values
       const preset = MOTION_PRESETS.includes(plan.preset_id) ? plan.preset_id : 'showcase';
       const background = BACKGROUNDS.includes(plan.background) ? plan.background : 'sunset';
       const device = DEVICES.includes(plan.device) ? plan.device : 'iphone';
       const playSpeed = Math.max(0.25, Math.min(4, Number(speed) || 1));
 
-      // If a choreograph (sub-agent loop) ran, use its segments as a chain.
       let duration;
       const params = new URLSearchParams({
         auto: '1',
@@ -537,26 +713,19 @@ Return the FINAL JSON plan with the same shape:
       });
 
       if (choreograph?.segments?.length) {
-        // Prefer the master director's globally-sequenced order if available.
-        // Otherwise fall back to the raw sub-agent beat order.
         let chainIds;
         if (Array.isArray(sequence?.ordered_preset_ids) && sequence.ordered_preset_ids.length > 0) {
-          chainIds = sequence.ordered_preset_ids
-            .map(id => MOTION_PRESETS.includes(id) ? id : 'showcase');
+          chainIds = sequence.ordered_preset_ids.map(id => MOTION_PRESETS.includes(id) ? id : 'showcase');
         } else {
           chainIds = [];
           for (const seg of choreograph.segments) {
             const ids = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
-            for (const id of ids) {
-              chainIds.push(MOTION_PRESETS.includes(id) ? id : 'showcase');
-            }
+            for (const id of ids) chainIds.push(MOTION_PRESETS.includes(id) ? id : 'showcase');
           }
         }
-        const chain = chainIds.join(',');
         duration = Math.max(8, Math.min(60, Math.round(choreograph.total_duration || 12)));
-        params.set('chain', chain);
+        params.set('chain', chainIds.join(','));
         params.set('duration', String(duration));
-        // Use the first segment's camera if any
         const firstCam = choreograph.segments.find(s => CAMERA_PRESETS.includes(s.camera_preset))?.camera_preset;
         if (firstCam) params.set('camera', firstCam);
       } else {

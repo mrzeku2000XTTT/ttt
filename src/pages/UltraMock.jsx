@@ -302,6 +302,26 @@ export default function UltraMockPage() {
     const autoCamera = params.get("camera") || ""; // optional camera preset id
     // Multi-segment chain: comma-separated preset ids ("slide-in-left,zoomin,bounce")
     const autoChain = (params.get("chain") || "").split(",").map(s => s.trim()).filter(Boolean);
+    // Per-beat text track from Katagami sub-agents (base64'd JSON of [{t,a,x,y,d}])
+    let autoBeats = [];
+    const beatsParam = params.get("beats");
+    if (beatsParam) {
+      try {
+        const json = decodeURIComponent(escape(atob(beatsParam)));
+        const parsed = JSON.parse(json);
+        if (Array.isArray(parsed)) autoBeats = parsed;
+      } catch { /* ignore malformed beats */ }
+    }
+    // Cinematographer's camera plan: "preset:dur,preset:dur,..." — applied as
+    // a chain on the camera track so cuts play in real order.
+    const autoCamPlan = (params.get("camplan") || "")
+      .split(",")
+      .map((s) => {
+        const [id, dur] = s.split(":");
+        const d = parseFloat(dur);
+        return id && d > 0 ? { id: id.trim(), dur: d } : null;
+      })
+      .filter(Boolean);
 
     // Render-mode hides outlines, ×, zoom controls, mobile bar — clean recording.
     // For apply-only mode (Katagami handoff) we WANT the editor UI visible.
@@ -310,19 +330,40 @@ export default function UltraMockPage() {
     setDuration(autoDuration);
 
     // Build a fresh, simple template: tagline up top + one device in the middle
-    const textItem = autoText
-      ? makeText({
-          text: autoText,
-          x: 50, y: 14, fontSize: 56, fontWeight: 900, color: "#ffffff",
-          animation: "typewriter", typeSpeed: 14, loopDelay: 1.5, boxWidth: 90,
-        })
-      : null;
+    // PLUS — when autoBeats are provided (Katagami flow) — one text item per
+    // beat, each with its own animation, position, and unique script line.
     const deviceItem = makeItem({
       device: autoDevice,
       x: 50, y: 55, scale: 0.85,
       media: autoMedia ? { url: autoMedia, type: "image", name: "auto" } : null,
     });
-    const fresh = textItem ? [textItem, deviceItem] : [deviceItem];
+    const fresh = [];
+    if (autoBeats.length > 0) {
+      // Per-beat texts: spread them across the timeline. Each one gets its
+      // own typewriter/pop/3d animation + non-overlapping position.
+      autoBeats.forEach((b) => {
+        if (!b.t) return;
+        fresh.push(makeText({
+          text: b.t,
+          x: typeof b.x === "number" ? b.x : 50,
+          y: typeof b.y === "number" ? b.y : 14,
+          fontSize: 48,
+          fontWeight: 900,
+          color: "#ffffff",
+          animation: ["typewriter", "pop", "3d", "none"].includes(b.a) ? b.a : "pop",
+          typeSpeed: 18,
+          loopDelay: 1.5,
+          boxWidth: 80,
+        }));
+      });
+    } else if (autoText) {
+      fresh.push(makeText({
+        text: autoText,
+        x: 50, y: 14, fontSize: 56, fontWeight: 900, color: "#ffffff",
+        animation: "typewriter", typeSpeed: 14, loopDelay: 1.5, boxWidth: 90,
+      }));
+    }
+    fresh.push(deviceItem);
     setItems(fresh);
     // Don't select anything — keeps render frame clean (no cyan outline, no ×)
     setSelectedId(deviceItem.id);
@@ -353,8 +394,17 @@ export default function UltraMockPage() {
         } else if (timelineRef.current?.applyPresetById) {
           timelineRef.current.applyPresetById(autoPreset, "replace");
         }
-        // Optional camera preset across the whole scene
-        if (autoCamera && timelineRef.current?.applyCameraPresetById) {
+        // CINEMATOGRAPHER'S CAMERA PLAN — applied as a chain so each cut
+        // plays for its director-assigned duration. Falls back to the simple
+        // single-preset `autoCamera` when no camplan is provided.
+        if (autoCamPlan.length > 0 && timelineRef.current?.applyCameraPresetById) {
+          timelineRef.current.clearCameraTrack?.();
+          for (let i = 0; i < autoCamPlan.length; i++) {
+            const { id, dur } = autoCamPlan[i];
+            timelineRef.current.applyCameraPresetById(id, "append", dur);
+            await new Promise((r) => setTimeout(r, 60));
+          }
+        } else if (autoCamera && timelineRef.current?.applyCameraPresetById) {
           timelineRef.current.applyCameraPresetById(autoCamera, "replace");
         }
       } catch (e) { console.warn("preset apply failed", e); }

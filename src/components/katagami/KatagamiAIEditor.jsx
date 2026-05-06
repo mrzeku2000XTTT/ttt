@@ -66,7 +66,7 @@ CRAFT RULES: every motion uses ease-out or ease-in-out (NEVER linear). Text is A
  */
 
 const SHORT_STEPS = ["research", "analyze_media", "plan", "critique", "refine", "done"];
-const LONG_STEPS  = ["research", "analyze_media", "plan", "choreograph", "sequence", "critique", "refine", "done"];
+const LONG_STEPS  = ["research", "analyze_media", "plan", "choreograph", "sequence", "camera_director", "critique", "refine", "done"];
 
 const SPEED_OPTIONS = [
   { value: 0.5, label: "0.5×", desc: "Slow / cinematic" },
@@ -97,6 +97,7 @@ export default function KatagamiAIEditor() {
   // chain into Cháoxiào when "Open in Cháoxiào" is clicked.
   const [choreograph, setChoreograph] = useState(null);
   const [sequence, setSequence] = useState(null);
+  const [cameraPlan, setCameraPlan] = useState(null); // { cuts: [...], reasoning }
   const [finalPlan, setFinalPlan] = useState(null);
   const [uploadedMediaUrl, setUploadedMediaUrl] = useState(null);
   const [dragOver, setDragOver] = useState(false);
@@ -145,6 +146,30 @@ export default function KatagamiAIEditor() {
       }
       if (chainIds.length > 0) params.set("chain", chainIds.join(","));
 
+      // Per-beat text track — ALL the sub-agent script lines (one per beat).
+      // We pass them as a single base64'd JSON blob so newlines/quotes survive.
+      if (choreograph?.segments?.length) {
+        const beats = choreograph.segments.map((s) => ({
+          t: s.text || "",
+          a: s.text_animation || "pop",
+          x: s.text_x ?? 50,
+          y: s.text_y ?? 12,
+          d: s.duration || 1.5,
+        }));
+        try {
+          const blob = btoa(unescape(encodeURIComponent(JSON.stringify(beats))));
+          params.set("beats", blob);
+        } catch { /* ignore */ }
+      }
+
+      // Camera director cuts — passed as comma-separated preset|duration pairs
+      if (cameraPlan?.cuts?.length) {
+        const camPlan = cameraPlan.cuts
+          .map((c) => `${c.camera_preset}:${(c.duration_sec || 0).toFixed(2)}`)
+          .join(",");
+        params.set("camplan", camPlan);
+      }
+
       // Media — reuse already-uploaded URL when available, otherwise upload now
       let mediaUrl = uploadedMediaUrl;
       if (!mediaUrl && file) {
@@ -181,6 +206,7 @@ export default function KatagamiAIEditor() {
     setRenderUrl(null);
     setChoreograph(null);
     setSequence(null);
+    setCameraPlan(null);
     setFinalPlan(null);
     setUploadedMediaUrl(null);
   }, []);
@@ -203,6 +229,7 @@ export default function KatagamiAIEditor() {
     setRunning(false);
     setChoreograph(null);
     setSequence(null);
+    setCameraPlan(null);
     setFinalPlan(null);
     setUploadedMediaUrl(null);
   };
@@ -255,6 +282,7 @@ export default function KatagamiAIEditor() {
         else if (step === "plan")          state = { ...state, plan: data.output };
         else if (step === "choreograph")   { state = { ...state, choreograph: data.output }; setChoreograph(data.output); }
         else if (step === "sequence")      { state = { ...state, sequence: data.output };    setSequence(data.output); }
+        else if (step === "camera_director") { state = { ...state, camera_director: data.output }; setCameraPlan(data.output); }
         else if (step === "critique")      state = { ...state, critique: data.output };
         else if (step === "refine")        { state = { ...state, plan: data.output };        setFinalPlan(data.output); }
         else if (step === "done" && data.render_url) setRenderUrl(data.render_url);

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Eye, Wand2, Gavel, Sparkles, CheckCircle2, Loader2,
-  Film, ExternalLink, AlertCircle, Bot, ChevronDown, ChevronRight, Layers, ListOrdered
+  Film, ExternalLink, AlertCircle, Bot, ChevronDown, ChevronRight, Layers, ListOrdered, Camera
 } from "lucide-react";
 
 /**
@@ -17,6 +17,7 @@ const STEP_META = {
   plan:          { icon: Wand2,     label: "Designing v1 motion plan",          color: "from-fuchsia-500 to-pink-500" },
   choreograph:   { icon: Layers,    label: "Sub-agents choreographing beats",   color: "from-indigo-500 to-purple-500" },
   sequence:      { icon: ListOrdered, label: "Master director sequencing beats", color: "from-purple-500 to-pink-500" },
+  camera_director: { icon: Camera,  label: "Cinematographer planning camera cuts", color: "from-pink-500 to-rose-500" },
   critique:      { icon: Gavel,     label: "Self-critique pass",                color: "from-orange-500 to-red-500" },
   refine:        { icon: Sparkles,  label: "Refining into final plan",          color: "from-amber-400 to-orange-500" },
   done:          { icon: CheckCircle2, label: "Final cut ready",                color: "from-emerald-500 to-cyan-500" },
@@ -285,20 +286,58 @@ function StepBody({ step, output }) {
           {(output.segments || []).map((seg, i) => {
             const presets = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
             return (
-              <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
-                  {seg.beat}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] text-white font-bold truncate">
-                    {presets.join(" → ")}{seg.camera_preset ? ` + ${seg.camera_preset}` : ""}
+              <div key={i} className="px-2 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
+                    {seg.beat}
                   </div>
-                  <div className="text-[10px] text-white/50 truncate">{seg.intent}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] text-white font-bold truncate">
+                      {presets.join(" → ")}{seg.camera_preset ? ` + ${seg.camera_preset}` : ""}
+                    </div>
+                  </div>
+                </div>
+                {seg.text && (
+                  <div className="ml-7 mb-0.5 text-[11px] text-fuchsia-200 italic truncate">"{seg.text}"</div>
+                )}
+                <div className="ml-7 flex items-center gap-1.5 flex-wrap text-[9px] text-white/50">
+                  {seg.text_animation && <span className="px-1.5 py-0.5 rounded bg-white/10 font-bold">{seg.text_animation}</span>}
+                  {seg.text_position_id && <span className="px-1.5 py-0.5 rounded bg-white/5">@ {seg.text_position_id}</span>}
+                  {seg.image_prompt && <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">+ image ({seg.image_role})</span>}
                 </div>
               </div>
             );
           })}
         </div>
+      </div>
+    );
+  }
+
+  if (step === "camera_director") {
+    const cuts = output.cuts || [];
+    return (
+      <div className="space-y-2">
+        <div className="text-[10px] text-white/50">
+          {cuts.length} professional camera cuts · total {cuts.reduce((a, c) => a + (c.duration_sec || 0), 0).toFixed(1)}s
+        </div>
+        <div className="space-y-1">
+          {cuts.map((c, i) => (
+            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-pink-500/10 border border-pink-500/20">
+              <div className="w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
+                {i + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-white font-bold truncate">
+                  {c.camera_preset} <span className="text-pink-200/60 font-mono">· {(c.duration_sec || 0).toFixed(1)}s</span>
+                </div>
+                {c.intent && <div className="text-[10px] text-white/50 truncate">{c.intent}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+        {output.reasoning && (
+          <div className="text-[11px] text-white/60 italic">"{output.reasoning}"</div>
+        )}
       </div>
     );
   }

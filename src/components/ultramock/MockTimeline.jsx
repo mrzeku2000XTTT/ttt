@@ -447,7 +447,7 @@ const MockTimeline = forwardRef(function MockTimeline({
   // (which would leave the entire intro of a video without any camera motion).
   const CAMERA_MAX_START = 30;
 
-  const applyCameraPreset = (preset, modeOverride = null) => {
+  const applyCameraPreset = (preset, modeOverride = null, segmentLengthOverride = null) => {
     const mode = modeOverride || presetMode;
     // Use the currently selected item as the camera focus target
     const target = (selected && typeof selected.x === "number" && typeof selected.y === "number")
@@ -465,7 +465,7 @@ const MockTimeline = forwardRef(function MockTimeline({
     }
 
     // APPEND — clamp the start so the first new key never lands past 30s
-    const segLen = Math.max(0.5, presetSegment);
+    const segLen = Math.max(0.5, segmentLengthOverride != null ? segmentLengthOverride : presetSegment);
     const lastKeyT = cameraTrack.length ? Math.max(...cameraTrack.map((k) => k.t)) : 0;
     const rawStartT = Math.max(playhead, lastKeyT);
     const startT = Math.min(rawStartT, CAMERA_MAX_START);
@@ -619,10 +619,10 @@ const MockTimeline = forwardRef(function MockTimeline({
       if (!preset) return false;
       return applyPreset(preset, null, mode, segmentLength);
     },
-    applyCameraPresetById: (id, mode = "replace") => {
+    applyCameraPresetById: (id, mode = "replace", segmentLength = null) => {
       const preset = CAMERA_PRESETS.find((p) => p.id === id);
       if (!preset) return false;
-      return applyCameraPreset(preset, mode);
+      return applyCameraPreset(preset, mode, segmentLength);
     },
     clearCameraTrack: () => clearCameraTrack(),
     clearKeyframes: () => {
