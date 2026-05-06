@@ -215,60 +215,76 @@ Return JSON:
     // a fresh sub-agent for every beat, and stitch their outputs into a
     // multi-segment preset chain the timeline can play back-to-back.
     if (step === 'choreograph') {
-      const { plan, research, analysis, vibe, target_duration, segment_count } = state;
-      // Always spawn at least 10 sub-agents for long-form ads — fewer beats = boring.
-      const segCount = Math.max(10, Math.min(20, parseInt(segment_count) || 10));
-      const totalDur = Math.max(8, Math.min(60, parseInt(target_duration) || 12));
+      const { plan, research, analysis, vibe, target_duration, segment_count, keyframes_per_segment } = state;
+      // User-controlled: 4–30 sub-agents (slides). Default 20.
+      const segCount = Math.max(4, Math.min(30, parseInt(segment_count) || 20));
+      const totalDur = Math.max(4, Math.min(60, parseInt(target_duration) || 12));
       const segLen = totalDur / segCount;
+      // Keyframes per slide — controls how many chained motion presets each
+      // sub-agent picks. 1 = simple single move, 6 = rich multi-flourish.
+      const kfPerSeg = Math.max(1, Math.min(6, parseInt(keyframes_per_segment) || 3));
 
       const segments = [];
       // Sub-agent loop — each call is a fresh director designing ONE beat
-      // with TWO chained motion presets so each beat has 5-10 keyframes.
+      // with `kfPerSeg` chained motion presets, so each beat has rich motion.
       for (let i = 0; i < segCount; i++) {
         const previous = segments.map((s, idx) => `Beat ${idx + 1}: ${s.preset_ids.join('+')} — ${s.intent}`).join(' · ');
         const subAgent = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing a long-form motion ad. Design ONLY beat ${i + 1} with 2 chained motion presets so this beat has 5-10 keyframes of rich motion.
+          prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing a long-form motion ad. Design ONLY beat ${i + 1} with EXACTLY ${kfPerSeg} chained motion preset${kfPerSeg === 1 ? '' : 's'} so this beat has rich motion.
 
 OVERALL VIBE: "${vibe}"
 SUBJECT: ${analysis?.subject || ''}
 RECOMMENDED PACE: ${research?.recommended_pace || 'medium'}
 PRINCIPLES: ${(research?.key_principles || []).slice(0, 3).join(' · ')}
-TOTAL DURATION: ${totalDur}s split into ${segCount} beats of ~${segLen.toFixed(1)}s each
+TOTAL DURATION: ${totalDur}s split into ${segCount} beats of ~${segLen.toFixed(2)}s each
 BEAT POSITION: ${i + 1}/${segCount} (${i === 0 ? 'opener — hook the viewer' : i === segCount - 1 ? 'closer — land the message' : 'middle — build tension'})
 PREVIOUS BEATS: ${previous || '(none — this is the opener)'}
 
-Pick EXACTLY 2 motion presets that flow into each other from: spin, tilt, pop, float, reveal, flip, wobble, zoomin, zoomout, tilt-up, showcase, shake, barrel, slide-in-left, slide-in-right, slide-up, drop-in, fly-across, orbit, bounce, pendulum, swoop, chat-zoom
+Pick EXACTLY ${kfPerSeg} motion preset${kfPerSeg === 1 ? '' : 's'} that flow into each other, from: spin, tilt, pop, float, reveal, flip, wobble, zoomin, zoomout, tilt-up, showcase, shake, barrel, slide-in-left, slide-in-right, slide-up, drop-in, fly-across, orbit, bounce, pendulum, swoop, chat-zoom
 
-Pair them so the first sets up and the second pays off (e.g. "slide-in-left" → "pop" for entrance+landing, or "zoomin" → "spin" for arrival+flourish).
+Sequence them so each preset builds on the last: setup → development → payoff. Avoid using the same preset twice in a row.
 
 Return JSON:
-- primary_preset: first preset id (the setup/entrance)
-- secondary_preset: second preset id (the payoff/flourish), MUST be different from primary
-- intent: 1 short phrase describing the emotional beat (e.g. "punchy entrance + bouncy landing", "elegant arrival + confident hold")
+- preset_ids: array of EXACTLY ${kfPerSeg} preset ids in play order
+- intent: 1 short phrase describing the emotional beat (e.g. "punchy entrance + bouncy landing")
 - camera_preset: optional camera move from: cam_dolly_in, cam_zoom_to_target, cam_pull_back, cam_pan_lr, cam_pan_rl, cam_orbit, cam_punch_in, cam_handheld (or empty)`,
           response_json_schema: {
             type: 'object',
             properties: {
-              primary_preset: { type: 'string' },
-              secondary_preset: { type: 'string' },
+              preset_ids: { type: 'array', items: { type: 'string' } },
               intent: { type: 'string' },
               camera_preset: { type: 'string' },
             },
-            required: ['primary_preset', 'secondary_preset', 'intent'],
+            required: ['preset_ids', 'intent'],
           },
         });
-        // Sanitize each sub-agent output — fall back to safe defaults if invalid
-        const primary = MOTION_PRESETS.includes(subAgent.primary_preset) ? subAgent.primary_preset : 'showcase';
-        let secondary = MOTION_PRESETS.includes(subAgent.secondary_preset) ? subAgent.secondary_preset : 'pop';
-        if (secondary === primary) secondary = primary === 'pop' ? 'showcase' : 'pop';
+        // Sanitize: ensure exactly kfPerSeg valid, non-repeating-adjacent presets
+        const fallbacks = ['showcase', 'pop', 'float', 'tilt', 'reveal', 'bounce'];
+        let ids = (Array.isArray(subAgent.preset_ids) ? subAgent.preset_ids : [])
+          .map(id => MOTION_PRESETS.includes(id) ? id : null)
+          .filter(Boolean);
+        // Pad with fallbacks if LLM returned too few
+        let fb = 0;
+        while (ids.length < kfPerSeg) {
+          const cand = fallbacks[fb++ % fallbacks.length];
+          if (ids[ids.length - 1] !== cand) ids.push(cand);
+        }
+        // Trim if too many
+        ids = ids.slice(0, kfPerSeg);
+        // Break adjacent duplicates
+        for (let j = 1; j < ids.length; j++) {
+          if (ids[j] === ids[j - 1]) {
+            ids[j] = fallbacks.find(f => f !== ids[j - 1]) || 'pop';
+          }
+        }
         segments.push({
           beat: i + 1,
-          preset_ids: [primary, secondary],
-          // Keep preset_id for back-compat with any UI that reads single preset
-          preset_id: primary,
+          preset_ids: ids,
+          preset_id: ids[0],
           intent: subAgent.intent || '',
           camera_preset: CAMERA_PRESETS.includes(subAgent.camera_preset) ? subAgent.camera_preset : '',
           duration: segLen,
+          keyframes_per_slide: kfPerSeg,
         });
       }
 
@@ -278,6 +294,7 @@ Return JSON:
           segments,
           total_duration: totalDur,
           segment_count: segCount,
+          keyframes_per_segment: kfPerSeg,
         },
         // For long-form ads we run an extra "sequence" pass that lets a
         // master director reorder all chained presets into a globally

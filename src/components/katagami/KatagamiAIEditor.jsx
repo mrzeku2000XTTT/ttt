@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge, Zap, Film, Megaphone } from "lucide-react";
+import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge, Zap, Film, Megaphone, Users, Layers } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import KatagamiAgentChat from "./KatagamiAgentChat";
 
@@ -13,10 +13,12 @@ const QUICK_PRESETS = [
     label: "Motion Ad",
     icon: Megaphone,
     vibe: "premium product motion ad — punchy 0.4s text pops, dolly-in into the hero, kinetic flourishes, cinematic color grade, end on a confident product hold",
-    duration: 20,
+    duration: 30,
     speed: 1,
+    slides: 20,
+    kf: 3,
     color: "from-fuchsia-500 to-orange-500",
-    desc: "20s · 10 sub-agents · long-form ad",
+    desc: "30s · 20 slides × 3 kfs",
   },
   {
     id: "teaser",
@@ -25,18 +27,22 @@ const QUICK_PRESETS = [
     vibe: "fast energetic teaser — snappy reveals, kinetic typography, modern app vibes",
     duration: 6,
     speed: 1,
+    slides: 4,
+    kf: 2,
     color: "from-cyan-500 to-blue-500",
-    desc: "6s · single-shot · punchy",
+    desc: "6s · 4 slides × 2 kfs",
   },
   {
     id: "cinematic",
     label: "Cinematic",
     icon: Film,
     vibe: "moody cinematic teaser — slow dolly, dramatic lighting, prestige film grading, deliberate pacing",
-    duration: 14,
+    duration: 20,
     speed: 0.5,
+    slides: 10,
+    kf: 4,
     color: "from-violet-500 to-fuchsia-500",
-    desc: "14s · multi-agent · slow & moody",
+    desc: "20s · 10 slides × 4 kfs",
   },
 ];
 
@@ -65,6 +71,11 @@ export default function KatagamiAIEditor() {
   const [email, setEmail] = useState("");
   const [duration, setDurationSec] = useState(6); // 4-30s — > 8 triggers multi-agent loop
   const [speed, setSpeed] = useState(1);          // 0.5 / 1 / 2
+  // Enhanced ad controls — user-adjustable agent count + keyframes per slide.
+  // Each "slide" = one beat handled by one sub-agent. Keyframes-per-slide
+  // controls how many chained motion presets that beat gets.
+  const [slideCount, setSlideCount] = useState(20);    // 4–30 slides (sub-agents)
+  const [kfPerSlide, setKfPerSlide] = useState(3);     // 1–6 keyframes per slide
 
   const [working, setWorking] = useState(null);   // current step name while in-flight
   const [messages, setMessages] = useState([]);   // [{step, output}]
@@ -121,10 +132,10 @@ export default function KatagamiAIEditor() {
       if (!file_url) throw new Error("Upload failed");
 
       const media_type = file.type.startsWith("video/") ? "video" : "image";
-      const isLong = duration > 8;
-      // Long-form ALWAYS spawns 10 sub-agents (one per beat). They share the
-      // total duration so each beat is `duration / 10` seconds long.
-      const segmentCount = isLong ? 10 : 0;
+      // Long-form mode is ON whenever the user wants more than 1 slide.
+      // Each slide = one sub-agent beat.
+      const isLong = slideCount > 1 && duration > 4;
+      const segmentCount = isLong ? slideCount : 0;
       const STEPS = isLong ? LONG_STEPS : SHORT_STEPS;
 
       let state = {
@@ -134,6 +145,7 @@ export default function KatagamiAIEditor() {
         email: email.trim() || undefined,
         target_duration: duration,
         segment_count: segmentCount,
+        keyframes_per_segment: kfPerSlide,
         speed,
       };
 
@@ -238,7 +250,7 @@ export default function KatagamiAIEditor() {
             <div className="grid grid-cols-3 gap-1.5">
               {QUICK_PRESETS.map((p) => {
                 const Icon = p.icon;
-                const isActive = vibe === p.vibe && duration === p.duration && speed === p.speed;
+                const isActive = vibe === p.vibe && duration === p.duration && speed === p.speed && slideCount === p.slides && kfPerSlide === p.kf;
                 return (
                   <button
                     key={p.id}
@@ -247,6 +259,8 @@ export default function KatagamiAIEditor() {
                       setVibe(p.vibe);
                       setDurationSec(p.duration);
                       setSpeed(p.speed);
+                      setSlideCount(p.slides);
+                      setKfPerSlide(p.kf);
                     }}
                     disabled={running}
                     title={p.desc}
@@ -278,56 +292,104 @@ export default function KatagamiAIEditor() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {/* Duration */}
-            <div>
-              <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <Clock className="w-3 h-3" /> Duration
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={4}
-                  max={30}
-                  step={1}
-                  value={duration}
-                  onChange={(e) => setDurationSec(Number(e.target.value))}
-                  disabled={running}
-                  className="flex-1 accent-fuchsia-400"
-                />
-                <span className="text-white font-mono text-xs tabular-nums w-8 text-right">{duration}s</span>
+          {/* Enhanced Ad Controls — agents, keyframes per slide, duration */}
+          <div className="rounded-xl bg-gradient-to-br from-fuchsia-950/40 to-orange-950/30 border border-fuchsia-500/20 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-fuchsia-300">
+                <Sparkles className="w-3 h-3" /> Enhanced Ad
               </div>
-              <div className="text-[10px] text-white/40 mt-1">
-                {duration > 8 ? `🤖 Multi-agent · 10 sub-agents (${(duration / 10).toFixed(1)}s/beat)` : "Single-shot"}
+              <div className="text-[10px] font-mono tabular-nums text-white/70">
+                {slideCount} slides × {kfPerSlide} kfs = <span className="text-fuchsia-300 font-bold">{slideCount * kfPerSlide}</span> keyframes
               </div>
             </div>
 
-            {/* Speed */}
+            {/* Slides (sub-agents) */}
             <div>
-              <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <Gauge className="w-3 h-3" /> Render speed
+              <label className="text-[10px] font-bold text-white/70 uppercase tracking-wider mb-1 flex items-center gap-1.5 justify-between">
+                <span className="flex items-center gap-1.5"><Users className="w-3 h-3" /> Slides / Sub-agents</span>
+                <span className="text-fuchsia-300 font-mono">{slideCount}</span>
               </label>
-              <div className="flex items-center gap-1 p-1 rounded-lg bg-white/5 border border-white/10">
-                {SPEED_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setSpeed(opt.value)}
-                    disabled={running}
-                    title={opt.desc}
-                    className={`flex-1 h-7 rounded-md text-[11px] font-bold transition-colors ${
-                      speed === opt.value
-                        ? "bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/30"
-                        : "text-white/60 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              <input
+                type="range"
+                min={4}
+                max={30}
+                step={1}
+                value={slideCount}
+                onChange={(e) => setSlideCount(Number(e.target.value))}
+                disabled={running}
+                className="w-full accent-fuchsia-400"
+              />
+              <div className="flex justify-between text-[9px] text-white/30 mt-0.5">
+                <span>4</span><span>20 (default)</span><span>30</span>
               </div>
-              <div className="text-[10px] text-white/40 mt-1">
-                {SPEED_OPTIONS.find(o => o.value === speed)?.desc}
+            </div>
+
+            {/* Keyframes per slide */}
+            <div>
+              <label className="text-[10px] font-bold text-white/70 uppercase tracking-wider mb-1 flex items-center gap-1.5 justify-between">
+                <span className="flex items-center gap-1.5"><Layers className="w-3 h-3" /> Keyframes / Slide</span>
+                <span className="text-fuchsia-300 font-mono">{kfPerSlide}</span>
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={6}
+                step={1}
+                value={kfPerSlide}
+                onChange={(e) => setKfPerSlide(Number(e.target.value))}
+                disabled={running}
+                className="w-full accent-fuchsia-400"
+              />
+              <div className="flex justify-between text-[9px] text-white/30 mt-0.5">
+                <span>1 (simple)</span><span>3 (rich)</span><span>6 (max)</span>
               </div>
+            </div>
+
+            {/* Duration estimate */}
+            <div>
+              <label className="text-[10px] font-bold text-white/70 uppercase tracking-wider mb-1 flex items-center gap-1.5 justify-between">
+                <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> Total Duration</span>
+                <span className="text-fuchsia-300 font-mono">{duration}s</span>
+              </label>
+              <input
+                type="range"
+                min={4}
+                max={60}
+                step={1}
+                value={duration}
+                onChange={(e) => setDurationSec(Number(e.target.value))}
+                disabled={running}
+                className="w-full accent-fuchsia-400"
+              />
+              <div className="text-[10px] text-white/50 mt-1 flex items-center justify-between">
+                <span>~{(duration / slideCount).toFixed(2)}s per slide</span>
+                <span>~{((duration / slideCount) / kfPerSlide).toFixed(2)}s per keyframe</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Speed */}
+          <div>
+            <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <Gauge className="w-3 h-3" /> Render speed
+            </label>
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-white/5 border border-white/10">
+              {SPEED_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setSpeed(opt.value)}
+                  disabled={running}
+                  title={opt.desc}
+                  className={`flex-1 h-8 rounded-md text-[11px] font-bold transition-colors ${
+                    speed === opt.value
+                      ? "bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/30"
+                      : "text-white/60 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {opt.label} <span className="font-normal text-[9px] opacity-60">· {opt.desc.split(" / ")[0]}</span>
+                </button>
+              ))}
             </div>
           </div>
 
