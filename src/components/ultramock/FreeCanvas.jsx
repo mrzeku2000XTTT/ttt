@@ -489,6 +489,23 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       >
         {items.map((item) => {
           const selected = item.id === selectedId;
+
+          // Per-beat visibility windows — if an item declares appearAt/disappearAt,
+          // hide it outside that window during playback. Always show while the
+          // user has it selected (so they can edit it). Text items handle their
+          // own window inside TextLayer; we apply the same rule to devices and
+          // overlays here so per-beat device swaps + text-only beats work.
+          if (item.kind !== "text" && typeof item.appearAt === "number" && typeof item.disappearAt === "number") {
+            const inWindow = playhead >= item.appearAt && playhead < item.disappearAt;
+            if (!inWindow && !selected && !renderMode) {
+              // While editing (not rendering, not selected, outside window): still hide.
+              return null;
+            }
+            if (!inWindow && renderMode) {
+              return null;
+            }
+          }
+
           // Render text items via TextLayer
           if (item.kind === "text") {
             return (

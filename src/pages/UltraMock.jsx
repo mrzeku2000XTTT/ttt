@@ -302,6 +302,7 @@ export default function UltraMockPage() {
     const autoEmail = (params.get("email") || "").trim();
     const autoSpeed = Math.max(0.25, Math.min(4, Number(params.get("speed")) || 1));
     const autoCamera = params.get("camera") || ""; // optional camera preset id
+    const autoBgPrompt = (params.get("bg_prompt") || "").trim(); // AI-generated modern background
     // Multi-segment chain: comma-separated preset ids ("slide-in-left,zoomin,bounce")
     const autoChain = (params.get("chain") || "").split(",").map(s => s.trim()).filter(Boolean);
     // Per-beat text track from Katagami sub-agents (base64'd JSON of [{t,a,x,y,d}])
@@ -331,59 +332,92 @@ export default function UltraMockPage() {
     setBackground(autoBackground);
     setDuration(autoDuration);
 
-    // Build a fresh, simple template: tagline up top + one device in the middle
-    // PLUS — when autoBeats are provided (Katagami flow) — one text item per
-    // beat, each with its own animation, position, and unique script line.
-    const deviceItem = makeItem({
-      device: autoDevice,
-      x: 50, y: 55, scale: 0.85,
-      media: autoMedia ? { url: autoMedia, type: "image", name: "auto" } : null,
-    });
+    // Build a fresh ad. When per-beat data is available (Katagami flow), each
+    // beat may:
+    //   - have its OWN device frame (per-beat device swap)
+    //   - be TEXT-ONLY (no device shown that beat)
+    //   - have its own text + animation + position + window
+    // We create ONE text item AND ONE device item per beat, each with strict
+    // [appearAt, disappearAt] visibility windows so playback shows exactly the
+    // right combination of elements at every moment.
     const fresh = [];
+    let lastDeviceId = null;
+    // beatDeviceMap[i] = device item id for beat i, or null if text-only.
+    // Used in the run() phase to apply each beat's preset to its own device.
+    const beatDeviceMap = [];
+    const beatWindows = [];
     if (autoBeats.length > 0) {
-      // Per-beat texts: spread them across the timeline sequentially — ONE beat
-      // visible at a time. Each beat gets a strict [appearAt, disappearAt] window
-      // computed from its declared duration, so TextLayer hides it outside that
-      // window. loopDelay=0 disables the auto-restart so the animation plays
-      // ONCE per beat and holds until the next beat takes over.
       let cursor = 0;
-      const totalBeatDur = autoBeats.reduce((acc, b) => acc + (Number(b.d) > 0 ? Number(b.d) : 0), 0);
-      // If durations are missing/invalid, fall back to evenly splitting the timeline.
-      const evenLen = autoBeats.length > 0 ? autoDuration / autoBeats.length : 0;
+      const evenLen = autoDuration / autoBeats.length;
       autoBeats.forEach((b) => {
-        if (!b.t) return;
         const segLen = Number(b.d) > 0 ? Number(b.d) : evenLen;
         const appearAt = cursor;
         const disappearAt = Math.min(autoDuration, cursor + segLen);
         cursor = disappearAt;
-        fresh.push(makeText({
-          text: b.t,
-          x: typeof b.x === "number" ? b.x : 50,
-          y: typeof b.y === "number" ? b.y : 14,
-          fontSize: 48,
-          fontWeight: 900,
-          color: "#ffffff",
-          animation: ["typewriter", "pop", "3d", "none"].includes(b.a) ? b.a : "pop",
-          typeSpeed: 18,
-          loopDelay: 0,         // play once — do NOT loop while the beat is on screen
-          boxWidth: 80,
-          appearAt,             // beat is HIDDEN before this time
-          disappearAt,          // beat is HIDDEN at/after this time
-        }));
+        beatWindows.push({ appearAt, disappearAt, segLen });
+
+        // Text item for this beat (hidden outside its window)
+        if (b.t) {
+          fresh.push(makeText({
+            text: b.t,
+            x: typeof b.x === "number" ? b.x : 50,
+            // Text-only beats put the words in the middle of the frame
+            y: b.to ? 50 : (typeof b.y === "number" ? b.y : 14),
+            // Text-only beats get bigger text (whole-frame statement card)
+            fontSize: b.to ? 96 : 48,
+            fontWeight: 900,
+            color: "#ffffff",
+            animation: ["typewriter", "pop", "3d", "none"].includes(b.a) ? b.a : "pop",
+            typeSpeed: 18,
+            loopDelay: 0,
+            boxWidth: b.to ? 90 : 80,
+            appearAt,
+            disappearAt,
+          }));
+        }
+
+        // Device item for this beat — SKIP if this beat is text-only
+        if (!b.to) {
+          const beatDevice = b.dv && b.dv !== "none" ? b.dv : autoDevice;
+          // Adjust scale per device (desktop frames are wider)
+          const isDesktop = ["macbook", "imac", "browser"].includes(beatDevice);
+          const beatItem = makeItem({
+            device: beatDevice,
+            x: 50,
+            y: isDesktop ? 60 : 55,
+            scale: isDesktop ? 0.55 : 0.85,
+            media: autoMedia ? { url: autoMedia, type: "image", name: "auto" } : null,
+            appearAt,
+            disappearAt,
+          });
+          fresh.push(beatItem);
+          lastDeviceId = beatItem.id;
+          beatDeviceMap.push(beatItem.id);
+        } else {
+          beatDeviceMap.push(null);
+        }
       });
-      // Avoid unused-var lint flag for totalBeatDur (kept for future tuning)
-      void totalBeatDur;
-    } else if (autoText) {
-      fresh.push(makeText({
-        text: autoText,
-        x: 50, y: 14, fontSize: 56, fontWeight: 900, color: "#ffffff",
-        animation: "typewriter", typeSpeed: 14, loopDelay: 1.5, boxWidth: 90,
-      }));
+    } else {
+      // Fallback: simple template — single tagline + single device
+      if (autoText) {
+        fresh.push(makeText({
+          text: autoText,
+          x: 50, y: 14, fontSize: 56, fontWeight: 900, color: "#ffffff",
+          animation: "typewriter", typeSpeed: 14, loopDelay: 1.5, boxWidth: 90,
+        }));
+      }
+      const deviceItem = makeItem({
+        device: autoDevice,
+        x: 50, y: 55, scale: 0.85,
+        media: autoMedia ? { url: autoMedia, type: "image", name: "auto" } : null,
+      });
+      fresh.push(deviceItem);
+      lastDeviceId = deviceItem.id;
     }
-    fresh.push(deviceItem);
     setItems(fresh);
-    // Don't select anything — keeps render frame clean (no cyan outline, no ×)
-    setSelectedId(deviceItem.id);
+    // Select the last device so motion presets target it. If no devices exist
+    // (all beats are text-only), we won't apply motion presets anyway.
+    if (lastDeviceId) setSelectedId(lastDeviceId);
 
     // Wait for canvas to settle, then apply preset & record
     const run = async () => {
@@ -391,22 +425,75 @@ export default function UltraMockPage() {
       setAutoStatus({ phase: "building", message: "Building canvas…" });
       // Give React a couple of paints to mount items
       await new Promise((r) => setTimeout(r, 800));
+
+      // ── Generate a single MODERN AI background (if requested) ─────────────
+      if (autoBgPrompt) {
+        try {
+          setAutoStatus({ phase: "building", message: "Generating modern AI background…" });
+          const { base44 } = await import("@/api/base44Client");
+          const fullPrompt = `Wide cinematic 16:10 modern background image for a premium product motion ad. ${autoBgPrompt}. High quality, sharp, contemporary, polished, professional studio lighting. Composition keeps the central area clean (a product mockup will sit in the middle) — push interesting detail toward the edges. NO text, NO logos, NO watermarks.`;
+          const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+          const bgUrl = res?.url;
+          if (bgUrl) {
+            setCustomBackground(bgUrl);
+            // Preload the image so the first recorded frames already have it
+            await new Promise((resolve) => {
+              const img = new Image();
+              img.onload = resolve;
+              img.onerror = resolve;
+              img.src = bgUrl;
+              // Hard cap: don't block recording for more than 5s
+              setTimeout(resolve, 5000);
+            });
+          }
+        } catch (e) {
+          console.warn("[ultramock auto] background generation failed", e);
+          // Non-fatal — fall back to the preset background.
+        }
+      }
+
       try {
-        if (autoChain.length > 0 && timelineRef.current?.applyPresetById) {
-          // Multi-segment animation: chain presets back-to-back so the device gets
-          // many keyframes over the full duration. Critically — each segment
-          // gets length = duration / chain.length so the entire chain fits in
-          // the recording window. Without this, each segment defaulted to 2s
-          // and a 30s recording would only capture the first ~15 of 60+ presets.
+        // ── Per-beat device animation (preferred when beats are available) ──
+        // Each beat's preset slots are placed onto THAT beat's device, scoped
+        // to the device's visibility window. This way device swaps + text-only
+        // beats get crisp, distinct motion per beat.
+        if (autoBeats.length > 0 && beatDeviceMap.length > 0 && timelineRef.current?.applyPresetToItem) {
+          timelineRef.current.clearAllTracks?.();
+          // Re-flatten the autoChain across beats: distribute autoChain entries
+          // by slot. autoChain.length = sum of preset_ids across all beats.
+          // We assume an even slot count per beat (the agent enforces this via
+          // keyframes_per_segment). If not, we just chunk them sequentially.
+          const totalSlots = autoChain.length;
+          const slotsPerBeat = Math.max(1, Math.round(totalSlots / autoBeats.length));
+          let chainIdx = 0;
+          for (let i = 0; i < autoBeats.length; i++) {
+            const deviceId = beatDeviceMap[i];
+            const win = beatWindows[i];
+            if (!deviceId || !win) {
+              // Skip text-only beats — advance chainIdx so visuals stay aligned
+              chainIdx += slotsPerBeat;
+              continue;
+            }
+            // How many preset slots this beat owns
+            const slotsHere = (i === autoBeats.length - 1) ? (totalSlots - chainIdx) : slotsPerBeat;
+            const perSlotLen = win.segLen / Math.max(1, slotsHere);
+            for (let s = 0; s < slotsHere; s++) {
+              const presetId = autoChain[chainIdx++];
+              if (!presetId) break;
+              const startT = win.appearAt + s * perSlotLen;
+              timelineRef.current.applyPresetToItem(deviceId, presetId, startT, perSlotLen);
+            }
+            await new Promise((r) => setTimeout(r, 30));
+          }
+          setDuration(autoDuration);
+        } else if (autoChain.length > 0 && timelineRef.current?.applyPresetById) {
+          // Fallback: legacy single-track chain (no per-beat data)
           timelineRef.current.clearKeyframes?.();
           const segLen = Math.max(0.1, autoDuration / autoChain.length);
-          // Use append mode for ALL segments (not replace for the first) so each
-          // gets exactly segLen seconds. After clear, append starts at t=0.
           for (let i = 0; i < autoChain.length; i++) {
             timelineRef.current.applyPresetById(autoChain[i], "append", segLen);
             await new Promise((r) => setTimeout(r, 80));
           }
-          // Lock final timeline length to the requested record duration
           setDuration(autoDuration);
         } else if (timelineRef.current?.applyPresetById) {
           timelineRef.current.applyPresetById(autoPreset, "replace");

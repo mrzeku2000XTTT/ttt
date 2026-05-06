@@ -623,6 +623,30 @@ const MockTimeline = forwardRef(function MockTimeline({
       if (!preset) return false;
       return applyPreset(preset, null, mode, segmentLength);
     },
+    // Apply a preset to a SPECIFIC item, placing keyframes starting at startT.
+    // Used by the per-beat auto-render flow: each beat's preset goes onto its
+    // own per-beat device, sized to fit that device's visibility window.
+    applyPresetToItem: (itemId, presetId, startT, segLen) => {
+      const item = items.find((i) => i.id === itemId);
+      const preset = MOTION_PRESETS.find((p) => p.id === presetId);
+      if (!item || !preset) return false;
+      const start = (typeof item.x === "number" && typeof item.y === "number") ? { x: item.x, y: item.y } : undefined;
+      const len = Math.max(0.1, segLen);
+      const t0 = Math.max(0, Math.min(duration, startT));
+      const segKfs = preset.build(len, start).map((k) => ({
+        ...k,
+        t: t0 + Math.max(0, Math.min(len, k.t)),
+      }));
+      setTracks((prev) => {
+        const cur = prev[itemId] || [];
+        // Drop any existing keyframes inside this segment window before inserting
+        const kept = cur.filter((k) => k.t < t0 - 0.01 || k.t > t0 + len + 0.01);
+        return { ...prev, [itemId]: [...kept, ...segKfs].sort((a, b) => a.t - b.t) };
+      });
+      const newEnd = t0 + len;
+      if (newEnd > duration && setDuration) setDuration(Math.ceil(newEnd * 2) / 2);
+      return true;
+    },
     applyCameraPresetById: (id, mode = "replace", segmentLength = null) => {
       const preset = CAMERA_PRESETS.find((p) => p.id === id);
       if (!preset) return false;

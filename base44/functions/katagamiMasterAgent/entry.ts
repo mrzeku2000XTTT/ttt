@@ -30,7 +30,7 @@ const CAMERA_PRESETS = [
   "cam_pan_rl","cam_orbit","cam_punch_in","cam_handheld"
 ];
 const BACKGROUNDS = ["sunset","ocean","forest","midnight","neon","cosmos","pastel","mono"];
-const DEVICES = ["iphone","android","macbook","ipad"];
+const DEVICES = ["iphone","android","macbook","ipad","imac","browser","none"];
 
 // Text-animation variants the sub-agents can pick from. Each one renders
 // VERY differently so consecutive beats feel distinct.
@@ -382,10 +382,22 @@ ${shouldOfferImage ? `6) IMAGE OVERLAY (optional but encouraged for THIS beat) �
    - image_role: "background" (full canvas behind device) or "accent" (small overlay floating in a corner)
    Otherwise leave both empty.` : '6) IMAGE OVERLAY — leave empty for this beat.'}
 
+7) TEXT-ONLY MODE — for ~25-35% of beats (especially openers, transitions, and pure-statement climax beats), set text_only=true. When text_only=true the device is HIDDEN for this beat and the text takes over the whole frame — like real TV ads that intercut product shots with bold text-only kinetic typography cards. NEVER set text_only=true on the very last beat (need a clean product resolution). Vary so the ad has rhythm: device → device → TEXT-ONLY → device → device → TEXT-ONLY etc. Don't put two text-only beats back-to-back.
+
+8) DEVICE FOR THIS BEAT — pick ONE device frame that should hold the product for this beat:
+   ${DEVICES.join(', ')}
+   - "iphone"/"android" = mobile portrait (default for app/social products)
+   - "macbook"/"imac"/"browser" = desktop landscape (for SaaS, dashboards, websites)
+   - "ipad" = tablet
+   - "none" = bare image, no chrome (for hero shots, logos, lifestyle photos)
+   You MAY swap devices across beats to add visual variety (e.g. iphone → macbook → iphone). If you have no preference for this beat, repeat what was used recently.
+
+9) BACKGROUND VIBE FOR THIS BEAT (optional) — describe a MODERN AI-generated background that fits this beat's energy in 4-12 words. Examples: "soft pastel gradient with floating glass orbs", "neon cyan grid receding into purple fog", "warm ivory studio with caustic light". Leave bg_prompt empty if the existing background still works.
+
 RECENT BEATS:
 ${previous || '(this is the first beat)'}
 
-Return JSON with: preset_ids, intent, camera_preset, text_animation, text_position_id, image_prompt, image_role.`,
+Return JSON with: preset_ids, intent, camera_preset, text_animation, text_position_id, image_prompt, image_role, text_only, device, bg_prompt.`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -396,6 +408,9 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, text_positi
             text_position_id: { type: 'string' },
             image_prompt: { type: 'string' },
             image_role: { type: 'string' },
+            text_only: { type: 'boolean' },
+            device: { type: 'string' },
+            bg_prompt: { type: 'string' },
           },
           required: ['preset_ids', 'intent', 'text_animation', 'text_position_id'],
         },
@@ -430,6 +445,22 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, text_positi
         posId = pos.id;
       }
 
+      // ── Text-only sanitization: not on last beat, not back-to-back ───
+      const prevBeat = segments[segments.length - 1];
+      const isLastBeat = (i + 1) >= segCount;
+      let textOnly = !!subAgent.text_only;
+      if (isLastBeat) textOnly = false;                    // last beat must show product
+      if (textOnly && prevBeat?.text_only) textOnly = false; // no two text-only back-to-back
+
+      // ── Device sanitization: fall back to plan's device if invalid ───
+      const planDevice = state.plan?.device || 'iphone';
+      const beatDevice = DEVICES.includes(subAgent.device) ? subAgent.device : planDevice;
+
+      // ── Background prompt: only keep if it's a real string ──────────
+      const bgPrompt = (typeof subAgent.bg_prompt === 'string' && subAgent.bg_prompt.trim().length > 4)
+        ? subAgent.bg_prompt.trim().slice(0, 200)
+        : '';
+
       const segment = {
         beat: i + 1,
         phase,
@@ -447,6 +478,9 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, text_positi
         image_prompt: shouldOfferImage && subAgent.image_prompt ? subAgent.image_prompt : '',
         image_role: shouldOfferImage && (subAgent.image_role === 'background' || subAgent.image_role === 'accent')
           ? subAgent.image_role : '',
+        text_only: textOnly,
+        device: beatDevice,
+        bg_prompt: bgPrompt,
       };
 
       const isLast = (i + 1) >= segCount;
@@ -754,6 +788,29 @@ Return final JSON with the same shape:
         params.set('duration', String(duration));
         const firstCam = choreograph.segments.find(s => CAMERA_PRESETS.includes(s.camera_preset))?.camera_preset;
         if (firstCam) params.set('camera', firstCam);
+
+        // Encode per-beat narrative fields (text + animation + position + duration
+        // + text_only flag + per-beat device swap) so UltraMock can stream them
+        // sequentially.
+        const beats = choreograph.segments.map((s) => ({
+          t: s.text || '',
+          a: s.text_animation || 'pop',
+          x: s.text_x ?? 50,
+          y: s.text_y ?? 12,
+          d: s.duration || 1.5,
+          to: !!s.text_only,
+          dv: DEVICES.includes(s.device) ? s.device : '',
+        }));
+        try {
+          // base64-encode the JSON so newlines/quotes survive URL encoding
+          const blob = btoa(unescape(encodeURIComponent(JSON.stringify(beats))));
+          params.set('beats', blob);
+        } catch { /* ignore */ }
+
+        // Pick the dominant background prompt for a single AI-generated modern
+        // background that the whole ad uses. Prefer the first non-empty one.
+        const dominantBg = (choreograph.segments.find(s => s.bg_prompt)?.bg_prompt || '').trim();
+        if (dominantBg) params.set('bg_prompt', dominantBg.slice(0, 200));
       } else {
         duration = Math.max(3, Math.min(8, parseInt(plan.duration) || 4));
         params.set('preset', preset);

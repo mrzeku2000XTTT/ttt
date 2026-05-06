@@ -163,6 +163,8 @@ export default function KatagamiAIEditor() {
 
       // Per-beat text track — ALL the sub-agent script lines (one per beat).
       // We pass them as a single base64'd JSON blob so newlines/quotes survive.
+      // Also includes per-beat text_only flag (hide device that beat) and
+      // per-beat device swap so the ad can swap iphone↔macbook etc.
       if (choreograph?.segments?.length) {
         const beats = choreograph.segments.map((s) => ({
           t: s.text || "",
@@ -170,11 +172,18 @@ export default function KatagamiAIEditor() {
           x: s.text_x ?? 50,
           y: s.text_y ?? 12,
           d: s.duration || 1.5,
+          to: !!s.text_only,
+          dv: s.device || "",
         }));
         try {
           const blob = btoa(unescape(encodeURIComponent(JSON.stringify(beats))));
           params.set("beats", blob);
         } catch { /* ignore */ }
+
+        // Forward the dominant AI background prompt so UltraMock generates a
+        // single modern background for the whole ad.
+        const dominantBg = (choreograph.segments.find(s => s.bg_prompt)?.bg_prompt || "").trim();
+        if (dominantBg) params.set("bg_prompt", dominantBg.slice(0, 200));
       }
 
       // Camera director cuts — passed as comma-separated preset|duration pairs
