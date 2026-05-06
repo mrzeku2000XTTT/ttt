@@ -36,18 +36,17 @@ const DEVICES = ["iphone","android","macbook","ipad","imac","browser","none"];
 // VERY differently so consecutive beats feel distinct.
 const TEXT_ANIMATIONS = ["typewriter","pop","3d","none"];
 
-// Safe text positions — these AVOID the device that sits in the middle of
-// the frame (roughly x:30-70, y:35-75). Each beat picks ONE so text never
-// overlaps the product.
+// Safe text positions when a DEVICE is on screen. The device occupies the
+// vertical center strip (roughly y:25-85), so text MUST stay in the top
+// band (y:6-14) or bottom band (y:86-94). We removed all middle-y positions
+// because they overlap the device.
 const TEXT_POSITIONS = [
-  { id: "top_center",     x: 50, y: 10 },
-  { id: "top_left",       x: 22, y: 12 },
-  { id: "top_right",      x: 78, y: 12 },
-  { id: "bottom_center",  x: 50, y: 90 },
-  { id: "bottom_left",    x: 22, y: 88 },
-  { id: "bottom_right",   x: 78, y: 88 },
-  { id: "left_middle",    x: 12, y: 50 },
-  { id: "right_middle",   x: 88, y: 50 },
+  { id: "top_center",     x: 50, y: 8  },
+  { id: "top_left",       x: 25, y: 10 },
+  { id: "top_right",      x: 75, y: 10 },
+  { id: "bottom_center",  x: 50, y: 92 },
+  { id: "bottom_left",    x: 25, y: 90 },
+  { id: "bottom_right",   x: 75, y: 90 },
 ];
 
 Deno.serve(async (req) => {
@@ -372,7 +371,7 @@ TASK: Choose all of the following for this beat:
    - "3d" — bold extruded 3D text (best for dramatic claims, climax)
    - "none" — instant on (best for very short hits, less than 3 words)
 
-4) TEXT POSITION — pick ONE from this list. AVOID positions used in the last 3 beats (${usedPositions.length ? usedPositions.join(', ') : 'none yet'}). The device is in the center, so NEVER pick "center". Pick from:
+4) TEXT POSITION — pick ONE from this list. AVOID positions used in the last 3 beats (${usedPositions.length ? usedPositions.join(', ') : 'none yet'}). The device occupies the entire vertical middle of the frame, so text MUST stay in the TOP band or BOTTOM band. Pick from:
    ${TEXT_POSITIONS.map(p => `${p.id} (x:${p.x}, y:${p.y})`).join(', ')}
 
 5) CAMERA (optional) — empty string or one of: cam_dolly_in, cam_zoom_to_target, cam_pull_back, cam_pan_lr, cam_pan_rl, cam_orbit, cam_punch_in, cam_handheld

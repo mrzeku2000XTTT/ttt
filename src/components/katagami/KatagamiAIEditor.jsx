@@ -25,10 +25,10 @@ ACT 4 — RESOLVE (24–30s): Settle confidently. Subject lands in a clean hero 
 CRAFT RULES: every motion uses ease-out or ease-in-out (NEVER linear). Text is ALL CAPS, condensed sans, weight 900. Color grade: cinematic — crushed blacks, warm highlights or single neon accent. No motion is decorative — every move serves the product story. Pacing: fast but never frantic. The viewer should feel the product is INEVITABLE.`,
     duration: 30,
     speed: 1,
-    slides: 20,
+    slides: 12,
     kf: 3,
     color: "from-fuchsia-500 to-orange-500",
-    desc: "30s · 20 slides × 3 kfs",
+    desc: "30s · 12 slides × 3 kfs",
   },
   {
     id: "teaser",

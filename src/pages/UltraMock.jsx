@@ -415,21 +415,37 @@ export default function UltraMockPage() {
         cursor = disappearAt;
         beatWindows.push({ appearAt, disappearAt, segLen });
 
-        // Text item for this beat (hidden outside its window)
+        // Text item for this beat (hidden outside its window).
+        // Strict layout rules to prevent text↔device overlap:
+        //  - text_only beats: device is hidden, text fills the frame center
+        //  - normal beats: text MUST stay in top (y<=20) or bottom (y>=80) band
         if (b.t) {
+          const isTextOnly = !!b.to;
+          let tx = typeof b.x === "number" ? b.x : 50;
+          let ty = typeof b.y === "number" ? b.y : 10;
+          if (!isTextOnly) {
+            // Clamp to safe top/bottom band — never the middle
+            if (ty > 20 && ty < 80) ty = ty < 50 ? 12 : 88;
+          } else {
+            // Center text-only beats vertically
+            tx = 50;
+            ty = 50;
+          }
           fresh.push(makeText({
             text: b.t,
-            x: typeof b.x === "number" ? b.x : 50,
-            // Text-only beats put the words in the middle of the frame
-            y: b.to ? 50 : (typeof b.y === "number" ? b.y : 14),
-            // Text-only beats get bigger text (whole-frame statement card)
-            fontSize: b.to ? 96 : 48,
+            x: tx,
+            y: ty,
+            // Text-only beats get a huge, bold whole-frame statement.
+            // Normal beats use a smaller size that fits the top/bottom band.
+            fontSize: isTextOnly ? 88 : 36,
             fontWeight: 900,
             color: "#ffffff",
             animation: ["typewriter", "pop", "3d", "none"].includes(b.a) ? b.a : "pop",
             typeSpeed: 18,
             loopDelay: 0,
-            boxWidth: b.to ? 90 : 80,
+            // Narrower box for non-text-only beats so words don't sprawl
+            // and end up overlapping the device.
+            boxWidth: isTextOnly ? 88 : 72,
             appearAt,
             disappearAt,
           }));
@@ -518,30 +534,47 @@ export default function UltraMockPage() {
         // beats get crisp, distinct motion per beat.
         if (autoBeats.length > 0 && beatDeviceMap.length > 0 && timelineRef.current?.applyPresetToItem) {
           timelineRef.current.clearAllTracks?.();
-          // Re-flatten the autoChain across beats: distribute autoChain entries
-          // by slot. autoChain.length = sum of preset_ids across all beats.
-          // We assume an even slot count per beat (the agent enforces this via
-          // keyframes_per_segment). If not, we just chunk them sequentially.
+          // Distribute keyframes across each beat's OWN device window. Each
+          // beat owns `slotsPerBeat` of the total chain (kfPerSlide). For
+          // text-only beats (no device), we DROP that beat's slots entirely
+          // and advance the chain pointer — those keyframes are intentional
+          // pauses where the device isn't shown.
+          //
+          // KEY FIX: keep slots tightly packed within each beat's window so
+          // motion is actually visible (was 0.5s/preset = blink-and-miss).
+          // We now require each preset slot to be at LEAST 0.6s long; if a
+          // beat is too short for all its slots, we reduce the slot count
+          // for that beat (preserving the most important presets).
           const totalSlots = autoChain.length;
           const slotsPerBeat = Math.max(1, Math.round(totalSlots / autoBeats.length));
+          const MIN_SLOT_LEN = 0.6; // seconds — anything shorter is invisible
           let chainIdx = 0;
           for (let i = 0; i < autoBeats.length; i++) {
             const deviceId = beatDeviceMap[i];
             const win = beatWindows[i];
+            // How many preset slots this beat owns based on the chain layout
+            const slotsClaimed = (i === autoBeats.length - 1)
+              ? Math.max(0, totalSlots - chainIdx)
+              : slotsPerBeat;
             if (!deviceId || !win) {
-              // Skip text-only beats — advance chainIdx so visuals stay aligned
-              chainIdx += slotsPerBeat;
+              // Text-only beat: skip its slots entirely (advance pointer).
+              chainIdx += slotsClaimed;
               continue;
             }
-            // How many preset slots this beat owns
-            const slotsHere = (i === autoBeats.length - 1) ? (totalSlots - chainIdx) : slotsPerBeat;
-            const perSlotLen = win.segLen / Math.max(1, slotsHere);
+            // Cap slots so each one gets >= MIN_SLOT_LEN of screen time.
+            // This prevents 0.5s blink-and-miss motion.
+            const maxSlotsByTime = Math.max(1, Math.floor(win.segLen / MIN_SLOT_LEN));
+            const slotsHere = Math.max(1, Math.min(slotsClaimed, maxSlotsByTime));
+            const perSlotLen = win.segLen / slotsHere;
             for (let s = 0; s < slotsHere; s++) {
-              const presetId = autoChain[chainIdx++];
+              const presetId = autoChain[chainIdx + s];
               if (!presetId) break;
               const startT = win.appearAt + s * perSlotLen;
               timelineRef.current.applyPresetToItem(deviceId, presetId, startT, perSlotLen);
             }
+            // Advance the chain pointer by the FULL claim so the next beat
+            // gets its intended presets, not the leftovers from this one.
+            chainIdx += slotsClaimed;
             await new Promise((r) => setTimeout(r, 30));
           }
           setDuration(autoDuration);
