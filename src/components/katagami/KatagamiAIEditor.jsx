@@ -1,21 +1,28 @@
 import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Loader2, Sparkles, Film, Wand2, ExternalLink, CheckCircle2, X, Mail } from "lucide-react";
+import { Upload, Loader2, Sparkles, Wand2, X, Mail } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import KatagamiAgentChat from "./KatagamiAgentChat";
 
 /**
- * Katagami AI Editor
- * Drop an image or video → AI designs a motion edit → opens UltraMock
- * auto-render in a new tab which records and (optionally) emails the MP4.
+ * Katagami AI Editor — runs the master motion-ad agent loop:
+ * research → analyze_media → plan → critique → refine → done.
+ * Every step streams to the chat panel so the user sees the agent's thinking.
  */
+
+const STEPS = ["research", "analyze_media", "plan", "critique", "refine", "done"];
+
 export default function KatagamiAIEditor() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [vibe, setVibe] = useState("");
   const [email, setEmail] = useState("");
-  const [stage, setStage] = useState("idle"); // idle | uploading | thinking | ready | error
+
+  const [working, setWorking] = useState(null);   // current step name while in-flight
+  const [messages, setMessages] = useState([]);   // [{step, output}]
   const [error, setError] = useState(null);
-  const [result, setResult] = useState(null); // { plan, render_url }
+  const [renderUrl, setRenderUrl] = useState(null);
+  const [running, setRunning] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
 
@@ -25,21 +32,19 @@ export default function KatagamiAIEditor() {
     const isVideo = f.type.startsWith("video/");
     if (!isImage && !isVideo) {
       setError("Only images or videos are supported.");
-      setStage("error");
       return;
     }
     setError(null);
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
-    setStage("idle");
-    setResult(null);
+    setMessages([]);
+    setRenderUrl(null);
   }, []);
 
   const onDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
-    const f = e.dataTransfer.files?.[0];
-    handleFile(f);
+    handleFile(e.dataTransfer.files?.[0]);
   };
 
   const reset = () => {
@@ -47,54 +52,68 @@ export default function KatagamiAIEditor() {
     setFile(null);
     setPreviewUrl(null);
     setVibe("");
-    setStage("idle");
-    setResult(null);
+    setMessages([]);
     setError(null);
+    setRenderUrl(null);
+    setWorking(null);
+    setRunning(false);
   };
 
-  const generate = async () => {
-    if (!file) return;
+  const runAgentLoop = async () => {
+    if (!file || running) return;
+    setRunning(true);
     setError(null);
+    setMessages([]);
+    setRenderUrl(null);
+
     try {
-      // 1) Upload the file
-      setStage("uploading");
+      // Upload file first
+      setWorking("upload");
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       if (!file_url) throw new Error("Upload failed");
 
-      // 2) Ask the AI editor to design a plan
-      setStage("thinking");
-      const res = await base44.functions.invoke("katagamiAutoEdit", {
-        media_url: file_url,
-        media_type: file.type.startsWith("video/") ? "video" : "image",
-        vibe,
-        email: email.trim() || undefined,
-      });
-      const data = res?.data;
-      if (!data?.success) throw new Error(data?.error || "AI editor failed");
+      const media_type = file.type.startsWith("video/") ? "video" : "image";
+      let state = { media_url: file_url, media_type, vibe, email: email.trim() || undefined };
 
-      setResult(data);
-      setStage("ready");
+      // Walk through every step
+      for (const step of STEPS) {
+        setWorking(step);
+        const res = await base44.functions.invoke("katagamiMasterAgent", { step, state });
+        const data = res?.data;
+        if (!data || data.error) throw new Error(data?.error || `Step ${step} failed`);
+
+        // Append the step output to the transcript
+        setMessages((prev) => [...prev, { step, output: data.output }]);
+
+        // Merge step output into running state under that step's key
+        if (step === "research")        state = { ...state, research: data.output };
+        else if (step === "analyze_media") state = { ...state, analysis: data.output };
+        else if (step === "plan")       state = { ...state, plan: data.output };
+        else if (step === "critique")   state = { ...state, critique: data.output };
+        else if (step === "refine")     state = { ...state, plan: data.output }; // overwrite plan with refined v2
+        else if (step === "done" && data.render_url) setRenderUrl(data.render_url);
+      }
     } catch (e) {
-      setError(e.message || "Something went wrong");
-      setStage("error");
+      setError(e.message || "Agent loop failed");
+    } finally {
+      setWorking(null);
+      setRunning(false);
     }
   };
 
   const isVideo = file?.type?.startsWith("video/");
-  const isWorking = stage === "uploading" || stage === "thinking";
 
   return (
     <div>
       <ChapterHeader />
 
       <p className="text-white/60 mt-4 mb-8 max-w-3xl">
-        Drop an image or video. AI picks the perfect motion preset, tagline, background and timing,
-        then renders a cinematic MP4 you can download or get emailed.
+        A self-improving motion-ad agent. It researches current trends, analyzes your media, drafts a plan, critiques itself, and refines — all visible live below.
       </p>
 
-      <div className="grid md:grid-cols-[1.2fr_1fr] gap-6">
-        {/* LEFT — Drop zone & preview */}
-        <div>
+      <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-6">
+        {/* LEFT — Input */}
+        <div className="space-y-4">
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -107,7 +126,7 @@ export default function KatagamiAIEditor() {
                   ? "border-white/20 bg-black/40"
                   : "border-white/15 bg-white/[0.02] hover:border-fuchsia-400/50 hover:bg-white/5 cursor-pointer"
             }`}
-            style={{ minHeight: 280 }}
+            style={{ minHeight: 220 }}
           >
             <input
               ref={inputRef}
@@ -128,14 +147,15 @@ export default function KatagamiAIEditor() {
             ) : (
               <div className="relative">
                 {isVideo ? (
-                  <video src={previewUrl} className="w-full h-72 object-cover" controls muted />
+                  <video src={previewUrl} className="w-full h-56 object-cover" controls muted />
                 ) : (
-                  <img src={previewUrl} alt="" className="w-full h-72 object-cover" />
+                  <img src={previewUrl} alt="" className="w-full h-56 object-cover" />
                 )}
                 <button
                   onClick={(e) => { e.stopPropagation(); reset(); }}
                   className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 hover:bg-black border border-white/20 flex items-center justify-center text-white/80 hover:text-white"
                   title="Remove"
+                  disabled={running}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -145,10 +165,7 @@ export default function KatagamiAIEditor() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* RIGHT — Controls */}
-        <div className="space-y-4">
           <div>
             <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 block">
               Vibe (optional)
@@ -158,7 +175,7 @@ export default function KatagamiAIEditor() {
               onChange={(e) => setVibe(e.target.value)}
               placeholder="e.g. dramatic launch trailer, playful product reveal, moody cinematic teaser…"
               className="w-full h-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder:text-white/30 focus:border-fuchsia-400/50 focus:bg-white/10 outline-none resize-none"
-              disabled={isWorking}
+              disabled={running}
             />
           </div>
 
@@ -172,79 +189,32 @@ export default function KatagamiAIEditor() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="w-full h-10 px-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder:text-white/30 focus:border-fuchsia-400/50 focus:bg-white/10 outline-none"
-              disabled={isWorking}
+              disabled={running}
             />
           </div>
 
           <button
-            onClick={generate}
-            disabled={!file || isWorking}
+            onClick={runAgentLoop}
+            disabled={!file || running}
             className="w-full h-12 rounded-xl bg-gradient-to-r from-fuchsia-500 to-orange-500 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-sm tracking-wide shadow-lg shadow-fuchsia-500/30 flex items-center justify-center gap-2"
           >
-            {stage === "uploading" && <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>}
-            {stage === "thinking" && <><Sparkles className="w-4 h-4 animate-pulse" /> AI is editing…</>}
-            {!isWorking && <><Wand2 className="w-4 h-4" /> Auto-Edit with AI</>}
-          </button>
-
-          {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-xs">
-              {error}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* RESULT */}
-      <AnimatePresence>
-        {stage === "ready" && result && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mt-8 p-5 rounded-2xl bg-gradient-to-br from-emerald-900/30 to-fuchsia-900/30 border border-emerald-500/40"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <div className="text-white font-bold text-sm">AI Edit Ready</div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-3 mb-4 text-xs">
-              <PlanRow label="Tagline" value={result.plan.tagline || "—"} />
-              <PlanRow label="Motion" value={result.plan.preset_id} />
-              <PlanRow label="Device" value={result.plan.device} />
-              <PlanRow label="Background" value={result.plan.background} />
-              <PlanRow label="Duration" value={`${result.plan.duration}s`} />
-            </div>
-
-            {result.plan.reasoning && (
-              <p className="text-white/60 text-xs italic mb-4">"{result.plan.reasoning}"</p>
+            {running ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Agent at work…</>
+            ) : (
+              <><Wand2 className="w-4 h-4" /> Auto-Edit with AI Agent</>
             )}
+          </button>
+        </div>
 
-            <a
-              href={result.render_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-white text-black font-black text-sm hover:bg-white/90"
-            >
-              <Film className="w-4 h-4" /> Render & Download MP4
-              <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-            </a>
-            <p className="text-white/40 text-[10px] mt-2">
-              Opens in a new tab. The MP4 will auto-download when rendering finishes
-              {email ? ` and a copy will be emailed to ${email}.` : "."}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function PlanRow({ label, value }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-white/40 uppercase tracking-wider text-[10px] font-bold w-20 flex-shrink-0">{label}</span>
-      <span className="text-white font-mono text-xs truncate">{value}</span>
+        {/* RIGHT — Live agent chat */}
+        <KatagamiAgentChat
+          messages={messages}
+          working={working === "upload" ? null : working}
+          error={error}
+          renderUrl={renderUrl}
+          onOpenRender={() => renderUrl && window.open(renderUrl, "_blank")}
+        />
+      </div>
     </div>
   );
 }
@@ -255,7 +225,7 @@ function ChapterHeader() {
       <div className="text-7xl md:text-8xl font-black text-white/10 leading-none tabular-nums">AI</div>
       <div className="flex-1">
         <div className="text-3xl md:text-4xl font-black text-fuchsia-300 mb-1">編集</div>
-        <h2 className="text-xl md:text-2xl font-bold text-white">AI Auto-Editor</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-white">Auto-Editor Agent</h2>
       </div>
       <Sparkles className="w-5 h-5 text-fuchsia-300 hidden md:block" />
     </div>
