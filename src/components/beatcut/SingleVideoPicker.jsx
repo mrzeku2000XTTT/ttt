@@ -6,8 +6,10 @@ export default function SingleVideoPicker({ video, onSet, onClear }) {
 
   const handleFile = (file) => {
     if (!file) return;
-    if (!file.type.startsWith("video/")) {
-      alert("Please choose a video file.");
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    if (!isVideo && !isImage) {
+      alert("Please choose an MP4/video or image file.");
       return;
     }
     onSet({
@@ -15,7 +17,7 @@ export default function SingleVideoPicker({ video, onSet, onClear }) {
       url: URL.createObjectURL(file),
       name: file.name,
       file,
-      type: "video",
+      type: file.type.startsWith("image/") ? "image" : "video",
     });
   };
 
@@ -29,16 +31,20 @@ export default function SingleVideoPicker({ video, onSet, onClear }) {
           </button>
         )}
       </div>
-      <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
+      <input ref={inputRef} type="file" accept="video/*,image/*" className="hidden" onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
       {!video ? (
         <button onClick={() => inputRef.current?.click()} className="w-full aspect-video rounded-2xl border-2 border-dashed border-white/15 hover:border-fuchsia-400/60 hover:bg-fuchsia-400/5 transition-colors flex flex-col items-center justify-center gap-2 text-white/45 hover:text-fuchsia-300">
           <Upload className="w-8 h-8" />
-          <div className="text-sm font-black">Upload one short video</div>
-          <div className="text-[11px] text-white/35">BeatCut edits the first 10 seconds</div>
+          <div className="text-sm font-black">Upload MP4 or image</div>
+          <div className="text-[11px] text-white/35">BeatCut places it inside the selected template</div>
         </button>
       ) : (
         <div className="relative aspect-video rounded-2xl overflow-hidden bg-black ring-1 ring-white/10">
-          <video src={video.url} className="w-full h-full object-cover" muted playsInline />
+          {video.type === "image" ? (
+            <img src={video.url} alt={video.name} className="w-full h-full object-cover" />
+          ) : (
+            <video src={video.url} className="w-full h-full object-cover" muted playsInline />
+          )}
           <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
             <div className="flex items-center gap-2 text-white">
               <Film className="w-4 h-4 text-fuchsia-300" />
