@@ -1,8 +1,44 @@
 import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge } from "lucide-react";
+import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge, Zap, Film, Megaphone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import KatagamiAgentChat from "./KatagamiAgentChat";
+
+// Quick-start presets that prefill vibe + duration + speed in one click.
+// "Motion Ad" is the flagship — long duration so the master agent spawns its
+// 10 sub-agent choreography loop and the timeline gets 50+ keyframes.
+const QUICK_PRESETS = [
+  {
+    id: "motion_ad",
+    label: "Motion Ad",
+    icon: Megaphone,
+    vibe: "premium product motion ad — punchy 0.4s text pops, dolly-in into the hero, kinetic flourishes, cinematic color grade, end on a confident product hold",
+    duration: 20,
+    speed: 1,
+    color: "from-fuchsia-500 to-orange-500",
+    desc: "20s · 10 sub-agents · long-form ad",
+  },
+  {
+    id: "teaser",
+    label: "Quick Teaser",
+    icon: Zap,
+    vibe: "fast energetic teaser — snappy reveals, kinetic typography, modern app vibes",
+    duration: 6,
+    speed: 1,
+    color: "from-cyan-500 to-blue-500",
+    desc: "6s · single-shot · punchy",
+  },
+  {
+    id: "cinematic",
+    label: "Cinematic",
+    icon: Film,
+    vibe: "moody cinematic teaser — slow dolly, dramatic lighting, prestige film grading, deliberate pacing",
+    duration: 14,
+    speed: 0.5,
+    color: "from-violet-500 to-fuchsia-500",
+    desc: "14s · multi-agent · slow & moody",
+  },
+];
 
 /**
  * Katagami AI Editor — runs the master motion-ad agent loop:
@@ -191,6 +227,41 @@ export default function KatagamiAIEditor() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Quick-start presets — one click prefills vibe + duration + speed */}
+          <div>
+            <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 block">
+              Quick start
+            </label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {QUICK_PRESETS.map((p) => {
+                const Icon = p.icon;
+                const isActive = vibe === p.vibe && duration === p.duration && speed === p.speed;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setVibe(p.vibe);
+                      setDurationSec(p.duration);
+                      setSpeed(p.speed);
+                    }}
+                    disabled={running}
+                    title={p.desc}
+                    className={`group relative flex flex-col items-start gap-1 p-2.5 rounded-lg border transition-all text-left disabled:opacity-40 ${
+                      isActive
+                        ? `bg-gradient-to-br ${p.color} border-white/30 text-white shadow-lg`
+                        : "bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 text-white/80"
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-fuchsia-300"}`} />
+                    <div className={`text-[11px] font-black ${isActive ? "text-white" : "text-white"}`}>{p.label}</div>
+                    <div className={`text-[9px] leading-tight ${isActive ? "text-white/80" : "text-white/40"}`}>{p.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div>

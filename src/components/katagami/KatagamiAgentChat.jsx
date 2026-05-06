@@ -274,23 +274,29 @@ function StepBody({ step, output }) {
   }
 
   if (step === "choreograph") {
+    const totalKfs = (output.segments || []).reduce((acc, s) => acc + (Array.isArray(s.preset_ids) ? s.preset_ids.length : 1), 0);
     return (
       <div className="space-y-1.5">
         <div className="text-[10px] text-white/50">
-          {output.segment_count} sub-agents · {output.total_duration}s total · ~{(output.total_duration / output.segment_count).toFixed(1)}s per beat
+          {output.segment_count} sub-agents · {output.total_duration}s total · {totalKfs} chained presets
         </div>
         <div className="space-y-1">
-          {(output.segments || []).map((seg, i) => (
-            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-              <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
-                {seg.beat}
+          {(output.segments || []).map((seg, i) => {
+            const presets = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
+            return (
+              <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
+                  {seg.beat}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] text-white font-bold truncate">
+                    {presets.join(" → ")}{seg.camera_preset ? ` + ${seg.camera_preset}` : ""}
+                  </div>
+                  <div className="text-[10px] text-white/50 truncate">{seg.intent}</div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] text-white font-bold truncate">{seg.preset_id}{seg.camera_preset ? ` + ${seg.camera_preset}` : ""}</div>
-                <div className="text-[10px] text-white/50 truncate">{seg.intent}</div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );

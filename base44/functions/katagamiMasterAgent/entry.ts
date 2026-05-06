@@ -223,10 +223,11 @@ Return JSON:
 
       const segments = [];
       // Sub-agent loop — each call is a fresh director designing ONE beat
+      // with TWO chained motion presets so each beat has 5-10 keyframes.
       for (let i = 0; i < segCount; i++) {
-        const previous = segments.map((s, idx) => `Beat ${idx + 1}: ${s.preset_id} — ${s.intent}`).join(' · ');
+        const previous = segments.map((s, idx) => `Beat ${idx + 1}: ${s.preset_ids.join('+')} — ${s.intent}`).join(' · ');
         const subAgent = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing a long-form motion ad. Design ONLY beat ${i + 1}. Your beat MUST flow from the previous one and lead into the next.
+          prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing a long-form motion ad. Design ONLY beat ${i + 1} with 2 chained motion presets so this beat has 5-10 keyframes of rich motion.
 
 OVERALL VIBE: "${vibe}"
 SUBJECT: ${analysis?.subject || ''}
@@ -236,27 +237,35 @@ TOTAL DURATION: ${totalDur}s split into ${segCount} beats of ~${segLen.toFixed(1
 BEAT POSITION: ${i + 1}/${segCount} (${i === 0 ? 'opener — hook the viewer' : i === segCount - 1 ? 'closer — land the message' : 'middle — build tension'})
 PREVIOUS BEATS: ${previous || '(none — this is the opener)'}
 
-Pick ONE motion preset for this beat from: spin, tilt, pop, float, reveal, flip, wobble, zoomin, zoomout, tilt-up, showcase, shake, barrel, slide-in-left, slide-in-right, slide-up, drop-in, fly-across, orbit, bounce, pendulum, swoop, chat-zoom
+Pick EXACTLY 2 motion presets that flow into each other from: spin, tilt, pop, float, reveal, flip, wobble, zoomin, zoomout, tilt-up, showcase, shake, barrel, slide-in-left, slide-in-right, slide-up, drop-in, fly-across, orbit, bounce, pendulum, swoop, chat-zoom
+
+Pair them so the first sets up and the second pays off (e.g. "slide-in-left" → "pop" for entrance+landing, or "zoomin" → "spin" for arrival+flourish).
 
 Return JSON:
-- preset_id: chosen preset
-- intent: 1 short phrase describing the emotional beat (e.g. "punchy entrance", "elegant settle", "kinetic flourish")
+- primary_preset: first preset id (the setup/entrance)
+- secondary_preset: second preset id (the payoff/flourish), MUST be different from primary
+- intent: 1 short phrase describing the emotional beat (e.g. "punchy entrance + bouncy landing", "elegant arrival + confident hold")
 - camera_preset: optional camera move from: cam_dolly_in, cam_zoom_to_target, cam_pull_back, cam_pan_lr, cam_pan_rl, cam_orbit, cam_punch_in, cam_handheld (or empty)`,
           response_json_schema: {
             type: 'object',
             properties: {
-              preset_id: { type: 'string' },
+              primary_preset: { type: 'string' },
+              secondary_preset: { type: 'string' },
               intent: { type: 'string' },
               camera_preset: { type: 'string' },
             },
-            required: ['preset_id', 'intent'],
+            required: ['primary_preset', 'secondary_preset', 'intent'],
           },
         });
-        // Sanitize each sub-agent output
-        const presetId = MOTION_PRESETS.includes(subAgent.preset_id) ? subAgent.preset_id : 'showcase';
+        // Sanitize each sub-agent output — fall back to safe defaults if invalid
+        const primary = MOTION_PRESETS.includes(subAgent.primary_preset) ? subAgent.primary_preset : 'showcase';
+        let secondary = MOTION_PRESETS.includes(subAgent.secondary_preset) ? subAgent.secondary_preset : 'pop';
+        if (secondary === primary) secondary = primary === 'pop' ? 'showcase' : 'pop';
         segments.push({
           beat: i + 1,
-          preset_id: presetId,
+          preset_ids: [primary, secondary],
+          // Keep preset_id for back-compat with any UI that reads single preset
+          preset_id: primary,
           intent: subAgent.intent || '',
           camera_preset: CAMERA_PRESETS.includes(subAgent.camera_preset) ? subAgent.camera_preset : '',
           duration: segLen,
@@ -344,9 +353,16 @@ Return the FINAL JSON plan with the same shape:
       });
 
       if (choreograph?.segments?.length) {
-        const chain = choreograph.segments
-          .map(s => MOTION_PRESETS.includes(s.preset_id) ? s.preset_id : 'showcase')
-          .join(',');
+        // Flatten each beat's [primary, secondary] presets into one long chain.
+        // 10 beats × 2 presets = 20 chained presets → 50+ keyframes total.
+        const chainIds = [];
+        for (const seg of choreograph.segments) {
+          const ids = Array.isArray(seg.preset_ids) ? seg.preset_ids : [seg.preset_id];
+          for (const id of ids) {
+            chainIds.push(MOTION_PRESETS.includes(id) ? id : 'showcase');
+          }
+        }
+        const chain = chainIds.join(',');
         duration = Math.max(8, Math.min(60, Math.round(choreograph.total_duration || 12)));
         params.set('chain', chain);
         params.set('duration', String(duration));
