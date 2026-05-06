@@ -328,13 +328,20 @@ export default function UltraMockPage() {
       try {
         if (autoChain.length > 0 && timelineRef.current?.applyPresetById) {
           // Multi-segment animation: chain presets back-to-back so the device gets
-          // 4-10+ keyframes per segment over the full duration.
+          // many keyframes over the full duration. Critically — each segment
+          // gets length = duration / chain.length so the entire chain fits in
+          // the recording window. Without this, each segment defaulted to 2s
+          // and a 30s recording would only capture the first ~15 of 60+ presets.
           timelineRef.current.clearKeyframes?.();
+          const segLen = Math.max(0.1, autoDuration / autoChain.length);
+          // Use append mode for ALL segments (not replace for the first) so each
+          // gets exactly segLen seconds. After clear, append starts at t=0.
           for (let i = 0; i < autoChain.length; i++) {
-            const mode = i === 0 ? "replace" : "append";
-            timelineRef.current.applyPresetById(autoChain[i], mode);
+            timelineRef.current.applyPresetById(autoChain[i], "append", segLen);
             await new Promise((r) => setTimeout(r, 80));
           }
+          // Lock final timeline length to the requested record duration
+          setDuration(autoDuration);
         } else if (timelineRef.current?.applyPresetById) {
           timelineRef.current.applyPresetById(autoPreset, "replace");
         }

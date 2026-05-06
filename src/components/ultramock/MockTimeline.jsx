@@ -390,7 +390,9 @@ const MockTimeline = forwardRef(function MockTimeline({
   };
 
   // Apply preset to SELECTED item's track
-  const applyPreset = (preset, targetId = null, modeOverride = null) => {
+  // segmentLengthOverride: when set, overrides the default presetSegment for
+  // append-mode chains (used by auto-render to size each beat to fit total duration).
+  const applyPreset = (preset, targetId = null, modeOverride = null, segmentLengthOverride = null) => {
     const id = targetId || selected?.id;
     if (!id) return false;
     const item = items.find((i) => i.id === id);
@@ -416,7 +418,7 @@ const MockTimeline = forwardRef(function MockTimeline({
     }
 
     // APPEND
-    const segLen = Math.max(0.5, presetSegment);
+    const segLen = Math.max(0.1, segmentLengthOverride != null ? segmentLengthOverride : presetSegment);
     const cur = tracks[id] || [];
     const lastKeyT = cur.length ? Math.max(...cur.map((k) => k.t)) : 0;
     const startT = Math.max(playhead, lastKeyT);
@@ -612,10 +614,10 @@ const MockTimeline = forwardRef(function MockTimeline({
 
   // Imperative API for the AI agent
   useImperativeHandle(ref, () => ({
-    applyPresetById: (id, mode = "replace") => {
+    applyPresetById: (id, mode = "replace", segmentLength = null) => {
       const preset = MOTION_PRESETS.find((p) => p.id === id);
       if (!preset) return false;
-      return applyPreset(preset, null, mode);
+      return applyPreset(preset, null, mode, segmentLength);
     },
     applyCameraPresetById: (id, mode = "replace") => {
       const preset = CAMERA_PRESETS.find((p) => p.id === id);
