@@ -12,7 +12,17 @@ const QUICK_PRESETS = [
     id: "motion_ad",
     label: "Motion Ad",
     icon: Megaphone,
-    vibe: "premium product motion ad — punchy 0.4s text pops, dolly-in into the hero, kinetic flourishes, cinematic color grade, end on a confident product hold",
+    vibe: `Premium 30-second flagship product motion ad — broadcast-quality, Apple-keynote energy, end-of-Super-Bowl-spot polish.
+
+ACT 1 — HOOK (0–6s): Open BIG. Subject enters from off-screen with confident force — slide-in or fly-across with a heavy ease-out, NOT a slow fade. First text pop hits within 1.2s, ALL-CAPS, 0.35s in, holds 1s, out. Deep cinematic color: rich blacks, controlled highlights, single accent color. Camera dollies in slowly the whole act.
+
+ACT 2 — BUILD (6–18s): Subject is on-screen and ALIVE. Rhythmic in-place motion — float, wobble, tilt, bounce — synced to an implied beat (~120bpm, one accent every 0.5s). Layer in 2–3 supporting text pops as feature callouts (3–5 words each, punchy, kinetic typography). Camera does subtle parallax pans left↔right to keep the frame breathing. No motion lasts longer than 1.5s — keep it dense.
+
+ACT 3 — CLIMAX (18–24s): Peak energy. Bold rotation, spin, barrel, or orbit. One dramatic camera punch-in or pull-back. The biggest text moment lands here — the tagline or hero claim — large, centered, weight 900, 0.4s pop with overshoot easing. Brief micro-shake on impact.
+
+ACT 4 — RESOLVE (24–30s): Settle confidently. Subject lands in a clean hero showcase pose — slight tilt-up or chat-zoom. Final logo/tagline holds for 2s with a soft camera ease-out. End on a confident, commercial-ready frame.
+
+CRAFT RULES: every motion uses ease-out or ease-in-out (NEVER linear). Text is ALL CAPS, condensed sans, weight 900. Color grade: cinematic — crushed blacks, warm highlights or single neon accent. No motion is decorative — every move serves the product story. Pacing: fast but never frantic. The viewer should feel the product is INEVITABLE.`,
     duration: 30,
     speed: 1,
     slides: 20,
