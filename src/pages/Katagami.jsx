@@ -5,6 +5,7 @@ import {
   Cpu, Box, Rocket, Lightbulb, BookOpen, Wand2, Activity, Target,
   GitBranch, Gauge, Palette, Film, ArrowRight, Lock, Globe
 } from "lucide-react";
+import KatagamiAIEditor from "@/components/katagami/KatagamiAIEditor";
 
 // ─────────────────────────────────────────────────────────────────────────
 // 型紙 (Katagami) — Template
@@ -14,6 +15,7 @@ import {
 // ─────────────────────────────────────────────────────────────────────────
 
 const CHAPTERS = [
+  { id: "ai", label: "AI Editor 編集", icon: Sparkles },
   { id: "intro", label: "序章 · Intro", icon: BookOpen },
   { id: "principles", label: "12 Principles", icon: Lightbulb },
   { id: "easing", label: "Easing Lab", icon: Activity },
@@ -82,6 +84,9 @@ export default function Katagami() {
       </div>
 
       <main className="max-w-6xl mx-auto px-4 py-12 space-y-32">
+        <Section id="ai" innerRef={(el) => (sectionsRef.current.ai = el)}>
+          <KatagamiAIEditor />
+        </Section>
         <Section id="intro" innerRef={(el) => (sectionsRef.current.intro = el)}>
           <IntroSection />
         </Section>
