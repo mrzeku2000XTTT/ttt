@@ -58,7 +58,6 @@ import UltraMockPage from './pages/UltraMock';
 import KatagamiPage from './pages/Katagami';
 import DoomPage from './pages/Doom';
 import BeatCutPage from './pages/BeatCut';
-import AntimatterPage from './pages/Antimatter';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -158,7 +157,6 @@ const AuthenticatedApp = () => {
       <Route path="/UltraMock" element={<UltraMockPage />} />
       <Route path="/Doom" element={<DoomPage />} />
       <Route path="/BeatCut" element={<BeatCutPage />} />
-      <Route path="/Antimatter" element={<AntimatterPage />} />
       <Route path="/Katagami" element={
         <LayoutWrapper currentPageName="Katagami">
           <KatagamiPage />
