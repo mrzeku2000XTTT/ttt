@@ -1,0 +1,68 @@
+{
+  "name": "UniverseElement",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the user who owns this element"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "matter",
+        "antimatter",
+        "textbox"
+      ],
+      "default": "matter",
+      "description": "Type of element"
+    },
+    "position": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "description": "3D world position"
+    },
+    "scale": {
+      "type": "number",
+      "default": 1,
+      "description": "Uniform scale factor"
+    },
+    "color": {
+      "type": "string",
+      "description": "Hex color"
+    },
+    "text_content": {
+      "type": "string",
+      "description": "Text content for textbox elements"
+    },
+    "text_title": {
+      "type": "string",
+      "description": "Title for textbox elements"
+    }
+  },
+  "required": [
+    "owner_email",
+    "kind"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "owner_email": "{{user.email}}"
+    },
+    "update": {
+      "owner_email": "{{user.email}}"
+    },
+    "delete": {
+      "owner_email": "{{user.email}}"
+    }
+  }
+}
