@@ -724,9 +724,14 @@ const MockTimeline = forwardRef(function MockTimeline({
   // ── Recording ───────────────────────────────────────────────────────────
   // REAL-TIME RECORDER: animates the canvas at wall-clock speed and lets
   // MediaRecorder sample it continuously. A 4s animation = exactly 4s of video.
-  // We use html2canvas at ~12 fps in the background and paint into an output
-  // canvas that the recorder is streaming from at its native cadence.
-  const recordVideo = async () => {
+  //
+  // `opts.speed` (default 1) scales the OUTPUT video duration without changing
+  // the timeline's logical duration:
+  //   speed = 0.5 → outputs a 2× longer (slower) video
+  //   speed = 2   → outputs a 0.5× shorter (faster) video
+  // Implemented by adjusting the playback frame interval during PHASE 2.
+  const recordVideo = async (opts = {}) => {
+    const speed = Math.max(0.25, Math.min(4, Number(opts.speed) || 1));
     if (!captureFrame || recording || !hasAnyTrack) return;
     setRecording(true);
     setRecordProgress(0);
@@ -834,16 +839,20 @@ const MockTimeline = forwardRef(function MockTimeline({
         setRecordProgress((i / totalFrames) * 0.8);
       }
 
-      // PHASE 2: Play back at exact 30fps into the recorder
+      // PHASE 2: Play back at exact 30fps into the recorder.
+      // For speed control we keep recorder FPS at 30 but stretch/compress wall-clock time:
+      //   outputDurationMs = (duration / speed) * 1000
+      //   each pre-rendered frame is held for (outputDurationMs / totalFrames) ms
       recorder.start();
       const playbackStart = performance.now();
-      const frameInterval = 1000 / FPS;
+      const outputDurationMs = (duration / speed) * 1000;
+      const frameHoldMs = outputDurationMs / totalFrames;
       let lastFrameDrawn = -1;
 
       await new Promise((resolve) => {
         const playLoop = () => {
           const elapsed = performance.now() - playbackStart;
-          const frameIdx = Math.min(totalFrames - 1, Math.floor(elapsed / frameInterval));
+          const frameIdx = Math.min(totalFrames - 1, Math.floor(elapsed / frameHoldMs));
           if (frameIdx !== lastFrameDrawn) {
             const bm = frames[frameIdx];
             if (bm) {
@@ -853,7 +862,7 @@ const MockTimeline = forwardRef(function MockTimeline({
             lastFrameDrawn = frameIdx;
             setRecordProgress(0.8 + (frameIdx / totalFrames) * 0.2);
           }
-          if (elapsed >= duration * 1000 + 100) {
+          if (elapsed >= outputDurationMs + 100) {
             resolve();
             return;
           }

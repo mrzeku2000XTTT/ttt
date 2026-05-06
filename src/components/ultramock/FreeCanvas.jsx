@@ -31,6 +31,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     camera,                // { zoom, x, y } — animated by the timeline camera track
     isPlaying = false,     // bool — preview animation playing state (from timeline)
     onTogglePlay,          // () => void — toggle play/pause via the timeline ref
+    renderMode = false,    // when true: hide selection rings, × buttons, zoom controls — clean recording
   },
   ref
 ) {
@@ -381,7 +382,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       )}
 
       {/* Zoom controls — overlay, not part of the exported canvas (sits outside surface) */}
-      {!locked && !controlsHidden && (
+      {!locked && !controlsHidden && !renderMode && (
       <div className="absolute top-3 right-3 z-40 flex items-center gap-1 bg-black/60 backdrop-blur-md rounded-full p-1 ring-1 ring-white/15 shadow-lg">
         {onTogglePlay && (
           <>
@@ -447,7 +448,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       )}
 
       {/* Restore button when controls are hidden */}
-      {!locked && controlsHidden && (
+      {!locked && controlsHidden && !renderMode && (
         <button
           onClick={() => setControlsHidden(false)}
           className="absolute top-3 right-3 z-40 w-7 h-7 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md hover:bg-black/70 text-white/50 hover:text-white ring-1 ring-white/10 shadow-lg transition-colors"
@@ -538,8 +539,8 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                 touchAction: "none",
               }}
             >
-              {/* Selection ring + handles */}
-              {selected && (
+              {/* Selection ring + handles — hidden in renderMode for clean recording */}
+              {selected && !renderMode && (
                 <>
                   <div
                     className="absolute inset-0 ring-2 ring-cyan-400 rounded-[2.5rem] pointer-events-none"

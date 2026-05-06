@@ -276,6 +276,7 @@ export default function UltraMockPage() {
   // Reads ?auto=1&text=...&device=...&background=...&preset=...&duration=...&media=...&email=...
   // Then auto-builds the canvas, applies the preset, triggers MP4 download, and emails it.
   const [autoStatus, setAutoStatus] = useState(null); // { phase, message, error }
+  const [renderMode, setRenderMode] = useState(false); // hides UI overlays for clean recording
   const autoRanRef = useRef(false);
   useEffect(() => {
     if (autoRanRef.current) return;
@@ -287,10 +288,16 @@ export default function UltraMockPage() {
     const autoDevice = params.get("device") || "iphone";
     const autoBackground = params.get("background") || "sunset";
     const autoPreset = params.get("preset") || "spin";
-    const autoDuration = Math.max(1, Math.min(30, Number(params.get("duration")) || 4));
+    const autoDuration = Math.max(1, Math.min(60, Number(params.get("duration")) || 4));
     const autoMedia = params.get("media") || "";
     const autoEmail = (params.get("email") || "").trim();
+    const autoSpeed = Math.max(0.25, Math.min(4, Number(params.get("speed")) || 1));
+    const autoCamera = params.get("camera") || ""; // optional camera preset id
+    // Multi-segment chain: comma-separated preset ids ("slide-in-left,zoomin,bounce")
+    const autoChain = (params.get("chain") || "").split(",").map(s => s.trim()).filter(Boolean);
 
+    // Render-mode hides outlines, ×, zoom controls, mobile bar — clean recording
+    setRenderMode(true);
     setBackground(autoBackground);
     setDuration(autoDuration);
 
@@ -309,6 +316,7 @@ export default function UltraMockPage() {
     });
     const fresh = textItem ? [textItem, deviceItem] : [deviceItem];
     setItems(fresh);
+    // Don't select anything — keeps render frame clean (no cyan outline, no ×)
     setSelectedId(deviceItem.id);
 
     // Wait for canvas to settle, then apply preset & record
@@ -318,18 +326,33 @@ export default function UltraMockPage() {
       // Give React a couple of paints to mount items
       await new Promise((r) => setTimeout(r, 800));
       try {
-        if (timelineRef.current?.applyPresetById) {
+        if (autoChain.length > 0 && timelineRef.current?.applyPresetById) {
+          // Multi-segment animation: chain presets back-to-back so the device gets
+          // 4-10+ keyframes per segment over the full duration.
+          timelineRef.current.clearKeyframes?.();
+          for (let i = 0; i < autoChain.length; i++) {
+            const mode = i === 0 ? "replace" : "append";
+            timelineRef.current.applyPresetById(autoChain[i], mode);
+            await new Promise((r) => setTimeout(r, 80));
+          }
+        } else if (timelineRef.current?.applyPresetById) {
           timelineRef.current.applyPresetById(autoPreset, "replace");
         }
+        // Optional camera preset across the whole scene
+        if (autoCamera && timelineRef.current?.applyCameraPresetById) {
+          timelineRef.current.applyCameraPresetById(autoCamera, "replace");
+        }
       } catch (e) { console.warn("preset apply failed", e); }
-      // Wait for keyframes to commit, then start recording
-      await new Promise((r) => setTimeout(r, 600));
+      // Wait for keyframes to commit, deselect to clear outline, then start recording
+      await new Promise((r) => setTimeout(r, 200));
+      setSelectedId(null);
+      await new Promise((r) => setTimeout(r, 400));
 
-      setAutoStatus({ phase: "recording", message: `Recording ${autoDuration}s MP4…` });
+      setAutoStatus({ phase: "recording", message: `Recording ${autoDuration}s MP4 (${autoSpeed}× speed)…` });
       let result = null;
       try {
         if (timelineRef.current?.recordVideo) {
-          result = await timelineRef.current.recordVideo();
+          result = await timelineRef.current.recordVideo({ speed: autoSpeed });
         }
       } catch (e) {
         console.error("auto-record failed", e);
@@ -571,8 +594,8 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
-      {/* Top bar */}
-      <nav className="sticky top-0 z-30 flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/10 bg-black/80 backdrop-blur-xl">
+      {/* Top bar — hidden during auto-render so the recording is clean */}
+      <nav className={`sticky top-0 z-30 flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/10 bg-black/80 backdrop-blur-xl ${renderMode ? "hidden" : ""}`}>
         <Link
           to="/AppStoreV2"
           className="flex items-center justify-center sm:gap-1.5 w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 text-white/60 hover:text-white text-sm flex-shrink-0"
@@ -666,7 +689,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
               <FreeCanvas
                 ref={canvasRef}
                 items={items}
-                selectedId={selectedId}
+                selectedId={renderMode ? null : selectedId}
                 setSelectedId={setSelectedId}
                 onUpdateItem={updateItem}
                 onAddAt={addAt}
@@ -680,14 +703,15 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 camera={camera}
                 isPlaying={previewPlaying}
                 onTogglePlay={() => timelineRef.current?.togglePlay?.()}
+                renderMode={renderMode}
               />
             </div>
             <div className="hidden sm:flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3 px-2 text-center">
               <ImageIcon className="w-3 h-3 flex-shrink-0" />
               <span>Click "+ Add Device" then tap the canvas · Drag freely · Animate the selected one below</span>
             </div>
-            {/* Mobile action bar — sits directly under the preview */}
-            <MockMobileBar
+            {/* Mobile action bar — hidden in render mode */}
+            {!renderMode && <MockMobileBar
               placementMode={placementMode}
               onTogglePlacement={() => setPlacementMode((p) => !p)}
               onAddText={addText}
@@ -703,15 +727,15 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
               pinchEnabled={pinchEnabled}
               onTogglePinch={() => setPinchEnabled((p) => !p)}
               onOpenOverlay={() => setOverlayPickerOpen(true)}
-            />
+            />}
 
             <div className="sm:hidden flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-2 px-2 text-center">
               <ImageIcon className="w-3 h-3 flex-shrink-0" />
               <span>Pinch to zoom · Drag empty area to pan · Tap device to select</span>
             </div>
 
-            {/* Multi-track timeline — every item with keyframes gets its own lane */}
-            {showTimeline && (
+            {/* Multi-track timeline — hidden during auto-render to keep frame clean */}
+            {showTimeline && !renderMode && (
               <MockTimeline
                 ref={timelineRef}
                 items={items}
@@ -729,7 +753,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
         </div>
 
         {/* Desktop sidebar — hidden on mobile (replaced by bottom sheet) */}
-        <aside className="hidden lg:block border-l border-white/10 bg-black/40 backdrop-blur-xl p-5 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto">
+        <aside className={`hidden ${renderMode ? "" : "lg:block"} border-l border-white/10 bg-black/40 backdrop-blur-xl p-5 lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)] lg:overflow-y-auto`}>
           {selected?.kind === "text" ? (
             <TextControls
               selected={selected}

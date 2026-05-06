@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Eye, Wand2, Gavel, Sparkles, CheckCircle2, Loader2,
-  Film, ExternalLink, AlertCircle, Bot, ChevronDown, ChevronRight
+  Film, ExternalLink, AlertCircle, Bot, ChevronDown, ChevronRight, Layers
 } from "lucide-react";
 
 /**
@@ -15,6 +15,7 @@ const STEP_META = {
   research:      { icon: Search,    label: "Researching motion ad trends",      color: "from-cyan-500 to-blue-500" },
   analyze_media: { icon: Eye,       label: "Analyzing your media",              color: "from-violet-500 to-fuchsia-500" },
   plan:          { icon: Wand2,     label: "Designing v1 motion plan",          color: "from-fuchsia-500 to-pink-500" },
+  choreograph:   { icon: Layers,    label: "Sub-agents choreographing beats",   color: "from-indigo-500 to-purple-500" },
   critique:      { icon: Gavel,     label: "Self-critique pass",                color: "from-orange-500 to-red-500" },
   refine:        { icon: Sparkles,  label: "Refining into final plan",          color: "from-amber-400 to-orange-500" },
   done:          { icon: CheckCircle2, label: "Final cut ready",                color: "from-emerald-500 to-cyan-500" },
@@ -257,6 +258,29 @@ function StepBody({ step, output }) {
         {output.verdict && (
           <div className="text-[11px] text-white/60 italic">"{output.verdict}"</div>
         )}
+      </div>
+    );
+  }
+
+  if (step === "choreograph") {
+    return (
+      <div className="space-y-1.5">
+        <div className="text-[10px] text-white/50">
+          {output.segment_count} sub-agents · {output.total_duration}s total · ~{(output.total_duration / output.segment_count).toFixed(1)}s per beat
+        </div>
+        <div className="space-y-1">
+          {(output.segments || []).map((seg, i) => (
+            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+              <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white flex-shrink-0">
+                {seg.beat}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-white font-bold truncate">{seg.preset_id}{seg.camera_preset ? ` + ${seg.camera_preset}` : ""}</div>
+                <div className="text-[10px] text-white/50 truncate">{seg.intent}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

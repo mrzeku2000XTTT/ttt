@@ -1,22 +1,34 @@
 import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Loader2, Sparkles, Wand2, X, Mail } from "lucide-react";
+import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import KatagamiAgentChat from "./KatagamiAgentChat";
 
 /**
  * Katagami AI Editor — runs the master motion-ad agent loop:
- * research → analyze_media → plan → critique → refine → done.
- * Every step streams to the chat panel so the user sees the agent's thinking.
+ *   research → analyze_media → plan → [choreograph] → critique → refine → done
+ *
+ * `choreograph` only runs for LONG-form videos (duration > 8s). It spawns a
+ * fresh sub-agent for each beat (4-10 segments) so the final ad has many
+ * distinct keyframed motions instead of one looping preset.
  */
 
-const STEPS = ["research", "analyze_media", "plan", "critique", "refine", "done"];
+const SHORT_STEPS = ["research", "analyze_media", "plan", "critique", "refine", "done"];
+const LONG_STEPS  = ["research", "analyze_media", "plan", "choreograph", "critique", "refine", "done"];
+
+const SPEED_OPTIONS = [
+  { value: 0.5, label: "0.5×", desc: "Slow / cinematic" },
+  { value: 1,   label: "1×",   desc: "Real-time" },
+  { value: 2,   label: "2×",   desc: "Fast / punchy" },
+];
 
 export default function KatagamiAIEditor() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [vibe, setVibe] = useState("");
   const [email, setEmail] = useState("");
+  const [duration, setDurationSec] = useState(6); // 4-30s — > 8 triggers multi-agent loop
+  const [speed, setSpeed] = useState(1);          // 0.5 / 1 / 2
 
   const [working, setWorking] = useState(null);   // current step name while in-flight
   const [messages, setMessages] = useState([]);   // [{step, output}]
@@ -73,7 +85,20 @@ export default function KatagamiAIEditor() {
       if (!file_url) throw new Error("Upload failed");
 
       const media_type = file.type.startsWith("video/") ? "video" : "image";
-      let state = { media_url: file_url, media_type, vibe, email: email.trim() || undefined };
+      const isLong = duration > 8;
+      // For long-form: ~2s per beat → 4-10 sub-agent segments
+      const segmentCount = isLong ? Math.max(4, Math.min(10, Math.round(duration / 2))) : 0;
+      const STEPS = isLong ? LONG_STEPS : SHORT_STEPS;
+
+      let state = {
+        media_url: file_url,
+        media_type,
+        vibe,
+        email: email.trim() || undefined,
+        target_duration: duration,
+        segment_count: segmentCount,
+        speed,
+      };
 
       // Walk through every step
       for (const step of STEPS) {
@@ -86,11 +111,12 @@ export default function KatagamiAIEditor() {
         setMessages((prev) => [...prev, { step, output: data.output }]);
 
         // Merge step output into running state under that step's key
-        if (step === "research")        state = { ...state, research: data.output };
+        if (step === "research")           state = { ...state, research: data.output };
         else if (step === "analyze_media") state = { ...state, analysis: data.output };
-        else if (step === "plan")       state = { ...state, plan: data.output };
-        else if (step === "critique")   state = { ...state, critique: data.output };
-        else if (step === "refine")     state = { ...state, plan: data.output }; // overwrite plan with refined v2
+        else if (step === "plan")          state = { ...state, plan: data.output };
+        else if (step === "choreograph")   state = { ...state, choreograph: data.output };
+        else if (step === "critique")      state = { ...state, critique: data.output };
+        else if (step === "refine")        state = { ...state, plan: data.output };
         else if (step === "done" && data.render_url) setRenderUrl(data.render_url);
       }
     } catch (e) {
@@ -177,6 +203,59 @@ export default function KatagamiAIEditor() {
               className="w-full h-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder:text-white/30 focus:border-fuchsia-400/50 focus:bg-white/10 outline-none resize-none"
               disabled={running}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Duration */}
+            <div>
+              <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Clock className="w-3 h-3" /> Duration
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={4}
+                  max={30}
+                  step={1}
+                  value={duration}
+                  onChange={(e) => setDurationSec(Number(e.target.value))}
+                  disabled={running}
+                  className="flex-1 accent-fuchsia-400"
+                />
+                <span className="text-white font-mono text-xs tabular-nums w-8 text-right">{duration}s</span>
+              </div>
+              <div className="text-[10px] text-white/40 mt-1">
+                {duration > 8 ? `🤖 Multi-agent · ${Math.max(4, Math.min(10, Math.round(duration / 2)))} sub-agents` : "Single-shot"}
+              </div>
+            </div>
+
+            {/* Speed */}
+            <div>
+              <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Gauge className="w-3 h-3" /> Render speed
+              </label>
+              <div className="flex items-center gap-1 p-1 rounded-lg bg-white/5 border border-white/10">
+                {SPEED_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSpeed(opt.value)}
+                    disabled={running}
+                    title={opt.desc}
+                    className={`flex-1 h-7 rounded-md text-[11px] font-bold transition-colors ${
+                      speed === opt.value
+                        ? "bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/30"
+                        : "text-white/60 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="text-[10px] text-white/40 mt-1">
+                {SPEED_OPTIONS.find(o => o.value === speed)?.desc}
+              </div>
+            </div>
           </div>
 
           <div>
