@@ -32,6 +32,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     isPlaying = false,     // bool — preview animation playing state (from timeline)
     onTogglePlay,          // () => void — toggle play/pause via the timeline ref
     renderMode = false,    // when true: hide selection rings, × buttons, zoom controls — clean recording
+    playhead = 0,          // current timeline time (sec) — drives per-beat text visibility
   },
   ref
 ) {
@@ -503,6 +504,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                 cameraZoom={camera?.zoom || 1}
                 viewZoom={zoom}
                 onUpdateItem={onUpdateItem}
+                playhead={playhead}
               />
             );
           }

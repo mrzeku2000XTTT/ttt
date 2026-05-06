@@ -105,6 +105,8 @@ export default function UltraMockPage() {
   const [camera, setCamera] = useState({ zoom: 1, x: 50, y: 50 });
   const [exporting, setExporting] = useState(false);
   const [previewPlaying, setPreviewPlaying] = useState(false);
+  // Current timeline playhead (seconds) — drives per-beat text visibility windows
+  const [playhead, setPlayhead] = useState(0);
   const [agentOpen, setAgentOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
@@ -339,10 +341,21 @@ export default function UltraMockPage() {
     });
     const fresh = [];
     if (autoBeats.length > 0) {
-      // Per-beat texts: spread them across the timeline. Each one gets its
-      // own typewriter/pop/3d animation + non-overlapping position.
+      // Per-beat texts: spread them across the timeline sequentially — ONE beat
+      // visible at a time. Each beat gets a strict [appearAt, disappearAt] window
+      // computed from its declared duration, so TextLayer hides it outside that
+      // window. loopDelay=0 disables the auto-restart so the animation plays
+      // ONCE per beat and holds until the next beat takes over.
+      let cursor = 0;
+      const totalBeatDur = autoBeats.reduce((acc, b) => acc + (Number(b.d) > 0 ? Number(b.d) : 0), 0);
+      // If durations are missing/invalid, fall back to evenly splitting the timeline.
+      const evenLen = autoBeats.length > 0 ? autoDuration / autoBeats.length : 0;
       autoBeats.forEach((b) => {
         if (!b.t) return;
+        const segLen = Number(b.d) > 0 ? Number(b.d) : evenLen;
+        const appearAt = cursor;
+        const disappearAt = Math.min(autoDuration, cursor + segLen);
+        cursor = disappearAt;
         fresh.push(makeText({
           text: b.t,
           x: typeof b.x === "number" ? b.x : 50,
@@ -352,10 +365,14 @@ export default function UltraMockPage() {
           color: "#ffffff",
           animation: ["typewriter", "pop", "3d", "none"].includes(b.a) ? b.a : "pop",
           typeSpeed: 18,
-          loopDelay: 1.5,
+          loopDelay: 0,         // play once — do NOT loop while the beat is on screen
           boxWidth: 80,
+          appearAt,             // beat is HIDDEN before this time
+          disappearAt,          // beat is HIDDEN at/after this time
         }));
       });
+      // Avoid unused-var lint flag for totalBeatDur (kept for future tuning)
+      void totalBeatDur;
     } else if (autoText) {
       fresh.push(makeText({
         text: autoText,
@@ -793,6 +810,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 isPlaying={previewPlaying}
                 onTogglePlay={() => timelineRef.current?.togglePlay?.()}
                 renderMode={renderMode}
+                playhead={playhead}
               />
             </div>
             <div className="hidden sm:flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3 px-2 text-center">

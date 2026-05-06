@@ -27,6 +27,7 @@ const MockTimeline = forwardRef(function MockTimeline({
   camera,                 // { zoom, x, y } — current camera state
   setCamera,              // setter to drive the canvas viewport
   onPlayingChange,        // (playing: bool) => void — notify parent so the canvas overlay can show play/pause
+  onPlayheadChange,       // (t: number) => void — notify parent of playhead changes (drives per-beat text visibility)
 }, ref) {
   // tracks: { [itemId]: Keyframe[] }
   const [tracks, setTracks] = useState({});
@@ -59,6 +60,9 @@ const MockTimeline = forwardRef(function MockTimeline({
 
   // Expose playing state upward (so FreeCanvas's overlay can show a play/pause button)
   useEffect(() => { if (onPlayingChange) onPlayingChange(playing); }, [playing, onPlayingChange]);
+
+  // Expose playhead upward — drives per-beat text visibility windows in TextLayer.
+  useEffect(() => { if (onPlayheadChange) onPlayheadChange(playhead); }, [playhead, onPlayheadChange]);
 
   const selected = items.find((i) => i.id === selectedId) || null;
   const selectedKfs = (selected && tracks[selected.id]) || [];

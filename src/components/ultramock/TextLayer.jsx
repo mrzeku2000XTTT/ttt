@@ -37,18 +37,29 @@ export default function TextLayer({
   cameraZoom = 1,
   viewZoom = 1,
   onUpdateItem,
+  playhead = 0,  // current timeline time (sec) — drives appearAt/disappearAt windows
 }) {
   const [displayed, setDisplayed] = useState(item.text || "");
   // Word-pop animation state — number of words currently visible
   const [popVisible, setPopVisible] = useState(0);
 
-  // Word-pop loop: reveals one word at a time, then loops.
+  // Per-beat visibility window: when a beat has appearAt/disappearAt set
+  // (from the Katagami sub-agent flow), render ONLY inside [appearAt, disappearAt].
+  // While editing (item is selected), always show so the user can drag/resize.
+  const hasWindow = typeof item.appearAt === "number" && typeof item.disappearAt === "number";
+  const inWindow = !hasWindow || (playhead >= item.appearAt && playhead < item.disappearAt);
+
+  // Word-pop loop: reveals one word at a time, then loops (if loopDelay > 0).
+  // When loopDelay is 0, the animation plays ONCE and holds — used for sequential
+  // per-beat playback so each beat shows its words once and stays visible until
+  // its disappearAt window ends.
   useEffect(() => {
     if (item.animation !== "pop") return;
     const words = (item.text || "").split(/\s+/).filter(Boolean);
     if (!words.length) return;
     const stepMs = Math.max(50, (Number(item.popDelay) || 0.25) * 1000);
     const loopMs = Math.max(0, (Number(item.loopDelay) ?? 1.5) * 1000);
+    const shouldLoop = loopMs > 0;
     let cancelled = false;
     let timeouts = [];
 
@@ -58,8 +69,10 @@ export default function TextLayer({
         const t = setTimeout(() => { if (!cancelled) setPopVisible(i); }, i * stepMs);
         timeouts.push(t);
       }
-      const restart = setTimeout(() => { if (!cancelled) runOnce(); }, words.length * stepMs + loopMs);
-      timeouts.push(restart);
+      if (shouldLoop) {
+        const restart = setTimeout(() => { if (!cancelled) runOnce(); }, words.length * stepMs + loopMs);
+        timeouts.push(restart);
+      }
     };
     runOnce();
     return () => { cancelled = true; timeouts.forEach(clearTimeout); };
@@ -73,6 +86,7 @@ export default function TextLayer({
     const full = item.text || "";
     const speed = Math.max(1, Number(item.typeSpeed) || 12); // chars per sec
     const loopDelay = Math.max(0, Number(item.loopDelay) ?? 1.5) * 1000;
+    const shouldLoop = loopDelay > 0;
     let cancelled = false;
     let timeouts = [];
 
@@ -84,11 +98,13 @@ export default function TextLayer({
         }, (i / speed) * 1000);
         timeouts.push(t);
       }
-      // schedule restart
-      const restart = setTimeout(() => {
-        if (!cancelled) runOnce();
-      }, (full.length / speed) * 1000 + loopDelay);
-      timeouts.push(restart);
+      // Only schedule a restart if loopDelay > 0 — beats need ONE pass.
+      if (shouldLoop) {
+        const restart = setTimeout(() => {
+          if (!cancelled) runOnce();
+        }, (full.length / speed) * 1000 + loopDelay);
+        timeouts.push(restart);
+      }
     };
 
     runOnce();
@@ -97,6 +113,10 @@ export default function TextLayer({
       timeouts.forEach(clearTimeout);
     };
   }, [item.text, item.animation, item.typeSpeed, item.loopDelay]);
+
+  // OUTSIDE-WINDOW: don't render anything (one beat at a time). Always render
+  // when the user has selected the item so they can edit it.
+  if (hasWindow && !inWindow && !selected) return null;
 
   return (
     <div
