@@ -57,6 +57,7 @@ import TTTGatePage from './pages/TTTGate';
 import UltraMockPage from './pages/UltraMock';
 import KatagamiPage from './pages/Katagami';
 import DoomPage from './pages/Doom';
+import BeatCutPage from './pages/BeatCut';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -155,6 +156,7 @@ const AuthenticatedApp = () => {
       <Route path="/MIRAGEStudio" element={<MIRAGEStudioPage />} />
       <Route path="/UltraMock" element={<UltraMockPage />} />
       <Route path="/Doom" element={<DoomPage />} />
+      <Route path="/BeatCut" element={<BeatCutPage />} />
       <Route path="/Katagami" element={
         <LayoutWrapper currentPageName="Katagami">
           <KatagamiPage />

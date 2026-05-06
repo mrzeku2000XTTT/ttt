@@ -1,0 +1,104 @@
+{
+  "name": "NodaWorkflow",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the user who owns this workflow"
+    },
+    "name": {
+      "type": "string",
+      "description": "Workflow name (also used as call key)"
+    },
+    "slug": {
+      "type": "string",
+      "description": "Lowercase URL-safe identifier (auto-derived from name)"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this workflow does"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "config": {
+            "type": "object"
+          }
+        }
+      },
+      "description": "Ordered list of workflow nodes"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, any signed-in app user can invoke it via runNodaWorkflow"
+    },
+    "run_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Total times this workflow has run"
+    },
+    "last_run_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "owner_email",
+    "name",
+    "nodes"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "owner_email": "{{user.email}}"
+        },
+        {
+          "is_public": true
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "owner_email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "owner_email": "{{user.email}}"
+        },
+        {
+          "user.role": "admin"
+        }
+      ]
+    }
+  }
+}
