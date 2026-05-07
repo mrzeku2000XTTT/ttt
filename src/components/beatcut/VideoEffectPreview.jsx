@@ -5,7 +5,6 @@ const VideoEffectPreview = forwardRef(function VideoEffectPreview({ video, analy
   const videoRef = useRef(null);
   const stageRef = useRef(null);
   const rafRef = useRef(null);
-  const playStartRef = useRef(0);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
 
@@ -15,7 +14,7 @@ const VideoEffectPreview = forwardRef(function VideoEffectPreview({ video, analy
   useEffect(() => {
     if (!playing) return;
     const tick = () => {
-      const t = video?.type === "image" ? (performance.now() - playStartRef.current) / 1000 : videoRef.current?.currentTime || 0;
+      const t = videoRef.current?.currentTime || 0;
       if (t >= duration) {
         reset();
         return;
@@ -28,13 +27,9 @@ const VideoEffectPreview = forwardRef(function VideoEffectPreview({ video, analy
   }, [playing, duration]);
 
   const play = () => {
-    if (video?.type !== "image" && !videoRef.current) return;
-    if (video?.type === "image") {
-      playStartRef.current = performance.now();
-    } else {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => {});
-    }
+    if (!videoRef.current) return;
+    videoRef.current.currentTime = 0;
+    videoRef.current.play().catch(() => {});
     setTime(0);
     setPlaying(true);
   };
@@ -62,17 +57,13 @@ const VideoEffectPreview = forwardRef(function VideoEffectPreview({ video, analy
   return (
     <div className="space-y-3">
       <div ref={stageRef} className="relative aspect-[9/16] rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-fuchsia-500/10">
-        {video.type === "image" ? (
-          <img src={video.url} alt={video.name} className={`absolute inset-0 w-full h-full object-cover beatcut-edit-${currentEffect}`} />
-        ) : (
-          <video
-            ref={videoRef}
-            src={video.url}
-            className={`absolute inset-0 w-full h-full object-cover beatcut-edit-${currentEffect}`}
-            muted
-            playsInline
-          />
-        )}
+        <video
+          ref={videoRef}
+          src={video.url}
+          className={`absolute inset-0 w-full h-full object-cover beatcut-edit-${currentEffect}`}
+          muted
+          playsInline
+        />
         <div key={currentEffect + Math.floor(time)} className={`absolute inset-0 pointer-events-none beatcut-overlay-${currentEffect}`} />
         <div className="absolute inset-x-0 top-0 h-1 bg-white/10">
           <div className="h-full bg-gradient-to-r from-fuchsia-400 to-cyan-300" style={{ width: `${Math.min(100, (time / duration) * 100)}%` }} />

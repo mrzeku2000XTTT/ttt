@@ -7,9 +7,7 @@ import { base44 } from "@/api/base44Client";
 import SingleVideoPicker from "@/components/beatcut/SingleVideoPicker";
 import VideoEffectPreview from "@/components/beatcut/VideoEffectPreview";
 import AnalysisLogPanel from "@/components/beatcut/AnalysisLogPanel";
-import PresetTemplatePicker from "@/components/beatcut/PresetTemplatePicker";
 import { analyzeVideoFrames } from "@/components/beatcut/videoFrameAnalyzer";
-import { applyAnimationTemplate, buildStaticImagePlan, DEFAULT_TEMPLATE_ID, getAnimationTemplate } from "@/components/beatcut/animationTemplates";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/80ea7b3ed_generated_image.png";
 
@@ -18,8 +16,6 @@ export default function BeatCutPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [video, setVideo] = useState(null);
   const [analysis, setAnalysis] = useState(null);
-  const [rawAnalysis, setRawAnalysis] = useState(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState(DEFAULT_TEMPLATE_ID);
   const [analysisLogs, setAnalysisLogs] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [rendering, setRendering] = useState(false);
@@ -34,34 +30,19 @@ export default function BeatCutPage() {
   const handleVideoSet = async (nextVideo) => {
     setVideo(nextVideo);
     setAnalysis(null);
-    setRawAnalysis(null);
-    setAnalysisLogs([{ text: `${nextVideo.type === "image" ? "Image" : "Video"} received. Preparing template scan…` }]);
+    setAnalysisLogs([{ text: "Video received. Starting frame scan…" }]);
     setAnalyzing(true);
-    const result = nextVideo.type === "image"
-      ? buildStaticImagePlan(10)
-      : await analyzeVideoFrames(nextVideo.file, 10, (entry) => {
-          setAnalysisLogs((prev) => [...prev, entry]);
-        });
-    setRawAnalysis(result);
-    setAnalysis(applyAnimationTemplate(result, getAnimationTemplate(selectedTemplateId)));
-    setAnalysisLogs((prev) => [...prev, { text: `Template applied: ${getAnimationTemplate(selectedTemplateId).name}`, done: true }]);
+    const result = await analyzeVideoFrames(nextVideo.file, 10, (entry) => {
+      setAnalysisLogs((prev) => [...prev, entry]);
+    });
+    setAnalysis(result);
     setAnalyzing(false);
   };
 
   const clearVideo = () => {
     setVideo(null);
     setAnalysis(null);
-    setRawAnalysis(null);
     setAnalysisLogs([]);
-  };
-
-  const handleTemplateSelect = (templateId) => {
-    setSelectedTemplateId(templateId);
-    if (rawAnalysis) {
-      const template = getAnimationTemplate(templateId);
-      setAnalysis(applyAnimationTemplate(rawAnalysis, template));
-      setAnalysisLogs((prev) => [...prev, { text: `Template switched to ${template.name}`, done: true }]);
-    }
   };
 
   const handleExport = async () => {
@@ -117,21 +98,18 @@ export default function BeatCutPage() {
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-bold text-fuchsia-200 mb-4">
-            <Sparkles className="w-3 h-3" /> Plug MP4/images into reusable animation templates
+            <Sparkles className="w-3 h-3" /> CapCut-style one-slide auto effects
           </div>
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[0.92] max-w-4xl">
-            Pick a template. Plug in MP4 or image. Auto-animate.
+            One 10-sec video. Frame-analyzed. Auto-animated.
           </h1>
           <p className="text-white/50 text-sm sm:text-base max-w-2xl mt-4 leading-relaxed">
-            Choose a preset animation template, upload an MP4 or image, and BeatCut places it inside a 10-second animated video style with pre-built punch, shake, flash, neon, and zoom effects.
+            Upload one short user video. BeatCut analyzes the first 10 seconds frame-by-frame, detects motion and brightness changes, then applies pre-animated punch, shake, flash, neon, and zoom effects.
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5 lg:gap-8">
           <section className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <Panel>
-              <PresetTemplatePicker selectedId={selectedTemplateId} onSelect={handleTemplateSelect} />
-            </Panel>
             <Panel>
               <SingleVideoPicker video={video} onSet={handleVideoSet} onClear={clearVideo} />
             </Panel>
