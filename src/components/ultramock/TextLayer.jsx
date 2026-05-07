@@ -127,6 +127,9 @@ export default function TextLayer({
 
   // OUTSIDE-WINDOW: don't render anything (one beat at a time). Always render
   // when the user has selected the item so they can edit it.
+  // Visual cue when selected-but-out-of-window: dim + dashed outline so the
+  // user clearly sees "this is hidden at the current playhead".
+  const dimmed = hasWindow && !inWindow && selected;
   if (hasWindow && !inWindow && !selected) return null;
 
   return (
@@ -144,6 +147,7 @@ export default function TextLayer({
         pointerEvents: "auto",
         width: `${Math.max(10, Math.min(100, item.boxWidth ?? 90))}%`,
         maxWidth: `${Math.max(10, Math.min(100, item.boxWidth ?? 90))}%`,
+        opacity: dimmed ? 0.25 : 1,
       }}
     >
       {selected && (
@@ -152,6 +156,13 @@ export default function TextLayer({
           <div className="absolute top-1/2 -left-7 -translate-y-1/2 z-30 w-6 h-6 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-lg pointer-events-none">
             <Move className="w-3 h-3" />
           </div>
+          {hasWindow && (
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 rounded-full bg-orange-400 text-black text-[10px] font-black tracking-wide shadow-lg whitespace-nowrap pointer-events-none">
+              {hasBeatWindow
+                ? `⏱ ${item.appearAt.toFixed(1)}s – ${item.disappearAt.toFixed(1)}s`
+                : `⏱ appears at ${trackWindow.first.toFixed(1)}s`}
+            </div>
+          )}
           <div
             className="absolute -inset-2 ring-2 ring-cyan-400/70 rounded-lg pointer-events-none"
             style={{ boxShadow: "0 0 0 4px rgba(34,211,238,0.1)" }}
