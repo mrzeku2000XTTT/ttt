@@ -39,6 +39,7 @@ export default function TextLayer({
   viewZoom = 1,
   onUpdateItem,
   playhead = 0,  // current timeline time (sec) — drives appearAt/disappearAt windows
+  trackWindow = null, // { first, last } — first/last keyframe times for this item's track
 }) {
   const [displayed, setDisplayed] = useState(item.text || "");
   // Word-pop animation state — number of words currently visible
@@ -46,9 +47,18 @@ export default function TextLayer({
 
   // Per-beat visibility window: when a beat has appearAt/disappearAt set
   // (from the Katagami sub-agent flow), render ONLY inside [appearAt, disappearAt].
+  // Otherwise, when this text has timeline keyframes, gate visibility to its
+  // [first kf, last kf] window so the word only appears starting at its
+  // first keyframe — i.e. "shows up on the time it was added on keyframe".
   // While editing (item is selected), always show so the user can drag/resize.
-  const hasWindow = typeof item.appearAt === "number" && typeof item.disappearAt === "number";
-  const inWindow = !hasWindow || (playhead >= item.appearAt && playhead < item.disappearAt);
+  const hasBeatWindow = typeof item.appearAt === "number" && typeof item.disappearAt === "number";
+  const hasKfWindow = !hasBeatWindow && trackWindow && typeof trackWindow.first === "number";
+  const hasWindow = hasBeatWindow || hasKfWindow;
+  const inWindow = hasBeatWindow
+    ? (playhead >= item.appearAt && playhead < item.disappearAt)
+    : hasKfWindow
+      ? (playhead >= trackWindow.first - 0.001)
+      : true;
 
   // Word-pop loop: reveals one word at a time, then loops (if loopDelay > 0).
   // When loopDelay is 0, the animation plays ONCE and holds — used for sequential

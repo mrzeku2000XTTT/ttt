@@ -28,6 +28,7 @@ const MockTimeline = forwardRef(function MockTimeline({
   setCamera,              // setter to drive the canvas viewport
   onPlayingChange,        // (playing: bool) => void — notify parent so the canvas overlay can show play/pause
   onPlayheadChange,       // (t: number) => void — notify parent of playhead changes (drives per-beat text visibility)
+  onTrackWindowsChange,   // ({[itemId]: {first,last}}) => void — exposes each track's first/last keyframe time
 }, ref) {
   // tracks: { [itemId]: Keyframe[] }
   const [tracks, setTracks] = useState({});
@@ -63,6 +64,19 @@ const MockTimeline = forwardRef(function MockTimeline({
 
   // Expose playhead upward — drives per-beat text visibility windows in TextLayer.
   useEffect(() => { if (onPlayheadChange) onPlayheadChange(playhead); }, [playhead, onPlayheadChange]);
+
+  // Expose per-item keyframe windows so text only appears between its first
+  // and last keyframe. { [itemId]: { first: number, last: number } }
+  useEffect(() => {
+    if (!onTrackWindowsChange) return;
+    const windows = {};
+    Object.entries(tracks).forEach(([id, kfs]) => {
+      if (!kfs || kfs.length === 0) return;
+      const sorted = [...kfs].sort((a, b) => a.t - b.t);
+      windows[id] = { first: sorted[0].t, last: sorted[sorted.length - 1].t };
+    });
+    onTrackWindowsChange(windows);
+  }, [tracks, onTrackWindowsChange]);
 
   const selected = items.find((i) => i.id === selectedId) || null;
   const selectedKfs = (selected && tracks[selected.id]) || [];

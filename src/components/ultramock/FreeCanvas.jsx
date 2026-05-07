@@ -34,6 +34,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     onTogglePlay,          // () => void — toggle play/pause via the timeline ref
     renderMode = false,    // when true: hide selection rings, × buttons, zoom controls — clean recording
     playhead = 0,          // current timeline time (sec) — drives per-beat text visibility
+    trackWindows = {},     // { [itemId]: { first, last } } — per-item kf windows for text gating
   },
   ref
 ) {
@@ -523,6 +524,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
                 viewZoom={zoom}
                 onUpdateItem={onUpdateItem}
                 playhead={playhead}
+                trackWindow={trackWindows[item.id] || null}
               />
             );
           }

@@ -108,6 +108,8 @@ export default function UltraMockPage() {
   const [previewPlaying, setPreviewPlaying] = useState(false);
   // Current timeline playhead (seconds) — drives per-beat text visibility windows
   const [playhead, setPlayhead] = useState(0);
+  // Per-track first/last keyframe times — drives "text appears at its keyframe time"
+  const [trackWindows, setTrackWindows] = useState({});
   const [agentOpen, setAgentOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
@@ -1077,6 +1079,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 onTogglePlay={() => timelineRef.current?.togglePlay?.()}
                 renderMode={renderMode}
                 playhead={playhead}
+                trackWindows={trackWindows}
               />
             </div>
             <div className="hidden sm:flex items-center justify-center gap-1.5 text-white/30 text-[10px] font-medium mt-3 px-2 text-center">
@@ -1123,6 +1126,8 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                   camera={camera}
                   setCamera={setCamera}
                   onPlayingChange={setPreviewPlaying}
+                  onPlayheadChange={setPlayhead}
+                  onTrackWindowsChange={setTrackWindows}
                 />
               </div>
             )}
