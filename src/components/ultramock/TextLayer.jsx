@@ -125,12 +125,8 @@ export default function TextLayer({
     };
   }, [item.text, item.animation, item.typeSpeed, item.loopDelay]);
 
-  // OUTSIDE-WINDOW: don't render anything (one beat at a time). Always render
-  // when the user has selected the item so they can edit it.
-  // Visual cue when selected-but-out-of-window: dim + dashed outline so the
-  // user clearly sees "this is hidden at the current playhead".
-  const dimmed = hasWindow && !inWindow && selected;
-  if (hasWindow && !inWindow && !selected) return null;
+  // OUTSIDE-WINDOW: don't render anything — completely hidden, even when selected.
+  if (hasWindow && !inWindow) return null;
 
   return (
     <div
@@ -147,7 +143,6 @@ export default function TextLayer({
         pointerEvents: "auto",
         width: `${Math.max(10, Math.min(100, item.boxWidth ?? 90))}%`,
         maxWidth: `${Math.max(10, Math.min(100, item.boxWidth ?? 90))}%`,
-        opacity: dimmed ? 0.25 : 1,
       }}
     >
       {selected && (
