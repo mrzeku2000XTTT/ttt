@@ -1,5 +1,5 @@
 export async function analyzeVideoFrames(videoFileOrUrl, maxDuration = 10, onLog) {
-  const log = (text, done = false) => onLog?.({ text, done });
+  const log = (text, done = false, sample = null) => onLog?.({ text, done, sample });
   const url = typeof videoFileOrUrl === "string" ? videoFileOrUrl : URL.createObjectURL(videoFileOrUrl);
   log("Loading video metadata…");
   const video = document.createElement("video");
@@ -45,7 +45,7 @@ export async function analyzeVideoFrames(videoFileOrUrl, maxDuration = 10, onLog
       motion: previous ? motion / count : 0,
     };
     samples.push(sample);
-    log(`Frame ${samples.length}: ${sample.t.toFixed(2)}s · motion ${sample.motion.toFixed(1)} · light ${sample.brightness.toFixed(0)}`);
+    log(`Frame ${samples.length}: ${sample.t.toFixed(2)}s · motion ${sample.motion.toFixed(1)} · light ${sample.brightness.toFixed(0)}`, false, sample);
     previous = gray;
   }
 
