@@ -108,7 +108,8 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
         }
       }
       if (userAttachments.length > 0) {
-        systemPrompt += `\n\n📎 The user attached ${userAttachments.length} reference image(s). Inspect them visually for style, content, or context the user wants applied.`;
+        const urlList = userAttachments.map((a, i) => `  ${i + 1}. ${a.url}  (${a.name})`).join("\n");
+        systemPrompt += `\n\n📎 ATTACHMENT URLS — the user attached ${userAttachments.length} image(s):\n${urlList}\n\nIf the user is asking you to upload/use/place/render this image on a device, call set_media({ url: "<one of the URLs above>" }) — pass the EXACT url string from the list. Do NOT invent placeholder URLs. If multiple images and multiple devices exist, map them in order (slide 1 ← img 1, slide 2 ← img 2, etc.) using set_media({ url, slide_number }).`;
       }
 
       // Build conversational context

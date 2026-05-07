@@ -796,6 +796,35 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
       removeItem(id);
       return { id };
     },
+    set_media: (a = {}) => {
+      const url = (a.url || "").trim();
+      if (!url) throw new Error("url is required");
+      // Resolve target: explicit id → slide_number → selected device → first device → auto-create
+      let target = null;
+      if (a.id) target = items.find((it) => it.id === a.id);
+      else if (typeof a.slide_number === "number") target = items[a.slide_number - 1];
+      else if (selectedId) {
+        const sel = items.find((it) => it.id === selectedId);
+        if (sel?.kind === "device") target = sel;
+      }
+      if (!target || target.kind !== "device") {
+        target = items.find((it) => it.kind === "device") || null;
+      }
+      if (!target) {
+        // No device on canvas yet — create one to host the media
+        const it = makeItem({ x: 50, y: 55, scale: 0.85 });
+        const newItems = [...items, it];
+        setItems(newItems);
+        setSelectedId(it.id);
+        target = it;
+      }
+      const isVideo = a.type === "video" || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+      updateItem(target.id, {
+        media: { url, type: isVideo ? "video" : "image", name: "attachment" },
+      });
+      setSelectedId(target.id);
+      return { id: target.id, url, type: isVideo ? "video" : "image" };
+    },
     set_background: (a = {}) => {
       if (a.background) setBackground(a.background);
       // Switching to a preset gradient should drop any custom AI image
