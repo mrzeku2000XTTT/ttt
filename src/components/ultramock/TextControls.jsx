@@ -1,6 +1,7 @@
 import React from "react";
 import { Type, RotateCcw } from "lucide-react";
 import ScriptGenerator from "./ScriptGenerator";
+import TextStylePanel from "./TextStylePanel";
 
 const PRESET_POSITIONS = [
   { id: "tl", label: "Top L",     x: 20, y: 15 },
@@ -50,6 +51,8 @@ export default function TextControls({ selected, onUpdate, onRemove, onAddAsNewS
         onAddAsNewSlide={(line) => onAddAsNewSlide?.(line)}
       />
 
+      {/* 3D depth one-click + AI image-fill + per-letter editor */}
+      <TextStylePanel selected={selected} onUpdate={onUpdate} />
 
       <Section title="Animation">
         <div className="grid grid-cols-2 gap-1.5">

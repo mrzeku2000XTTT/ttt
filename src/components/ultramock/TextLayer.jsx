@@ -45,6 +45,44 @@ export default function TextLayer({
   // Word-pop animation state — number of words currently visible
   const [popVisible, setPopVisible] = useState(0);
 
+  // Per-letter overrides (each: { color?, scale?, rotation? }) and
+  // optional image-fill URL — letters use background-clip: text to render the
+  // image *inside* the glyph shapes.
+  const letterOverrides = Array.isArray(item.letters) ? item.letters : [];
+  const hasLetterOverrides = letterOverrides.some((l) => l && Object.keys(l).length > 0);
+  const imageFillUrl = item.imageFillUrl || null;
+  const imageFillStyle = imageFillUrl
+    ? {
+        backgroundImage: `url("${imageFillUrl}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        WebkitBackgroundClip: "text",
+        backgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        color: "transparent",
+        // text-shadow kills the clip on most browsers — drop it for image fills
+        textShadow: "none",
+      }
+    : null;
+
+  // Render text as per-letter <span>s when overrides exist, OR pass through.
+  // Used by the static + 3D variants. The typewriter/pop animations have
+  // their own renderers and ignore per-letter overrides for simplicity.
+  const renderStyledText = (sourceText, baseStyle = {}) => {
+    if (!hasLetterOverrides) return sourceText;
+    return sourceText.split("").map((ch, i) => {
+      const o = letterOverrides[i] || {};
+      const style = {
+        display: "inline-block",
+        whiteSpace: "pre",
+        ...(o.color ? { color: o.color, WebkitTextFillColor: o.color } : null),
+        ...(o.scale ? { fontSize: `${(Number(baseStyle.fontSize) || 32) * o.scale}px` } : null),
+        ...(o.rotation ? { transform: `rotate(${o.rotation}deg)` } : null),
+      };
+      return <span key={i} style={style}>{ch}</span>;
+    });
+  };
+
   // Per-beat visibility window: when a beat has appearAt/disappearAt set
   // (from the Katagami sub-agent flow), render ONLY inside [appearAt, disappearAt].
   // Otherwise, when this text has timeline keyframes, gate visibility to its
@@ -188,7 +226,8 @@ export default function TextLayer({
         </>
       )}
       {item.animation === "3d" ? (
-        // 3D extruded text — stacked layered shadows + perspective tilt
+        // 3D extruded text — stacked layered shadows + perspective tilt.
+        // Image fills disable the textShadow stack (background-clip can't coexist with it).
         <div
           style={{
             perspective: "800px",
@@ -207,11 +246,12 @@ export default function TextLayer({
               letterSpacing: "-0.02em",
               transform: `rotateX(${item.tilt ?? 12}deg)`,
               transformOrigin: "50% 100%",
-              textShadow: build3DShadow(item.depth ?? 8, item.color),
+              textShadow: imageFillUrl ? "none" : build3DShadow(item.depth ?? 8, item.color),
               filter: "drop-shadow(0 12px 24px rgba(0,0,0,0.45))",
+              ...(imageFillStyle || {}),
             }}
           >
-            {item.text}
+            {renderStyledText(item.text, { fontSize: item.fontSize })}
           </div>
         </div>
       ) : item.animation === "pop" ? (
@@ -259,13 +299,14 @@ export default function TextLayer({
             fontWeight: item.fontWeight,
             fontFamily: item.fontFamily || "ui-sans-serif, system-ui, sans-serif",
             textAlign: "center",
-            textShadow: "0 2px 12px rgba(0,0,0,0.35)",
+            textShadow: imageFillUrl ? "none" : "0 2px 12px rgba(0,0,0,0.35)",
             whiteSpace: "pre-wrap",
             lineHeight: 1.15,
             letterSpacing: "-0.01em",
+            ...(imageFillStyle || {}),
           }}
         >
-          {displayed}
+          {item.animation === "typewriter" ? displayed : renderStyledText(displayed, { fontSize: item.fontSize })}
           {item.animation === "typewriter" && (
             <span
               className="inline-block w-[0.08em] align-baseline"
