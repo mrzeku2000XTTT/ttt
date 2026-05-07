@@ -748,7 +748,14 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
     update_item: (a = {}) => {
       const id = a.id || selectedId;
       if (!id) throw new Error("no item selected");
-      const { id: _ignore, ...rest } = a;
+      const { id: _ignore, media_url, mediaUrl, image_url, imageUrl, ...rest } = a;
+      // Safety net: if the AI tries to pass an image URL through update_item
+      // (common mistake), redirect it through the proper media setter.
+      const stray = media_url || mediaUrl || image_url || imageUrl;
+      if (stray && typeof stray === "string" && /^https?:\/\//.test(stray)) {
+        const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(stray);
+        rest.media = { url: stray, type: isVideo ? "video" : "image", name: "attachment" };
+      }
       updateItem(id, rest);
       return { id };
     },

@@ -108,8 +108,21 @@ export default function MockAgent({ open, onClose, getStateSnapshot, canvasRef, 
         }
       }
       if (userAttachments.length > 0) {
-        const urlList = userAttachments.map((a, i) => `  ${i + 1}. ${a.url}  (${a.name})`).join("\n");
-        systemPrompt += `\n\n📎 ATTACHMENT URLS — the user attached ${userAttachments.length} image(s):\n${urlList}\n\nIf the user is asking you to upload/use/place/render this image on a device, call set_media({ url: "<one of the URLs above>" }) — pass the EXACT url string from the list. Do NOT invent placeholder URLs. If multiple images and multiple devices exist, map them in order (slide 1 ← img 1, slide 2 ← img 2, etc.) using set_media({ url, slide_number }).`;
+        const urlList = userAttachments.map((a, i) => `  ${i + 1}. ${a.url}`).join("\n");
+        systemPrompt += `\n\n📎🚨 USER ATTACHED ${userAttachments.length} IMAGE(S) — YOU MUST PUT THEM ON A DEVICE SCREEN.
+
+ATTACHMENT URLS (use these EXACT strings, copy-paste them):
+${urlList}
+
+MANDATORY ACTION when an attachment is present and the user says anything like "use this", "upload", "put on phone", "this image", "render", or even just sends the image with a vague prompt:
+→ Call set_media({ url: "<exact url from list above>" }) — this puts the image onto the device's screen.
+
+❌ DO NOT call update_item with a media field — update_item is for size/rotation/position only.
+❌ DO NOT call add_text with the image URL.
+❌ DO NOT invent placeholder URLs like "image_url" or "uploaded_image".
+✅ The url passed to set_media MUST be one of the URLs listed above, character-for-character.
+
+If multiple images exist, map them by order using set_media({ url, slide_number: N }).`;
       }
 
       // Build conversational context
