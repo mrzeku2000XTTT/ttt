@@ -1,55 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Loader2, ExternalLink, RefreshCw } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 /**
- * Typewriter that types the text char by char.
- */
-function TypewriterText({ text }) {
-  const [displayed, setDisplayed] = useState("");
-  const [idx, setIdx] = useState(0);
-
-  useEffect(() => {
-    setDisplayed("");
-    setIdx(0);
-  }, [text]);
-
-  useEffect(() => {
-    if (idx >= text.length) return;
-    const delay = 18 + Math.random() * 22; // slight randomness for realism
-    const t = setTimeout(() => {
-      setDisplayed((prev) => prev + text[idx]);
-      setIdx((i) => i + 1);
-    }, delay);
-    return () => clearTimeout(t);
-  }, [idx, text]);
-
-  return (
-    <>
-      {displayed}
-      {idx < text.length && (
-        <motion.span
-          animate={{ opacity: [1, 0, 1] }}
-          transition={{ duration: 0.5, repeat: Infinity }}
-          className="inline-block w-0.5 h-6 bg-white/70 ml-0.5 align-middle"
-        />
-      )}
-    </>
-  );
-}
-
-/**
  * One full-screen "doom card" — a fact + a haunting image.
- * Image is generated on-demand. When the user scrolls away, a new replacement
- * is fetched via the onReplace callback so the feed feels infinite.
+ * Image is generated on-demand the first time the card is rendered.
  */
-export default function DoomCard({ fact, imagePrompt, sourceUrl, index, onReplace }) {
+export default function DoomCard({ fact, imagePrompt, sourceUrl, index }) {
   const [imageUrl, setImageUrl] = useState(null);
   const [imgError, setImgError] = useState(false);
-  const [replacing, setReplacing] = useState(false);
-  const cardRef = useRef(null);
-  const hasTriggeredReplace = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,31 +24,8 @@ export default function DoomCard({ fact, imagePrompt, sourceUrl, index, onReplac
     return () => { cancelled = true; };
   }, [imagePrompt]);
 
-  // When the card scrolls out of view (intersection < 10%), trigger onReplace
-  useEffect(() => {
-    if (!onReplace || !cardRef.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting && !hasTriggeredReplace.current) {
-          hasTriggeredReplace.current = true;
-          onReplace(index);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(cardRef.current);
-    return () => observer.disconnect();
-  }, [index, onReplace]);
-
-  const handleManualReplace = async () => {
-    if (replacing || !onReplace) return;
-    setReplacing(true);
-    await onReplace(index);
-    setReplacing(false);
-  };
-
   return (
-    <div ref={cardRef} className="relative w-full h-screen snap-start snap-always overflow-hidden bg-black flex items-end">
+    <div className="relative w-full h-screen snap-start snap-always overflow-hidden bg-black flex items-end">
       {/* Image */}
       {imageUrl ? (
         <motion.img
@@ -126,7 +63,7 @@ export default function DoomCard({ fact, imagePrompt, sourceUrl, index, onReplac
           № {String(index + 1).padStart(3, "0")}
         </div>
         <p className="text-white text-2xl sm:text-3xl md:text-4xl font-serif leading-tight tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.9)]">
-          <TypewriterText text={fact} />
+          {fact}
         </p>
         {sourceUrl && (
           <a
@@ -150,18 +87,6 @@ export default function DoomCard({ fact, imagePrompt, sourceUrl, index, onReplac
         >
           ↓ Scroll ↓
         </motion.div>
-      )}
-
-      {/* Manual replace button */}
-      {onReplace && (
-        <button
-          onClick={handleManualReplace}
-          disabled={replacing}
-          className="absolute top-4 right-4 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/70 border border-white/10 text-white/50 hover:text-white backdrop-blur transition-colors"
-          title="Replace this card"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${replacing ? "animate-spin" : ""}`} />
-        </button>
       )}
     </div>
   );

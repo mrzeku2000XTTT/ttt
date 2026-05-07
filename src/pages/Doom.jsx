@@ -4,7 +4,6 @@ import { ArrowLeft, RefreshCw, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import DoomSearch from "@/components/doom/DoomSearch";
 import DoomCard from "@/components/doom/DoomCard";
-import DoomLoadingScreen from "@/components/doom/DoomLoadingScreen";
 
 /**
  * Doom — search any topic, fall into an infinite scroll of dark facts
@@ -59,18 +58,6 @@ export default function DoomPage() {
     setError(null);
   };
 
-  // Replace one card at a given index with a fresh fact from the server.
-  const handleReplace = useCallback(async (index) => {
-    try {
-      const res = await base44.functions.invoke("doomScrollFacts", { query, count: 1 });
-      const newFact = res?.data?.facts?.[0];
-      if (!newFact) return;
-      setFacts((prev) => prev.map((f, i) => (i === index ? newFact : f)));
-    } catch {
-      // silently ignore replacement errors
-    }
-  }, [query]);
-
   // Infinite scroll: when user nears the bottom, fetch more facts on the same topic.
   useEffect(() => {
     const el = containerRef.current;
@@ -103,7 +90,13 @@ export default function DoomPage() {
 
   // ── Loading first batch ───────────────────────────────────────────────
   if (loading && facts.length === 0) {
-    return <DoomLoadingScreen query={query} />;
+    return (
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-white">
+        <Loader2 className="w-8 h-8 text-red-500 animate-spin mb-4" />
+        <div className="text-red-400/80 text-[10px] font-bold tracking-[0.4em] uppercase mb-2">Descending</div>
+        <div className="text-white/60 text-sm">Pulling truths about "{query}"…</div>
+      </div>
+    );
   }
 
   // ── Error / empty ─────────────────────────────────────────────────────
@@ -153,12 +146,11 @@ export default function DoomPage() {
 
       {facts.map((f, i) => (
         <DoomCard
-          key={`${query}-${i}-${f.fact?.slice(0, 20)}`}
+          key={`${query}-${i}`}
           fact={f.fact}
           imagePrompt={f.image_prompt}
           sourceUrl={sourceUrl}
           index={i}
-          onReplace={handleReplace}
         />
       ))}
 
