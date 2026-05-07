@@ -145,20 +145,28 @@ export default function UltraMockPage() {
   }, []);
 
   const addText = useCallback(() => {
-    const item = makeText();
+    // Pin the text's appearAt to the current playhead so it only shows up
+    // from the time it was added onward — matches "shows up on time it was
+    // added on keyframe" expectation.
+    const appearAt = Math.max(0, Math.round(playhead * 100) / 100);
+    const item = makeText(appearAt > 0.01 ? { appearAt, disappearAt: duration } : {});
     setItems((prev) => [...prev, item]);
     setSelectedId(item.id);
     setPlacementMode(false);
-  }, []);
+  }, [playhead, duration]);
 
   // Add a NEW text item carrying a script-generated line, ready to drop into
   // the next slide of the timeline. Used by TextControls' ScriptGenerator.
   const addTextSlide = useCallback((line) => {
     if (!line) return;
-    const item = makeText({ text: line });
+    const appearAt = Math.max(0, Math.round(playhead * 100) / 100);
+    const item = makeText({
+      text: line,
+      ...(appearAt > 0.01 ? { appearAt, disappearAt: duration } : {}),
+    });
     setItems((prev) => [...prev, item]);
     setSelectedId(item.id);
-  }, []);
+  }, [playhead, duration]);
 
   // Add an overlay from a library preset
   const addOverlayPreset = useCallback((preset) => {
