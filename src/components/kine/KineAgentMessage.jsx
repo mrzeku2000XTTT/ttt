@@ -10,11 +10,11 @@ export default function KineAgentMessage({ message }) {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-start gap-3 justify-end"
       >
-        <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-gradient-to-br from-fuchsia-500 to-violet-600 px-4 py-2.5 text-white text-sm leading-relaxed shadow-lg shadow-fuchsia-500/20">
+        <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-zinc-900 px-4 py-2.5 text-white text-sm leading-relaxed shadow-sm">
           {message.content}
         </div>
-        <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
-          <User className="w-4 h-4 text-white/70" />
+        <div className="w-8 h-8 rounded-full bg-zinc-100 border border-zinc-200/60 flex items-center justify-center flex-shrink-0">
+          <User className="w-4 h-4 text-zinc-500" />
         </div>
       </motion.div>
     );
@@ -27,30 +27,30 @@ export default function KineAgentMessage({ message }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex items-start gap-3"
     >
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-400 flex items-center justify-center flex-shrink-0 shadow-lg shadow-fuchsia-500/40">
+      <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0 shadow-sm">
         <Bot className="w-4 h-4 text-white" />
       </div>
       <div className="flex-1 max-w-[85%]">
         {message.status === "enhancing" && (
-          <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 flex items-center gap-2.5 text-sm text-white/80">
-            <Sparkles className="w-3.5 h-3.5 text-fuchsia-300 animate-pulse" />
+          <div className="rounded-2xl rounded-tl-sm bg-white border border-zinc-200/70 px-4 py-3 flex items-center gap-2.5 text-sm text-zinc-600 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-zinc-400 animate-pulse" />
             <span>Enhancing your prompt…</span>
           </div>
         )}
 
         {message.status === "generating" && (
           <div className="space-y-2">
-            <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 text-sm">
-              <div className="text-[10px] font-bold tracking-widest uppercase text-fuchsia-300 mb-1.5 flex items-center gap-1.5">
+            <div className="rounded-2xl rounded-tl-sm bg-white border border-zinc-200/70 px-4 py-3 text-sm shadow-sm">
+              <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-zinc-400 mb-1.5 flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3" /> Enhanced Prompt
               </div>
-              <p className="text-white/85 leading-relaxed italic">{message.content}</p>
+              <p className="text-zinc-700 leading-relaxed italic">{message.content}</p>
             </div>
-            <div className="rounded-2xl bg-gradient-to-r from-fuchsia-500/10 via-violet-500/10 to-cyan-500/10 border border-fuchsia-500/20 px-4 py-3 flex items-center gap-2.5 text-sm">
-              <Loader2 className="w-4 h-4 text-fuchsia-300 animate-spin flex-shrink-0" />
+            <div className="rounded-2xl bg-zinc-50 border border-zinc-200/70 px-4 py-3 flex items-center gap-2.5 text-sm">
+              <Loader2 className="w-4 h-4 text-zinc-500 animate-spin flex-shrink-0" />
               <div>
-                <div className="text-white font-semibold">Generating your video…</div>
-                <div className="text-white/50 text-[11px]">{message.hint || "30-60 seconds"}</div>
+                <div className="text-zinc-900 font-semibold">Generating your video…</div>
+                <div className="text-zinc-500 text-[11px]">{message.hint || "30-60 seconds"}</div>
               </div>
             </div>
           </div>
@@ -58,13 +58,13 @@ export default function KineAgentMessage({ message }) {
 
         {message.status === "done" && message.videoUrl && (
           <div className="space-y-2">
-            <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 text-sm">
-              <div className="text-[10px] font-bold tracking-widest uppercase text-fuchsia-300 mb-1.5 flex items-center gap-1.5">
+            <div className="rounded-2xl rounded-tl-sm bg-white border border-zinc-200/70 px-4 py-3 text-sm shadow-sm">
+              <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-zinc-400 mb-1.5 flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3" /> Generated From
               </div>
-              <p className="text-white/85 leading-relaxed italic">{message.content}</p>
+              <p className="text-zinc-700 leading-relaxed italic">{message.content}</p>
             </div>
-            <div className="rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-fuchsia-500/10">
+            <div className="rounded-2xl overflow-hidden bg-black border border-zinc-200/70 shadow-lg shadow-zinc-900/10">
               <video
                 src={message.videoUrl}
                 controls
@@ -81,7 +81,7 @@ export default function KineAgentMessage({ message }) {
                 download={`kine-${Date.now()}.mp4`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold"
+                className="flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 Download
@@ -90,7 +90,7 @@ export default function KineAgentMessage({ message }) {
                 href={message.videoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
+                className="flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white hover:bg-zinc-50 border border-zinc-200/70 text-zinc-700 text-xs font-semibold transition-colors"
               >
                 <Film className="w-3.5 h-3.5" />
                 Open
@@ -100,11 +100,11 @@ export default function KineAgentMessage({ message }) {
         )}
 
         {message.status === "error" && (
-          <div className="rounded-2xl rounded-tl-sm bg-red-500/10 border border-red-500/30 px-4 py-3 flex items-start gap-2.5 text-sm">
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="rounded-2xl rounded-tl-sm bg-red-50 border border-red-200/70 px-4 py-3 flex items-start gap-2.5 text-sm">
+            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
-              <div className="text-red-300 font-semibold">Generation failed</div>
-              <div className="text-white/60 text-[11px] mt-0.5">{message.error}</div>
+              <div className="text-red-700 font-semibold">Generation failed</div>
+              <div className="text-red-600/70 text-[11px] mt-0.5">{message.error}</div>
             </div>
           </div>
         )}

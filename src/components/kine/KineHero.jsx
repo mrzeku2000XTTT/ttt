@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Film, Bot } from "lucide-react";
+import { Sparkles, Film } from "lucide-react";
 
 export default function KineHero() {
   return (
@@ -8,39 +8,36 @@ export default function KineHero() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7 }}
-      className="text-center mb-10"
+      className="text-center mb-12"
     >
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold tracking-[0.3em] uppercase text-fuchsia-300 mb-5">
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 border border-zinc-200/60 text-[10px] font-semibold tracking-[0.2em] uppercase text-zinc-500 mb-6">
         <Sparkles className="w-3 h-3" /> AI Video Agent
       </div>
 
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
+        initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative inline-block mb-6"
+        className="relative inline-block mb-7"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-400 blur-3xl opacity-50 rounded-full" />
-        <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-400 flex items-center justify-center shadow-2xl shadow-fuchsia-500/40">
-          <Film className="w-10 h-10 text-white" />
+        <div className="relative w-16 h-16 rounded-2xl bg-zinc-900 flex items-center justify-center shadow-2xl shadow-zinc-900/20">
+          <Film className="w-7 h-7 text-white" />
         </div>
       </motion.div>
 
-      <h1 className="text-5xl sm:text-6xl md:text-7xl font-[900] tracking-tight mb-4 bg-gradient-to-r from-fuchsia-300 via-violet-200 to-cyan-300 bg-clip-text text-transparent">
+      <h1 className="text-6xl sm:text-7xl md:text-8xl font-[900] tracking-tight mb-4 text-zinc-900">
         Kine
       </h1>
-      <p className="text-white/70 text-base sm:text-lg max-w-xl mx-auto leading-relaxed mb-2">
+      <p className="text-zinc-700 text-xl sm:text-2xl max-w-xl mx-auto leading-tight mb-3 font-medium tracking-tight">
         Describe anything. Watch it move.
       </p>
-      <p className="text-white/40 text-sm max-w-md mx-auto">
+      <p className="text-zinc-500 text-sm max-w-md mx-auto leading-relaxed">
         Your AI video agent enhances your prompt, then generates a cinematic 6-second clip in HD.
       </p>
 
-      <div className="flex items-center justify-center gap-4 mt-8 text-[10px] text-white/40 font-bold tracking-widest uppercase">
-        <span className="flex items-center gap-1.5">
-          <Bot className="w-3 h-3 text-fuchsia-300" /> Agent Powered
-        </span>
-        <span className="w-1 h-1 rounded-full bg-white/20" />
+      <div className="flex items-center justify-center gap-3 mt-8 text-[10px] text-zinc-400 font-semibold tracking-widest uppercase">
+        <span>Agent Powered</span>
+        <span className="w-1 h-1 rounded-full bg-zinc-300" />
         <span>16:9 · 6s · HD</span>
       </div>
     </motion.div>
