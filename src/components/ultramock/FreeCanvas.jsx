@@ -66,6 +66,8 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     };
   }, []);
 
+  const isMobile = () => typeof window !== "undefined" && (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || ""));
+
   const toggleFullscreen = () => {
     const el = typeof ref === "function" ? null : ref?.current;
     const target = el || surfaceRef.current?.parentElement;
@@ -74,8 +76,15 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     const isPseudo = document.body.classList.contains("ultramock-pseudo-fs");
 
     if (!fsEl && !isPseudo) {
-      // Try native fullscreen first (desktop + Android Chrome/Firefox)
-      const req = target.requestFullscreen || target.webkitRequestFullscreen || target.webkitEnterFullscreen;
+      // On mobile, ALWAYS use pseudo-fullscreen — native FS API on divs is
+      // either unavailable (iOS Safari) or unreliable (Android in-app browsers).
+      // Pseudo-FS is guaranteed to work and gives true edge-to-edge canvas.
+      if (isMobile()) {
+        enterPseudoFullscreen(target);
+        return;
+      }
+      // Desktop: try native fullscreen, fall back to pseudo on rejection.
+      const req = target.requestFullscreen || target.webkitRequestFullscreen;
       if (req) {
         try {
           const p = req.call(target);
@@ -86,7 +95,6 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
           return;
         }
       }
-      // iOS Safari fallback: native fullscreen unavailable on divs → use CSS pseudo-fullscreen
       enterPseudoFullscreen(target);
     } else {
       if (fsEl) {
@@ -100,12 +108,16 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   const enterPseudoFullscreen = (target) => {
     document.body.classList.add("ultramock-pseudo-fs");
     target.classList.add("ultramock-pseudo-fs-target");
+    // Try to lock screen orientation to landscape on mobile (best effort —
+    // many browsers reject this without a fullscreen element, so we ignore failures).
+    try { window.screen?.orientation?.lock?.("landscape").catch(() => {}); } catch {}
     setIsFullscreen(true);
   };
 
   const exitPseudoFullscreen = (target) => {
     document.body.classList.remove("ultramock-pseudo-fs");
     target?.classList.remove("ultramock-pseudo-fs-target");
+    try { window.screen?.orientation?.unlock?.(); } catch {}
     setIsFullscreen(false);
   };
 
@@ -362,20 +374,38 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         touchAction: "none",
       }}
     >
-      {/* iOS Safari pseudo-fullscreen styles (native FS unavailable on divs there) */}
+      {/* Pseudo-fullscreen styles — primary on mobile (iOS Safari + Android),
+          fallback on desktop. Locks body scroll, fills viewport edge-to-edge,
+          and uses 100dvh so iOS browser chrome bars don't crop the canvas. */}
       <style>{`
-        body.ultramock-pseudo-fs { overflow: hidden !important; }
-        .ultramock-pseudo-fs-target {
+        body.ultramock-pseudo-fs {
+          overflow: hidden !important;
           position: fixed !important;
-          inset: 0 !important;
           width: 100vw !important;
           height: 100vh !important;
           height: 100dvh !important;
-          z-index: 9999 !important;
+        }
+        .ultramock-pseudo-fs-target {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          max-width: none !important;
+          max-height: none !important;
+          z-index: 99999 !important;
           aspect-ratio: auto !important;
           padding: 0 !important;
           margin: 0 !important;
+          border-radius: 0 !important;
+          background: black !important;
         }
+        /* Hide any sibling chrome the parent wraps the canvas with */
+        body.ultramock-pseudo-fs nav,
+        body.ultramock-pseudo-fs > div > nav { display: none !important; }
       `}</style>
       {/* Locked indicator (replaces zoom controls when preview is locked) */}
       {locked && (
