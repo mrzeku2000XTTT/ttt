@@ -165,9 +165,6 @@ function Hero() {
         className="relative z-10 text-center px-4"
       >
         <div className="flex items-center justify-center gap-2 mb-4">
-          <div className="px-3 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 text-[10px] font-black tracking-widest uppercase flex items-center gap-1">
-            <Lock className="w-3 h-3" /> Admin Only
-          </div>
           <div className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white/70 text-[10px] font-black tracking-widest uppercase">
             Fullstack · Motion Design
           </div>
