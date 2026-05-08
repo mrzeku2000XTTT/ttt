@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight } from "lucide-react";
+import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight, Bot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 
@@ -57,12 +57,28 @@ export default function AppStoreV2Page() {
             <span className="text-[14px] font-medium">Back</span>
           </Link>
           <span className="text-[15px] font-[800] tracking-tight">App Store</span>
-          <Link
-            to="/Home"
-            className="flex items-center text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 h-10 px-4 rounded-full transition-colors"
-          >
-            Open TTT
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/AIAgentHub"
+              className="hidden sm:flex items-center gap-1.5 text-[13px] font-semibold text-white bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-400 hover:opacity-90 h-10 px-3.5 rounded-full transition-opacity shadow-lg shadow-fuchsia-500/30"
+            >
+              <Bot className="w-3.5 h-3.5" />
+              Agents
+            </Link>
+            <Link
+              to="/AIAgentHub"
+              className="sm:hidden flex items-center justify-center text-white bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-400 h-10 w-10 rounded-full shadow-lg shadow-fuchsia-500/30"
+              title="AI Agent Hub"
+            >
+              <Bot className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/Home"
+              className="flex items-center text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 h-10 px-4 rounded-full transition-colors"
+            >
+              Open TTT
+            </Link>
+          </div>
         </div>
       </nav>
 

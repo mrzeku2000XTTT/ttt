@@ -60,6 +60,7 @@ import DoomPage from './pages/Doom';
 import BeatCutPage from './pages/BeatCut';
 import TrinityPage from './pages/Trinity';
 import KinePage from './pages/Kine';
+import AIAgentHubPage from './pages/AIAgentHub';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -161,6 +162,8 @@ const AuthenticatedApp = () => {
       <Route path="/BeatCut" element={<BeatCutPage />} />
       <Route path="/Trinity" element={<TrinityPage />} />
       <Route path="/Kine" element={<KinePage />} />
+      <Route path="/AIAgentHub" element={<AIAgentHubPage />} />
+      <Route path="/AgentHub" element={<AIAgentHubPage />} />
       <Route path="/Katagami" element={
         <LayoutWrapper currentPageName="Katagami">
           <KatagamiPage />
