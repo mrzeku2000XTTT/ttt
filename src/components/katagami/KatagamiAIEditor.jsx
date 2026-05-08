@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge, Zap, Film, Megaphone, Users, Layers, ExternalLink } from "lucide-react";
+import { Upload, Loader2, Sparkles, Wand2, X, Mail, Clock, Gauge, Zap, Film, Megaphone, Users, Layers, ExternalLink, Music } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import KatagamiAgentChat from "./KatagamiAgentChat";
 
@@ -116,7 +116,12 @@ export default function KatagamiAIEditor() {
   const [finalPlan, setFinalPlan] = useState(null);
   const [uploadedMediaUrl, setUploadedMediaUrl] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  // Optional MP3/audio track — uploaded by user, forwarded to Cháoxiào via ?audio=
+  const [audioFile, setAudioFile] = useState(null);
+  const [uploadedAudioUrl, setUploadedAudioUrl] = useState(null);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
   const inputRef = useRef(null);
+  const audioRef = useRef(null);
 
   // Hand off the current setup to UltraMock (Cháoxiào嘲笑) studio.
   //
@@ -202,6 +207,15 @@ export default function KatagamiAIEditor() {
         mediaUrl = file_url;
       }
       if (mediaUrl) params.set("media", mediaUrl);
+
+      // Audio (MP3/WAV/etc) — upload if needed and forward as ?audio=
+      let audioUrl = uploadedAudioUrl;
+      if (!audioUrl && audioFile) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
+        audioUrl = file_url;
+        setUploadedAudioUrl(file_url);
+      }
+      if (audioUrl) params.set("audio", audioUrl);
 
       // `auto=1` triggers UltraMock to apply chain → record → download. For the
       // "open for editing" handoff we want the chain applied but no recording,
@@ -623,6 +637,56 @@ export default function KatagamiAIEditor() {
               className="w-full h-10 px-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder:text-white/30 focus:border-fuchsia-400/50 focus:bg-white/10 outline-none"
               disabled={running}
             />
+          </div>
+
+          {/* MP3 / Music track — optional, ingested by Cháoxiào on handoff */}
+          <div>
+            <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <Music className="w-3 h-3 text-emerald-300" /> Music (optional MP3)
+            </label>
+            <input
+              ref={audioRef}
+              type="file"
+              accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                setAudioFile(f);
+                setUploadedAudioUrl(null);
+                e.target.value = "";
+              }}
+            />
+            {!audioFile ? (
+              <button
+                type="button"
+                onClick={() => audioRef.current?.click()}
+                disabled={running}
+                className="w-full h-10 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                <Upload className="w-3.5 h-3.5" /> Upload MP3 / Audio
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 h-10 px-3 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-100 text-xs">
+                <Music className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate flex-1" title={audioFile.name}>{audioFile.name}</span>
+                <span className="text-[9px] text-emerald-300/70 font-mono">
+                  {uploadedAudioUrl ? "uploaded" : `${(audioFile.size / 1024 / 1024).toFixed(1)}mb`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setAudioFile(null); setUploadedAudioUrl(null); }}
+                  disabled={running || uploadingAudio}
+                  className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-500/40 opacity-70 hover:opacity-100"
+                  title="Remove audio"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            <div className="text-[10px] text-white/40 mt-1">
+              Forwarded to Cháoxiào and played in sync with the timeline preview.
+            </div>
           </div>
 
           <button

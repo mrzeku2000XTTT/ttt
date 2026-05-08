@@ -16,6 +16,7 @@ import MockBottomSheet from "@/components/ultramock/MockBottomSheet";
 import AutoRenderStatus from "@/components/ultramock/AutoRenderStatus";
 import ScreenRecorder from "@/components/ultramock/ScreenRecorder";
 import UrlResearchModal from "@/components/ultramock/UrlResearchModal";
+import MusicTrack from "@/components/ultramock/MusicTrack";
 
 const newId = () => `dev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -114,6 +115,11 @@ export default function UltraMockPage() {
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
   const [urlResearchOpen, setUrlResearchOpen] = useState(false);
+  // Audio track — loaded from ?audio= param (Katagami handoff) or manual upload
+  const [audioUrl, setAudioUrl] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("audio") || null;
+  });
   const [locked, setLocked] = useState(false);
   // Pinch-to-zoom on by default on mobile so users can frame the canvas with 2 fingers
   const [pinchEnabled, setPinchEnabled] = useState(() => {
@@ -1138,6 +1144,12 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 exposes applyPresetById/recordVideo to the auto-render flow. */}
             {showTimeline && (
               <div className={renderMode ? "hidden" : ""}>
+                <MusicTrack
+                  playhead={playhead}
+                  playing={previewPlaying}
+                  duration={duration}
+                  externalUrl={audioUrl}
+                />
                 <MockTimeline
                   ref={timelineRef}
                   items={items}
