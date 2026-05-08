@@ -33,8 +33,10 @@ const BACKGROUNDS = ["sunset","ocean","forest","midnight","neon","cosmos","paste
 const DEVICES = ["iphone","android","macbook","ipad","imac","browser","none"];
 
 // Text-animation variants the sub-agents can pick from. Each one renders
-// VERY differently so consecutive beats feel distinct.
-const TEXT_ANIMATIONS = ["typewriter","pop","3d","none"];
+// VERY differently so consecutive beats feel distinct. The 5 per-word
+// reveals (pop, slide-up, blur-in, glow-pop, glitch) read as smooth modern
+// kinetic typography — picked from 2025 motion-ad trends.
+const TEXT_ANIMATIONS = ["typewriter","pop","slide-up","blur-in","glow-pop","glitch","3d","none"];
 
 // Safe text positions when a DEVICE is on screen. The device occupies the
 // vertical center strip (roughly y:25-85), so text MUST stay in the top
@@ -366,10 +368,21 @@ TASK: Choose all of the following for this beat:
 2) TEXT — your beat's script line is ALREADY WRITTEN: "${myLine}". Use it verbatim. Do not change it.
 
 3) TEXT ANIMATION — pick ONE that is DIFFERENT from the last two beats (${recentAnims.length ? recentAnims.join(', ') : 'none yet'}):
-   - "typewriter" — types out char-by-char (best for setup/teaser lines)
-   - "pop" — pops one word at a time (best for punchy callouts)
-   - "3d" — bold extruded 3D text (best for dramatic claims, climax)
+   - "typewriter" — types char-by-char (best for setup/teaser lines, OPENER)
+   - "pop" — punchy word-by-word scale-bounce (best for punchy callouts, BUILD)
+   - "slide-up" — words slide up smoothly from below (modern, clean — BUILD/RESOLVE)
+   - "blur-in" — words emerge from a soft blur (premium / cinematic — BUILD/RESOLVE)
+   - "glow-pop" — words pop with a bright neon glow halo (max energy — CLIMAX)
+   - "glitch" — words glitch/skew in with cyan+magenta chroma split (edgy — CLIMAX)
+   - "3d" — bold extruded 3D text (dramatic claims — CLIMAX)
    - "none" — instant on (best for very short hits, less than 3 words)
+   PHASE GUIDANCE: opener → typewriter/none. build → pop/slide-up/blur-in. climax → glow-pop/glitch/3d. resolve → blur-in/slide-up/pop.
+
+3b) TEXT STYLE — choose font_weight (400, 600, 700, 800, or 900) and emphasis ("uppercase" or "normal").
+   - Climax / hero claims: weight 900, uppercase.
+   - Build / feature callouts: weight 700-800, uppercase.
+   - Soft openers / questions: weight 600, normal.
+   - Resolve / CTA: weight 800-900, uppercase.
 
 4) TEXT POSITION — pick ONE from this list. AVOID positions used in the last 3 beats (${usedPositions.length ? usedPositions.join(', ') : 'none yet'}). The device occupies the entire vertical middle of the frame, so text MUST stay in the TOP band or BOTTOM band. Pick from:
    ${TEXT_POSITIONS.map(p => `${p.id} (x:${p.x}, y:${p.y})`).join(', ')}
@@ -396,7 +409,7 @@ ${shouldOfferImage ? `6) IMAGE OVERLAY (optional but encouraged for THIS beat) �
 RECENT BEATS:
 ${previous || '(this is the first beat)'}
 
-Return JSON with: preset_ids, intent, camera_preset, text_animation, text_position_id, image_prompt, image_role, text_only, device, bg_prompt.`,
+Return JSON with: preset_ids, intent, camera_preset, text_animation, font_weight, emphasis, text_position_id, image_prompt, image_role, text_only, device, bg_prompt.`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -404,6 +417,8 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, text_positi
             intent: { type: 'string' },
             camera_preset: { type: 'string' },
             text_animation: { type: 'string' },
+            font_weight: { type: 'number' },
+            emphasis: { type: 'string' },
             text_position_id: { type: 'string' },
             image_prompt: { type: 'string' },
             image_role: { type: 'string' },
@@ -437,6 +452,14 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, text_positi
         anim = TEXT_ANIMATIONS.find(a => a !== anim) || 'pop';
       }
 
+      // Auto-style fallbacks per narrative phase if the agent didn't decide.
+      const ALLOWED_WEIGHTS = [400, 600, 700, 800, 900];
+      const phaseWeight = phase === 'climax' ? 900 : phase === 'build' ? 800 : phase === 'resolve' ? 900 : 700;
+      const fontWeight = ALLOWED_WEIGHTS.includes(subAgent.font_weight) ? subAgent.font_weight : phaseWeight;
+      const emphasis = (subAgent.emphasis === 'uppercase' || subAgent.emphasis === 'normal')
+        ? subAgent.emphasis
+        : (phase === 'opener' ? 'normal' : 'uppercase');
+
       let posId = subAgent.text_position_id;
       let pos = TEXT_POSITIONS.find(p => p.id === posId);
       if (!pos) {
@@ -469,8 +492,10 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, text_positi
         camera_preset: CAMERA_PRESETS.includes(subAgent.camera_preset) ? subAgent.camera_preset : '',
         duration: segLen,
         keyframes_per_slide: kfPerSeg,
-        text: myLine,
+        text: emphasis === 'uppercase' ? (myLine || '').toUpperCase() : myLine,
         text_animation: anim,
+        font_weight: fontWeight,
+        emphasis,
         text_position_id: posId,
         text_x: pos.x,
         text_y: pos.y,
@@ -799,6 +824,7 @@ Return final JSON with the same shape:
           d: s.duration || 1.5,
           to: !!s.text_only,
           dv: DEVICES.includes(s.device) ? s.device : '',
+          fw: s.font_weight || 900,
         }));
         try {
           // base64-encode the JSON so newlines/quotes survive URL encoding

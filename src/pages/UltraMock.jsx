@@ -446,24 +446,39 @@ export default function UltraMockPage() {
             // Clamp to safe top/bottom band — never the middle
             if (ty > 20 && ty < 80) ty = ty < 50 ? 12 : 88;
           } else {
-            // Center text-only beats vertically
             tx = 50;
             ty = 50;
           }
+
+          // Modern animation set — accept all 8 variants.
+          const ALLOWED_ANIMS = ["typewriter", "pop", "slide-up", "blur-in", "glow-pop", "glitch", "3d", "none"];
+          const anim = ALLOWED_ANIMS.includes(b.a) ? b.a : "pop";
+
+          // Smart per-beat timing so word reveal SYNCS with the beat duration.
+          // - popDelay = time between each word reveal (sec).
+          // - loopDelay = 0 means "play once and hold" — NEVER restart mid-beat.
+          // We pick popDelay so the full reveal lands at ~70% of segLen,
+          // leaving 30% of the beat to hold/breathe before the next beat.
+          const wordCount = (b.t || "").split(/\s+/).filter(Boolean).length || 1;
+          const targetReveal = Math.max(0.4, segLen * 0.7);
+          const popDelay = Math.max(0.08, Math.min(0.45, targetReveal / wordCount));
+
+          // Length-aware font size (climax beats stay big; long lines shrink).
+          const baseSize = isTextOnly ? 96 : 40;
+          const lengthScale = wordCount > 5 ? 0.78 : wordCount > 3 ? 0.92 : 1;
+          const fontSize = Math.round(baseSize * lengthScale);
+
           fresh.push(makeText({
             text: b.t,
             x: tx,
             y: ty,
-            // Text-only beats get a huge, bold whole-frame statement.
-            // Normal beats use a smaller size that fits the top/bottom band.
-            fontSize: isTextOnly ? 88 : 36,
-            fontWeight: 900,
+            fontSize,
+            fontWeight: typeof b.fw === "number" ? b.fw : 900,
             color: "#ffffff",
-            animation: ["typewriter", "pop", "3d", "none"].includes(b.a) ? b.a : "pop",
-            typeSpeed: 18,
-            loopDelay: 0,
-            // Narrower box for non-text-only beats so words don't sprawl
-            // and end up overlapping the device.
+            animation: anim,
+            typeSpeed: Math.max(10, Math.min(30, (b.t.length / Math.max(0.4, segLen * 0.7)))),
+            popDelay,
+            loopDelay: 0, // play once, hold — strict beat sync
             boxWidth: isTextOnly ? 88 : 72,
             appearAt,
             disappearAt,

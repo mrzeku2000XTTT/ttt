@@ -174,6 +174,7 @@ export default function KatagamiAIEditor() {
           d: s.duration || 1.5,
           to: !!s.text_only,
           dv: s.device || "",
+          fw: s.font_weight || 900,
         }));
         try {
           const blob = btoa(unescape(encodeURIComponent(JSON.stringify(beats))));

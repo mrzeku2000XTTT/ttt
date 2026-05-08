@@ -98,15 +98,15 @@ export default function TextLayer({
       ? (playhead >= trackWindow.first - 0.001)
       : true;
 
-  // Word-pop loop: reveals one word at a time, then loops (if loopDelay > 0).
-  // When loopDelay is 0, the animation plays ONCE and holds — used for sequential
-  // per-beat playback so each beat shows its words once and stays visible until
-  // its disappearAt window ends.
+  // Word-reveal loop — used by 'pop', 'slide-up', 'blur-in', 'glow-pop', 'glitch'
+  // (all per-word reveal animations). Reveals one word at a time, then loops.
+  // When loopDelay is 0, plays ONCE and holds.
   useEffect(() => {
-    if (item.animation !== "pop") return;
+    const PER_WORD_ANIMS = ["pop", "slide-up", "blur-in", "glow-pop", "glitch"];
+    if (!PER_WORD_ANIMS.includes(item.animation)) return;
     const words = (item.text || "").split(/\s+/).filter(Boolean);
     if (!words.length) return;
-    const stepMs = Math.max(50, (Number(item.popDelay) || 0.25) * 1000);
+    const stepMs = Math.max(50, (Number(item.popDelay) || 0.18) * 1000);
     const loopMs = Math.max(0, (Number(item.loopDelay) ?? 1.5) * 1000);
     const shouldLoop = loopMs > 0;
     let cancelled = false;
@@ -254,8 +254,9 @@ export default function TextLayer({
             {renderStyledText(item.text, { fontSize: item.fontSize })}
           </div>
         </div>
-      ) : item.animation === "pop" ? (
-        // Word pop-in — each word scales/fades in sequentially
+      ) : ["pop", "slide-up", "blur-in", "glow-pop", "glitch"].includes(item.animation) ? (
+        // Per-word kinetic typography. Five distinct reveal styles, each with
+        // its own enter transform / filter. All use the same popVisible counter.
         <div
           style={{
             fontSize: item.fontSize,
@@ -263,17 +264,48 @@ export default function TextLayer({
             fontWeight: item.fontWeight,
             fontFamily: item.fontFamily || "ui-sans-serif, system-ui, sans-serif",
             textAlign: "center",
-            textShadow: "0 4px 18px rgba(0,0,0,0.55), 0 0 28px rgba(0,0,0,0.35)",
+            textShadow: item.animation === "glow-pop"
+              ? `0 0 32px ${item.color || "#fff"}, 0 0 64px ${item.color || "#fff"}, 0 4px 18px rgba(0,0,0,0.6)`
+              : item.animation === "glitch"
+                ? "2px 0 0 #ff00ea, -2px 0 0 #00fff0, 0 4px 18px rgba(0,0,0,0.6)"
+                : "0 4px 18px rgba(0,0,0,0.55), 0 0 28px rgba(0,0,0,0.35)",
             whiteSpace: "pre-wrap",
-            lineHeight: 1.15,
-            letterSpacing: "-0.01em",
+            lineHeight: 1.1,
+            letterSpacing: item.animation === "glitch" ? "0.02em" : "-0.015em",
           }}
         >
           {(item.text || "").split(/(\s+)/).map((chunk, i, arr) => {
-            // Count word index (skip whitespace chunks)
             const wordsBefore = arr.slice(0, i).filter((c) => c.trim().length > 0).length;
             const isWord = chunk.trim().length > 0;
             const visible = !isWord || wordsBefore < popVisible;
+
+            // Per-style enter transforms
+            let hiddenTransform = "scale(0.4)";
+            let hiddenFilter = "blur(6px)";
+            let trans = "opacity 0.25s ease-out, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease-out";
+            if (item.animation === "slide-up") {
+              hiddenTransform = "translateY(60%)";
+              hiddenFilter = "blur(2px)";
+              trans = "opacity 0.3s ease-out, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease-out";
+            } else if (item.animation === "blur-in") {
+              hiddenTransform = "scale(1.05)";
+              hiddenFilter = "blur(14px)";
+              trans = "opacity 0.45s ease-out, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.55s ease-out";
+            } else if (item.animation === "glow-pop") {
+              hiddenTransform = "scale(0.7)";
+              hiddenFilter = "blur(8px) brightness(2.5)";
+              trans = "opacity 0.3s ease-out, transform 0.45s cubic-bezier(0.34, 1.7, 0.64, 1), filter 0.5s ease-out";
+            } else if (item.animation === "glitch") {
+              hiddenTransform = "translateX(-8%) skewX(-8deg)";
+              hiddenFilter = "blur(2px)";
+              trans = "opacity 0.15s ease-out, transform 0.25s cubic-bezier(0.85, 0, 0.15, 1), filter 0.2s ease-out";
+            } else {
+              // 'pop' — punchy spring overshoot
+              hiddenTransform = "scale(0.35)";
+              hiddenFilter = "blur(8px)";
+              trans = "opacity 0.25s ease-out, transform 0.4s cubic-bezier(0.34, 1.7, 0.64, 1), filter 0.3s ease-out";
+            }
+
             return (
               <span
                 key={i}
@@ -281,9 +313,9 @@ export default function TextLayer({
                   display: "inline-block",
                   whiteSpace: "pre",
                   opacity: visible ? 1 : 0,
-                  transform: visible ? "scale(1)" : "scale(0.4)",
-                  transition: "opacity 0.25s ease-out, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                  filter: visible ? "blur(0)" : "blur(6px)",
+                  transform: visible ? "none" : hiddenTransform,
+                  transition: trans,
+                  filter: visible ? "blur(0)" : hiddenFilter,
                 }}
               >
                 {chunk}
