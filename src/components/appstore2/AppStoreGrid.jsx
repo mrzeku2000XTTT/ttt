@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "TRINITY", path: "Trinity", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3e8b286e0_generated_image.png", desc: "3 agents · 3 results · 1 prompt" },
   { name: "BeatCut", path: "BeatCut", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/80ea7b3ed_generated_image.png", desc: "AI beat-synced auto editor" },
   { name: "Doom", path: "Doom", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0e25796da_generated_image.png", desc: "Doomscroll any topic" },
   { name: "型紙 Katagami", path: "Katagami", cat: "Education", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b83d219ef_generated_image.png", desc: "Motion design masterclass", admin: true },
