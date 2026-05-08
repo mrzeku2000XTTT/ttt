@@ -7,24 +7,24 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
-  { name: "Kine", path: "Kine", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d4040c3da_generated_image.png", desc: "AI video agent · text to video" },
-  { name: "TRINITY", path: "Trinity", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3e8b286e0_generated_image.png", desc: "3 agents · 3 results · 1 prompt" },
-  { name: "BeatCut", path: "BeatCut", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/80ea7b3ed_generated_image.png", desc: "AI beat-synced auto editor" },
+  { name: "Kine", path: "Kine", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d4040c3da_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/b38409cda_generated_video.mp4", desc: "AI video agent · text to video" },
+  { name: "TRINITY", path: "Trinity", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3e8b286e0_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/7ab3a0079_generated_video.mp4", desc: "3 agents · 3 results · 1 prompt" },
+  { name: "BeatCut", path: "BeatCut", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/80ea7b3ed_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/f59063451_generated_video.mp4", desc: "AI beat-synced auto editor" },
   { name: "Doom", path: "Doom", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0e25796da_generated_image.png", desc: "Doomscroll any topic" },
   { name: "型紙 Katagami", path: "Katagami", cat: "Education", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b83d219ef_generated_image.png", desc: "Motion design masterclass" },
-  { name: "Cháoxiào", path: "UltraMock", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/15c852849_generated_image.png", desc: "Cheeky device mockups" },
+  { name: "Cháoxiào", path: "UltraMock", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/15c852849_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/4ae7e645c_generated_video.mp4", desc: "Cheeky device mockups" },
   { name: "APEX", path: "APEX", cat: "Security", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/de2e1af61_generated_image.png", desc: "ZK proof for NODA runs" },
-  { name: "NODA", path: "NODA", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4a4455642_generated_image.png", desc: "Node-based AI workflows" },
-  { name: "Motion", path: "Motion", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/81791a703_generated_image.png", desc: "Vibe-code landing pages", admin: true },
-  { name: "RMX Ultra", path: "RMX", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f2f74ca6e_generated_image.png", desc: "Visual workflow automation" },
+  { name: "NODA", path: "NODA", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4a4455642_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/e294fb91a_generated_video.mp4", desc: "Node-based AI workflows" },
+  { name: "Motion", path: "Motion", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/81791a703_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/86cffc2ea_generated_video.mp4", desc: "Vibe-code landing pages", admin: true },
+  { name: "RMX Ultra", path: "RMX", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f2f74ca6e_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/d46344bca_generated_video.mp4", desc: "Visual workflow automation" },
   { name: "TELE", path: "TELE", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/242215e43_generated_image.png", desc: "TTT agent on Telegram" },
   { name: "Hiro", path: "Hiro", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1a11decfa_generated_image.png", desc: "AI typography studio" },
-  { name: "NEPU", path: "NEPU", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8f9fda87e_generated_image.png", desc: "Free TV shows & movies" },
+  { name: "NEPU", path: "NEPU", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8f9fda87e_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/52b020b2c_generated_video.mp4", desc: "Free TV shows & movies" },
 
   // ── Featured / Core ──
-  { name: "Feed", path: "Feed", cat: "Community", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fdf274d16_generated_image.png", desc: "Social feed + KAS tips" },
+  { name: "Feed", path: "Feed", cat: "Community", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fdf274d16_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/e412d2ebc_generated_video.mp4", desc: "Social feed + KAS tips" },
   { name: "Agent ZK", path: "AgentZK", cat: "AI", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3e49e39c2_image.png", desc: "Crypto identity", premium: true },
-  { name: "TTTV", path: "Browser", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f510ff896_generated_image.png", desc: "Ad-free video browser" },
+  { name: "TTTV", path: "Browser", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f510ff896_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/04070fcbe_generated_video.mp4", desc: "Ad-free video browser" },
   { name: "Bridge", path: "Bridge", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/53d0e2e15_generated_image.png", desc: "Send KAS cross-layer" },
   { name: "StakeDAG", path: "StakeDAG", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/273ecff83_generated_image.png", desc: "Prediction markets", admin: true },
   { name: "DAGKnight", path: "DAGKnightWallet", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2ea9d0166_generated_image.png", desc: "Advanced wallet", premium: true },
@@ -126,15 +126,41 @@ const APPS = [
   { name: "OneShot", path: "UICloner", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ee7187675_generated_image.png", desc: "Clone & vibe-code any UI", admin: true },
 ];
 
-function AppIcon({ app }) {
+function AppIcon({ app, hovered }) {
+  const videoRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (hovered) {
+      v.currentTime = 0;
+      v.play().catch(() => {});
+    } else {
+      v.pause();
+    }
+  }, [hovered]);
+
   if (app.logo) {
     return (
-      <img
-        src={app.logo}
-        alt={app.name}
-        className="w-full h-full object-cover rounded-2xl"
-        loading="lazy"
-      />
+      <div className="relative w-full h-full">
+        <img
+          src={app.logo}
+          alt={app.name}
+          className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+          loading="lazy"
+        />
+        {app.video && (
+          <video
+            ref={videoRef}
+            src={app.video}
+            muted
+            loop
+            playsInline
+            preload="none"
+            className={`absolute inset-0 w-full h-full object-cover rounded-2xl transition-opacity duration-300 ${hovered ? "opacity-100" : "opacity-0"}`}
+          />
+        )}
+      </div>
     );
   }
   return (
@@ -220,13 +246,26 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
         className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3 gap-y-5"
       >
         {filtered.map((app, i) => {
+          const Wrapper = ({ children }) => {
+            const [hovered, setHovered] = React.useState(false);
+            return (
+              <motion.div
+                variants={itemVariants}
+                whileHover={{ y: -5, scale: 1.06, transition: { type: "spring", stiffness: 400, damping: 18 } }}
+                whileTap={{ scale: 0.92 }}
+                onHoverStart={() => setHovered(true)}
+                onHoverEnd={() => setHovered(false)}
+                onTouchStart={() => setHovered(true)}
+                onTouchEnd={() => setHovered(false)}
+                className="flex flex-col items-center gap-1.5 cursor-pointer group"
+              >
+                {typeof children === "function" ? children(hovered) : children}
+              </motion.div>
+            );
+          };
           const inner = (
-            <motion.div
-              variants={itemVariants}
-              whileHover={{ y: -5, scale: 1.06, transition: { type: "spring", stiffness: 400, damping: 18 } }}
-              whileTap={{ scale: 0.92 }}
-              className="flex flex-col items-center gap-1.5 cursor-pointer group"
-            >
+            <Wrapper>
+              {(hovered) => (<>
               <motion.div
                 className="relative w-[60px] h-[60px] sm:w-[64px] sm:h-[64px] rounded-2xl overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow"
                 animate={{ y: [0, -1.5, 0] }}
@@ -237,7 +276,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
                   delay: (i % 7) * 0.15,
                 }}
               >
-                <AppIcon app={app} />
+                <AppIcon app={app} hovered={hovered} />
                 {/* Glossy hover sheen */}
                 <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-white/30 via-transparent to-transparent" />
                 {app.premium && (
@@ -259,7 +298,8 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
                 <p className="text-[11px] font-semibold text-zinc-800 truncate leading-tight group-hover:text-zinc-950 transition-colors">{app.name}</p>
                 <p className="text-[9px] text-zinc-400 truncate">{app.desc}</p>
               </div>
-            </motion.div>
+              </>)}
+            </Wrapper>
           );
 
           if (app.externalUrl) {
