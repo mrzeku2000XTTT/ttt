@@ -61,6 +61,11 @@ export default function KineAgentMessage({ message }) {
             <div className="rounded-2xl rounded-tl-sm bg-white border border-zinc-200/70 px-4 py-3 text-sm shadow-sm">
               <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-zinc-400 mb-1.5 flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3" /> Generated From
+                {message.matchedLabel && (
+                  <span className="ml-auto px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-[9px] tracking-wider">
+                    {message.matchedLabel}
+                  </span>
+                )}
               </div>
               <p className="text-zinc-700 leading-relaxed italic">{message.content}</p>
             </div>

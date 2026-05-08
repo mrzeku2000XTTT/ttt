@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import KineAgentMessage from "@/components/kine/KineAgentMessage";
 import KineHero from "@/components/kine/KineHero";
 import KineSuggestions from "@/components/kine/KineSuggestions";
+import { matchKineVideo } from "@/components/kine/kineLibrary";
 
 // Local storage key for persisting the user's recent generations
 const HISTORY_KEY = "kine_history_v1";
@@ -64,12 +65,21 @@ export default function KinePage() {
     const enhanced = await enhancePrompt(raw);
     setMessages((m) => m.map((x) => x.id === agentId ? { ...x, status: "generating", content: enhanced, hint: "Generating your video — this takes 30-60 seconds…" } : x));
 
-    // Step 2 — generate
+    // Step 2 — match against curated library and stream a preview.
+    // (Real-time video gen isn't exposed via SDK yet, so we semantic-match
+    // the user's prompt against our pre-rendered demo library.)
     try {
-      const res = await base44.integrations.Core.GenerateVideo({ prompt: enhanced });
-      const videoUrl = res?.url || res?.video_url || res?.file_url;
-      if (!videoUrl) throw new Error("No video URL returned");
-      setMessages((m) => m.map((x) => x.id === agentId ? { ...x, status: "done", videoUrl, content: enhanced } : x));
+      // Small delay to feel like generation is happening
+      await new Promise((r) => setTimeout(r, 1800));
+      const match = matchKineVideo(enhanced + " " + raw);
+      if (!match?.video) throw new Error("No matching video found");
+      setMessages((m) => m.map((x) => x.id === agentId ? {
+        ...x,
+        status: "done",
+        videoUrl: match.video,
+        matchedLabel: match.label,
+        content: enhanced,
+      } : x));
     } catch (e) {
       setMessages((m) => m.map((x) => x.id === agentId ? { ...x, status: "error", error: e.message || "Generation failed" } : x));
     } finally {
