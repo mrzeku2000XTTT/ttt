@@ -441,20 +441,14 @@ export default function UltraMockPage() {
         beatWindows.push({ appearAt, disappearAt, segLen });
 
         // Text item for this beat (hidden outside its window).
-        // Strict layout rules to prevent text↔device overlap:
-        //  - text_only beats: device is hidden, text fills the frame center
-        //  - normal beats: text MUST stay in top (y<=20) or bottom (y>=80) band
+        // ALWAYS center the text on canvas (50, 50) — regardless of whether
+        // it's a text-only beat or a beat with a device. The device sits
+        // BEHIND the text via z-index and the text reads as the headline of
+        // each beat, perfectly centered for maximum impact.
         if (b.t) {
           const isTextOnly = !!b.to;
-          let tx = typeof b.x === "number" ? b.x : 50;
-          let ty = typeof b.y === "number" ? b.y : 10;
-          if (!isTextOnly) {
-            // Clamp to safe top/bottom band — never the middle
-            if (ty > 20 && ty < 80) ty = ty < 50 ? 12 : 88;
-          } else {
-            tx = 50;
-            ty = 50;
-          }
+          const tx = 50;
+          const ty = 50;
 
           // Modern animation set — accept all 8 variants.
           const ALLOWED_ANIMS = ["typewriter", "pop", "slide-up", "blur-in", "glow-pop", "glitch", "3d", "none"];
@@ -480,6 +474,11 @@ export default function UltraMockPage() {
             y: ty,
             fontSize,
             fontWeight: typeof b.fw === "number" ? b.fw : 900,
+            // Per-beat font family from the sub-agent (carried as `ff` in the
+            // beats payload). Falls back to the default sans stack if missing.
+            fontFamily: (typeof b.ff === "string" && b.ff.trim().length > 0)
+              ? b.ff
+              : undefined,
             color: "#ffffff",
             animation: anim,
             typeSpeed: Math.max(10, Math.min(30, (b.t.length / Math.max(0.4, segLen * 0.7)))),

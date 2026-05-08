@@ -180,6 +180,7 @@ export default function KatagamiAIEditor() {
           to: !!s.text_only,
           dv: s.device || "",
           fw: s.font_weight || 900,
+          ff: s.font_family_css || "",
         }));
         try {
           const blob = btoa(unescape(encodeURIComponent(JSON.stringify(beats))));

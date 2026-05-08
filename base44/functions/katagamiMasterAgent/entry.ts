@@ -38,6 +38,21 @@ const DEVICES = ["iphone","android","macbook","ipad","imac","browser","none"];
 // kinetic typography — picked from 2025 motion-ad trends.
 const TEXT_ANIMATIONS = ["typewriter","pop","slide-up","blur-in","glow-pop","glitch","3d","none"];
 
+// Font families per intent. Each ad will mix several of these so consecutive
+// beats look visually distinct. Whitelisted on the frontend (TextLayer reads
+// `item.fontFamily`) and preloaded globally in index.html.
+const FONT_FAMILIES = [
+  { id: "anton",     css: "'Anton', Impact, sans-serif",                   intent: "bold display, hero claims, high impact climaxes" },
+  { id: "bebas",     css: "'Bebas Neue', Impact, sans-serif",              intent: "ALL-CAPS punchy callouts, energetic builds" },
+  { id: "archivo",   css: "'Archivo Black', sans-serif",                   intent: "ultra-heavy weight, modern app vibes" },
+  { id: "oswald",    css: "'Oswald', sans-serif",                          intent: "condensed editorial feel, subtitles" },
+  { id: "inter",     css: "'Inter', system-ui, sans-serif",                intent: "clean minimal modern (default tech / SaaS)" },
+  { id: "space",     css: "'Space Grotesk', sans-serif",                   intent: "tech / startup / futuristic vibes" },
+  { id: "playfair",  css: "'Playfair Display', Georgia, serif",            intent: "luxury / premium / editorial / fashion" },
+  { id: "montserrat",css: "'Montserrat', sans-serif",                      intent: "friendly modern brand, balanced builds" },
+  { id: "caveat",    css: "'Caveat', cursive",                             intent: "handwritten / playful / personal — use sparingly" },
+];
+
 // Safe text positions when a DEVICE is on screen. The device occupies the
 // vertical center strip (roughly y:25-85), so text MUST stay in the top
 // band (y:6-14) or bottom band (y:86-94). We removed all middle-y positions
@@ -384,6 +399,10 @@ TASK: Choose all of the following for this beat:
    - Soft openers / questions: weight 600, normal.
    - Resolve / CTA: weight 800-900, uppercase.
 
+3c) FONT FAMILY — pick ONE id from this list, matching the beat's intent. VARY across beats so the ad feels alive (don't reuse the same font more than ~40% of the ad). AVOID repeating the font used in the previous beat.
+${FONT_FAMILIES.map(f => `   - "${f.id}" — ${f.intent}`).join('\n')}
+   PHASE GUIDANCE: opener → inter/space/montserrat. build → bebas/oswald/archivo. climax → anton/archivo. resolve → playfair/montserrat/inter. Use "caveat" sparingly (max 1-2 beats per ad, only for personal/playful moments).
+
 4) TEXT POSITION — pick ONE from this list. AVOID positions used in the last 3 beats (${usedPositions.length ? usedPositions.join(', ') : 'none yet'}). The device occupies the entire vertical middle of the frame, so text MUST stay in the TOP band or BOTTOM band. Pick from:
    ${TEXT_POSITIONS.map(p => `${p.id} (x:${p.x}, y:${p.y})`).join(', ')}
 
@@ -409,7 +428,7 @@ ${shouldOfferImage ? `6) IMAGE OVERLAY (optional but encouraged for THIS beat) �
 RECENT BEATS:
 ${previous || '(this is the first beat)'}
 
-Return JSON with: preset_ids, intent, camera_preset, text_animation, font_weight, emphasis, text_position_id, image_prompt, image_role, text_only, device, bg_prompt.`,
+Return JSON with: preset_ids, intent, camera_preset, text_animation, font_weight, emphasis, font_family, text_position_id, image_prompt, image_role, text_only, device, bg_prompt.`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -419,6 +438,7 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, font_weight
             text_animation: { type: 'string' },
             font_weight: { type: 'number' },
             emphasis: { type: 'string' },
+            font_family: { type: 'string' },
             text_position_id: { type: 'string' },
             image_prompt: { type: 'string' },
             image_role: { type: 'string' },
@@ -467,6 +487,24 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, font_weight
         posId = pos.id;
       }
 
+      // ── Font family resolution ────────────────────────────────────────
+      // Pick the font the sub-agent chose. Fall back to a phase-appropriate
+      // font if the agent's choice is invalid. Avoid using the SAME font as
+      // the previous beat so consecutive beats look distinct.
+      const phaseFonts = {
+        opener:  ['inter', 'space', 'montserrat'],
+        build:   ['bebas', 'oswald', 'archivo'],
+        climax:  ['anton', 'archivo'],
+        resolve: ['playfair', 'montserrat', 'inter'],
+      };
+      const prevFontId = segments[segments.length - 1]?.font_family_id;
+      let fontId = FONT_FAMILIES.find(f => f.id === subAgent.font_family)?.id;
+      if (!fontId || fontId === prevFontId) {
+        const pool = (phaseFonts[phase] || ['inter']).filter(f => f !== prevFontId);
+        fontId = pool[i % pool.length] || 'inter';
+      }
+      const fontCss = (FONT_FAMILIES.find(f => f.id === fontId) || FONT_FAMILIES[4]).css;
+
       // ── Text-only sanitization: not on last beat, not back-to-back ───
       const prevBeat = segments[segments.length - 1];
       const isLastBeat = (i + 1) >= segCount;
@@ -495,6 +533,8 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, font_weight
         text: emphasis === 'uppercase' ? (myLine || '').toUpperCase() : myLine,
         text_animation: anim,
         font_weight: fontWeight,
+        font_family_id: fontId,
+        font_family_css: fontCss,
         emphasis,
         text_position_id: posId,
         text_x: pos.x,
@@ -814,8 +854,8 @@ Return final JSON with the same shape:
         if (firstCam) params.set('camera', firstCam);
 
         // Encode per-beat narrative fields (text + animation + position + duration
-        // + text_only flag + per-beat device swap) so UltraMock can stream them
-        // sequentially.
+        // + text_only flag + per-beat device swap + font family) so UltraMock can
+        // stream them sequentially.
         const beats = choreograph.segments.map((s) => ({
           t: s.text || '',
           a: s.text_animation || 'pop',
@@ -825,6 +865,7 @@ Return final JSON with the same shape:
           to: !!s.text_only,
           dv: DEVICES.includes(s.device) ? s.device : '',
           fw: s.font_weight || 900,
+          ff: s.font_family_css || '',
         }));
         try {
           // base64-encode the JSON so newlines/quotes survive URL encoding
