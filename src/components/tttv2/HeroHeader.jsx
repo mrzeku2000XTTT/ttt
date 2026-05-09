@@ -205,10 +205,27 @@ export default function HeroHeader() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-[15px] text-zinc-400 max-w-md mx-auto leading-relaxed mb-10"
+          className="text-[15px] text-zinc-400 max-w-md mx-auto leading-relaxed mb-5"
         >
           80+ apps. One ecosystem. Built on the fastest blockDAG.
         </motion.p>
+
+        {/* Pricing — no paywall, pay with Kaspa */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-3 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-50 to-emerald-50 ring-1 ring-cyan-200/60 mb-10"
+        >
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wider uppercase text-emerald-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            No paywall
+          </span>
+          <span className="hidden sm:block w-px h-4 bg-zinc-300/70" />
+          <span className="text-[12px] sm:text-[13px] font-semibold text-zinc-700">
+            <span className="text-cyan-600 font-[900]">6 KAS</span> per agent ad · <span className="text-zinc-900 font-bold">2 free trials</span> every day
+          </span>
+        </motion.div>
 
         {/* Animated scrolling app icons — two rows, opposite directions */}
         <motion.div
