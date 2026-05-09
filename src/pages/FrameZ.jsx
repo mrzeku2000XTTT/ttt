@@ -4,7 +4,8 @@ import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import FrameZHeader from "@/components/framez/FrameZHeader";
 import FrameZTabs from "@/components/framez/FrameZTabs";
-import FrameZChat from "@/components/framez/FrameZChat";
+import FrameZChat from "@/components/framez/FrameZChat.jsx";
+import FrameZContentTab from "@/components/framez/FrameZContentTab.jsx";
 import FrameZBottomBar from "@/components/framez/FrameZBottomBar";
 
 /**
@@ -18,6 +19,7 @@ export default function FrameZPage() {
   const [activeTab, setActiveTab] = useState("chat");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [deck, setDeck] = useState(null);
 
   useEffect(() => {
     base44.auth.me()
@@ -61,8 +63,10 @@ export default function FrameZPage() {
         <FrameZHeader />
         <FrameZTabs active={activeTab} onChange={setActiveTab} />
 
-        {activeTab === "chat" && <FrameZChat initialPrompt="TTT" />}
-        {activeTab === "content" && <PlaceholderTab title="Content" subtitle="Slides will appear here as the agent generates them." />}
+        {activeTab === "chat" && (
+          <FrameZChat onDeckGenerated={(d) => { setDeck(d); setActiveTab("content"); }} />
+        )}
+        {activeTab === "content" && <FrameZContentTab deck={deck} />}
         {activeTab === "controls" && <PlaceholderTab title="Controls" subtitle="Theme, animations, and deck-level settings." />}
 
         <FrameZBottomBar domain="framez.app" />
