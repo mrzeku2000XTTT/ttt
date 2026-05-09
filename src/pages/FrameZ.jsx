@@ -4,8 +4,8 @@ import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import FrameZHeader from "@/components/framez/FrameZHeader";
 import FrameZTabs from "@/components/framez/FrameZTabs";
-import FrameZChat from "@/components/framez/FrameZChat.jsx";
-import FrameZContentTab from "@/components/framez/FrameZContentTab.jsx";
+import FrameZChat from "@/components/framez/FrameZChat";
+import FrameZContentTab from "@/components/framez/FrameZContentTab";
 import FrameZBottomBar from "@/components/framez/FrameZBottomBar";
 
 /**
