@@ -228,26 +228,18 @@ const MockTimeline = forwardRef(function MockTimeline({
   const addCameraKeyframeAt = (t) => {
     if (!camera) return;
     const tt = Math.max(0, Math.min(Math.min(duration, CAMERA_MAX_START), Math.round(t * 100) / 100));
-    // Always force REAL movement by cycling through distinct camera positions.
-    // Each new keyframe gets a different offset so the camera actually travels
-    // between keyframes instead of sitting still on the current position.
-    const idx = cameraTrack.length % 6;
-    const cycle = [
-      { zoom: 1.4, x: 50, y: 50 }, // zoom in to center
-      { zoom: 1.0, x: 75, y: 50 }, // pan right
-      { zoom: 0.8, x: 50, y: 50 }, // zoom out
-      { zoom: 1.0, x: 25, y: 50 }, // pan left
-      { zoom: 1.2, x: 50, y: 30 }, // tilt up + zoom
-      { zoom: 1.2, x: 50, y: 70 }, // tilt down + zoom
-    ];
-    const { zoom, x, y } = cycle[idx];
+    const key = {
+      t: tt,
+      zoom: camera.zoom ?? 1,
+      x: camera.x ?? 50,
+      y: camera.y ?? 50,
+    };
     setCameraTrack((prev) => {
       const filtered = prev.filter((k) => Math.abs(k.t - tt) > 0.01);
-      return [...filtered, { t: tt, zoom, x, y }].sort((a, b) => a.t - b.t);
+      return [...filtered, key].sort((a, b) => a.t - b.t);
     });
     setPlayhead(tt);
-    // Force the camera to the new state so the user sees the change immediately
-    if (setCamera) setCamera({ zoom, x, y });
+    if (setCamera) setCamera({ zoom: key.zoom, x: key.x, y: key.y });
   };
 
   const addKeyframe = () => {
@@ -496,25 +488,17 @@ const MockTimeline = forwardRef(function MockTimeline({
     // Clamp camera keyframe time so it can't start past 30s
     const tRaw = Math.round(playhead * 100) / 100;
     const t = Math.min(tRaw, CAMERA_MAX_START);
-    // Cycle through distinct camera positions so each new key represents
-    // REAL movement instead of capturing the (already interpolated) current
-    // camera state — which would freeze the camera at the previous key.
-    const idx = cameraTrack.length % 6;
-    const cycle = [
-      { zoom: 1.4, x: 50, y: 50 }, // zoom in to center
-      { zoom: 1.0, x: 75, y: 50 }, // pan right
-      { zoom: 0.8, x: 50, y: 50 }, // zoom out
-      { zoom: 1.0, x: 25, y: 50 }, // pan left
-      { zoom: 1.2, x: 50, y: 30 }, // tilt up + zoom
-      { zoom: 1.2, x: 50, y: 70 }, // tilt down + zoom
-    ];
-    const { zoom, x, y } = cycle[idx];
+    const key = {
+      t,
+      zoom: camera.zoom ?? 1,
+      x: camera.x ?? 50,
+      y: camera.y ?? 50,
+    };
     setCameraTrack((prev) => {
       const filtered = prev.filter((k) => Math.abs(k.t - t) > 0.01);
-      return [...filtered, { t, zoom, x, y }].sort((a, b) => a.t - b.t);
+      return [...filtered, key].sort((a, b) => a.t - b.t);
     });
-    // Snap the live camera to the new key so the user immediately sees it
-    if (setCamera) setCamera({ zoom, x, y });
+    if (setCamera) setCamera({ zoom: key.zoom, x: key.x, y: key.y });
   };
 
   const removeCameraKeyframe = (idx) => {
