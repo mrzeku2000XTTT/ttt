@@ -209,10 +209,7 @@ const MockTimeline = forwardRef(function MockTimeline({
     setTracks((prev) => {
       const cur = prev[itemId] || [];
       const filtered = cur.filter((k) => Math.abs(k.t - tt) > 0.01);
-      const carriesPos =
-        item.kind === "text" ||
-        item.kind === "overlay" ||
-        cur.some((k) => typeof k.x === "number" || typeof k.y === "number");
+      const carriesPos = typeof item.x === "number" && typeof item.y === "number";
       const next = {
         t: tt,
         rotX: item.rotX || 0,
@@ -259,13 +256,8 @@ const MockTimeline = forwardRef(function MockTimeline({
     setTracks((prev) => {
       const cur = prev[selected.id] || [];
       const filtered = cur.filter((k) => Math.abs(k.t - t) > 0.01);
-      // Always carry x/y for text and overlay items so position animates from
-      // the very first keyframe. For devices, only carry pos if existing keys
-      // already have it (preserves existing motion-preset behavior).
-      const carriesPos =
-        selected.kind === "text" ||
-        selected.kind === "overlay" ||
-        cur.some((k) => typeof k.x === "number" || typeof k.y === "number");
+      // Always carry x/y so every keyframe can preserve and animate real position.
+      const carriesPos = typeof selected.x === "number" && typeof selected.y === "number";
       const next = {
         t,
         rotX: selected.rotX || 0,
