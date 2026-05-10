@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, Sparkles, PanelRight } from "lucide-react";
+import { Send, Loader2, Sparkles, PanelRight, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import BrandMessageBubble from "@/components/launchbrand/BrandMessageBubble";
 import BrandWorkspace from "@/components/launchbrand/BrandWorkspace";
@@ -152,6 +152,15 @@ export default function BrandStudio() {
           <p className="text-white/50 mt-3 max-w-md mx-auto text-sm">
             Chat with your AI strategist. Real assets get built as you go.
           </p>
+          <a
+            href="https://k6ix.base44.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex items-center gap-2 h-10 px-5 rounded-full bg-white text-black text-[13px] font-bold hover:bg-cyan-100 active:scale-95 transition-all shadow-lg shadow-cyan-500/20"
+          >
+            Open K6ix
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur-xl overflow-hidden grid lg:grid-cols-[1fr_420px] h-[640px]">
