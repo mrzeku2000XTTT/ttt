@@ -891,6 +891,16 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
     set_padding: (a = {}) => { if (typeof a.padding === "number") setPadding(Math.max(20, Math.min(160, a.padding))); return { padding: a.padding }; },
     set_duration: (a = {}) => { if (typeof a.seconds === "number") setDuration(Math.max(1, Math.min(30, a.seconds))); return { duration: a.seconds }; },
     apply_preset: async (a = {}) => {
+      if (a.preset_id === "typewriter") {
+        let target = selected;
+        if (!target || target.kind !== "text") {
+          target = items.find((i) => i.kind === "text") || null;
+        }
+        if (!target) throw new Error("no text layer available for typewriter animation");
+        updateItem(target.id, { animation: "typewriter" });
+        setSelectedId(target.id);
+        return { applied: "typewriter", id: target.id };
+      }
       if (!timelineRef.current) throw new Error("no timeline available");
       // Auto-select first item if nothing is selected — the preset needs a target
       if (!selectedId) {

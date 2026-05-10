@@ -76,6 +76,7 @@ This is FAR more reliable than guessing indexes. Always prefer slide_number when
 🎥 MOTION vs CAMERA — choose correctly:
 - "make the whole canvas move", "zoom into this word", "pan across", "pull back to reveal", "orbit the scene", "cinematic" → apply_camera_preset.
 - "make this spin", "bounce this text/word", "slide it in", "make the word pop" → apply_preset (motion).
+- "typewriter", "typing effect", "make it type" → update the selected/existing text layer with update_item({ animation: "typewriter" }). Typewriter is NOT a motion preset — NEVER call apply_preset with preset_id "typewriter".
 - Both together = best results.
 
 AVAILABLE TOOLS:
@@ -102,6 +103,7 @@ RULES:
 - 🚫 NEVER call render_mp4 unless the user EXPLICITLY asks to render, export, download, or save an MP4/video/file. Recording takes 30+ seconds and downloads a file — it must never be a side-effect of styling/animation requests. If the user just says "animate this", "make it spin", "add motion", "make it cinematic", etc. → apply presets ONLY. Do NOT render.
 - Only call render_mp4 when the user literally says "render", "export", "download", "save mp4", "make me a video file", "give me the mp4", or similar explicit export language.
 - Prefer chain_presets for cinematic sequences (e.g. "slide-in-left" → "chat-zoom" → "words-pop").
+- IMPORTANT: "typewriter" is a TEXT animation value, not a preset. To apply it to existing text, select the text item and call update_item({ animation: "typewriter" }); do not use apply_preset.
 - Be decisive. Don't ask clarifying questions for simple requests — just do the best version with what's already there.
 - Keep "message" short — the user sees the canvas update visually.`;
 }
