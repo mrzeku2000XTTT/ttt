@@ -30,6 +30,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     locked = false,        // Lock preview: freezes pan/zoom/interactions for MP4 framing
     pinchEnabled = false,  // Mobile 2-finger pinch-to-zoom
     camera,                // { zoom, x, y } — animated by the timeline camera track
+    onCameraChange,        // (camera) => void — lets visible zoom/pan become real camera state
     isPlaying = false,     // bool — preview animation playing state (from timeline)
     onTogglePlay,          // () => void — toggle play/pause via the timeline ref
     renderMode = false,    // when true: hide selection rings, × buttons, zoom controls — clean recording
@@ -135,9 +136,26 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   }, [ref]);
 
   const clampZoom = (z) => Math.max(0.25, Math.min(2, z));
-  const zoomIn = () => setZoom((z) => clampZoom(z + 0.1));
-  const zoomOut = () => setZoom((z) => clampZoom(z - 0.1));
-  const zoomReset = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+  const commitCameraFromView = useCallback((nextZoom = zoom, nextPan = pan) => {
+    if (!onCameraChange) return;
+    onCameraChange({
+      zoom: nextZoom,
+      x: 50 - (nextPan.x / 8),
+      y: 50 - (nextPan.y / 8),
+    });
+  }, [onCameraChange, zoom, pan]);
+
+  const zoomIn = () => setZoom((z) => {
+    const next = clampZoom(z + 0.1);
+    commitCameraFromView(next, pan);
+    return next;
+  });
+  const zoomOut = () => setZoom((z) => {
+    const next = clampZoom(z - 0.1);
+    commitCameraFromView(next, pan);
+    return next;
+  });
+  const zoomReset = () => { setZoom(1); setPan({ x: 0, y: 0 }); onCameraChange?.({ zoom: 1, x: 50, y: 50 }); };
 
   // Plain scroll-to-zoom — no modifier key needed
   const onWheel = (e) => {

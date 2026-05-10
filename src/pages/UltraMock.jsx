@@ -1103,6 +1103,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 locked={locked}
                 pinchEnabled={pinchEnabled}
                 camera={camera}
+                onCameraChange={setCamera}
                 isPlaying={previewPlaying}
                 onTogglePlay={() => timelineRef.current?.togglePlay?.()}
                 renderMode={renderMode}
