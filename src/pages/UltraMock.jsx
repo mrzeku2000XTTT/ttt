@@ -981,6 +981,15 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
     },
   }), [items, selectedId, updateItem, removeItem]);
 
+  const seekTimeline = useCallback((seconds) => {
+    setPlayhead(seconds);
+    timelineRef.current?.applyAtTime?.(seconds);
+  }, []);
+
+  const addFullscreenKeyframe = useCallback(() => {
+    timelineRef.current?.addKeyframe?.();
+  }, []);
+
   // Multi-track timeline: every item gets its own animation lane.
   // Always render — even with no selection — so existing tracks remain visible.
   const showTimeline = items.length > 0;
@@ -1118,6 +1127,9 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 onTogglePlay={() => timelineRef.current?.togglePlay?.()}
                 renderMode={renderMode}
                 playhead={playhead}
+                duration={duration}
+                onSeek={seekTimeline}
+                onAddKeyframe={addFullscreenKeyframe}
                 trackWindows={trackWindows}
               />
             </div>

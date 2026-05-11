@@ -4,7 +4,7 @@ import TextLayer from "./TextLayer";
 import OverlayLayer from "./OverlayLayer";
 import ResizeHandles from "./ResizeHandles";
 import CornerDeleteButtons from "./CornerDeleteButtons";
-import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock, Expand, Minimize, Play, Pause, EyeOff, Eye } from "lucide-react";
+import { Trash2, Plus, Move, X, ZoomIn, ZoomOut, Maximize2, Lock, Expand, Minimize, Play, Pause, EyeOff, Eye, Settings, Diamond } from "lucide-react";
 
 /**
  * Free-form canvas where users can:
@@ -35,6 +35,9 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     onTogglePlay,          // () => void — toggle play/pause via the timeline ref
     renderMode = false,    // when true: hide selection rings, × buttons, zoom controls — clean recording
     playhead = 0,          // current timeline time (sec) — drives per-beat text visibility
+    duration = 4,          // total timeline duration for fullscreen scrubber
+    onSeek,                // (seconds) => void — scrub timeline from fullscreen dock
+    onAddKeyframe,         // () => void — add keyframe from fullscreen dock
     trackWindows = {},     // { [itemId]: { first, last } } — per-item kf windows for text gating
   },
   ref
@@ -52,6 +55,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   const [isPanning, setIsPanning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsHidden, setControlsHidden] = useState(false);
+  const [fullscreenSettingsOpen, setFullscreenSettingsOpen] = useState(false);
 
   // Track native fullscreen state so the icon stays in sync (Esc, F11, etc.)
   useEffect(() => {
@@ -424,6 +428,20 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         /* Hide any sibling chrome the parent wraps the canvas with */
         body.ultramock-pseudo-fs nav,
         body.ultramock-pseudo-fs > div > nav { display: none !important; }
+        .ultramock-fs-dock {
+          position: absolute;
+          left: 50%;
+          bottom: max(18px, env(safe-area-inset-bottom));
+          transform: translateX(-50%);
+          z-index: 70;
+        }
+        .ultramock-fs-panel {
+          position: absolute;
+          right: max(18px, env(safe-area-inset-right));
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 70;
+        }
       `}</style>
       {/* Locked indicator (replaces zoom controls when preview is locked) */}
       {locked && (
@@ -507,6 +525,80 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         >
           <Eye className="w-3.5 h-3.5" />
         </button>
+      )}
+
+      {/* Fullscreen Apple-style preview controls */}
+      {isFullscreen && !renderMode && !locked && (
+        <>
+          <div className="ultramock-fs-dock html2canvas-ignore w-[min(92vw,720px)] rounded-[2rem] border border-white/15 bg-black/70 backdrop-blur-2xl shadow-2xl shadow-black/60 px-3 py-2 text-white">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onTogglePlay}
+                className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg"
+                title={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+              </button>
+              <button
+                onClick={onAddKeyframe}
+                className="hidden sm:flex h-10 px-3 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 items-center gap-1.5 text-xs font-bold text-white/85"
+                title="Add keyframe at current time"
+              >
+                <Diamond className="w-3.5 h-3.5 fill-white/70" /> Keyframe
+              </button>
+              <div className="flex-1 px-1">
+                <input
+                  type="range"
+                  min="0"
+                  max={duration || 1}
+                  step="0.01"
+                  value={Math.min(duration || 1, Math.max(0, playhead || 0))}
+                  onChange={(e) => onSeek?.(Number(e.target.value))}
+                  className="w-full accent-white cursor-pointer"
+                  title="Timeline"
+                />
+                <div className="flex justify-between text-[10px] text-white/45 font-mono -mt-1">
+                  <span>{(playhead || 0).toFixed(2)}s</span>
+                  <span>{(duration || 0).toFixed(2)}s</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setFullscreenSettingsOpen((v) => !v)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${fullscreenSettingsOpen ? "bg-white text-black border-white" : "bg-white/10 hover:bg-white/15 border-white/10 text-white/85"}`}
+                title="Preview settings"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 text-white/85 flex items-center justify-center"
+                title="Exit fullscreen"
+              >
+                <Minimize className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {fullscreenSettingsOpen && (
+            <div className="ultramock-fs-panel html2canvas-ignore w-[260px] rounded-[1.6rem] border border-white/15 bg-black/75 backdrop-blur-2xl shadow-2xl shadow-black/60 p-4 text-white hidden sm:block">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-black mb-3">Preview Settings</div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-[11px] text-white/60 mb-1"><span>Zoom</span><span>{Math.round(zoom * 100)}%</span></div>
+                  <div className="flex gap-2">
+                    <button onClick={zoomOut} className="flex-1 h-9 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center"><ZoomOut className="w-4 h-4" /></button>
+                    <button onClick={zoomReset} className="flex-1 h-9 rounded-xl bg-white text-black text-xs font-black">Fit</button>
+                    <button onClick={zoomIn} className="flex-1 h-9 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center"><ZoomIn className="w-4 h-4" /></button>
+                  </div>
+                </div>
+                <button onClick={() => setControlsHidden((v) => !v)} className="w-full h-10 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold flex items-center justify-center gap-2">
+                  {controlsHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  {controlsHidden ? "Show corner HUD" : "Hide corner HUD"}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Camera viewport — wraps the surface and applies the timeline camera transform */}
