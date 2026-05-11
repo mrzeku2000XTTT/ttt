@@ -383,6 +383,7 @@ export default function UltraMockPage() {
     const autoPreset = params.get("preset") || "spin";
     const autoDuration = Math.max(1, Math.min(60, Number(params.get("duration")) || 4));
     const autoMedia = params.get("media") || "";
+    const autoMediaType = params.get("media_type") === "video" || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(autoMedia) ? "video" : "image";
     const autoEmail = (params.get("email") || "").trim();
     const autoSpeed = Math.max(0.25, Math.min(4, Number(params.get("speed")) || 1));
     const autoCamera = params.get("camera") || ""; // optional camera preset id
@@ -500,7 +501,7 @@ export default function UltraMockPage() {
             x: 50,
             y: isDesktop ? 60 : 55,
             scale: isDesktop ? 0.55 : 0.85,
-            media: autoMedia ? { url: autoMedia, type: "image", name: "auto" } : null,
+            media: autoMedia ? { url: autoMedia, type: autoMediaType, name: "auto" } : null,
             appearAt,
             disappearAt,
           });
@@ -523,7 +524,7 @@ export default function UltraMockPage() {
       const deviceItem = makeItem({
         device: autoDevice,
         x: 50, y: 55, scale: 0.85,
-        media: autoMedia ? { url: autoMedia, type: "image", name: "auto" } : null,
+        media: autoMedia ? { url: autoMedia, type: autoMediaType, name: "auto" } : null,
       });
       fresh.push(deviceItem);
       lastDeviceId = deviceItem.id;

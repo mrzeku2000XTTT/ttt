@@ -69,8 +69,12 @@ const TEXT_POSITIONS = [
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    let user = null;
+    try {
+      user = await base44.auth.me();
+    } catch {
+      user = null;
+    }
 
     const { step, state = {} } = await req.json();
     if (!step) return Response.json({ error: 'Missing step' }, { status: 400 });
@@ -92,8 +96,6 @@ Return JSON:
 - key_principles: array of 3-5 craft rules
 - recommended_pace: "fast" | "medium" | "slow"
 - recommended_mood: short phrase`,
-        add_context_from_internet: true,
-        model: 'gemini_3_flash',
         response_json_schema: {
           type: 'object',
           properties: {
@@ -118,11 +120,26 @@ Return JSON:
 
     // ── STEP 2: ANALYZE MEDIA ──────────────────────────────────────────
     if (step === 'analyze_media') {
-      const { media_url, media_type } = state;
+      const { media_url, media_type, media_name, vibe } = state;
       if (!media_url) return Response.json({ error: 'Missing media_url' }, { status: 400 });
 
-      const analysis = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this ${media_type || 'image'} for a motion ad. Look at composition, subject, mood, palette.
+      const isVideo = media_type === 'video';
+      const analysisPrompt = isVideo
+        ? `Analyze this uploaded VIDEO for a motion ad from the user's intent and filename. The video itself will be handed into Cháoxiào as playable video media, so focus on how to use it in an edit.
+
+VIDEO FILE: ${media_name || 'uploaded video'}
+USER INTENT / VIBE: ${vibe || 'cinematic premium motion ad'}
+
+Return JSON:
+- subject: likely main subject (1 short phrase)
+- product_category: best guess category
+- mood: dominant intended mood
+- palette: 3-4 likely visual palette words
+- composition: how to frame the video inside a device/mockup
+- best_motion_angle: how the camera/timeline should use the video (push-in, cuts, zoom locks, product reveal)
+- suggested_focal_point: where the camera box should lock first
+- key_selling_points: array of 3-5 implied selling points / features the ad copy could highlight`
+        : `Analyze this image for a motion ad. Look at composition, subject, mood, palette.
 
 Return JSON:
 - subject: what is the main subject (1 short phrase)
@@ -132,8 +149,10 @@ Return JSON:
 - composition: short phrase
 - best_motion_angle: which animation style would best showcase this
 - suggested_focal_point: where the eye should land first
-- key_selling_points: array of 3-5 implied selling points / features the ad copy could highlight`,
-        file_urls: [media_url],
+- key_selling_points: array of 3-5 implied selling points / features the ad copy could highlight`;
+
+      const analysisArgs = {
+        prompt: analysisPrompt,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -148,7 +167,10 @@ Return JSON:
           },
           required: ['subject', 'mood', 'best_motion_angle'],
         },
-      });
+      };
+      if (!isVideo) analysisArgs.file_urls = [media_url];
+
+      const analysis = await base44.integrations.Core.InvokeLLM(analysisArgs);
 
       return Response.json({ step: 'analyze_media', output: analysis, next_step: 'plan' });
     }
@@ -817,7 +839,7 @@ Return final JSON with the same shape:
 
     // ── STEP 6: DONE ───────────────────────────────────────────────────
     if (step === 'done') {
-      const { plan, media_url, email, choreograph, sequence, speed } = state;
+      const { plan, media_url, media_type, email, choreograph, sequence, speed } = state;
       if (!plan || !media_url) {
         return Response.json({ error: 'Missing plan or media_url' }, { status: 400 });
       }
@@ -835,6 +857,7 @@ Return final JSON with the same shape:
         background,
         media: media_url,
       });
+      if (media_type) params.set('media_type', media_type);
 
       if (choreograph?.segments?.length) {
         let chainIds;

@@ -208,6 +208,8 @@ export default function KatagamiAIEditor() {
         mediaUrl = file_url;
       }
       if (mediaUrl) params.set("media", mediaUrl);
+      if (file?.type?.startsWith("video/")) params.set("media_type", "video");
+      else if (file?.type?.startsWith("image/")) params.set("media_type", "image");
 
       // Audio (MP3/WAV/etc) — upload if needed and forward as ?audio=
       let audioUrl = uploadedAudioUrl;
@@ -298,6 +300,7 @@ export default function KatagamiAIEditor() {
       let state = {
         media_url: file_url,
         media_type,
+        media_name: file.name,
         vibe,
         email: email.trim() || undefined,
         target_duration: duration,
