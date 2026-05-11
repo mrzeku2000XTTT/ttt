@@ -38,6 +38,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     duration = 4,          // total timeline duration for fullscreen scrubber
     onSeek,                // (seconds) => void — scrub timeline from fullscreen dock
     onAddKeyframe,         // () => void — add keyframe from fullscreen dock
+    onAddCameraKeyframe,   // () => void — add camera keyframe from camera guide
     trackWindows = {},     // { [itemId]: { first, last } } — per-item kf windows for text gating
   },
   ref
@@ -46,6 +47,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
   const dragState = useRef(null);
   const panState = useRef(null);
   const pinchState = useRef(null);
+  const cameraBoxDragRef = useRef(null);
   // On mobile, start zoomed out so the full phone is visible (device sits at y:58 with scale 1)
   const [zoom, setZoom] = useState(() => {
     if (typeof window !== "undefined" && window.innerWidth < 640) return 0.5;
@@ -160,6 +162,37 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     return next;
   });
   const zoomReset = () => { setZoom(1); setPan({ x: 0, y: 0 }); onCameraChange?.({ zoom: 1, x: 50, y: 50 }); };
+
+  const adjustCameraZoom = (delta) => {
+    const nextZoom = Math.max(1, Math.min(4, (camera?.zoom || 1) + delta));
+    onCameraChange?.({ zoom: nextZoom, x: camera?.x ?? 50, y: camera?.y ?? 50 });
+  };
+
+  const startCameraBoxDrag = (e) => {
+    if (!onCameraChange || locked || renderMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch {}
+    cameraBoxDragRef.current = { pointerId: e.pointerId, target: e.currentTarget };
+  };
+
+  const moveCameraBox = useCallback((e) => {
+    const d = cameraBoxDragRef.current;
+    if (!d || !onCameraChange) return;
+    const rect = (typeof ref === "function" ? null : ref?.current)?.getBoundingClientRect?.();
+    if (!rect) return;
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    onCameraChange({ zoom: camera?.zoom || 1, x, y });
+  }, [camera, onCameraChange, ref]);
+
+  const endCameraBoxDrag = useCallback(() => {
+    const d = cameraBoxDragRef.current;
+    if (d?.target && d.pointerId !== undefined) {
+      try { d.target.releasePointerCapture?.(d.pointerId); } catch {}
+    }
+    cameraBoxDragRef.current = null;
+  }, []);
 
   // Plain scroll-to-zoom — no modifier key needed
   const onWheel = (e) => {
@@ -308,7 +341,9 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     const onUp = () => endDrag();
     const onCancel = () => endDrag();
     document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointermove", moveCameraBox);
     document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointerup", endCameraBoxDrag);
     document.addEventListener("pointercancel", onCancel);
     document.addEventListener("mouseleave", onUp);
     // Touch fallback for older Safari
@@ -317,7 +352,9 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     document.addEventListener("touchcancel", onCancel);
     return () => {
       document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointermove", moveCameraBox);
       document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointerup", endCameraBoxDrag);
       document.removeEventListener("pointercancel", onCancel);
       document.removeEventListener("mouseleave", onUp);
       document.removeEventListener("touchmove", onMove);
@@ -525,6 +562,36 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
         >
           <Eye className="w-3.5 h-3.5" />
         </button>
+      )}
+
+      {/* Camera guide box — drag to set focus, zoom +/- then save as camera keyframe */}
+      {!renderMode && !locked && camera && (
+        <div
+          className="absolute z-50 html2canvas-ignore select-none"
+          style={{
+            left: `${camera.x ?? 50}%`,
+            top: `${camera.y ?? 50}%`,
+            width: `${Math.max(18, 42 / Math.max(1, camera.zoom || 1))}%`,
+            aspectRatio: "16 / 10",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <div
+            onPointerDown={startCameraBoxDrag}
+            className="relative w-full h-full rounded-2xl border-2 border-white/80 bg-white/[0.03] shadow-[0_0_0_9999px_rgba(0,0,0,0.18),0_0_30px_rgba(255,255,255,0.22)] cursor-move backdrop-blur-[1px]"
+            title="Drag camera lock area"
+          >
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-black/75 backdrop-blur-xl border border-white/15 px-1.5 py-1 shadow-xl">
+              <button onClick={(e) => { e.stopPropagation(); adjustCameraZoom(-0.25); }} className="w-6 h-6 rounded-full hover:bg-white/15 text-white/80 flex items-center justify-center" title="Camera zoom out"><ZoomOut className="w-3 h-3" /></button>
+              <span className="min-w-10 text-center text-[9px] font-black text-white/80 tabular-nums">{(camera.zoom || 1).toFixed(2)}×</span>
+              <button onClick={(e) => { e.stopPropagation(); adjustCameraZoom(0.25); }} className="w-6 h-6 rounded-full hover:bg-white/15 text-white/80 flex items-center justify-center" title="Camera zoom in"><ZoomIn className="w-3 h-3" /></button>
+              <button onClick={(e) => { e.stopPropagation(); onAddCameraKeyframe?.(); }} className="ml-1 h-6 px-2 rounded-full bg-white text-black text-[9px] font-black flex items-center gap-1" title="Save camera keyframe"><Diamond className="w-2.5 h-2.5 fill-black" /> Key</button>
+            </div>
+            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/35" />
+            <div className="absolute top-1/2 left-0 right-0 h-px bg-white/35" />
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-black tracking-[0.2em] uppercase text-white/70 bg-black/50 rounded-full px-2 py-0.5">Camera Lock</div>
+          </div>
+        </div>
       )}
 
       {/* Fullscreen Apple-style preview controls */}

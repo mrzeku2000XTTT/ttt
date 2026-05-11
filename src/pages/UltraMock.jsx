@@ -990,6 +990,10 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
     timelineRef.current?.addKeyframe?.();
   }, []);
 
+  const addCameraGuideKeyframe = useCallback(() => {
+    timelineRef.current?.addCameraKeyframe?.();
+  }, []);
+
   // Multi-track timeline: every item gets its own animation lane.
   // Always render — even with no selection — so existing tracks remain visible.
   const showTimeline = items.length > 0;
@@ -1130,6 +1134,7 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 duration={duration}
                 onSeek={seekTimeline}
                 onAddKeyframe={addFullscreenKeyframe}
+                onAddCameraKeyframe={addCameraGuideKeyframe}
                 trackWindows={trackWindows}
               />
             </div>

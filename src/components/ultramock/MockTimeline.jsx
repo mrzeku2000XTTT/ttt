@@ -660,6 +660,7 @@ const MockTimeline = forwardRef(function MockTimeline({
     clearCameraTrack: () => clearCameraTrack(),
     applyAtTime: (t) => applyAtTime(t),
     addKeyframe: () => addKeyframe(),
+    addCameraKeyframe: () => addCameraKeyframe(),
     clearKeyframes: () => {
       if (selected) removeTrack(selected.id);
     },
