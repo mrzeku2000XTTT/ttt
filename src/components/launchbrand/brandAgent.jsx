@@ -25,16 +25,16 @@ function extractUrl(text) {
 }
 
 const STAGE_PROMPTS = {
-  discovery: `You are a friendly, sharp brand strategist. Your job is to gather just enough info to build a real brand.
+  discovery: `You are a fast, decisive brand strategist. Your job is to gather just enough info to build a real brand without annoying the user.
 
-You need THREE things, all clearly stated by the user:
-  1. WHAT they're building (a specific product/service, not just "a brand" or "marketing")
-  2. WHO it's for (a specific audience, not just "businesses" or "people")
-  3. THE VIBE (mood/personality — playful, premium, tactical, calm, etc.)
+Extract or infer THREE things:
+  1. WHAT they're building
+  2. WHO it's for
+  3. THE VIBE
 
-If ANY of these three is vague or missing, ask ONE focused question to fill the gap. Be warm, casual, 2 sentences max. Reference what they already told you.
+If the user gives enough context to make a reasonable assumption, set ready=true and move forward. Do NOT ask the same question twice. Do NOT demand a perfect one-sentence summary.
 
-ONLY say ready=true when ALL three are clear AND specific. Otherwise ready=false.`,
+Only ask one short follow-up when the product itself is completely unclear.`, 
 
   naming: `Generate 5 distinct, memorable brand name candidates.
 Each name: 1-2 words, brandable, easy to remember, no generic words ("Tech", "Solutions", "Hub" etc are banned).
@@ -85,10 +85,13 @@ async function handleDiscovery(brand, userMessage, history) {
     return handleUrlDiscovery(brand, url);
   }
 
+  const userTurns = history.filter((m) => m.role === "user" && m.content);
   const convo = history
     .filter((m) => m.kind === "text" || !m.kind)
     .map((m) => `${m.role}: ${m.content}`)
     .join("\n");
+  const userCorpus = userTurns.map((m) => m.content).join(" ").trim();
+  const userIsFrustrated = /\b(stfu|shut up|fuck|fucking|already told|i told|stop asking|same questions?|you keep asking)\b/i.test(userMessage || "");
 
   const res = await base44.integrations.Core.InvokeLLM({
     prompt: `${STAGE_PROMPTS.discovery}
@@ -103,8 +106,8 @@ Already known about the brand:
 - industry: ${brand.industry || "(unknown)"}
 
 Decide:
-- If the user has now clearly stated WHAT, WHO, and the VIBE → ready=true. Fill description (1 specific sentence about what it is and does), target_audience (specific group), industry (1-2 words).
-- Otherwise → ready=false, ask the next question in "reply" — be specific, reference their words.`,
+- If there is enough information to infer WHAT, WHO, and VIBE → ready=true. Fill description (1 specific sentence about what it is and does), target_audience (specific group), industry (1-2 words).
+- Otherwise → ready=false, ask the next question in "reply" — never repeat a previous question.`,
     response_json_schema: {
       type: "object",
       properties: {
@@ -137,6 +140,29 @@ Decide:
     };
   }
 
+  if (userIsFrustrated || userTurns.length >= 2) {
+    const description = res?.description || brand.description || userCorpus.slice(0, 220) || "A new digital brand";
+    const targetAudience = res?.target_audience || brand.target_audience || "early users and customers";
+
+    return {
+      messages: [
+        {
+          role: "assistant",
+          kind: "text",
+          content: `Got it — I’ll stop asking and move forward with what I have.\n\nLocked in: **${description}** for **${targetAudience}**.\n\nLet me brainstorm names…`,
+        },
+      ],
+      brandUpdates: {
+        description,
+        target_audience: targetAudience,
+        industry: res?.industry || brand.industry || "Digital",
+        stage: "naming",
+        completion: 15,
+      },
+      autoAdvance: true,
+    };
+  }
+
   return {
     messages: [
       {
@@ -144,7 +170,7 @@ Decide:
         kind: "text",
         content:
           res?.reply ||
-          "Tell me a bit more — what exactly are you building, and who's it for?",
+          "What are you building, and who should use it?",
       },
     ],
     brandUpdates: {},
