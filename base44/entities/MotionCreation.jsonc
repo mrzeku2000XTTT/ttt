@@ -1,0 +1,50 @@
+{
+  "name": "MotionCreation",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Display title for the generated Motion site"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "Prompt used to generate the site"
+    },
+    "code": {
+      "type": "string",
+      "description": "Generated React component code"
+    },
+    "creator_email": {
+      "type": "string",
+      "description": "Email of the creator"
+    },
+    "creator_name": {
+      "type": "string",
+      "description": "Name of the creator"
+    },
+    "preset_name": {
+      "type": "string",
+      "description": "Preset used for this creation"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this creation appears in the community gallery"
+    }
+  },
+  "required": [
+    "title",
+    "prompt",
+    "code"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
