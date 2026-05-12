@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ImagePlus, ZoomIn, Sun, Paintbrush, Sparkles, ArrowRight } from "lucide-react";
+import { ImagePlus, ZoomIn, Sun, Paintbrush, Sparkles, ArrowRight, Film } from "lucide-react";
 
 const TOOLS = [
   { id: "generate", label: "Generate Image", desc: "Create stunning AI images from text prompts", icon: ImagePlus, color: "from-purple-500 to-indigo-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+  { id: "motion", label: "Motion SaaS", desc: "Generate SaaS hero frames and open animated product demos", icon: Film, color: "from-fuchsia-500 to-cyan-500", bg: "bg-fuchsia-500/10", border: "border-fuchsia-500/20" },
   { id: "upscaler", label: "Upscaler", desc: "Enhance resolution and quality of any image", icon: ZoomIn, color: "from-cyan-500 to-blue-500", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
   { id: "relight", label: "Relight", desc: "Control lighting angle, warmth, and intensity", icon: Sun, color: "from-amber-500 to-orange-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
   { id: "edit", label: "Edit Image", desc: "Transform images with AI-powered editing", icon: Paintbrush, color: "from-emerald-500 to-teal-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },

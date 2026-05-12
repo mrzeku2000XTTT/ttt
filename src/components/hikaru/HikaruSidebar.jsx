@@ -1,9 +1,10 @@
 import React from "react";
-import { Compass, ImagePlus, ZoomIn, Sun, Paintbrush } from "lucide-react";
+import { Compass, ImagePlus, ZoomIn, Sun, Paintbrush, Film } from "lucide-react";
 
 const NAV_ITEMS = [
   { id: "explore", label: "Explore", icon: Compass },
   { id: "generate", label: "Images", icon: ImagePlus },
+  { id: "motion", label: "Motion SaaS", icon: Film },
   { id: "upscaler", label: "Upscaler", icon: ZoomIn },
   { id: "relight", label: "Relight", icon: Sun },
   { id: "edit", label: "Edit Image", icon: Paintbrush },

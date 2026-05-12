@@ -8,12 +8,14 @@ import HikaruUpscaler from "@/components/hikaru/HikaruUpscaler";
 import HikaruRelight from "@/components/hikaru/HikaruRelight";
 import HikaruEditImage from "@/components/hikaru/HikaruEditImage";
 import HikaruGallery from "@/components/hikaru/HikaruGallery";
+import HikaruMotionSaaS from "@/components/hikaru/HikaruMotionSaaS";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/36834c19a_generated_image.png";
 
 const TOOLS = {
   explore: { label: "Explore", component: HikaruGallery },
   generate: { label: "Generate Image", component: HikaruImageGen },
+  motion: { label: "Motion SaaS", component: HikaruMotionSaaS },
   upscaler: { label: "Upscaler", component: HikaruUpscaler },
   relight: { label: "Relight", component: HikaruRelight },
   edit: { label: "Edit Image", component: HikaruEditImage },
