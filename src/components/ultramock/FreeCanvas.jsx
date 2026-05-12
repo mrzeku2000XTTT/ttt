@@ -39,6 +39,8 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
     onSeek,                // (seconds) => void — scrub timeline from fullscreen dock
     onAddKeyframe,         // () => void — add keyframe from fullscreen dock
     onAddCameraKeyframe,   // () => void — add camera keyframe from camera guide
+    showCameraGuide = true,
+    onToggleCameraGuide,
     trackWindows = {},     // { [itemId]: { first, last } } — per-item kf windows for text gating
   },
   ref
@@ -565,7 +567,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
       )}
 
       {/* Camera guide box — drag to set focus, zoom +/- then save as camera keyframe */}
-      {!renderMode && !locked && camera && (
+      {!renderMode && !locked && camera && showCameraGuide && (
         <div
           className="absolute z-50 html2canvas-ignore select-none"
           style={{
@@ -586,6 +588,7 @@ const FreeCanvas = React.forwardRef(function FreeCanvas(
               <span className="min-w-10 text-center text-[9px] font-black text-white/80 tabular-nums">{(camera.zoom || 1).toFixed(2)}×</span>
               <button onClick={(e) => { e.stopPropagation(); adjustCameraZoom(0.25); }} className="w-6 h-6 rounded-full hover:bg-white/15 text-white/80 flex items-center justify-center" title="Camera zoom in"><ZoomIn className="w-3 h-3" /></button>
               <button onClick={(e) => { e.stopPropagation(); onAddCameraKeyframe?.(); }} className="ml-1 h-6 px-2 rounded-full bg-white text-black text-[9px] font-black flex items-center gap-1" title="Save camera keyframe"><Diamond className="w-2.5 h-2.5 fill-black" /> Key</button>
+              <button onClick={(e) => { e.stopPropagation(); onToggleCameraGuide?.(); }} className="w-6 h-6 rounded-full hover:bg-red-500/20 text-white/70 hover:text-red-200 flex items-center justify-center" title="Hide camera guide"><X className="w-3 h-3" /></button>
             </div>
             <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/35" />
             <div className="absolute top-1/2 left-0 right-0 h-px bg-white/35" />

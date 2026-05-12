@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type, Bot, Globe } from "lucide-react";
+import { ArrowLeft, Download, ImageIcon, Sparkles, Loader2, RefreshCw, Plus, Type, Bot, Globe, Camera } from "lucide-react";
 import html2canvas from "html2canvas";
 import { BACKGROUND_PRESETS } from "@/components/ultramock/MockBackground";
 import MockControls from "@/components/ultramock/MockControls";
@@ -107,6 +107,7 @@ export default function UltraMockPage() {
   const [camera, setCamera] = useState({ zoom: 1, x: 50, y: 50 });
   const [exporting, setExporting] = useState(false);
   const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [showCameraGuide, setShowCameraGuide] = useState(false);
   // Current timeline playhead (seconds) — drives per-beat text visibility windows
   const [playhead, setPlayhead] = useState(0);
   // Per-track first/last keyframe times — drives "text appears at its keyframe time"
@@ -1071,6 +1072,17 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
             <Globe className="w-3.5 h-3.5" /> URL → 10 Images
           </button>
           <button
+            onClick={() => setShowCameraGuide((v) => !v)}
+            className={`flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold transition-all ${
+              showCameraGuide
+                ? "bg-white text-black"
+                : "bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
+            }`}
+            title={showCameraGuide ? "Hide camera guide" : "Show camera guide"}
+          >
+            <Camera className="w-3.5 h-3.5" /> Camera
+          </button>
+          <button
             onClick={addText}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold"
           >
@@ -1136,6 +1148,8 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
                 onSeek={seekTimeline}
                 onAddKeyframe={addFullscreenKeyframe}
                 onAddCameraKeyframe={addCameraGuideKeyframe}
+                showCameraGuide={showCameraGuide}
+                onToggleCameraGuide={() => setShowCameraGuide((v) => !v)}
                 trackWindows={trackWindows}
               />
             </div>
