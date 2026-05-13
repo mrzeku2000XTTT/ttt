@@ -68,14 +68,28 @@ const sizePixels = {
 
 function MarqueeIcon({ app }) {
   const s = sizePixels[app.size] || sizePixels.small;
+  const [imageFailed, setImageFailed] = React.useState(false);
+
   return (
     <Link to={app.path} className="flex-shrink-0">
       <div className="flex flex-col items-center gap-1.5 cursor-pointer group">
         <div
-          className="shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300 overflow-hidden flex-shrink-0"
+          className="shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300 overflow-hidden flex-shrink-0 bg-gradient-to-br from-cyan-400 via-blue-500 to-violet-500"
           style={{ width: s.width, height: s.height, borderRadius: s.radius }}
         >
-          <img src={app.logo} alt={app.name} className="w-full h-full object-cover" draggable={false} />
+          {!imageFailed ? (
+            <img
+              src={app.logo}
+              alt={app.name}
+              className="w-full h-full object-cover"
+              draggable={false}
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white font-black text-lg tracking-tight">
+              {app.name.split(" ").map((word) => word[0]).join("").slice(0, 2)}
+            </div>
+          )}
         </div>
         <span className="text-[11px] font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors truncate max-w-[80px] text-center">
           {app.name}
