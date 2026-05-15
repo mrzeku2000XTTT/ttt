@@ -12,6 +12,7 @@ const COMING_SOON = [
 
 // Changelog — add new entries at the TOP when features ship
 const RECENT_UPDATES = [
+  { title: "Kaspa Toccata Hard-Fork Outlook", desc: "Covenants++ points Kaspa toward native assets, extended covenants, ZK verification opcodes, and stronger Layer 1 programmability.", tag: "Kaspa", date: "May 15" },
   { title: "Core R&D Agent on What is Kaspa", desc: "AI agent now scrapes kaspa.news daily for Rust node, GHOSTDAG, DAGKnight, and protocol development updates.", tag: "AI Agent", date: "Apr 14" },
   { title: "KCbridge on Send KAS", desc: "Quick-access bridge button added to the Send KAS page for instant crypto swaps via KC Bridge.", tag: "Bridge", date: "Apr 14" },
   { title: "What is Kaspa — Dedicated Page", desc: "Full educational page covering blockDAG architecture, PoW, fair launch, timeline, and live community news.", tag: "Education", date: "Apr 13" },
