@@ -18,6 +18,7 @@ import CommunityVideos from "@/components/tttv2/CommunityVideos";
 import KaspaAvatarChat from "@/components/kaspa/KaspaAvatarChat";
 import MobileNavToast from "@/components/tttv2/MobileNavToast";
 import EmbeddedSiteViewer from "@/components/tttv2/EmbeddedSiteViewer";
+import CookieNotice from "@/components/tttv2/CookieNotice";
 
 /* ─── roadmap data ─── */
 const ROADMAP = [
@@ -567,6 +568,9 @@ export default function TTTV2Page() {
 
       {/* Mobile nav toast */}
       <MobileNavToast />
+
+      {/* Cookie/privacy notice */}
+      <CookieNotice />
 
       {/* ── data use note ── */}
       <section className="px-5 pb-10">
