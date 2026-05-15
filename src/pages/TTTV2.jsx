@@ -568,6 +568,16 @@ export default function TTTV2Page() {
       {/* Mobile nav toast */}
       <MobileNavToast />
 
+      {/* ── data use note ── */}
+      <section className="px-5 pb-10">
+        <div className="max-w-5xl mx-auto rounded-2xl bg-white border border-zinc-200/70 p-5 sm:p-6 text-center shadow-sm">
+          <p className="text-[11px] font-bold text-cyan-600 uppercase tracking-widest mb-2">Data & Privacy</p>
+          <p className="text-sm text-zinc-600 leading-relaxed max-w-3xl mx-auto">
+            TTT does not sell your data. Most user preferences stay on your device using local storage. When you upload files or create private content, it is stored on Base44’s secure servers and is only available to the user/account allowed to access it.
+          </p>
+        </div>
+      </section>
+
       {/* ── footer ── */}
       <motion.footer initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="py-8 px-5 border-t border-zinc-200/50">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-zinc-400">
