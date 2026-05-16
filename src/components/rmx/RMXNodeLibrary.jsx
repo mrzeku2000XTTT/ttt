@@ -4,7 +4,7 @@ import {
   X, Brain, Image as ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch,
   Search, Sparkles, Zap, Cog, Send, Twitter, Telescope, Rss, MessageSquarePlus,
   Languages, FileText, Globe, Newspaper, CloudSun, TrendingUp, Music, MessageCircle,
-  Hash, Calculator, Bot, Film,
+  Hash, Calculator, Bot, Film, Video as VideoIcon,
 } from "lucide-react";
 import { getNodeLogo } from "./nodeLogos";
 
@@ -68,6 +68,46 @@ export const NODE_TEMPLATES = [
     category: "AI",
     tags: ["image", "art", "visual"],
     defaultConfig: { prompt: "A glowing crystal in space, cinematic" },
+  },
+  {
+    type: "k6ix_image",
+    label: "K6ix Image",
+    icon: "ImageIcon",
+    color: "from-teal-500 to-cyan-500",
+    desc: "Generate images through the K6ix creative API",
+    category: "AI",
+    tags: ["k6ix", "image", "creative", "api"],
+    defaultConfig: { prompt: "Kaspa cinematic, After Effects style: a futuristic city", existing_image_urls: "" },
+  },
+  {
+    type: "k6ix_video",
+    label: "K6ix Video",
+    icon: "VideoIcon",
+    color: "from-orange-500 to-amber-500",
+    desc: "Generate creative videos through K6ix",
+    category: "AI",
+    tags: ["k6ix", "video", "creative", "motion"],
+    defaultConfig: { prompt: "Kaspa cinematic motion ad with teal accents", duration: "6", aspect_ratio: "16:9" },
+  },
+  {
+    type: "k6ix_llm",
+    label: "K6ix LLM",
+    icon: "Sparkles",
+    color: "from-violet-500 to-purple-500",
+    desc: "Generate text, scripts, HTML scenes, and structured output with K6ix",
+    category: "AI",
+    tags: ["k6ix", "llm", "script", "html", "copy"],
+    defaultConfig: { prompt: "Build a cinematic After Effects-style HTML scene", add_context_from_internet: "no", response_json_schema: "", file_urls: "", model: "automatic" },
+  },
+  {
+    type: "k6ix_scrape",
+    label: "K6ix Scrape",
+    icon: "Globe",
+    color: "from-cyan-500 to-sky-500",
+    desc: "Scrape a website through the K6ix creative API",
+    category: "Apps",
+    tags: ["k6ix", "scrape", "website", "url"],
+    defaultConfig: { url: "https://" },
   },
   {
     type: "ultramock_mp4",
@@ -275,6 +315,7 @@ const ICONS = {
   Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter,
   Telescope, Rss, MessageSquarePlus, Languages, FileText, Globe, Newspaper,
   CloudSun, TrendingUp, Music, MessageCircle, Hash, Calculator, Bot, Film,
+  VideoIcon, Sparkles,
 };
 
 const CATEGORIES = [

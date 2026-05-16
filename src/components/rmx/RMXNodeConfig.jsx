@@ -38,6 +38,16 @@ export default function RMXNodeConfig({ node, onUpdate, onClose, onDelete, onWor
                 rows={4}
                 className="w-full px-3 py-2 bg-black/40 border border-white/10 focus:border-purple-400 rounded-lg text-white text-sm outline-none resize-none"
               />
+            ) : f.type === "checkbox" ? (
+              <label className="flex items-center gap-2 px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white/70 text-sm">
+                <input
+                  type="checkbox"
+                  checked={node.config[f.key] === true || node.config[f.key] === "yes"}
+                  onChange={(e) => setField(f.key, e.target.checked ? "yes" : "no")}
+                  className="w-4 h-4 accent-purple-500"
+                />
+                Enabled
+              </label>
             ) : f.type === "select" ? (
               <select
                 value={node.config[f.key] || ""}
@@ -65,7 +75,7 @@ export default function RMXNodeConfig({ node, onUpdate, onClose, onDelete, onWor
       {node.output !== null && node.output !== undefined && (
         <div className="mb-4">
           <label className="block text-white/70 text-xs font-bold mb-1.5">Last Output</label>
-          {node.type === "ai_image" && typeof node.output === "string" && node.output ? (
+          {(["ai_image", "k6ix_image", "k6ix_video"].includes(node.type)) && typeof node.output === "string" && node.output ? (
             <NodeImageOutput url={node.output} onWorldToggle={onWorldToggle} />
           ) : (
             <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg max-h-48 overflow-y-auto">
@@ -160,6 +170,27 @@ function getFields(type) {
       return [{ key: "expression", label: "Expression", type: "textarea", placeholder: "15% tip on $42, or {{result}} * 1.1", hint: "Plain English works: 'add 7% tax to {{result}}' or 'average of 10, 20, 30'. Pure math also works." }];
     case "ai_image":
       return [{ key: "prompt", label: "Image Prompt", type: "textarea", placeholder: "Describe the image" }];
+    case "k6ix_image":
+      return [
+        { key: "prompt", label: "Prompt", type: "textarea", placeholder: "Describe the image", hint: "Use {{result}} to include the previous node output" },
+        { key: "existing_image_urls", label: "Reference image URLs", type: "textarea", placeholder: "https://...\nhttps://...", hint: "Optional, one URL per line" },
+      ];
+    case "k6ix_video":
+      return [
+        { key: "prompt", label: "Prompt", type: "textarea", placeholder: "Describe the video", hint: "Use {{result}} to include the previous node output" },
+        { key: "duration", label: "Duration", type: "select", options: ["4", "6", "8"] },
+        { key: "aspect_ratio", label: "Aspect Ratio", type: "select", options: ["16:9", "9:16"] },
+      ];
+    case "k6ix_llm":
+      return [
+        { key: "prompt", label: "Prompt", type: "textarea", placeholder: "What should K6ix generate?", hint: "Use {{result}} to include the previous node output" },
+        { key: "add_context_from_internet", label: "Web Context", type: "checkbox" },
+        { key: "response_json_schema", label: "JSON Schema", type: "textarea", placeholder: "{\n  \"type\": \"object\",\n  \"properties\": {}\n}", hint: "Optional" },
+        { key: "file_urls", label: "File URLs", type: "textarea", placeholder: "https://...\nhttps://...", hint: "Optional, one URL per line" },
+        { key: "model", label: "Model", type: "select", options: ["automatic", "gpt_5_mini", "gpt_5_4", "gpt_5_5", "gemini_3_flash", "gemini_3_1_pro", "claude_sonnet_4_6", "claude_opus_4_6", "claude_opus_4_7"] },
+      ];
+    case "k6ix_scrape":
+      return [{ key: "url", label: "Website URL", placeholder: "https://example.com" }];
     case "ultramock_mp4":
       return [
         { key: "tagline", label: "Tagline / Headline", type: "textarea", placeholder: "Your tagline here", hint: "Use {{result}} to pull text from the previous step" },

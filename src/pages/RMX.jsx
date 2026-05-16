@@ -20,6 +20,12 @@ export default function RMXPage() {
   const [runLogs, setRunLogs] = useState([]);
   const [showRunPanel, setShowRunPanel] = useState(false);
   const [workflowName, setWorkflowName] = useState("Untitled Ultra Workflow");
+  const [k6ixApiKey, setK6ixApiKey] = useState(() => localStorage.getItem("noda_k6ix_api_key") || "");
+
+  const updateK6ixApiKey = (value) => {
+    setK6ixApiKey(value);
+    localStorage.setItem("noda_k6ix_api_key", value);
+  };
 
   const addNode = (template) => {
     const id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -79,12 +85,33 @@ export default function RMXPage() {
     const interpolate = (str) => {
       if (typeof str !== "string") return str;
       return str.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-        const lastNode = nodes[nodes.length - 1];
-        const lastOutput = context[lastNode?.id];
+        const lastOutput = Object.values(context).pop();
+        if (key === "result") return typeof lastOutput === "string" ? lastOutput : JSON.stringify(lastOutput || "");
         if (typeof lastOutput === "string") return lastOutput;
         if (lastOutput && typeof lastOutput === "object") return lastOutput[key] || "";
         return "";
       });
+    };
+
+    const callK6ix = async (endpoint, body) => {
+      if (!k6ixApiKey.trim()) throw new Error("Add your K6ix API key first");
+      const res = await fetch(`https://k6ix.base44.app/functions/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${k6ixApiKey.trim()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `K6ix request failed (${res.status})`);
+      return data;
+    };
+
+    const parseLines = (value) => String(value || "").split("\n").map((v) => v.trim()).filter(Boolean);
+    const parseJson = (value) => {
+      if (!value || !String(value).trim()) return undefined;
+      return JSON.parse(value);
     };
 
     switch (node.type) {
@@ -97,6 +124,36 @@ export default function RMXPage() {
         const prompt = interpolate(node.config.prompt || "");
         const res = await base44.integrations.Core.GenerateImage({ prompt });
         return res?.url || "";
+      }
+      case "k6ix_image": {
+        const data = await callK6ix("generateK6ixImage", {
+          prompt: interpolate(node.config.prompt || ""),
+          existing_image_urls: parseLines(node.config.existing_image_urls),
+        });
+        return data?.url || "";
+      }
+      case "k6ix_video": {
+        const data = await callK6ix("generateK6ixVideo", {
+          prompt: interpolate(node.config.prompt || ""),
+          duration: Number(node.config.duration || 6),
+          aspect_ratio: node.config.aspect_ratio || "16:9",
+        });
+        return data?.url || "";
+      }
+      case "k6ix_llm": {
+        const data = await callK6ix("invokeK6ixLLM", {
+          prompt: interpolate(node.config.prompt || ""),
+          add_context_from_internet: node.config.add_context_from_internet === true || node.config.add_context_from_internet === "yes",
+          response_json_schema: parseJson(node.config.response_json_schema),
+          file_urls: parseLines(node.config.file_urls),
+          model: node.config.model || "automatic",
+        });
+        return data?.response ?? data;
+      }
+      case "k6ix_scrape": {
+        return await callK6ix("scrapeK6ixWebsite", {
+          url: interpolate(node.config.url || ""),
+        });
       }
       case "send_email": {
         const to = interpolate(node.config.to || "");
@@ -178,6 +235,13 @@ export default function RMXPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <input
+            type="password"
+            value={k6ixApiKey}
+            onChange={(e) => updateK6ixApiKey(e.target.value)}
+            placeholder="K6ix API key"
+            className="hidden sm:block w-40 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white text-xs outline-none focus:border-teal-400"
+          />
           <button
             onClick={() => setShowLibrary(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm font-bold"
