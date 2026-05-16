@@ -124,7 +124,13 @@ export default function NODAPage() {
   const [brainOpen, setBrainOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [k6ixApiKey, setK6ixApiKey] = useState(() => localStorage.getItem("noda_k6ix_api_key") || "");
   const [xPostModal, setXPostModal] = useState(null); // { text, intent }
+
+  const updateK6ixApiKey = (value) => {
+    setK6ixApiKey(value);
+    localStorage.setItem("noda_k6ix_api_key", value);
+  };
 
   // Auto-run state is per-tab now.
   const autoRun = !!activeTab?.autoRun;
@@ -386,7 +392,7 @@ export default function NODAPage() {
         const prev = nodeList[i];
         const out = context[prev.id];
         if (out === undefined || out === null) continue;
-        if (prev.type === "ai_image" && typeof out === "string") {
+        if ((prev.type === "ai_image" || prev.type === "k6ix_image" || prev.type === "k6ix_video") && typeof out === "string") {
           parts.push(out); // raw URL — email step will turn into <img>
         } else {
           parts.push(stringify(out));
@@ -456,6 +462,27 @@ export default function NODAPage() {
         }
       }
       throw lastErr;
+    };
+
+    const callK6ix = async (endpoint, body) => {
+      if (!k6ixApiKey.trim()) throw new Error("Add your K6ix API key first");
+      const res = await fetch(`https://k6ix.base44.app/functions/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${k6ixApiKey.trim()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || data?.message || `K6ix request failed (${res.status})`);
+      return data;
+    };
+
+    const parseLines = (value) => String(value || "").split("\n").map((v) => v.trim()).filter(Boolean);
+    const parseJson = (value) => {
+      if (!value || !String(value).trim()) return undefined;
+      return JSON.parse(value);
     };
 
     switch (node.type) {
@@ -687,6 +714,36 @@ Also return the final numeric answer.`,
         const res = await withRetry(() => base44.integrations.Core.GenerateImage({ prompt }));
         return res?.url || "";
       }
+      case "k6ix_image": {
+        const data = await callK6ix("generateK6ixImage", {
+          prompt: interpolate(node.config.prompt || ""),
+          existing_image_urls: parseLines(node.config.existing_image_urls),
+        });
+        return data?.url || data;
+      }
+      case "k6ix_video": {
+        const data = await callK6ix("generateK6ixVideo", {
+          prompt: interpolate(node.config.prompt || ""),
+          duration: Number(node.config.duration || 6),
+          aspect_ratio: node.config.aspect_ratio || "16:9",
+        });
+        return data?.url || data;
+      }
+      case "k6ix_llm": {
+        const data = await callK6ix("invokeK6ixLLM", {
+          prompt: interpolate(node.config.prompt || ""),
+          add_context_from_internet: node.config.add_context_from_internet === true || node.config.add_context_from_internet === "yes",
+          response_json_schema: parseJson(node.config.response_json_schema),
+          file_urls: parseLines(node.config.file_urls),
+          model: node.config.model || "automatic",
+        });
+        return data?.response ?? data;
+      }
+      case "k6ix_scrape": {
+        return await callK6ix("scrapeK6ixWebsite", {
+          url: interpolate(node.config.url || "").trim(),
+        });
+      }
       case "ultramock_mp4": {
         // Find most recent image URL from prior steps to use as device screen content
         const idx = nodeList.findIndex((n) => n.id === node.id);
@@ -695,7 +752,7 @@ Also return the final numeric answer.`,
           const prev = nodeList[i];
           const out = context[prev.id];
           if (out === undefined || out === null) continue;
-          if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
+          if ((prev.type === "ai_image" || prev.type === "k6ix_image" || prev.type === "k6ix_video") && typeof out === "string" && /^https?:\/\//.test(out)) {
             mediaUrl = out;
             break;
           }
@@ -892,7 +949,7 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
         for (let i = 0; i < idx; i++) {
           const prev = nodeList[i];
           const out = context[prev.id];
-          if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
+          if ((prev.type === "ai_image" || prev.type === "k6ix_image" || prev.type === "k6ix_video") && typeof out === "string" && /^https?:\/\//.test(out)) {
             imageUrls.push(out);
           }
         }
@@ -941,7 +998,7 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
           const prev = nodeList[i];
           const out = context[prev.id];
           if (out === undefined || out === null) continue;
-          if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
+          if ((prev.type === "ai_image" || prev.type === "k6ix_image" || prev.type === "k6ix_video") && typeof out === "string" && /^https?:\/\//.test(out)) {
             if (!imageUrl) imageUrl = out;
             continue;
           }
@@ -986,7 +1043,7 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
           const prev = nodeList[i];
           const out = context[prev.id];
           if (out === undefined || out === null) continue;
-          if (prev.type === "ai_image" && typeof out === "string" && /^https?:\/\//.test(out)) {
+          if ((prev.type === "ai_image" || prev.type === "k6ix_image" || prev.type === "k6ix_video") && typeof out === "string" && /^https?:\/\//.test(out)) {
             if (!imageUrl) imageUrl = out;
             continue;
           }
@@ -1133,6 +1190,14 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
         </div>
 
         <div className="flex items-center gap-2">
+          <input
+            type="password"
+            value={k6ixApiKey}
+            onChange={(e) => updateK6ixApiKey(e.target.value)}
+            placeholder="K6ix API key"
+            className="hidden xl:block w-36 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-xs outline-none focus:border-cyan-400"
+            title="K6ix API key"
+          />
           <button
             data-agent-id="brain"
             aria-label="Brain"

@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Plus, Brain, Image as ImageIcon, Mail, Clock, Filter, Webhook,
   Database, GitBranch, Trash2, CheckCircle2, Twitter, Telescope, Rss,
-  MessageSquarePlus, Maximize2, ZoomIn, ZoomOut, RotateCcw,
+  MessageSquarePlus, Maximize2, ZoomIn, ZoomOut, RotateCcw, Video as VideoIcon,
+  Sparkles, Globe,
 } from "lucide-react";
 
-const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter, Telescope, Rss, MessageSquarePlus };
+const ICONS = { Brain, ImageIcon, Mail, Clock, Filter, Webhook, Database, GitBranch, Twitter, Telescope, Rss, MessageSquarePlus, VideoIcon, Sparkles, Globe };
 
 const NODE_W = 220;
 const NODE_H = 64;
