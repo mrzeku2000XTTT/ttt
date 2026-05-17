@@ -1,353 +1,628 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { 
-  FileText, Search, Loader2, Sparkles, ChevronRight, 
-  Book, Code, Zap, Shield, Users, ArrowLeft, Brain
-} from "lucide-react";
+import React, { useState, useMemo } from 'react';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Search, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const ALL_PAGES = [
-  { name: "AgentFYE", category: "AI Agents", icon: "🤖", desc: "Financial advisor AI analyzing bills and finding savings" },
-  { name: "AgentZK", category: "AI Agents", icon: "🔐", desc: "Zero-knowledge agent workspace with tools and integrations" },
-  { name: "AgentZKChat", category: "AI Agents", icon: "💬", desc: "Chat interface for Agent ZK interactions" },
-  { name: "AgentZKDirectory", category: "AI Agents", icon: "📖", desc: "Directory of verified Agent ZK profiles" },
-  { name: "AgentZKProfile", category: "AI Agents", icon: "👤", desc: "Individual Agent ZK profile pages" },
-  { name: "AgentMessages", category: "AI Agents", icon: "✉️", desc: "P2P encrypted messaging between agents" },
-  { name: "ZekuAI", category: "AI Agents", icon: "⚡", desc: "Premium AI chat with file uploads and web search" },
-  { name: "AIAnalytics", category: "Analytics", icon: "📊", desc: "AI conversation analytics dashboard" },
-  { name: "Analytics", category: "Analytics", icon: "📈", desc: "Platform usage and statistics" },
-  { name: "Bridge", category: "Blockchain", icon: "🌉", desc: "L1 to L2 token bridge with wallet integration" },
-  { name: "Wallet", category: "Blockchain", icon: "💰", desc: "KAS wallet management" },
-  { name: "Receive", category: "Blockchain", icon: "📥", desc: "Generate QR codes to receive KAS" },
-  { name: "History", category: "Blockchain", icon: "📜", desc: "Transaction history viewer" },
-  { name: "GlobalHistory", category: "Blockchain", icon: "🌍", desc: "Global transaction feed" },
-  { name: "KaspaBalanceViewer", category: "Blockchain", icon: "💎", desc: "Check Kaspa address balances" },
-  { name: "KaspaNode", category: "Blockchain", icon: "🔗", desc: "Connect to Kaspa node infrastructure" },
-  { name: "DAGKnightWallet", category: "Blockchain", icon: "⚔️", desc: "Multi-wallet verification system with DAG" },
-  { name: "RegisterTTTID", category: "Identity", icon: "🆔", desc: "Register unique TTT identity" },
-  { name: "TTTIDProfile", category: "Identity", icon: "👨", desc: "View TTT ID profiles" },
-  { name: "SealedWalletDetails", category: "Identity", icon: "🔒", desc: "View sealed wallet verifications" },
-  { name: "Marketplace", category: "Trading", icon: "🛒", desc: "P2P KAS marketplace" },
-  { name: "MarketX", category: "Trading", icon: "💼", desc: "Job marketplace for tasks" },
-  { name: "CreateListing", category: "Trading", icon: "➕", desc: "Create marketplace listings" },
-  { name: "TradeView", category: "Trading", icon: "🤝", desc: "View and manage trades" },
-  { name: "Shop", category: "Commerce", icon: "🏪", desc: "NFT and digital goods shop" },
-  { name: "ShopItemView", category: "Commerce", icon: "🎁", desc: "View shop item details" },
-  { name: "Cart", category: "Commerce", icon: "🛍️", desc: "Shopping cart management" },
-  { name: "CreateShopListing", category: "Commerce", icon: "📦", desc: "Create shop listings" },
-  { name: "Feed", category: "Social", icon: "📰", desc: "TTT social feed with posts and comments" },
-  { name: "POLFeed", category: "Social", icon: "❤️", desc: "Proof of Life activity feed" },
-  { name: "ConnectionRequests", category: "Social", icon: "🤝", desc: "Manage Agent ZK connection requests" },
-  { name: "Profile", category: "User", icon: "👤", desc: "User profile management" },
-  { name: "UserProfile", category: "User", icon: "👥", desc: "View other user profiles" },
-  { name: "Settings", category: "User", icon: "⚙️", desc: "App settings and preferences" },
-  { name: "ConnectWallet", category: "User", icon: "🔌", desc: "Connect MetaMask and Kasware wallets" },
-  { name: "Subscription", category: "Premium", icon: "👑", desc: "Premium subscription management" },
-  { name: "NFTMint", category: "NFT", icon: "🎨", desc: "Mint and manage NFTs" },
-  { name: "Arcade", category: "Games", icon: "🎮", desc: "Game lobby and arcade" },
-  { name: "BingoLobbyBrowser", category: "Games", icon: "🎲", desc: "Browse Bingo lobbies" },
-  { name: "BingoLobbyRoom", category: "Games", icon: "🏠", desc: "Bingo room interface" },
-  { name: "BingoLobbyPlay", category: "Games", icon: "▶️", desc: "Play Bingo games" },
-  { name: "Browser", category: "Media", icon: "📺", desc: "TTTV video browser" },
-  { name: "ProofOfBullish", category: "Media", icon: "🔥", desc: "Bull Reels - proof of bullish conviction with video/image posts" },
-  { name: "GlobalWar", category: "News", icon: "⚔️", desc: "Global war news monitor" },
-  { name: "Countdown", category: "Events", icon: "⏱️", desc: "72-hour challenge countdown" },
-  { name: "Unity", category: "3D", icon: "🎮", desc: "3D multiplayer Unity game" },
-  { name: "Career", category: "Jobs", icon: "💼", desc: "Career opportunities board" },
-  { name: "WorkerTask", category: "Jobs", icon: "👷", desc: "Worker task management" },
-  { name: "EmployerTask", category: "Jobs", icon: "👔", desc: "Employer task management" },
-  { name: "Pera", category: "Tools", icon: "🔧", desc: "Pera task management" },
-  { name: "ZKVault", category: "Tools", icon: "🔐", desc: "Zero-knowledge vault storage" },
-  { name: "ZKWallet", category: "Tools", icon: "💳", desc: "Zero-knowledge wallet" },
-  { name: "VPImport", category: "Tools", icon: "📥", desc: "Import VP data" },
-  { name: "BackgroundGenerator", category: "Tools", icon: "🎨", desc: "AI background generator" },
-  { name: "ESC", category: "Tools", icon: "🚀", desc: "ESC tools and utilities" },
-  { name: "Hercules", category: "Premium", icon: "💪", desc: "Hercules premium features" },
-  { name: "Home", category: "Core", icon: "🏠", desc: "Landing page and app entry" },
-  { name: "Categories", category: "Core", icon: "📱", desc: "App categories and navigation" },
-  { name: "X", category: "Verification", icon: "✅", desc: "Agent ZK verification hub" },
-  { name: "Waitlist", category: "Access", icon: "📝", desc: "Waitlist registration" },
-  { name: "Hub", category: "Admin", icon: "🎛️", desc: "Admin dashboard and controls" },
-  { name: "SSHManager", category: "Admin", icon: "🖥️", desc: "SSH connection manager" },
-  { name: "APIDocumentation", category: "Developer", icon: "📚", desc: "API documentation" },
-  { name: "TestKaspaAPI", category: "Developer", icon: "🧪", desc: "Test Kaspa API endpoints" },
-  { name: "ReplitTest", category: "Developer", icon: "🔬", desc: "Development testing page" },
-  { name: "MobileTest", category: "Developer", icon: "📱", desc: "Mobile testing interface" },
-  { name: "ContributorHistory", category: "Stats", icon: "📊", desc: "Contributor statistics" },
-  { name: "DeployContract", category: "Developer", icon: "🚀", desc: "Smart contract deployment" },
-  { name: "EditListing", category: "Trading", icon: "✏️", desc: "Edit marketplace listings" },
-  { name: "Terms", category: "Legal", icon: "📄", desc: "Terms of Service and legal disclaimers" },
-  { name: "Docs", category: "Core", icon: "📖", desc: "AI-powered documentation for all pages" }
+const DOCS_SECTIONS = [
+  {
+    id: 'getting-started',
+    title: 'Getting Started',
+    icon: '🚀',
+    subsections: [
+      { id: 'intro', title: 'Introduction to TTT' },
+      { id: 'setup', title: 'Setup Guide' },
+      { id: 'first-steps', title: 'Your First Steps' },
+    ]
+  },
+  {
+    id: 'ai-creation',
+    title: 'AI Creation Tools',
+    icon: '🎨',
+    subsections: [
+      { id: 'noda', title: 'NODA - Workflow Builder' },
+      { id: 'motion', title: 'Motion - Video Generation' },
+      { id: 'hikaru', title: 'Hikaru - Image Generation' },
+      { id: 'rmx', title: 'RMX - Advanced Workflows' },
+    ]
+  },
+  {
+    id: 'web3-finance',
+    title: 'Web3 & Finance',
+    icon: '💰',
+    subsections: [
+      { id: 'wallet', title: 'Kaspa Wallet Integration' },
+      { id: 'bridge', title: 'Cross-Chain Bridge' },
+      { id: 'agent-zk', title: 'Agent ZK Identity' },
+      { id: 'transactions', title: 'Managing Transactions' },
+    ]
+  },
+  {
+    id: 'agents',
+    title: 'AI Agents',
+    icon: '🤖',
+    subsections: [
+      { id: 'agent-zk-guide', title: 'Agent ZK Guide' },
+      { id: 'agent-features', title: 'Agent Features' },
+      { id: 'agent-commands', title: 'Agent Commands' },
+    ]
+  },
+  {
+    id: 'advanced',
+    title: 'Advanced Topics',
+    icon: '⚙️',
+    subsections: [
+      { id: 'api-integration', title: 'API Integration' },
+      { id: 'custom-workflows', title: 'Custom Workflows' },
+      { id: 'backend-functions', title: 'Backend Functions' },
+    ]
+  },
+  {
+    id: 'faq',
+    title: 'FAQ & Support',
+    icon: '❓',
+    subsections: [
+      { id: 'faq-general', title: 'General Questions' },
+      { id: 'troubleshooting', title: 'Troubleshooting' },
+      { id: 'contact-support', title: 'Contact Support' },
+    ]
+  }
 ];
 
+const CONTENT = {
+  'intro': {
+    title: 'Introduction to TTT',
+    content: `# Welcome to TTT
+
+TTT is a unified, real-time Web3 platform built on the Kaspa blockchain. It combines AI-powered creation tools, secure financial management, and community-driven development.
+
+## What is TTT?
+
+TTT (The Tip Treasury) is an evolving ecosystem that brings together:
+
+- **AI Creation**: Generate images, videos, and websites instantly
+- **Web3 Integration**: Manage Kaspa wallets, cross-chain transactions, and digital identity
+- **Community**: Participate in a real-time, user-driven development platform
+- **Decentralization**: Built on Kaspa's DAG technology
+
+## Key Features
+
+### 🎨 Creative Tools
+Use AI-powered agents to generate stunning visuals and functional websites without coding.
+
+### 💼 Financial Control
+Securely manage your Kaspa assets with integrated wallet and bridge features.
+
+### 🔐 Digital Identity
+Establish your Agent ZK identity for secure transactions and community participation.
+
+### 🚀 Real-Time Evolution
+TTT is built in real-time. New features roll out continuously based on community feedback.
+
+## Getting Started
+
+Visit the [Setup Guide](#setup) to get your profile configured and start exploring.
+`
+  },
+  'setup': {
+    title: 'Setup Guide',
+    content: `# Setup Guide
+
+Get started with TTT in just a few minutes.
+
+## Step 1: Create Your Profile
+
+1. Click your profile icon in the top navigation
+2. Fill in your basic information
+3. Set your username (this will be your identity across TTT)
+
+## Step 2: Connect Your Wallet
+
+Navigate to **Wallet** in the menu to:
+- View your Kaspa balance
+- Receive KAS from others
+- Send transactions securely
+
+## Step 3: Explore AI Tools
+
+Visit **App Store** to discover:
+- Image generation (Hikaru)
+- Video creation (Motion)
+- Workflow automation (NODA, RMX)
+
+## Step 4: Join the Community
+
+- Check out **TTT Feed** for community updates
+- Connect with other users via **Agent ZK**
+- Participate in discussions and collaborations
+
+You're all set! Start creating and building with TTT.
+`
+  },
+  'first-steps': {
+    title: 'Your First Steps',
+    content: `# Your First Steps with TTT
+
+Ready to dive in? Here's a practical guide to your first actions.
+
+## Action 1: Generate Your First Image
+
+1. Go to **Hikaru** (Image Generation)
+2. Enter a prompt: "A cyberpunk city at night, neon lights, digital art"
+3. Click "Generate"
+4. Download or share your creation
+
+## Action 2: Send Your First Transaction
+
+1. Navigate to **Bridge** or **Wallet**
+2. Click "Send KAS"
+3. Enter recipient address
+4. Confirm and sign with your wallet
+5. Done! You've completed your first blockchain transaction
+
+## Action 3: Create a Workflow
+
+1. Open **NODA** or **RMX**
+2. Add AI nodes (Image Gen, Text Processing, etc.)
+3. Connect them to create a workflow
+4. Run and see the magic happen
+
+## Next Steps
+
+Explore more tools, join the community, and keep building!
+`
+  },
+  'noda': {
+    title: 'NODA - Workflow Builder',
+    content: `# NODA - Workflow Builder
+
+NODA is TTT's visual workflow automation platform. Chain together AI tools and create powerful automations without code.
+
+## Overview
+
+NODA allows you to:
+- Create multi-step workflows
+- Combine AI tools (image gen, text processing, etc.)
+- Automate repetitive tasks
+- Build complex pipelines
+
+## Getting Started with NODA
+
+### 1. Create a New Workflow
+
+1. Open NODA from the App Store
+2. Click "New Workflow"
+3. Give your workflow a name
+
+### 2. Add Nodes
+
+Click the **+** button to add processing nodes:
+- **Image Generation**: Create images from text
+- **Text Processing**: Transform and analyze text
+- **Data Fetch**: Pull data from external sources
+- **Conditional Logic**: Add if/then branches
+
+### 3. Connect Nodes
+
+Drag connectors between nodes to pass data:
+- Output from one node → Input to next node
+- Create complex data flows
+
+### 4. Configure & Run
+
+1. Click on each node to configure parameters
+2. Click "Run Workflow"
+3. Watch the magic happen in real-time
+
+## Example Workflow
+
+**Prompt → Image Gen → Upscale → Export**
+
+This simple workflow takes a text prompt, generates an image, upscales it, and exports the result.
+
+## Advanced Features
+
+- Save workflow templates
+- Schedule automatic runs
+- Monitor execution logs
+- Share workflows with community
+`
+  },
+  'wallet': {
+    title: 'Kaspa Wallet Integration',
+    content: `# Kaspa Wallet Integration
+
+Securely manage your Kaspa assets directly within TTT.
+
+## Your Wallet
+
+Your TTT wallet is built on Kaspa's ultra-fast DAG blockchain.
+
+### Features
+
+- **Instant Transactions**: Send and receive KAS in seconds
+- **Zero Fees**: Kaspa's efficient network = no transaction costs
+- **Hardware Support**: Connect Kasware or other Kaspa wallets
+- **Real-Time Balance**: Always see current holdings
+
+## Sending KAS
+
+1. Navigate to **Wallet** or **Bridge**
+2. Click **Send**
+3. Enter:
+   - Recipient address
+   - Amount in KAS
+4. Review and confirm
+5. Sign with your wallet
+6. Transaction complete!
+
+## Receiving KAS
+
+1. Go to **Wallet** → **Receive**
+2. Copy your address or share QR code
+3. Share with others to receive funds
+
+## Security
+
+- Your private keys stay in your wallet
+- TTT never has access to your funds
+- All transactions are signed by you
+- Verify addresses carefully before sending
+
+## Best Practices
+
+✓ Always double-check recipient addresses
+✓ Use QR codes when possible
+✓ Keep your wallet seed safe
+✓ Enable all available security features
+`
+  },
+  'agent-zk-guide': {
+    title: 'Agent ZK Guide',
+    content: `# Agent ZK - Your Digital Identity
+
+Agent ZK is your verified, decentralized identity within TTT and the Kaspa ecosystem.
+
+## What is Agent ZK?
+
+Agent ZK is:
+- Your unique identifier in the TTT ecosystem
+- A verified digital identity backed by zero-knowledge proofs
+- A gateway to decentralized finance and services
+- Your reputation score and contribution history
+
+## Setting Up Your Agent ZK
+
+### Step 1: Create Profile
+
+1. Go to **Agent ZK** in the App Store
+2. Click **Create Profile**
+3. Add:
+   - Username
+   - Bio
+   - Profile picture
+   - Social links (optional)
+
+### Step 2: Verify Identity
+
+1. Complete verification steps (varies by level)
+2. Link your wallet
+3. Prove your identity through our verification system
+
+### Step 3: Start Building
+
+- Connect with other agents
+- Build your reputation
+- Access premium features
+- Participate in ecosystem rewards
+
+## Reputation & Verification Levels
+
+### Level 1: Verified User
+- Profile created
+- Email verified
+- Wallet linked
+
+### Level 2: Active Builder
+- 5+ contributions
+- Community feedback positive
+- Completed verification tasks
+
+### Level 3: Trusted Agent
+- 20+ contributions
+- High reputation score
+- Approved for advanced features
+
+## Your Agent Dashboard
+
+Monitor:
+- Reputation score
+- Contributions count
+- Connected agents
+- Verification status
+- Earnings and rewards
+
+## Privacy & Security
+
+- Your identity is cryptographically verified
+- Zero-knowledge proofs protect privacy
+- No centralized authority controls your identity
+- You own your data
+`
+  },
+  'faq-general': {
+    title: 'Frequently Asked Questions',
+    content: `# Frequently Asked Questions
+
+## General Questions
+
+### What is TTT built on?
+
+TTT is built on the Kaspa blockchain, leveraging its ultra-fast DAG technology for instant, low-fee transactions.
+
+### Is TTT decentralized?
+
+Yes! TTT is built in real-time with community input. While it's hosted on Base44's infrastructure, the vision is full decentralization.
+
+### How much does it cost?
+
+Most core TTT features are **free**. Some premium tools may require a subscription. Transactions on Kaspa have zero fees.
+
+### Do I need crypto to use TTT?
+
+No! You can explore and create without any crypto. Wallet features are optional.
+
+### How do I report a bug?
+
+Contact us via the **Support** section or email [support@tttz.xyz](mailto:support@tttz.xyz).
+
+## Account & Security
+
+### How do I secure my wallet?
+
+- Never share your seed phrase
+- Use hardware wallets for large amounts
+- Enable all security features
+- Verify addresses before sending
+
+### Can I change my username?
+
+Currently, usernames are permanent. Choose wisely!
+
+### How do I delete my account?
+
+Visit **Settings** → **Account** → **Delete Account**. This action is irreversible.
+
+## Technical Questions
+
+### What browsers are supported?
+
+TTT works on all modern browsers: Chrome, Firefox, Safari, Edge.
+
+### Is TTT mobile-friendly?
+
+Yes! TTT is fully responsive and works great on mobile devices.
+
+### Can I use TTT offline?
+
+Some features require internet. Most AI generation requires an active connection.
+
+## Still have questions?
+
+Contact our support team or visit the community forum!
+`
+  },
+  'troubleshooting': {
+    title: 'Troubleshooting',
+    content: `# Troubleshooting Guide
+
+## Common Issues & Solutions
+
+### Image Generation Not Working
+
+**Problem**: Hikaru returns an error or blank image.
+
+**Solutions**:
+1. Check your internet connection
+2. Try a simpler prompt
+3. Clear browser cache
+4. Check if you're rate-limited (wait a few minutes)
+5. Verify your subscription is active
+
+### Wallet Balance Not Updating
+
+**Problem**: Your balance shows incorrect amount.
+
+**Solutions**:
+1. Refresh the page (F5)
+2. Disconnect and reconnect wallet
+3. Check if transaction is pending
+4. Visit explorer to verify on-chain balance
+5. Restart your browser
+
+### Can't Connect Wallet
+
+**Problem**: Wallet connection fails.
+
+**Solutions**:
+1. Ensure wallet extension is installed
+2. Check wallet is unlocked
+3. Try connecting to a different app first
+4. Clear wallet cache
+5. Update to latest wallet version
+
+### Slow Performance
+
+**Problem**: Pages load slowly or lag.
+
+**Solutions**:
+1. Close unused browser tabs
+2. Clear browser cache
+3. Disable browser extensions
+4. Try a different browser
+5. Check your internet speed
+
+### Transaction Failed
+
+**Problem**: Transaction shows as failed.
+
+**Solutions**:
+1. Check your account balance
+2. Verify recipient address is correct
+3. Try again with adjusted gas (if applicable)
+4. Check Kaspa network status
+5. Contact support with transaction hash
+
+## Getting Help
+
+If you can't find a solution:
+
+1. **Check Documentation**: Search our docs
+2. **Community Forum**: Ask other users
+3. **Contact Support**: Email us with details
+4. **Twitter**: @TTTZK for updates and support
+
+Include:
+- Error message (if any)
+- Screenshots
+- Steps you took
+- Device/browser info
+`
+  }
+};
+
 export default function DocsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPage, setSelectedPage] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [documentation, setDocumentation] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSection, setSelectedSection] = useState('intro');
+  const [expandedCategories, setExpandedCategories] = useState(new Set(['getting-started']));
 
-  const categories = ['all', ...new Set(ALL_PAGES.map(p => p.category))];
+  const currentContent = CONTENT[selectedSection] || CONTENT['intro'];
 
-  const filteredPages = ALL_PAGES.filter(page => {
-    const matchesSearch = page.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          page.desc.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || page.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const generateDocumentation = async (page) => {
-    setIsGenerating(true);
-    setDocumentation(null);
+  const filteredSections = useMemo(() => {
+    if (!searchTerm) return DOCS_SECTIONS;
     
-    try {
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a technical documentation expert. Generate comprehensive documentation for this page in the TTT application:
+    const term = searchTerm.toLowerCase();
+    return DOCS_SECTIONS.map(section => ({
+      ...section,
+      subsections: section.subsections.filter(sub => 
+        sub.title.toLowerCase().includes(term)
+      )
+    })).filter(section => section.subsections.length > 0 || section.title.toLowerCase().includes(term));
+  }, [searchTerm]);
 
-Page Name: ${page.name}
-Category: ${page.category}
-Brief Description: ${page.desc}
-
-Generate detailed documentation with the following sections:
-1. **Overview** - What this page does
-2. **Key Features** - List 5-8 main features with brief explanations
-3. **User Flow** - Step by step how users interact with this page
-4. **Technical Details** - What entities, APIs, or integrations it uses
-5. **Access Requirements** - Who can access (public, logged in, premium, admin)
-6. **Related Pages** - Which other pages connect to this one
-
-Write in clear, concise markdown format. Be specific and technical where needed.`,
-        add_context_from_internet: false
-      });
-
-      const docText = typeof response === 'string' ? response : response.response || response.content || 'Documentation generated.';
-      setDocumentation(docText);
-
-    } catch (err) {
-      console.error('Failed to generate documentation:', err);
-      setDocumentation('Failed to generate documentation. Try again.');
-    } finally {
-      setIsGenerating(false);
+  const toggleCategory = (categoryId) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
     }
-  };
-
-  const handleSelectPage = (page) => {
-    setSelectedPage(page);
-    generateDocumentation(page);
+    setExpandedCategories(newExpanded);
   };
 
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {!selectedPage ? (
-          <>
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-                  <Book className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white">Documentation</h1>
-                  <p className="text-gray-500 text-sm">AI-powered docs for all {ALL_PAGES.length} pages</p>
-                </div>
+    <div className="min-h-screen bg-black text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2 text-cyan-400">TTT Documentation</h1>
+          <p className="text-gray-400">Everything you need to know about TTT</p>
+        </div>
+
+        {/* Main Layout */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <div className="lg:w-1/4 flex-shrink-0">
+            <div className="sticky top-4 space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+                <Input
+                  placeholder="Search docs..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-gray-900 border-gray-700 text-white placeholder-gray-500"
+                />
               </div>
 
-              {/* Search and Filters */}
-              <div className="flex gap-3 flex-wrap">
-                <div className="flex-1 min-w-[250px] relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search pages..."
-                    className="pl-10 bg-white/5 border-white/10 text-white"
-                  />
-                </div>
+              {/* Navigation */}
+              <ScrollArea className="h-[calc(100vh-250px)] rounded-lg border border-gray-800 bg-gray-900/50 p-4">
+                <nav className="space-y-2">
+                  {filteredSections.map(section => (
+                    <div key={section.id}>
+                      <button
+                        onClick={() => toggleCategory(section.id)}
+                        className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-800 transition-colors text-left"
+                      >
+                        <span className="font-semibold text-sm flex items-center gap-2">
+                          <span>{section.icon}</span>
+                          {section.title}
+                        </span>
+                        <ChevronRight 
+                          className={`w-4 h-4 transition-transform ${expandedCategories.has(section.id) ? 'rotate-90' : ''}`}
+                        />
+                      </button>
 
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat} className="bg-black">
-                      {cat === 'all' ? 'All Categories' : cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </motion.div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-white">{ALL_PAGES.length}</p>
-                  <p className="text-xs text-gray-500">Total Pages</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-purple-400">{categories.length - 1}</p>
-                  <p className="text-xs text-gray-500">Categories</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-cyan-400">{filteredPages.length}</p>
-                  <p className="text-xs text-gray-500">Filtered</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-4 text-center">
-                  <Brain className="w-6 h-6 text-yellow-400 mx-auto mb-1" />
-                  <p className="text-xs text-gray-500">AI Powered</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Pages Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <AnimatePresence>
-                {filteredPages.map((page, index) => (
-                  <motion.div
-                    key={page.name}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                  >
-                    <Card 
-                      className="bg-white/5 border-white/10 hover:border-white/30 hover:bg-white/10 transition-all cursor-pointer group"
-                      onClick={() => handleSelectPage(page)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="text-2xl">{page.icon}</div>
-                            <div>
-                              <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-cyan-400 transition-colors">
-                                {page.name}
-                              </h3>
-                              <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
-                                {page.category}
-                              </Badge>
-                            </div>
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+                      {expandedCategories.has(section.id) && (
+                        <div className="pl-4 space-y-1 mt-1">
+                          {section.subsections.map(subsection => (
+                            <button
+                              key={subsection.id}
+                              onClick={() => setSelectedSection(subsection.id)}
+                              className={`w-full text-left text-xs p-2 rounded transition-colors ${
+                                selectedSection === subsection.id
+                                  ? 'bg-cyan-500/20 text-cyan-400'
+                                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                              }`}
+                            >
+                              {subsection.title}
+                            </button>
+                          ))}
                         </div>
-                        <p className="text-xs text-gray-400 leading-relaxed">{page.desc}</p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-
-            {filteredPages.length === 0 && (
-              <div className="text-center py-20">
-                <FileText className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-                <p className="text-gray-500">No pages found</p>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            {/* Documentation View */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <Button
-                onClick={() => {
-                  setSelectedPage(null);
-                  setDocumentation(null);
-                }}
-                size="sm"
-                className="mb-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to All Pages
-              </Button>
-
-              <div className="mb-6">
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="text-4xl">{selectedPage.icon}</div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-white mb-1">{selectedPage.name}</h1>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                        {selectedPage.category}
-                      </Badge>
-                      <span className="text-sm text-gray-500">{selectedPage.desc}</span>
+                      )}
                     </div>
-                  </div>
+                  ))}
+                </nav>
+              </ScrollArea>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="lg:w-3/4">
+            <div className="bg-gray-900/50 rounded-lg border border-gray-800 p-8">
+              <div className="prose prose-invert max-w-none">
+                <h1 className="text-3xl font-bold text-cyan-400 mb-4">{currentContent.title}</h1>
+                <div className="text-gray-300 leading-relaxed space-y-4">
+                  {currentContent.content.split('\n\n').map((paragraph, idx) => {
+                    if (paragraph.startsWith('#')) {
+                      const level = paragraph.match(/^#+/)[0].length;
+                      const text = paragraph.replace(/^#+\s/, '');
+                      const className = {
+                        1: 'text-2xl font-bold text-cyan-400 mt-6 mb-4',
+                        2: 'text-xl font-bold text-cyan-300 mt-4 mb-3',
+                        3: 'text-lg font-semibold text-white mt-3 mb-2'
+                      }[level] || 'text-base';
+                      return <div key={idx} className={className}>{text}</div>;
+                    }
+                    
+                    if (paragraph.startsWith('-') || paragraph.startsWith('✓') || paragraph.match(/^\d+\./)) {
+                      const items = paragraph.split('\n');
+                      return (
+                        <ul key={idx} className="list-disc list-inside space-y-1 text-gray-300">
+                          {items.map((item, i) => (
+                            <li key={i}>{item.replace(/^[-✓\d+\.\s]+/, '')}</li>
+                          ))}
+                        </ul>
+                      );
+                    }
+                    
+                    return <p key={idx} className="text-gray-300">{paragraph}</p>;
+                  })}
                 </div>
               </div>
-
-              <Card className="bg-black border-white/10">
-                <CardContent className="p-6 md:p-8">
-                  {isGenerating ? (
-                    <div className="text-center py-12">
-                      <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
-                      <p className="text-gray-500">Generating AI documentation...</p>
-                    </div>
-                  ) : documentation ? (
-                    <div className="prose prose-invert max-w-none">
-                      <div className="text-gray-200 leading-relaxed whitespace-pre-wrap">
-                        {documentation.split('\n').map((line, idx) => {
-                          if (line.startsWith('# ')) {
-                            return <h1 key={idx} className="text-2xl font-bold text-white mt-6 mb-3">{line.replace('# ', '')}</h1>;
-                          } else if (line.startsWith('## ')) {
-                            return <h2 key={idx} className="text-xl font-bold text-white mt-5 mb-2">{line.replace('## ', '')}</h2>;
-                          } else if (line.startsWith('### ')) {
-                            return <h3 key={idx} className="text-lg font-semibold text-cyan-400 mt-4 mb-2">{line.replace('### ', '')}</h3>;
-                          } else if (line.startsWith('**') && line.endsWith('**')) {
-                            return <p key={idx} className="font-bold text-white mt-3 mb-1">{line.replace(/\*\*/g, '')}</p>;
-                          } else if (line.startsWith('- ') || line.startsWith('* ')) {
-                            return <li key={idx} className="text-gray-300 ml-6 mb-1">{line.substring(2)}</li>;
-                          } else if (line.trim() === '') {
-                            return <br key={idx} />;
-                          } else {
-                            return <p key={idx} className="text-gray-300 mb-2">{line}</p>;
-                          }
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Sparkles className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-                      <p className="text-gray-500">Documentation will appear here</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="mt-4 flex gap-3">
-                <Button
-                  onClick={() => generateDocumentation(selectedPage)}
-                  disabled={isGenerating}
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                >
-                  {isGenerating ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 mr-2" />
-                  )}
-                  Regenerate Documentation
-                </Button>
-              </div>
-            </motion.div>
-          </>
-        )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

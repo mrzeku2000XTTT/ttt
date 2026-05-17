@@ -62,6 +62,7 @@ import TrinityPage from './pages/Trinity';
 import KinePage from './pages/Kine';
 import AIAgentHubPage from './pages/AIAgentHub';
 import FrameZPage from './pages/FrameZ';
+import DocsPage from './pages/Docs';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -166,6 +167,11 @@ const AuthenticatedApp = () => {
       <Route path="/AIAgentHub" element={<AIAgentHubPage />} />
       <Route path="/AgentHub" element={<AIAgentHubPage />} />
       <Route path="/FrameZ" element={<FrameZPage />} />
+      <Route path="/Docs" element={
+        <LayoutWrapper currentPageName="Docs">
+          <DocsPage />
+        </LayoutWrapper>
+      } />
       <Route path="/Katagami" element={
         <LayoutWrapper currentPageName="Katagami">
           <KatagamiPage />
