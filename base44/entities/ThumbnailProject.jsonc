@@ -1,0 +1,46 @@
+{
+  "name": "ThumbnailProject",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Thumbnail title or video title"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Topic or prompt used to create the thumbnail"
+    },
+    "style": {
+      "type": "string",
+      "description": "Selected thumbnail style"
+    },
+    "platform": {
+      "type": "string",
+      "default": "YouTube",
+      "description": "Target platform for the thumbnail"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Generated thumbnail image URL"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "Full image generation prompt"
+    }
+  },
+  "required": [
+    "title",
+    "topic",
+    "image_url"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

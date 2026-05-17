@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Thumbnail Creator", path: "ThumbnailCreator", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/6ac2ec072_generated_image.png", desc: "AI thumbnails for creators" },
   { name: "K6ix", path: null, externalUrl: "https://k6ix.base44.app", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bd502aa5a_image.png", desc: "Creative AI API" },
   { name: "FrameZ", path: "FrameZ", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b5a1b9a40_generated_image.png", desc: "AI interactive decks", admin: true },
   { name: "Kine", path: "Kine", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d4040c3da_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/b38409cda_generated_video.mp4", desc: "AI video agent · text to video" },
