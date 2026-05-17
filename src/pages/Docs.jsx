@@ -74,7 +74,7 @@ const CONTENT = {
     title: 'Introduction to TTT',
     content: `# Welcome to TTT
 
-TTT is a unified, real-time Web3 platform built on the Kaspa blockchain. It combines AI-powered creation tools, secure financial management, and community-driven development.
+TTT is the **Kaspa Super App**—a unified, real-time Web3 platform built on the Kaspa blockchain. It combines AI-powered creation tools, secure financial management, and community-driven development.
 
 ## What is TTT?
 
@@ -84,6 +84,7 @@ TTT (The Tip Treasury) is an evolving ecosystem that brings together:
 - **Web3 Integration**: Manage Kaspa wallets, cross-chain transactions, and digital identity
 - **Community**: Participate in a real-time, user-driven development platform
 - **Decentralization**: Built on Kaspa's DAG technology
+- **TapToTip**: Quick and easy KAS tipping for creators and supporters
 
 ## Key Features
 
@@ -526,7 +527,7 @@ export default function DocsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2 text-cyan-400">TTT Documentation</h1>
-          <p className="text-gray-400">Everything you need to know about TTT</p>
+          <p className="text-gray-400">The Kaspa Super App—Everything you need to know about TTT</p>
         </div>
 
         {/* Main Layout */}
