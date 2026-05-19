@@ -4,11 +4,12 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const STYLES = ["Viral YouTube", "Kaspa Cyber", "Luxury Tech", "Gaming Energy", "Documentary", "Podcast Clip"];
+const STYLES = ["Viral YouTube", "Creator Face", "Gaming Energy", "Documentary", "Podcast Clip", "Tech Review"];
 
 export default function ThumbnailGenerator({ onCreated }) {
-  const [title, setTitle] = useState("Kaspa Super App Explained");
-  const [topic, setTopic] = useState("A bold thumbnail about TTT, TapToTip, and the Kaspa ecosystem");
+  const [title, setTitle] = useState("How I Built This App");
+  const [topic, setTopic] = useState("A polished YouTube thumbnail for a creator explaining a new app or product");
+  const [characterDescription, setCharacterDescription] = useState("A surprised realistic creator face, expressive eyes, clean cutout, looking at the title");
   const [style, setStyle] = useState(STYLES[0]);
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,11 +17,12 @@ export default function ThumbnailGenerator({ onCreated }) {
   const generateThumbnail = async () => {
     if (!title.trim() || !topic.trim()) return;
     setLoading(true);
-    const prompt = `Create a 16:9 high-converting creator thumbnail. Title text: "${title}". Topic: ${topic}. Style: ${style}. Brand: TTT is the Kaspa Super App, TapToTip energy, neon cyan and lime accents, bold readable typography, dramatic contrast, expressive composition, professional YouTube thumbnail, no watermarks.`;
+    const prompt = `Create a realistic 16:9 YouTube thumbnail that looks professionally edited in Photoshop. Title text: "${title}". Video topic: ${topic}. Main character/avatar/face: ${characterDescription || "create a fitting expressive human face or avatar for the topic"}. Style: ${style}. Use clean creator-thumbnail composition: expressive face or avatar cutout, realistic lighting, depth, shadows, high contrast, bold readable text, arrows/circles only if useful, modern editorial background relevant to the topic. Do not use Kaspa neon, crypto cyber glow, generic cyan/lime sci-fi backgrounds, logos, watermarks, or unreadable text unless explicitly requested.`;
     const result = await base44.integrations.Core.GenerateImage({ prompt });
     const created = await base44.entities.ThumbnailProject.create({
       title,
       topic,
+      character_description: characterDescription,
       style,
       platform: "YouTube / TTTV",
       image_url: result.url,
@@ -41,16 +43,20 @@ export default function ThumbnailGenerator({ onCreated }) {
           </div>
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Video topic / idea</label>
-            <textarea value={topic} onChange={(e) => setTopic(e.target.value)} className="min-h-28 w-full rounded-xl border border-white/10 bg-black/50 p-3 text-sm text-white outline-none focus:border-cyan-400" />
+            <textarea value={topic} onChange={(e) => setTopic(e.target.value)} className="min-h-24 w-full rounded-xl border border-white/10 bg-black/50 p-3 text-sm text-white outline-none focus:border-white/40" />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Avatar / face character</label>
+            <textarea value={characterDescription} onChange={(e) => setCharacterDescription(e.target.value)} placeholder="Describe any face, avatar, character, emotion, outfit, pose, or camera angle" className="min-h-24 w-full rounded-xl border border-white/10 bg-black/50 p-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-white/40" />
           </div>
           <div className="flex flex-wrap gap-2">
             {STYLES.map((item) => (
-              <button key={item} onClick={() => setStyle(item)} className={`rounded-full px-3 py-2 text-xs font-bold transition ${style === item ? "bg-cyan-400 text-black" : "bg-white/10 text-zinc-300 hover:bg-white/15"}`}>
+              <button key={item} onClick={() => setStyle(item)} className={`rounded-full px-3 py-2 text-xs font-bold transition ${style === item ? "bg-white text-black" : "bg-white/10 text-zinc-300 hover:bg-white/15"}`}>
                 {item}
               </button>
             ))}
           </div>
-          <Button onClick={generateThumbnail} disabled={loading || !title.trim() || !topic.trim()} className="w-full bg-cyan-400 font-black text-black hover:bg-cyan-300">
+          <Button onClick={generateThumbnail} disabled={loading || !title.trim() || !topic.trim()} className="w-full bg-white font-black text-black hover:bg-zinc-200">
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             {loading ? "Generating thumbnail..." : "Generate Thumbnail"}
           </Button>
@@ -65,7 +71,7 @@ export default function ThumbnailGenerator({ onCreated }) {
             </div>
           ) : (
             <div className="text-center text-zinc-500">
-              <Sparkles className="mx-auto mb-3 h-10 w-10 text-cyan-300" />
+              <Sparkles className="mx-auto mb-3 h-10 w-10 text-white" />
               <p className="text-sm font-semibold">Your generated thumbnail will appear here.</p>
             </div>
           )}

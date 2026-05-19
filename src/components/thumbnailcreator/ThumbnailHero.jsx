@@ -4,30 +4,31 @@ import ThumbnailLogo from "./ThumbnailLogo";
 
 export default function ThumbnailHero() {
   return (
-    <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-zinc-950 via-black to-cyan-950/40 p-6 sm:p-10">
-      <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
-      <div className="absolute -left-24 bottom-0 h-64 w-64 rounded-full bg-lime-400/10 blur-3xl" />
+    <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950 p-6 sm:p-10">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(255,255,255,0.08),transparent_32%),linear-gradient(135deg,rgba(39,39,42,0.95),rgba(0,0,0,1))]" />
       <div className="relative grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div>
           <div className="mb-5 flex items-center gap-3">
             <ThumbnailLogo />
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">Kaspa Super App</p>
-              <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">TTT Thumbnail Creator</h1>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-zinc-400">YouTube Thumbnail Studio</p>
+              <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">Real Thumbnail Creator</h1>
             </div>
           </div>
           <p className="max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
-            Create bold, scroll-stopping thumbnails for YouTube, TTTV, reels, and creator campaigns using AI inside TTT.
+            Generate realistic creator faces, avatars, characters, and polished YouTube-style thumbnails without the generic neon crypto look.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-sm font-bold text-white">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10"><Sparkles className="h-4 w-4 text-cyan-300" /> AI generated</span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10"><Wand2 className="h-4 w-4 text-lime-300" /> Creator-ready</span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10"><Sparkles className="h-4 w-4 text-white" /> Any face or avatar</span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10"><Wand2 className="h-4 w-4 text-white" /> Real YouTube editing</span>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          {["SHOCKING KASPA MOVE", "I BUILT THIS IN TTT", "THIS CHANGES WEB3", "WATCH BEFORE 2026"].map((text, index) => (
-            <div key={text} className={`aspect-video rounded-2xl border border-white/10 bg-gradient-to-br ${index % 2 ? "from-lime-400 via-cyan-400 to-blue-600" : "from-fuchsia-500 via-red-500 to-yellow-400"} p-1 shadow-2xl`}>
-              <div className="flex h-full items-end rounded-[0.85rem] bg-black/45 p-3">
+          {["I TRIED THIS", "DON'T MISS THIS", "HUGE RESULT", "BEFORE YOU CLICK"].map((text, index) => (
+            <div key={text} className="relative aspect-video overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl">
+              <div className={`absolute inset-0 ${index % 2 ? "bg-gradient-to-br from-amber-200 via-zinc-200 to-zinc-700" : "bg-gradient-to-br from-sky-100 via-zinc-300 to-stone-900"}`} />
+              <div className="absolute right-2 top-3 h-16 w-16 rounded-full bg-zinc-950/80 ring-4 ring-white/80 sm:h-20 sm:w-20" />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/70 to-transparent p-3 pt-10">
                 <p className="text-sm font-black leading-none text-white drop-shadow sm:text-lg">{text}</p>
               </div>
             </div>

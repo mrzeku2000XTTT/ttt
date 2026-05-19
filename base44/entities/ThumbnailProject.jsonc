@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Topic or prompt used to create the thumbnail"
     },
+    "character_description": {
+      "type": "string",
+      "description": "Face, avatar, or character description used in the thumbnail"
+    },
     "style": {
       "type": "string",
       "description": "Selected thumbnail style"
