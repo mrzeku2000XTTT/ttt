@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
 
 const STYLES = ["Character Bible", "Product Storyboard", "YouTube Intro", "Animation Pitch", "Comic Frames", "Game Cutscene"];
 
@@ -9,6 +10,13 @@ export default function StoryboardForm({ onGenerated }) {
   const [idea, setIdea] = useState("A young apprentice chef and a kind kung-fu master preparing magical dumplings for a village festival");
   const [style, setStyle] = useState(STYLES[0]);
   const [loading, setLoading] = useState(false);
+
+  const applyPreset = (presetId) => {
+    const preset = STORYBOARD_PRESETS.find((item) => item.id === presetId);
+    if (!preset) return;
+    setIdea(preset.idea);
+    setStyle(preset.style);
+  };
 
   const generateStoryboard = async () => {
     if (!idea.trim()) return;
@@ -60,6 +68,14 @@ Include: main characters, expressions, action poses, key props, color palette, m
 
   return (
     <div className="rounded-[1.5rem] border border-zinc-200 bg-white p-5 shadow-xl shadow-zinc-200/60">
+      <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-zinc-500">1000 presets</label>
+      <select defaultValue="" onChange={(e) => applyPreset(e.target.value)} className="mb-4 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-400">
+        <option value="" disabled>Choose a storyboard preset...</option>
+        {STORYBOARD_PRESETS.map((preset) => (
+          <option key={preset.id} value={preset.id}>{preset.id.replace("preset-", "#")} · {preset.title}</option>
+        ))}
+      </select>
+
       <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-zinc-500">Your idea</label>
       <textarea value={idea} onChange={(e) => setIdea(e.target.value)} className="min-h-36 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-950 outline-none focus:border-zinc-400" />
 
