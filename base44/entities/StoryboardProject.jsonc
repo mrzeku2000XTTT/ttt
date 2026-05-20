@@ -1,0 +1,56 @@
+{
+  "name": "StoryboardProject",
+  "type": "object",
+  "properties": {
+    "idea": {
+      "type": "string",
+      "description": "Original user idea for the storyboard"
+    },
+    "enhanced_prompt": {
+      "type": "string",
+      "description": "Prompt engineered storyboard generation prompt"
+    },
+    "research_notes": {
+      "type": "string",
+      "description": "Research and creative direction notes"
+    },
+    "agent_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent": {
+            "type": "string"
+          },
+          "feedback": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Triple agent review feedback"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Generated storyboard image URL"
+    },
+    "style": {
+      "type": "string",
+      "description": "Selected visual storyboard style"
+    }
+  },
+  "required": [
+    "idea",
+    "enhanced_prompt",
+    "image_url"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
