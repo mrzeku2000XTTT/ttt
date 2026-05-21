@@ -3,6 +3,7 @@ import { Sparkles, Film, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import ViralXTool from "@/components/storyboard/ViralXTool";
+import StoryboardCrabBot from "@/components/storyboard/StoryboardCrabBot";
 
 const KASPA_LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/4/4d/Kaspa-logo.svg";
 const DEFAULT_SCENE_IDEA = "Extend this story into the next emotional beat while keeping the same character, props, palette, and visual continuity.";
@@ -110,6 +111,8 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
   };
 
   return (
+    <>
+    <StoryboardCrabBot active={loading} sceneCount={scenes.length} />
     <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
       <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-5 shadow-2xl shadow-black/40 backdrop-blur-2xl">
         <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-cyan-200">Mood Board Page</p>
@@ -200,5 +203,6 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
         )}
       </div>
     </div>
+    </>
   );
 }
