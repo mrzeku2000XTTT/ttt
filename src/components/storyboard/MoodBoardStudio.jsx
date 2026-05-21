@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Loader2, Sparkles, Copy, Check } from "lucide-react";
+import { Loader2, Sparkles, Copy, Check, Film } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
@@ -9,6 +9,7 @@ export default function MoodBoardStudio() {
   const [scene, setScene] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [videoCopied, setVideoCopied] = useState(false);
 
   useEffect(() => {
     const storyboardId = new URLSearchParams(window.location.search).get("storyboard");
@@ -27,6 +28,17 @@ Inherited style: ${storyboard?.style || "cinematic storyboard concept art"}
 Consistency source: ${storyboard?.enhanced_prompt || "Keep one consistent character, prop language, visual theme, and palette."}
 
 Rules: keep the same character identity, outfit logic, key props, Kaspa/KAS visual theme, color palette, lighting mood, and visual continuity. Make it a single polished square mood board frame with one strong scene, clear composition, cinematic lighting, realistic anatomy, clean hands, consistent scale, and no gibberish text. If text is necessary, use only 1-3 correctly spelled words.`;
+
+  const buildVideoPrompt = () => `Turn this mood board result into a cinematic scene video.
+
+Use everything from the generated scene:
+Scene idea: ${scene?.scene_idea || sceneIdea}
+Scene image reference: ${scene?.image_url || "Use the generated mood board image as the visual reference."}
+Scene prompt: ${scene?.scene_prompt || buildPrompt()}
+Source storyboard: ${storyboard?.idea || "Original storyboard concept"}
+Style continuity: ${storyboard?.style || "cinematic storyboard concept art"}
+
+Create a polished 16:9 motion scene video with consistent character identity, same props, same outfit logic, same palette, same Kaspa/KAS theme, same lighting mood, and the same environment. Include camera direction, action beats, timing, motion details, transition style, sound design cues, and any on-screen words limited to 1-3 correctly spelled words. Keep anatomy natural, hands clean, movement believable, no gibberish text, no warped UI, and no random new characters.`;
 
   const generateScene = async () => {
     if (!sceneIdea.trim()) return;
@@ -49,6 +61,12 @@ Rules: keep the same character identity, outfit logic, key props, Kaspa/KAS visu
     await navigator.clipboard.writeText(prompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const copyVideoPrompt = async () => {
+    await navigator.clipboard.writeText(buildVideoPrompt());
+    setVideoCopied(true);
+    setTimeout(() => setVideoCopied(false), 1500);
   };
 
   return (
@@ -86,6 +104,22 @@ Rules: keep the same character identity, outfit logic, key props, Kaspa/KAS visu
             </div>
           )}
         </div>
+
+        {scene && (
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Film className="h-5 w-5 text-cyan-200" />
+                <h2 className="font-black">Scene video prompt</h2>
+              </div>
+              <Button onClick={copyVideoPrompt} className="bg-cyan-300 font-black text-black hover:bg-cyan-200">
+                {videoCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                {videoCopied ? "Copied" : "Copy Video Prompt"}
+              </Button>
+            </div>
+            <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-black/40 p-4 text-sm leading-6 text-white/70">{buildVideoPrompt()}</pre>
+          </div>
+        )}
       </div>
     </div>
   );
