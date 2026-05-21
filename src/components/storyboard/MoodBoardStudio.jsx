@@ -137,7 +137,7 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
           {loading ? "Generating Another Scene..." : "Generate Another Scene"}
         </Button>
 
-        <ViralXTool storageKey={`moodboard_viral_x_${storyboard?.id || "default"}`} />
+        <ViralXTool storageKey={`moodboard_prompt_tool_${storyboard?.id || "default"}`} />
       </div>
 
       <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-4 shadow-2xl shadow-black/40 backdrop-blur-2xl">

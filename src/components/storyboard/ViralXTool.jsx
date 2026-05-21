@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
-export default function ViralXTool({ storageKey = "moodboard_viral_x_tool" }) {
+export default function ViralXTool({ storageKey = "moodboard_prompt_tool" }) {
   const saved = (() => {
     try {
       return JSON.parse(localStorage.getItem(storageKey) || "{}");
@@ -24,7 +24,7 @@ export default function ViralXTool({ storageKey = "moodboard_viral_x_tool" }) {
     if (!input.trim()) return;
     setLoading(true);
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an elite viral X post strategist. Ingest this long-form idea fully, preserve its power, emotion, intent, and core message, then compress and restructure it into a high-impact viral X post optimized for hooks, retention, engagement, replies, reposts, and shareability. Keep it sharp, human, emotionally charged, and algorithm-friendly. Return one polished post only, no explanations.\n\nLONG IDEA:\n${input}`
+      prompt: `You are an elite prompt engineer. Ingest this long-form idea fully, preserve its power, emotion, visual intent, characters, story beats, palette, atmosphere, and core message, then restructure it into one clean, high-impact creative prompt for generating a cinematic scene, storyboard, or video. Do not write a social media post. Do not add hashtags, captions, links, or engagement questions. Output only the polished prompt.\n\nLONG IDEA:\n${input}`
     });
     setOutput(result);
     saveSession(input, result);
@@ -37,7 +37,7 @@ export default function ViralXTool({ storageKey = "moodboard_viral_x_tool" }) {
         onClick={() => setOpen(!open)}
         className="w-full rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold tracking-tight text-white/90 shadow-inner shadow-white/10 backdrop-blur-2xl transition hover:bg-white/15"
       >
-        Viral X Post Tool
+Prompt Builder Tool
       </button>
 
       {open && (
@@ -48,11 +48,11 @@ export default function ViralXTool({ storageKey = "moodboard_viral_x_tool" }) {
               setInput(e.target.value);
               saveSession(e.target.value, output);
             }}
-            placeholder="Paste a massive prompt or long idea here..."
+            placeholder="Paste a long idea, scene, or messy prompt here..."
             className="min-h-36 w-full rounded-2xl border border-white/10 bg-black/25 p-4 text-sm font-medium leading-6 text-white outline-none placeholder:text-white/35 focus:border-white/25"
           />
           <Button onClick={generatePost} disabled={loading || !input.trim()} className="w-full rounded-full border border-white/15 bg-white/10 font-semibold tracking-tight text-white shadow-inner shadow-white/10 backdrop-blur-2xl hover:bg-white/15">
-            {loading ? "Writing Viral Post..." : "Compress Into X Post"}
+            {loading ? "Building Prompt..." : "Turn Into Prompt"}
           </Button>
           {output && (
             <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-sm font-medium leading-6 text-white/80 whitespace-pre-wrap">
