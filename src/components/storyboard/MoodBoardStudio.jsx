@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Loader2, Sparkles, Copy, Check, Film } from "lucide-react";
+import { Loader2, Sparkles, Copy, Check, Film, Plus, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
@@ -7,6 +7,7 @@ export default function MoodBoardStudio() {
   const [storyboard, setStoryboard] = useState(null);
   const [sceneIdea, setSceneIdea] = useState("Extend this story into the next emotional beat while keeping the same character, props, palette, and Kaspa theme.");
   const [scene, setScene] = useState(null);
+  const [scenes, setScenes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [videoCopied, setVideoCopied] = useState(false);
@@ -18,16 +19,22 @@ export default function MoodBoardStudio() {
     base44.entities.StoryboardProject.filter({ id: storyboardId }).then((items) => {
       setStoryboard(items?.[0] || null);
     });
+    base44.entities.MoodBoardScene.filter({ storyboard_id: storyboardId }).then((items) => {
+      const existingScenes = items || [];
+      setScenes(existingScenes);
+      setScene(existingScenes[0] || null);
+    });
   }, []);
 
-  const buildPrompt = () => `Create a 1:1 square mood board extension scene for this storyboard.
+  const buildPrompt = (ideaOverride = sceneIdea) => `Create a 1:1 square mood board extension scene from the START storyboard image.
 
-New scene idea: ${sceneIdea}
+START image reference: ${storyboard?.image_url || "Use the original generated storyboard as the source image."}
+New scene idea: ${ideaOverride}
 Source story: ${storyboard?.idea || "Use the user scene idea as the story source."}
 Inherited style: ${storyboard?.style || "cinematic storyboard concept art"}
 Consistency source: ${storyboard?.enhanced_prompt || "Keep one consistent character, prop language, visual theme, and palette."}
 
-Rules: keep the same character identity, outfit logic, key props, Kaspa/KAS visual theme, color palette, lighting mood, and visual continuity. Make it a single polished square mood board frame with one strong scene, clear composition, cinematic lighting, realistic anatomy, clean hands, consistent scale, and no gibberish text. If text is necessary, use only 1-3 correctly spelled words.`;
+Rules: the main character must match the START image character identity, face language, silhouette, outfit logic, key props, Kaspa/KAS visual theme, color palette, lighting mood, and visual continuity. Make it a single polished square mood board frame with one strong scene, clear composition, cinematic lighting, realistic anatomy, clean hands, consistent scale, and no gibberish text. If text is necessary, use only 1-3 correctly spelled words.`;
 
   const buildVideoPrompt = () => `Turn this mood board result into a cinematic scene video.
 
@@ -40,20 +47,28 @@ Style continuity: ${storyboard?.style || "cinematic storyboard concept art"}
 
 Create a polished 16:9 motion scene video with consistent character identity, same props, same outfit logic, same palette, same Kaspa/KAS theme, same lighting mood, and the same environment. Include camera direction, action beats, timing, motion details, transition style, sound design cues, and any on-screen words limited to 1-3 correctly spelled words. Keep anatomy natural, hands clean, movement believable, no gibberish text, no warped UI, and no random new characters.`;
 
-  const generateScene = async () => {
-    if (!sceneIdea.trim()) return;
+  const generateScene = async (ideaOverride = sceneIdea) => {
+    if (!ideaOverride.trim()) return;
     setLoading(true);
-    const scenePrompt = buildPrompt();
-    const image = await base44.integrations.Core.GenerateImage({ prompt: scenePrompt });
+    const scenePrompt = buildPrompt(ideaOverride);
+    const image = await base44.integrations.Core.GenerateImage({
+      prompt: scenePrompt,
+      existing_image_urls: storyboard?.image_url ? [storyboard.image_url] : undefined
+    });
     const created = await base44.entities.MoodBoardScene.create({
       storyboard_id: storyboard?.id,
-      scene_idea: sceneIdea,
+      scene_idea: ideaOverride,
       scene_prompt: scenePrompt,
       image_url: image.url,
       style: storyboard?.style || "Custom"
     });
     setScene(created);
+    setScenes((prev) => [created, ...prev]);
     setLoading(false);
+  };
+
+  const generateAnotherScene = () => {
+    generateScene(`${sceneIdea}\n\nCreate a fresh additional scene ${scenes.length + 1} from the same START image, with a new camera angle and new emotional beat while preserving the exact same character identity.`);
   };
 
   const copyPrompt = async () => {
@@ -76,13 +91,24 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
         <h1 className="text-3xl font-black">Extend the story</h1>
         <p className="mt-3 text-sm leading-6 text-white/60">Generate a 1:1 scene that keeps the same character, props, palette, and theme from the original storyboard.</p>
 
+        <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-black/30 p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
+            <ImageIcon className="h-4 w-4" /> Start image
+          </div>
+          {storyboard?.image_url ? (
+            <img src={storyboard.image_url} alt="Original storyboard start" className="max-h-56 w-full rounded-xl object-contain" />
+          ) : (
+            <div className="flex h-40 items-center justify-center rounded-xl bg-black/40 text-sm font-semibold text-white/45">No start image selected yet.</div>
+          )}
+        </div>
+
         <textarea
           value={sceneIdea}
           onChange={(e) => setSceneIdea(e.target.value)}
           className="mt-5 min-h-40 w-full rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white outline-none focus:border-white/30"
         />
 
-        <Button onClick={generateScene} disabled={loading || !sceneIdea.trim()} className="mt-4 w-full bg-white font-black text-black hover:bg-white/90">
+        <Button onClick={() => generateScene()} disabled={loading || !sceneIdea.trim()} className="mt-4 w-full bg-white font-black text-black hover:bg-white/90">
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
           {loading ? "Extending story..." : "Generate 1:1 Extension"}
         </Button>
@@ -90,6 +116,11 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
         <Button onClick={copyPrompt} variant="outline" className="mt-3 w-full border-white/10 bg-transparent font-black text-white hover:bg-white/10">
           {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
           {copied ? "Copied" : "Copy Scene Prompt"}
+        </Button>
+
+        <Button onClick={generateAnotherScene} disabled={loading || !storyboard?.image_url} className="mt-3 w-full bg-cyan-300 font-black text-black hover:bg-cyan-200">
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+          Generate Another Scene
         </Button>
       </div>
 
@@ -104,6 +135,16 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
             </div>
           )}
         </div>
+
+        {scenes.length > 0 && (
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+            {scenes.map((item, index) => (
+              <button key={item.id || index} onClick={() => setScene(item)} className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border ${scene?.id === item.id ? "border-cyan-300" : "border-white/10"}`}>
+                <img src={item.image_url} alt={`Scene ${index + 1}`} className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
 
         {scene && (
           <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
