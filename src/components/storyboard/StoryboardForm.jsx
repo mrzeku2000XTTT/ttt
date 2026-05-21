@@ -4,10 +4,19 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
 
-const STYLES = ["Kaspa Explainer", "DAG Flow", "KAS Wallet", "KRC20 Launch", "Miner Story", "TTT Agent"];
+const STYLE_IDEAS = {
+  "Kaspa Explainer": "Create a clear Kaspa explainer storyboard showing how BlockDAG technology enables fast confirmations, parallel blocks, and everyday KAS payments for normal users.",
+  "DAG Flow": "Create a visual DAG flow storyboard showing multiple Kaspa blocks forming in parallel, transactions moving through the network, and confirmations happening quickly without a traditional single-chain bottleneck.",
+  "KAS Wallet": "Create a KAS wallet storyboard showing a user opening a Kaspa wallet, scanning a QR code, sending KAS instantly, receiving confirmation, and feeling safe with simple self-custody.",
+  "KRC20 Launch": "Create a KRC20 launch storyboard showing a Kaspa builder introducing a new token, community members discovering it, liquidity forming, and the token moving across the Kaspa ecosystem.",
+  "Miner Story": "Create a Kaspa miner storyboard showing mining hardware securing the network, blocks racing through the DAG, rewards arriving in KAS, and the miner supporting decentralization.",
+  "TTT Agent": "Create a TTT Agent storyboard showing an AI agent helping a Kaspa user research, build, send KAS, verify identity, and navigate the TTT super app ecosystem."
+};
+
+const STYLES = Object.keys(STYLE_IDEAS);
 
 export default function StoryboardForm({ onGenerated, hasPreview = false, isDark = false }) {
-  const [idea, setIdea] = useState("A young apprentice chef and a kind kung-fu master preparing magical dumplings for a village festival");
+  const [idea, setIdea] = useState(STYLE_IDEAS[STYLES[0]]);
   const [style, setStyle] = useState(STYLES[0]);
   const [selectedPreset, setSelectedPreset] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,7 +95,15 @@ Include: main characters, expressions, action poses, key props, color palette, m
 
       <div className="mt-4 flex flex-wrap gap-2">
         {STYLES.map((item) => (
-          <button key={item} onClick={() => setStyle(item)} className={`rounded-full px-3 py-2 text-xs font-black transition ${style === item ? (isDark ? "bg-white text-black" : "bg-zinc-950 text-white") : (isDark ? "bg-white/10 text-white/70 hover:bg-white/15" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200")}`}>
+          <button
+            key={item}
+            onClick={() => {
+              setStyle(item);
+              setSelectedPreset("");
+              setIdea(STYLE_IDEAS[item]);
+            }}
+            className={`rounded-full px-3 py-2 text-xs font-black transition ${style === item ? (isDark ? "bg-white text-black" : "bg-zinc-950 text-white") : (isDark ? "bg-white/10 text-white/70 hover:bg-white/15" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200")}`}
+          >
             {item}
           </button>
         ))}
