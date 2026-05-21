@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 
@@ -6,6 +6,10 @@ export default function StoryboardCrabBot({ active = false, sceneCount = 0, stor
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [recognitionSupported, setRecognitionSupported] = useState(false);
+  const recognitionRef = useRef(null);
   const [messages, setMessages] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("storyboard_crab_ai_memory") || "[]");
@@ -17,6 +21,44 @@ export default function StoryboardCrabBot({ active = false, sceneCount = 0, stor
   useEffect(() => {
     localStorage.setItem("storyboard_crab_ai_memory", JSON.stringify(messages.slice(-16)));
   }, [messages]);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    setRecognitionSupported(true);
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript || "";
+      setInput(transcript);
+      setListening(false);
+    };
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (listening) {
+      recognitionRef.current.stop();
+      setListening(false);
+    } else {
+      recognitionRef.current.start();
+      setListening(true);
+    }
+  };
+
+  const speak = (text) => {
+    if (!voiceOn || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1.05;
+    window.speechSynthesis.speak(utterance);
+  };
 
   const askCrab = async () => {
     if (!input.trim() || thinking) return;
@@ -42,6 +84,7 @@ Give a concise but useful answer. If helpful, suggest exact wording for the next
     });
 
     setMessages((prev) => [...prev, { role: "assistant", content: response }]);
+    speak(response);
     setThinking(false);
   };
 
@@ -66,6 +109,17 @@ Give a concise but useful answer. If helpful, suggest exact wording for the next
             ))}
             {thinking && <div className="mr-8 rounded-2xl bg-white/10 px-3 py-2 text-sm text-white/60">Crab is reading the scene patterns...</div>}
           </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button onClick={() => setVoiceOn((value) => !value)} className={`rounded-full px-3 py-2 text-xs font-black ${voiceOn ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}>
+              Voice {voiceOn ? "On" : "Off"}
+            </button>
+            <button onClick={toggleListening} disabled={!recognitionSupported} className={`rounded-full px-3 py-2 text-xs font-black ${listening ? "bg-red-400 text-black" : "bg-white/10 text-white"} disabled:opacity-40`}>
+              {listening ? "Listening..." : "Mic Toggle"}
+            </button>
+          </div>
+
+          <p className="mt-2 text-[10px] leading-4 text-white/35">Mic access uses your device/browser permission. Only recognized text is sent to Crab AI.</p>
 
           <div className="mt-2 flex gap-2">
             <input
