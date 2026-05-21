@@ -9,7 +9,11 @@ export default function StoryboardCrabBot({ active = false, sceneCount = 0, stor
   const [voiceOn, setVoiceOn] = useState(false);
   const [listening, setListening] = useState(false);
   const [recognitionSupported, setRecognitionSupported] = useState(false);
+  const [pendingVoiceText, setPendingVoiceText] = useState("");
   const recognitionRef = useRef(null);
+  const listeningRef = useRef(false);
+  const thinkingRef = useRef(false);
+  const silenceTimerRef = useRef(null);
   const [messages, setMessages] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("storyboard_crab_ai_memory") || "[]");
@@ -23,29 +27,59 @@ export default function StoryboardCrabBot({ active = false, sceneCount = 0, stor
   }, [messages]);
 
   useEffect(() => {
+    thinkingRef.current = thinking;
+  }, [thinking]);
+
+  useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     setRecognitionSupported(true);
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.lang = "en-US";
+
+    recognition.onstart = () => setListening(true);
     recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript || "";
-      setInput(transcript);
-      setListening(false);
+      let liveText = "";
+      let finalText = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const transcript = event.results[i][0]?.transcript || "";
+        if (event.results[i].isFinal) finalText += transcript;
+        else liveText += transcript;
+      }
+
+      const heardText = (finalText || liveText).trim();
+      if (heardText) setInput(heardText);
+
+      if (finalText.trim()) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+          if (listeningRef.current && !thinkingRef.current) setPendingVoiceText(finalText.trim());
+        }, 650);
+      }
     };
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => {
+      if (listeningRef.current) {
+        setTimeout(() => recognition.start(), 250);
+      } else {
+        setListening(false);
+      }
+    };
+    recognition.onerror = () => setListening(false);
     recognitionRef.current = recognition;
   }, []);
 
   const toggleListening = () => {
     if (!recognitionRef.current) return;
-    if (listening) {
+    if (listeningRef.current) {
+      listeningRef.current = false;
       recognitionRef.current.stop();
       setListening(false);
     } else {
+      listeningRef.current = true;
       recognitionRef.current.start();
       setListening(true);
     }
@@ -60,9 +94,10 @@ export default function StoryboardCrabBot({ active = false, sceneCount = 0, stor
     window.speechSynthesis.speak(utterance);
   };
 
-  const askCrab = async () => {
-    if (!input.trim() || thinking) return;
-    const userMessage = { role: "user", content: input.trim() };
+  const askCrab = async (overrideText) => {
+    const text = (overrideText || input).trim();
+    if (!text || thinkingRef.current) return;
+    const userMessage = { role: "user", content: text };
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
     setInput("");
@@ -87,6 +122,12 @@ Give a concise but useful answer. If helpful, suggest exact wording for the next
     speak(response);
     setThinking(false);
   };
+
+  useEffect(() => {
+    if (!pendingVoiceText) return;
+    askCrab(pendingVoiceText);
+    setPendingVoiceText("");
+  }, [pendingVoiceText]);
 
   return (
     <>
@@ -115,11 +156,11 @@ Give a concise but useful answer. If helpful, suggest exact wording for the next
               Voice {voiceOn ? "On" : "Off"}
             </button>
             <button onClick={toggleListening} disabled={!recognitionSupported} className={`rounded-full px-3 py-2 text-xs font-black ${listening ? "bg-red-400 text-black" : "bg-white/10 text-white"} disabled:opacity-40`}>
-              {listening ? "Listening..." : "Mic Toggle"}
+              {listening ? "Live Mic On" : "Live Mic Off"}
             </button>
           </div>
 
-          <p className="mt-2 text-[10px] leading-4 text-white/35">Mic access uses your device/browser permission. Only recognized text is sent to Crab AI.</p>
+          <p className="mt-2 text-[10px] leading-4 text-white/35">Realtime mic uses your browser permission over HTTPS. Only final recognized text is sent to Crab AI.</p>
 
           <div className="mt-2 flex gap-2">
             <input
