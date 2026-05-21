@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Loader2, Sparkles, Copy, Check, Film, Plus, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import ViralXTool from "@/components/storyboard/ViralXTool";
 
 export default function MoodBoardStudio() {
   const [storyboard, setStoryboard] = useState(null);
@@ -16,6 +17,16 @@ export default function MoodBoardStudio() {
     const storyboardId = new URLSearchParams(window.location.search).get("storyboard");
     if (!storyboardId) return;
 
+    const savedSession = localStorage.getItem(`moodboard_session_${storyboardId}`);
+    if (savedSession) {
+      try {
+        const parsed = JSON.parse(savedSession);
+        setSceneIdea(parsed.sceneIdea || sceneIdea);
+        setScene(parsed.scene || null);
+        setScenes(parsed.scenes || []);
+      } catch {}
+    }
+
     base44.entities.StoryboardProject.filter({ id: storyboardId }).then((items) => {
       setStoryboard(items?.[0] || null);
     });
@@ -25,6 +36,12 @@ export default function MoodBoardStudio() {
       setScene(existingScenes[0] || null);
     });
   }, []);
+
+  useEffect(() => {
+    const storyboardId = storyboard?.id || new URLSearchParams(window.location.search).get("storyboard");
+    if (!storyboardId) return;
+    localStorage.setItem(`moodboard_session_${storyboardId}`, JSON.stringify({ sceneIdea, scene, scenes }));
+  }, [storyboard?.id, sceneIdea, scene, scenes]);
 
   const buildPrompt = (ideaOverride = sceneIdea) => `Create a 1:1 square mood board extension scene from the START storyboard image.
 
@@ -108,20 +125,19 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
           className="mt-5 min-h-40 w-full rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white outline-none focus:border-white/30"
         />
 
-        <Button onClick={() => generateScene()} disabled={loading || !sceneIdea.trim()} className="mt-4 w-full bg-white font-black text-black hover:bg-white/90">
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-          {loading ? "Extending story..." : "Generate 1:1 Extension"}
+        <Button onClick={() => generateScene()} disabled={loading || !sceneIdea.trim()} className="mt-4 w-full rounded-full border border-white/20 bg-white/12 px-4 py-2 font-semibold tracking-tight text-white shadow-inner shadow-white/10 backdrop-blur-2xl hover:bg-white/18">
+          {loading ? "Extending Story..." : "Generate 1:1 Extension"}
         </Button>
 
-        <Button onClick={copyPrompt} variant="outline" className="mt-3 w-full border-white/10 bg-transparent font-black text-white hover:bg-white/10">
-          {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+        <Button onClick={copyPrompt} variant="outline" className="mt-3 w-full rounded-full border border-white/15 bg-white/8 px-4 py-2 font-semibold tracking-tight text-white shadow-inner shadow-white/10 backdrop-blur-2xl hover:bg-white/14">
           {copied ? "Copied" : "Copy Scene Prompt"}
         </Button>
 
-        <Button onClick={generateAnotherScene} disabled={loading || !storyboard?.image_url} className="mt-3 w-full bg-cyan-300 font-black text-black hover:bg-cyan-200">
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-          Generate Another Scene
+        <Button onClick={generateAnotherScene} disabled={loading || !storyboard?.image_url} className="mt-3 w-full rounded-full border border-white/15 bg-white/10 px-4 py-2 font-semibold tracking-tight text-white shadow-inner shadow-white/10 backdrop-blur-2xl hover:bg-white/15">
+          {loading ? "Generating Another Scene..." : "Generate Another Scene"}
         </Button>
+
+        <ViralXTool storageKey={`moodboard_viral_x_${storyboard?.id || "default"}`} />
       </div>
 
       <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-4 shadow-2xl shadow-black/40 backdrop-blur-2xl">
@@ -153,8 +169,7 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
                 <Film className="h-5 w-5 text-cyan-200" />
                 <h2 className="font-black">Scene video prompt</h2>
               </div>
-              <Button onClick={copyVideoPrompt} className="bg-cyan-300 font-black text-black hover:bg-cyan-200">
-                {videoCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              <Button onClick={copyVideoPrompt} className="rounded-full border border-white/15 bg-white/10 px-4 py-2 font-semibold tracking-tight text-white shadow-inner shadow-white/10 backdrop-blur-2xl hover:bg-white/15">
                 {videoCopied ? "Copied" : "Copy Video Prompt"}
               </Button>
             </div>
