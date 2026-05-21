@@ -17,7 +17,12 @@ export default function ThumbnailGenerator({ onCreated }) {
   const generateThumbnail = async () => {
     if (!title.trim() || !topic.trim()) return;
     setLoading(true);
-    const prompt = `Create a realistic 16:9 YouTube thumbnail that looks professionally edited in Photoshop. Title text: "${title}". Video topic: ${topic}. Main character/avatar/face: ${characterDescription || "create a fitting expressive human face or avatar for the topic"}. Style: ${style}. Use clean creator-thumbnail composition: expressive face or avatar cutout, realistic lighting, depth, shadows, high contrast, bold readable text, arrows/circles only if useful, modern editorial background relevant to the topic. Do not use Kaspa neon, crypto cyber glow, generic cyan/lime sci-fi backgrounds, logos, watermarks, or unreadable text unless explicitly requested.`;
+    const safeTitle = title.trim().split(/\s+/).slice(0, 5).join(" ");
+    const prompt = `Create a realistic 16:9 YouTube thumbnail that looks professionally edited in Photoshop. EXACT title text to render: "${safeTitle}". Video topic: ${topic}. Main character/avatar/face: ${characterDescription || "create a fitting expressive human face or avatar for the topic"}. Style: ${style}.
+
+TEXT FIT RULES: The title must fit fully inside the canvas with generous safe margins on every side. Use 2-5 large words maximum, bold block lettering, centered or left-aligned inside a clean text box, no cropping, no letters outside frame, no warped letters, no misspellings, no tiny text, no extra random words. If the full title is too long, use only the exact shortened title above.
+
+Use clean creator-thumbnail composition: expressive face or avatar cutout, realistic lighting, depth, shadows, high contrast, bold readable text, arrows/circles only if useful, modern editorial background relevant to the topic. Do not use Kaspa neon, crypto cyber glow, generic cyan/lime sci-fi backgrounds, logos, watermarks, or unreadable text unless explicitly requested.`;
     const result = await base44.integrations.Core.GenerateImage({ prompt });
     const created = await base44.entities.ThumbnailProject.create({
       title,
