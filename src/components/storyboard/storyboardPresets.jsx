@@ -30,7 +30,7 @@ export const STORYBOARD_PRESETS = Array.from({ length: 1000 }, (_, index) => {
   return {
     id: `preset-${index + 1}`,
     title: `${subject} in a ${world}`,
-    style,
-    idea: `Create a ${mood} Kaspa storyboard about a ${subject} in a ${world} who ${conflict}. The panels must clearly connect to ${style}: show Kaspa DAG blocks, KAS payments, wallets, miners, builders, KRC20 launches, or TTT agents where it fits naturally. Create a polished production storyboard sheet with expressive characters, poses, props, palette, scale reference, and readable labels.`
+    style: "Custom",
+    idea: `Create a ${mood} Kaspa storyboard about a ${subject} in a ${world} who ${conflict}. Keep the story focused on this preset only. Use Kaspa ecosystem details only where they naturally support the scene, without forcing DAG Flow, wallet, miner, KRC20, or TTT agent themes. Create a polished production storyboard sheet with expressive characters, poses, props, palette, scale reference, and readable labels.`
   };
 });

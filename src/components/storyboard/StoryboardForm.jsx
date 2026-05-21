@@ -26,7 +26,7 @@ export default function StoryboardForm({ onGenerated, hasPreview = false, isDark
     const preset = STORYBOARD_PRESETS.find((item) => item.id === presetId);
     if (!preset) return;
     setIdea(preset.idea);
-    setStyle(preset.style);
+    setStyle("");
   };
 
   const selectStyle = (item) => {
