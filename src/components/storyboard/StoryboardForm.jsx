@@ -40,12 +40,13 @@ export default function StoryboardForm({ onGenerated, hasPreview = false, isDark
     setLoading(true);
 
     const plan = await base44.integrations.Core.InvokeLLM({
+      model: "gpt_5_mini",
       add_context_from_internet: true,
       prompt: `Transform this rough user idea into a highly detailed, production-ready storyboard / character sheet prompt: "${idea}".
 
 Create: 1) concise research-inspired creative direction, 2) an enhanced professional image prompt for a clean storyboard sheet like animation studio concept art, 3) exactly three agent checks from: Prompt Engineer, Visual Director, Continuity Checker.
 
-The enhanced prompt must add clear scene-by-scene details, believable physics, consistent scale, natural anatomy, accurate perspective, correct shadows, material logic, readable layout hierarchy, and exact spelling guidance for any visible labels. Avoid warped text, gibberish lettering, impossible poses, melting objects, inconsistent character designs, and broken hands. Avoid copyrighted characters. Make it original, cinematic, family-safe, and commercially usable.`, 
+The enhanced prompt must add clear scene-by-scene details, believable physics, consistent scale, natural anatomy, accurate perspective, correct shadows, material logic, and readable layout hierarchy. Avoid tiny text, paragraph text, warped text, gibberish lettering, impossible poses, melting objects, inconsistent character designs, and broken hands. If labels are needed, use only 1-3 word simple labels in exact clean English. Avoid copyrighted characters. Make it original, cinematic, family-safe, and commercially usable.`, 
       response_json_schema: {
         type: "object",
         properties: {
@@ -66,11 +67,15 @@ The enhanced prompt must add clear scene-by-scene details, believable physics, c
       }
     });
 
-    const imagePrompt = `Create a clean 16:9 professional storyboard / character design sheet. Style mode: ${style}. ${plan.enhanced_prompt}
+    const sheetTheme = isDark
+      ? "dark graphite storyboard sheet, black studio background, cyan and Kaspa-blue accents, high contrast white line dividers, premium dark UI concept board"
+      : "white or warm studio storyboard sheet, clean bright background, soft professional pitch deck layout";
 
-STRICT QUALITY RULES: Use real-world physics, believable gravity, consistent scale, correct perspective, natural anatomy, clean hands, grounded shadows, coherent lighting, accurate material behavior, and stable character continuity across every scene. If text appears, keep it minimal, large, straight, sharp, correctly spelled, and placed inside clean label boxes; never use warped, curved, misspelled, tiny, or gibberish text. Each scene panel must have a clear purpose, readable composition, and enough visual context to understand the action.
+    const imagePrompt = `Create a clean 16:9 professional storyboard / character design sheet. Visual theme: ${sheetTheme}. Style mode: ${style}. ${plan.enhanced_prompt}
 
-Include: main characters, expressions, action poses, key props, color palette, material swatches, scale reference, scene panels, and short readable labels. White or warm studio background, polished animation pitch deck layout, high-end concept art, coherent characters across panels, no watermark, no messy text.`;
+STRICT QUALITY RULES: Use real-world physics, believable gravity, consistent scale, correct perspective, natural anatomy, clean hands, grounded shadows, coherent lighting, accurate material behavior, and stable character continuity across every scene. Avoid paragraph text inside the image. If text appears, use only large 1-3 word labels with simple exact English spelling, straight horizontal baseline, sharp letters, and clean label boxes. Never use warped, curved, misspelled, tiny, or gibberish text. Each scene panel must have a clear purpose, readable composition, and enough visual context to understand the action.
+
+Include: main characters, expressions, action poses, key props, color palette, material swatches, scale reference, scene panels, and only short readable labels. Polished animation pitch deck layout, high-end concept art, coherent characters across panels, no watermark, no messy text.`;
 
     const image = await base44.integrations.Core.GenerateImage({ prompt: imagePrompt });
     const created = await base44.entities.StoryboardProject.create({
