@@ -41,7 +41,7 @@ export default function QuickStoryboardPage() {
         </section>
 
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-          <StoryboardForm onGenerated={setProject} />
+          <StoryboardForm onGenerated={setProject} hasPreview={!!project?.image_url} />
           <StoryboardPreview imageUrl={project?.image_url} title={project?.idea} />
         </div>
 

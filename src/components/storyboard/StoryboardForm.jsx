@@ -6,7 +6,7 @@ import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
 
 const STYLES = ["Character Bible", "Product Storyboard", "YouTube Intro", "Animation Pitch", "Comic Frames", "Game Cutscene"];
 
-export default function StoryboardForm({ onGenerated }) {
+export default function StoryboardForm({ onGenerated, hasPreview = false }) {
   const [idea, setIdea] = useState("A young apprentice chef and a kind kung-fu master preparing magical dumplings for a village festival");
   const [style, setStyle] = useState(STYLES[0]);
   const [loading, setLoading] = useState(false);
@@ -24,10 +24,11 @@ export default function StoryboardForm({ onGenerated }) {
 
     const plan = await base44.integrations.Core.InvokeLLM({
       add_context_from_internet: true,
-      prompt: `Turn this idea into a production-ready quick storyboard / character sheet brief: "${idea}".
+      prompt: `Transform this rough user idea into a highly detailed, production-ready storyboard / character sheet prompt: "${idea}".
 
-Create: 1) concise research-inspired creative direction, 2) an enhanced image prompt for a clean storyboard sheet like animation studio concept art, 3) exactly three agent checks from: Prompt Engineer, Visual Director, Continuity Checker.
-Avoid copyrighted characters. Make it original, cinematic, family-safe, and commercially usable.`,
+Create: 1) concise research-inspired creative direction, 2) an enhanced professional image prompt for a clean storyboard sheet like animation studio concept art, 3) exactly three agent checks from: Prompt Engineer, Visual Director, Continuity Checker.
+
+The enhanced prompt must add clear scene-by-scene details, believable physics, consistent scale, natural anatomy, accurate perspective, correct shadows, material logic, readable layout hierarchy, and exact spelling guidance for any visible labels. Avoid warped text, gibberish lettering, impossible poses, melting objects, inconsistent character designs, and broken hands. Avoid copyrighted characters. Make it original, cinematic, family-safe, and commercially usable.`, 
       response_json_schema: {
         type: "object",
         properties: {
@@ -50,7 +51,9 @@ Avoid copyrighted characters. Make it original, cinematic, family-safe, and comm
 
     const imagePrompt = `Create a clean 16:9 professional storyboard / character design sheet. Style mode: ${style}. ${plan.enhanced_prompt}
 
-Include: main characters, expressions, action poses, key props, color palette, material swatches, scale reference, and short readable labels. White or warm studio background, polished animation pitch deck layout, high-end concept art, coherent characters across panels, no watermark, no messy text.`;
+STRICT QUALITY RULES: Use real-world physics, believable gravity, consistent scale, correct perspective, natural anatomy, clean hands, grounded shadows, coherent lighting, accurate material behavior, and stable character continuity across every scene. If text appears, keep it minimal, large, straight, sharp, correctly spelled, and placed inside clean label boxes; never use warped, curved, misspelled, tiny, or gibberish text. Each scene panel must have a clear purpose, readable composition, and enough visual context to understand the action.
+
+Include: main characters, expressions, action poses, key props, color palette, material swatches, scale reference, scene panels, and short readable labels. White or warm studio background, polished animation pitch deck layout, high-end concept art, coherent characters across panels, no watermark, no messy text.`;
 
     const image = await base44.integrations.Core.GenerateImage({ prompt: imagePrompt });
     const created = await base44.entities.StoryboardProject.create({
@@ -89,8 +92,11 @@ Include: main characters, expressions, action poses, key props, color palette, m
 
       <Button onClick={generateStoryboard} disabled={loading || !idea.trim()} className="mt-5 w-full bg-zinc-950 font-black text-white hover:bg-zinc-800">
         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-        {loading ? "Researching + triple checking..." : "Generate Quick Storyboard"}
+        {loading ? "Regenerating while keeping preview..." : hasPreview ? "Regenerate Quick Storyboard" : "Generate Quick Storyboard"}
       </Button>
+      {hasPreview && (
+        <p className="mt-3 text-center text-xs font-semibold text-zinc-500">Regenerate keeps the current preview visible until the new storyboard is ready.</p>
+      )}
     </div>
   );
 }
