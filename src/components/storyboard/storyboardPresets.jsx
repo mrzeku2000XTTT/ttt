@@ -18,7 +18,7 @@ const moods = [
   "epic but family-safe", "funny expressive comedy", "quiet magical realism", "bold toyetic design", "storybook concept art"
 ];
 
-const styles = ["Character Bible", "Product Storyboard", "YouTube Intro", "Animation Pitch", "Comic Frames", "Game Cutscene"];
+const styles = ["Kaspa Explainer", "DAG Flow", "KAS Wallet", "KRC20 Launch", "Miner Story", "TTT Agent"];
 
 export const STORYBOARD_PRESETS = Array.from({ length: 1000 }, (_, index) => {
   const subject = subjects[index % subjects.length];
@@ -31,6 +31,6 @@ export const STORYBOARD_PRESETS = Array.from({ length: 1000 }, (_, index) => {
     id: `preset-${index + 1}`,
     title: `${subject} in a ${world}`,
     style,
-    idea: `An original ${mood} story about a ${subject} in a ${world} who ${conflict}. Create a polished production storyboard sheet with expressive characters, poses, props, palette, scale reference, and readable labels.`
+    idea: `An original ${mood} Kaspa-themed story about a ${subject} in a ${world} who ${conflict}. Connect the concept to Kaspa, DAG blocks, fast confirmations, wallets, KAS payments, builders, or TTT agents where it fits naturally. Create a polished production storyboard sheet with expressive characters, poses, props, palette, scale reference, and readable labels.`
   };
 });

@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
 
-const STYLES = ["Character Bible", "Product Storyboard", "YouTube Intro", "Animation Pitch", "Comic Frames", "Game Cutscene"];
+const STYLES = ["Kaspa Explainer", "DAG Flow", "KAS Wallet", "KRC20 Launch", "Miner Story", "TTT Agent"];
 
 export default function StoryboardForm({ onGenerated, hasPreview = false, isDark = false }) {
   const [idea, setIdea] = useState("A young apprentice chef and a kind kung-fu master preparing magical dumplings for a village festival");
