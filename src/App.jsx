@@ -65,6 +65,7 @@ import FrameZPage from './pages/FrameZ';
 import DocsPage from './pages/Docs';
 import ThumbnailCreatorPage from './pages/ThumbnailCreator';
 import QuickStoryboardPage from './pages/QuickStoryboard';
+import MoodBoardPage from './pages/MoodBoard';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -171,6 +172,7 @@ const AuthenticatedApp = () => {
       <Route path="/FrameZ" element={<FrameZPage />} />
       <Route path="/ThumbnailCreator" element={<ThumbnailCreatorPage />} />
       <Route path="/QuickStoryboard" element={<QuickStoryboardPage />} />
+      <Route path="/MoodBoard" element={<MoodBoardPage />} />
       <Route path="/Docs" element={
         <LayoutWrapper currentPageName="Docs">
           <DocsPage />

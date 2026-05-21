@@ -31,6 +31,11 @@ export default function StoryboardForm({ onGenerated, hasPreview = false, isDark
 
   const selectStyle = (item) => {
     setSelectedPreset("");
+    if (style === item) {
+      setStyle("");
+      setIdea("");
+      return;
+    }
     setStyle(item);
     setIdea(STYLE_IDEAS[item]);
   };
@@ -72,7 +77,7 @@ The enhanced prompt must add clear scene-by-scene details, believable physics, c
       ? "dark graphite storyboard sheet, black studio background, cyan and Kaspa-blue accents, high contrast white line dividers, premium dark UI concept board"
       : "white or warm studio storyboard sheet, clean bright background, soft professional pitch deck layout";
 
-    const imagePrompt = `Create a clean 16:9 professional storyboard / character design sheet. Visual theme: ${sheetTheme}. Style mode: ${style}. ${plan.enhanced_prompt}
+    const imagePrompt = `Create a clean 16:9 professional storyboard / character design sheet. Visual theme: ${sheetTheme}. Style mode: ${style || "Custom"}. ${plan.enhanced_prompt}
 
 STRICT QUALITY RULES: Use real-world physics, believable gravity, consistent scale, correct perspective, natural anatomy, clean hands, grounded shadows, coherent lighting, accurate material behavior, and stable character continuity across every scene. Avoid paragraph text inside the image. If text appears, use only large 1-3 word labels with simple exact English spelling, straight horizontal baseline, sharp letters, and clean label boxes. Never use warped, curved, misspelled, tiny, or gibberish text. Each scene panel must have a clear purpose, readable composition, and enough visual context to understand the action.
 
@@ -81,7 +86,7 @@ Include: main characters, expressions, action poses, key props, color palette, m
     const image = await base44.integrations.Core.GenerateImage({ prompt: imagePrompt });
     const created = await base44.entities.StoryboardProject.create({
       idea,
-      style,
+      style: style || "Custom",
       research_notes: plan.research_notes,
       enhanced_prompt: imagePrompt,
       motion_cut_prompt: plan.motion_cut_prompt,

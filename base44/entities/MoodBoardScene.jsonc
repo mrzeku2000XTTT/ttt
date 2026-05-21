@@ -1,0 +1,41 @@
+{
+  "name": "MoodBoardScene",
+  "type": "object",
+  "properties": {
+    "storyboard_id": {
+      "type": "string",
+      "description": "Source StoryboardProject ID"
+    },
+    "scene_idea": {
+      "type": "string",
+      "description": "User idea for the extended scene"
+    },
+    "scene_prompt": {
+      "type": "string",
+      "description": "Generated 1:1 mood board scene prompt"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Generated mood board image URL"
+    },
+    "style": {
+      "type": "string",
+      "description": "Inherited storyboard style"
+    }
+  },
+  "required": [
+    "scene_idea",
+    "scene_prompt",
+    "image_url"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

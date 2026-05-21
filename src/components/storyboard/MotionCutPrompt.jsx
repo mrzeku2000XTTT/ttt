@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Check, Copy, Film } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Check, Copy, Film, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function MotionCutPrompt({ project, isDark = false }) {
@@ -32,10 +33,15 @@ Create a 16:9 motion cut with 6-8 short scenes, smooth camera movement, clear sc
           <Film className="h-5 w-5" />
           <h2 className="text-lg font-black">Motion cut video prompt</h2>
         </div>
-        <Button onClick={copyPrompt} className={`font-black ${isDark ? "bg-white text-black hover:bg-white/90" : "bg-zinc-950 text-white hover:bg-zinc-800"}`}>
-          {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-          {copied ? "Copied" : "Copy Prompt"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Link to={`/MoodBoard?storyboard=${project.id}`} className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-black transition ${isDark ? "bg-cyan-300 text-black hover:bg-cyan-200" : "bg-cyan-600 text-white hover:bg-cyan-700"}`}>
+            <Plus className="mr-2 h-4 w-4" /> Extend Story
+          </Link>
+          <Button onClick={copyPrompt} className={`font-black ${isDark ? "bg-white text-black hover:bg-white/90" : "bg-zinc-950 text-white hover:bg-zinc-800"}`}>
+            {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+            {copied ? "Copied" : "Copy Prompt"}
+          </Button>
+        </div>
       </div>
       <pre className={`max-h-72 overflow-auto whitespace-pre-wrap rounded-2xl p-4 text-sm leading-6 ${isDark ? "bg-black/40 text-white/75" : "bg-zinc-100 text-zinc-700"}`}>{prompt}</pre>
     </div>
