@@ -112,7 +112,7 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
 
   return (
     <>
-    <StoryboardCrabBot active={loading} sceneCount={scenes.length} />
+    <StoryboardCrabBot active={loading} sceneCount={scenes.length} storyboard={storyboard} scene={scene} scenes={scenes} />
     <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
       <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-5 shadow-2xl shadow-black/40 backdrop-blur-2xl">
         <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-cyan-200">Mood Board Page</p>
