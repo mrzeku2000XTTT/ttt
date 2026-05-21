@@ -9,9 +9,11 @@ const STYLES = ["Kaspa Explainer", "DAG Flow", "KAS Wallet", "KRC20 Launch", "Mi
 export default function StoryboardForm({ onGenerated, hasPreview = false, isDark = false }) {
   const [idea, setIdea] = useState("A young apprentice chef and a kind kung-fu master preparing magical dumplings for a village festival");
   const [style, setStyle] = useState(STYLES[0]);
+  const [selectedPreset, setSelectedPreset] = useState("");
   const [loading, setLoading] = useState(false);
 
   const applyPreset = (presetId) => {
+    setSelectedPreset(presetId);
     const preset = STORYBOARD_PRESETS.find((item) => item.id === presetId);
     if (!preset) return;
     setIdea(preset.idea);
@@ -72,8 +74,8 @@ Include: main characters, expressions, action poses, key props, color palette, m
   return (
     <div className={`rounded-[1.5rem] border p-5 backdrop-blur-2xl transition ${isDark ? "border-white/10 bg-white/[0.07] shadow-2xl shadow-black/40" : "border-zinc-200 bg-white shadow-xl shadow-zinc-200/60"}`}>
       <label className={`mb-2 block text-xs font-black uppercase tracking-[0.18em] ${isDark ? "text-white/55" : "text-zinc-500"}`}>1000 presets</label>
-      <select defaultValue="" onChange={(e) => applyPreset(e.target.value)} className={`mb-4 w-full rounded-2xl border p-3 text-sm font-semibold outline-none backdrop-blur-xl transition ${isDark ? "border-white/10 bg-black/30 text-white focus:border-white/30" : "border-zinc-200 bg-zinc-50 text-zinc-800 focus:border-zinc-400"}`}>
-        <option value="" disabled>Choose a storyboard preset...</option>
+      <select value={selectedPreset} onChange={(e) => applyPreset(e.target.value)} className={`mb-4 w-full rounded-2xl border p-3 text-sm font-semibold outline-none backdrop-blur-xl transition ${isDark ? "border-white/10 bg-black/30 text-white focus:border-white/30" : "border-zinc-200 bg-zinc-50 text-zinc-800 focus:border-zinc-400"}`}>
+        <option value="">Choose a storyboard preset...</option>
         {STORYBOARD_PRESETS.map((preset) => (
           <option key={preset.id} value={preset.id}>{preset.id.replace("preset-", "#")} · {preset.title}</option>
         ))}
