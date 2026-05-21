@@ -44,7 +44,7 @@ export default function StoryboardForm({ onGenerated, hasPreview = false, isDark
       add_context_from_internet: false,
       prompt: `Transform this rough user idea into a highly detailed, production-ready storyboard / character sheet prompt: "${idea}".
 
-Create: 1) concise research-inspired creative direction, 2) an enhanced professional image prompt for a clean storyboard sheet like animation studio concept art, 3) exactly three agent checks from: Prompt Engineer, Visual Director, Continuity Checker.
+Create: 1) concise research-inspired creative direction, 2) an enhanced professional image prompt for a clean storyboard sheet like animation studio concept art, 3) exactly three agent checks from: Prompt Engineer, Visual Director, Continuity Checker, 4) a copy-ready motion cut video prompt that turns the storyboard into a 16:9 multi-scene cinematic video cut.
 
 The enhanced prompt must add clear scene-by-scene details, believable physics, consistent scale, natural anatomy, accurate perspective, correct shadows, material logic, and readable layout hierarchy. Avoid tiny text, paragraph text, warped text, gibberish lettering, impossible poses, melting objects, inconsistent character designs, and broken hands. If labels are needed, use only 1-3 word simple labels in exact clean English. Avoid copyrighted characters. Make it original, cinematic, family-safe, and commercially usable.`, 
       response_json_schema: {
@@ -52,6 +52,7 @@ The enhanced prompt must add clear scene-by-scene details, believable physics, c
         properties: {
           research_notes: { type: "string" },
           enhanced_prompt: { type: "string" },
+          motion_cut_prompt: { type: "string" },
           agent_checks: {
             type: "array",
             items: {
@@ -63,7 +64,7 @@ The enhanced prompt must add clear scene-by-scene details, believable physics, c
             }
           }
         },
-        required: ["research_notes", "enhanced_prompt", "agent_checks"]
+        required: ["research_notes", "enhanced_prompt", "motion_cut_prompt", "agent_checks"]
       }
     });
 
@@ -83,6 +84,7 @@ Include: main characters, expressions, action poses, key props, color palette, m
       style,
       research_notes: plan.research_notes,
       enhanced_prompt: imagePrompt,
+      motion_cut_prompt: plan.motion_cut_prompt,
       agent_checks: plan.agent_checks,
       image_url: image.url,
     });

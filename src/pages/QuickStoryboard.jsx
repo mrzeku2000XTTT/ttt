@@ -5,6 +5,7 @@ import StoryboardForm from "@/components/storyboard/StoryboardForm";
 import StoryboardPreview from "@/components/storyboard/StoryboardPreview";
 import AgentChecks from "@/components/storyboard/AgentChecks";
 import StoryboardModeToggle from "@/components/storyboard/StoryboardModeToggle";
+import MotionCutPrompt from "@/components/storyboard/MotionCutPrompt";
 
 export default function QuickStoryboardPage() {
   const [project, setProject] = useState(null);
@@ -49,6 +50,8 @@ export default function QuickStoryboardPage() {
           <StoryboardForm onGenerated={setProject} hasPreview={!!project?.image_url} isDark={isDark} />
           <StoryboardPreview imageUrl={project?.image_url} title={project?.idea} isDark={isDark} />
         </div>
+
+        <MotionCutPrompt project={project} isDark={isDark} />
 
         <AgentChecks checks={project?.agent_checks || []} isDark={isDark} />
       </div>

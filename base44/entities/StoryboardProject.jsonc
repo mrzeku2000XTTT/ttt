@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Prompt engineered storyboard generation prompt"
     },
+    "motion_cut_prompt": {
+      "type": "string",
+      "description": "Copy-ready multi-scene motion cut video prompt"
+    },
     "research_notes": {
       "type": "string",
       "description": "Research and creative direction notes"
