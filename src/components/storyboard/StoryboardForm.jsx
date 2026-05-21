@@ -6,7 +6,7 @@ import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
 
 const STYLES = ["Character Bible", "Product Storyboard", "YouTube Intro", "Animation Pitch", "Comic Frames", "Game Cutscene"];
 
-export default function StoryboardForm({ onGenerated, hasPreview = false }) {
+export default function StoryboardForm({ onGenerated, hasPreview = false, isDark = false }) {
   const [idea, setIdea] = useState("A young apprentice chef and a kind kung-fu master preparing magical dumplings for a village festival");
   const [style, setStyle] = useState(STYLES[0]);
   const [loading, setLoading] = useState(false);
@@ -70,32 +70,32 @@ Include: main characters, expressions, action poses, key props, color palette, m
   };
 
   return (
-    <div className="rounded-[1.5rem] border border-zinc-200 bg-white p-5 shadow-xl shadow-zinc-200/60">
-      <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-zinc-500">1000 presets</label>
-      <select defaultValue="" onChange={(e) => applyPreset(e.target.value)} className="mb-4 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-400">
+    <div className={`rounded-[1.5rem] border p-5 backdrop-blur-2xl transition ${isDark ? "border-white/10 bg-white/[0.07] shadow-2xl shadow-black/40" : "border-zinc-200 bg-white shadow-xl shadow-zinc-200/60"}`}>
+      <label className={`mb-2 block text-xs font-black uppercase tracking-[0.18em] ${isDark ? "text-white/55" : "text-zinc-500"}`}>1000 presets</label>
+      <select defaultValue="" onChange={(e) => applyPreset(e.target.value)} className={`mb-4 w-full rounded-2xl border p-3 text-sm font-semibold outline-none backdrop-blur-xl transition ${isDark ? "border-white/10 bg-black/30 text-white focus:border-white/30" : "border-zinc-200 bg-zinc-50 text-zinc-800 focus:border-zinc-400"}`}>
         <option value="" disabled>Choose a storyboard preset...</option>
         {STORYBOARD_PRESETS.map((preset) => (
           <option key={preset.id} value={preset.id}>{preset.id.replace("preset-", "#")} · {preset.title}</option>
         ))}
       </select>
 
-      <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-zinc-500">Your idea</label>
-      <textarea value={idea} onChange={(e) => setIdea(e.target.value)} className="min-h-36 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-950 outline-none focus:border-zinc-400" />
+      <label className={`mb-2 block text-xs font-black uppercase tracking-[0.18em] ${isDark ? "text-white/55" : "text-zinc-500"}`}>Your idea</label>
+      <textarea value={idea} onChange={(e) => setIdea(e.target.value)} className={`min-h-36 w-full rounded-2xl border p-4 text-sm outline-none backdrop-blur-xl transition ${isDark ? "border-white/10 bg-black/30 text-white focus:border-white/30" : "border-zinc-200 bg-zinc-50 text-zinc-950 focus:border-zinc-400"}`} />
 
       <div className="mt-4 flex flex-wrap gap-2">
         {STYLES.map((item) => (
-          <button key={item} onClick={() => setStyle(item)} className={`rounded-full px-3 py-2 text-xs font-black transition ${style === item ? "bg-zinc-950 text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"}`}>
+          <button key={item} onClick={() => setStyle(item)} className={`rounded-full px-3 py-2 text-xs font-black transition ${style === item ? (isDark ? "bg-white text-black" : "bg-zinc-950 text-white") : (isDark ? "bg-white/10 text-white/70 hover:bg-white/15" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200")}`}>
             {item}
           </button>
         ))}
       </div>
 
-      <Button onClick={generateStoryboard} disabled={loading || !idea.trim()} className="mt-5 w-full bg-zinc-950 font-black text-white hover:bg-zinc-800">
+      <Button onClick={generateStoryboard} disabled={loading || !idea.trim()} className={`mt-5 w-full font-black ${isDark ? "bg-white text-black hover:bg-white/90" : "bg-zinc-950 text-white hover:bg-zinc-800"}`}>
         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
         {loading ? "Regenerating while keeping preview..." : hasPreview ? "Regenerate Quick Storyboard" : "Generate Quick Storyboard"}
       </Button>
       {hasPreview && (
-        <p className="mt-3 text-center text-xs font-semibold text-zinc-500">Regenerate keeps the current preview visible until the new storyboard is ready.</p>
+        <p className={`mt-3 text-center text-xs font-semibold ${isDark ? "text-white/45" : "text-zinc-500"}`}>Regenerate keeps the current preview visible until the new storyboard is ready.</p>
       )}
     </div>
   );
