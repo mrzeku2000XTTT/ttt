@@ -31,6 +31,6 @@ export const STORYBOARD_PRESETS = Array.from({ length: 1000 }, (_, index) => {
     id: `preset-${index + 1}`,
     title: `${subject} in a ${world}`,
     style,
-    idea: `An original ${mood} Kaspa-themed story about a ${subject} in a ${world} who ${conflict}. Connect the concept to Kaspa, DAG blocks, fast confirmations, wallets, KAS payments, builders, or TTT agents where it fits naturally. Create a polished production storyboard sheet with expressive characters, poses, props, palette, scale reference, and readable labels.`
+    idea: `Create a ${mood} Kaspa storyboard about a ${subject} in a ${world} who ${conflict}. The panels must clearly connect to ${style}: show Kaspa DAG blocks, KAS payments, wallets, miners, builders, KRC20 launches, or TTT agents where it fits naturally. Create a polished production storyboard sheet with expressive characters, poses, props, palette, scale reference, and readable labels.`
   };
 });

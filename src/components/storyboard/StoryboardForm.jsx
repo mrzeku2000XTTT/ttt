@@ -4,16 +4,16 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
 
-const STYLE_IDEAS = {
-  "Kaspa Explainer": "Create a clear Kaspa explainer storyboard showing how BlockDAG technology enables fast confirmations, parallel blocks, and everyday KAS payments for normal users.",
-  "DAG Flow": "Create a visual DAG flow storyboard showing multiple Kaspa blocks forming in parallel, transactions moving through the network, and confirmations happening quickly without a traditional single-chain bottleneck.",
-  "KAS Wallet": "Create a KAS wallet storyboard showing a user opening a Kaspa wallet, scanning a QR code, sending KAS instantly, receiving confirmation, and feeling safe with simple self-custody.",
-  "KRC20 Launch": "Create a KRC20 launch storyboard showing a Kaspa builder introducing a new token, community members discovering it, liquidity forming, and the token moving across the Kaspa ecosystem.",
-  "Miner Story": "Create a Kaspa miner storyboard showing mining hardware securing the network, blocks racing through the DAG, rewards arriving in KAS, and the miner supporting decentralization.",
-  "TTT Agent": "Create a TTT Agent storyboard showing an AI agent helping a Kaspa user research, build, send KAS, verify identity, and navigate the TTT super app ecosystem."
-};
+const STYLES = ["Kaspa Explainer", "DAG Flow", "KAS Wallet", "KRC20 Launch", "Miner Story", "TTT Agent"];
 
-const STYLES = Object.keys(STYLE_IDEAS);
+const STYLE_IDEAS = {
+  "Kaspa Explainer": "Create a clear Kaspa storyboard explaining how fast KAS payments move through the DAG with blocks confirming in parallel, simple wallet actions, and readable labels for users new to Kaspa.",
+  "DAG Flow": "Show a cinematic Kaspa DAG flow storyboard where many blue blocks connect at once, transactions confirm quickly, and the visual panels explain parallel block creation without confusing text.",
+  "KAS Wallet": "Create a storyboard for a KAS wallet experience: a user opens their wallet, scans a QR code, sends KAS instantly, receives confirmation, and celebrates a smooth secure payment.",
+  "KRC20 Launch": "Design a Kaspa KRC20 launch storyboard showing token setup, community announcement, wallet interaction, trading energy, and clear launch-day panels with clean readable labels.",
+  "Miner Story": "Tell a Kaspa miner story with mining rigs, glowing DAG blocks, network contribution, fast block rewards, and a human builder proudly supporting the Kaspa ecosystem.",
+  "TTT Agent": "Create a TTT Agent storyboard where an AI agent helps a user navigate Kaspa apps, understand KAS payments, verify actions, and complete a task inside the TTT ecosystem."
+};
 
 export default function StoryboardForm({ onGenerated, hasPreview = false, isDark = false }) {
   const [idea, setIdea] = useState(STYLE_IDEAS[STYLES[0]]);
@@ -27,6 +27,12 @@ export default function StoryboardForm({ onGenerated, hasPreview = false, isDark
     if (!preset) return;
     setIdea(preset.idea);
     setStyle(preset.style);
+  };
+
+  const selectStyle = (item) => {
+    setSelectedPreset("");
+    setStyle(item);
+    setIdea(STYLE_IDEAS[item]);
   };
 
   const generateStoryboard = async () => {
@@ -95,15 +101,7 @@ Include: main characters, expressions, action poses, key props, color palette, m
 
       <div className="mt-4 flex flex-wrap gap-2">
         {STYLES.map((item) => (
-          <button
-            key={item}
-            onClick={() => {
-              setStyle(item);
-              setSelectedPreset("");
-              setIdea(STYLE_IDEAS[item]);
-            }}
-            className={`rounded-full px-3 py-2 text-xs font-black transition ${style === item ? (isDark ? "bg-white text-black" : "bg-zinc-950 text-white") : (isDark ? "bg-white/10 text-white/70 hover:bg-white/15" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200")}`}
-          >
+          <button key={item} onClick={() => selectStyle(item)} className={`rounded-full px-3 py-2 text-xs font-black transition ${style === item ? (isDark ? "bg-white text-black" : "bg-zinc-950 text-white") : (isDark ? "bg-white/10 text-white/70 hover:bg-white/15" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200")}`}>
             {item}
           </button>
         ))}
