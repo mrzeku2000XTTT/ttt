@@ -41,7 +41,7 @@ export default function StoryboardForm({ onGenerated, hasPreview = false, isDark
 
     const plan = await base44.integrations.Core.InvokeLLM({
       model: "gpt_5_mini",
-      add_context_from_internet: true,
+      add_context_from_internet: false,
       prompt: `Transform this rough user idea into a highly detailed, production-ready storyboard / character sheet prompt: "${idea}".
 
 Create: 1) concise research-inspired creative direction, 2) an enhanced professional image prompt for a clean storyboard sheet like animation studio concept art, 3) exactly three agent checks from: Prompt Engineer, Visual Director, Continuity Checker.
