@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Loader2, Sparkles, Copy, Check, Film, Plus, Image as ImageIcon } from "lucide-react";
+import { Sparkles, Film, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import ViralXTool from "@/components/storyboard/ViralXTool";
 
+const KASPA_LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/4/4d/Kaspa-logo.svg";
+const DEFAULT_SCENE_IDEA = "Extend this story into the next emotional beat while keeping the same character, props, palette, and visual continuity.";
+const KASPA_SCENE_IDEA = "Turn this into a Kaspa theme prompt while keeping the same character, props, palette, and visual continuity.";
+
 export default function MoodBoardStudio() {
   const [storyboard, setStoryboard] = useState(null);
-  const [sceneIdea, setSceneIdea] = useState("Extend this story into the next emotional beat while keeping the same character, props, palette, and Kaspa theme.");
+  const [sceneIdea, setSceneIdea] = useState(DEFAULT_SCENE_IDEA);
+  const [kaspaTheme, setKaspaTheme] = useState(false);
   const [scene, setScene] = useState(null);
   const [scenes, setScenes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,7 +26,8 @@ export default function MoodBoardStudio() {
     if (savedSession) {
       try {
         const parsed = JSON.parse(savedSession);
-        setSceneIdea(parsed.sceneIdea || sceneIdea);
+        setSceneIdea(parsed.sceneIdea || DEFAULT_SCENE_IDEA);
+        setKaspaTheme(!!parsed.kaspaTheme);
         setScene(parsed.scene || null);
         setScenes(parsed.scenes || []);
       } catch {}
@@ -32,16 +38,18 @@ export default function MoodBoardStudio() {
     });
     base44.entities.MoodBoardScene.filter({ storyboard_id: storyboardId }).then((items) => {
       const existingScenes = items || [];
-      setScenes(existingScenes);
-      setScene(existingScenes[0] || null);
+      if (existingScenes.length > 0) {
+        setScenes(existingScenes);
+        setScene(existingScenes[0]);
+      }
     });
   }, []);
 
   useEffect(() => {
     const storyboardId = storyboard?.id || new URLSearchParams(window.location.search).get("storyboard");
     if (!storyboardId) return;
-    localStorage.setItem(`moodboard_session_${storyboardId}`, JSON.stringify({ sceneIdea, scene, scenes }));
-  }, [storyboard?.id, sceneIdea, scene, scenes]);
+    localStorage.setItem(`moodboard_session_${storyboardId}`, JSON.stringify({ sceneIdea, kaspaTheme, scene, scenes }));
+  }, [storyboard?.id, sceneIdea, kaspaTheme, scene, scenes]);
 
   const buildPrompt = (ideaOverride = sceneIdea) => `Create a 1:1 square mood board extension scene from the START storyboard image.
 
@@ -51,7 +59,7 @@ Source story: ${storyboard?.idea || "Use the user scene idea as the story source
 Inherited style: ${storyboard?.style || "cinematic storyboard concept art"}
 Consistency source: ${storyboard?.enhanced_prompt || "Keep one consistent character, prop language, visual theme, and palette."}
 
-Rules: the main character must match the START image character identity, face language, silhouette, outfit logic, key props, Kaspa/KAS visual theme, color palette, lighting mood, and visual continuity. Make it a single polished square mood board frame with one strong scene, clear composition, cinematic lighting, realistic anatomy, clean hands, consistent scale, and no gibberish text. If text is necessary, use only 1-3 correctly spelled words.`;
+Rules: the main character must match the START image character identity, face language, silhouette, outfit logic, key props, color palette, lighting mood, and visual continuity. ${kaspaTheme ? "Include a tasteful Kaspa/KAS visual theme using turquoise geometric accents, subtle blockDAG energy, and optional KAS symbol details." : "Do not force any Kaspa, crypto, token, KAS, or blockchain theme unless it already exists in the source image or user idea."} Make it a single polished square mood board frame with one strong scene, clear composition, cinematic lighting, realistic anatomy, clean hands, consistent scale, and no gibberish text. If text is necessary, use only 1-3 correctly spelled words.`;
 
   const buildVideoPrompt = () => `Turn this mood board result into a cinematic scene video.
 
@@ -62,7 +70,7 @@ Scene prompt: ${scene?.scene_prompt || buildPrompt()}
 Source storyboard: ${storyboard?.idea || "Original storyboard concept"}
 Style continuity: ${storyboard?.style || "cinematic storyboard concept art"}
 
-Create a polished 16:9 motion scene video with consistent character identity, same props, same outfit logic, same palette, same Kaspa/KAS theme, same lighting mood, and the same environment. Include camera direction, action beats, timing, motion details, transition style, sound design cues, and any on-screen words limited to 1-3 correctly spelled words. Keep anatomy natural, hands clean, movement believable, no gibberish text, no warped UI, and no random new characters.`;
+Create a polished 16:9 motion scene video with consistent character identity, same props, same outfit logic, same palette, same lighting mood, and the same environment. ${kaspaTheme ? "Include a tasteful Kaspa/KAS theme with subtle turquoise geometric energy and blockDAG-inspired visual accents." : "Do not add Kaspa, crypto, token, KAS, or blockchain details unless they already exist in the source image or prompt."} Include camera direction, action beats, timing, motion details, transition style, sound design cues, and any on-screen words limited to 1-3 correctly spelled words. Keep anatomy natural, hands clean, movement believable, no gibberish text, no warped UI, and no random new characters.`;
 
   const generateScene = async (ideaOverride = sceneIdea) => {
     if (!ideaOverride.trim()) return;
@@ -133,9 +141,23 @@ Create a polished 16:9 motion scene video with consistent character identity, sa
           {copied ? "Copied" : "Copy Scene Prompt"}
         </Button>
 
-        <Button onClick={generateAnotherScene} disabled={loading || !storyboard?.image_url} className="mt-3 w-full rounded-full border border-white/15 bg-white/10 px-4 py-2 font-semibold tracking-tight text-white shadow-inner shadow-white/10 backdrop-blur-2xl hover:bg-white/15">
-          {loading ? "Generating Another Scene..." : "Generate Another Scene"}
-        </Button>
+        <div className="mt-3 flex gap-2">
+          <Button onClick={generateAnotherScene} disabled={loading || !storyboard?.image_url} className="flex-1 rounded-full border border-white/15 bg-white/10 px-4 py-2 font-semibold tracking-tight text-white shadow-inner shadow-white/10 backdrop-blur-2xl hover:bg-white/15">
+            {loading ? "Generating Another Scene..." : "Generate Another Scene"}
+          </Button>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !kaspaTheme;
+              setKaspaTheme(next);
+              setSceneIdea(next ? KASPA_SCENE_IDEA : DEFAULT_SCENE_IDEA);
+            }}
+            className={`flex h-10 w-12 items-center justify-center rounded-full border backdrop-blur-2xl transition ${kaspaTheme ? "border-cyan-200/60 bg-cyan-300/20 shadow-[0_0_22px_rgba(103,232,249,0.35)]" : "border-white/15 bg-white/8 hover:bg-white/14"}`}
+            title="Kaspa theme"
+          >
+            <img src={KASPA_LOGO_URL} alt="Kaspa" className="h-5 w-5" />
+          </button>
+        </div>
 
         <ViralXTool storageKey={`moodboard_prompt_tool_${storyboard?.id || "default"}`} />
       </div>
