@@ -39,7 +39,7 @@ export default function PromptPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [autoAnalyze, setAutoAnalyze] = useState(false);
+  const [autoAnalyze, setAutoAnalyze] = useState(true);
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [showToolkit, setShowToolkit] = useState(false);
   const [activeStyle, setActiveStyle] = useState(null);
@@ -374,8 +374,8 @@ export default function PromptPage() {
     const preview = URL.createObjectURL(file);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setUploadedImage({ url: file_url, preview });
-      toast.success("Image attached!");
+      setUploadedImage({ url: file_url, preview: file_url });
+      toast.success("Image attached and ready to analyze!");
     } catch { URL.revokeObjectURL(preview); toast.error("Upload failed."); }
     finally { setUploading(false); }
   };
@@ -394,7 +394,7 @@ export default function PromptPage() {
     const userMsg = {
       id: Date.now(), role: "user",
       content: isAnalyzeRun ? `[Image Analysis] ${currentPrompt || 'Analyze and generate replication prompt'}` : currentPrompt,
-      imagePreview: currentImage?.preview,
+      imagePreview: currentImage?.preview || currentImage?.url,
       imageUrl: currentImage?.url || null
     };
     const streamMsg = { id: streamId, role: "assistant", content: "", streaming: true };
@@ -442,8 +442,9 @@ export default function PromptPage() {
       let aiResponse;
       if (isAnalyzeRun) {
         aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are PROMPTO, an elite-tier AI image prompt engineer.${kb}\n\n--- Conversation so far ---\n${historyStr}\n--- End ---\n\nAnalyze this image with extreme precision. Output:\n1. **Visual Analysis**: Exhaustively describe every element — subject (physical features, skin tone, hair, eyes, expression, pose, clothing, accessories), composition (framing, aspect ratio, camera angle), lighting (type, direction, intensity, color temperature), color palette, background/environment, mood/atmosphere, and any imperfections or artifacts.\n2. **3 Replication Prompts** (each minimum 150 words in code blocks):\n   - **Exact Match**: Faithful recreation with maximum detail\n   - **Enhanced Cinematic**: Elevated with dramatic lighting and film-grade quality\n   - **Alternative Artistic**: Creative reinterpretation with a distinct aesthetic\n3. **3 Refinement Tips**: Specific ways to customize the output further.${currentPrompt ? `\n\nUser goal: ${currentPrompt}` : ''}`,
-          file_urls: [currentImage.url]
+          prompt: `You are PROMPTO, an elite-tier AI image prompt engineer.${kb}\n\n--- Conversation so far ---\n${historyStr}\n--- End ---\n\nThe attached image is the primary source. Analyze the image directly with extreme precision. Do not say you cannot analyze it unless the file is genuinely unreadable. Output:\n1. **Visual Analysis**: Exhaustively describe every element — subject, composition, camera angle, lighting, color palette, background/environment, mood/atmosphere, textures, typography if visible, and any artifacts.\n2. **3 Replication Prompts** (each minimum 150 words in code blocks):\n   - **Exact Match**: Faithful recreation with maximum detail\n   - **Enhanced Cinematic**: Elevated with dramatic lighting and film-grade quality\n   - **Alternative Artistic**: Creative reinterpretation with a distinct aesthetic\n3. **3 Refinement Tips**: Specific ways to customize the output further.${currentPrompt ? `\n\nUser goal: ${currentPrompt}` : ''}`,
+          file_urls: [currentImage.url],
+          model: "gpt_5_4"
         });
       } else {
         const system = `You are PROMPTO, an elite-tier AI image prompt engineer specializing in ultra-detailed, production-quality prompts for AI image generators (Midjourney, DALL-E, Stable Diffusion, Flux, etc).
@@ -859,7 +860,7 @@ NEVER produce short, vague, or generic prompts. Every single prompt must read li
                     : "bg-white/5 border border-white/10 text-white/90"
                 }`}>
                   {msg.imagePreview && (
-                    <img src={msg.imagePreview} alt="uploaded" className="h-28 rounded-xl object-cover mb-2 border border-white/10" />
+                    <img src={msg.imagePreview || msg.imageUrl} alt="uploaded" className="h-28 rounded-xl object-cover mb-2 border border-white/10" />
                   )}
                   {msg.streaming ? (
                     <div className="flex items-center gap-2">
@@ -983,7 +984,7 @@ NEVER produce short, vague, or generic prompts. Every single prompt must read li
               <button onClick={() => setAutoAnalyze(v => !v)}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all ${autoAnalyze ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
                 <Eye className="w-3 h-3" />
-                {autoAnalyze ? 'Auto-Analyze ON' : 'Auto-Analyze OFF'}
+                {autoAnalyze ? 'Analyze Image ON' : 'Analyze Image OFF'}
               </button>
             </div>
           )}
