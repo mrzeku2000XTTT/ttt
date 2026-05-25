@@ -11,6 +11,22 @@
 
 export const TTT_UPDATES = [
   {
+    id: "quick-storyboard-crab-ai",
+    title: "Quick Storyboard Crab AI Upgraded",
+    summary: "StoryboardCrabBot now has a cleaner Crab AI button plus continuous voice input for faster creative direction and storyboard feedback.",
+    tag: "AI Studio",
+    date: "2026-05-25",
+    link: "/QuickStoryboard",
+  },
+  {
+    id: "moodboard-continuity-studio",
+    title: "Mood Board Continuity Tools",
+    summary: "Mood Board now helps extend storyboard scenes with stronger continuity prompts, scene logic, and copy-ready motion cut direction.",
+    tag: "Creative Tools",
+    date: "2026-05-24",
+    link: "/MoodBoard",
+  },
+  {
     id: "hiro-launch",
     title: "Hiro — AI Typography Studio",
     summary: "Design on-brand fonts, wordmarks, and type systems. Build your Type Kit once, generate letterforms that actually belong to your brand.",

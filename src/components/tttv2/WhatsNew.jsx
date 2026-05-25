@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Rocket, Clock, MessageSquare, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { getLatestUpdates } from "@/components/feed/tttUpdates";
 
 const COMING_SOON = [
   { title: "KRC-20 Cross-Token Swaps", desc: "Swap tokens directly inside TTT", tag: "DeFi" },
@@ -10,18 +11,19 @@ const COMING_SOON = [
   { title: "Mobile Native App", desc: "TTT on iOS and Android natively", tag: "Mobile" },
 ];
 
-// Changelog — add new entries at the TOP when features ship
+const formatUpdateDate = (date) => {
+  const parsed = new Date(date);
+  return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
 const RECENT_UPDATES = [
-  { title: "Kaspa Toccata Hard-Fork Outlook", desc: "Covenants++ points Kaspa toward native assets, extended covenants, ZK verification opcodes, and stronger Layer 1 programmability.", tag: "Kaspa", date: "May 15" },
-  { title: "Core R&D Agent on What is Kaspa", desc: "AI agent now scrapes kaspa.news daily for Rust node, GHOSTDAG, DAGKnight, and protocol development updates.", tag: "AI Agent", date: "Apr 14" },
-  { title: "KCbridge on Send KAS", desc: "Quick-access bridge button added to the Send KAS page for instant crypto swaps via KC Bridge.", tag: "Bridge", date: "Apr 14" },
-  { title: "What is Kaspa — Dedicated Page", desc: "Full educational page covering blockDAG architecture, PoW, fair launch, timeline, and live community news.", tag: "Education", date: "Apr 13" },
-  { title: "Community Videos Section", desc: "Users can now add, watch, and manage YouTube explainer videos directly on the TTT 2.0 landing page.", tag: "Community", date: "Apr 13" },
-  { title: "Custom Product Icons", desc: "All 8 product cards on TTT 2.0 now feature unique, AI-generated high-fidelity logos.", tag: "Design", date: "Apr 13" },
-  { title: "Kaspa Community News Feed", desc: "Daily auto-refreshing news from kaspa.news and community sources, cached for efficiency.", tag: "News", date: "Apr 13" },
-  { title: "TTT 2.0 Landing Page", desc: "Complete redesign with Apple-inspired aesthetics — products, roadmap, market data, and more.", tag: "Platform", date: "Apr 12" },
-  { title: "Navigation: Community Link", desc: "Added Community section to the TTTV2 top nav for quick access.", tag: "Nav", date: "Apr 12" },
-  { title: "Home → TTTV2 Link", desc: "Home page now features a direct link to the TTT 2.0 landing experience.", tag: "Nav", date: "Apr 12" },
+  ...getLatestUpdates(8).map((item) => ({
+    title: item.title,
+    desc: item.summary,
+    tag: item.tag,
+    date: formatUpdateDate(item.date),
+  })),
+  { title: "Great Success: Toccata Testnet Launched", desc: "Kaspa's Toccata testnet is live, marking a major milestone for Layer 1 programmability, native assets, and future smart-contract capabilities.", tag: "Kaspa", date: "May 25" },
 ];
 
 export default function WhatsNew({ kaspaUpdates, posts }) {

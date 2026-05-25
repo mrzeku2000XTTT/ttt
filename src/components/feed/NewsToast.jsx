@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { getLatestUpdates } from "./tttUpdates";
 
 const FALLBACK_ITEMS = [
+  { id: "kaspa_toccata_success", title: "Great Success: Toccata Testnet Launched", summary: "Kaspa's Toccata testnet is live, marking a major step toward stronger Layer 1 programmability and native smart-contract capabilities.", tag: "Kaspa" },
   { id: 1, title: "TTT Feed Now Live", summary: "Share posts, tip creators with KAS, and interact with the @zk AI bot.", tag: "TTT" },
   { id: 2, title: "Agent ZK Identity", summary: "Verify your wallet and claim your cryptographic Agent ZK identity.", tag: "Agent ZK" },
   { id: 3, title: "KRC-20 Tipping", summary: "Send PACMAN and other KRC-20 tokens as tips on posts and comments.", tag: "Tipping" },
@@ -52,7 +53,7 @@ export default function NewsToast() {
         return;
       }
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Give me 4 brief, real Kaspa blockchain news or community updates as of today. Topics: development, hashrate, ecosystem, KRC-20, community milestones. Be factual and current.`,
+        prompt: `Give me 4 brief, real Kaspa blockchain news or community updates as of today. Include the successful Kaspa Toccata testnet launch if current/relevant. Topics: development, hashrate, ecosystem, KRC-20, community milestones. Be factual and current.`,
         add_context_from_internet: true,
         model: 'gemini_3_flash',
         response_json_schema: {
