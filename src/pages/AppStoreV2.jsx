@@ -37,6 +37,7 @@ const CATEGORIES = [
 const STORE_MENU_ITEMS = [
   { label: "Explore", path: "/AppStoreV2", icon: Sparkles },
   { label: "Products", path: "/AppStoreV2", icon: ShoppingBag },
+  { label: "App Store", path: "/AppStoreV2", icon: ShoppingBag },
   { label: "Kaspa", path: "/WhatIsKaspa", icon: Shield },
   { label: "TTTV", path: "/Browser", icon: Search },
   { label: "Community", path: "/Feed", icon: Users },
@@ -60,124 +61,102 @@ export default function AppStoreV2Page() {
   const isAdmin = user?.role === "admin";
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-zinc-900">
-      {/* Nav */}
-      <nav
-        className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-5 bg-[#F5F5F7]/80 backdrop-blur-2xl border-b border-zinc-200/50"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-      >
-        <div className="flex items-center justify-between w-full h-14">
-          <Link
-            to="/TTTV2"
-            className="flex items-center gap-1.5 text-zinc-700 hover:text-zinc-900 transition-colors h-11 px-3 -ml-1 rounded-lg active:bg-zinc-200/60"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-[14px] font-medium">Back</span>
-          </Link>
-          <span className="text-[15px] font-[800] tracking-tight">App Store</span>
-          <div className="hidden sm:flex items-center gap-2">
-            {STORE_MENU_ITEMS.map(item => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.label}
-                  to={item.path}
-                  className="flex items-center gap-1 text-[13px] font-medium text-zinc-600 hover:text-zinc-900 px-2 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors"
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-          <div className="sm:hidden flex items-center">
-            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 hover:bg-zinc-100 rounded-lg transition-colors">
-                  {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                {STORE_MENU_ITEMS.map(item => {
-                  const Icon = item.icon;
-                  return (
-                    <Link key={item.label} to={item.path}>
-                      <DropdownMenuItem onClick={() => setMenuOpen(false)} className="cursor-pointer">
-                        <Icon className="w-4 h-4 mr-2" />
-                        <span>{item.label}</span>
-                      </DropdownMenuItem>
-                    </Link>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/AIAgentHub"
-              className="hidden sm:flex items-center gap-1.5 text-[13px] font-semibold text-white bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-400 hover:opacity-90 h-10 px-3.5 rounded-full transition-opacity shadow-lg shadow-fuchsia-500/30"
-            >
-              <Bot className="w-3.5 h-3.5" />
-              Agents
-            </Link>
-            <Link
-              to="/AIAgentHub"
-              className="sm:hidden flex items-center justify-center text-white bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-400 h-10 w-10 rounded-full shadow-lg shadow-fuchsia-500/30"
-              title="AI Agent Hub"
-            >
-              <Bot className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/Home"
-              className="flex items-center text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 h-10 px-4 rounded-full transition-colors"
-            >
-              Open TTT
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20">
-        {/* Cinematic Hero Banner */}
+    <div className="min-h-screen bg-white text-zinc-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-32 pb-20">
+        {/* Dark Glass Header */}
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7 }}
-          className="relative w-full h-44 sm:h-64 md:h-80 mb-6 rounded-2xl overflow-hidden ring-1 ring-zinc-200/60 shadow-lg"
+          className="relative overflow-hidden rounded-2xl bg-black mb-8 shadow-2xl shadow-black/20 ring-1 ring-white/10"
         >
           <img
-            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/334ebd062_generated_image.png"
-            alt="Cinematic AI app store"
-            className="absolute inset-0 w-full h-full object-cover"
+            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1f3bc9ef2_generated_image.png"
+            alt="Dark glass app store background"
+            className="absolute inset-0 w-full h-full object-cover opacity-80"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
-            <div className="text-[10px] font-bold tracking-[0.2em] text-cyan-300 mb-2 uppercase">Welcome to TTT</div>
+          <div className="absolute inset-0 bg-black/55" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(34,211,238,0.22),transparent_34%)]" />
+          <div className="relative p-4 sm:p-6 md:p-8 min-h-[18rem]">
+            <nav className="flex items-center justify-between gap-4 rounded-2xl border border-white/15 bg-white/[0.055] px-4 sm:px-6 py-3 backdrop-blur-2xl shadow-inner shadow-white/5">
+              <Link
+                to="/TTTV2"
+                className="text-white/90 hover:text-white text-base font-medium transition-colors"
+              >
+                Back
+              </Link>
+              <div className="hidden lg:flex items-center justify-center gap-1.5 flex-1">
+                {STORE_MENU_ITEMS.map(item => {
+                  const isAppStore = item.label === "App Store";
+                  const isGlow = item.label === "Roadmap" || item.label === "Docs";
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.path}
+                      className={`relative px-3 py-2 text-base font-medium transition-all ${
+                        isAppStore
+                          ? "text-cyan-300"
+                          : isGlow
+                            ? `text-white bg-white/10 ${item.label === "Roadmap" ? "rounded-l-xl ml-2" : "rounded-r-xl -ml-1"} shadow-[0_0_22px_rgba(34,211,238,0.55)]`
+                            : "text-white/90 hover:text-cyan-200"
+                      }`}
+                    >
+                      {item.label}
+                      {isAppStore && <span className="absolute left-2 right-2 -bottom-3 h-1 bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.9)]" />}
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="lg:hidden flex items-center">
+                <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors">
+                      {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-48 bg-zinc-950 border-zinc-800 text-white">
+                    {STORE_MENU_ITEMS.map(item => {
+                      const Icon = item.icon;
+                      return (
+                        <Link key={item.label} to={item.path}>
+                          <DropdownMenuItem onClick={() => setMenuOpen(false)} className="cursor-pointer focus:bg-white/10 focus:text-white">
+                            <Icon className="w-4 h-4 mr-2" />
+                            <span>{item.label}</span>
+                          </DropdownMenuItem>
+                        </Link>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex items-center gap-5">
+                <Link
+                  to="/AIAgentHub"
+                  className="text-white/90 hover:text-cyan-200 text-base font-medium transition-colors"
+                >
+                  Agents
+                </Link>
+                <Link
+                  to="/Home"
+                  className="text-white/90 hover:text-cyan-200 text-base font-medium transition-colors"
+                >
+                  Open TTT
+                </Link>
+              </div>
+            </nav>
+
             <button
               onClick={() => setBlueprintOpen(true)}
-              className="group text-left"
+              className="absolute inset-x-6 bottom-8 mx-auto max-w-3xl text-center"
             >
-              <h2 className="text-2xl sm:text-4xl md:text-5xl font-[900] text-white tracking-tight leading-tight drop-shadow-lg group-hover:text-cyan-200 transition-colors">
-                The Decentralized App Store
-              </h2>
-              <p className="text-white/70 text-xs sm:text-sm mt-1.5 max-w-md group-hover:text-white/90 transition-colors">
-                Built on Kaspa · Powered by the community · <span className="underline">View Blueprint</span>
-              </p>
+              <div className="text-2xl text-white/45 mb-2">The Decentralized App Store</div>
+              <h1 className="text-3xl text-white font-light tracking-tight mb-1">Discover</h1>
+              <p className="text-3xl text-white font-light tracking-tight">80+ apps built on the Kaspa ecosystem</p>
             </button>
           </div>
         </motion.div>
 
         <BlueprintModal open={blueprintOpen} onClose={() => setBlueprintOpen(false)} />
-
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-[900] tracking-tight mb-1">Discover</h1>
-            <p className="text-zinc-400 text-sm">80+ apps built on the Kaspa ecosystem</p>
-          </div>
-          <ListAppButton user={user} />
-        </motion.div>
 
         {/* Admin proposals panel */}
         {isAdmin && <AdminProposalsPanel onChange={() => setRefreshKey(k => k + 1)} />}

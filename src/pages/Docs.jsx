@@ -597,7 +597,7 @@ export default function DocsPage() {
                   {currentContent.content.split('\n\n').map((paragraph, idx) => {
                     if (paragraph.startsWith('#')) {
                       const level = paragraph.match(/^#+/)[0].length;
-                      const text = paragraph.replace(/^#+\s/, '');
+                      const text = paragraph.replace(/^#+\s/, '').replace(/\*\*/g, '');
                       const className = {
                         1: 'text-2xl font-bold text-cyan-400 mt-6 mb-4',
                         2: 'text-xl font-bold text-cyan-300 mt-4 mb-3',
@@ -611,7 +611,7 @@ export default function DocsPage() {
                       return (
                         <ul key={idx} className="list-disc list-inside space-y-1 text-gray-300">
                           {items.map((item, i) => (
-                            <li key={i}>{item.replace(/^[-✓\d+\.\s]+/, '')}</li>
+                            <li key={i}>{item.replace(/^[-✓\d+\.\s]+/, '').replace(/\*\*/g, '')}</li>
                           ))}
                         </ul>
                       );
