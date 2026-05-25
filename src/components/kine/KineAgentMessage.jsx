@@ -62,7 +62,7 @@ export default function KineAgentMessage({ message }) {
               <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-zinc-400 mb-1.5 flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3" /> Generated From
                 {message.matchedLabel && (
-                  <span className="ml-auto px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-[9px] tracking-wider">
+                  <span className="ml-auto px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[9px] tracking-wider">
                     {message.matchedLabel}
                   </span>
                 )}
@@ -100,20 +100,6 @@ export default function KineAgentMessage({ message }) {
                 <Film className="w-3.5 h-3.5" />
                 Open
               </a>
-            </div>
-          </div>
-        )}
-
-        {message.status === "custom_ready" && (
-          <div className="space-y-2">
-            <div className="rounded-2xl rounded-tl-sm bg-white border border-zinc-200/70 px-4 py-3 text-sm shadow-sm">
-              <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-zinc-400 mb-1.5 flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3" /> Custom Prompt Ready
-              </div>
-              <p className="text-zinc-700 leading-relaxed italic">{message.content}</p>
-            </div>
-            <div className="rounded-2xl bg-amber-50 border border-amber-200/70 px-4 py-3 text-sm text-amber-800">
-              No preset was used. This custom request is ready for real video generation when a video provider is connected.
             </div>
           </div>
         )}
