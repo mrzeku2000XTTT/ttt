@@ -617,7 +617,8 @@ export default function DocsPage() {
                       );
                     }
                     
-                    return <p key={idx} className="text-gray-300">{paragraph}</p>;
+                    const cleanParagraph = paragraph.replace(/\*\*/g, '');
+                    return <p key={idx} className="text-gray-300">{cleanParagraph}</p>;
                   })}
                 </div>
               </div>
