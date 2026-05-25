@@ -104,6 +104,20 @@ export default function KineAgentMessage({ message }) {
           </div>
         )}
 
+        {message.status === "custom_ready" && (
+          <div className="space-y-2">
+            <div className="rounded-2xl rounded-tl-sm bg-white border border-zinc-200/70 px-4 py-3 text-sm shadow-sm">
+              <div className="text-[10px] font-semibold tracking-[0.2em] uppercase text-zinc-400 mb-1.5 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" /> Custom Prompt Ready
+              </div>
+              <p className="text-zinc-700 leading-relaxed italic">{message.content}</p>
+            </div>
+            <div className="rounded-2xl bg-amber-50 border border-amber-200/70 px-4 py-3 text-sm text-amber-800">
+              No preset was used. This custom request is ready for real video generation when a video provider is connected.
+            </div>
+          </div>
+        )}
+
         {message.status === "error" && (
           <div className="rounded-2xl rounded-tl-sm bg-red-50 border border-red-200/70 px-4 py-3 flex items-start gap-2.5 text-sm">
             <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />

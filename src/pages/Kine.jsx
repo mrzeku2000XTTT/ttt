@@ -72,12 +72,11 @@ export default function KinePage() {
       // Small delay to feel like generation is happening
       await new Promise((r) => setTimeout(r, 1800));
       const match = matchKineVideo(enhanced + " " + raw);
-      if (!match?.video) throw new Error("No matching video found");
       setMessages((m) => m.map((x) => x.id === agentId ? {
         ...x,
-        status: "done",
-        videoUrl: match.video,
-        matchedLabel: match.label,
+        status: match?.video ? "done" : "custom_ready",
+        videoUrl: match?.video,
+        matchedLabel: match?.label,
         content: enhanced,
       } : x));
     } catch (e) {

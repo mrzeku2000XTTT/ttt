@@ -49,7 +49,7 @@ export const KINE_LIBRARY = [
 ];
 
 // Pick the closest demo video from the library based on prompt keyword overlap.
-// Falls back to "Cinematic" if no good match.
+// Returns null when the user's request does not clearly match a preset.
 export function matchKineVideo(prompt) {
   const text = (prompt || "").toLowerCase();
   let best = null;
@@ -64,5 +64,5 @@ export function matchKineVideo(prompt) {
       best = item;
     }
   }
-  return best || KINE_LIBRARY[1]; // default → Cinematic
+  return bestScore >= 2 ? best : null;
 }
