@@ -23,8 +23,7 @@ export async function createKineVideoFromImage(imageUrl, prompt) {
 
   const done = new Promise((resolve) => {
     recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "video/webm" });
-      resolve(URL.createObjectURL(blob));
+      resolve(new Blob(chunks, { type: "video/webm" }));
     };
   });
 
@@ -51,9 +50,12 @@ export async function createKineVideoFromImage(imageUrl, prompt) {
 
   audio.stop();
   recorder.stop();
-  const url = await done;
+  const videoBlob = await done;
   await audio.close();
-  return url;
+  return {
+    videoBlob,
+    videoUrl: URL.createObjectURL(videoBlob),
+  };
 }
 
 function loadImage(src) {

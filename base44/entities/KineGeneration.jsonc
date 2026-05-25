@@ -1,0 +1,44 @@
+{
+  "name": "KineGeneration",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user who generated this video"
+    },
+    "raw_prompt": {
+      "type": "string",
+      "description": "Original user prompt"
+    },
+    "enhanced_prompt": {
+      "type": "string",
+      "description": "Enhanced cinematic prompt"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Generated keyframe image URL"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "Uploaded generated video URL"
+    }
+  },
+  "required": [
+    "user_email",
+    "raw_prompt",
+    "enhanced_prompt",
+    "video_url"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

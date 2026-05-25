@@ -8,30 +8,47 @@ import KineHero from "@/components/kine/KineHero";
 import KineSuggestions from "@/components/kine/KineSuggestions";
 import { createKineVideoFromImage } from "@/components/kine/createKineVideo";
 
-// Local storage key for persisting the user's recent generations
-const HISTORY_KEY = "kine_history_v1";
+const generationToMessages = (item) => ([
+  { id: `${item.id}_user`, role: "user", content: item.raw_prompt, ts: item.created_date },
+  {
+    id: `${item.id}_agent`,
+    role: "agent",
+    status: "done",
+    content: item.enhanced_prompt,
+    imageUrl: item.image_url,
+    videoUrl: item.video_url,
+    matchedLabel: "Saved",
+    generationId: item.id,
+  },
+]);
 
 export default function KinePage() {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState([]); // [{ role, content, videoUrl?, status?, error? }]
   const [generating, setGenerating] = useState(false);
+  const [user, setUser] = useState(null);
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
 
-  // Load history once
+  // Load the current user's saved generations
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(HISTORY_KEY);
-      if (saved) setMessages(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, []);
+    const loadUserGenerations = async () => {
+      const authed = await base44.auth.isAuthenticated();
+      if (!authed) return;
 
-  // Persist on change
-  useEffect(() => {
-    try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-30)));
-    } catch { /* ignore */ }
-  }, [messages]);
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+
+      const generations = await base44.entities.KineGeneration.filter(
+        { user_email: currentUser.email },
+        "-created_date",
+        15
+      );
+      setMessages(generations.reverse().flatMap(generationToMessages));
+    };
+
+    loadUserGenerations();
+  }, []);
 
   // Auto-scroll on new message
   useEffect(() => {
@@ -53,6 +70,12 @@ export default function KinePage() {
   const generate = async () => {
     const raw = prompt.trim();
     if (!raw || generating) return;
+
+    if (!user) {
+      base44.auth.redirectToLogin(window.location.href);
+      return;
+    }
+
     setGenerating(true);
     setPrompt("");
 
@@ -71,13 +94,31 @@ export default function KinePage() {
       });
       const imageUrl = image?.url;
       if (!imageUrl) throw new Error("Could not generate the video keyframe");
-      const videoUrl = await createKineVideoFromImage(imageUrl, enhanced);
+      const { videoUrl, videoBlob } = await createKineVideoFromImage(imageUrl, enhanced);
+      let savedVideoUrl = videoUrl;
+      let generationId;
+
+      if (user?.email) {
+        const file = new File([videoBlob], `kine-${Date.now()}.webm`, { type: "video/webm" });
+        const upload = await base44.integrations.Core.UploadFile({ file });
+        savedVideoUrl = upload.file_url;
+        const saved = await base44.entities.KineGeneration.create({
+          user_email: user.email,
+          raw_prompt: raw,
+          enhanced_prompt: enhanced,
+          image_url: imageUrl,
+          video_url: savedVideoUrl,
+        });
+        generationId = saved.id;
+      }
+
       setMessages((m) => m.map((x) => x.id === agentId ? {
         ...x,
         status: "done",
-        videoUrl,
+        videoUrl: savedVideoUrl,
         imageUrl,
-        matchedLabel: "Fresh",
+        matchedLabel: user?.email ? "Saved" : "Fresh",
+        generationId,
         content: enhanced,
       } : x));
     } catch (e) {
@@ -95,9 +136,10 @@ export default function KinePage() {
     }
   };
 
-  const clearHistory = () => {
+  const clearHistory = async () => {
+    const ids = messages.map((message) => message.generationId).filter(Boolean);
+    await Promise.all(ids.map((id) => base44.entities.KineGeneration.delete(id)));
     setMessages([]);
-    try { localStorage.removeItem(HISTORY_KEY); } catch { /* ignore */ }
   };
 
   const useSuggestion = (text) => {
