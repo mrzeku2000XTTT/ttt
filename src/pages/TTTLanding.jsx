@@ -4,31 +4,57 @@ import { motion } from "framer-motion";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/cde0e740c_generated_image.png";
 function VineCorner({ className = "" }) {
+  const vinePaths = [
+    "M2 42C30 17 67 8 108 17C146 25 177 25 211 8",
+    "M8 18C42 39 55 70 48 108C42 143 24 166 8 205",
+    "M22 31C48 45 77 47 106 39C128 33 151 24 181 28",
+    "M36 8C55 35 65 62 67 94C69 129 58 158 36 190",
+    "M56 27C42 48 31 68 24 100",
+    "M78 18C88 40 103 58 130 70",
+    "M96 25C123 35 151 39 184 31",
+    "M130 18C150 36 171 46 204 44",
+    "M52 76C35 88 25 105 20 132",
+    "M66 92C87 106 101 122 110 148",
+    "M49 125C30 140 20 158 15 188",
+    "M48 151C61 173 65 193 58 226",
+    "M26 65C16 77 10 93 8 115",
+    "M82 58C106 67 126 82 143 104",
+    "M105 43C115 61 131 75 153 85",
+    "M34 101C49 114 59 131 63 154"
+  ];
+
   return (
-    <svg viewBox="0 0 260 260" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 220 240" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="vineGradient" x1="0" y1="0" x2="260" y2="260" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#f5b6b6" />
-          <stop offset="0.38" stopColor="#f08a72" />
-          <stop offset="0.7" stopColor="#b77ad9" />
-          <stop offset="1" stopColor="#65d6f1" />
+        <linearGradient id="vineGradient" x1="0" y1="0" x2="220" y2="240" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#f4b9b6" />
+          <stop offset="0.32" stopColor="#ee907d" />
+          <stop offset="0.62" stopColor="#d783b7" />
+          <stop offset="0.82" stopColor="#9b7ed9" />
+          <stop offset="1" stopColor="#6bd7ef" />
         </linearGradient>
+        <filter id="softInk" x="-10%" y="-10%" width="120%" height="120%">
+          <feGaussianBlur stdDeviation="0.18" />
+        </filter>
       </defs>
-      <path d="M6 34C42 14 80 10 121 22C158 33 191 25 232 8" stroke="url(#vineGradient)" strokeWidth="3" strokeLinecap="round" />
-      <path d="M30 10C54 33 67 54 72 91C77 127 65 162 36 209" stroke="url(#vineGradient)" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M45 30C30 49 20 69 18 94" stroke="url(#vineGradient)" strokeWidth="2" strokeLinecap="round" />
-      <path d="M71 39C94 50 113 54 139 50" stroke="url(#vineGradient)" strokeWidth="2" strokeLinecap="round" />
-      <path d="M96 20C111 42 127 58 154 69" stroke="url(#vineGradient)" strokeWidth="2" strokeLinecap="round" />
-      <path d="M126 24C141 36 159 42 183 38" stroke="url(#vineGradient)" strokeWidth="2" strokeLinecap="round" />
-      <path d="M164 31C184 45 204 49 231 43" stroke="url(#vineGradient)" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M52 74C35 84 25 99 21 121" stroke="url(#vineGradient)" strokeWidth="1.9" strokeLinecap="round" />
-      <path d="M75 81C95 91 111 105 122 128" stroke="url(#vineGradient)" strokeWidth="1.9" strokeLinecap="round" />
-      <path d="M61 124C43 132 31 148 26 172" stroke="url(#vineGradient)" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M55 158C66 178 70 196 65 223" stroke="url(#vineGradient)" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="88" cy="34" r="4" stroke="#de8ab8" strokeWidth="2" />
-      <circle cx="127" cy="55" r="3" stroke="#ef9177" strokeWidth="1.8" />
-      <circle cx="48" cy="101" r="3.5" stroke="#b782d8" strokeWidth="1.8" />
-      <circle cx="73" cy="148" r="3" stroke="#ef9177" strokeWidth="1.7" />
+      {vinePaths.map((path, index) => (
+        <path
+          key={path}
+          d={path}
+          stroke="url(#vineGradient)"
+          strokeWidth={index < 4 ? 2.6 : 1.55}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter="url(#softInk)"
+        />
+      ))}
+      <path d="M1 43C36 27 68 29 102 43" stroke="#f5c8c2" strokeWidth="5" strokeLinecap="round" opacity="0.26" />
+      <path d="M38 7C48 45 47 82 34 122" stroke="#f5c8c2" strokeWidth="5" strokeLinecap="round" opacity="0.22" />
+      <circle cx="70" cy="34" r="4" stroke="#df8ab6" strokeWidth="1.8" opacity="0.8" />
+      <circle cx="109" cy="48" r="3" stroke="#ef947d" strokeWidth="1.6" opacity="0.78" />
+      <circle cx="31" cy="91" r="3.5" stroke="#aa83d8" strokeWidth="1.6" opacity="0.72" />
+      <circle cx="58" cy="142" r="3" stroke="#ef947d" strokeWidth="1.5" opacity="0.68" />
+      <circle cx="146" cy="32" r="2.5" stroke="#75d2e8" strokeWidth="1.4" opacity="0.58" />
     </svg>
   );
 }
