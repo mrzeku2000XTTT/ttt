@@ -54,6 +54,7 @@ import APEXPage from './pages/APEX';
 import MIRAGEPage from './pages/MIRAGE';
 import MIRAGEStudioPage from './pages/MIRAGEStudio';
 import TTTGatePage from './pages/TTTGate';
+import TTTLandingPage from './pages/TTTLanding';
 import UltraMockPage from './pages/UltraMock';
 import KatagamiPage from './pages/Katagami';
 import DoomPage from './pages/Doom';
@@ -103,7 +104,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/Xunhua" element={<XunhuaPage />} />
-      <Route path="/" element={<TTTGatePage />} />
+      <Route path="/" element={<TTTLandingPage />} />
       <Route path="/TTTGate" element={<TTTGatePage />} />
       <Route path="/Home" element={
         <LayoutWrapper currentPageName={mainPageKey}>
