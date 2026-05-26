@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
-const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/6aedc3a19_image.png";
+const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/cde0e740c_generated_image.png";
 
 export default function TTTLandingPage() {
   return (
@@ -16,7 +16,7 @@ export default function TTTLandingPage() {
       <img
         src={ORB_IMAGE}
         alt="TTT orb water reflection"
-        className="absolute inset-x-0 bottom-0 h-1/3 w-full origin-bottom scale-y-[-1] object-contain object-bottom opacity-22 blur-[1px]"
+        className="absolute inset-x-0 bottom-0 h-1/3 w-full origin-bottom scale-y-[-1] object-contain object-bottom opacity-18"
       />
       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white via-white/65 to-transparent" />
       <div className="absolute inset-0 bg-white/5" />
