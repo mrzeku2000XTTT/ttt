@@ -1,8 +1,9 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import FloatingLandingBar from "../components/landing/FloatingLandingBar";
 
-const BACKGROUND_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10569d41a_generated_image.png";
+const BACKGROUND_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e981f570b_generated_image.png";
 const LOGO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10c825bfb_image.png";
 
 export default function TTTLandingPage() {
@@ -23,8 +24,12 @@ export default function TTTLandingPage() {
           transition={{ duration: 1, ease: "easeOut" }}
           className="relative"
         >
-          <div className="absolute -inset-5 rounded-full border border-purple-300/20 bg-black/20 shadow-[0_0_80px_rgba(168,85,247,0.32)]" />
-          <div className="relative rounded-full border border-white/25 bg-white/5 p-2 shadow-[0_0_95px_rgba(168,85,247,0.36)]">
+          <Link
+            to="/TTTGate"
+            aria-label="Launch old TTT portal"
+            className="absolute -inset-8 z-0 rounded-full border border-red-400/35 bg-black/10 shadow-[0_0_110px_rgba(239,68,68,0.38)] transition-all hover:border-red-300/80 hover:shadow-[0_0_145px_rgba(239,68,68,0.58)]"
+          />
+          <div className="pointer-events-none relative z-10 rounded-full border border-white/25 bg-white/5 p-2 shadow-[0_0_95px_rgba(168,85,247,0.36)]">
             <img
               src={LOGO_IMAGE}
               alt="TTT red cosmic logo"
