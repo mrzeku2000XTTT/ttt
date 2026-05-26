@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import FloatingLandingBar from "../components/landing/FloatingLandingBar";
 
-const HERO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10c825bfb_image.png";
+const HERO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10569d41a_generated_image.png";
 
 export default function TTTLandingPage() {
   return (
