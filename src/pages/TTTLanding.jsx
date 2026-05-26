@@ -3,11 +3,16 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/cde0e740c_generated_image.png";
+const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/50376ee68_generated_image.png";
 
 export default function TTTLandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-slate-950">
       <div className="absolute inset-0 bg-white" />
+      <img src={CORNER_ART} alt="TTT corner art" className="pointer-events-none absolute left-0 top-0 h-44 w-44 object-contain opacity-80 sm:h-64 sm:w-64" />
+      <img src={CORNER_ART} alt="TTT corner art" className="pointer-events-none absolute right-0 top-0 h-44 w-44 scale-x-[-1] object-contain opacity-80 sm:h-64 sm:w-64" />
+      <img src={CORNER_ART} alt="TTT corner art" className="pointer-events-none absolute bottom-0 left-0 h-44 w-44 scale-y-[-1] object-contain opacity-70 sm:h-64 sm:w-64" />
+      <img src={CORNER_ART} alt="TTT corner art" className="pointer-events-none absolute bottom-0 right-0 h-44 w-44 scale-[-1] object-contain opacity-70 sm:h-64 sm:w-64" />
       <img
         src={ORB_IMAGE}
         alt="TTT cosmic orb background"
