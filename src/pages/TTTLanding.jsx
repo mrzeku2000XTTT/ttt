@@ -2,14 +2,15 @@ import React from "react";
 import { motion } from "framer-motion";
 import FloatingLandingBar from "../components/landing/FloatingLandingBar";
 
-const HERO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10569d41a_generated_image.png";
+const BACKGROUND_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10569d41a_generated_image.png";
+const LOGO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10c825bfb_image.png";
 
 export default function TTTLandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <img
-        src={HERO_IMAGE}
-        alt="TTT cosmic background"
+        src={BACKGROUND_IMAGE}
+        alt="TTT vibrant nature background"
         className="absolute left-1/2 top-1/2 h-[118vh] w-[118vh] max-w-none -translate-x-1/2 -translate-y-1/2 scale-125 object-cover opacity-60"
       />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_0%,transparent_34%,rgba(168,85,247,0.16)_45%,rgba(6,182,212,0.12)_62%,#000_86%),linear-gradient(180deg,rgba(0,0,0,0.12),#000_92%)]" />
@@ -25,8 +26,8 @@ export default function TTTLandingPage() {
           <div className="absolute -inset-5 rounded-full border border-purple-300/20 bg-black/20 shadow-[0_0_80px_rgba(168,85,247,0.32)]" />
           <div className="relative rounded-full border border-white/25 bg-white/5 p-2 shadow-[0_0_95px_rgba(168,85,247,0.36)]">
             <img
-              src={HERO_IMAGE}
-              alt="TTT cosmic eye portal"
+              src={LOGO_IMAGE}
+              alt="TTT red cosmic logo"
               className="h-[min(60vh,620px)] w-[min(84vw,620px)] rounded-full object-cover"
             />
             <div className="pointer-events-none absolute inset-2 rounded-full bg-gradient-to-br from-white/10 via-transparent to-black/10" />
