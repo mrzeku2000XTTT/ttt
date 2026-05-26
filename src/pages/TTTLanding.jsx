@@ -7,11 +7,18 @@ const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c
 export default function TTTLandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      <div className="absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.9)_1px,transparent_1px),radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.7)_1px,transparent_1px),radial-gradient(circle_at_45%_70%,rgba(255,255,255,0.55)_1px,transparent_1px)] bg-[length:90px_90px,130px_130px,170px_170px] opacity-70" />
       <img
         src={ORB_IMAGE}
         alt="TTT cosmic orb background"
         className="absolute inset-0 h-full w-full object-contain object-center opacity-100"
       />
+      <img
+        src={ORB_IMAGE}
+        alt="TTT orb water reflection"
+        className="absolute inset-x-0 bottom-0 h-1/3 w-full origin-bottom scale-y-[-1] object-contain object-bottom opacity-22 blur-[1px]"
+      />
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black via-black/55 to-transparent" />
       <div className="absolute inset-0 bg-black/10" />
 
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-8 pt-10 text-center sm:px-6">
@@ -34,7 +41,7 @@ export default function TTTLandingPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.25 }}
-          className="mb-2 text-sm font-medium tracking-[0.45em] text-white/80 sm:text-base"
+          className="mb-2 text-sm font-medium tracking-[0.45em] text-white/85 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] sm:text-base"
         >
           地球到火星
         </motion.p>
