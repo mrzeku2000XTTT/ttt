@@ -12,9 +12,9 @@ export default function TTTLandingPage() {
       <img
         src={BACKGROUND_IMAGE}
         alt="TTT vibrant nature background"
-        className="absolute left-1/2 top-1/2 h-[118vh] w-[118vh] max-w-none -translate-x-1/2 -translate-y-1/2 scale-125 object-cover opacity-60"
+        className="absolute left-1/2 top-1/2 h-[min(112vw,900px)] w-[min(112vw,900px)] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain opacity-75"
       />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_0%,transparent_34%,rgba(168,85,247,0.16)_45%,rgba(6,182,212,0.12)_62%,#000_86%),linear-gradient(180deg,rgba(0,0,0,0.12),#000_92%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_0%,transparent_36%,rgba(239,68,68,0.11)_48%,rgba(6,182,212,0.08)_64%,#000_88%),linear-gradient(180deg,rgba(0,0,0,0.08),#000_94%)]" />
       <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:72px_72px]" />
 
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-10 text-center sm:px-6">
@@ -27,7 +27,7 @@ export default function TTTLandingPage() {
           <Link
             to="/TTTGate"
             aria-label="Launch old TTT portal"
-            className="absolute -inset-8 z-0 rounded-full border border-red-400/35 bg-black/10 shadow-[0_0_110px_rgba(239,68,68,0.38)] transition-all hover:border-red-300/80 hover:shadow-[0_0_145px_rgba(239,68,68,0.58)]"
+            className="absolute -inset-10 z-0 rounded-full border border-red-300/35 bg-[radial-gradient(circle,transparent_62%,rgba(239,68,68,0.20)_64%,rgba(168,85,247,0.18)_72%,transparent_76%),conic-gradient(from_90deg,rgba(239,68,68,0.0),rgba(239,68,68,0.34),rgba(34,211,238,0.22),rgba(239,68,68,0.34),rgba(239,68,68,0.0))] shadow-[inset_0_0_40px_rgba(255,255,255,0.08),0_0_90px_rgba(239,68,68,0.32)] transition-all hover:border-red-200/80 hover:scale-[1.015] hover:shadow-[inset_0_0_46px_rgba(255,255,255,0.12),0_0_135px_rgba(239,68,68,0.5)]"
           />
           <div className="pointer-events-none relative z-10 rounded-full border border-white/25 bg-white/5 p-2 shadow-[0_0_95px_rgba(168,85,247,0.36)]">
             <img
@@ -41,10 +41,10 @@ export default function TTTLandingPage() {
         </motion.div>
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-[6%] top-[18%] h-24 w-24 rounded-full border border-white/25 bg-gradient-to-br from-white/18 via-cyan-300/10 to-purple-500/10 shadow-[inset_10px_10px_24px_rgba(255,255,255,0.12),0_0_32px_rgba(34,211,238,0.18)] backdrop-blur-sm" />
-          <div className="absolute right-[9%] top-[28%] h-16 w-16 rounded-full border border-cyan-200/35 bg-gradient-to-br from-white/20 via-cyan-300/12 to-transparent shadow-[inset_8px_8px_18px_rgba(255,255,255,0.16),0_0_30px_rgba(34,211,238,0.22)] backdrop-blur-sm" />
-          <div className="absolute bottom-[22%] left-[18%] h-14 w-14 rounded-full border border-pink-200/35 bg-gradient-to-br from-white/18 via-pink-400/12 to-transparent shadow-[inset_7px_7px_16px_rgba(255,255,255,0.14),0_0_26px_rgba(244,114,182,0.2)] backdrop-blur-sm" />
-          <div className="absolute bottom-[26%] right-[17%] h-28 w-28 rounded-full border border-orange-200/30 bg-gradient-to-br from-white/16 via-orange-400/12 to-red-500/10 shadow-[inset_12px_12px_28px_rgba(255,255,255,0.12),0_0_36px_rgba(251,146,60,0.2)] backdrop-blur-sm" />
+          <div className="absolute left-[5%] top-[20%] h-20 w-20 rounded-full border border-white/18 bg-gradient-to-br from-white/12 via-cyan-300/7 to-transparent shadow-[inset_8px_8px_20px_rgba(255,255,255,0.1),0_0_24px_rgba(34,211,238,0.12)] backdrop-blur-sm" />
+          <div className="absolute right-[7%] top-[31%] h-12 w-12 rounded-full border border-cyan-200/24 bg-gradient-to-br from-white/14 via-cyan-300/8 to-transparent shadow-[inset_6px_6px_14px_rgba(255,255,255,0.12),0_0_22px_rgba(34,211,238,0.14)] backdrop-blur-sm" />
+          <div className="absolute bottom-[23%] left-[18%] h-11 w-11 rounded-full border border-pink-200/22 bg-gradient-to-br from-white/12 via-pink-400/8 to-transparent shadow-[inset_5px_5px_13px_rgba(255,255,255,0.1),0_0_18px_rgba(244,114,182,0.12)] backdrop-blur-sm" />
+          <div className="absolute bottom-[26%] right-[15%] h-20 w-20 rounded-full border border-orange-200/20 bg-gradient-to-br from-white/10 via-orange-400/8 to-transparent shadow-[inset_9px_9px_22px_rgba(255,255,255,0.1),0_0_24px_rgba(251,146,60,0.12)] backdrop-blur-sm" />
         </div>
 
         <motion.div
