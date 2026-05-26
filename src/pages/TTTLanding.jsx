@@ -33,24 +33,25 @@ export default function TTTLandingPage() {
             <img
               src={LOGO_IMAGE}
               alt="TTT red cosmic logo"
-              className="h-[min(60vh,620px)] w-[min(84vw,620px)] rounded-full object-cover"
+              className="h-[min(70vw,58vh,620px)] w-[min(70vw,58vh,620px)] rounded-full object-cover object-center"
             />
-            <div className="pointer-events-none absolute inset-2 rounded-full bg-gradient-to-br from-white/10 via-transparent to-black/10" />
+            <div className="pointer-events-none absolute inset-2 rounded-full bg-gradient-to-br from-white/12 via-transparent to-black/20" />
+          <div className="pointer-events-none absolute -inset-3 rounded-full border border-red-300/25 shadow-[inset_0_0_35px_rgba(255,255,255,0.12),0_0_70px_rgba(239,68,68,0.28)]" />
           </div>
         </motion.div>
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-[7%] top-[26%] h-24 w-24 rounded-full border border-white/20 bg-purple-400/10" />
-          <div className="absolute right-[10%] top-[34%] h-16 w-16 rounded-full border border-cyan-300/25 bg-cyan-300/10" />
-          <div className="absolute bottom-[24%] left-[18%] h-14 w-14 rounded-full border border-pink-300/25 bg-pink-400/10" />
-          <div className="absolute bottom-[31%] right-[18%] h-28 w-28 rounded-full border border-orange-300/20 bg-orange-400/10" />
+          <div className="absolute left-[6%] top-[18%] h-24 w-24 rounded-full border border-white/25 bg-gradient-to-br from-white/18 via-cyan-300/10 to-purple-500/10 shadow-[inset_10px_10px_24px_rgba(255,255,255,0.12),0_0_32px_rgba(34,211,238,0.18)] backdrop-blur-sm" />
+          <div className="absolute right-[9%] top-[28%] h-16 w-16 rounded-full border border-cyan-200/35 bg-gradient-to-br from-white/20 via-cyan-300/12 to-transparent shadow-[inset_8px_8px_18px_rgba(255,255,255,0.16),0_0_30px_rgba(34,211,238,0.22)] backdrop-blur-sm" />
+          <div className="absolute bottom-[22%] left-[18%] h-14 w-14 rounded-full border border-pink-200/35 bg-gradient-to-br from-white/18 via-pink-400/12 to-transparent shadow-[inset_7px_7px_16px_rgba(255,255,255,0.14),0_0_26px_rgba(244,114,182,0.2)] backdrop-blur-sm" />
+          <div className="absolute bottom-[26%] right-[17%] h-28 w-28 rounded-full border border-orange-200/30 bg-gradient-to-br from-white/16 via-orange-400/12 to-red-500/10 shadow-[inset_12px_12px_28px_rgba(255,255,255,0.12),0_0_36px_rgba(251,146,60,0.2)] backdrop-blur-sm" />
         </div>
 
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="mt-5 rounded-full border border-white/15 bg-white/10 px-5 py-2 backdrop-blur-xl"
+          className="mt-5 rounded-full border border-red-200/25 bg-black/35 px-6 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_34px_rgba(239,68,68,0.24)] backdrop-blur-xl"
         >
           <p className="text-xs font-black uppercase tracking-[0.45em] text-emerald-100/80">Newly Updated TTT 2.5</p>
         </motion.div>
