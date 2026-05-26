@@ -13,7 +13,7 @@ export default function TTTLandingPage() {
         alt="TTT cosmic orb background"
         className="absolute inset-0 h-full w-full object-cover object-center opacity-95"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/45" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/5 to-black/62" />
 
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-8 pt-10 text-center sm:px-6">
         <motion.div
@@ -30,14 +30,6 @@ export default function TTTLandingPage() {
         </motion.div>
 
 
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mt-5 rounded-full border border-red-200/25 bg-black/35 px-6 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_34px_rgba(239,68,68,0.24)] backdrop-blur-xl"
-        >
-          <p className="text-xs font-black uppercase tracking-[0.45em] text-emerald-100/80">Newly Updated TTT 2.5</p>
-        </motion.div>
 
         <FloatingLandingBar />
       </section>
