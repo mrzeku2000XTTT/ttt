@@ -8,15 +8,26 @@ const YOUTUBE_VIDEO_ID = "k8eynkLKmfU";
 
 export default function TTTLandingPage() {
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [hasStartedMusic, setHasStartedMusic] = React.useState(false);
   const playerRef = React.useRef(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const musicSrc = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&autoplay=1&playsinline=1&controls=0&rel=0&origin=${origin}`;
 
-  const toggleMusic = () => {
-    const command = isPlaying ? "pauseVideo" : "playVideo";
+  const sendPlayerCommand = (command) => {
     playerRef.current?.contentWindow?.postMessage(
       JSON.stringify({ event: "command", func: command, args: [] }),
       "*"
     );
+  };
+
+  const toggleMusic = () => {
+    if (!hasStartedMusic) {
+      setHasStartedMusic(true);
+      setIsPlaying(true);
+      return;
+    }
+
+    sendPlayerCommand(isPlaying ? "pauseVideo" : "playVideo");
     setIsPlaying(!isPlaying);
   };
 
@@ -49,9 +60,9 @@ export default function TTTLandingPage() {
       <iframe
         ref={playerRef}
         title="Mind On My Kaspa by Kas Tunes"
-        src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&playsinline=1&controls=0&rel=0&origin=${origin}`}
+        src={hasStartedMusic ? musicSrc : "about:blank"}
         allow="autoplay; encrypted-media"
-        className="pointer-events-none absolute h-0 w-0 opacity-0"
+        className="pointer-events-none absolute h-px w-px opacity-0"
       />
 
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-8 pt-10 text-center sm:px-6">
