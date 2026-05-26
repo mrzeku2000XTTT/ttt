@@ -43,7 +43,15 @@ export default function TTTLandingPage() {
           transition={{ duration: 0.8, delay: 0.25 }}
           className="mb-2 text-sm font-medium tracking-[0.45em] text-white/85 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] sm:text-base"
         >
-          地球到火星
+          地球到火星交易
+        </motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="text-xs font-medium tracking-[0.32em] text-white/55 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] sm:text-sm"
+        >
+          由 Kaspa 提供支持
         </motion.p>
       </section>
     </main>
