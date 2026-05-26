@@ -47,7 +47,7 @@ export default function TTTLandingPage() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="mt-5 rounded-full border border-white/15 bg-white/10 px-5 py-2 backdrop-blur-xl"
         >
-          <p className="text-xs font-black uppercase tracking-[0.45em] text-white/70">HD Glass Portal</p>
+          <p className="text-xs font-black uppercase tracking-[0.45em] text-emerald-100/80">Newly Updated TTT 2.5</p>
         </motion.div>
 
         <FloatingLandingBar />
