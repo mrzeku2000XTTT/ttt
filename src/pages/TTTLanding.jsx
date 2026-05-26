@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import FloatingLandingBar from "../components/landing/FloatingLandingBar";
 
-const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10c825bfb_image.png";
+const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e4a5d18e1_cropped_circle_image3.png";
 
 export default function TTTLandingPage() {
   return (
