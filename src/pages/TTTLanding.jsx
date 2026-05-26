@@ -13,11 +13,17 @@ export default function TTTLandingPage() {
       <img src={CORNER_ART} alt="TTT corner art" className="pointer-events-none absolute right-0 top-0 h-56 w-56 scale-x-[-1] object-contain opacity-70 sm:h-80 sm:w-80" />
       <img src={CORNER_ART} alt="TTT corner art" className="pointer-events-none absolute bottom-0 left-0 h-56 w-56 scale-y-[-1] object-contain opacity-45 sm:h-80 sm:w-80" />
       <img src={CORNER_ART} alt="TTT corner art" className="pointer-events-none absolute bottom-0 right-0 h-56 w-56 scale-[-1] object-contain opacity-45 sm:h-80 sm:w-80" />
-      <img
-        src={ORB_IMAGE}
-        alt="TTT cosmic orb background"
-        className="absolute inset-0 h-full w-full scale-90 object-contain object-center opacity-100 [image-rendering:auto] transform-gpu md:scale-[0.78]"
-      />
+      <motion.div
+        className="absolute inset-0"
+        animate={{ y: [0, -12, 0], opacity: [1, 0.96, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <img
+          src={ORB_IMAGE}
+          alt="TTT cosmic orb background"
+          className="h-full w-full scale-90 object-contain object-center opacity-100 [image-rendering:auto] transform-gpu md:scale-[0.78]"
+        />
+      </motion.div>
       <img
         src={ORB_IMAGE}
         alt="TTT orb water reflection"
