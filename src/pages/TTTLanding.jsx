@@ -21,7 +21,7 @@ export default function TTTLandingPage() {
         <img
           src={ORB_IMAGE}
           alt="TTT cosmic orb background"
-          className="h-full w-full scale-90 object-contain object-center opacity-100 [image-rendering:auto] transform-gpu brightness-75 contrast-125 saturate-125 md:scale-[0.78]"
+          className="h-full w-full scale-90 object-contain object-center opacity-100 [image-rendering:auto] transform-gpu md:scale-[0.78]"
         />
       </motion.div>
       <img
