@@ -1,7 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import FloatingLandingBar from "../components/landing/FloatingLandingBar";
-import LandingVideoUploader from "../components/landing/LandingVideoUploader";
 
 const BACKGROUND_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10569d41a_generated_image.png";
 const LOGO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/10c825bfb_image.png";
@@ -14,7 +13,6 @@ export default function TTTLandingPage() {
         alt="TTT vibrant nature background"
         className="absolute left-1/2 top-1/2 h-[118vh] w-[118vh] max-w-none -translate-x-1/2 -translate-y-1/2 scale-125 object-cover opacity-60"
       />
-      <LandingVideoUploader />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_0%,transparent_34%,rgba(168,85,247,0.16)_45%,rgba(6,182,212,0.12)_62%,#000_86%),linear-gradient(180deg,rgba(0,0,0,0.12),#000_92%)]" />
       <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:72px_72px]" />
 
