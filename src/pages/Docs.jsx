@@ -78,7 +78,7 @@ TTT is the **Kaspa Super App**—a unified, real-time Web3 platform built on the
 
 ## What is TTT?
 
-TTT (The Tip Treasury) is an evolving ecosystem that brings together:
+TTT (TapToTip) is an evolving ecosystem that brings together:
 
 - **AI Creation**: Generate images, videos, and websites instantly
 - **Web3 Integration**: Manage Kaspa wallets, cross-chain transactions, and digital identity
