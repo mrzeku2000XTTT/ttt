@@ -140,48 +140,43 @@ export default function WalletPage() {
   };
 
   // ── Send KAS via Terra Protocol (sendKaspaTransaction) ────────────────────
-  const [sendMnemonic, setSendMnemonic] = useState('');
-  const [showMnemonicInput, setShowMnemonicInput] = useState(false);
+  const [sendPin, setSendPin] = useState('');
 
   const handleSend = async () => {
     if (!sendTo.trim() || !sendAmount || parseFloat(sendAmount) <= 0) {
       showToast('Enter a valid address and amount', 'error');
       return;
     }
-    // Retrieve stored private key
     const storedPK = localStorage.getItem('ttt_wallet_pk');
-    if (!storedPK && !sendMnemonic.trim()) {
-      setShowMnemonicInput(true);
+    const storedPinHash = localStorage.getItem('ttt_wallet_pin_hash') || user?.wallet_pin_hash;
+    if (!storedPK) {
+      showToast('No connected wallet key found. Re-import this wallet once to enable local PIN sending.', 'error');
+      return;
+    }
+    if (!storedPinHash) {
+      showToast('Set your wallet PIN before sending.', 'error');
+      return;
+    }
+    if (sendPin.length !== 6) {
+      showToast('Enter your 6-digit wallet PIN', 'error');
       return;
     }
     setIsSending(true);
     try {
-      const payload = {
+      const pinRes = await base44.functions.invoke('hashPin', { pin: sendPin });
+      if (pinRes.data?.hash !== storedPinHash) throw new Error('Incorrect PIN');
+      const res = await base44.functions.invoke('sendKaspaTransaction', {
+        privateKey: storedPK,
         fromAddress: address,
         toAddress: sendTo.trim(),
         amountKas: parseFloat(sendAmount),
-      };
-      if (storedPK) {
-        payload.privateKey = storedPK;
-      } else {
-        // Derive PK from mnemonic, also cache it
-        const pkRes = await base44.functions.invoke('createKaspaWallet', {
-          mnemonic: sendMnemonic.trim(),
-          wordCount: sendMnemonic.trim().split(/\s+/).length,
-          importMode: true,
-        });
-        if (pkRes.data?.error) throw new Error('Invalid seed phrase');
-        payload.privateKey = pkRes.data.privateKey;
-        localStorage.setItem('ttt_wallet_pk', pkRes.data.privateKey);
-      }
-      const res = await base44.functions.invoke('sendKaspaTransaction', payload);
+      });
       if (res.data?.error) throw new Error(res.data.error);
       showToast(`Sent! TX: ${String(res.data.txId).slice(0, 16)}...`, 'success');
       setShowSend(false);
       setSendTo('');
       setSendAmount('');
-      setSendMnemonic('');
-      setShowMnemonicInput(false);
+      setSendPin('');
       setTimeout(() => fetchBalance(address), 3000);
     } catch (e) {
       showToast(e?.message || 'Send failed', 'error');
@@ -560,21 +555,22 @@ export default function WalletPage() {
                   </p>
                 )}
               </div>
-              {showMnemonicInput && (
-                <div>
-                  <label className="text-xs text-yellow-400 mb-1.5 block">⚠️ Enter your seed phrase to authorize this transaction</label>
-                  <Textarea
-                    value={sendMnemonic}
-                    onChange={e => setSendMnemonic(e.target.value)}
-                    placeholder="word1 word2 word3 ..."
-                    className="bg-black border-yellow-500/40 text-white font-mono text-sm min-h-[80px]"
-                    rows={3}
-                  />
-                </div>
-              )}
+              <div>
+                <label className="text-xs text-cyan-400 mb-1.5 block">Enter your local wallet PIN to authorize</label>
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={sendPin}
+                  onChange={e => setSendPin(e.target.value.replace(/\D/g, ''))}
+                  placeholder="6-digit PIN"
+                  className="bg-black border-cyan-500/40 text-white text-center tracking-[0.5em]"
+                />
+                <p className="text-[11px] text-gray-500 mt-1.5">Your seed phrase stays on this device and is never re-entered here.</p>
+              </div>
               <Button
                 onClick={handleSend}
-                disabled={isSending || !sendTo.trim() || !sendAmount || (showMnemonicInput && !sendMnemonic.trim())}
+                disabled={isSending || !sendTo.trim() || !sendAmount || sendPin.length !== 6}
                 className="w-full bg-white text-black hover:bg-gray-200 h-12"
               >
                 {isSending ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Sending...</> : <><Send className="w-4 h-4 mr-2" />Send KAS</>}
