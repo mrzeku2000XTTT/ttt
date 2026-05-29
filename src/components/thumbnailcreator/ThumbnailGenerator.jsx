@@ -47,9 +47,12 @@ Reference images count: ${sourceImageUrls.length}
 Style: ${style}
 Character/face direction: ${characterDescription || "infer the best subject"}
 
-Do real online research when a URL/topic is provided. If the URL is YouTube, infer public context from the URL/page/search results when available. Fact-check the core claim. Then create a concise generation plan for a highly clickable but truthful thumbnail.
+If reference images are provided, visually inspect them and make the thumbnail plan match the ingested image content: subject, face/person likeness, product/app visuals, text placement, color palette, lighting, mood, composition, and thumbnail style. Treat uploaded images as primary creative direction, not loose inspiration.
+
+Do real online research when a URL/topic is provided. If the URL is YouTube, infer public context from the URL/page/search results when available. Fact-check the core claim. Then create a concise generation plan for a highly clickable but truthful thumbnail that matches any ingested references.
 
 Return JSON only.`,
+      file_urls: sourceImageUrls.length ? sourceImageUrls : undefined,
       response_json_schema: {
         type: "object",
         properties: {
@@ -85,6 +88,8 @@ Topic/source context: ${topic}
 ${youtubeUrl ? `Source URL: ${youtubeUrl}` : ""}
 Main character/avatar/face: ${brief.character_direction || characterDescription || "create a fitting expressive human face or avatar for the topic"}.
 Style: ${style}.
+
+${sourceImageUrls.length ? "REFERENCE IMAGE MATCHING RULES: Match the ingested reference image closely. Preserve the main subject/creator/product identity, overall composition logic, lighting direction, color palette, crop style, text hierarchy, and thumbnail mood while improving polish and clickability. Do not generate an unrelated thumbnail." : ""}
 
 TEXT FIT RULES: The title must fit fully inside the canvas with generous safe margins. Use 2-5 large words maximum, bold readable block lettering, no cropping, no misspellings, no extra random words.
 
