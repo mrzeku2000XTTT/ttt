@@ -43,6 +43,7 @@ Return:
 - topic: a polished YouTube thumbnail prompt describing the visible subject/scene/product/style
 - script_notes: hook, scene notes, and thumbnail direction based on the image
 - character_description: visible person/face/avatar/object description, or if no person exists describe the main visual subject, mood, lighting, crop, and composition
+- script_notes: include a note to add premium social-media-style UI overlays, badges, view/subscriber chips, arrows, and lower-third graphic callouts
 - style: choose exactly one of: ${STYLES.join(", ")}
 
 Do not leave any field generic. Do not mention uploaded image or AI.`,
@@ -146,7 +147,9 @@ ${sourceImageUrls.length ? "REFERENCE IMAGE MATCHING RULES: Match the ingested r
 
 TEXT FIT RULES: The title must fit fully inside the canvas with generous safe margins. Use 2-5 large words maximum, bold readable block lettering, no cropping, no misspellings, no extra random words.
 
-Use high CTR YouTube design: clear focal point, expressive emotion, visual contrast, truthful framing, depth, realistic lighting, polished editorial compositing. Use uploaded reference images as visual source material when provided. Avoid generic neon crypto backgrounds, logos, watermarks, and unreadable text unless explicitly requested.`;
+GRAPHIC UI OVERLAY RULES: Every generated thumbnail must include high-definition editorial graphic overlays similar to viral social media thumbnails: a clean social proof card, platform-style badge, view/subscriber chip, verified check, reaction bubble, arrow/circle callout, lower-third caption strip, or glossy app-style panel. These overlays should look premium, sharp, layered, and intentional, not cluttered. Use generic social-media-style UI unless a specific platform is requested.
+
+Use high CTR YouTube design: clear focal point, expressive emotion, visual contrast, truthful framing, depth, realistic lighting, polished editorial compositing, and premium social-media UI graphics. Use uploaded reference images as visual source material when provided. Avoid generic neon crypto backgrounds, logos, watermarks, and unreadable text unless explicitly requested.`;
 
     const result = await base44.integrations.Core.GenerateImage({
       prompt,
