@@ -29,7 +29,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 2. Fetch UTXOs (private key is now set above)
+    const derived = await wallet.getNewAddress({ privateKey });
+    const derivedAddress = (derived.address || derived).startsWith('kaspa:') ? (derived.address || derived) : `kaspa:${derived.address || derived}`;
+    if (derivedAddress !== normalizedFromAddress) {
+      throw new Error('This wallet key does not match the selected sending address. Re-import the wallet seed phrase and try again.');
+    }
+
+    // 2. Fetch UTXOs (private key is now verified above)
     const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFromAddress}/utxos`);
     if (!utxoRes.ok) {
       const txt = await utxoRes.text();

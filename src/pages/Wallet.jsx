@@ -215,7 +215,9 @@ export default function WalletPage() {
         const currentUser = await base44.auth.me();
         if (currentUser) {
           setUser(currentUser);
-          const savedAddr = currentUser.created_wallet_address || localStorage.getItem('ttt_wallet_address');
+          const localAddr = localStorage.getItem('ttt_wallet_address');
+          const localPK = localStorage.getItem('ttt_wallet_pk');
+          const savedAddr = localPK && localAddr ? localAddr : (currentUser.created_wallet_address || localAddr);
           if (savedAddr) {
             setAddress(savedAddr);
             setPinSet(!!(currentUser.wallet_pin_hash || localStorage.getItem('ttt_wallet_pin_hash')));
