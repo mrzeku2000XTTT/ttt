@@ -11,16 +11,16 @@ export default function ThumbnailHero() {
           <div className="mb-5 flex items-center gap-3">
             <ThumbnailLogo />
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-zinc-400">YouTube Thumbnail Studio</p>
-              <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">Real Thumbnail Creator</h1>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-zinc-400">Agentic YouTube Thumbnail Studio</p>
+              <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">Research → Plan → Generate</h1>
             </div>
           </div>
           <p className="max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
-            Generate realistic creator faces, avatars, characters, and polished YouTube-style thumbnails without the generic neon crypto look.
+            Upload images, paste scripts, or drop a YouTube link. The agent researches online, fact-checks the angle, plans the composition, then generates the finished thumbnail.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-sm font-bold text-white">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10"><Sparkles className="h-4 w-4 text-white" /> Any face or avatar</span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10"><Wand2 className="h-4 w-4 text-white" /> Real YouTube editing</span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10"><Sparkles className="h-4 w-4 text-white" /> Image + URL ingest</span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/10"><Wand2 className="h-4 w-4 text-white" /> Agent research + generation</span>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">

@@ -30,6 +30,36 @@
     "prompt": {
       "type": "string",
       "description": "Full image generation prompt"
+    },
+    "youtube_url": {
+      "type": "string",
+      "description": "YouTube or web URL used as source research"
+    },
+    "source_image_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Uploaded reference images used for the thumbnail"
+    },
+    "script_text": {
+      "type": "string",
+      "description": "Video script, notes, or transcript pasted by the user"
+    },
+    "research_notes": {
+      "type": "string",
+      "description": "Online research and fact-check notes created by the thumbnail agent"
+    },
+    "agent_plan": {
+      "type": "string",
+      "description": "Agentic thumbnail strategy and composition plan"
+    },
+    "fact_checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key verified facts or warnings used during generation"
     }
   },
   "required": [

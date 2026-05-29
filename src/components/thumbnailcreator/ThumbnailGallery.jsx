@@ -23,6 +23,9 @@ export default function ThumbnailGallery({ refreshKey = 0 }) {
             <div className="p-3">
               <p className="truncate text-sm font-black text-white">{project.title}</p>
               <p className="truncate text-xs text-zinc-500">{project.style}</p>
+              {(project.youtube_url || project.source_image_urls?.length || project.research_notes) && (
+                <p className="mt-1 truncate text-[11px] font-bold text-cyan-300">Agent researched · {project.source_image_urls?.length || 0} refs</p>
+              )}
             </div>
           </a>
         ))}
