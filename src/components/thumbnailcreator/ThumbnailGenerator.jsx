@@ -20,7 +20,9 @@ export default function ThumbnailGenerator({ onCreated }) {
   const [researchNotes, setResearchNotes] = useState("");
   const [agentPlan, setAgentPlan] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [editInstruction, setEditInstruction] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   const generateThumbnail = async () => {
     if (!title.trim() || !topic.trim()) return;
@@ -120,6 +122,54 @@ Use high CTR YouTube design: clear focal point, expressive emotion, visual contr
     setLoading(false);
   };
 
+  const reviseThumbnail = async () => {
+    if (!imageUrl || !editInstruction.trim()) return;
+    setEditLoading(true);
+    setAgentLogs((logs) => [
+      ...logs.filter((log) => log.label !== "Revision agent"),
+      { type: "plan", status: "running", label: "Revision agent", detail: "Applying your image change request." },
+    ]);
+
+    const revisionPrompt = `Revise this existing YouTube thumbnail while preserving its core subject and professional thumbnail style.
+
+Requested change from user:
+${editInstruction}
+
+Original thumbnail context:
+Title: ${title}
+Topic: ${topic}
+Style: ${style}
+
+Keep a clean 16:9 YouTube thumbnail layout, readable text, strong focal point, high contrast, and no random extra words. Make only the requested change unless it improves mobile/thumbnail readability.`;
+
+    const result = await base44.integrations.Core.GenerateImage({
+      prompt: revisionPrompt,
+      existing_image_urls: [imageUrl, ...sourceImageUrls],
+    });
+
+    const created = await base44.entities.ThumbnailProject.create({
+      title: `${title} revision`,
+      topic,
+      character_description: characterDescription,
+      style,
+      platform: "YouTube / TTTV",
+      image_url: result.url,
+      prompt: revisionPrompt,
+      youtube_url: youtubeUrl,
+      source_image_urls: [imageUrl, ...sourceImageUrls],
+      script_text: scriptText,
+      research_notes: researchNotes,
+      agent_plan: `Revision request: ${editInstruction}`,
+      fact_checks: [],
+    });
+
+    setImageUrl(result.url);
+    setEditInstruction("");
+    setAgentLogs((logs) => logs.map((log) => log.label === "Revision agent" ? { ...log, status: "done", detail: "Revision generated and saved." } : log));
+    onCreated?.(created);
+    setEditLoading(false);
+  };
+
   return (
     <section className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/30 backdrop-blur">
       <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
@@ -165,9 +215,24 @@ Use high CTR YouTube design: clear focal point, expressive emotion, visual contr
             {imageUrl ? (
               <div className="w-full space-y-3">
                 <img src={imageUrl} alt={title} className="aspect-video w-full rounded-xl object-cover" />
-                <a href={imageUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200">
-                  <Download className="h-4 w-4" /> Open / Download
-                </a>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <a href={imageUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-black hover:bg-zinc-200 sm:w-auto">
+                    <Download className="h-4 w-4" /> Open
+                  </a>
+                  <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row">
+                    <Input
+                      value={editInstruction}
+                      onChange={(e) => setEditInstruction(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && reviseThumbnail()}
+                      placeholder="Ask AI to change the thumbnail..."
+                      className="min-w-0 border-white/10 bg-black/50 text-white placeholder:text-zinc-600"
+                    />
+                    <Button onClick={reviseThumbnail} disabled={editLoading || !editInstruction.trim()} className="shrink-0 bg-cyan-400 font-black text-black hover:bg-cyan-300">
+                      {editLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                      Revise
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center text-zinc-500">
