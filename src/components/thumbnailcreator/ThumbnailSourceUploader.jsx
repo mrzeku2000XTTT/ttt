@@ -15,7 +15,7 @@ export default function ThumbnailSourceUploader({ imageUrls = [], onChange }) {
       const result = await base44.integrations.Core.UploadFile({ file });
       uploaded.push(result.file_url);
     }
-    onChange([...(imageUrls || []), ...uploaded]);
+    await onChange([...(imageUrls || []), ...uploaded], uploaded);
     setUploading(false);
     event.target.value = "";
   };

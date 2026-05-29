@@ -25,46 +25,54 @@ export default function ThumbnailGenerator({ onCreated }) {
   const [loading, setLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
 
-  const handleSourceImagesChange = async (urls) => {
-    const hadMoreImagesAdded = urls.length > sourceImageUrls.length;
-    setSourceImageUrls(urls);
-    if (!hadMoreImagesAdded) return;
-
+  const prefillFromImages = async (urls = sourceImageUrls) => {
+    if (!urls.length) return;
     setImageAnalyzing(true);
     setAgentLogs([
       { type: "research", status: "running", label: "Image ingestion agent", detail: "Reading the uploaded reference image and preparing the workspace prompts." },
     ]);
 
-    try {
-      const imageBrief = await base44.integrations.Core.InvokeLLM({
-        file_urls: urls,
-        prompt: `Analyze the uploaded reference image(s) for a YouTube thumbnail creation workspace. Prefill every relevant input field with strong, useful prompts based only on what is visible in the image.
+    const imageBrief = await base44.integrations.Core.InvokeLLM({
+      file_urls: urls,
+      prompt: `Analyze the uploaded reference image(s) and prefill this YouTube thumbnail workspace.
 
-Return concise field-ready text. If the image contains a person, describe their look, expression, pose, crop, lighting, and role. If it contains an object, app, logo, product, scene, or text, turn that into a thumbnail topic and creative direction. Do not mention that you are an AI.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            topic: { type: "string" },
-            script_notes: { type: "string" },
-            character_description: { type: "string" },
-            style: { type: "string" }
-          },
-          required: ["title", "topic", "script_notes", "character_description"]
-        }
-      });
+IMPORTANT: Replace the current generic defaults with specific field-ready text based on the visible image content.
 
-      setTitle(imageBrief.title || title);
-      setTopic(imageBrief.topic || topic);
-      setScriptText(imageBrief.script_notes || scriptText);
-      setCharacterDescription(imageBrief.character_description || characterDescription);
-      if (imageBrief.style && STYLES.includes(imageBrief.style)) setStyle(imageBrief.style);
-      setAgentLogs([
-        { type: "research", status: "done", label: "Image ingestion agent", detail: "Workspace fields were prefilled from the uploaded reference image." },
-      ]);
-    } finally {
-      setImageAnalyzing(false);
-    }
+Return:
+- title: a short clickable thumbnail title, 2-5 words
+- topic: a polished YouTube thumbnail prompt describing the visible subject/scene/product/style
+- script_notes: hook, scene notes, and thumbnail direction based on the image
+- character_description: visible person/face/avatar/object description, or if no person exists describe the main visual subject, mood, lighting, crop, and composition
+- style: choose exactly one of: ${STYLES.join(", ")}
+
+Do not leave any field generic. Do not mention uploaded image or AI.`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          topic: { type: "string" },
+          script_notes: { type: "string" },
+          character_description: { type: "string" },
+          style: { type: "string" }
+        },
+        required: ["title", "topic", "script_notes", "character_description", "style"]
+      }
+    });
+
+    setTitle(imageBrief.title || "Image-Based Thumbnail");
+    setTopic(imageBrief.topic || "Create a polished YouTube thumbnail based on the uploaded reference image.");
+    setScriptText(imageBrief.script_notes || "Use the uploaded reference image as the core visual direction for the hook, scene, and thumbnail composition.");
+    setCharacterDescription(imageBrief.character_description || "Use the main visible subject from the reference image as the focal point.");
+    setStyle(STYLES.includes(imageBrief.style) ? imageBrief.style : "Viral YouTube");
+    setAgentLogs([
+      { type: "research", status: "done", label: "Image ingestion agent", detail: "Title, topic, notes, and character fields were prefilled from the reference image." },
+    ]);
+    setImageAnalyzing(false);
+  };
+
+  const handleSourceImagesChange = async (urls, uploaded = []) => {
+    setSourceImageUrls(urls);
+    if (uploaded.length) await prefillFromImages(urls);
   };
 
   const generateThumbnail = async () => {
@@ -239,6 +247,12 @@ Keep a clean 16:9 YouTube thumbnail layout, readable text, strong focal point, h
               {imageAnalyzing && <span className="flex items-center gap-1 text-cyan-300"><Loader2 className="h-3 w-3 animate-spin" /> Prefilling</span>}
             </label>
             <ThumbnailSourceUploader imageUrls={sourceImageUrls} onChange={handleSourceImagesChange} />
+            {!!sourceImageUrls.length && (
+              <Button type="button" onClick={() => prefillFromImages()} disabled={imageAnalyzing} className="mt-2 w-full bg-cyan-400 font-black text-black hover:bg-cyan-300">
+                {imageAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Prefill fields from image
+              </Button>
+            )}
           </div>
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Avatar / face character</label>
