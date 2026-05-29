@@ -16,6 +16,7 @@ export default function ThumbnailGenerator({ onCreated }) {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [scriptText, setScriptText] = useState("");
   const [sourceImageUrls, setSourceImageUrls] = useState([]);
+  const [imageAnalyzing, setImageAnalyzing] = useState(false);
   const [agentLogs, setAgentLogs] = useState([]);
   const [researchNotes, setResearchNotes] = useState("");
   const [agentPlan, setAgentPlan] = useState("");
@@ -23,6 +24,48 @@ export default function ThumbnailGenerator({ onCreated }) {
   const [editInstruction, setEditInstruction] = useState("");
   const [loading, setLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+
+  const handleSourceImagesChange = async (urls) => {
+    const hadMoreImagesAdded = urls.length > sourceImageUrls.length;
+    setSourceImageUrls(urls);
+    if (!hadMoreImagesAdded) return;
+
+    setImageAnalyzing(true);
+    setAgentLogs([
+      { type: "research", status: "running", label: "Image ingestion agent", detail: "Reading the uploaded reference image and preparing the workspace prompts." },
+    ]);
+
+    try {
+      const imageBrief = await base44.integrations.Core.InvokeLLM({
+        file_urls: urls,
+        prompt: `Analyze the uploaded reference image(s) for a YouTube thumbnail creation workspace. Prefill every relevant input field with strong, useful prompts based only on what is visible in the image.
+
+Return concise field-ready text. If the image contains a person, describe their look, expression, pose, crop, lighting, and role. If it contains an object, app, logo, product, scene, or text, turn that into a thumbnail topic and creative direction. Do not mention that you are an AI.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            topic: { type: "string" },
+            script_notes: { type: "string" },
+            character_description: { type: "string" },
+            style: { type: "string" }
+          },
+          required: ["title", "topic", "script_notes", "character_description"]
+        }
+      });
+
+      setTitle(imageBrief.title || title);
+      setTopic(imageBrief.topic || topic);
+      setScriptText(imageBrief.script_notes || scriptText);
+      setCharacterDescription(imageBrief.character_description || characterDescription);
+      if (imageBrief.style && STYLES.includes(imageBrief.style)) setStyle(imageBrief.style);
+      setAgentLogs([
+        { type: "research", status: "done", label: "Image ingestion agent", detail: "Workspace fields were prefilled from the uploaded reference image." },
+      ]);
+    } finally {
+      setImageAnalyzing(false);
+    }
+  };
 
   const generateThumbnail = async () => {
     if (!title.trim() || !topic.trim()) return;
@@ -191,8 +234,11 @@ Keep a clean 16:9 YouTube thumbnail layout, readable text, strong focal point, h
             <textarea value={scriptText} onChange={(e) => setScriptText(e.target.value)} placeholder="Paste your script, hook, transcript, or bullet points for the agent to analyze" className="min-h-24 w-full rounded-xl border border-white/10 bg-black/50 p-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-white/40" />
           </div>
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Reference images</label>
-            <ThumbnailSourceUploader imageUrls={sourceImageUrls} onChange={setSourceImageUrls} />
+            <label className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
+              <span>Reference images</span>
+              {imageAnalyzing && <span className="flex items-center gap-1 text-cyan-300"><Loader2 className="h-3 w-3 animate-spin" /> Prefilling</span>}
+            </label>
+            <ThumbnailSourceUploader imageUrls={sourceImageUrls} onChange={handleSourceImagesChange} />
           </div>
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Avatar / face character</label>
@@ -205,7 +251,7 @@ Keep a clean 16:9 YouTube thumbnail layout, readable text, strong focal point, h
               </button>
             ))}
           </div>
-          <Button onClick={generateThumbnail} disabled={loading || !title.trim() || !topic.trim()} className="w-full bg-white font-black text-black hover:bg-zinc-200">
+          <Button onClick={generateThumbnail} disabled={loading || imageAnalyzing || !title.trim() || !topic.trim()} className="w-full bg-white font-black text-black hover:bg-zinc-200">
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             {loading ? "Generating thumbnail..." : "Generate Thumbnail"}
           </Button>
