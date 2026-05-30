@@ -41,8 +41,26 @@
   ],
   "rls": {
     "create": true,
-    "read": true,
-    "update": true,
-    "delete": true
+    "read": {
+      "$or": [
+        {
+          "data.sender_wallet": "{{user.data.kaspa_address}}"
+        },
+        {
+          "data.receiver_wallet": "{{user.data.kaspa_address}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "data.sender_wallet": "{{user.data.kaspa_address}}"
+    },
+    "delete": {
+      "data.sender_wallet": "{{user.data.kaspa_address}}"
+    }
   }
 }
