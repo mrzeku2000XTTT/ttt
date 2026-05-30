@@ -726,10 +726,10 @@ export default function XunhuaPage() {
         {/* Top Controls */}
         <div className="flex items-center justify-between mb-2 gap-2" style={{ flexShrink: 0 }}>
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+            <button onClick={() => navigate(-1)} className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors active:scale-95 touch-none" title="Go back">
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <h1 className="text-white font-bold text-lg">Xùnhuà</h1>
+            <h1 className="text-white font-bold text-sm sm:text-lg truncate">Xùnhuà</h1>
             <p className="text-white/40 text-xs hidden sm:block">AI Sketch Studio</p>
           </div>
           
