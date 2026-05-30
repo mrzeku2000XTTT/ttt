@@ -8,6 +8,8 @@ import KineHero from "@/components/kine/KineHero";
 import KineSuggestions from "@/components/kine/KineSuggestions";
 import { createKineVideoFromImage } from "@/components/kine/createKineVideo";
 
+const DAILY_LIMIT = 3;
+
 const generationToMessages = (item) => ([
   { id: `${item.id}_user`, role: "user", content: item.raw_prompt, ts: item.created_date },
   {
@@ -27,6 +29,7 @@ export default function KinePage() {
   const [messages, setMessages] = useState([]); // [{ role, content, videoUrl?, status?, error? }]
   const [generating, setGenerating] = useState(false);
   const [user, setUser] = useState(null);
+  const [usage, setUsage] = useState({ used: 0, resetAt: null });
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
 
@@ -44,6 +47,7 @@ export default function KinePage() {
         "-created_date",
         15
       );
+      setUsage(computeUsage(generations));
       setMessages(generations.reverse().flatMap(generationToMessages));
     };
 
@@ -67,12 +71,41 @@ export default function KinePage() {
     }
   };
 
+  const computeUsage = (gens) => {
+    const dayMs = 86400000;
+    const now = Date.now();
+    const within = gens.filter((g) => now - new Date(g.created_date).getTime() < dayMs);
+    const resetAt = within.length
+      ? Math.min(...within.map((g) => new Date(g.created_date).getTime())) + dayMs
+      : null;
+    return { used: within.length, resetAt };
+  };
+
+  const formatReset = (resetAt) => {
+    if (!resetAt) return "soon";
+    const diff = resetAt - Date.now();
+    if (diff <= 0) return "now";
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return h > 0 ? `in ${h}h ${m}m` : `in ${m}m`;
+  };
+
   const generate = async () => {
     const raw = prompt.trim();
     if (!raw || generating) return;
 
     if (!user) {
       base44.auth.redirectToLogin(window.location.href);
+      return;
+    }
+
+    if (usage.used >= DAILY_LIMIT) {
+      setMessages((m) => [
+        ...m,
+        { role: "user", content: raw, ts: Date.now() },
+        { id: `a_${Date.now()}`, role: "agent", status: "error", error: `You've used all ${DAILY_LIMIT} free videos for today. Come back ${formatReset(usage.resetAt)}.` },
+      ]);
+      setPrompt("");
       return;
     }
 
@@ -110,6 +143,7 @@ export default function KinePage() {
           video_url: savedVideoUrl,
         });
         generationId = saved.id;
+        setUsage((u) => ({ used: u.used + 1, resetAt: u.resetAt || (Date.now() + 86400000) }));
       }
 
       setMessages((m) => m.map((x) => x.id === agentId ? {
@@ -229,7 +263,7 @@ export default function KinePage() {
             <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-100">
               <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
                 <Sparkles className="w-3 h-3" />
-                Powered by Base44 video AI
+                {user ? `${Math.max(0, DAILY_LIMIT - usage.used)} of ${DAILY_LIMIT} free videos left today` : "Powered by Base44 video AI"}
               </div>
               <button
                 onClick={generate}
