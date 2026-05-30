@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight, Bot, Menu, X, FileText, MapPin } from "lucide-react";
+import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight, Bot, Menu, X, FileText, MapPin, Dumbbell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import {
@@ -22,6 +22,7 @@ const CATEGORIES = [
   { id: "AI", label: "AI", icon: Sparkles },
   { id: "Finance", label: "Finance", icon: Wallet },
   { id: "Games", label: "Games", icon: Gamepad2 },
+  { id: "Fitness", label: "Fitness", icon: Dumbbell },
   { id: "Tools", label: "Tools", icon: Wrench },
   { id: "Creative", label: "Creative", icon: Palette },
   { id: "Education", label: "Education", icon: BookOpen },
