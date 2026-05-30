@@ -67,6 +67,7 @@ import DocsPage from './pages/Docs';
 import ThumbnailCreatorPage from './pages/ThumbnailCreator';
 import QuickStoryboardPage from './pages/QuickStoryboard';
 import MoodBoardPage from './pages/MoodBoard';
+import AboutPage from './pages/About';
 import KasthleticsPage from './pages/Kasthletics';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
@@ -175,6 +176,7 @@ const AuthenticatedApp = () => {
       <Route path="/ThumbnailCreator" element={<ThumbnailCreatorPage />} />
       <Route path="/QuickStoryboard" element={<QuickStoryboardPage />} />
       <Route path="/MoodBoard" element={<MoodBoardPage />} />
+      <Route path="/About" element={<AboutPage />} />
       <Route path="/Kasthletics" element={<KasthleticsPage />} />
       <Route path="/Docs" element={
         <LayoutWrapper currentPageName="Docs">
