@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Wallet } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { WALLET_APPS } from "@/components/wallethub/walletApps";
 import WalletAppTile from "@/components/wallethub/WalletAppTile";
@@ -29,8 +29,8 @@ export default function WalletHubPage() {
       <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-400/15 flex items-center justify-center mb-5">
-            <Wallet className="w-5 h-5 text-emerald-300" />
+          <div className="w-16 h-16 rounded-2xl mb-5 overflow-hidden shadow-lg">
+            <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3bab8f8ae_generated_image.png" alt="Wallet" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-4xl sm:text-6xl font-[200] tracking-tight">
             Your <span className="font-[700] bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent">Wallets</span>
