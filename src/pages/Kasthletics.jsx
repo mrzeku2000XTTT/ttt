@@ -1,11 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, ExternalLink, Dumbbell, ShieldCheck, Flame, Activity, Trophy } from "lucide-react";
+import { ArrowLeft, ExternalLink, Dumbbell, ShieldCheck, Flame, Activity, Trophy, Zap } from "lucide-react";
 
-const LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/403d1b0e8_generated_image.png";
-const HERO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1d19d9fc6_generated_image.png";
+const LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/88f689596_generated_image.png";
+const HERO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1ab9e35eb_generated_image.png";
 const EXTERNAL_URL = "https://kasthletics.app";
+const ACCENT = "#49EACB";
 
 const FEATURES = [
   { icon: Dumbbell, title: "Train", desc: "Real workouts, real reps — no fake streaks." },
@@ -19,17 +20,36 @@ const STATS = [
   { icon: ShieldCheck, label: "On-chain Verified" },
 ];
 
+// EKG / heartbeat pulse line — the brand motif
+function PulseLine({ className = "" }) {
+  return (
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className={className} fill="none">
+      <path
+        d="M0 60 H320 L360 60 L390 20 L430 100 L470 40 L500 60 H1200"
+        stroke={ACCENT}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function KasthleticsPage() {
   const openApp = () => window.open(EXTERNAL_URL, "_blank", "noopener,noreferrer");
 
   return (
-    <div className="min-h-screen bg-[#0B0F0E] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between px-4 h-14 bg-[#0B0F0E]/80 backdrop-blur-xl border-b border-white/10" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <nav className="sticky top-0 z-50 flex items-center justify-between px-4 h-14 bg-black/80 backdrop-blur-xl border-b border-white/10" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <Link to="/AppStoreV2" className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm font-medium">App Store</span>
         </Link>
+        <div className="flex items-center gap-2">
+          <img src={LOGO} alt="Kasthletics" className="w-7 h-7 rounded-full ring-1 ring-[#49EACB]/30" />
+          <span className="font-black tracking-tight text-sm hidden sm:block">KASTHLETICS</span>
+        </div>
         <button
           onClick={openApp}
           className="flex items-center gap-1.5 text-[13px] font-semibold text-black bg-[#49EACB] hover:bg-[#3fd9bc] h-9 px-4 rounded-full transition-colors"
@@ -41,31 +61,52 @@ export default function KasthleticsPage() {
       {/* Hero */}
       <div className="relative">
         <div className="absolute inset-0">
-          <img src={HERO} alt="Kasthletics" className="w-full h-full object-cover opacity-40" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0B0F0E]/40 via-[#0B0F0E]/70 to-[#0B0F0E]" />
+          <img src={HERO} alt="" className="w-full h-full object-cover opacity-45" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/75 to-black" />
         </div>
-        <div className="relative max-w-3xl mx-auto px-5 pt-16 pb-20 text-center">
-          <motion.img
+
+        {/* glow orbs */}
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-20" style={{ background: "radial-gradient(circle, #49EACB, transparent 70%)" }} />
+
+        <div className="relative max-w-3xl mx-auto px-5 pt-16 pb-24 text-center">
+          <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            src={LOGO}
-            alt="Kasthletics logo"
-            className="w-24 h-24 mx-auto rounded-3xl shadow-2xl shadow-[#49EACB]/20 ring-1 ring-white/10"
-          />
+            className="relative inline-block"
+          >
+            <div className="absolute inset-0 rounded-full blur-2xl opacity-50" style={{ background: ACCENT }} />
+            <img
+              src={LOGO}
+              alt="Kasthletics logo"
+              className="relative w-28 h-28 mx-auto rounded-full shadow-2xl shadow-[#49EACB]/30 ring-1 ring-[#49EACB]/30"
+            />
+          </motion.div>
+
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="mt-6 text-4xl sm:text-6xl font-[900] tracking-tight"
+            className="mt-7 text-5xl sm:text-7xl font-[900] tracking-tighter"
           >
-            Kasthletics
+            KASTHLETICS
           </motion.h1>
+
+          {/* pulse divider */}
+          <motion.div
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="mx-auto mt-4 w-56 h-6"
+          >
+            <PulseLine className="w-full h-full" />
+          </motion.div>
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.18 }}
-            className="mt-4 text-base sm:text-lg text-white/70 max-w-xl mx-auto"
+            className="mt-5 text-base sm:text-lg text-white/70 max-w-xl mx-auto"
           >
             The AI fitness app built on Kaspa. <span className="text-[#49EACB] font-semibold">Train → Verify → Prove.</span> No fake streaks. No “trust me bro” workouts.
           </motion.p>
@@ -80,7 +121,7 @@ export default function KasthleticsPage() {
               onClick={openApp}
               className="flex items-center gap-2 text-base font-bold text-black bg-[#49EACB] hover:bg-[#3fd9bc] h-12 px-7 rounded-full transition-colors shadow-lg shadow-[#49EACB]/30"
             >
-              Launch Kasthletics <ExternalLink className="w-4 h-4" />
+              <Zap className="w-4 h-4" /> Launch Kasthletics
             </button>
             <Link
               to="/AppStoreV2"
@@ -116,8 +157,9 @@ export default function KasthleticsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className="rounded-2xl bg-white/[0.04] border border-white/10 p-6 hover:border-[#49EACB]/40 transition-colors"
+                className="group relative rounded-2xl bg-white/[0.04] border border-white/10 p-6 hover:border-[#49EACB]/50 transition-colors overflow-hidden"
               >
+                <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full blur-2xl opacity-0 group-hover:opacity-30 transition-opacity" style={{ background: ACCENT }} />
                 <div className="w-11 h-11 rounded-xl bg-[#49EACB]/15 flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-[#49EACB]" />
                 </div>
@@ -133,15 +175,16 @@ export default function KasthleticsPage() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-12 rounded-3xl bg-gradient-to-br from-[#49EACB]/15 to-transparent border border-[#49EACB]/20 p-8 sm:p-12 text-center"
+          className="relative mt-12 rounded-3xl bg-gradient-to-br from-[#49EACB]/15 to-transparent border border-[#49EACB]/20 p-8 sm:p-12 text-center overflow-hidden"
         >
-          <h2 className="text-2xl sm:text-3xl font-[900] mb-3">Prove your workout. On-chain.</h2>
-          <p className="text-white/60 max-w-md mx-auto mb-6">
+          <PulseLine className="absolute left-0 bottom-0 w-full h-16 opacity-20" />
+          <h2 className="relative text-2xl sm:text-3xl font-[900] mb-3">Prove your workout. On-chain.</h2>
+          <p className="relative text-white/60 max-w-md mx-auto mb-6">
             Open Kasthletics in a new tab and start building verifiable fitness consistency, powered by Kaspa.
           </p>
           <button
             onClick={openApp}
-            className="inline-flex items-center gap-2 text-base font-bold text-black bg-[#49EACB] hover:bg-[#3fd9bc] h-12 px-8 rounded-full transition-colors shadow-lg shadow-[#49EACB]/30"
+            className="relative inline-flex items-center gap-2 text-base font-bold text-black bg-[#49EACB] hover:bg-[#3fd9bc] h-12 px-8 rounded-full transition-colors shadow-lg shadow-[#49EACB]/30"
           >
             Open Kasthletics <ExternalLink className="w-4 h-4" />
           </button>
