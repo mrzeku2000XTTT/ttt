@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const AGENT_ID = '69e00a3b3c4957544571e863';
-const AGENT_API_KEY = '7d4e7751d1ac406dae4df07533c5e566';
+const AGENT_API_KEY = Deno.env.get('SLIDEDECK_AGENT_API_KEY');
 const AGENT_BASE_URL = `https://app.base44.com/api/agents/${AGENT_ID}`;
 
 async function createConversation(title) {
