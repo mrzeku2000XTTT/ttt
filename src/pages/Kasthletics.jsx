@@ -5,7 +5,7 @@ import { ArrowLeft, ExternalLink, Dumbbell, ShieldCheck, Flame, Activity, Trophy
 
 const LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/88f689596_generated_image.png";
 const HERO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1ab9e35eb_generated_image.png";
-const EXTERNAL_URL = "https://kasthletics.com";
+const EXTERNAL_URL = "https://www.kasthletics.com/";
 const ACCENT = "#49EACB";
 
 const FEATURES = [
