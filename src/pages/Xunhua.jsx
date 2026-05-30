@@ -613,6 +613,14 @@ export default function XunhuaPage() {
     saveToHistory();
   };
 
+  const makeSafeImagePrompt = (rawPrompt) => {
+    return rawPrompt
+      .replace(/zombie\s*horde/gi, "stylized spooky crowd of fantasy creatures")
+      .replace(/zombies?/gi, "stylized spooky fantasy creature")
+      .replace(/horde/gi, "large crowd")
+      .replace(/blood|gore|violent|corpse|dead body/gi, "cinematic dark fantasy atmosphere");
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       alert("Please describe what you're drawing");
@@ -634,13 +642,14 @@ export default function XunhuaPage() {
         file: new File([blob], "sketch.png", { type: "image/png" })
       });
 
+      const safePrompt = makeSafeImagePrompt(prompt);
       let aiPrompt;
       if (sketchMode) {
-        aiPrompt = `${prompt}. Render this as a HIGHLY REALISTIC PENCIL SKETCH with fine details, shading, cross-hatching, and texture. Black and white only, photorealistic pencil drawing style. Convert any photos or images into detailed pencil sketch artwork.`;
+        aiPrompt = `${safePrompt}. Render this as a highly detailed spooky fantasy pencil sketch with fine shading, cross-hatching, atmosphere, and texture. Keep it non-graphic, cinematic, and safe for all audiences. Black and white only.`;
       } else if (advancedMode) {
-        aiPrompt = `${prompt}. Transform this sketch into a beautiful, detailed artistic image. Add creative details, textures, and enhancements.`;
+        aiPrompt = `${safePrompt}. Transform this sketch into a beautiful, detailed, non-graphic cinematic fantasy image. Add creative details, textures, atmosphere, and enhancements while keeping it safe for all audiences.`;
       } else {
-        aiPrompt = `${prompt}. CRITICAL: Match the sketch EXACTLY - same number of objects, same positions, same proportions. Only enhance colors and textures. Do NOT add any objects or elements that don't exist in the sketch.`;
+        aiPrompt = `${safePrompt}. CRITICAL: Match the sketch EXACTLY - same number of objects, same positions, same proportions. Only enhance colors and textures. Keep it non-graphic, safe for all audiences, and do NOT add any objects or elements that don't exist in the sketch.`;
       }
       
       // Check if prompt mentions Kaspa - if so, include Kaspa logo as reference
@@ -681,7 +690,8 @@ export default function XunhuaPage() {
       }
     } catch (err) {
       console.error("Generation failed:", err);
-      alert("Failed to generate image. Try again.");
+      const blocked = err?.message?.toLowerCase().includes("filtered") || err?.message?.toLowerCase().includes("usage guidelines");
+      alert(blocked ? "The prompt was blocked by the image safety filter. I softened scary terms automatically — try again or use words like 'spooky fantasy crowd'." : "Failed to generate image. Try again.");
     } finally {
       setIsGenerating(false);
     }
