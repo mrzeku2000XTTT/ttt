@@ -106,10 +106,12 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
+      {/* Public landing */}
+      <Route path="/" element={<TTTLandingPage />} />
+
       {/* Protected routes */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
       <Route path="/Xunhua" element={<XunhuaPage />} />
-      <Route path="/" element={<TTTLandingPage />} />
       <Route path="/TTTGate" element={<TTTGatePage />} />
       <Route path="/Home" element={
         <LayoutWrapper currentPageName={mainPageKey}>

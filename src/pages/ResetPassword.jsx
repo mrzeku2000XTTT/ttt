@@ -30,6 +30,11 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black px-4">
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-8">
+        <img
+          src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png"
+          alt="TTT"
+          className="mx-auto mb-5 h-20 w-20 object-contain"
+        />
         <h1 className="text-2xl font-black text-white mb-1">New password</h1>
         <p className="text-sm text-white/50 mb-6">Choose a new password</p>
 
