@@ -6,10 +6,14 @@ import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
 import TitleManager from '@/lib/TitleManager'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import HworkPage from './pages/Hwork';
 import XunhuaPage from './pages/Xunhua';
 import ValorantArenaPage from './pages/ValorantArena';
@@ -42,7 +46,6 @@ import RMXPage from './pages/RMX';
 import ImageHistoryPage from './pages/ImageHistory';
 import OneShotStudioPage from './pages/OneShotStudio';
 import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
-import AuthRedirect from './pages/AuthRedirect';
 import MotionPage from './pages/Motion';
 import MotionLandingPage from './pages/MotionLanding';
 import MotionIdeasPage from './pages/MotionIdeas';
@@ -82,10 +85,10 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, navigateToLogin } = useAuth();
+  const { isLoadingPublicSettings } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  // Show loading spinner while checking app public settings
+  if (isLoadingPublicSettings) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
@@ -93,20 +96,18 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
-  }
-
   // Render the main app
   return (
     <Routes>
+      {/* Public auth pages */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/Login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
       <Route path="/Xunhua" element={<XunhuaPage />} />
       <Route path="/" element={<TTTLandingPage />} />
       <Route path="/TTTGate" element={<TTTGatePage />} />
@@ -192,8 +193,7 @@ const AuthenticatedApp = () => {
           <KatagamiPage />
         </LayoutWrapper>
       } />
-      <Route path="/login" element={<AuthRedirect />} />
-      <Route path="/Login" element={<AuthRedirect />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
