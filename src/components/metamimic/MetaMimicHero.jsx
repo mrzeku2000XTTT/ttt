@@ -33,15 +33,16 @@ export default function MetaMimicHero() {
           transition={{ duration: 0.7, delay: 0.3 }}
           className="flex flex-wrap justify-center gap-3"
         >
-          <button
+          <a
+            href="#studio"
             className="rounded-full bg-gradient-to-br from-[#4A90E2] to-[#2C3E50] px-7 py-3.5 text-sm font-extrabold text-white transition hover:opacity-90"
             style={{ boxShadow: "0 10px 30px #4A90E255" }}
           >
             Get started
-          </button>
-          <button className="rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white/10">
+          </a>
+          <a href="#studio" className="rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white/10">
             Learn more
-          </button>
+          </a>
         </motion.div>
       </div>
     </section>

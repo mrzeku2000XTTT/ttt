@@ -13,12 +13,13 @@ export default function MetaMimicCTA() {
         Ready to begin?
       </h2>
       <p className="mb-7 text-white/70">Join us — be part of what's next.</p>
-      <button
-        className="rounded-full bg-gradient-to-br from-[#4A90E2] to-[#2C3E50] px-7 py-3.5 text-sm font-extrabold text-white transition hover:opacity-90"
+      <a
+        href="#studio"
+        className="inline-block rounded-full bg-gradient-to-br from-[#4A90E2] to-[#2C3E50] px-7 py-3.5 text-sm font-extrabold text-white transition hover:opacity-90"
         style={{ boxShadow: "0 10px 30px #4A90E255" }}
       >
         Get started today
-      </button>
+      </a>
     </section>
   );
 }
