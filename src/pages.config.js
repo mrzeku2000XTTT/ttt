@@ -289,7 +289,6 @@ import ZekuAI from './pages/ZekuAI';
 import Zelcore from './pages/Zelcore';
 import TTT from './pages/TTT';
 import DAGVisualizer from './pages/DAGVisualizer';
-import TTTLanding from './pages/TTTLanding';
 import __Layout from './Layout.jsx';
 
 
@@ -536,11 +535,10 @@ export const PAGES = {
     "Zelcore": Zelcore,
     "TTT": TTT,
     "DAGVisualizer": DAGVisualizer,
-    "TTTLanding": TTTLanding,
 }
 
 export const pagesConfig = {
-    mainPage: "TTTLanding",
+    mainPage: "Home",
     Pages: PAGES,
     Layout: __Layout,
 };
