@@ -16,10 +16,11 @@ const STYLE_IDEAS = {
 };
 
 export default function StoryboardForm({ onGenerated, hasPreview = false, isDark = false }) {
-  const [idea, setIdea] = useState(STYLE_IDEAS[STYLES[0]]);
-  const [style, setStyle] = useState(STYLES[0]);
+  const [idea, setIdea] = useState("");
+  const [style, setStyle] = useState("");
   const [selectedPreset, setSelectedPreset] = useState("");
   const [loading, setLoading] = useState(false);
+  const [kaspaMode, setKaspaMode] = useState(false);
 
   const applyPreset = (presetId) => {
     setSelectedPreset(presetId);
@@ -74,10 +75,12 @@ The enhanced prompt must add clear scene-by-scene details, believable physics, c
     });
 
     const sheetTheme = isDark
-      ? "dark graphite storyboard sheet, black studio background, cyan and Kaspa-blue accents, high contrast white line dividers, premium dark UI concept board"
+      ? `dark graphite storyboard sheet, black studio background, ${kaspaMode ? "cyan and Kaspa-blue accents, " : ""}high contrast white line dividers, premium dark UI concept board`
       : "white or warm studio storyboard sheet, clean bright background, soft professional pitch deck layout";
 
-    const imagePrompt = `Create a clean 16:9 professional storyboard / character design sheet. Visual theme: ${sheetTheme}. Style mode: ${style || "Custom"}. ${plan.enhanced_prompt}
+    const kaspaLine = kaspaMode ? " Theme this around the Kaspa ecosystem (DAG, KAS payments, wallets) where it naturally fits." : "";
+
+    const imagePrompt = `Create a clean 16:9 professional storyboard / character design sheet. Visual theme: ${sheetTheme}. Style mode: ${style || "Custom"}.${kaspaLine} ${plan.enhanced_prompt}
 
 STRICT QUALITY RULES: Use real-world physics, believable gravity, consistent scale, correct perspective, natural anatomy, clean hands, grounded shadows, coherent lighting, accurate material behavior, and stable character continuity across every scene. Avoid paragraph text inside the image. If text appears, use only large 1-3 word labels with simple exact English spelling, straight horizontal baseline, sharp letters, and clean label boxes. Never use warped, curved, misspelled, tiny, or gibberish text. Each scene panel must have a clear purpose, readable composition, and enough visual context to understand the action.
 
@@ -119,10 +122,20 @@ Include: main characters, expressions, action poses, key props, color palette, m
         ))}
       </div>
 
-      <Button onClick={generateStoryboard} disabled={loading || !idea.trim()} className={`mt-5 w-full font-black ${isDark ? "bg-white text-black hover:bg-white/90" : "bg-zinc-950 text-white hover:bg-zinc-800"}`}>
-        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-        {loading ? "Regenerating while keeping preview..." : hasPreview ? "Regenerate Quick Storyboard" : "Generate Quick Storyboard"}
-      </Button>
+      <div className="mt-5 flex gap-2">
+        <button
+          onClick={() => setKaspaMode((v) => !v)}
+          type="button"
+          className={`shrink-0 rounded-md px-4 text-xs font-black transition ${kaspaMode ? "bg-gradient-to-r from-cyan-500 to-teal-400 text-black" : (isDark ? "bg-white/10 text-white/60 hover:bg-white/15" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200")}`}
+          title="Toggle Kaspa theme"
+        >
+          Kaspa {kaspaMode ? "ON" : "OFF"}
+        </button>
+        <Button onClick={generateStoryboard} disabled={loading || !idea.trim()} className={`flex-1 font-black ${isDark ? "bg-white text-black hover:bg-white/90" : "bg-zinc-950 text-white hover:bg-zinc-800"}`}>
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+          {loading ? "Regenerating while keeping preview..." : hasPreview ? "Regenerate Quick Storyboard" : "Generate Quick Storyboard"}
+        </Button>
+      </div>
       {hasPreview && (
         <p className={`mt-3 text-center text-xs font-semibold ${isDark ? "text-white/45" : "text-zinc-500"}`}>Regenerate keeps the current preview visible until the new storyboard is ready.</p>
       )}
