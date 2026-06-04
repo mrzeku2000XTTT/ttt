@@ -19,6 +19,7 @@ import BlueprintModal from "@/components/appstore2/BlueprintModal";
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },
+  { id: "Kaspa", label: "Kaspa", icon: Shield },
   { id: "AI", label: "AI", icon: Sparkles },
   { id: "Finance", label: "Finance", icon: Wallet },
   { id: "Games", label: "Games", icon: Gamepad2 },

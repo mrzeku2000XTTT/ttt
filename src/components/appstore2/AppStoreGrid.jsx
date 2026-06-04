@@ -199,9 +199,16 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
 
   const allApps = [...APPS, ...communityApps];
 
+  const isKaspaApp = (app) => {
+    const text = `${app.name} ${app.desc} ${app.path || ""}`.toLowerCase();
+    return /\bkaspa\b|\bkas\b|krc20|krc-20|\bdag\b/.test(text);
+  };
+
   const filtered = allApps.filter((app) => {
     if (app.admin && !isAdmin) return false;
-    if (category !== "All" && app.cat !== category) return false;
+    if (category === "Kaspa") {
+      if (!isKaspaApp(app)) return false;
+    } else if (category !== "All" && app.cat !== category) return false;
     if (search) {
       const q = search.toLowerCase();
       return app.name.toLowerCase().includes(q) || app.cat.toLowerCase().includes(q) || app.desc.toLowerCase().includes(q);
