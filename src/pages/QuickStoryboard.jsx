@@ -28,7 +28,7 @@ export default function QuickStoryboardPage() {
           <StoryboardModeToggle isDark={isDark} onToggle={() => setIsDark((value) => !value)} />
         </div>
 
-        <StoryboardHero isDark={isDark} onStart={scrollToWorkspace} />
+        <StoryboardHero onStart={scrollToWorkspace} />
 
         <StoryboardSteps isDark={isDark} />
 
