@@ -23,12 +23,12 @@ const STYLE_IDEAS = {
 };
 
 const TEMPLATES = [
-  { title: "Create a\nStoryboard", cta: "Go to Studio →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bc53763d7_generated_image.png", idea: "Create a polished character storyboard sheet with expressions, action poses, props and a clean color palette." },
-  { title: "Start from\nScratch", cta: "Blank idea →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20c9f3b50_generated_image.png", idea: "" },
-  { title: "Idea to\nStoryboard", cta: "Try it now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e7091459a_generated_image.png", idea: STYLE_IDEAS["Kaspa Explainer"] },
-  { title: "DAG\nFlow Board", cta: "Get started →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bc53763d7_generated_image.png", idea: STYLE_IDEAS["DAG Flow"] },
-  { title: "KAS Wallet\nStory", cta: "Build now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20c9f3b50_generated_image.png", idea: STYLE_IDEAS["KAS Wallet"] },
-  { title: "KRC20\nLaunch Board", cta: "Try it now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e7091459a_generated_image.png", idea: STYLE_IDEAS["KRC20 Launch"] },
+  { title: "Create a\nStoryboard", cta: "Go to Studio →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bd8ec1706_generated_image.png", idea: "Create a polished character storyboard sheet with expressions, action poses, props and a clean color palette." },
+  { title: "Start from\nScratch", cta: "Blank idea →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1d43a9eae_generated_image.png", idea: "" },
+  { title: "Idea to\nStoryboard", cta: "Try it now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/27d84cbfd_generated_image.png", idea: STYLE_IDEAS["Kaspa Explainer"] },
+  { title: "DAG\nFlow Board", cta: "Get started →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/71627bf9b_generated_image.png", idea: STYLE_IDEAS["DAG Flow"] },
+  { title: "KAS Wallet\nStory", cta: "Build now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/80940743d_generated_image.png", idea: STYLE_IDEAS["KAS Wallet"] },
+  { title: "KRC20\nLaunch Board", cta: "Try it now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fece3485b_generated_image.png", idea: STYLE_IDEAS["KRC20 Launch"] },
 ];
 
 const SIDEBAR_ICONS = [
