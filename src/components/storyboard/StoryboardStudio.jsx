@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Home, UserRound, Sparkles, LayoutGrid, FolderClosed, Search, Share2,
   Loader2, Plus, Film, ArrowLeft, Image as ImageIcon, X, Heart, Code2,
+  PanelLeftClose, PanelLeftOpen, Brain, ChevronDown,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
@@ -43,7 +44,12 @@ export default function StoryboardStudio({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [project, setProject] = useState(null);
   const [history, setHistory] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [thoughts, setThoughts] = useState(null);
+  const [showThoughts, setShowThoughts] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const resultRef = useRef(null);
+  const thoughtsRef = useRef(null);
 
   useEffect(() => {
     base44.entities.StoryboardProject.list("-created_date", 25).then(setHistory).catch(() => {});
@@ -58,6 +64,33 @@ export default function StoryboardStudio({ onClose }) {
   const pickPreset = (e) => {
     const preset = STORYBOARD_PRESETS.find((p) => p.id === e.target.value);
     if (preset) { setIdea(preset.idea); setStyle(""); }
+  };
+
+  const runPrompt = async () => {
+    const finalIdea = idea.trim();
+    if (!finalIdea || thinking) return;
+    setThinking(true);
+    setShowThoughts(true);
+    setThoughts(null);
+    setTimeout(() => thoughtsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+
+    const out = await base44.integrations.Core.InvokeLLM({
+      model: "gpt_5_mini",
+      prompt: `You are a senior prompt engineer for a Kaspa storyboard studio. The user's rough idea: "${finalIdea}".
+
+Think out loud about how to improve it, then produce a fully restructured, production-ready prompt. Be concise but show your reasoning.`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          reasoning: { type: "string", description: "Step-by-step thoughts on what to improve and why" },
+          restructured_prompt: { type: "string", description: "The final improved prompt" },
+        },
+        required: ["reasoning", "restructured_prompt"],
+      },
+    });
+
+    setThoughts(out);
+    setThinking(false);
   };
 
   const generate = async (overrideIdea) => {
@@ -132,14 +165,19 @@ Include: main characters, expressions, action poses, key props, color palette, m
         </div>
       </aside>
 
-      {/* History sidebar */}
-      <aside className="hidden w-[230px] flex-col border-r border-white/5 bg-[#0d0f14] md:flex">
-        <div className="p-3">
-          <button onClick={() => { setProject(null); setIdea(""); setStyle(""); }} className="flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-2.5 text-sm font-bold text-white/90 transition hover:bg-white/10">
-            <Plus className="h-4 w-4" /> Create New
-          </button>
+      {/* History sidebar — collapsible */}
+      <aside className={`hidden flex-col overflow-hidden border-r border-white/5 bg-[#0d0f14] transition-all duration-300 ease-in-out md:flex ${sidebarOpen ? "w-[230px]" : "w-0 border-r-0"}`}>
+        <div className="w-[230px] flex-shrink-0">
+          <div className="flex items-center gap-2 p-3">
+            <button onClick={() => { setProject(null); setIdea(""); setStyle(""); }} className="flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-2.5 text-sm font-bold text-white/90 transition hover:bg-white/10">
+              <Plus className="h-4 w-4" /> Create New
+            </button>
+            <button onClick={() => setSidebarOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/50 transition hover:bg-white/10" title="Hide recent">
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-3 pb-4">
+        <div className="w-[230px] flex-1 flex-shrink-0 overflow-y-auto px-3 pb-4">
           <p className="mb-2 mt-2 text-[10px] font-bold uppercase tracking-wider text-white/30">Recent</p>
           {history.length === 0 && <p className="text-xs text-white/30">No storyboards yet.</p>}
           <div className="space-y-0.5">
@@ -157,9 +195,16 @@ Include: main characters, expressions, action poses, key props, color palette, m
       <main className="relative flex-1 overflow-y-auto">
         {/* top bar */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-[#0b0d12]/80 px-4 py-3 backdrop-blur-xl">
-          <button onClick={onClose} className="inline-flex items-center gap-2 text-sm font-bold text-white/60 transition hover:text-white">
-            <ArrowLeft className="h-4 w-4" /> Exit Studio
-          </button>
+          <div className="flex items-center gap-2">
+            {!sidebarOpen && (
+              <button onClick={() => setSidebarOpen(true)} className="hidden h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-white/10 md:flex" title="Show recent">
+                <PanelLeftOpen className="h-4 w-4" />
+              </button>
+            )}
+            <button onClick={onClose} className="inline-flex items-center gap-2 text-sm font-bold text-white/60 transition hover:text-white">
+              <ArrowLeft className="h-4 w-4" /> Exit Studio
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/60 hover:bg-white/10"><Search className="h-4 w-4" /></button>
             <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/60 hover:bg-white/10"><Share2 className="h-4 w-4" /></button>
@@ -177,10 +222,9 @@ Include: main characters, expressions, action poses, key props, color palette, m
           <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-3 shadow-2xl shadow-black/40">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <select onChange={pickPreset} defaultValue="" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 outline-none">
-                <option value="">1000+ Presets</option>
+                <option value="">1000+ Kaspa Presets</option>
                 {STORYBOARD_PRESETS.slice(0, 200).map((p) => <option key={p.id} value={p.id}>{p.id.replace("preset-", "#")} · {p.title}</option>)}
               </select>
-              <button onClick={() => setKaspaMode((v) => !v)} className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${kaspaMode ? "bg-gradient-to-r from-cyan-500 to-teal-400 text-black" : "bg-white/5 text-white/60 hover:bg-white/10"}`}>Kaspa {kaspaMode ? "ON" : "OFF"}</button>
             </div>
             <textarea
               value={idea}
@@ -194,10 +238,16 @@ Include: main characters, expressions, action poses, key props, color palette, m
                   <button key={s} onClick={() => pickStyle(s)} className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${style === s ? "bg-white text-black" : "bg-white/5 text-white/55 hover:bg-white/10"}`}>{s}</button>
                 ))}
               </div>
-              <button onClick={() => generate()} disabled={loading || !idea.trim()} className="flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition hover:opacity-95 disabled:opacity-40">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {loading ? "Creating…" : "Generate"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={runPrompt} disabled={thinking || !idea.trim()} className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 text-sm font-bold text-white/85 transition hover:bg-white/10 disabled:opacity-40" title="Let AI show its thoughts & restructure your prompt">
+                  {thinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+                  Prompt
+                </button>
+                <button onClick={() => generate()} disabled={loading || !idea.trim()} className="flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition hover:opacity-95 disabled:opacity-40">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {loading ? "Creating…" : "Generate"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -207,6 +257,37 @@ Include: main characters, expressions, action poses, key props, color palette, m
               <span key={c} className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-semibold text-white/70">{c}</span>
             ))}
           </div>
+
+          {/* AI thoughts panel */}
+          {showThoughts && (
+            <div ref={thoughtsRef} className="mx-auto mt-6 max-w-3xl overflow-hidden rounded-2xl border border-violet-400/30 bg-violet-500/[0.06]">
+              <button onClick={() => setShowThoughts((v) => !v)} className="flex w-full items-center justify-between px-4 py-3">
+                <span className="flex items-center gap-2 text-sm font-bold text-white/90">
+                  <Brain className="h-4 w-4 text-violet-300" /> AI Thoughts &amp; Restructured Prompt
+                </span>
+                <ChevronDown className="h-4 w-4 text-white/50" />
+              </button>
+              <div className="space-y-4 px-4 pb-4">
+                {thinking && !thoughts ? (
+                  <div className="flex items-center gap-2 text-sm text-white/60"><Loader2 className="h-4 w-4 animate-spin" /> Thinking &amp; restructuring…</div>
+                ) : thoughts ? (
+                  <>
+                    <div>
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-white/40">Reasoning</p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/75">{thoughts.reasoning}</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Restructured Prompt</p>
+                        <button onClick={() => setIdea(thoughts.restructured_prompt)} className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-black transition hover:bg-white/90">Use this</button>
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-white/85">{thoughts.restructured_prompt}</p>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          )}
 
           {/* Template cards */}
           <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
