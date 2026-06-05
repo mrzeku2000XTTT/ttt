@@ -23,12 +23,12 @@ const STYLE_IDEAS = {
 };
 
 const TEMPLATES = [
-  { title: "Create a\nStoryboard", cta: "Go to Studio →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bd8ec1706_generated_image.png", idea: "Create a polished character storyboard sheet with expressions, action poses, props and a clean color palette." },
-  { title: "Start from\nScratch", cta: "Blank idea →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1d43a9eae_generated_image.png", idea: "" },
-  { title: "Idea to\nStoryboard", cta: "Try it now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/27d84cbfd_generated_image.png", idea: STYLE_IDEAS["Kaspa Explainer"] },
-  { title: "DAG\nFlow Board", cta: "Get started →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/71627bf9b_generated_image.png", idea: STYLE_IDEAS["DAG Flow"] },
-  { title: "KAS Wallet\nStory", cta: "Build now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/80940743d_generated_image.png", idea: STYLE_IDEAS["KAS Wallet"] },
-  { title: "KRC20\nLaunch Board", cta: "Try it now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fece3485b_generated_image.png", idea: STYLE_IDEAS["KRC20 Launch"] },
+  { title: "Create a\nStoryboard", cta: "Go to Studio →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bd8ec1706_generated_image.png", theme: "create-a-storyboard" },
+  { title: "Start from\nScratch", cta: "Blank idea →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1d43a9eae_generated_image.png", theme: "start-from-scratch" },
+  { title: "Idea to\nStoryboard", cta: "Try it now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/27d84cbfd_generated_image.png", theme: "idea-to-storyboard" },
+  { title: "DAG\nFlow Board", cta: "Get started →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/71627bf9b_generated_image.png", theme: "dag-flow-board" },
+  { title: "KAS Wallet\nStory", cta: "Build now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/80940743d_generated_image.png", theme: "kas-wallet-story" },
+  { title: "KRC20\nLaunch Board", cta: "Try it now →", img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fece3485b_generated_image.png", theme: "krc20-launch-board" },
 ];
 
 const SIDEBAR_ICONS = [
@@ -301,7 +301,7 @@ Include: main characters, expressions, action poses, key props, color palette, m
           {/* Template cards */}
           <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {TEMPLATES.map((t) => (
-              <button key={t.title} onClick={() => generate(t.idea || idea)} className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 text-left">
+              <button key={t.title} onClick={() => navigate(`/StoryboardTheme?theme=${t.theme}`)} className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 text-left">
                 <img src={t.img} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70 transition group-hover:scale-105 group-hover:opacity-90" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                 <div className="relative flex h-full flex-col justify-between p-3">
