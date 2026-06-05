@@ -25,7 +25,7 @@ export default function PresetDropdown({ onPick }) {
         className="flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
       >
         <Sparkles className="h-3.5 w-3.5 text-violet-500" />
-        1000+ Kaspa Presets
+        200 Presets
         <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition ${open ? "rotate-180" : ""}`} />
       </button>
 
