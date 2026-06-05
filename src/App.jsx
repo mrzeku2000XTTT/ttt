@@ -66,6 +66,9 @@ import FrameZPage from './pages/FrameZ';
 import DocsPage from './pages/Docs';
 import ThumbnailCreatorPage from './pages/ThumbnailCreator';
 import QuickStoryboardPage from './pages/QuickStoryboard';
+import StoryboardStylesPage from './pages/StoryboardStyles';
+import StoryboardPresetsPage from './pages/StoryboardPresets';
+import StoryboardProjectsPage from './pages/StoryboardProjects';
 import MoodBoardPage from './pages/MoodBoard';
 import AboutPage from './pages/About';
 import WalletHubPage from './pages/WalletHub';
@@ -177,6 +180,9 @@ const AuthenticatedApp = () => {
       <Route path="/FrameZ" element={<FrameZPage />} />
       <Route path="/ThumbnailCreator" element={<ThumbnailCreatorPage />} />
       <Route path="/QuickStoryboard" element={<QuickStoryboardPage />} />
+      <Route path="/StoryboardStyles" element={<StoryboardStylesPage />} />
+      <Route path="/StoryboardPresets" element={<StoryboardPresetsPage />} />
+      <Route path="/StoryboardProjects" element={<StoryboardProjectsPage />} />
       <Route path="/MoodBoard" element={<MoodBoardPage />} />
       <Route path="/About" element={<AboutPage />} />
       <Route path="/WalletHub" element={<WalletHubPage />} />

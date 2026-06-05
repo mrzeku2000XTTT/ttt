@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Home, UserRound, Sparkles, LayoutGrid, FolderClosed, Search, Share2,
   Loader2, Plus, Film, ArrowLeft, Image as ImageIcon, X, Heart, Code2,
@@ -31,14 +32,15 @@ const TEMPLATES = [
 ];
 
 const SIDEBAR_ICONS = [
-  { icon: Home, label: "Home" },
-  { icon: UserRound, label: "Storyboard" },
-  { icon: LayoutGrid, label: "Styles" },
-  { icon: Sparkles, label: "Presets" },
-  { icon: FolderClosed, label: "Projects" },
+  { icon: Home, label: "Home", path: "/QuickStoryboard" },
+  { icon: UserRound, label: "Storyboard", path: "/QuickStoryboard" },
+  { icon: LayoutGrid, label: "Styles", path: "/StoryboardStyles" },
+  { icon: Sparkles, label: "Presets", path: "/StoryboardPresets" },
+  { icon: FolderClosed, label: "Projects", path: "/StoryboardProjects" },
 ];
 
 export default function StoryboardStudio({ onClose }) {
+  const navigate = useNavigate();
   const [idea, setIdea] = useState("");
   const [style, setStyle] = useState("");
   const [kaspaMode, setKaspaMode] = useState(false);
@@ -54,6 +56,15 @@ export default function StoryboardStudio({ onClose }) {
 
   useEffect(() => {
     base44.entities.StoryboardProject.list("-created_date", 25).then(setHistory).catch(() => {});
+    try {
+      const seed = sessionStorage.getItem("storyboard_seed");
+      if (seed) {
+        const { idea: si, style: ss } = JSON.parse(seed);
+        if (si) setIdea(si);
+        if (ss) setStyle(ss);
+        sessionStorage.removeItem("storyboard_seed");
+      }
+    } catch { /* ignore */ }
   }, []);
 
   const pickStyle = (item) => {
@@ -153,8 +164,8 @@ Include: main characters, expressions, action poses, key props, color palette, m
       <aside className="hidden w-[60px] flex-col items-center border-r border-white/5 bg-[#0e1016] py-4 lg:flex">
         <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 font-black">S</div>
         <div className="flex flex-1 flex-col items-center gap-1">
-          {SIDEBAR_ICONS.map(({ icon: Icon, label }, i) => (
-            <button key={label} className={`flex w-full flex-col items-center gap-1 rounded-lg py-2 text-[9px] font-semibold transition ${i === 0 ? "text-white" : "text-white/40 hover:text-white/70"}`}>
+          {SIDEBAR_ICONS.map(({ icon: Icon, label, path }, i) => (
+            <button key={label} onClick={() => navigate(path)} className={`flex w-full flex-col items-center gap-1 rounded-lg py-2 text-[9px] font-semibold transition ${i === 0 ? "text-white" : "text-white/40 hover:text-white/70"}`}>
               <Icon className="h-5 w-5" /> {label}
             </button>
           ))}
