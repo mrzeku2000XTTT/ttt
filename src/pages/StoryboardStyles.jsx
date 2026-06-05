@@ -15,9 +15,9 @@ const STYLE_THUMBS = {
   "Kaspa Explainer": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e7091459a_generated_image.png",
   "DAG Flow": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bc53763d7_generated_image.png",
   "KAS Wallet": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20c9f3b50_generated_image.png",
-  "KRC20 Launch": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e7091459a_generated_image.png",
-  "Miner Story": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bc53763d7_generated_image.png",
-  "TTT Agent": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20c9f3b50_generated_image.png",
+  "KRC20 Launch": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d4f7624be_generated_image.png",
+  "Miner Story": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/5e7fdbf23_generated_image.png",
+  "TTT Agent": "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/5a44fd73f_generated_image.png",
 };
 
 export default function StoryboardStylesPage() {
