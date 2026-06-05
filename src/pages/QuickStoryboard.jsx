@@ -8,15 +8,21 @@ import StoryboardPreview from "@/components/storyboard/StoryboardPreview";
 import AgentChecks from "@/components/storyboard/AgentChecks";
 import StoryboardModeToggle from "@/components/storyboard/StoryboardModeToggle";
 import MotionCutPrompt from "@/components/storyboard/MotionCutPrompt";
+import StoryboardStudio from "@/components/storyboard/StoryboardStudio";
 
 export default function QuickStoryboardPage() {
   const [project, setProject] = useState(null);
   const [isDark, setIsDark] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
   const workspaceRef = useRef(null);
 
   const scrollToWorkspace = () => {
-    workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setStudioOpen(true);
   };
+
+  if (studioOpen) {
+    return <StoryboardStudio onClose={() => setStudioOpen(false)} />;
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-500 ${isDark ? "bg-[#050507] text-white" : "bg-[#f7f3ec] text-zinc-950"}`}>
