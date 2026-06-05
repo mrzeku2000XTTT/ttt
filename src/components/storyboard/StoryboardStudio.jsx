@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
 import MotionCutPrompt from "@/components/storyboard/MotionCutPrompt";
 import AgentChecks from "@/components/storyboard/AgentChecks";
+import PresetDropdown from "@/components/storyboard/PresetDropdown";
 
 const STYLES = ["Kaspa Explainer", "DAG Flow", "KAS Wallet", "KRC20 Launch", "Miner Story", "TTT Agent"];
 
@@ -221,10 +222,7 @@ Include: main characters, expressions, action poses, key props, color palette, m
           {/* Prompt box */}
           <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-3 shadow-2xl shadow-black/40">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <select onChange={pickPreset} defaultValue="" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 outline-none">
-                <option value="">1000+ Kaspa Presets</option>
-                {STORYBOARD_PRESETS.slice(0, 200).map((p) => <option key={p.id} value={p.id}>{p.id.replace("preset-", "#")} · {p.title}</option>)}
-              </select>
+              <PresetDropdown onPick={(p) => { setIdea(p.idea); setStyle(""); }} />
             </div>
             <textarea
               value={idea}
