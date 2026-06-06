@@ -235,8 +235,11 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
 
     } catch (err) {
       console.error('Tip failed:', err);
+      const status = err.response?.status;
       const errMsg = err.response?.data?.error || err.message || 'Unknown error';
-      if (errMsg.includes('User reject')) {
+      if (status === 404 || errMsg.includes('status code 404') || errMsg.includes('Deployment does not exist')) {
+        setTipError('⚠️ Tip service is temporarily unavailable (transfer function not deployed). Please try again in a moment or contact support.');
+      } else if (errMsg.includes('User reject')) {
         setTipError('Transaction cancelled');
       } else if (errMsg.includes('storage mass')) {
         setTipError('⚠️ Storage mass error: Consolidate UTXOs in your wallet settings.');

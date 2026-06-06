@@ -19,9 +19,20 @@
 //   - Minimum output enforced at 0.1 KAS per KASPACOM
 //   - Enhanced retry with exponential backoff
 
-import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
 import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
+
+// Lazy-load the OKX Kaspa SDK only when a signing action needs it.
+// This keeps balance/status (REST-only) actions working even if the SDK
+// fails to resolve, and prevents a broken import from 404-ing the whole function.
+let _KaspaWallet = null;
+async function getKaspaWallet() {
+  if (!_KaspaWallet) {
+    const mod = await import('npm:@okxweb3/coin-kaspa@1.0.6');
+    _KaspaWallet = mod.KaspaWallet;
+  }
+  return _KaspaWallet;
+}
 
 const KASPA_API = 'https://api.kaspa.org';
 const COMMIT_AMOUNT_KAS = 0.3;
@@ -116,6 +127,7 @@ function scriptHashToAddress(scriptHash, network = 'mainnet') {
 }
 
 async function getXOnlyPubKey(privateKeyHex) {
+  const KaspaWallet = await getKaspaWallet();
   const wallet = new KaspaWallet();
   const addressResult = await wallet.getNewAddress({ privateKey: privateKeyHex });
   const addr = addressResult.address || addressResult;
@@ -648,6 +660,7 @@ Deno.serve(async (req) => {
     // Derive private key
     let privateKey = inputPrivateKey;
     if (!privateKey && mnemonic) {
+      const KaspaWallet = await getKaspaWallet();
       const wallet = new KaspaWallet();
       privateKey = await wallet.getDerivedPrivateKey({
         mnemonic: mnemonic.trim(),

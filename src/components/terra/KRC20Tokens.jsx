@@ -38,7 +38,12 @@ export default function KRC20Tokens({ walletAddress, onSendToken }) {
       setTokens(parsed);
     } catch (err) {
       console.error('KRC-20 balance error:', err);
-      setError('Failed to load tokens');
+      const status = err.response?.status;
+      if (status === 404 || (err.message || '').includes('404')) {
+        setError('Token service temporarily unavailable. Tap refresh to retry.');
+      } else {
+        setError('Failed to load tokens. Tap refresh to retry.');
+      }
       setTokens([]);
     }
     setLoading(false);
