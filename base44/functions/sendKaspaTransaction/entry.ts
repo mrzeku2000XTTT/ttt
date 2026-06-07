@@ -199,28 +199,40 @@ Deno.serve(async (req) => {
     let totalIn = 0n;
     const selectedUtxos = [];
 
+    let feeSompi;
     if (sendAll) {
       for (const utxo of utxos) {
         if (selectedUtxos.length >= MAX_UTXOS) break;
         selectedUtxos.push(utxo);
         totalIn += BigInt(utxo.utxoEntry.amount);
       }
-      amountSompi = totalIn - FEE_SOMPI;
+      // sendAll = compound: single output, fee scales with input count
+      feeSompi = estimateFee(selectedUtxos.length, 1);
+      amountSompi = totalIn - feeSompi;
       if (amountSompi <= 0n) throw new Error('Balance too low to cover fee');
     } else {
-      const needed = amountSompi + FEE_SOMPI;
+      // Two-pass: select enough inputs, then recompute fee from final input count
+      // (fee grows as more inputs are added, so loop until covered).
+      const baseFee = estimateFee(1, 2);
+      let needed = amountSompi + baseFee;
       for (const utxo of utxos) {
-        if (totalIn >= needed) break;
+        if (totalIn >= needed && selectedUtxos.length > 0) {
+          // recompute needed with the actual input count we have so far
+          const f = estimateFee(selectedUtxos.length, 2);
+          if (totalIn >= amountSompi + f) break;
+          needed = amountSompi + f;
+        }
         if (selectedUtxos.length >= MAX_UTXOS) break;
         selectedUtxos.push(utxo);
         totalIn += BigInt(utxo.utxoEntry.amount);
       }
-      if (totalIn < needed) throw new Error(`Insufficient balance. Need ${(Number(needed) / 1e8).toFixed(8)} KAS, have ${(Number(totalIn) / 1e8).toFixed(8)} KAS`);
+      feeSompi = estimateFee(selectedUtxos.length, 2);
+      if (totalIn < amountSompi + feeSompi) throw new Error(`Insufficient balance. Need ${(Number(amountSompi + feeSompi) / 1e8).toFixed(8)} KAS, have ${(Number(totalIn) / 1e8).toFixed(8)} KAS`);
     }
 
     const fromScript = p2pkScriptFromAddress(normalizedFromAddress);
     const toScript = p2pkScriptFromAddress(normalizedToAddress);
-    const change = totalIn - amountSompi - FEE_SOMPI;
+    const change = totalIn - amountSompi - feeSompi;
 
     const inputs = selectedUtxos.map(u => ({
       prevTxId: u.outpoint.transactionId,
@@ -285,7 +297,8 @@ Deno.serve(async (req) => {
       success: true,
       txId: submitData.transactionId || submitData.txid || submitData,
       amountKas: Number(amountSompi) / 1e8,
-      fee: Number(FEE_SOMPI) / 1e8,
+      fee: Number(feeSompi) / 1e8,
+      inputsCompounded: selectedUtxos.length,
     });
   } catch (error) {
     const msg = error?.message || String(error) || 'Unknown error';

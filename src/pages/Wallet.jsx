@@ -195,6 +195,27 @@ export default function WalletPage() {
     }
     setIsCompounding(true);
     try {
+      // First check how many UTXOs the wallet has (live, from Kaspa API).
+      // If 0 or 1, there's nothing to merge.
+      const apiAddr = address.startsWith('kaspa:') ? address : `kaspa:${address}`;
+      const utxoResp = await fetch(`https://api.kaspa.org/addresses/${apiAddr}/utxos`);
+      const utxos = utxoResp.ok ? await utxoResp.json() : [];
+      const count = Array.isArray(utxos) ? utxos.length : 0;
+      const totalKas = (Array.isArray(utxos) ? utxos : []).reduce((sum, u) => sum + (Number(u.utxoEntry?.amount || 0) / 1e8), 0);
+
+      if (count <= 1) {
+        showToast(
+          count === 0
+            ? 'No funds to compound yet.'
+            : `✅ No need to compound — your ${totalKas.toFixed(4)} KAS is already in a single UTXO.`,
+          'success'
+        );
+        setIsCompounding(false);
+        return;
+      }
+
+      showToast(`Compounding ${count} UTXOs (${totalKas.toFixed(4)} KAS) into one...`, 'success');
+
       const res = await base44.functions.invoke('sendKaspaTransaction', {
         privateKey: storedPK,
         fromAddress: address,
@@ -202,7 +223,7 @@ export default function WalletPage() {
         sendAll: true,
       });
       if (res.data?.error) throw new Error(res.data.error);
-      showToast(`Compounded! All UTXOs merged. TX: ${String(res.data.txId).slice(0, 12)}...`, 'success');
+      showToast(`Compounded ${count} UTXOs into one! TX: ${String(res.data.txId).slice(0, 12)}...`, 'success');
       setTimeout(() => fetchBalance(address), 4000);
     } catch (e) {
       showToast(e?.message || 'Compound failed', 'error');
