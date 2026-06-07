@@ -240,15 +240,22 @@ Deno.serve(async (req) => {
       subnetworkId: '0000000000000000000000000000000000000000',
     };
 
-    const submitRes = await fetch(`${KASPA_API}/transactions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
-      signal: AbortSignal.timeout(15000),
-    });
-
-    const submitText = await submitRes.text();
-    if (!submitRes.ok) throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 200)}`);
+    let submitRes, submitText;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 2500));
+      submitRes = await fetch(`${KASPA_API}/transactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transaction: rawTx, allowOrphan: false }),
+        signal: AbortSignal.timeout(15000),
+      });
+      submitText = await submitRes.text();
+      if (submitRes.ok) break;
+      console.error(`[sendKaspaTransaction] submit attempt ${attempt + 1} full error:`, submitText);
+      // retry only on transient propagation errors; fail fast on signature/script rejections
+      if (!submitText.includes('orphan') && !submitText.includes('missing') && !submitText.includes('already')) break;
+    }
+    if (!submitRes.ok) throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 300)}`);
     let submitData;
     try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
 
