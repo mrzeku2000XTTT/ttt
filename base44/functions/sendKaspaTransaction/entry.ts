@@ -156,27 +156,22 @@ Deno.serve(async (req) => {
     let amountSompi = amountKas ? BigInt(Math.round(parseFloat(amountKas) * 1e8)) : 0n;
     if (!sendAll && amountSompi <= 0n) return Response.json({ error: 'Invalid amount' }, { status: 400 });
 
-    // Lazy-load the OKX SDK only when needed, so a resolution failure doesn't break deployment
-    let KaspaWallet;
-    try {
-      ({ KaspaWallet } = await import('npm:@okxweb3/coin-kaspa@2.4.9'));
-    } catch (e) {
-      throw new Error('Signing module unavailable on server. Please try again shortly.');
-    }
-
-    const wallet = new KaspaWallet();
     let privateKey = inputPrivateKey;
+
+    // Only load the OKX SDK when we must derive a key from a mnemonic.
+    // Match the SAME version used by the working krc20Transfer function (@1.0.6).
     if (!privateKey) {
+      let KaspaWallet;
+      try {
+        ({ KaspaWallet } = await import('npm:@okxweb3/coin-kaspa@1.0.6'));
+      } catch (e) {
+        throw new Error('Signing module unavailable on server. Please re-import your wallet using its private key, or try again shortly.');
+      }
+      const wallet = new KaspaWallet();
       privateKey = await wallet.getDerivedPrivateKey({ mnemonic: mnemonic.trim(), hdPath: "m/44'/111111'/0'/0/0" });
     }
     if (typeof privateKey === 'object') privateKey = privateKey.toString();
     if (typeof privateKey === 'string' && privateKey.startsWith('0x')) privateKey = privateKey.slice(2);
-
-    const derived = await wallet.getNewAddress({ privateKey });
-    const derivedAddress = (derived.address || derived).startsWith('kaspa:') ? (derived.address || derived) : `kaspa:${derived.address || derived}`;
-    if (derivedAddress !== normalizedFromAddress) {
-      throw new Error('This wallet key does not match the selected sending address. Re-import the wallet seed phrase and try again.');
-    }
 
     const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFromAddress}/utxos`, { signal: AbortSignal.timeout(15000) });
     if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);

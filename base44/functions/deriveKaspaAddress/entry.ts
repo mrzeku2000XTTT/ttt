@@ -1,4 +1,4 @@
-import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
+import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@1.0.6';
 
 Deno.serve(async (req) => {
   try {

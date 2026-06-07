@@ -1,6 +1,6 @@
 import * as bip39 from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
-import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
+import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@1.0.6';
 
 let walletInstance = null;
 
