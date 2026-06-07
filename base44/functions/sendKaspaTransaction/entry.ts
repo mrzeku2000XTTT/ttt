@@ -175,8 +175,25 @@ Deno.serve(async (req) => {
 
     const utxoRes = await fetch(`${KASPA_API}/addresses/${normalizedFromAddress}/utxos`, { signal: AbortSignal.timeout(15000) });
     if (!utxoRes.ok) throw new Error(`Failed to fetch UTXOs: ${utxoRes.status}`);
-    const utxos = await utxoRes.json();
+    let utxos = await utxoRes.json();
     if (!utxos || utxos.length === 0) throw new Error('No UTXOs. Your balance may be 0 or unconfirmed.');
+
+    // Only spend confirmed (mature) UTXOs. Right after a send, the API may still
+    // list the just-spent inputs and an unconfirmed change UTXO. Get current DAG
+    // score and require each UTXO to have at least 10 confirmations.
+    let virtualDaa = 0;
+    try {
+      const tipRes = await fetch(`${KASPA_API}/info/virtual-chain-blue-score`, { signal: AbortSignal.timeout(10000) });
+      if (tipRes.ok) virtualDaa = Number((await tipRes.json()).blueScore || 0);
+    } catch { /* if tip fetch fails, fall back to using all UTXOs */ }
+
+    if (virtualDaa > 0) {
+      const matureUtxos = utxos.filter(u => {
+        const score = Number(u.utxoEntry?.blockDaaScore || 0);
+        return score > 0 && (virtualDaa - score) >= 10;
+      });
+      if (matureUtxos.length > 0) utxos = matureUtxos;
+    }
 
     utxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
     let totalIn = 0n;
@@ -255,7 +272,12 @@ Deno.serve(async (req) => {
       // retry only on transient propagation errors; fail fast on signature/script rejections
       if (!submitText.includes('orphan') && !submitText.includes('missing') && !submitText.includes('already')) break;
     }
-    if (!submitRes.ok) throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 300)}`);
+    if (!submitRes.ok) {
+      if (submitText.includes('already spent') || submitText.includes('orphan') || submitText.includes('missing') || submitText.includes('UTXO')) {
+        throw new Error('Your previous transaction is still confirming. Please wait ~10 seconds and try again.');
+      }
+      throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 300)}`);
+    }
     let submitData;
     try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
 
