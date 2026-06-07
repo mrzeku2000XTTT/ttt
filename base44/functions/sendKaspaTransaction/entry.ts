@@ -1,5 +1,4 @@
 // Real Kaspa transaction: fetch UTXOs → manually sign P2PK inputs → submit to Kaspa REST API
-import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
 import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
 import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
 
@@ -156,6 +155,14 @@ Deno.serve(async (req) => {
 
     let amountSompi = amountKas ? BigInt(Math.round(parseFloat(amountKas) * 1e8)) : 0n;
     if (!sendAll && amountSompi <= 0n) return Response.json({ error: 'Invalid amount' }, { status: 400 });
+
+    // Lazy-load the OKX SDK only when needed, so a resolution failure doesn't break deployment
+    let KaspaWallet;
+    try {
+      ({ KaspaWallet } = await import('npm:@okxweb3/coin-kaspa@2.4.9'));
+    } catch (e) {
+      throw new Error('Signing module unavailable on server. Please try again shortly.');
+    }
 
     const wallet = new KaspaWallet();
     let privateKey = inputPrivateKey;
