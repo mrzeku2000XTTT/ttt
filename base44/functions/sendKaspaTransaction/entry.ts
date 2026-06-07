@@ -6,15 +6,15 @@ const KASPA_API = 'https://api.kaspa.org';
 const FEE_SOMPI = 10000n; // 0.0001 KAS (minimum floor)
 const MAX_UTXOS = 80;
 
-// Dynamic fee: Kaspa fees scale with transaction mass, which grows with the
-// number of inputs/outputs. Estimate mass and charge ~1000 sompi per mass unit,
-// never below the FEE_SOMPI floor. This prevents "fee too low" rejections when
-// compounding many UTXOs while keeping a normal 1-input send cheap.
+// Dynamic fee: Kaspa requires fees to cover transaction "mass", which is
+// dominated by storage mass — each output costs ~100k mass and each input
+// adds compute/size mass. The node rejects anything under the required amount
+// (e.g. ~203,600 for a 2-output tx). We over-estimate slightly to always clear
+// the threshold while staying tiny in KAS terms (100k sompi = 0.001 KAS).
 function estimateFee(numInputs, numOutputs) {
-  // Rough per-element mass: each input ~1118 bytes-equiv, each output ~36, plus header.
-  const mass = BigInt(numInputs) * 1118n + BigInt(numOutputs) * 36n + 200n;
-  const fee = mass; // ~1 sompi per mass unit
-  return fee > FEE_SOMPI ? fee : FEE_SOMPI;
+  // ~120k mass per output (covers storage mass) + ~2,500 per input + header.
+  const mass = BigInt(numOutputs) * 120000n + BigInt(numInputs) * 2500n + 1000n;
+  return mass > FEE_SOMPI ? mass : FEE_SOMPI;
 }
 const OP_DATA_32 = 0x20;
 const OP_CHECKSIG = 0xac;
