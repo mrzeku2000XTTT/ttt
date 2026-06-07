@@ -106,6 +106,7 @@ export default function WalletPage() {
   const [sendAmount, setSendAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [isCompounding, setIsCompounding] = useState(false);
 
   // Receive/Request QR state
   const [requestAmount, setRequestAmount] = useState('');
@@ -182,6 +183,31 @@ export default function WalletPage() {
       showToast(e?.message || 'Send failed', 'error');
     } finally {
       setIsSending(false);
+    }
+  };
+
+  // ── Compound / Combine UTXOs (self-send entire balance into one UTXO) ──────
+  const handleCompound = async () => {
+    const storedPK = localStorage.getItem('ttt_wallet_pk');
+    if (!storedPK) {
+      showToast('Re-import this wallet once to enable compounding.', 'error');
+      return;
+    }
+    setIsCompounding(true);
+    try {
+      const res = await base44.functions.invoke('sendKaspaTransaction', {
+        privateKey: storedPK,
+        fromAddress: address,
+        toAddress: address,
+        sendAll: true,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      showToast(`Compounded! All UTXOs merged. TX: ${String(res.data.txId).slice(0, 12)}...`, 'success');
+      setTimeout(() => fetchBalance(address), 4000);
+    } catch (e) {
+      showToast(e?.message || 'Compound failed', 'error');
+    } finally {
+      setIsCompounding(false);
     }
   };
 
@@ -738,6 +764,19 @@ export default function WalletPage() {
                     Send
                   </Button>
                 </div>
+
+                {/* Compound / Combine UTXOs */}
+                <Button
+                  onClick={handleCompound}
+                  disabled={isCompounding}
+                  variant="outline"
+                  className="w-full mb-4 bg-zinc-950 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                  title="Merge all small UTXOs into one to fix send errors and reduce fees"
+                >
+                  {isCompounding
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Compounding...</>
+                    : <><RefreshCw className="w-4 h-4 mr-2" />Compound UTXOs</>}
+                </Button>
 
                 {/* Seal */}
                 {pinSet && !isSealed && mnemonic && (
