@@ -211,17 +211,13 @@ Deno.serve(async (req) => {
       amountSompi = totalIn - feeSompi;
       if (amountSompi <= 0n) throw new Error('Balance too low to cover fee');
     } else {
-      // Two-pass: select enough inputs, then recompute fee from final input count
-      // (fee grows as more inputs are added, so loop until covered).
-      const baseFee = estimateFee(1, 2);
-      let needed = amountSompi + baseFee;
+      // Select inputs assuming the worst-case fee (MAX inputs), so we always
+      // pull in enough to cover the final dynamic fee. Then compute the real
+      // fee from the actual number of inputs selected.
+      const maxFee = estimateFee(MAX_UTXOS, 2);
+      const target = amountSompi + maxFee;
       for (const utxo of utxos) {
-        if (totalIn >= needed && selectedUtxos.length > 0) {
-          // recompute needed with the actual input count we have so far
-          const f = estimateFee(selectedUtxos.length, 2);
-          if (totalIn >= amountSompi + f) break;
-          needed = amountSompi + f;
-        }
+        if (totalIn >= target) break;
         if (selectedUtxos.length >= MAX_UTXOS) break;
         selectedUtxos.push(utxo);
         totalIn += BigInt(utxo.utxoEntry.amount);
