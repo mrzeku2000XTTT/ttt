@@ -3,8 +3,19 @@ import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
 import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
 
 const KASPA_API = 'https://api.kaspa.org';
-const FEE_SOMPI = 10000n; // 0.0001 KAS
+const FEE_SOMPI = 10000n; // 0.0001 KAS (minimum floor)
 const MAX_UTXOS = 80;
+
+// Dynamic fee: Kaspa fees scale with transaction mass, which grows with the
+// number of inputs/outputs. Estimate mass and charge ~1000 sompi per mass unit,
+// never below the FEE_SOMPI floor. This prevents "fee too low" rejections when
+// compounding many UTXOs while keeping a normal 1-input send cheap.
+function estimateFee(numInputs, numOutputs) {
+  // Rough per-element mass: each input ~1118 bytes-equiv, each output ~36, plus header.
+  const mass = BigInt(numInputs) * 1118n + BigInt(numOutputs) * 36n + 200n;
+  const fee = mass; // ~1 sompi per mass unit
+  return fee > FEE_SOMPI ? fee : FEE_SOMPI;
+}
 const OP_DATA_32 = 0x20;
 const OP_CHECKSIG = 0xac;
 const SIGHASH_KEY = new TextEncoder().encode('TransactionSigningHash');
