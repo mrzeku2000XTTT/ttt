@@ -10,6 +10,7 @@ import {
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
 import LoginButton from "@/components/tttv2/LoginButton";
+import Base44LoginButton from "@/components/tttv2/Base44LoginButton";
 import PortalTransition from "@/components/tttv2/PortalTransition";
 
 import WhatsNew from "@/components/tttv2/WhatsNew";
@@ -263,6 +264,7 @@ export default function TTTV2Page() {
           >
             Open TTT
           </Link>
+          <Base44LoginButton />
         </div>
       </nav>
 
