@@ -8,6 +8,11 @@ import { base44 } from "@/api/base44Client";
  */
 export default function AuthRedirect() {
   useEffect(() => {
+    // Guard against the redirect firing twice (which created a /login refresh
+    // loop). Only ever trigger the hosted login once per page load.
+    if (window.__tttLoginRedirected) return;
+    window.__tttLoginRedirected = true;
+
     const t = setTimeout(() => {
       try {
         base44.auth.redirectToLogin(window.location.origin + "/");

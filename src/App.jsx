@@ -102,9 +102,9 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
+      // Public app: do NOT force-redirect unauthenticated visitors (that caused
+      // an infinite /login refresh loop). Just render the app as a guest.
+      // Login is available via the explicit Login buttons in the UI.
     }
   }
 
