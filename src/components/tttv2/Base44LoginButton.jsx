@@ -23,7 +23,7 @@ export default function Base44LoginButton() {
     return (
       <button
         onClick={handleLogout}
-        className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-zinc-900 bg-white hover:bg-zinc-100 border border-zinc-200 px-4 py-1.5 rounded-full transition-colors shadow-sm"
+        className="inline-flex items-center gap-1.5 text-[13px] font-bold text-zinc-900 bg-white hover:bg-zinc-100 border-2 border-zinc-900 px-4 py-1.5 rounded-full transition-colors shadow-md"
         title="Log out"
       >
         <LogOut className="w-3.5 h-3.5" /> Logout
@@ -34,7 +34,7 @@ export default function Base44LoginButton() {
   return (
     <button
       onClick={handleLogin}
-      className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-zinc-900 bg-white hover:bg-zinc-100 border border-zinc-200 px-4 py-1.5 rounded-full transition-colors shadow-sm"
+      className="inline-flex items-center gap-1.5 text-[13px] font-bold text-zinc-900 bg-white hover:bg-zinc-100 border-2 border-zinc-900 px-4 py-1.5 rounded-full transition-colors shadow-md"
       title="Log in with Base44"
     >
       <LogIn className="w-3.5 h-3.5" /> Login
