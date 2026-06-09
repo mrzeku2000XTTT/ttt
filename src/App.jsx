@@ -200,8 +200,8 @@ const AuthenticatedApp = () => {
           <KatagamiPage />
         </LayoutWrapper>
       } />
-      <Route path="/login" element={<AuthRedirect />} />
-      <Route path="/Login" element={<AuthRedirect />} />
+      <Route path="/login" element={<TTTLandingPage />} />
+      <Route path="/Login" element={<TTTLandingPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
