@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import MetaMimicNav from "@/components/metamimic/MetaMimicNav";
 import MetaMimicHero from "@/components/metamimic/MetaMimicHero";
@@ -9,6 +9,10 @@ import MetaMimicCTA from "@/components/metamimic/MetaMimicCTA";
 import MetaMimicFooter from "@/components/metamimic/MetaMimicFooter";
 
 export default function MetaMimicPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white antialiased">
       <MetaMimicNav />
