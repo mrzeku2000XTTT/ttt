@@ -113,29 +113,8 @@
       // base44's login UI paints. Hold the overlay longer there until a real
       // login form/button is visible.
       (function () {
-        var path = window.location.pathname;
-        // /login on custom domains (e.g. tttz.xyz/login) is base44's server-rendered
-        // login page that briefly shows a raw page list. Keep the boot overlay over it
-        // forever — the browser will navigate away to base44.com login UI shortly.
-        var isLoginRoute = /^\/login(\/|$)/i.test(path);
-        if (isLoginRoute) {
-          // /login is the brief intermediate route base44 uses before redirecting to
-          // its actual login UI on app.base44.com. We must keep our Kaspa loader on
-          // screen the entire time and never let React's PageNotFound (or anything
-          // else) flash behind it.
-          document.documentElement.style.background = '#000';
-          var lbl = document.getElementById('ttt-boot-label');
-          if (lbl) lbl.textContent = 'Connecting';
-
-          // Inject a stylesheet that permanently hides #root and forces the boot
-          // overlay to stay on top with maximum z-index. Stylesheets win over
-          // inline styles React might add.
-          var style = document.createElement('style');
-          style.textContent = '#root{display:none !important;visibility:hidden !important;opacity:0 !important;}#ttt-boot{display:flex !important;opacity:1 !important;z-index:2147483647 !important;pointer-events:auto !important;}';
-          document.head.appendChild(style);
-          return; // never call hideBoot or checkMounted
-        }
-
+        // NOTE: /login is now a real in-app page (custom email/password login),
+        // so it boots like any other route — no special overlay handling.
         function hideBoot() {
           var b = document.getElementById('ttt-boot');
           if (!b) return;
