@@ -192,17 +192,14 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         source: 'feed'
       });
 
-      // Update post tips
-      if (tipTokenType === 'KRC20') {
-        const currentKrc20 = tippingPost.krc20_tips_received || {};
-        await base44.entities.Post.update(tippingPost.id, {
-          krc20_tips_received: { ...currentKrc20, [tipKrc20Ticker.toUpperCase()]: (currentKrc20[tipKrc20Ticker.toUpperCase()] || 0) + tipAmountValue }
-        });
-      } else {
-        await base44.entities.Post.update(tippingPost.id, {
-          tips_received: (tippingPost.tips_received || 0) + tipAmountValue
-        });
-      }
+      // Update post tips via service-role function (tipper isn't the post author,
+      // so a direct Post.update is blocked by RLS — "Permission denied").
+      await base44.functions.invoke('incrementPostTips', {
+        postId: tippingPost.id,
+        amount: tipAmountValue,
+        tokenType: tipTokenType,
+        ticker: tipTokenType === 'KRC20' ? tipKrc20Ticker.toUpperCase() : null,
+      });
 
       // Track tip stats
       if (tipTokenType === 'KAS') {
