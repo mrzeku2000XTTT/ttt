@@ -43,6 +43,10 @@ import ImageHistoryPage from './pages/ImageHistory';
 import OneShotStudioPage from './pages/OneShotStudio';
 import SlideDeckBuilderPage from './pages/SlideDeckBuilder';
 import AuthRedirect from './pages/AuthRedirect';
+import LoginPage from './pages/Login';
+import RegisterPage from './pages/Register';
+import ForgotPasswordPage from './pages/ForgotPassword';
+import ResetPasswordPage from './pages/ResetPassword';
 import MotionPage from './pages/Motion';
 import MotionLandingPage from './pages/MotionLanding';
 import MotionIdeasPage from './pages/MotionIdeas';
@@ -200,8 +204,11 @@ const AuthenticatedApp = () => {
           <KatagamiPage />
         </LayoutWrapper>
       } />
-      <Route path="/login" element={<AuthRedirect />} />
-      <Route path="/Login" element={<AuthRedirect />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/Login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
