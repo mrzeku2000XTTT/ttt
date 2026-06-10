@@ -176,6 +176,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       const senderName = user?.username || (senderWallet ? `${senderWallet.slice(0, 8)}...` : 'Anonymous');
       const ticker = tipTokenType === 'KRC20' ? tipKrc20Ticker.toUpperCase() : 'KAS';
 
+      // Bookkeeping below must NEVER fail the tip — the KAS is already sent.
+      // Guests (no email login) may not have permission for some of these.
+      try {
       // Record tip transaction
       await base44.entities.TipTransaction.create({
         sender_wallet: senderWallet,
@@ -225,6 +228,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             await base44.entities.UserTipStats.create({ user_email: tippingPost.created_by || null, wallet_address: tippingPost.author_wallet_address, username: tippingPost.author_name, feed_tips_sent: 0, feed_tips_received: tipAmountValue, bull_tips_sent: 0, bull_tips_received: 0 });
           }
         }
+      }
+      } catch (bookkeepingErr) {
+        console.warn('Tip sent OK, but recording stats failed (guest?):', bookkeepingErr);
       }
 
       onSuccess({ tipAmountValue, txId, ticker, tippingPost, tipTokenType, tipKrc20Ticker });

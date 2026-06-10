@@ -10,12 +10,8 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Must be an authenticated app user (guest tipping still requires login session)
-    const isAuthed = await base44.auth.isAuthenticated();
-    if (!isAuthed) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    // NOTE: No auth required — tipping is open to guests (wallet-only users).
+    // This function only ever increments tip counters on a post.
     const { postId, amount, tokenType, ticker } = await req.json();
 
     if (!postId || typeof amount !== 'number' || amount <= 0) {
