@@ -514,7 +514,7 @@ export default function Layout({ children, currentPageName }) {
                     {!user && (
                       <>
                         <DropdownMenuItem 
-                          onClick={() => base44.auth.redirectToLogin()}
+                          onClick={() => { window.location.href = "/login"; }}
                           className="cursor-pointer text-cyan-400 hover:bg-cyan-500/10 border-b border-zinc-700"
                         >
                           <UserIcon className="w-4 h-4 mr-2" />
@@ -703,7 +703,7 @@ export default function Layout({ children, currentPageName }) {
                         <button
                           onClick={() => {
                             setMobileMenuOpen(false);
-                            base44.auth.redirectToLogin();
+                            window.location.href = "/login";
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 mb-2"
                         >
@@ -759,7 +759,7 @@ export default function Layout({ children, currentPageName }) {
                         <button
                           onClick={() => {
                             setMobileMenuOpen(false);
-                            base44.auth.redirectToLogin();
+                            window.location.href = "/login";
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 mt-4"
                         >

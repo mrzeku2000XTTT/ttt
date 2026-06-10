@@ -12,7 +12,9 @@ export default function Base44LoginButton() {
   }, []);
 
   const handleLogin = () => {
-    base44.auth.redirectToLogin();
+    // Use our in-app login page — the hosted base44 login gets stuck
+    // "Connecting" on this public (no-login-required) app.
+    window.location.href = "/login";
   };
 
   const handleLogout = async () => {

@@ -4,9 +4,9 @@ import { base44 } from "@/api/base44Client";
 
 export default function LoginButton({ currentUser, onLogout }) {
   const handleLogin = () => {
-    // Send the user to Base44's hosted login and return them to the app root
-    // after success. Passing an explicit destination avoids the /login bounce loop.
-    base44.auth.redirectToLogin(window.location.origin + "/Home");
+    // Use our in-app login page — the hosted base44 login gets stuck
+    // "Connecting" on this public (no-login-required) app.
+    window.location.href = "/login";
   };
 
   if (currentUser) {
