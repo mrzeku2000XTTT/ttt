@@ -47,32 +47,19 @@ export const AuthProvider = ({ children }) => {
         setIsLoadingPublicSettings(false);
       } catch (appError) {
         console.error('App state check failed:', appError);
-        
-        // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            setAuthError({
-              type: reason,
-              message: appError.message
-            });
-          }
-        } else {
+
+        // This app is PUBLIC (no login required) and uses wallet connections.
+        // 'auth_required' must NEVER be treated as a blocker — just render the
+        // app as a guest. Only 'user_not_registered' is a real blocker.
+        if (appError.status === 403 && appError.data?.extra_data?.reason === 'user_not_registered') {
           setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
+            type: 'user_not_registered',
+            message: 'User not registered for this app'
           });
         }
+        // For auth_required / unknown / any other error: do NOT set a blocking
+        // authError. Let the app render publicly as a guest.
+        setIsAuthenticated(false);
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
       }
@@ -99,14 +86,8 @@ export const AuthProvider = ({ children }) => {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
-      
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
-      }
+      // Public app: an expired/invalid token must NOT block access.
+      // Simply continue as a guest — no authError is set.
     }
   };
 
