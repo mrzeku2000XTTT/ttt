@@ -14,8 +14,18 @@ Deno.serve(async (req) => {
     // This function only ever increments tip counters on a post.
     const { postId, amount, tokenType, ticker } = await req.json();
 
-    if (!postId || typeof amount !== 'number' || amount <= 0) {
+    if (!postId || typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
       return Response.json({ error: 'Invalid postId or amount' }, { status: 400 });
+    }
+
+    // Security cap: prevent counter inflation abuse from unauthenticated calls
+    if (amount > 100000) {
+      return Response.json({ error: 'Amount exceeds maximum per tip' }, { status: 400 });
+    }
+
+    // Sanitize ticker: alphanumeric only, max 12 chars
+    if (ticker && !/^[A-Za-z0-9]{1,12}$/.test(String(ticker))) {
+      return Response.json({ error: 'Invalid ticker' }, { status: 400 });
     }
 
     const post = await base44.asServiceRole.entities.Post.get(postId);
