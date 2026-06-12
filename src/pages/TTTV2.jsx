@@ -233,8 +233,8 @@ export default function TTTV2Page() {
     <div className="min-h-screen bg-[#F5F5F7] text-zinc-900 selection:bg-cyan-200/60 overflow-x-hidden">
 
       {/* ── nav ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-[#F5F5F7]/70 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-200/50">
-        <Link to="/" className="flex items-center gap-1.5 group min-h-[44px] min-w-[72px] -ml-3 px-3 rounded-xl active:bg-zinc-200/70 touch-manipulation" title="Go to TTT landing page" aria-label="Go to TTT landing page">
+      <nav className="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-5 bg-[#F5F5F7]/70 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-200/50">
+        <Link to="/" className="flex items-center gap-1.5 group h-14 min-w-[72px] -ml-3 px-3 rounded-xl active:bg-zinc-200/70 touch-manipulation" style={{ touchAction: 'manipulation' }} title="Go to TTT landing page" aria-label="Go to TTT landing page">
           <span className="text-[15px] font-[900] tracking-tight text-zinc-900 group-hover:text-cyan-600 transition-colors">TTT</span>
           <span className="text-[9px] font-bold bg-black text-white px-1.5 py-[1px] rounded">2.0</span>
         </Link>
@@ -260,7 +260,8 @@ export default function TTTV2Page() {
           <Link
             to="/Home"
             onClick={() => setNavigating(true)}
-            className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 px-4 py-1.5 rounded-full transition-colors"
+            className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 active:bg-zinc-700 px-4 py-2.5 rounded-full transition-colors touch-manipulation"
+            style={{ touchAction: 'manipulation', minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}
           >
             Open TTT
           </Link>
@@ -284,7 +285,7 @@ export default function TTTV2Page() {
       )}
 
       {/* ── new hero ── */}
-      <div className="pt-12">
+      <div className="pt-14">
         <HeroHeader />
       </div>
 
