@@ -82,18 +82,36 @@ export default function DoubleOPage() {
   return (
     <div className="min-h-screen bg-[#08090c] text-white overflow-x-hidden">
 
-      {/* ── Minimal back link (non-home views only) ── */}
+      {/* ── Floating bottom tab bar (always visible on inner pages) ── */}
       {!isHome && (
-        <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-full px-2 py-1.5 shadow-2xl">
           <button
             onClick={() => setActiveTab("home")}
-            className="text-zinc-500 hover:text-white text-[13px] font-medium transition-colors"
+            className="px-3 py-1.5 rounded-full text-zinc-500 hover:text-white text-[12px] font-medium transition-all hover:bg-white/5"
           >
-            ← Back
+            ← Home
           </button>
-          <span className="text-zinc-700 text-xs uppercase tracking-widest font-bold">
-            {activeTab === "expansion" ? "Voice Expansion" : activeTab === "brief" ? "Brief Agent" : "Chapter Studio"}
-          </span>
+          <div className="w-px h-4 bg-white/10" />
+          {[
+            { id: "expansion", label: "Expansion" },
+            { id: "brief", label: "Brief" },
+            { id: "chapters", label: "Chapters" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                activeTab === t.id
+                  ? "bg-cyan-500 text-black font-bold"
+                  : "text-zinc-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {t.label}
+              {t.id === "brief" && roughDraft && activeTab !== "brief" && (
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 ml-1 align-middle" />
+              )}
+            </button>
+          ))}
         </div>
       )}
 
