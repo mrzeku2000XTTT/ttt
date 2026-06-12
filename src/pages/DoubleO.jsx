@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Zap, BookOpen, Film, Mic, ChevronRight, ArrowRight, Radio, Clapperboard, FileText, Cpu } from "lucide-react";
+import { Sparkles, Zap, BookOpen, Film, Mic, ChevronRight, ArrowRight, Radio, Clapperboard, FileText, Cpu, ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import OOExpansion from "@/components/doubleo/OOExpansion";
@@ -16,43 +16,41 @@ const NAV_TABS = [
   { id: "canvas", label: "Canvas" },
 ];
 
-const ROBOT_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/098382f40_generated_image.png";
-
 const FEATURE_CARDS = [
   {
-    imgPos: "object-[center_10%]",
-    tint: "rgba(0,212,255,0.08)",
+    img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e1b0bd70e_generated_image.png",
+    borderColor: "#00bfff",
     title: "Voice Expansion",
     desc: "Speak your story idea. 00 listens, analyzes, and builds your world in real time.",
-    tag: "Active",
-    tagColor: "bg-cyan-500",
+    tag: "ACTIVE",
+    tagColor: "#00bfff",
     tab: "expansion",
   },
   {
-    imgPos: "object-[center_35%]",
-    tint: "rgba(139,92,246,0.08)",
+    img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b9d1a2d06_generated_image.png",
+    borderColor: "#ffd700",
     title: "Brief Agent",
     desc: "Command center. Organizes your rough draft into scenes, tasks, and sub-agents.",
-    tag: "Ready",
-    tagColor: "bg-violet-500",
+    tag: "READY",
+    tagColor: "#ffd700",
     tab: "brief",
   },
   {
-    imgPos: "object-[center_60%]",
-    tint: "rgba(52,211,153,0.08)",
+    img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/32bf43779_generated_image.png",
+    borderColor: "#00e676",
     title: "Chapter Studio",
     desc: "Write each chapter with cinematic mood, lighting, and camera direction auto-generated.",
-    tag: "Studio",
-    tagColor: "bg-emerald-500",
+    tag: "STUDIO",
+    tagColor: "#00e676",
     tab: "chapters",
   },
   {
-    imgPos: "object-[center_80%]",
-    tint: "rgba(161,161,170,0.05)",
+    img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2e4ef678a_generated_image.png",
+    borderColor: "#ff3d3d",
     title: "Movie Engine",
     desc: "Every scene gets enhanced into a movie-ready prompt with visual direction.",
-    tag: "Coming",
-    tagColor: "bg-zinc-600",
+    tag: "COMING",
+    tagColor: "#ff3d3d",
     tab: "home",
   },
 ];
@@ -159,185 +157,129 @@ export default function DoubleOPage() {
 }
 
 function OOLandingPage({ onStartExpansion, roughDraft, onGoToBrief, onTabChange }) {
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const prevSlide = () => setActiveSlide((p) => (p - 1 + FEATURE_CARDS.length) % FEATURE_CARDS.length);
+  const nextSlide = () => setActiveSlide((p) => (p + 1) % FEATURE_CARDS.length);
+
+  // Visible cards: hero card placeholder + 4 module cards
+  const FILTER_TABS = ["Command", "Story", "Modules", "Scene", "Compile", "Assemble"];
+
   return (
-    <div>
-      {/* ── Hero ── */}
-      <section className="relative min-h-[90vh] flex items-end overflow-hidden">
-        {/* Background image */}
-        <div className="absolute inset-0">
-          <img
-            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/098382f40_generated_image.png"
-            alt="00 Agent"
-            className="w-full h-full object-cover object-center"
-          />
-          {/* Gradient overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#08090c] via-[#08090c]/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#08090c]/60 via-transparent to-[#08090c]/30" />
-        </div>
+    <div className="min-h-screen bg-black pb-20">
 
-        {/* Cyan glowing ring — like reference */}
-        <div className="absolute top-[15%] left-[8%] w-28 h-28 rounded-full border border-cyan-400/40 flex items-center justify-center pointer-events-none"
-          style={{ boxShadow: "0 0 40px rgba(0,212,255,0.15), inset 0 0 40px rgba(0,212,255,0.05)" }}>
-          <div className="w-16 h-16 rounded-full border border-cyan-400/30 flex items-center justify-center"
-            style={{ boxShadow: "0 0 20px rgba(0,212,255,0.2)" }}>
-            <div className="w-3 h-3 rounded-full bg-cyan-400" style={{ boxShadow: "0 0 12px rgba(0,212,255,0.8)" }} />
-          </div>
-        </div>
-
-        {/* Scanning line animation */}
-        <motion.div
-          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent pointer-events-none"
-          animate={{ top: ["15%", "85%", "15%"] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-
-        {/* Hero text */}
-        <div className="relative z-10 w-full px-6 sm:px-10 pb-14">
-          <p className="text-[11px] font-bold tracking-[0.3em] text-cyan-400 uppercase mb-3">Story Intelligence · Active</p>
-          <h1 className="text-[clamp(2.8rem,8vw,6rem)] font-[900] tracking-tight leading-[0.88] mb-5 max-w-2xl">
-            00<br />
-            <span className="text-zinc-400">Story</span><br />
-            <span className="text-zinc-600">Studio</span>
-          </h1>
-          <p className="text-zinc-400 text-sm sm:text-base max-w-md leading-relaxed mb-8">
-            Turn any idea into a book. Turn any book into a film. 
-            Voice-first AI agents handle the entire production pipeline.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={onStartExpansion}
-              className="flex items-center gap-2 px-7 py-3.5 bg-cyan-500 text-black text-[13px] font-[800] rounded-full hover:bg-cyan-400 active:scale-95 transition-all shadow-xl shadow-cyan-500/30"
-            >
-              <Mic className="w-4 h-4" /> Start Expansion
-            </button>
-            {roughDraft && (
+      {/* ── Cinema Schedule header bar ── */}
+      <div className="flex items-center justify-center pt-6 pb-4">
+        <div className="flex items-center gap-0 bg-[#1a1a1a] rounded-full px-2 py-1.5 border border-white/10">
+          {FILTER_TABS.map((label, i) => (
+            <React.Fragment key={label}>
+              {i > 0 && <span className="text-zinc-600 text-sm mx-1">|</span>}
               <button
-                onClick={onGoToBrief}
-                className="flex items-center gap-2 px-7 py-3.5 border border-white/20 text-white text-[13px] font-semibold rounded-full hover:bg-white/5 active:scale-95 transition-all"
-              >
-                Brief Agent <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Filter tabs row (like reference) ── */}
-      <div className="sticky top-14 z-30 bg-[#08090c]/95 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-5 flex items-center justify-between gap-3 h-12 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-1">
-            {["Command", "Story", "Modules", "Scene", "Compile"].map((label, i) => (
-              <button key={label}
-                className={`px-3.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all ${
-                  i === 0 ? "bg-white/10 text-white" : "text-zinc-500 hover:text-zinc-300"
+                className={`px-4 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                  label === "Modules"
+                    ? "bg-white text-black font-bold"
+                    : "text-zinc-400 hover:text-white"
                 }`}
+                onClick={label === "Assemble" ? onStartExpansion : undefined}
               >
                 {label}
               </button>
-            ))}
-          </div>
-          <button
-            onClick={onStartExpansion}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-cyan-500 text-black text-[11px] font-bold rounded-full hover:bg-cyan-400 transition-all flex-shrink-0"
-          >
-            <Sparkles className="w-3 h-3" /> Assemble
-          </button>
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
-      {/* ── Feature cards grid (like reference) ── */}
-      <div className="max-w-6xl mx-auto px-5 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURE_CARDS.map((card, i) => (
-            <motion.button
-              key={card.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              onClick={() => onTabChange(card.tab)}
-              className="relative text-left bg-[#111318] rounded-2xl overflow-hidden hover:border-cyan-500/20 hover:shadow-xl hover:shadow-cyan-500/5 transition-all group active:scale-[0.98] border"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}
-            >
-              {/* Card image — robot hero crop */}
-              <div className="h-36 relative overflow-hidden">
+      {/* ── Cinematic Card Slideshow ── */}
+      <div className="relative flex items-center justify-center px-4 sm:px-12 py-4" style={{ minHeight: "520px" }}>
+
+        {/* Left arrow */}
+        <button
+          onClick={prevSlide}
+          className="absolute left-2 sm:left-4 z-20 w-10 h-10 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-all"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        {/* Cards row */}
+        <div className="flex items-stretch gap-3 w-full max-w-6xl overflow-hidden">
+
+          {/* Hero / title card */}
+          <div
+            className="flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white/20 flex flex-col justify-end p-5 cursor-pointer"
+            style={{ width: "200px", minHeight: "460px", background: "linear-gradient(180deg, #111 0%, #000 100%)" }}
+            onClick={onStartExpansion}
+          >
+            <h2 className="text-white font-[900] text-[2rem] leading-[1] uppercase">
+              THE<br />CINEMA<br />SEDULE
+            </h2>
+          </div>
+
+          {/* Feature cards */}
+          {FEATURE_CARDS.map((card, i) => {
+            const isActive = i === activeSlide;
+            return (
+              <motion.button
+                key={card.title}
+                onClick={() => { setActiveSlide(i); onTabChange(card.tab); }}
+                className="relative flex-1 rounded-2xl overflow-hidden text-left flex-shrink-0"
+                style={{
+                  minHeight: "460px",
+                  border: `2px solid ${card.borderColor}`,
+                  boxShadow: isActive ? `0 0 24px ${card.borderColor}55` : "none",
+                  minWidth: 0,
+                }}
+                animate={{ scale: isActive ? 1.02 : 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {/* Full-bleed image */}
                 <img
-                  src={ROBOT_IMG}
-                  alt=""
-                  className={`w-full h-full object-cover ${card.imgPos} scale-110 group-hover:scale-105 transition-transform duration-700`}
+                  src={card.img}
+                  alt={card.title}
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-[#111318]/20 to-transparent" />
-                <div className="absolute inset-0" style={{ background: card.tint }} />
-                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" />
-                <div className="absolute bottom-3 right-3 w-1.5 h-1.5 rounded-full bg-cyan-400/40" />
-              </div>
-              {/* Card body */}
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-[13px] font-bold text-white leading-tight">{card.title}</h3>
-                  <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full text-white ${card.tagColor} ml-2 flex-shrink-0`}>
-                    {card.tag}
-                  </span>
-                </div>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">{card.desc}</p>
-                <div className="mt-3 flex items-center gap-1 text-cyan-400 text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                  Open <ChevronRight className="w-3 h-3" />
-                </div>
-              </div>
-            </motion.button>
-          ))}
-        </div>
+                {/* Dark gradient at bottom */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
-        {/* ── Bottom stats row ── */}
-        <div className="grid grid-cols-3 gap-4 mt-6">
-          {STAT_CARDS.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 + i * 0.08 }}
-              className="bg-[#111318] border rounded-2xl p-4 flex items-center gap-4"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}
-            >
-              <div className="w-10 h-10 rounded-xl bg-[#1a1d24] flex items-center justify-center flex-shrink-0"
-                style={{ boxShadow: "0 0 15px rgba(0,212,255,0.1)" }}>
-                <div className="w-3 h-3 rounded-full bg-cyan-400/60" />
-              </div>
-              <div>
-                <div className="text-[20px] font-[900] text-white leading-none">{s.value}</div>
-                <div className="text-[10px] text-zinc-500 mt-0.5">{s.label}</div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* ── Workflow section ── */}
-        <div className="mt-10 bg-[#111318] rounded-2xl border p-6 sm:p-8" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-2 h-2 rounded-full bg-cyan-400" style={{ boxShadow: "0 0 8px rgba(0,212,255,0.8)" }} />
-            <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">Production Pipeline</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              { num: "01", title: "Expansion", desc: "Voice or text brainstorm with 00. Upload any file for context.", icon: Radio, color: "text-cyan-400" },
-              { num: "02", title: "Brief Agent", desc: "Compiles draft, assigns sub-agents, structures your book.", icon: Zap, color: "text-violet-400" },
-              { num: "03", title: "Chapter Studio", desc: "Write with AI co-pilot. Every chapter gets cinematic direction.", icon: BookOpen, color: "text-emerald-400" },
-            ].map((step) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.num} className="flex gap-4">
-                  <div className="text-[28px] font-[900] text-white/10 leading-none flex-shrink-0">{step.num}</div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Icon className={`w-3.5 h-3.5 ${step.color}`} />
-                      <span className="text-[13px] font-bold text-white">{step.title}</span>
+                {/* Text overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <h3 className="text-white font-[900] text-[1.1rem] leading-tight mb-1">{card.title}</h3>
+                  <p className="text-[11px] text-zinc-300 leading-relaxed">
+                    <span className="font-bold mr-1" style={{ color: card.tagColor }}>{card.tag}</span>
+                    — {card.desc}
+                  </p>
+                  {card.tab !== "home" && (
+                    <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold" style={{ color: card.tagColor }}>
+                      Open →
                     </div>
-                    <p className="text-[12px] text-zinc-500 leading-relaxed">{step.desc}</p>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
+              </motion.button>
+            );
+          })}
         </div>
+
+        {/* Right arrow */}
+        <button
+          onClick={nextSlide}
+          className="absolute right-2 sm:right-4 z-20 w-10 h-10 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-all"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* ── Stats + Pipeline bar ── */}
+      <div className="text-center mt-4 space-y-2">
+        <p className="text-white text-lg font-semibold">
+          3+ Story Agents &nbsp;|&nbsp; ∞ File Types &nbsp;|&nbsp; Book Output Format
+        </p>
+        <p className="text-zinc-500 text-sm tracking-widest uppercase">
+          PRODUCTION PIPELINE:&nbsp;
+          <span className="text-zinc-400">01 Expansion</span>
+          <span className="text-zinc-600 mx-2">|</span>
+          <span className="text-zinc-400">02 Brief Agent</span>
+          <span className="text-zinc-600 mx-2">|</span>
+          <span className="text-zinc-400">03 Chapter Studio</span>
+        </p>
       </div>
     </div>
   );
