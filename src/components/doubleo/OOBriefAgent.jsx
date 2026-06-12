@@ -99,17 +99,14 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 flex flex-col items-center justify-center">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
-          <div className="w-20 h-20 rounded-full border-4 border-zinc-100 border-t-zinc-900 animate-spin mx-auto mb-6" />
-          <h2 className="text-[20px] font-[800] text-zinc-900 mb-2">Brief Agent Compiling</h2>
-          <p className="text-[13px] text-zinc-400 mb-8">Analyzing rough draft · Organizing tasks · Briefing sub-agents</p>
-          <div className="w-64 h-1.5 bg-zinc-100 rounded-full overflow-hidden mx-auto">
-            <motion.div
-              className="h-full bg-zinc-900 rounded-full"
-              animate={{ width: `${compilationProgress}%` }}
-              transition={{ duration: 0.3 }}
-            />
+          <div className="w-20 h-20 rounded-full animate-spin mx-auto mb-6" style={{ border: "4px solid rgba(255,255,255,0.06)", borderTopColor: "#0a84ff" }} />
+          <h2 className="text-[20px] font-[800] text-white mb-2">Brief Agent Compiling</h2>
+          <p className="text-[13px] mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>Analyzing rough draft · Organizing tasks · Briefing sub-agents</p>
+          <div className="w-64 h-1.5 rounded-full overflow-hidden mx-auto" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <motion.div className="h-full rounded-full" style={{ background: "#0a84ff" }}
+              animate={{ width: `${compilationProgress}%` }} transition={{ duration: 0.3 }} />
           </div>
-          <p className="text-[11px] text-zinc-400 mt-2">{Math.round(compilationProgress)}%</p>
+          <p className="text-[11px] mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>{Math.round(compilationProgress)}%</p>
         </motion.div>
       </div>
     );
@@ -119,19 +116,16 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 flex flex-col items-center justify-center">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
-          <motion.div
-            animate={{ rotate: [0, 180, 360] }}
-            transition={{ duration: 1.5, ease: "easeInOut" }}
-            className="w-20 h-20 rounded-2xl bg-zinc-900 flex items-center justify-center mx-auto mb-6"
-          >
-            <RefreshCw className="w-8 h-8 text-white" />
+          <motion.div animate={{ rotate: [0, 180, 360] }} transition={{ duration: 1.5, ease: "easeInOut" }}
+            className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6"
+            style={{ background: "rgba(10,132,255,0.15)", border: "1px solid rgba(10,132,255,0.3)" }}>
+            <RefreshCw className="w-8 h-8" style={{ color: "#0a84ff" }} />
           </motion.div>
-          <h2 className="text-[22px] font-[900] text-zinc-900 mb-2">Morphing to Co-Engineer</h2>
-          <p className="text-[13px] text-zinc-400 mb-8">Brief Agent is transforming into your Chapter Co-Engineer</p>
-          <button
-            onClick={onGoToChapters}
-            className="flex items-center gap-2 px-8 py-3 bg-zinc-900 text-white rounded-full text-[13px] font-semibold hover:bg-zinc-800 transition-all"
-          >
+          <h2 className="text-[22px] font-[900] text-white mb-2">Morphing to Co-Engineer</h2>
+          <p className="text-[13px] mb-8" style={{ color: "rgba(255,255,255,0.4)" }}>Brief Agent is transforming into your Chapter Co-Engineer</p>
+          <button onClick={onGoToChapters}
+            className="flex items-center gap-2 px-8 py-3 text-white rounded-full text-[13px] font-semibold transition-all"
+            style={{ background: "#0a84ff" }}>
             Open Chapter Editor <ChevronRight className="w-4 h-4" />
           </button>
         </motion.div>
@@ -155,7 +149,7 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
       </div>
 
       {!roughDraft && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-4 text-[12px] text-amber-700">
+        <div className="p-4 rounded-xl mb-4 text-[12px]" style={{ background: "rgba(255,214,10,0.08)", border: "1px solid rgba(255,214,10,0.2)", color: "#ffd60a" }}>
           No draft yet — go to Expansion tab first to brainstorm and finish a draft.
         </div>
       )}
@@ -167,13 +161,13 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
         ))}
         {isThinking && (
           <div className="flex gap-2 items-end">
-            <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0">
-              <Zap className="w-3 h-3 text-white" />
+            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(10,132,255,0.15)" }}>
+              <Zap className="w-3 h-3" style={{ color: "#0a84ff" }} />
             </div>
-            <div className="bg-white border border-zinc-100 rounded-2xl rounded-bl-sm px-4 py-3">
+            <div className="rounded-2xl rounded-bl-sm px-4 py-3" style={{ background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex gap-1">
                 {[0,1,2].map(i => (
-                  <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-400"
+                  <motion.div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.3)" }}
                     animate={{ y: [0,-4,0] }} transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }} />
                 ))}
               </div>
@@ -187,15 +181,14 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
       <AnimatePresence>
         {showDraftPicker && roughDraft && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-            className="mb-2 bg-[#111318] border rounded-xl shadow-lg overflow-hidden" style={{ borderColor: "rgba(255,255,255,0.1)" }}
-          >
-            <button onClick={attachDraft} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 transition-colors text-left">
-              <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center">
+            className="mb-2 rounded-xl shadow-lg overflow-hidden" style={{ background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <button onClick={attachDraft} className="w-full flex items-center gap-3 px-4 py-3 transition-colors text-left hover:brightness-110">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(10,132,255,0.15)" }}>
                 <span className="text-[9px] font-[900] text-white">00</span>
               </div>
               <div>
                 <p className="text-[12px] font-bold text-white">{roughDraft.title || "My Story"}</p>
-                <p className="text-[10px] text-zinc-500">{roughDraft.logline?.slice(0, 60) || "Rough draft"}</p>
+                <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{roughDraft.logline?.slice(0, 60) || "Rough draft"}</p>
               </div>
             </button>
           </motion.div>
@@ -203,8 +196,8 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
       </AnimatePresence>
 
       {/* Input */}
-      <div className="flex items-end gap-2 bg-[#111318] rounded-2xl border p-2" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-        <button onClick={() => setInput(prev => prev + "@")} className="p-2.5 rounded-xl text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors flex-shrink-0">
+      <div className="flex items-end gap-2 rounded-2xl p-2" style={{ background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <button onClick={() => setInput(prev => prev + "@")} className="p-2.5 rounded-xl transition-colors flex-shrink-0" style={{ color: "rgba(255,255,255,0.4)" }}>
           <AtSign className="w-4 h-4" />
         </button>
         <textarea
@@ -215,11 +208,9 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
           rows={1}
           className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder-zinc-600 outline-none min-h-[36px] max-h-[120px] py-2 leading-relaxed"
         />
-        <button
-          onClick={sendMessage}
-          disabled={!input.trim() || isThinking}
-          className="p-2.5 bg-zinc-900 text-white rounded-xl hover:bg-zinc-800 disabled:opacity-40 transition-all flex-shrink-0"
-        >
+        <button onClick={sendMessage} disabled={!input.trim() || isThinking}
+          className="p-2.5 text-white rounded-xl disabled:opacity-40 transition-all flex-shrink-0"
+          style={{ background: "#0a84ff" }}>
           <Send className="w-4 h-4" />
         </button>
       </div>
@@ -238,21 +229,23 @@ function BriefBubble({ msg, onMorph, onGoChapters }) {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       className={`flex gap-2 items-end ${isUser ? "flex-row-reverse" : ""}`}>
       {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0">
-          <Zap className="w-3 h-3 text-white" />
+        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(10,132,255,0.15)" }}>
+          <Zap className="w-3 h-3" style={{ color: "#0a84ff" }} />
         </div>
       )}
-      <div className={`max-w-[85%] rounded-2xl text-[13px] leading-relaxed ${
-        isUser ? "bg-white/10 text-white rounded-br-sm px-4 py-3 border border-white/10"
-               : "bg-[#1a1d24] border border-white/5 text-zinc-200 rounded-bl-sm px-4 py-3"
-      }`}>
+      <div className="max-w-[85%] rounded-2xl text-[13px] leading-relaxed px-4 py-3"
+        style={isUser
+          ? { background: "rgba(255,255,255,0.08)", color: "#fff", borderRadius: "18px 18px 4px 18px", border: "1px solid rgba(255,255,255,0.08)" }
+          : { background: "#1c1c1e", color: "rgba(255,255,255,0.85)", borderRadius: "18px 18px 18px 4px", border: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="whitespace-pre-line">{formatted}</div>
         {msg.showMorph && (
           <div className="mt-3 flex gap-2 flex-wrap">
-            <button onClick={onMorph} className="flex items-center gap-1.5 px-4 py-2 bg-zinc-900 text-white text-[11px] font-bold rounded-full hover:bg-zinc-800 transition-all">
+            <button onClick={onMorph} className="flex items-center gap-1.5 px-4 py-2 text-white text-[11px] font-bold rounded-full transition-all"
+              style={{ background: "#0a84ff" }}>
               <RefreshCw className="w-3 h-3" /> Morph to Engineer
             </button>
-            <button onClick={onGoChapters} className="flex items-center gap-1.5 px-4 py-2 border border-zinc-200 text-zinc-700 text-[11px] font-semibold rounded-full hover:bg-zinc-50 transition-all">
+            <button onClick={onGoChapters} className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold rounded-full transition-all"
+              style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
               Go to Chapters <ChevronRight className="w-3 h-3" />
             </button>
           </div>
