@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Send, Paperclip, X, CheckCircle, Loader2, FileText, Image, Music, Video, Code, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
+import { Mic, MicOff, Send, Paperclip, X, CheckCircle, Loader2, FileText, Image, Music, Video } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const WELCOME = {
@@ -27,12 +27,15 @@ export default function OOExpansion({ onDraftCreated }) {
   const [input, setInput] = useState("");
   const [files, setFiles] = useState([]);
   const [isListening, setIsListening] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [canFinish, setCanFinish] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -56,62 +59,57 @@ export default function OOExpansion({ onDraftCreated }) {
   }, [messages]);
 
   const toggleVoice = async () => {
-    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      alert("Voice input not supported in this browser. Try Chrome.");
-      return;
-    }
+    // Stop recording if already listening
     if (isListening) {
-      recognitionRef.current?.stop();
+      mediaRecorderRef.current?.stop();
       setIsListening(false);
       return;
     }
 
-    // Request mic permission explicitly first
+    // Start recording
+    let stream;
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      alert("Microphone access was denied. Please allow mic access in your browser settings.");
+      alert("Microphone access denied. Please allow mic access in your browser settings.");
       return;
     }
 
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-US";
+    audioChunksRef.current = [];
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
 
-    let finalTranscript = "";
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunksRef.current.push(e.data);
+    };
 
-    rec.onresult = (e) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          finalTranscript += e.results[i][0].transcript + " ";
-        } else {
-          interim += e.results[i][0].transcript;
+    mediaRecorder.onstop = async () => {
+      // Stop all tracks
+      stream.getTracks().forEach(t => t.stop());
+
+      if (audioChunksRef.current.length === 0) return;
+
+      setIsTranscribing(true);
+      try {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const file = new File([blob], "voice.webm", { type: "audio/webm" });
+
+        // Upload the audio file
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+        // Transcribe it
+        const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
+
+        if (transcript && typeof transcript === "string" && transcript.trim()) {
+          setInput(prev => (prev ? prev + " " + transcript.trim() : transcript.trim()));
         }
+      } catch (err) {
+        console.error("Transcription error:", err);
       }
-      setInput(finalTranscript + interim);
+      setIsTranscribing(false);
     };
 
-    rec.onerror = (e) => {
-      console.error("Speech recognition error:", e.error);
-      setIsListening(false);
-      if (e.error === "not-allowed") {
-        alert("Microphone access denied. Please enable it in browser settings.");
-      }
-    };
-
-    rec.onend = () => {
-      setIsListening(false);
-      // Auto-populate whatever was captured
-      if (finalTranscript.trim()) {
-        setInput(finalTranscript.trim());
-      }
-    };
-
-    rec.start();
-    recognitionRef.current = rec;
+    mediaRecorder.start();
+    mediaRecorderRef.current = mediaRecorder;
     setIsListening(true);
   };
 
@@ -311,11 +309,12 @@ Return ONLY valid JSON.`;
         />
         <button
           onClick={toggleVoice}
+          disabled={isTranscribing}
           className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${
-            isListening ? "bg-red-500/20 text-red-400 animate-pulse" : "text-zinc-500 hover:text-white hover:bg-white/10"
+            isListening ? "bg-red-500/20 text-red-400 animate-pulse" : isTranscribing ? "text-cyan-400" : "text-zinc-500 hover:text-white hover:bg-white/10"
           }`}
         >
-          {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
         <button
           onClick={sendMessage}
@@ -326,7 +325,10 @@ Return ONLY valid JSON.`;
         </button>
       </div>
       {isListening && (
-        <p className="text-center text-[11px] text-red-500 font-medium mt-2 animate-pulse">🔴 Listening… speak your idea</p>
+        <p className="text-center text-[11px] text-red-500 font-medium mt-2 animate-pulse">🔴 Recording… tap mic again to stop</p>
+      )}
+      {isTranscribing && (
+        <p className="text-center text-[11px] text-cyan-400 font-medium mt-2 animate-pulse">✨ Transcribing your voice…</p>
       )}
     </div>
   );
