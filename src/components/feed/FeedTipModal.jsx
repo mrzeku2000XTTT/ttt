@@ -241,15 +241,21 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       const status = err.response?.status;
       const errMsg = err.response?.data?.error || err.message || 'Unknown error';
       if (status === 404 || errMsg.includes('status code 404') || errMsg.includes('Deployment does not exist')) {
-        setTipError('⚠️ Tip service is temporarily unavailable (transfer function not deployed). Please try again in a moment or contact support.');
-      } else if (errMsg.includes('User reject')) {
-        setTipError('Transaction cancelled');
-      } else if (errMsg.includes('storage mass')) {
-        setTipError('⚠️ Storage mass error: Consolidate UTXOs in your wallet settings.');
+        setTipError('⚠️ Tip service is temporarily offline. Please try again in a moment.');
+      } else if (errMsg.includes('User reject') || errMsg.includes('user rejected')) {
+        setTipError('Transaction cancelled by user.');
+      } else if (errMsg.includes('storage mass') || errMsg.includes('fee') || errMsg.includes('mass') || errMsg.includes('fee rate')) {
+        setTipError('⚠️ Too many small UTXOs in your wallet causing high fees. Go to Terra → Wallet → "Compound" to consolidate them, then try again. Or try sending a larger amount (5+ KAS).');
       } else if (errMsg.includes('false stack') || errMsg.includes('signature') || errMsg.includes('script execution')) {
-        setTipError("⚠️ Wallet key mismatch — your stored private key doesn't match this address. Go to Terra → Settings → Clear & reimport your seed phrase to fix this.");
+        setTipError("⚠️ Wallet key mismatch — your stored key doesn't match this address. Go to Terra → reimport your seed phrase to fix this.");
+      } else if (errMsg.includes('Insufficient balance') || errMsg.includes('insufficient')) {
+        setTipError(`⚠️ ${errMsg}`);
+      } else if (errMsg.includes('confirming') || errMsg.includes('already spent')) {
+        setTipError('⚠️ Previous transaction still confirming. Please wait 10–15 seconds and try again.');
+      } else if (errMsg.includes('No UTXOs') || errMsg.includes('balance may be 0')) {
+        setTipError('⚠️ Wallet balance appears to be 0 or is still syncing. Check your balance in Terra and try again.');
       } else {
-        setTipError(errMsg);
+        setTipError(`Transaction failed: ${errMsg}`);
       }
     } finally {
       setIsSendingTip(false);

@@ -79,6 +79,7 @@ import AboutPage from './pages/About';
 import WalletHubPage from './pages/WalletHub';
 import KasthleticsPage from './pages/Kasthletics';
 import MetaMimicPage from './pages/MetaMimic';
+import ARCPage from './pages/ARC';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -194,6 +195,7 @@ const AuthenticatedApp = () => {
       <Route path="/WalletHub" element={<WalletHubPage />} />
       <Route path="/Kasthletics" element={<KasthleticsPage />} />
       <Route path="/MetaMimic" element={<MetaMimicPage />} />
+      <Route path="/ARC" element={<ARCPage />} />
       <Route path="/Docs" element={
         <LayoutWrapper currentPageName="Docs">
           <DocsPage />

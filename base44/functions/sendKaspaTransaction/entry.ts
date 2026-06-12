@@ -3,17 +3,16 @@ import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
 import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
 
 const KASPA_API = 'https://api.kaspa.org';
-const FEE_SOMPI = 10000n; // 0.0001 KAS (minimum floor)
+const FEE_SOMPI = 50000n; // 0.0005 KAS (minimum floor, raised for safety)
 const MAX_UTXOS = 80;
 
 // Dynamic fee: Kaspa requires fees to cover transaction "mass", which is
 // dominated by storage mass — each output costs ~100k mass and each input
-// adds compute/size mass. The node rejects anything under the required amount
-// (e.g. ~203,600 for a 2-output tx). We over-estimate slightly to always clear
-// the threshold while staying tiny in KAS terms (100k sompi = 0.001 KAS).
+// adds compute/size mass. The node rejects anything under the required amount.
+// With many small UTXOs, storage mass grows fast; we apply a 2x safety buffer.
 function estimateFee(numInputs, numOutputs) {
-  // ~120k mass per output (covers storage mass) + ~2,500 per input + header.
-  const mass = BigInt(numOutputs) * 120000n + BigInt(numInputs) * 2500n + 1000n;
+  // ~150k mass per output + ~3,000 per input + header, then 2x safety buffer.
+  const mass = (BigInt(numOutputs) * 150000n + BigInt(numInputs) * 3000n + 2000n) * 2n;
   return mass > FEE_SOMPI ? mass : FEE_SOMPI;
 }
 const OP_DATA_32 = 0x20;
