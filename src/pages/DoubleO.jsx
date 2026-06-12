@@ -162,32 +162,8 @@ function OOLandingPage({ onStartExpansion, roughDraft, onGoToBrief, onTabChange 
   const prevSlide = () => setActiveSlide((p) => (p - 1 + FEATURE_CARDS.length) % FEATURE_CARDS.length);
   const nextSlide = () => setActiveSlide((p) => (p + 1) % FEATURE_CARDS.length);
 
-  // Visible cards: hero card placeholder + 4 module cards
-  const FILTER_TABS = ["Command", "Story", "Modules", "Scene", "Compile", "Assemble"];
-
   return (
     <div className="min-h-screen bg-black pb-20">
-
-      {/* ── Cinema Schedule header bar ── */}
-      <div className="flex items-center justify-center pt-6 pb-4">
-        <div className="flex items-center gap-0 bg-[#1a1a1a] rounded-full px-2 py-1.5 border border-white/10">
-          {FILTER_TABS.map((label, i) => (
-            <React.Fragment key={label}>
-              {i > 0 && <span className="text-zinc-600 text-sm mx-1">|</span>}
-              <button
-                className={`px-4 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                  label === "Modules"
-                    ? "bg-white text-black font-bold"
-                    : "text-zinc-400 hover:text-white"
-                }`}
-                onClick={label === "Assemble" ? onStartExpansion : undefined}
-              >
-                {label}
-              </button>
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
 
       {/* ── Cinematic Card Slideshow ── */}
       <div className="relative flex items-center justify-center px-4 sm:px-12 py-4" style={{ minHeight: "520px" }}>
