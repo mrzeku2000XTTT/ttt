@@ -77,185 +77,170 @@ export default function DoubleOPage() {
     setActiveTab("brief");
   };
 
+  const isHome = activeTab === "home";
+
   return (
     <div className="min-h-screen bg-[#08090c] text-white overflow-x-hidden">
 
-      {/* ── Nav ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-5 bg-[#08090c]/80 backdrop-blur-xl border-b border-white/5">
-        <Link to="/AppStoreV2" className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors h-14 -ml-2 px-2">
-          <span className="text-[13px] font-medium">← Store</span>
-        </Link>
-
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-          {NAV_TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id === "engineer" || tab.id === "canvas" ? "chapters" : tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition-all ${
-                  active
-                    ? "bg-cyan-500 text-black font-bold"
-                    : "text-zinc-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {tab.label}
-                {tab.id === "brief" && roughDraft && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                )}
-              </button>
-            );
-          })}
+      {/* ── Minimal back link (non-home views only) ── */}
+      {!isHome && (
+        <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+          <button
+            onClick={() => setActiveTab("home")}
+            className="text-zinc-500 hover:text-white text-[13px] font-medium transition-colors"
+          >
+            ← Back
+          </button>
+          <span className="text-zinc-700 text-xs uppercase tracking-widest font-bold">
+            {activeTab === "expansion" ? "Voice Expansion" : activeTab === "brief" ? "Brief Agent" : "Chapter Studio"}
+          </span>
         </div>
-
-        <button
-          onClick={() => setActiveTab("expansion")}
-          className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-black text-[12px] font-bold rounded-full hover:bg-cyan-400 transition-all shadow-lg shadow-cyan-500/30"
-        >
-          <Sparkles className="w-3.5 h-3.5" /> Start Now
-        </button>
-      </nav>
+      )}
 
       {/* ── Content ── */}
-      <div className="pt-14">
-        <AnimatePresence mode="wait">
-          {activeTab === "home" && (
-            <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-              <OOLandingPage
-                onStartExpansion={() => setActiveTab("expansion")}
-                roughDraft={roughDraft}
-                onGoToBrief={() => setActiveTab("brief")}
-                onTabChange={setActiveTab}
-              />
-            </motion.div>
-          )}
-          {activeTab === "expansion" && (
-            <motion.div key="expansion" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              <div className="max-w-3xl mx-auto px-0 sm:px-4 pt-4">
-                <OOExpansion onDraftCreated={handleDraftCreated} />
-              </div>
-            </motion.div>
-          )}
-          {activeTab === "brief" && (
-            <motion.div key="brief" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              <div className="max-w-3xl mx-auto px-0 sm:px-4 pt-4">
-                <OOBriefAgent roughDraft={roughDraft} onGoToChapters={() => setActiveTab("chapters")} />
-              </div>
-            </motion.div>
-          )}
-          {activeTab === "chapters" && (
-            <motion.div key="chapters" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-              <div className="max-w-4xl mx-auto px-0 sm:px-4 pt-4">
-                <OOChapterEditor roughDraft={roughDraft} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <AnimatePresence mode="wait">
+        {isHome && (
+          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+            <OOLandingPage
+              onStartExpansion={() => setActiveTab("expansion")}
+              roughDraft={roughDraft}
+              onGoToBrief={() => setActiveTab("brief")}
+              onTabChange={setActiveTab}
+            />
+          </motion.div>
+        )}
+        {activeTab === "expansion" && (
+          <motion.div key="expansion" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            <div className="max-w-3xl mx-auto px-0 sm:px-4 pt-2">
+              <OOExpansion onDraftCreated={handleDraftCreated} />
+            </div>
+          </motion.div>
+        )}
+        {activeTab === "brief" && (
+          <motion.div key="brief" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            <div className="max-w-3xl mx-auto px-0 sm:px-4 pt-2">
+              <OOBriefAgent roughDraft={roughDraft} onGoToChapters={() => setActiveTab("chapters")} />
+            </div>
+          </motion.div>
+        )}
+        {activeTab === "chapters" && (
+          <motion.div key="chapters" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            <div className="max-w-4xl mx-auto px-0 sm:px-4 pt-2">
+              <OOChapterEditor roughDraft={roughDraft} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 function OOLandingPage({ onStartExpansion, roughDraft, onGoToBrief, onTabChange }) {
-  const [activeSlide, setActiveSlide] = useState(0);
-
-  const prevSlide = () => setActiveSlide((p) => (p - 1 + FEATURE_CARDS.length) % FEATURE_CARDS.length);
-  const nextSlide = () => setActiveSlide((p) => (p + 1) % FEATURE_CARDS.length);
-
   return (
-    <div className="min-h-screen bg-black pb-20">
+    <div className="min-h-screen bg-black pb-10">
 
-      {/* ── Cinematic Card Slideshow ── */}
-      <div className="relative flex items-center justify-center px-4 sm:px-12 py-4" style={{ minHeight: "520px" }}>
-
-        {/* Left arrow */}
-        <button
-          onClick={prevSlide}
-          className="absolute left-2 sm:left-4 z-20 w-10 h-10 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-all"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        {/* Cards row */}
-        <div className="flex items-stretch gap-3 w-full max-w-6xl overflow-hidden">
-
-          {/* Hero / title card */}
-          <div
-            className="flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white/20 flex flex-col justify-end p-5 cursor-pointer"
-            style={{ width: "200px", minHeight: "460px", background: "linear-gradient(180deg, #111 0%, #000 100%)" }}
-            onClick={onStartExpansion}
-          >
-            <h2 className="text-white font-[900] text-[2rem] leading-[1] uppercase">
-              THE<br />CINEMA<br />SEDULE
-            </h2>
-          </div>
-
-          {/* Feature cards */}
-          {FEATURE_CARDS.map((card, i) => {
-            const isActive = i === activeSlide;
-            return (
-              <motion.button
-                key={card.title}
-                onClick={() => { setActiveSlide(i); onTabChange(card.tab); }}
-                className="relative flex-1 rounded-2xl overflow-hidden text-left flex-shrink-0"
-                style={{
-                  minHeight: "460px",
-                  border: `2px solid ${card.borderColor}`,
-                  boxShadow: isActive ? `0 0 24px ${card.borderColor}55` : "none",
-                  minWidth: 0,
-                }}
-                animate={{ scale: isActive ? 1.02 : 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                {/* Full-bleed image */}
-                <img
-                  src={card.img}
-                  alt={card.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                {/* Dark gradient at bottom */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-
-                {/* Text overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="text-white font-[900] text-[1.1rem] leading-tight mb-1">{card.title}</h3>
-                  <p className="text-[11px] text-zinc-300 leading-relaxed">
-                    <span className="font-bold mr-1" style={{ color: card.tagColor }}>{card.tag}</span>
-                    — {card.desc}
-                  </p>
-                  {card.tab !== "home" && (
-                    <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold" style={{ color: card.tagColor }}>
-                      Open →
-                    </div>
-                  )}
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        {/* Right arrow */}
-        <button
-          onClick={nextSlide}
-          className="absolute right-2 sm:right-4 z-20 w-10 h-10 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-all"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+      {/* ── Back to store ── */}
+      <div className="px-4 pt-5 pb-3">
+        <Link to="/AppStoreV2" className="text-zinc-600 hover:text-zinc-400 text-[12px] font-medium transition-colors">
+          ← Store
+        </Link>
       </div>
 
-      {/* ── Stats + Pipeline bar ── */}
-      <div className="text-center mt-4 space-y-2">
-        <p className="text-white text-lg font-semibold">
-          3+ Story Agents &nbsp;|&nbsp; ∞ File Types &nbsp;|&nbsp; Book Output Format
+      {/* ── Title ── */}
+      <div className="px-4 pb-4">
+        <h1 className="text-white font-[900] text-[2.2rem] leading-[0.95] uppercase tracking-tight">
+          00<br /><span className="text-zinc-500">Story</span><br /><span className="text-zinc-700">Studio</span>
+        </h1>
+        <p className="text-zinc-500 text-[12px] mt-2 max-w-xs leading-relaxed">
+          Turn any idea into a book. Turn any book into a film.
         </p>
-        <p className="text-zinc-500 text-sm tracking-widest uppercase">
-          PRODUCTION PIPELINE:&nbsp;
-          <span className="text-zinc-400">01 Expansion</span>
-          <span className="text-zinc-600 mx-2">|</span>
-          <span className="text-zinc-400">02 Brief Agent</span>
-          <span className="text-zinc-600 mx-2">|</span>
-          <span className="text-zinc-400">03 Chapter Studio</span>
-        </p>
+      </div>
+
+      {/* ── Desktop: horizontal slideshow | Mobile: vertical stack ── */}
+
+      {/* DESKTOP */}
+      <div className="hidden sm:flex gap-3 px-4 overflow-x-auto pb-4" style={{ minHeight: "500px" }}>
+        {/* Hero card */}
+        <button
+          onClick={onStartExpansion}
+          className="flex-shrink-0 rounded-2xl overflow-hidden border-2 border-white/20 flex flex-col justify-end p-5 cursor-pointer active:scale-95 transition-transform"
+          style={{ width: "180px", minHeight: "480px", background: "linear-gradient(180deg, #111 0%, #000 100%)" }}
+        >
+          <h2 className="text-white font-[900] text-[1.8rem] leading-[1] uppercase text-left">
+            THE<br />CINEMA<br />SCHEDULE
+          </h2>
+          <p className="text-cyan-400 text-[11px] font-bold mt-2">Start →</p>
+        </button>
+
+        {/* Feature cards */}
+        {FEATURE_CARDS.map((card) => (
+          <button
+            key={card.title}
+            onClick={() => onTabChange(card.tab)}
+            className="relative flex-1 rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform"
+            style={{ minHeight: "480px", minWidth: "160px", border: `2px solid ${card.borderColor}` }}
+          >
+            <img src={card.img} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4">
+              <h3 className="text-white font-[900] text-[1rem] leading-tight mb-1">{card.title}</h3>
+              <p className="text-[10px] text-zinc-300 leading-relaxed">
+                <span className="font-bold" style={{ color: card.tagColor }}>{card.tag}</span> — {card.desc}
+              </p>
+              {card.tab !== "home" && (
+                <p className="mt-2 text-[11px] font-bold" style={{ color: card.tagColor }}>Open →</p>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* MOBILE: vertical stack of cards */}
+      <div className="sm:hidden px-4 space-y-3">
+        {/* Start card */}
+        <button
+          onClick={onStartExpansion}
+          className="w-full rounded-2xl overflow-hidden border-2 border-cyan-500/50 flex items-center gap-4 p-4 active:scale-[0.98] transition-transform"
+          style={{ background: "linear-gradient(135deg, #0a1a2a 0%, #000 100%)" }}
+        >
+          <div className="w-14 h-14 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+            <Mic className="w-6 h-6 text-cyan-400" />
+          </div>
+          <div className="text-left">
+            <p className="text-cyan-400 text-[10px] font-bold uppercase tracking-widest">Begin</p>
+            <h3 className="text-white font-[900] text-[1rem]">Start Expansion</h3>
+            <p className="text-zinc-500 text-[11px]">Voice or text brainstorm with 00</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-zinc-600 ml-auto flex-shrink-0" />
+        </button>
+
+        {/* Feature cards */}
+        {FEATURE_CARDS.map((card) => (
+          <button
+            key={card.title}
+            onClick={() => onTabChange(card.tab)}
+            className="relative w-full rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform"
+            style={{ height: "180px", border: `2px solid ${card.borderColor}` }}
+          >
+            <img src={card.img} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
+              <div>
+                <h3 className="text-white font-[900] text-[1rem] leading-tight">{card.title}</h3>
+                <p className="text-[10px] font-bold" style={{ color: card.tagColor }}>{card.tag}</p>
+              </div>
+              {card.tab !== "home" && (
+                <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: card.tagColor }} />
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Pipeline ── */}
+      <div className="text-center mt-8 px-4 space-y-1">
+        <p className="text-zinc-600 text-[11px] tracking-widest uppercase">Production Pipeline</p>
+        <p className="text-zinc-400 text-[12px]">01 Expansion → 02 Brief Agent → 03 Chapter Studio</p>
       </div>
     </div>
   );
