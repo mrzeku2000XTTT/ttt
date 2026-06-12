@@ -59,6 +59,10 @@ const STAT_CARDS = [
 
 export default function DoubleOPage() {
   const [activeTab, setActiveTab] = useState("home");
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
   const [roughDraft, setRoughDraft] = useState(() => {
     try { return JSON.parse(localStorage.getItem("oo_rough_draft") || "null"); } catch { return null; }
   });
