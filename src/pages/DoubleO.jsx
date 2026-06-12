@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Zap, BookOpen, Film, Mic, ChevronRight, ArrowRight } from "lucide-react";
+import { Sparkles, Zap, BookOpen, Film, Mic, ChevronRight, ArrowRight, Radio, Clapperboard, FileText, Cpu } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import OOExpansion from "@/components/doubleo/OOExpansion";
@@ -18,7 +18,9 @@ const NAV_TABS = [
 
 const FEATURE_CARDS = [
   {
-    icon: "🎙",
+    Icon: Radio,
+    iconColor: "text-cyan-400",
+    glowColor: "rgba(0,212,255,0.15)",
     title: "Voice Expansion",
     desc: "Speak your story idea. 00 listens, analyzes, and builds your world in real time.",
     tag: "Active",
@@ -26,7 +28,9 @@ const FEATURE_CARDS = [
     tab: "expansion",
   },
   {
-    icon: "⚡",
+    Icon: Zap,
+    iconColor: "text-violet-400",
+    glowColor: "rgba(139,92,246,0.15)",
     title: "Brief Agent",
     desc: "Command center. Organizes your rough draft into scenes, tasks, and sub-agents.",
     tag: "Ready",
@@ -34,7 +38,9 @@ const FEATURE_CARDS = [
     tab: "brief",
   },
   {
-    icon: "📖",
+    Icon: BookOpen,
+    iconColor: "text-emerald-400",
+    glowColor: "rgba(52,211,153,0.15)",
     title: "Chapter Studio",
     desc: "Write each chapter with cinematic mood, lighting, and camera direction auto-generated.",
     tag: "Studio",
@@ -42,7 +48,9 @@ const FEATURE_CARDS = [
     tab: "chapters",
   },
   {
-    icon: "🎬",
+    Icon: Clapperboard,
+    iconColor: "text-zinc-400",
+    glowColor: "rgba(161,161,170,0.1)",
     title: "Movie Engine",
     desc: "Every scene gets enhanced into a movie-ready prompt with visual direction.",
     tag: "Coming",
@@ -242,42 +250,51 @@ function OOLandingPage({ onStartExpansion, roughDraft, onGoToBrief, onTabChange 
       {/* ── Feature cards grid (like reference) ── */}
       <div className="max-w-6xl mx-auto px-5 py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURE_CARDS.map((card, i) => (
-            <motion.button
-              key={card.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              onClick={() => onTabChange(card.tab)}
-              className="relative text-left bg-[#111318] border border-white/8 rounded-2xl overflow-hidden hover:border-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/5 transition-all group active:scale-[0.98]"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}
-            >
-              {/* Card image area */}
-              <div className="h-36 bg-gradient-to-br from-[#1a1d24] to-[#0f1116] flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 opacity-30" style={{
-                  backgroundImage: "radial-gradient(circle at 50% 50%, rgba(0,212,255,0.15) 0%, transparent 70%)"
-                }} />
-                <span className="text-5xl relative z-10">{card.icon}</span>
-                {/* Corner circuit decoration */}
-                <div className="absolute bottom-2 right-2 w-8 h-8 border border-cyan-400/20 rounded"
-                  style={{ boxShadow: "0 0 8px rgba(0,212,255,0.1)" }} />
-                <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-cyan-400/30" />
-              </div>
-              {/* Card body */}
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-[13px] font-bold text-white leading-tight">{card.title}</h3>
-                  <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full text-white ${card.tagColor} ml-2 flex-shrink-0`}>
-                    {card.tag}
-                  </span>
+          {FEATURE_CARDS.map((card, i) => {
+            const CardIcon = card.Icon;
+            return (
+              <motion.button
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                onClick={() => onTabChange(card.tab)}
+                className="relative text-left bg-[#111318] rounded-2xl overflow-hidden hover:border-cyan-500/20 hover:shadow-xl hover:shadow-cyan-500/5 transition-all group active:scale-[0.98] border"
+                style={{ borderColor: "rgba(255,255,255,0.06)" }}
+              >
+                {/* Card icon area */}
+                <div className="h-36 bg-[#0d0f14] flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: `radial-gradient(circle at 50% 60%, ${card.glowColor} 0%, transparent 65%)`
+                  }} />
+                  {/* Grid lines */}
+                  <div className="absolute inset-0 opacity-[0.04]" style={{
+                    backgroundImage: "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
+                    backgroundSize: "24px 24px"
+                  }} />
+                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center"
+                    style={{ boxShadow: `0 0 30px ${card.glowColor}` }}>
+                    <CardIcon className={`w-6 h-6 ${card.iconColor}`} strokeWidth={1.5} />
+                  </div>
+                  <div className="absolute bottom-3 right-3 w-1.5 h-1.5 rounded-full bg-white/20" />
+                  <div className="absolute top-3 left-3 w-1.5 h-1.5 rounded-full bg-white/10" />
                 </div>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">{card.desc}</p>
-                <div className="mt-3 flex items-center gap-1 text-cyan-400 text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                  Open <ChevronRight className="w-3 h-3" />
+                {/* Card body */}
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-[13px] font-bold text-white leading-tight">{card.title}</h3>
+                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full text-white ${card.tagColor} ml-2 flex-shrink-0`}>
+                      {card.tag}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 leading-relaxed">{card.desc}</p>
+                  <div className="mt-3 flex items-center gap-1 text-cyan-400 text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                    Open <ChevronRight className="w-3 h-3" />
+                  </div>
                 </div>
-              </div>
-            </motion.button>
-          ))}
+              </motion.button>
+            );
+          })}
         </div>
 
         {/* ── Bottom stats row ── */}
@@ -311,9 +328,9 @@ function OOLandingPage({ onStartExpansion, roughDraft, onGoToBrief, onTabChange 
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { num: "01", title: "Expansion", desc: "Voice or text brainstorm with 00. Upload any file for context.", icon: Mic },
-              { num: "02", title: "Brief Agent", desc: "Compiles draft, assigns sub-agents, structures your book.", icon: Zap },
-              { num: "03", title: "Chapter Studio", desc: "Write with AI co-pilot. Every chapter gets cinematic direction.", icon: Film },
+              { num: "01", title: "Expansion", desc: "Voice or text brainstorm with 00. Upload any file for context.", icon: Radio, color: "text-cyan-400" },
+              { num: "02", title: "Brief Agent", desc: "Compiles draft, assigns sub-agents, structures your book.", icon: Zap, color: "text-violet-400" },
+              { num: "03", title: "Chapter Studio", desc: "Write with AI co-pilot. Every chapter gets cinematic direction.", icon: BookOpen, color: "text-emerald-400" },
             ].map((step) => {
               const Icon = step.icon;
               return (
@@ -321,7 +338,7 @@ function OOLandingPage({ onStartExpansion, roughDraft, onGoToBrief, onTabChange 
                   <div className="text-[28px] font-[900] text-white/10 leading-none flex-shrink-0">{step.num}</div>
                   <div>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <Icon className="w-3.5 h-3.5 text-cyan-400" />
+                      <Icon className={`w-3.5 h-3.5 ${step.color}`} />
                       <span className="text-[13px] font-bold text-white">{step.title}</span>
                     </div>
                     <p className="text-[12px] text-zinc-500 leading-relaxed">{step.desc}</p>
