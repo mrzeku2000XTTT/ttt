@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Mic, ChevronRight, BookOpen, Film, History, Clock, Trash2, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Sparkles, Mic, ChevronRight, BookOpen, Film, History, Clock, Trash2, ArrowRight, PenLine } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 import OOExpansion from "@/components/doubleo/OOExpansion";
 import OOBriefAgent from "@/components/doubleo/OOBriefAgent";
@@ -146,6 +146,10 @@ export default function DoubleOPage() {
             </button>
           ))}
           <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.1)" }} />
+          <Link to="/DoubleONotes" className="p-1.5 rounded-full transition-all flex items-center" title="Notes"
+            style={{ color: "rgba(255,255,255,0.45)" }}>
+            <PenLine className="w-3.5 h-3.5" />
+          </Link>
           <button onClick={() => setShowHistory(true)}
             className="p-1.5 rounded-full transition-all"
             style={{ color: "rgba(255,255,255,0.45)" }}>
