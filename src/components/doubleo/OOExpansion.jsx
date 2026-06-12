@@ -200,14 +200,14 @@ Return ONLY valid JSON.`;
     <div className="max-w-3xl mx-auto px-4">
       <div className="py-4 flex items-center justify-between">
         <div>
-          <h2 className="text-[18px] font-[800] text-zinc-900">Expansion Mode</h2>
-          <p className="text-[12px] text-zinc-400">Brainstorm with 00. Voice, text, or drop files.</p>
+          <h2 className="text-[18px] font-[800] text-white">Expansion Mode</h2>
+          <p className="text-[12px] text-zinc-500">Brainstorm with 00. Voice, text, or drop files.</p>
         </div>
         {canFinish && (
           <button
             onClick={handleFinishDraft}
             disabled={finishing}
-            className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 text-white text-[13px] font-semibold rounded-full hover:bg-zinc-800 disabled:opacity-60 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-cyan-500 text-black text-[13px] font-semibold rounded-full hover:bg-cyan-400 disabled:opacity-60 transition-all shadow-lg shadow-cyan-500/20"
           >
             {finishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
             {finishing ? "Compiling..." : "Finish Draft"}
@@ -218,8 +218,9 @@ Return ONLY valid JSON.`;
       {/* Chat area */}
       <div
         className={`min-h-[50vh] max-h-[60vh] overflow-y-auto rounded-2xl border transition-colors p-4 space-y-4 mb-4 ${
-          isDragging ? "border-zinc-400 bg-zinc-50" : "border-zinc-100 bg-zinc-50/50"
+          isDragging ? "border-cyan-500/40 bg-cyan-500/5" : "bg-[#111318]"
         }`}
+        style={{ borderColor: isDragging ? undefined : "rgba(255,255,255,0.06)" }}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
@@ -258,10 +259,10 @@ Return ONLY valid JSON.`;
       )}
 
       {/* Input bar */}
-      <div className="flex items-end gap-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-2">
+      <div className="flex items-end gap-2 bg-[#111318] rounded-2xl border p-2" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
         <button
           onClick={() => fileRef.current?.click()}
-          className="p-2.5 rounded-xl text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors flex-shrink-0"
+          className="p-2.5 rounded-xl text-zinc-500 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
         >
           <Paperclip className="w-4 h-4" />
         </button>
@@ -273,13 +274,13 @@ Return ONLY valid JSON.`;
           onKeyDown={handleKeyDown}
           placeholder="Describe your story idea…"
           rows={1}
-          className="flex-1 resize-none bg-transparent text-[14px] text-zinc-900 placeholder-zinc-400 outline-none min-h-[36px] max-h-[120px] py-2 leading-relaxed"
+          className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder-zinc-600 outline-none min-h-[36px] max-h-[120px] py-2 leading-relaxed"
           style={{ overflowY: "auto" }}
         />
         <button
           onClick={toggleVoice}
           className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${
-            isListening ? "bg-red-50 text-red-500 animate-pulse" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100"
+            isListening ? "bg-red-500/20 text-red-400 animate-pulse" : "text-zinc-500 hover:text-white hover:bg-white/10"
           }`}
         >
           {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -287,7 +288,7 @@ Return ONLY valid JSON.`;
         <button
           onClick={sendMessage}
           disabled={!input.trim() && files.length === 0}
-          className="p-2.5 bg-zinc-900 text-white rounded-xl hover:bg-zinc-800 disabled:opacity-40 transition-all flex-shrink-0"
+          className="p-2.5 bg-cyan-500 text-black rounded-xl hover:bg-cyan-400 disabled:opacity-40 transition-all flex-shrink-0"
         >
           <Send className="w-4 h-4" />
         </button>
@@ -320,8 +321,8 @@ function MessageBubble({ msg }) {
       )}
       <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${
         isUser
-          ? "bg-zinc-900 text-white rounded-br-sm"
-          : "bg-white border border-zinc-100 text-zinc-800 rounded-bl-sm"
+          ? "bg-white/10 text-white rounded-br-sm border border-white/10"
+          : "bg-[#1a1d24] border border-white/5 text-zinc-200 rounded-bl-sm"
       }`}>
         {formatted}
         {msg.files && msg.files.length > 0 && (

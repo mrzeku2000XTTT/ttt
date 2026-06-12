@@ -87,14 +87,14 @@ Return ONLY valid JSON.`;
       {/* Header */}
       <div className="py-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-[18px] font-[800] text-zinc-900">Chapter Editor</h2>
-          <p className="text-[12px] text-zinc-400">
+          <h2 className="text-[18px] font-[800] text-white">Chapter Editor</h2>
+          <p className="text-[12px] text-zinc-500">
             {roughDraft?.title || "Your Story"} · {chapters.length} sections · ~{totalPages || "?"} pages estimated
           </p>
         </div>
         <div className="text-right">
-          <div className="text-[22px] font-[900] text-zinc-900">{completedChapters}/{chapters.length}</div>
-          <div className="text-[10px] text-zinc-400 uppercase tracking-widest">Sections done</div>
+          <div className="text-[22px] font-[900] text-white">{completedChapters}/{chapters.length}</div>
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Sections done</div>
         </div>
       </div>
 
@@ -124,9 +124,9 @@ Return ONLY valid JSON.`;
         ))}
       </div>
 
-      <div className="mt-8 p-5 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-        <BookOpen className="w-6 h-6 text-zinc-300 mx-auto mb-2" />
-        <p className="text-[12px] text-zinc-500">Complete all chapters to unlock export options</p>
+      <div className="mt-8 p-5 bg-[#111318] rounded-2xl border text-center" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <BookOpen className="w-6 h-6 text-zinc-700 mx-auto mb-2" />
+        <p className="text-[12px] text-zinc-600">Complete all chapters to unlock export options</p>
       </div>
     </div>
   );
@@ -142,19 +142,20 @@ function ChapterCard({ chapter, idx, isActive, isEnhancing, isAgentThinking, onA
   return (
     <motion.div
       layout
-      className={`rounded-2xl border overflow-hidden transition-shadow ${isActive ? "shadow-md" : "shadow-none"} ${
-        chapter.type === "prologue" ? "border-violet-100" : chapter.type === "epilogue" ? "border-cyan-100" : "border-zinc-100"
+      className={`rounded-2xl border overflow-hidden transition-shadow ${isActive ? "shadow-lg shadow-cyan-500/5" : "shadow-none"} ${
+        chapter.type === "prologue" ? "border-violet-500/20" : chapter.type === "epilogue" ? "border-cyan-500/20" : "border-white/6"
       }`}
+      style={{ borderColor: chapter.type === "chapter" ? "rgba(255,255,255,0.06)" : undefined }}
     >
       {/* Header */}
       <button
         onClick={onActivate}
-        className="w-full flex items-center gap-3 px-5 py-4 bg-white hover:bg-zinc-50 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-5 py-4 bg-[#111318] hover:bg-[#161920] transition-colors text-left"
       >
         <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${typeColors[chapter.type]}`}>
           {chapter.type}
         </div>
-        <span className="flex-1 text-[14px] font-[700] text-zinc-900">{chapter.label}</span>
+        <span className="flex-1 text-[14px] font-[700] text-white">{chapter.label}</span>
         {chapter.enhanced && (
           <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
             <Sparkles className="w-3 h-3" /> Enhanced
@@ -175,7 +176,7 @@ function ChapterCard({ chapter, idx, isActive, isEnhancing, isAgentThinking, onA
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <div className="px-5 pb-5 bg-white border-t border-zinc-50 space-y-4">
+            <div className="px-5 pb-5 bg-[#0f1014] border-t border-white/5 space-y-4">
               {/* Input */}
               <div className="pt-4">
                 <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-widest mb-2">Your Idea for this {chapter.type}</label>
@@ -184,7 +185,7 @@ function ChapterCard({ chapter, idx, isActive, isEnhancing, isAgentThinking, onA
                   onChange={e => onContentChange(e.target.value)}
                   placeholder={`Describe what happens in ${chapter.label}… Even rough notes work.`}
                   rows={4}
-                  className="w-full text-[13px] text-zinc-800 placeholder-zinc-300 bg-zinc-50 border border-zinc-100 rounded-xl p-3 outline-none focus:border-zinc-300 resize-none leading-relaxed transition-colors"
+                  className="w-full text-[13px] text-zinc-200 placeholder-zinc-700 bg-[#111318] border rounded-xl p-3 outline-none resize-none leading-relaxed transition-colors" style={{ borderColor: "rgba(255,255,255,0.07)" }}
                 />
               </div>
 
@@ -192,7 +193,7 @@ function ChapterCard({ chapter, idx, isActive, isEnhancing, isAgentThinking, onA
               <button
                 onClick={onEnhance}
                 disabled={isEnhancing}
-                className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 text-white text-[12px] font-semibold rounded-full hover:bg-zinc-800 disabled:opacity-50 transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-cyan-500 text-black text-[12px] font-semibold rounded-full hover:bg-cyan-400 disabled:opacity-50 transition-all shadow-lg shadow-cyan-500/20"
               >
                 {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
                 {isEnhancing ? "Co-Engineer is writing..." : "Enhance with 00"}
@@ -211,9 +212,9 @@ function ChapterCard({ chapter, idx, isActive, isEnhancing, isAgentThinking, onA
               {/* Enhanced output */}
               {chapter.enhanced && !isEnhancing && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                  <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100">
-                    <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Enhanced Prose</p>
-                    <p className="text-[13px] text-zinc-700 leading-relaxed">{chapter.enhanced.enhancedText}</p>
+                  <div className="p-4 bg-[#111318] rounded-xl border border-white/5">
+                    <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Enhanced Prose</p>
+                    <p className="text-[13px] text-zinc-300 leading-relaxed">{chapter.enhanced.enhancedText}</p>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
@@ -222,16 +223,16 @@ function ChapterCard({ chapter, idx, isActive, isEnhancing, isAgentThinking, onA
                       { label: "Lighting", val: chapter.enhanced.lighting, icon: "💡" },
                       { label: "Camera", val: chapter.enhanced.cameraNote, icon: "🎬" },
                     ].map(item => (
-                      <div key={item.label} className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                        <div className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">{item.icon} {item.label}</div>
-                        <div className="text-[11px] font-semibold text-zinc-700">{item.val}</div>
+                      <div key={item.label} className="p-3 bg-[#111318] rounded-xl border border-white/5">
+                        <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">{item.icon} {item.label}</div>
+                        <div className="text-[11px] font-semibold text-zinc-300">{item.val}</div>
                       </div>
                     ))}
                   </div>
 
                   {chapter.enhanced.suggestions?.length > 0 && (
-                    <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100">
-                      <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Plot Suggestions</p>
+                    <div className="p-4 bg-[#111318] rounded-xl border border-white/5">
+                      <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Plot Suggestions</p>
                       <ul className="space-y-1.5">
                         {chapter.enhanced.suggestions.map((s, i) => (
                           <li key={i} className="flex items-start gap-2 text-[12px] text-zinc-600">

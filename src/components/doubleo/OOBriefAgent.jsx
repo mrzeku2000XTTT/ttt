@@ -143,11 +143,11 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
     <div className="max-w-3xl mx-auto px-4">
       <div className="py-4 flex items-center justify-between">
         <div>
-          <h2 className="text-[18px] font-[800] text-zinc-900">Brief Agent</h2>
-          <p className="text-[12px] text-zinc-400">Command center · Use @ to reference your draft</p>
+          <h2 className="text-[18px] font-[800] text-white">Brief Agent</h2>
+          <p className="text-[12px] text-zinc-500">Command center · Use @ to reference your draft</p>
         </div>
         {roughDraft && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-full text-[11px] font-semibold text-zinc-600">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-[11px] font-semibold text-zinc-300">
             <Zap className="w-3 h-3" />
             <span className="truncate max-w-[100px]">{roughDraft.title || "Draft ready"}</span>
           </div>
@@ -161,7 +161,7 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
       )}
 
       {/* Chat */}
-      <div className="min-h-[50vh] max-h-[60vh] overflow-y-auto rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 space-y-4 mb-4">
+      <div className="min-h-[50vh] max-h-[60vh] overflow-y-auto rounded-2xl border p-4 space-y-4 mb-4 bg-[#111318]" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         {messages.map((msg) => (
           <BriefBubble key={msg.id} msg={msg} onMorph={() => setPhase("morph")} onGoChapters={onGoToChapters} />
         ))}
@@ -187,15 +187,15 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
       <AnimatePresence>
         {showDraftPicker && roughDraft && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-            className="mb-2 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden"
+            className="mb-2 bg-[#111318] border rounded-xl shadow-lg overflow-hidden" style={{ borderColor: "rgba(255,255,255,0.1)" }}
           >
             <button onClick={attachDraft} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 transition-colors text-left">
               <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center">
                 <span className="text-[9px] font-[900] text-white">00</span>
               </div>
               <div>
-                <p className="text-[12px] font-bold text-zinc-900">{roughDraft.title || "My Story"}</p>
-                <p className="text-[10px] text-zinc-400">{roughDraft.logline?.slice(0, 60) || "Rough draft"}</p>
+                <p className="text-[12px] font-bold text-white">{roughDraft.title || "My Story"}</p>
+                <p className="text-[10px] text-zinc-500">{roughDraft.logline?.slice(0, 60) || "Rough draft"}</p>
               </div>
             </button>
           </motion.div>
@@ -203,7 +203,7 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
       </AnimatePresence>
 
       {/* Input */}
-      <div className="flex items-end gap-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-2">
+      <div className="flex items-end gap-2 bg-[#111318] rounded-2xl border p-2" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
         <button onClick={() => setInput(prev => prev + "@")} className="p-2.5 rounded-xl text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors flex-shrink-0">
           <AtSign className="w-4 h-4" />
         </button>
@@ -213,7 +213,7 @@ Keep responses under 200 words. Be decisive and creative. Use **bold** for key d
           onKeyDown={handleKeyDown}
           placeholder='Type or use @ to attach a draft…'
           rows={1}
-          className="flex-1 resize-none bg-transparent text-[14px] text-zinc-900 placeholder-zinc-400 outline-none min-h-[36px] max-h-[120px] py-2 leading-relaxed"
+          className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder-zinc-600 outline-none min-h-[36px] max-h-[120px] py-2 leading-relaxed"
         />
         <button
           onClick={sendMessage}
@@ -243,8 +243,8 @@ function BriefBubble({ msg, onMorph, onGoChapters }) {
         </div>
       )}
       <div className={`max-w-[85%] rounded-2xl text-[13px] leading-relaxed ${
-        isUser ? "bg-zinc-900 text-white rounded-br-sm px-4 py-3"
-               : "bg-white border border-zinc-100 text-zinc-800 rounded-bl-sm px-4 py-3"
+        isUser ? "bg-white/10 text-white rounded-br-sm px-4 py-3 border border-white/10"
+               : "bg-[#1a1d24] border border-white/5 text-zinc-200 rounded-bl-sm px-4 py-3"
       }`}>
         <div className="whitespace-pre-line">{formatted}</div>
         {msg.showMorph && (
