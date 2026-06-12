@@ -342,22 +342,15 @@ export default function ARCPage() {
     setThinking(true);
 
     try {
-      const analysis = await base44.integrations.Core.InvokeLLM({
-        prompt: `${ARC_SYSTEM}\n\nAnalyze this viral video ad template image thoroughly. Extract every visual element, text overlay, scene type, and hook mechanism. Return the structured JSON as specified.`,
+      const raw = await base44.integrations.Core.InvokeLLM({
+        prompt: `${ARC_SYSTEM}\n\nAnalyze this viral video ad template image thoroughly. Extract every visual element, text overlay, scene type, and hook mechanism. Return ONLY a valid JSON object (no markdown fences, no extra text) with these exact keys: scene, overlays, hook_formula, template_name, pills, summary.`,
         file_urls: [imageUrl],
-        model: "claude_sonnet_4_6",
-        response_json_schema: {
-          type: "object",
-          properties: {
-            scene: { type: "object" },
-            overlays: { type: "object" },
-            hook_formula: { type: "string" },
-            template_name: { type: "string" },
-            pills: { type: "array" },
-            summary: { type: "string" }
-          }
-        }
+        model: "claude_sonnet_4_6"
       });
+      const rawStr = raw?.response || raw;
+      const analysis = typeof rawStr === 'string'
+        ? JSON.parse(rawStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim())
+        : rawStr;
 
       setThinking(false);
       setMessages(prev => [...prev, {
@@ -398,16 +391,14 @@ export default function ARCPage() {
     setMessages(prev => [...prev, { id: Date.now(), role: 'user', text: userMsg }]);
     setThinking(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${ARC_SYSTEM}\n\nUser message: ${userMsg}\n\nRespond helpfully about viral video templates and content creation. If they describe a scene, generate 2-3 prompt pills for it.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            summary: { type: "string" },
-            pills: { type: "array" }
-          }
-        }
+      const raw = await base44.integrations.Core.InvokeLLM({
+        prompt: `${ARC_SYSTEM}\n\nUser message: ${userMsg}\n\nRespond helpfully about viral video templates and content creation. If they describe a scene, generate 2-3 prompt pills for it. Return ONLY a valid JSON object with keys: summary (string), pills (array of objects with id, label, prompt, type).`,
+        model: "claude_sonnet_4_6"
       });
+      const rawStr = raw?.response || raw;
+      const res = typeof rawStr === 'string'
+        ? JSON.parse(rawStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim())
+        : rawStr;
       setThinking(false);
       setMessages(prev => [...prev, {
         id: Date.now() + 1, role: 'arc',
