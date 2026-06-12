@@ -345,6 +345,7 @@ export default function ARCPage() {
       const analysis = await base44.integrations.Core.InvokeLLM({
         prompt: `${ARC_SYSTEM}\n\nAnalyze this viral video ad template image thoroughly. Extract every visual element, text overlay, scene type, and hook mechanism. Return the structured JSON as specified.`,
         file_urls: [imageUrl],
+        model: "claude_sonnet_4_6",
         response_json_schema: {
           type: "object",
           properties: {
@@ -367,11 +368,12 @@ export default function ARCPage() {
         pills: analysis.pills || []
       }]);
     } catch (e) {
+      console.error("ARC analysis error:", e);
       setThinking(false);
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         role: 'arc',
-        text: "I had trouble analyzing that image. Please try again with a clearer screenshot.",
+        text: `Analysis failed: ${e?.message || "Unknown error"}. Please try again.`,
         pills: []
       }]);
     }
