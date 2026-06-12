@@ -55,7 +55,7 @@ export default function OOExpansion({ onDraftCreated }) {
     if (userMsgs.length >= 2) setCanFinish(true);
   }, [messages]);
 
-  const toggleVoice = () => {
+  const toggleVoice = async () => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
       alert("Voice input not supported in this browser. Try Chrome.");
       return;
@@ -65,19 +65,51 @@ export default function OOExpansion({ onDraftCreated }) {
       setIsListening(false);
       return;
     }
+
+    // Request mic permission explicitly first
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      alert("Microphone access was denied. Please allow mic access in your browser settings.");
+      return;
+    }
+
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new SR();
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = "en-US";
+
+    let finalTranscript = "";
+
     rec.onresult = (e) => {
-      let transcript = "";
+      let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        transcript += e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          finalTranscript += e.results[i][0].transcript + " ";
+        } else {
+          interim += e.results[i][0].transcript;
+        }
       }
-      setInput(transcript);
+      setInput(finalTranscript + interim);
     };
-    rec.onend = () => setIsListening(false);
+
+    rec.onerror = (e) => {
+      console.error("Speech recognition error:", e.error);
+      setIsListening(false);
+      if (e.error === "not-allowed") {
+        alert("Microphone access denied. Please enable it in browser settings.");
+      }
+    };
+
+    rec.onend = () => {
+      setIsListening(false);
+      // Auto-populate whatever was captured
+      if (finalTranscript.trim()) {
+        setInput(finalTranscript.trim());
+      }
+    };
+
     rec.start();
     recognitionRef.current = rec;
     setIsListening(true);
