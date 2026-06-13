@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ChevronLeft, BookOpen, Image, Loader2, CheckCircle2, Download, Copy, Sparkles, Eye, EyeOff, AlertCircle, Play, Zap, Film } from "lucide-react";
@@ -26,7 +26,59 @@ export default function DoubleOWorkshop() {
   const [renderingAll, setRenderingAll] = useState(false);
   const [renderProgress, setRenderProgress] = useState({ done: 0, total: 0 });
   const [copied, setCopied] = useState(false);
-  const [activeChapterIdx, setActiveChapterIdx] = useState(null);
+
+  // Always-fresh ref so async batches never use stale chapters
+  const chaptersRef = useRef(chapters);
+  useEffect(() => { chaptersRef.current = chapters; }, [chapters]);
+
+  // Re-read localStorage when page becomes visible again (navigated back)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        const fresh = loadChapters();
+        const freshDraft = loadDraft();
+        // Merge: prefer any imageUrl already in memory, but pick up new ones from storage
+        setChapters(prev => {
+          const merged = fresh.map((ch, ci) => {
+            const prevCh = prev[ci];
+            if (!prevCh || !ch.enhanced || !prevCh.enhanced) return ch;
+            const scenes = (ch.enhanced.scenes || []).map((s, si) => {
+              const prevScene = prevCh.enhanced?.scenes?.[si];
+              return prevScene?.imageUrl && !s.imageUrl ? { ...s, imageUrl: prevScene.imageUrl } : s;
+            });
+            return { ...ch, enhanced: { ...ch.enhanced, scenes } };
+          });
+          return merged;
+        });
+        setDraft(freshDraft);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    // Also sync on storage changes from other tabs/components
+    const onStorage = (e) => {
+      if (e.key === "oo_chapters") {
+        try {
+          const fresh = JSON.parse(e.newValue || "[]");
+          setChapters(prev => {
+            return fresh.map((ch, ci) => {
+              const prevCh = prev[ci];
+              if (!prevCh || !ch.enhanced || !prevCh.enhanced) return ch;
+              const scenes = (ch.enhanced.scenes || []).map((s, si) => {
+                const prevScene = prevCh.enhanced?.scenes?.[si];
+                return prevScene?.imageUrl && !s.imageUrl ? { ...s, imageUrl: prevScene.imageUrl } : s;
+              });
+              return { ...ch, enhanced: { ...ch.enhanced, scenes } };
+            });
+          });
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   const allScenes = chapters.flatMap((ch, ci) =>
     (ch.enhanced?.scenes || []).map((s, si) => ({ ...s, chapterLabel: ch.label, chapterIdx: ci, sceneIdx: si }))
@@ -49,34 +101,37 @@ export default function DoubleOWorkshop() {
     });
   };
 
-  // Render a single scene image
+  // Render a single scene image — always reads latest from ref
   const renderScene = async (scene, chapterIdx, sceneIdx) => {
-    const prompt = buildSceneImagePrompt(scene, chapters[chapterIdx], draft);
+    const currentChapters = chaptersRef.current;
+    const prompt = buildSceneImagePrompt(scene, currentChapters[chapterIdx], draft);
     const result = await base44.integrations.Core.GenerateImage({ prompt });
     updateSceneImage(chapterIdx, sceneIdx, result.url);
     return result.url;
   };
 
-  // Render ALL scenes in parallel batches of 3
+  // Render ALL unrendered scenes in batches of 3 — survives navigation away/back
+  // because each completed scene is immediately persisted to localStorage
   const renderAll = async () => {
     setRenderingAll(true);
+    const current = loadChapters(); // always use freshest data to build task list
     const tasks = [];
-    chapters.forEach((ch, ci) => {
+    current.forEach((ch, ci) => {
       (ch.enhanced?.scenes || []).forEach((s, si) => {
         if (!s.imageUrl) tasks.push({ scene: s, ci, si });
       });
     });
 
     setRenderProgress({ done: 0, total: tasks.length });
+    if (tasks.length === 0) { setRenderingAll(false); return; }
+
     let done = 0;
     const BATCH = 3;
 
     for (let b = 0; b < tasks.length; b += BATCH) {
       const batch = tasks.slice(b, b + BATCH);
       await Promise.all(batch.map(async ({ scene, ci, si }) => {
-        try {
-          await renderScene(scene, ci, si);
-        } catch {}
+        try { await renderScene(scene, ci, si); } catch {}
         done++;
         setRenderProgress(p => ({ ...p, done }));
       }));
