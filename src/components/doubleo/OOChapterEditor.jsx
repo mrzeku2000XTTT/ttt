@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ChevronDown, ChevronUp, Loader2, BookOpen, Film, Wand2, Clapperboard, Scissors, Zap, Check, Edit3, Save, X, Bot, Play } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp, Loader2, BookOpen, Film, Wand2, Clapperboard, Scissors, Zap, Check, Edit3, Save, X, Bot, Play, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
 function buildChapterList(count) {
@@ -301,10 +302,29 @@ Return JSON: { recommendedPages: number, reasoning: string, scenesPerChapter: nu
         ))}
       </div>
 
-      <div className="mt-8 mb-4 p-5 rounded-2xl border text-center" style={{ background: "#1c1c1e", borderColor: "rgba(255,255,255,0.06)" }}>
-        <BookOpen className="w-6 h-6 mx-auto mb-2" style={{ color: "rgba(255,255,255,0.2)" }} />
-        <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.3)" }}>Complete all chapters to unlock full export</p>
-      </div>
+      {completedChapters === chapters.length && chapters.length > 0 ? (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          className="mt-8 mb-4 p-5 rounded-2xl text-center"
+          style={{ background: "linear-gradient(135deg, rgba(10,132,255,0.12), rgba(48,209,88,0.08))", border: "1px solid rgba(10,132,255,0.3)" }}>
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Check className="w-5 h-5" style={{ color: "#30d158" }} />
+            <p className="text-[14px] font-[800] text-white">All chapters complete!</p>
+          </div>
+          <p className="text-[12px] mb-4" style={{ color: "rgba(255,255,255,0.45)" }}>
+            {chapters.length} sections · ~{totalPages} pages · ready for next stage
+          </p>
+          <Link to="/DoubleONotes"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[14px] font-bold text-white transition-all hover:brightness-110"
+            style={{ background: "#0a84ff", boxShadow: "0 0 24px rgba(10,132,255,0.4)" }}>
+            Continue to Notes <ArrowRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
+      ) : (
+        <div className="mt-8 mb-4 p-5 rounded-2xl border text-center" style={{ background: "#1c1c1e", borderColor: "rgba(255,255,255,0.06)" }}>
+          <BookOpen className="w-6 h-6 mx-auto mb-2" style={{ color: "rgba(255,255,255,0.2)" }} />
+          <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.3)" }}>{completedChapters}/{chapters.length} chapters done · complete all to continue</p>
+        </div>
+      )}
     </div>
   );
 }
