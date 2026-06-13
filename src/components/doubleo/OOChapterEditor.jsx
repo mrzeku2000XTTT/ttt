@@ -313,10 +313,10 @@ Return JSON: { recommendedPages: number, reasoning: string, scenesPerChapter: nu
           <p className="text-[12px] mb-4" style={{ color: "rgba(255,255,255,0.45)" }}>
             {chapters.length} sections · ~{totalPages} pages · ready for next stage
           </p>
-          <Link to="/DoubleONotes"
+          <Link to="/DoubleOWorkshop"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[14px] font-bold text-white transition-all hover:brightness-110"
             style={{ background: "#0a84ff", boxShadow: "0 0 24px rgba(10,132,255,0.4)" }}>
-            Continue to Notes <ArrowRight className="w-4 h-4" />
+            Open Workshop <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
       ) : (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Mic, ChevronRight, BookOpen, Film, History, Clock, Trash2, ArrowRight, PenLine } from "lucide-react";
+import { Sparkles, Mic, ChevronRight, BookOpen, Film, History, Clock, Trash2, ArrowRight, PenLine, Clapperboard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import OOExpansion from "@/components/doubleo/OOExpansion";
@@ -149,6 +149,10 @@ export default function DoubleOPage() {
           <Link to="/DoubleONotes" className="p-1.5 rounded-full transition-all flex items-center" title="Notes"
             style={{ color: "rgba(255,255,255,0.45)" }}>
             <PenLine className="w-3.5 h-3.5" />
+          </Link>
+          <Link to="/DoubleOWorkshop" className="p-1.5 rounded-full transition-all flex items-center" title="Workshop"
+            style={{ color: "rgba(255,255,255,0.45)" }}>
+            <Clapperboard className="w-3.5 h-3.5" />
           </Link>
           <button onClick={() => setShowHistory(true)}
             className="p-1.5 rounded-full transition-all"
