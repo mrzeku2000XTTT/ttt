@@ -19,6 +19,8 @@ const DEVICES = [
 export default function MockControls({
   // Global
   background, setBackground,
+  customBackground, setCustomBackground,
+  generatingBackground,
   padding, setPadding,
   // Selected item (may be null)
   selected,
@@ -38,13 +40,34 @@ export default function MockControls({
     <div className="space-y-5">
       {/* Background */}
       <Section title="Background">
+        {customBackground && (
+          <div className="mb-2 flex items-center gap-2 p-2 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/30">
+            <div className="w-8 h-8 rounded bg-cover bg-center flex-shrink-0 border border-white/20" style={{ backgroundImage: `url(${customBackground})` }} />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-bold text-fuchsia-300">AI Background</div>
+              <div className="text-[9px] text-fuchsia-400/60 truncate">Active — overrides presets</div>
+            </div>
+            <button
+              onClick={() => setCustomBackground(null)}
+              className="px-2 py-1 rounded text-[9px] font-bold bg-fuchsia-500/20 hover:bg-fuchsia-500/40 text-fuchsia-300 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+        {generatingBackground && (
+          <div className="mb-2 flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10 text-[10px] text-white/50">
+            <span className="w-3 h-3 border-2 border-fuchsia-400/30 border-t-fuchsia-400 rounded-full animate-spin" />
+            Generating AI background…
+          </div>
+        )}
         <div className="grid grid-cols-5 gap-2">
           {BACKGROUND_PRESETS.map((bg) => {
-            const active = background === bg.id;
+            const active = !customBackground && background === bg.id;
             return (
               <button
                 key={bg.id}
-                onClick={() => setBackground(bg.id)}
+                onClick={() => { setBackground(bg.id); setCustomBackground(null); }}
                 title={bg.label}
                 className={`aspect-square rounded-lg transition-all ${
                   active ? "ring-2 ring-white scale-105" : "ring-1 ring-white/10 hover:ring-white/30"

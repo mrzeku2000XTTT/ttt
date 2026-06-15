@@ -1229,6 +1229,8 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
           ) : (
             <MockControls
               background={background} setBackground={setBackground}
+              customBackground={customBackground} setCustomBackground={setCustomBackground}
+              generatingBackground={generatingBackground}
               padding={padding} setPadding={setPadding}
               selected={selected}
               onUpdate={(partial) => selected && updateItem(selected.id, partial)}
@@ -1266,6 +1268,8 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
         ) : (
           <MockControls
             background={background} setBackground={setBackground}
+            customBackground={customBackground} setCustomBackground={setCustomBackground}
+            generatingBackground={generatingBackground}
             padding={padding} setPadding={setPadding}
             selected={selected}
             onUpdate={(partial) => selected && updateItem(selected.id, partial)}
