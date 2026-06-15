@@ -1,14 +1,7 @@
 import React from "react";
-import { Type, Image, Square, Star, Move, Trash2, Copy, Eye, EyeOff, Lock } from "lucide-react";
+import { Type, Image, Square, Star, Move, Trash2, Copy, Eye, EyeOff } from "lucide-react";
 
 export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, onUpdateLayer, onDeleteLayer, onDuplicateLayer, onAddLayer, onMoveLayer }) {
-  const layerTypeIcons = {
-    text: Type,
-    image: Image,
-    shape: Square,
-    logo: Star,
-  };
-
   return (
     <div className="flex flex-col h-full" style={{ background: "#1a1a21" }}>
       {/* Add layer bar */}
@@ -22,7 +15,7 @@ export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, on
           <button
             key={type}
             onClick={() => onAddLayer(type)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all flex-1 justify-center"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all flex-1 justify-center hover:bg-white/10"
             style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}
           >
             <Icon className="w-3 h-3" style={{ color }} />
@@ -32,7 +25,7 @@ export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, on
       </div>
 
       {/* Layer list */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      <div className="overflow-y-auto p-2 space-y-0.5" style={{ maxHeight: 220, minHeight: 80 }}>
         {layers.map((layer, i) => {
           const isSelected = i === selectedLayerIdx;
           const trackColors = ["#ffcc00", "#ff9500", "#00be8c", "#007aff", "#af52de", "#ff3b30"];
@@ -70,7 +63,7 @@ export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, on
                 className="bg-transparent text-[11px] font-semibold text-white/80 outline-none flex-1 min-w-0 placeholder:text-white/20"
               />
 
-              {/* Move buttons */}
+              {/* Actions (shown on hover) */}
               <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
                 <button
                   onClick={(e) => { e.stopPropagation(); onMoveLayer(i, -1); }}
@@ -106,52 +99,60 @@ export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, on
 
       {/* Selected layer properties */}
       {selectedLayerIdx !== null && layers[selectedLayerIdx] && (
-        <div className="border-t border-white/5 p-3 space-y-3 max-h-64 overflow-y-auto">
-          <p className="text-[9px] uppercase tracking-widest text-white/25">Properties</p>
+        <div className="border-t border-white/5 p-3 space-y-3 overflow-y-auto flex-1">
+          <div className="flex items-center justify-between">
+            <p className="text-[9px] uppercase tracking-widest text-white/25">Properties</p>
+            <span className="text-[9px] text-white/20 bg-white/5 px-2 py-0.5 rounded-full">
+              {layers[selectedLayerIdx].type}
+            </span>
+          </div>
 
           {layers[selectedLayerIdx].type === "text" && (
-            <input
-              value={layers[selectedLayerIdx].text || ""}
-              onChange={(e) => onUpdateLayer(selectedLayerIdx, { text: e.target.value })}
-              placeholder="Enter text..."
-              className="w-full rounded-lg p-2 text-[12px] text-white bg-white/5 border border-white/10 outline-none"
-            />
+            <div className="space-y-1">
+              <p className="text-[8px] uppercase text-white/25">Double-click text to edit on canvas</p>
+              <input
+                value={layers[selectedLayerIdx].text || ""}
+                onChange={(e) => onUpdateLayer(selectedLayerIdx, { text: e.target.value })}
+                placeholder="Enter text..."
+                className="w-full rounded-lg p-2 text-[12px] font-medium text-white bg-white/5 border border-white/10 outline-none focus:border-[#34c759]/40 transition-colors"
+              />
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <p className="text-[8px] uppercase text-white/25 mb-1">X</p>
+              <p className="text-[8px] uppercase text-white/25 mb-1">X <span className="text-white/10">{layers[selectedLayerIdx].x}</span></p>
               <input type="range" min={0} max={100} value={layers[selectedLayerIdx].x || 50}
                 onChange={(e) => onUpdateLayer(selectedLayerIdx, { x: parseInt(e.target.value) })}
                 className="w-full accent-[#34c759] h-1" />
             </div>
             <div>
-              <p className="text-[8px] uppercase text-white/25 mb-1">Y</p>
+              <p className="text-[8px] uppercase text-white/25 mb-1">Y <span className="text-white/10">{layers[selectedLayerIdx].y}</span></p>
               <input type="range" min={0} max={100} value={layers[selectedLayerIdx].y || 50}
                 onChange={(e) => onUpdateLayer(selectedLayerIdx, { y: parseInt(e.target.value) })}
                 className="w-full accent-[#34c759] h-1" />
             </div>
             <div>
-              <p className="text-[8px] uppercase text-white/25 mb-1">Scale</p>
+              <p className="text-[8px] uppercase text-white/25 mb-1">Scale <span className="text-white/10">{layers[selectedLayerIdx].scale || 100}%</span></p>
               <input type="range" min={10} max={300} value={layers[selectedLayerIdx].scale || 100}
                 onChange={(e) => onUpdateLayer(selectedLayerIdx, { scale: parseInt(e.target.value) })}
                 className="w-full accent-[#34c759] h-1" />
             </div>
             <div>
-              <p className="text-[8px] uppercase text-white/25 mb-1">Opacity</p>
+              <p className="text-[8px] uppercase text-white/25 mb-1">Opacity <span className="text-white/10">{layers[selectedLayerIdx].opacity || 100}%</span></p>
               <input type="range" min={0} max={100} value={layers[selectedLayerIdx].opacity || 100}
                 onChange={(e) => onUpdateLayer(selectedLayerIdx, { opacity: parseInt(e.target.value) })}
                 className="w-full accent-[#34c759] h-1" />
             </div>
             <div>
-              <p className="text-[8px] uppercase text-white/25 mb-1">Rotate</p>
+              <p className="text-[8px] uppercase text-white/25 mb-1">Rotate <span className="text-white/10">{layers[selectedLayerIdx].rotation || 0}&deg;</span></p>
               <input type="range" min={-180} max={180} value={layers[selectedLayerIdx].rotation || 0}
                 onChange={(e) => onUpdateLayer(selectedLayerIdx, { rotation: parseInt(e.target.value) })}
                 className="w-full accent-[#34c759] h-1" />
             </div>
             {layers[selectedLayerIdx].type === "text" && (
               <div>
-                <p className="text-[8px] uppercase text-white/25 mb-1">Size</p>
+                <p className="text-[8px] uppercase text-white/25 mb-1">Size <span className="text-white/10">{layers[selectedLayerIdx].fontSize || 36}px</span></p>
                 <input type="range" min={8} max={120} value={layers[selectedLayerIdx].fontSize || 36}
                   onChange={(e) => onUpdateLayer(selectedLayerIdx, { fontSize: parseInt(e.target.value) })}
                   className="w-full accent-[#34c759] h-1" />
@@ -162,10 +163,35 @@ export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, on
           {/* Color picker */}
           <div>
             <p className="text-[8px] uppercase text-white/25 mb-1">Color</p>
-            <input type="color" value={layers[selectedLayerIdx].color || "#ffffff"}
-              onChange={(e) => onUpdateLayer(selectedLayerIdx, { color: e.target.value })}
-              className="w-full h-7 rounded cursor-pointer border-0 p-0" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded border border-white/20 flex-shrink-0" style={{ background: layers[selectedLayerIdx].color || "#ffffff" }} />
+              <input type="color" value={layers[selectedLayerIdx].color || "#ffffff"}
+                onChange={(e) => onUpdateLayer(selectedLayerIdx, { color: e.target.value })}
+                className="flex-1 h-7 rounded cursor-pointer border-0 p-0" />
+            </div>
           </div>
+
+          {/* Font weight picker for text layers */}
+          {layers[selectedLayerIdx].type === "text" && (
+            <div>
+              <p className="text-[8px] uppercase text-white/25 mb-1">Weight</p>
+              <div className="flex gap-1">
+                {["normal", "bold", "900"].map(w => (
+                  <button key={w}
+                    onClick={() => onUpdateLayer(selectedLayerIdx, { fontWeight: w })}
+                    className="flex-1 py-1.5 rounded text-[10px] font-semibold transition-all"
+                    style={{
+                      background: layers[selectedLayerIdx].fontWeight === w ? "rgba(52,199,89,0.15)" : "rgba(255,255,255,0.04)",
+                      color: layers[selectedLayerIdx].fontWeight === w ? "#34c759" : "rgba(255,255,255,0.4)",
+                      border: layers[selectedLayerIdx].fontWeight === w ? "1px solid rgba(52,199,89,0.4)" : "1px solid transparent",
+                    }}
+                  >
+                    {w === "normal" ? "Regular" : w === "bold" ? "Bold" : "Black"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

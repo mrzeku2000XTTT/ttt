@@ -273,7 +273,15 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
             <span className="text-[10px] sm:text-[11px] font-mono font-semibold text-white/60">{timecode}</span>
           </div>
 
-          <MotionPreview layers={layers} device={device} bgColor={bgColor} bgImage={bgImage} />
+          <MotionPreview
+            layers={layers}
+            device={device}
+            bgColor={bgColor}
+            bgImage={bgImage}
+            selectedLayerIdx={selectedLayerIdx}
+            onSelectLayer={setSelectedLayerIdx}
+            onUpdateLayer={updateLayer}
+          />
         </div>
 
         {/* RIGHT: Timeline & Layers (hidden on mobile unless selected) */}
