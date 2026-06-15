@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  ArrowLeft, Settings, Share2, Undo2, Redo2, SkipBack, Play, Pause,
-  SkipForward, Plus, Download, Sparkles, Film,
-  Eye, Layers, Grid3X3
+  ArrowLeft, Share2, Undo2, Redo2, SkipBack, Play, Pause,
+  SkipForward, Plus, Download, Sparkles, Film, Smartphone,
+  Eye, Layers, Grid3X3, Monitor, Tablet, Square, ChevronDown
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import MotionPreview from "@/components/motionfly/MotionPreview";
@@ -31,6 +31,22 @@ const makeLayer = (type) => ({
   shape: "rect",
 });
 
+const DEVICE_OPTIONS = [
+  { id: "none", icon: Square, label: "Free" },
+  { id: "phone", icon: Smartphone, label: "Phone" },
+  { id: "laptop", icon: Monitor, label: "Laptop" },
+  { id: "tablet", icon: Tablet, label: "Tablet" },
+];
+
+const PRESET_SCENES = [
+  { label: "Cinematic Title", prompt: "cinematic movie title with dramatic lighting and bold text" },
+  { label: "Product Launch", prompt: "sleek product launch with glowing highlights and clean typography" },
+  { label: "Social Story", prompt: "vertical social media story with vibrant colors and animated text" },
+  { label: "Logo Reveal", prompt: "minimal logo reveal with particle effects and smooth transitions" },
+  { label: "Music Visualizer", prompt: "audio-reactive music visualizer with neon waveforms and pulsing shapes" },
+  { label: "Quote Card", prompt: "inspirational quote on a cinematic background with elegant typography" },
+];
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function MotionFly() {
   const [projectName, setProjectName] = useState("Apple style Animation");
@@ -52,11 +68,11 @@ export default function MotionFly() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
-  const [mobileTab, setMobileTab] = useState("preview"); // "preview" | "layers" | "timeline"
+  const [mobileTab, setMobileTab] = useState("preview");
+  const [deviceMenuOpen, setDeviceMenuOpen] = useState(false);
   const playAnimRef = useRef(null);
   const frameRef = useRef(0);
 
-  // Save initial state for undo
   useEffect(() => {
     setHistory([{ layers: JSON.parse(JSON.stringify(layers)), bgColor, bgImage, device, projectName }]);
     setHistoryIdx(0);
@@ -159,11 +175,12 @@ export default function MotionFly() {
     }, 33);
   };
 
-  const handleAI = async () => {
-    if (!aiPrompt.trim()) return;
+  const handleAI = async (promptOverride) => {
+    const p = promptOverride || aiPrompt;
+    if (!p.trim()) return;
     setIsGenerating(true);
     try {
-      const prompt = `Create a set of motion graphics layers for: "${aiPrompt}"
+      const prompt = `Create a set of motion graphics layers for: "${p}"
 Return ONLY valid JSON array. Each layer: type (text/image/shape/logo), name, text, x (0-100), y (0-100), scale (50-200), opacity (0-100), rotation (-180 to 180), fontSize (12-80 for text), color (hex), fontWeight.
 Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","color":"#1a1a2e","x":50,"y":50,"scale":300,"shape":"rect"}]`;
 
@@ -182,13 +199,22 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
         setLayers(newLayers);
         setSelectedLayerIdx(newLayers.length > 1 ? 1 : 0);
         setAiPrompt("");
-        setProjectName(aiPrompt.slice(0, 40) || "New Project");
+        const name = p.slice(0, 40) || "New Project";
+        setProjectName(name);
+        // Add to undo history
+        setHistory(prev => [...prev.slice(0, historyIdx + 1), {
+          layers: JSON.parse(JSON.stringify(newLayers)), bgColor, bgImage, device, projectName: name
+        }]);
+        setHistoryIdx(prev => prev + 1);
       }
     } catch (e) {
       console.error("AI generation failed:", e);
     }
     setIsGenerating(false);
   };
+
+  const currentDevice = DEVICE_OPTIONS.find(d => d.id === device);
+  const DeviceIcon = currentDevice?.icon || Square;
 
   return (
     <div className="h-[100dvh] flex flex-col text-white overflow-hidden" style={{ background: "#141419", fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -200,15 +226,59 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           <ArrowLeft className="w-4 h-4 text-white/60" />
         </Link>
 
+        {/* Logo + Brand */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0 mr-2">
+          <img
+            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4b941540b_generated_image.png"
+            alt="MotionFly"
+            className="w-7 h-7 rounded-lg object-cover"
+          />
+          <span className="text-[13px] font-[800] tracking-tight text-white/90">MotionFly</span>
+        </div>
+
+        <div className="w-px h-5 hidden sm:block" style={{ background: "rgba(255,255,255,0.1)" }} />
+
         <input
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
           className="bg-transparent text-[12px] sm:text-[13px] font-[600] text-white outline-none flex-1 min-w-0"
+          placeholder="Untitled Project"
         />
 
-        <button className="w-8 h-8 sm:flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5 shrink-0 hidden">
-          <Settings className="w-4 h-4" />
-        </button>
+        {/* Device frame selector */}
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setDeviceMenuOpen(!deviceMenuOpen)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-white/50 hover:text-white hover:bg-white/5 transition-all"
+          >
+            <DeviceIcon className="w-3.5 h-3.5" />
+            <ChevronDown className="w-2.5 h-2.5" />
+          </button>
+          <AnimatePresence>
+            {deviceMenuOpen && (
+              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                className="absolute right-0 top-full mt-1 p-1.5 rounded-xl z-40 shadow-xl"
+                style={{ background: "#1c1c22", border: "1px solid rgba(255,255,255,0.08)", minWidth: 100 }}
+                onClick={() => setDeviceMenuOpen(false)}>
+                {DEVICE_OPTIONS.map(opt => {
+                  const OptIcon = opt.icon;
+                  return (
+                    <button key={opt.id}
+                      onClick={() => { setDevice(opt.id); setDeviceMenuOpen(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all text-left"
+                      style={{
+                        color: device === opt.id ? "#fff" : "rgba(255,255,255,0.5)",
+                        background: device === opt.id ? "rgba(52,199,89,0.1)" : "transparent",
+                      }}>
+                      <OptIcon className="w-3.5 h-3.5" />
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         <button
           onClick={() => setShowExportModal(true)}
@@ -218,6 +288,22 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           <span className="hidden sm:inline">Export</span>
         </button>
+      </div>
+
+      {/* ─── PRESET SCENES BAR ────────────────────────────────────────────────── */}
+      <div className="hidden lg:flex items-center gap-1.5 px-4 py-2 flex-shrink-0 overflow-x-auto"
+        style={{ background: "#1a1a21", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        <span className="text-[9px] uppercase tracking-widest text-white/20 mr-2 shrink-0">Presets</span>
+        {PRESET_SCENES.map((scene, i) => (
+          <button
+            key={i}
+            onClick={() => handleAI(scene.prompt)}
+            disabled={isGenerating}
+            className="shrink-0 px-3 py-1 rounded-full text-[10px] font-semibold text-white/40 hover:text-white hover:bg-white/5 transition-all border border-white/5 disabled:opacity-30"
+          >
+            {scene.label}
+          </button>
+        ))}
       </div>
 
       {/* ─── MOBILE TAB SWITCHER ────────────────────────────────────────────── */}
@@ -241,20 +327,22 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
 
       {/* ─── MAIN CONTENT ───────────────────────────────────────────────────── */}
       <div className="flex-1 flex min-h-0">
-        {/* LEFT: Preview Canvas (hidden on mobile unless selected) */}
+        {/* LEFT: Preview Canvas */}
         <div className={`flex-1 flex flex-col min-w-0 ${mobileTab !== "preview" ? "hidden lg:flex" : "flex"}`}
           style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
           {/* Play controls bar */}
           <div className="flex items-center gap-1 px-2 sm:px-3 py-1.5 flex-shrink-0" style={{ background: "#1a1a21", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
             <button onClick={undo} disabled={historyIdx <= 0}
-              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5">
+              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5"
+              title="Undo">
               <Undo2 className="w-3.5 h-3.5" />
             </button>
             <button onClick={redo} disabled={historyIdx >= history.length - 1}
-              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5">
+              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5"
+              title="Redo">
               <Redo2 className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-4 mx-0.5 hidden sm:block" style={{ background: "rgba(255,255,255,0.1)" }} />
+            <div className="w-px h-4 mx-0.5" style={{ background: "rgba(255,255,255,0.1)" }} />
             <button onClick={() => { frameRef.current = 0; setPlayheadPercent(0); setTimecode("00:00:00"); }}
               className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
               <SkipBack className="w-3.5 h-3.5" />
@@ -270,7 +358,7 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
               <SkipForward className="w-3.5 h-3.5" />
             </button>
             <div className="flex-1" />
-            <span className="text-[10px] sm:text-[11px] font-mono font-semibold text-white/60">{timecode}</span>
+            <span className="text-[10px] sm:text-[11px] font-mono font-semibold text-white/40">{timecode}</span>
           </div>
 
           <MotionPreview
@@ -284,14 +372,11 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           />
         </div>
 
-        {/* RIGHT: Timeline & Layers (hidden on mobile unless selected) */}
+        {/* RIGHT: Timeline & Layers */}
         <div className={`lg:flex flex-col ${mobileTab === "preview" ? "hidden lg:flex" : "flex"}`}
           style={{ width: "100%" }}>
           <div className="flex flex-col h-full lg:w-[380px] lg:min-w-[340px]" style={{ background: "#1a1a21" }}>
-
-            {/* Timeline tracks (visible in timeline tab on mobile) */}
             <div className={`${mobileTab === "layers" ? "hidden lg:block" : "block"} flex-1 overflow-hidden flex flex-col min-h-0`} style={{ background: "#18181e" }}>
-              {/* Playhead ruler */}
               <div className="relative h-5 flex-shrink-0" style={{ marginLeft: 44, background: "rgba(255,255,255,0.02)" }}>
                 {[0, 1, 2, 3, 4, 5].map(i => (
                   <span key={i} className="absolute text-[8px] font-mono text-white/15 top-0.5" style={{ left: `${i * 20}%` }}>
@@ -300,7 +385,6 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
                 ))}
                 <div className="absolute top-0 bottom-0 w-px z-20" style={{ left: `${playheadPercent}%`, background: "#fff" }} />
               </div>
-
               <div className="flex-1 overflow-y-auto min-h-0">
                 {layers.map((layer, i) => (
                   <TimelineTrack
@@ -318,7 +402,6 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
               </div>
             </div>
 
-            {/* Layer panel (visible in layers tab on mobile) */}
             <div className={`${mobileTab === "timeline" ? "hidden lg:block" : "block"} flex-shrink-0 min-h-0 overflow-hidden`}
               style={{ height: mobileTab === "layers" ? undefined : 260, borderTop: "1px solid rgba(255,255,255,0.06)", flex: mobileTab === "layers" ? 1 : undefined }}>
               <LayerPanel
@@ -337,7 +420,7 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
       </div>
 
       {/* Floating add button */}
-      <div className="pointer-events-none fixed z-30" style={{ bottom: 80, right: 16 }}>
+      <div className="pointer-events-none fixed z-30 lg:hidden" style={{ bottom: 80, right: 16 }}>
         <button
           onClick={() => { addLayer("text"); setMobileTab("layers"); }}
           className="pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
@@ -355,11 +438,11 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           value={aiPrompt}
           onChange={(e) => setAiPrompt(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAI()}
-          placeholder="Describe your motion graphics scene…"
+          placeholder="Describe your motion scene, or pick a preset above…"
           className="flex-1 px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] text-white bg-white/5 border border-white/10 outline-none min-w-0"
         />
         <button
-          onClick={handleAI}
+          onClick={() => handleAI()}
           disabled={isGenerating || !aiPrompt.trim()}
           className="px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold text-white disabled:opacity-40 flex items-center gap-1.5 transition-all shrink-0"
           style={{ background: "linear-gradient(135deg, #bf5af2, #0a84ff)" }}
@@ -382,8 +465,14 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
               className="max-w-sm w-full p-6 rounded-3xl" style={{ background: "#1c1c22", border: "1px solid rgba(255,255,255,0.1)" }}
               onClick={e => e.stopPropagation()}>
-              <h3 className="text-[17px] font-[800] text-white mb-1">Export Motion Graphics</h3>
-              <p className="text-[11px] text-white/40 mb-5">Download frames or export video</p>
+              <div className="flex items-center gap-3 mb-4">
+                <img src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4b941540b_generated_image.png"
+                  alt="" className="w-10 h-10 rounded-xl object-cover" />
+                <div>
+                  <h3 className="text-[16px] font-[800] text-white">Export Motion Graphics</h3>
+                  <p className="text-[10px] text-white/30">MotionFly Studio</p>
+                </div>
+              </div>
               <div className="space-y-3">
                 <button className="w-full py-3 rounded-2xl text-[13px] font-bold text-white flex items-center justify-center gap-2"
                   style={{ background: "#34c759" }}>
