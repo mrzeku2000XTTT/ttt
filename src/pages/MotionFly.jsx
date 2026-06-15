@@ -50,6 +50,8 @@ const PRESET_SCENES = [
 ];
 
 export default function MotionFly() {
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [projectName, setProjectName] = useState("Apple style Animation");
   const [layers, setLayers] = useState([
     { ...makeLayer("shape"), name: "Background", color: "#1a1a2e", y: 50, x: 50, scale: 300, shape: "rect" },
@@ -104,6 +106,17 @@ export default function MotionFly() {
   const secs = Math.floor(timeMs / 1000);
   const mins = Math.floor(secs / 60);
   const timecode = `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
+
+  // Admin-only gate
+  useEffect(() => {
+    (async () => {
+      try {
+        const u = await base44.auth.me();
+        setUser(u);
+      } catch { setUser(null); }
+      setAuthChecked(true);
+    })();
+  }, []);
 
   useEffect(() => {
     setHistory([{ layers: JSON.parse(JSON.stringify(layers)), bgColor, bgImage, device, projectName }]);
@@ -298,6 +311,23 @@ bgColor should match the mood/theme of the scene. Make 3-8 layers, cinematic App
 
   const currentDevice = DEVICE_OPTIONS.find(d => d.id === device);
   const DeviceIcon = currentDevice?.icon || Square;
+
+  // Auth gate: admin only
+  if (!authChecked) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ background: "#141419" }}>
+        <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4" style={{ background: "#141419" }}>
+        <div className="text-6xl">🔒</div>
+        <p className="text-white/60 text-sm">Admin access only</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[100dvh] flex flex-col text-white overflow-hidden" style={{ background: "#141419", fontFamily: "system-ui, -apple-system, sans-serif" }}>
