@@ -1,18 +1,17 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   ArrowLeft, Share2, Undo2, Redo2, SkipBack, Play, Pause,
   SkipForward, Plus, Download, Sparkles, Film, Smartphone,
-  Eye, Layers, Grid3X3, Monitor, Tablet, Square, ChevronDown
+  Eye, Layers, Grid3X3, Monitor, Tablet, Square, ChevronDown, Clock
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import MotionPreview from "@/components/motionfly/MotionPreview";
 import TimelineTrack from "@/components/motionfly/TimelineTrack";
 import LayerPanel from "@/components/motionfly/LayerPanel";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 let _layerId = 1;
 const newLayerId = () => `layer_${Date.now()}_${_layerId++}`;
 
@@ -38,6 +37,9 @@ const DEVICE_OPTIONS = [
   { id: "tablet", icon: Tablet, label: "Tablet" },
 ];
 
+const FPS = 60;
+const DEFAULT_DURATION = 5; // seconds
+
 const PRESET_SCENES = [
   { label: "Cinematic Title", prompt: "cinematic movie title with dramatic lighting and bold text" },
   { label: "Product Launch", prompt: "sleek product launch with glowing highlights and clean typography" },
@@ -47,19 +49,39 @@ const PRESET_SCENES = [
   { label: "Quote Card", prompt: "inspirational quote on a cinematic background with elegant typography" },
 ];
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function MotionFly() {
   const [projectName, setProjectName] = useState("Apple style Animation");
   const [layers, setLayers] = useState([
     { ...makeLayer("shape"), name: "Background", color: "#1a1a2e", y: 50, x: 50, scale: 300, shape: "rect" },
-    { ...makeLayer("text"), name: "Round", text: "Round", fontSize: 48, color: "#ffcc00", y: 35 },
-    { ...makeLayer("text"), name: "Motion", text: "Motion", fontSize: 56, color: "#ff9500", y: 50, fontWeight: "900" },
-    { ...makeLayer("text"), name: "Graphics", text: "Graphics", fontSize: 52, color: "#ffffff", y: 65 },
+    { ...makeLayer("text"), name: "Round", text: "Round", fontSize: 48, color: "#ffcc00",
+      x: 50, y: 50,
+      keyframes: [
+        { time: 0, x: 50, y: 60, scale: 100, opacity: 0, rotation: 0, easing: "ease-out-back" },
+        { time: 800, x: 50, y: 35, scale: 100, opacity: 100, rotation: 0 },
+        { time: 4000, x: 50, y: 35, scale: 110, opacity: 100, rotation: 0 },
+      ]
+    },
+    { ...makeLayer("text"), name: "Motion", text: "Motion", fontSize: 56, color: "#ff9500", fontWeight: "900",
+      x: 50, y: 50,
+      keyframes: [
+        { time: 300, x: 50, y: 65, scale: 60, opacity: 0, rotation: -15, easing: "ease-out-back" },
+        { time: 1200, x: 50, y: 50, scale: 100, opacity: 100, rotation: 0 },
+        { time: 4200, x: 50, y: 48, scale: 120, opacity: 100, rotation: 0 },
+      ]
+    },
+    { ...makeLayer("text"), name: "Graphics", text: "Graphics", fontSize: 52, color: "#ffffff",
+      x: 50, y: 50,
+      keyframes: [
+        { time: 600, x: 50, y: 70, scale: 50, opacity: 0, rotation: 10, easing: "ease-out-back" },
+        { time: 1600, x: 50, y: 65, scale: 100, opacity: 100, rotation: 0 },
+        { time: 4400, x: 50, y: 62, scale: 130, opacity: 100, rotation: 0 },
+      ]
+    },
   ]);
   const [selectedLayerIdx, setSelectedLayerIdx] = useState(2);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playheadPercent, setPlayheadPercent] = useState(0);
-  const [timecode, setTimecode] = useState("00:00:00");
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [durationSec, setDurationSec] = useState(DEFAULT_DURATION);
   const [bgColor, setBgColor] = useState("#141419");
   const [bgImage, setBgImage] = useState("");
   const [device, setDevice] = useState("none");
@@ -70,8 +92,18 @@ export default function MotionFly() {
   const [historyIdx, setHistoryIdx] = useState(-1);
   const [mobileTab, setMobileTab] = useState("preview");
   const [deviceMenuOpen, setDeviceMenuOpen] = useState(false);
-  const playAnimRef = useRef(null);
-  const frameRef = useRef(0);
+  const animRef = useRef(null);
+  const lastTimeRef = useRef(0);
+  const frameAccRef = useRef(0);
+  const frameLabelRef = useRef(currentFrame);
+  frameLabelRef.current = currentFrame;
+
+  const totalFrames = durationSec * FPS;
+  const playheadPercent = durationSec > 0 ? (currentFrame / totalFrames) * 100 : 0;
+  const timeMs = (currentFrame / FPS) * 1000;
+  const secs = Math.floor(timeMs / 1000);
+  const mins = Math.floor(secs / 60);
+  const timecode = `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
 
   useEffect(() => {
     setHistory([{ layers: JSON.parse(JSON.stringify(layers)), bgColor, bgImage, device, projectName }]);
@@ -79,7 +111,7 @@ export default function MotionFly() {
   }, []);
 
   useEffect(() => {
-    return () => clearInterval(playAnimRef.current);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
   }, []);
 
   const undo = () => {
@@ -143,36 +175,71 @@ export default function MotionFly() {
     setSelectedLayerIdx(prev => prev + dir);
   };
 
-  const play = () => {
+  // ─── 60fps playback via requestAnimationFrame ───────────────────────────
+  const play = useCallback(() => {
     if (isPlaying) {
-      clearInterval(playAnimRef.current);
+      cancelAnimationFrame(animRef.current);
       setIsPlaying(false);
-      setPlayheadPercent(0);
-      frameRef.current = 0;
-      setTimecode("00:00:00");
+      setCurrentFrame(0);
+      frameAccRef.current = 0;
       return;
     }
     setIsPlaying(true);
-    frameRef.current = 0;
-    setPlayheadPercent(0);
-    const totalFrames = 90;
-    playAnimRef.current = setInterval(() => {
-      frameRef.current++;
-      const pct = (frameRef.current / totalFrames) * 100;
-      setPlayheadPercent(pct);
-      const secs = Math.floor(frameRef.current / 30);
-      const mins = Math.floor(secs / 60);
-      const hrs = Math.floor(mins / 60);
-      setTimecode(
-        `${String(hrs).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`
-      );
-      if (frameRef.current >= totalFrames) {
-        clearInterval(playAnimRef.current);
-        setIsPlaying(false);
-        setPlayheadPercent(100);
-        frameRef.current = 0;
+    setCurrentFrame(0);
+    frameAccRef.current = 0;
+    lastTimeRef.current = performance.now();
+    const maxFrames = durationSec * FPS;
+
+    const tick = (now) => {
+      const delta = now - lastTimeRef.current;
+      lastTimeRef.current = now;
+      frameAccRef.current += delta;
+      const frameInterval = 1000 / FPS;
+      const framesElapsed = Math.floor(frameAccRef.current / frameInterval);
+      frameAccRef.current -= framesElapsed * frameInterval;
+
+      if (framesElapsed > 0) {
+        setCurrentFrame(prev => {
+          const next = prev + framesElapsed;
+          if (next >= maxFrames) {
+            setIsPlaying(false);
+            frameAccRef.current = 0;
+            return 0;
+          }
+          return next;
+        });
       }
-    }, 33);
+      animRef.current = requestAnimationFrame(tick);
+    };
+    animRef.current = requestAnimationFrame(tick);
+  }, [isPlaying, durationSec]);
+
+  const seekToFrame = (f) => {
+    setCurrentFrame(Math.max(0, Math.min(f, totalFrames)));
+  };
+
+  // Keyframe management
+  const addKeyframe = () => {
+    if (selectedLayerIdx == null) return;
+    const layer = layers[selectedLayerIdx];
+    const currentTimeMs = (currentFrame / FPS) * 1000;
+    const kfs = [...(layer.keyframes || []), {
+      time: Math.round(currentTimeMs),
+      x: layer.x, y: layer.y,
+      scale: layer.scale, opacity: layer.opacity,
+      rotation: layer.rotation,
+    }];
+    updateLayer(selectedLayerIdx, { keyframes: kfs });
+  };
+
+  const removeKeyframe = () => {
+    if (selectedLayerIdx == null) return;
+    const layer = layers[selectedLayerIdx];
+    const currentTimeMs = (currentFrame / FPS) * 1000;
+    const kfs = (layer.keyframes || []).filter(kf => {
+      return Math.abs(kf.time - currentTimeMs) > 50; // 50ms tolerance
+    });
+    updateLayer(selectedLayerIdx, { keyframes: kfs });
   };
 
   const handleAI = async (promptOverride) => {
@@ -201,7 +268,6 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
         setAiPrompt("");
         const name = p.slice(0, 40) || "New Project";
         setProjectName(name);
-        // Add to undo history
         setHistory(prev => [...prev.slice(0, historyIdx + 1), {
           layers: JSON.parse(JSON.stringify(newLayers)), bgColor, bgImage, device, projectName: name
         }]);
@@ -218,7 +284,7 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
 
   return (
     <div className="h-[100dvh] flex flex-col text-white overflow-hidden" style={{ background: "#141419", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      {/* ─── TOP HEADER ─────────────────────────────────────────────────────── */}
+      {/* TOP HEADER */}
       <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 flex-shrink-0"
         style={{ background: "#1c1c22", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <Link to={createPageUrl("AppStoreV2")}
@@ -226,7 +292,6 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           <ArrowLeft className="w-4 h-4 text-white/60" />
         </Link>
 
-        {/* Logo + Brand */}
         <div className="hidden sm:flex items-center gap-2 shrink-0 mr-2">
           <img
             src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4b941540b_generated_image.png"
@@ -245,12 +310,18 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           placeholder="Untitled Project"
         />
 
+        {/* Duration chip */}
+        <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-white/40"
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <Clock className="w-3 h-3" />
+          {durationSec}s
+        </div>
+
         {/* Device frame selector */}
         <div className="relative shrink-0">
           <button
             onClick={() => setDeviceMenuOpen(!deviceMenuOpen)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-white/50 hover:text-white hover:bg-white/5 transition-all"
-          >
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-white/50 hover:text-white hover:bg-white/5 transition-all">
             <DeviceIcon className="w-3.5 h-3.5" />
             <ChevronDown className="w-2.5 h-2.5" />
           </button>
@@ -280,33 +351,27 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           </AnimatePresence>
         </div>
 
-        <button
-          onClick={() => setShowExportModal(true)}
+        <button onClick={() => setShowExportModal(true)}
           className="flex items-center gap-1 px-3 sm:px-4 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-[700] text-white transition-all shrink-0"
-          style={{ background: "#34c759" }}
-        >
+          style={{ background: "#34c759" }}>
           <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           <span className="hidden sm:inline">Export</span>
         </button>
       </div>
 
-      {/* ─── PRESET SCENES BAR ────────────────────────────────────────────────── */}
+      {/* PRESET SCENES BAR */}
       <div className="hidden lg:flex items-center gap-1.5 px-4 py-2 flex-shrink-0 overflow-x-auto"
         style={{ background: "#1a1a21", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
         <span className="text-[9px] uppercase tracking-widest text-white/20 mr-2 shrink-0">Presets</span>
         {PRESET_SCENES.map((scene, i) => (
-          <button
-            key={i}
-            onClick={() => handleAI(scene.prompt)}
-            disabled={isGenerating}
-            className="shrink-0 px-3 py-1 rounded-full text-[10px] font-semibold text-white/40 hover:text-white hover:bg-white/5 transition-all border border-white/5 disabled:opacity-30"
-          >
+          <button key={i} onClick={() => handleAI(scene.prompt)} disabled={isGenerating}
+            className="shrink-0 px-3 py-1 rounded-full text-[10px] font-semibold text-white/40 hover:text-white hover:bg-white/5 transition-all border border-white/5 disabled:opacity-30">
             {scene.label}
           </button>
         ))}
       </div>
 
-      {/* ─── MOBILE TAB SWITCHER ────────────────────────────────────────────── */}
+      {/* MOBILE TAB SWITCHER */}
       <div className="lg:hidden flex items-center flex-shrink-0" style={{ background: "#1a1a21", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         {[
           { id: "preview", icon: Eye, label: "Preview" },
@@ -325,7 +390,7 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
         ))}
       </div>
 
-      {/* ─── MAIN CONTENT ───────────────────────────────────────────────────── */}
+      {/* MAIN CONTENT */}
       <div className="flex-1 flex min-h-0">
         {/* LEFT: Preview Canvas */}
         <div className={`flex-1 flex flex-col min-w-0 ${mobileTab !== "preview" ? "hidden lg:flex" : "flex"}`}
@@ -333,17 +398,15 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           {/* Play controls bar */}
           <div className="flex items-center gap-1 px-2 sm:px-3 py-1.5 flex-shrink-0" style={{ background: "#1a1a21", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
             <button onClick={undo} disabled={historyIdx <= 0}
-              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5"
-              title="Undo">
+              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5" title="Undo">
               <Undo2 className="w-3.5 h-3.5" />
             </button>
             <button onClick={redo} disabled={historyIdx >= history.length - 1}
-              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5"
-              title="Redo">
+              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5" title="Redo">
               <Redo2 className="w-3.5 h-3.5" />
             </button>
             <div className="w-px h-4 mx-0.5" style={{ background: "rgba(255,255,255,0.1)" }} />
-            <button onClick={() => { frameRef.current = 0; setPlayheadPercent(0); setTimecode("00:00:00"); }}
+            <button onClick={() => seekToFrame(0)}
               className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
               <SkipBack className="w-3.5 h-3.5" />
             </button>
@@ -352,11 +415,24 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
               style={{ background: isPlaying ? "#34c759" : "rgba(255,255,255,0.1)" }}>
               {isPlaying ? <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5" />}
             </button>
-            <button
-              onClick={() => { frameRef.current = 90; setPlayheadPercent(100); setTimecode("00:00:03"); }}
+            <button onClick={() => seekToFrame(totalFrames)}
               className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
               <SkipForward className="w-3.5 h-3.5" />
             </button>
+
+            {/* Keyframe buttons */}
+            <div className="w-px h-4 mx-1" style={{ background: "rgba(255,255,255,0.1)" }} />
+            <button onClick={addKeyframe} disabled={selectedLayerIdx == null}
+              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5"
+              title="Add keyframe at playhead">
+              <span className="text-[9px] font-bold">◆</span>
+            </button>
+            <button onClick={removeKeyframe} disabled={selectedLayerIdx == null}
+              className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-red-400 hover:bg-white/5"
+              title="Remove keyframe at playhead">
+              <span className="text-[14px] font-bold leading-none">−</span>
+            </button>
+
             <div className="flex-1" />
             <span className="text-[10px] sm:text-[11px] font-mono font-semibold text-white/40">{timecode}</span>
           </div>
@@ -369,6 +445,9 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
             selectedLayerIdx={selectedLayerIdx}
             onSelectLayer={setSelectedLayerIdx}
             onUpdateLayer={updateLayer}
+            currentFrame={currentFrame}
+            fps={FPS}
+            isPlaying={isPlaying}
           />
         </div>
 
@@ -378,8 +457,9 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           <div className="flex flex-col h-full lg:w-[380px] lg:min-w-[340px]" style={{ background: "#1a1a21" }}>
             <div className={`${mobileTab === "layers" ? "hidden lg:block" : "block"} flex-1 overflow-hidden flex flex-col min-h-0`} style={{ background: "#18181e" }}>
               <div className="relative h-5 flex-shrink-0" style={{ marginLeft: 44, background: "rgba(255,255,255,0.02)" }}>
-                {[0, 1, 2, 3, 4, 5].map(i => (
-                  <span key={i} className="absolute text-[8px] font-mono text-white/15 top-0.5" style={{ left: `${i * 20}%` }}>
+                {Array.from({ length: durationSec + 1 }).map((_, i) => (
+                  <span key={i} className="absolute text-[8px] font-mono text-white/15 top-0.5"
+                    style={{ left: `${(i / durationSec) * 100}%` }}>
                     {i}s
                   </span>
                 ))}
@@ -393,6 +473,8 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
                     index={i}
                     totalLayers={layers.length}
                     playheadPercent={playheadPercent}
+                    fps={FPS}
+                    durationMs={durationSec * 1000}
                     onToggleVisibility={(idx) => updateLayer(idx, { visible: !(layers[idx].visible !== false) })}
                     onToggleLock={() => {}}
                     onSelectLayer={(idx) => { setSelectedLayerIdx(idx); setMobileTab("layers"); }}
@@ -419,18 +501,17 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
         </div>
       </div>
 
-      {/* Floating add button */}
+      {/* FLOATING ADD BUTTON (mobile) */}
       <div className="pointer-events-none fixed z-30 lg:hidden" style={{ bottom: 80, right: 16 }}>
         <button
           onClick={() => { addLayer("text"); setMobileTab("layers"); }}
           className="pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
-          style={{ background: "#34c759" }}
-        >
+          style={{ background: "#34c759" }}>
           <Plus className="w-5 h-5 text-white" />
         </button>
       </div>
 
-      {/* ─── AI BAR ─────────────────────────────────────────────────────────── */}
+      {/* AI BAR */}
       <div className="flex items-center gap-2 px-3 sm:px-4 py-2 flex-shrink-0"
         style={{ background: "#1c1c22", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: "#bf5af2" }} />
@@ -439,14 +520,10 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
           onChange={(e) => setAiPrompt(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAI()}
           placeholder="Describe your motion scene, or pick a preset above…"
-          className="flex-1 px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] text-white bg-white/5 border border-white/10 outline-none min-w-0"
-        />
-        <button
-          onClick={() => handleAI()}
-          disabled={isGenerating || !aiPrompt.trim()}
+          className="flex-1 px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] text-white bg-white/5 border border-white/10 outline-none min-w-0" />
+        <button onClick={() => handleAI()} disabled={isGenerating || !aiPrompt.trim()}
           className="px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold text-white disabled:opacity-40 flex items-center gap-1.5 transition-all shrink-0"
-          style={{ background: "linear-gradient(135deg, #bf5af2, #0a84ff)" }}
-        >
+          style={{ background: "linear-gradient(135deg, #bf5af2, #0a84ff)" }}>
           {isGenerating ? (
             <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
           ) : (
@@ -456,7 +533,7 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
         </button>
       </div>
 
-      {/* ─── EXPORT MODAL ───────────────────────────────────────────────────── */}
+      {/* EXPORT MODAL */}
       <AnimatePresence>
         {showExportModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -481,10 +558,6 @@ Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","c
                 <button className="w-full py-3 rounded-2xl text-[13px] font-bold text-white flex items-center justify-center gap-2"
                   style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
                   <Film className="w-4 h-4" /> Export MP4 (Coming Soon)
-                </button>
-                <button className="w-full py-3 rounded-2xl text-[13px] font-bold flex items-center justify-center gap-2"
-                  style={{ background: "rgba(191,90,242,0.12)", color: "#bf5af2", border: "1px solid rgba(191,90,242,0.2)" }}>
-                  <Sparkles className="w-4 h-4" /> Add Voiceover (Coming Soon)
                 </button>
               </div>
               <button onClick={() => setShowExportModal(false)}

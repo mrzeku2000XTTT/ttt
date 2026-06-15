@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import { interpolateLayer } from "@/utils/animation";
 
 const DEVICE_FRAMES = {
   none: { name: "Free", w: 1200, h: 675 },
@@ -7,7 +8,7 @@ const DEVICE_FRAMES = {
   tablet: { name: "iPad", w: 1024, h: 1366 },
 };
 
-export default function MotionPreview({ layers, device, bgColor, bgImage, selectedLayerIdx, onSelectLayer, onUpdateLayer }) {
+export default function MotionPreview({ layers, device, bgColor, bgImage, selectedLayerIdx, onSelectLayer, onUpdateLayer, currentFrame, fps, isPlaying }) {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -31,7 +32,7 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
     return () => ro.disconnect();
   }, [device, deviceMeta.w, deviceMeta.h]);
 
-  // When a text layer gets selected via LayerPanel, open inline editor
+  // When text layer gets selected via LayerPanel, open inline editor
   useEffect(() => {
     if (selectedLayerIdx != null && layers[selectedLayerIdx]?.type === "text") {
       setEditingText(selectedLayerIdx);
@@ -41,7 +42,6 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
     }
   }, [selectedLayerIdx]);
 
-  // Convert screen px → canvas %
   const screenToCanvas = useCallback((clientX, clientY) => {
     if (!canvasRef.current) return { x: 50, y: 50 };
     const rect = canvasRef.current.getBoundingClientRect();
@@ -56,15 +56,15 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
   }, [scale, deviceMeta.w, deviceMeta.h]);
 
   const handleMouseDown = useCallback((e) => {
+    if (isPlaying) return; // no drag during playback
     const target = e.target.closest("[data-layer-id]");
     if (!target) return;
     const idx = parseInt(target.dataset.layerIndex);
     onSelectLayer(idx);
 
-    // Start dragging
     const startPos = screenToCanvas(e.clientX, e.clientY);
     setDragging({ idx, startX: e.clientX, startY: e.clientY, origX: layers[idx].x, origY: layers[idx].y, startPos });
-  }, [layers, screenToCanvas, onSelectLayer]);
+  }, [layers, screenToCanvas, onSelectLayer, isPlaying]);
 
   const handleMouseMove = useCallback((e) => {
     if (!dragging) return;
@@ -80,9 +80,7 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
     onUpdateLayer(dragging.idx, { x: newX, y: newY });
   }, [dragging, scale, deviceMeta.w, deviceMeta.h, onUpdateLayer]);
 
-  const handleMouseUp = useCallback(() => {
-    setDragging(null);
-  }, []);
+  const handleMouseUp = useCallback(() => setDragging(null), []);
 
   useEffect(() => {
     if (dragging) {
@@ -96,6 +94,7 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
   }, [dragging, handleMouseMove, handleMouseUp]);
 
   const handleDoubleClick = useCallback((e) => {
+    if (isPlaying) return;
     const target = e.target.closest("[data-layer-id]");
     if (!target) return;
     const idx = parseInt(target.dataset.layerIndex);
@@ -103,7 +102,7 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
       setEditingText(idx);
       setEditValue(layers[idx].text || "");
     }
-  }, [layers]);
+  }, [layers, isPlaying]);
 
   const commitEdit = () => {
     if (editingText != null) {
@@ -140,20 +139,27 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
         {layers.map((layer, i) => {
           if (layer.visible === false) return null;
           const isSelected = i === selectedLayerIdx;
-          const fs = Math.max(8, (layer.fontSize || 36) * scale);
           const isEditing = editingText === i;
 
-          if (isEditing) {
-            // Inline text editor
-            const estW = Math.max(30, ((editValue.length || 4) * fs * 0.6));
+          // Interpolate position/animation if keyframes exist
+          const anim = interpolateLayer(layer, currentFrame, fps);
+          const x = anim.x;
+          const y = anim.y;
+          const lScale = (anim.scale || 100) / 100;
+          const opacity = (anim.opacity || 100) / 100;
+          const rotation = anim.rotation || 0;
+          const fs = Math.max(8, ((layer.fontSize || 36) * scale * lScale));
+
+          if (isEditing && !isPlaying) {
+            const estW = Math.max(50, ((editValue.length || 4) * fs * 0.6));
             return (
               <div
                 key={layer.id}
                 className="absolute z-30"
                 style={{
-                  left: `${layer.x || 50}%`,
-                  top: `${layer.y || 50}%`,
-                  transform: `translate(-50%, -50%) rotate(${layer.rotation || 0}deg) scale(${(layer.scale || 100) / 100})`,
+                  left: `${x}%`,
+                  top: `${y}%`,
+                  transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
                 }}
               >
                 <input
@@ -170,7 +176,7 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
                     fontFamily: layer.fontFamily || "system-ui, -apple-system, sans-serif",
                     textShadow: "0 2px 20px rgba(0,0,0,0.6)",
                     width: `${estW}px`,
-                    minWidth: `${Math.min(40, estW)}px`,
+                    minWidth: "40px",
                     borderColor: "#34c759",
                     lineHeight: 1.1,
                   }}
@@ -184,16 +190,16 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
               key={layer.id}
               data-layer-id={layer.id}
               data-layer-index={i}
-              className={`absolute overflow-hidden transition-shadow ${isSelected ? "z-10" : "z-0"}`}
+              className={`absolute overflow-hidden transition-shadow ${isSelected && !isPlaying ? "z-10" : "z-0"}`}
               style={{
-                left: `${layer.x || 50}%`,
-                top: `${layer.y || 50}%`,
-                transform: `translate(-50%, -50%) rotate(${layer.rotation || 0}deg) scale(${(layer.scale || 100) / 100})`,
-                opacity: (layer.opacity || 100) / 100,
+                left: `${x}%`,
+                top: `${y}%`,
+                transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                opacity,
                 maxWidth: `${deviceMeta.w * scale * 0.9}px`,
-                outline: isSelected ? "2px solid rgba(52,199,89,0.5)" : "none",
+                outline: isSelected && !isPlaying ? "2px solid rgba(52,199,89,0.5)" : "none",
                 outlineOffset: 3,
-                cursor: "grab",
+                cursor: isPlaying ? "default" : "grab",
               }}
             >
               {layer.type === "text" && (
@@ -219,8 +225,8 @@ export default function MotionPreview({ layers, device, bgColor, bgImage, select
               )}
               {layer.type === "shape" && (
                 <div style={{
-                  width: Math.min(80 * scale, deviceMeta.w * scale * 0.9),
-                  height: Math.min(80 * scale, deviceMeta.h * scale * 0.9),
+                  width: Math.min(80 * scale * lScale, deviceMeta.w * scale * 0.9),
+                  height: Math.min(80 * scale * lScale, deviceMeta.h * scale * 0.9),
                   borderRadius: layer.shape === "circle" ? "50%" : "8px",
                   background: layer.color || "#ffffff",
                   opacity: (layer.opacity || 100) / 100,

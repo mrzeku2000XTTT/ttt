@@ -1,7 +1,7 @@
 import React from "react";
-import { Eye, EyeOff, Lock, Unlock } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
-export default function TimelineTrack({ layer, index, totalLayers, playheadPercent, onToggleVisibility, onToggleLock, onSelectLayer, isSelected }) {
+export default function TimelineTrack({ layer, index, totalLayers, playheadPercent, fps, durationMs, onToggleVisibility, onToggleLock, onSelectLayer, isSelected }) {
   const trackColors = [
     { bg: "rgba(255, 204, 0, 0.25)", border: "rgba(255, 204, 0, 0.6)", label: "#ffcc00" },
     { bg: "rgba(255, 149, 0, 0.25)", border: "rgba(255, 149, 0, 0.6)", label: "#ff9500" },
@@ -12,22 +12,21 @@ export default function TimelineTrack({ layer, index, totalLayers, playheadPerce
   ];
   const color = trackColors[index % trackColors.length];
 
-  const layerTypeIcons = {
-    text: "T",
-    image: "🖼",
-    shape: "⬡",
-    logo: "◆",
-    video: "▶",
-  };
-
+  const layerTypeIcons = { text: "T", image: "🖼", shape: "⬡", logo: "◆", video: "▶" };
   const icon = layerTypeIcons[layer.type] || "●";
+
+  const keyframes = (layer.keyframes || []).sort((a, b) => a.time - b.time);
+  const hasKeyframes = keyframes.length > 0;
+
+  // Track bar width based on first and last keyframe
+  const trackStart = hasKeyframes && durationMs > 0 ? (keyframes[0].time / durationMs) * 100 : 0;
+  const trackEnd = hasKeyframes && durationMs > 0 ? (keyframes[keyframes.length - 1].time / durationMs) * 100 : 100;
+  const trackWidth = hasKeyframes ? Math.max(8, trackEnd - trackStart) : 100;
 
   return (
     <div
       onClick={() => onSelectLayer(index)}
-      className={`flex items-stretch cursor-pointer transition-all rounded-lg overflow-hidden mb-0.5 ${
-        isSelected ? "ring-1 ring-[#34c759]" : ""
-      }`}
+      className={`flex items-stretch cursor-pointer transition-all rounded-lg overflow-hidden mb-0.5 ${isSelected ? "ring-1 ring-[#34c759]" : ""}`}
       style={{ height: 40 }}
     >
       {/* Visibility column */}
@@ -46,36 +45,56 @@ export default function TimelineTrack({ layer, index, totalLayers, playheadPerce
       <div className="flex-1 relative" style={{ background: "rgba(255,255,255,0.02)" }}>
         {/* Track bar */}
         <div className="absolute inset-y-2 left-1 right-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
-          <div
-            className="h-full rounded-full flex items-center px-3 transition-all"
-            style={{
-              background: color.bg,
-              border: `1px solid ${color.border}`,
-              width: `${Math.max(8, 100 - Math.random() * 60)}%`,
-            }}
-          >
-            <span className="text-[10px] font-semibold truncate" style={{ color: color.label }}>
-              {layer.name || layer.text || `Layer ${index + 1}`}
-            </span>
-          </div>
+          {hasKeyframes ? (
+            <div
+              className="h-full rounded-full flex items-center px-3 transition-all"
+              style={{
+                position: "absolute",
+                background: color.bg,
+                border: `1px solid ${color.border}`,
+                left: `${trackStart}%`,
+                width: `${trackWidth}%`,
+              }}
+            >
+              <span className="text-[10px] font-semibold truncate" style={{ color: color.label }}>
+                {layer.name || layer.text || `Layer ${index + 1}`}
+              </span>
+            </div>
+          ) : (
+            <div
+              className="h-full rounded-full flex items-center px-3 transition-all"
+              style={{
+                background: color.bg,
+                border: `1px solid ${color.border}`,
+                width: "100%",
+              }}
+            >
+              <span className="text-[10px] font-semibold truncate" style={{ color: color.label }}>
+                {layer.name || layer.text || `Layer ${index + 1}`}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Keyframe diamonds */}
-        {layer.keyframes?.map((kf, i) => (
-          <div
-            key={i}
-            className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rotate-45"
-            style={{
-              left: `${kf.time || 25 + i * 20}%`,
-              background: color.label,
-              boxShadow: `0 0 6px ${color.label}`,
-            }}
-          />
-        ))}
+        {keyframes.map((kf, i) => {
+          const kfPercent = durationMs > 0 ? (kf.time / durationMs) * 100 : 0;
+          return (
+            <div
+              key={i}
+              className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rotate-45 z-10 pointer-events-none"
+              style={{
+                left: `${kfPercent}%`,
+                background: color.label,
+                boxShadow: `0 0 6px ${color.label}`,
+              }}
+            />
+          );
+        })}
 
         {/* Playhead */}
         <div
-          className="absolute top-0 bottom-0 w-px z-10 pointer-events-none"
+          className="absolute top-0 bottom-0 w-px z-20 pointer-events-none"
           style={{ left: `${playheadPercent}%`, background: "rgba(255,255,255,0.3)" }}
         />
       </div>
