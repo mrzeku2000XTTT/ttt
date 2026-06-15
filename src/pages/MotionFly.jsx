@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   ArrowLeft, Settings, Share2, Undo2, Redo2, SkipBack, Play, Pause,
-  SkipForward, Copy, Maximize2, Plus, Download, Sparkles, Film,
-  ChevronLeft, ChevronRight
+  SkipForward, Plus, Download, Sparkles, Film,
+  Eye, Layers, Grid3X3
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import MotionPreview from "@/components/motionfly/MotionPreview";
@@ -31,14 +31,6 @@ const makeLayer = (type) => ({
   shape: "rect",
 });
 
-const ANIMATION_PRESETS = [
-  { name: "Fade In", layers: [{ opacity: 100 }] },
-  { name: "Slide Up", layers: [{ y: 30 }, { y: 50 }] },
-  { name: "Scale", layers: [{ scale: 30 }, { scale: 100 }] },
-  { name: "Spin", layers: [{ rotation: 0 }, { rotation: 360 }] },
-  { name: "Pop", layers: [{ scale: 0, opacity: 0 }, { scale: 120 }, { scale: 100, opacity: 100 }] },
-];
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function MotionFly() {
   const [projectName, setProjectName] = useState("Apple style Animation");
@@ -55,12 +47,12 @@ export default function MotionFly() {
   const [bgColor, setBgColor] = useState("#141419");
   const [bgImage, setBgImage] = useState("");
   const [device, setDevice] = useState("none");
-  const [zoom, setZoom] = useState(1);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
+  const [mobileTab, setMobileTab] = useState("preview"); // "preview" | "layers" | "timeline"
   const playAnimRef = useRef(null);
   const frameRef = useRef(0);
 
@@ -70,15 +62,9 @@ export default function MotionFly() {
     setHistoryIdx(0);
   }, []);
 
-  const pushHistory = useCallback((newState) => {
-    setHistory(prev => {
-      const updated = prev.slice(0, historyIdx + 1);
-      updated.push(JSON.parse(JSON.stringify(newState)));
-      if (updated.length > 50) updated.shift();
-      return updated;
-    });
-    setHistoryIdx(prev => Math.min(prev + 1, 49));
-  }, [historyIdx]);
+  useEffect(() => {
+    return () => clearInterval(playAnimRef.current);
+  }, []);
 
   const undo = () => {
     if (historyIdx <= 0) return;
@@ -105,10 +91,7 @@ export default function MotionFly() {
   };
 
   const updateLayer = (idx, changes) => {
-    setLayers(prev => {
-      const updated = prev.map((l, i) => i === idx ? { ...l, ...changes } : l);
-      return updated;
-    });
+    setLayers(prev => prev.map((l, i) => i === idx ? { ...l, ...changes } : l));
   };
 
   const addLayer = (type) => {
@@ -156,7 +139,7 @@ export default function MotionFly() {
     setIsPlaying(true);
     frameRef.current = 0;
     setPlayheadPercent(0);
-    const totalFrames = 90; // 3 seconds at 30fps
+    const totalFrames = 90;
     playAnimRef.current = setInterval(() => {
       frameRef.current++;
       const pct = (frameRef.current / totalFrames) * 100;
@@ -181,22 +164,8 @@ export default function MotionFly() {
     setIsGenerating(true);
     try {
       const prompt = `Create a set of motion graphics layers for: "${aiPrompt}"
-
-Return ONLY valid JSON array of layer objects. Each layer:
-{
-  "type": "text" | "image" | "shape" | "logo",
-  "name": "Layer name",
-  "text": "Display text (for text type)",
-  "x": 0-100, "y": 0-100,
-  "scale": 50-200, "opacity": 0-100, "rotation": -180 to 180,
-  "fontSize": 12-80 (text only),
-  "color": "hex color",
-  "fontWeight": "normal" | "bold" | "900",
-  "visible": true
-}
-
-Make 3-8 layers. Cinematic, modern, Apple-style motion graphics. Example:
-[{"type":"shape","name":"Background","color":"#1a1a2e","x":50,"y":50,"scale":300,"shape":"rect"},{"type":"text","name":"Title","text":"Introducing","fontSize":48,"color":"#ffffff","x":50,"y":50,"fontWeight":"900"}]`;
+Return ONLY valid JSON array. Each layer: type (text/image/shape/logo), name, text, x (0-100), y (0-100), scale (50-200), opacity (0-100), rotation (-180 to 180), fontSize (12-80 for text), color (hex), fontWeight.
+Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","color":"#1a1a2e","x":50,"y":50,"scale":300,"shape":"rect"}]`;
 
       const raw = await base44.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
       const str = typeof raw === "string" ? raw : JSON.stringify(raw);
@@ -222,52 +191,61 @@ Make 3-8 layers. Cinematic, modern, Apple-style motion graphics. Example:
   };
 
   return (
-    <div className="h-screen flex flex-col text-white overflow-hidden" style={{ background: "#141419", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <div className="h-[100dvh] flex flex-col text-white overflow-hidden" style={{ background: "#141419", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       {/* ─── TOP HEADER ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-2.5 flex-shrink-0"
+      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 flex-shrink-0"
         style={{ background: "#1c1c22", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <Link to={createPageUrl("AppStoreV2")}
-          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:bg-white/5">
+          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:bg-white/5 shrink-0">
           <ArrowLeft className="w-4 h-4 text-white/60" />
         </Link>
 
         <input
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
-          className="bg-transparent text-[13px] font-[600] text-white outline-none flex-1 min-w-0"
+          className="bg-transparent text-[12px] sm:text-[13px] font-[600] text-white outline-none flex-1 min-w-0"
         />
 
-        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5">
+        <button className="w-8 h-8 sm:flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/5 shrink-0 hidden">
           <Settings className="w-4 h-4" />
         </button>
 
         <button
           onClick={() => setShowExportModal(true)}
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-[700] text-white transition-all"
+          className="flex items-center gap-1 px-3 sm:px-4 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-[700] text-white transition-all shrink-0"
           style={{ background: "#34c759" }}
         >
-          <Share2 className="w-3.5 h-3.5" />
-          Export
+          <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <span className="hidden sm:inline">Export</span>
         </button>
+      </div>
+
+      {/* ─── MOBILE TAB SWITCHER ────────────────────────────────────────────── */}
+      <div className="lg:hidden flex items-center flex-shrink-0" style={{ background: "#1a1a21", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        {[
+          { id: "preview", icon: Eye, label: "Preview" },
+          { id: "layers", icon: Layers, label: "Layers" },
+          { id: "timeline", icon: Grid3X3, label: "Timeline" },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setMobileTab(tab.id)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold transition-all"
+            style={{
+              color: mobileTab === tab.id ? "#fff" : "rgba(255,255,255,0.35)",
+              borderBottom: mobileTab === tab.id ? "2px solid #34c759" : "2px solid transparent",
+            }}>
+            <tab.icon className="w-3.5 h-3.5" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* ─── MAIN CONTENT ───────────────────────────────────────────────────── */}
       <div className="flex-1 flex min-h-0">
-        {/* LEFT: Preview Canvas */}
-        <div className="flex-1 flex flex-col min-w-0" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-          <MotionPreview
-            layers={layers}
-            canvasSize={{ w: 1200, h: 675 }}
-            device={device}
-            bgColor={bgColor}
-            bgImage={bgImage}
-          />
-        </div>
-
-        {/* RIGHT: Timeline & Layers */}
-        <div className="flex flex-col" style={{ width: 380, minWidth: 340 }}>
-          {/* Timeline toolbar */}
-          <div className="flex items-center gap-1 px-3 py-2 border-b border-white/5" style={{ background: "#1a1a21" }}>
+        {/* LEFT: Preview Canvas (hidden on mobile unless selected) */}
+        <div className={`flex-1 flex flex-col min-w-0 ${mobileTab !== "preview" ? "hidden lg:flex" : "flex"}`}
+          style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+          {/* Play controls bar */}
+          <div className="flex items-center gap-1 px-2 sm:px-3 py-1.5 flex-shrink-0" style={{ background: "#1a1a21", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
             <button onClick={undo} disabled={historyIdx <= 0}
               className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5">
               <Undo2 className="w-3.5 h-3.5" />
@@ -276,106 +254,106 @@ Make 3-8 layers. Cinematic, modern, Apple-style motion graphics. Example:
               className="w-7 h-7 flex items-center justify-center rounded text-white/50 disabled:opacity-20 hover:text-white hover:bg-white/5">
               <Redo2 className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-4 mx-1" style={{ background: "rgba(255,255,255,0.1)" }} />
-            <button className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
+            <div className="w-px h-4 mx-0.5 hidden sm:block" style={{ background: "rgba(255,255,255,0.1)" }} />
+            <button onClick={() => { frameRef.current = 0; setPlayheadPercent(0); setTimecode("00:00:00"); }}
+              className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
               <SkipBack className="w-3.5 h-3.5" />
             </button>
             <button onClick={play}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-white transition-all"
+              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-white transition-all"
               style={{ background: isPlaying ? "#34c759" : "rgba(255,255,255,0.1)" }}>
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+              {isPlaying ? <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5" />}
             </button>
-            <button className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
+            <button
+              onClick={() => { frameRef.current = 90; setPlayheadPercent(100); setTimecode("00:00:03"); }}
+              className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
               <SkipForward className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-4 mx-1" style={{ background: "rgba(255,255,255,0.1)" }} />
-            <button className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
-              <Copy className="w-3.5 h-3.5" />
-            </button>
-            <button className="w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/5">
-              <Maximize2 className="w-3.5 h-3.5" />
-            </button>
-
             <div className="flex-1" />
-
-            {/* Timecode */}
-            <span className="text-[11px] font-mono font-semibold text-white/70">{timecode}</span>
+            <span className="text-[10px] sm:text-[11px] font-mono font-semibold text-white/60">{timecode}</span>
           </div>
 
-          {/* Timeline tracks */}
-          <div className="flex-1 overflow-hidden flex flex-col" style={{ background: "#18181e" }}>
-            {/* Playhead ruler */}
-            <div className="relative h-5 flex-shrink-0 mx-[44px]" style={{ background: "rgba(255,255,255,0.02)" }}>
-              {/* Tick marks */}
-              {[0, 1, 2, 3, 4, 5].map(i => (
-                <span key={i} className="absolute text-[8px] font-mono text-white/15 top-0.5" style={{ left: `${i * 20}%` }}>
-                  {i}s
-                </span>
-              ))}
-              {/* Playhead line */}
-              <div className="absolute top-0 bottom-0 w-px z-20" style={{ left: `${playheadPercent}%`, background: "#fff" }} />
+          <MotionPreview layers={layers} device={device} bgColor={bgColor} bgImage={bgImage} />
+        </div>
+
+        {/* RIGHT: Timeline & Layers (hidden on mobile unless selected) */}
+        <div className={`lg:flex flex-col ${mobileTab === "preview" ? "hidden lg:flex" : "flex"}`}
+          style={{ width: "100%" }}>
+          <div className="flex flex-col h-full lg:w-[380px] lg:min-w-[340px]" style={{ background: "#1a1a21" }}>
+
+            {/* Timeline tracks (visible in timeline tab on mobile) */}
+            <div className={`${mobileTab === "layers" ? "hidden lg:block" : "block"} flex-1 overflow-hidden flex flex-col min-h-0`} style={{ background: "#18181e" }}>
+              {/* Playhead ruler */}
+              <div className="relative h-5 flex-shrink-0" style={{ marginLeft: 44, background: "rgba(255,255,255,0.02)" }}>
+                {[0, 1, 2, 3, 4, 5].map(i => (
+                  <span key={i} className="absolute text-[8px] font-mono text-white/15 top-0.5" style={{ left: `${i * 20}%` }}>
+                    {i}s
+                  </span>
+                ))}
+                <div className="absolute top-0 bottom-0 w-px z-20" style={{ left: `${playheadPercent}%`, background: "#fff" }} />
+              </div>
+
+              <div className="flex-1 overflow-y-auto min-h-0">
+                {layers.map((layer, i) => (
+                  <TimelineTrack
+                    key={layer.id}
+                    layer={layer}
+                    index={i}
+                    totalLayers={layers.length}
+                    playheadPercent={playheadPercent}
+                    onToggleVisibility={(idx) => updateLayer(idx, { visible: !(layers[idx].visible !== false) })}
+                    onToggleLock={() => {}}
+                    onSelectLayer={(idx) => { setSelectedLayerIdx(idx); setMobileTab("layers"); }}
+                    isSelected={i === selectedLayerIdx}
+                  />
+                ))}
+              </div>
             </div>
 
-            {/* Layer tracks */}
-            <div className="flex-1 overflow-y-auto">
-              {layers.map((layer, i) => (
-                <TimelineTrack
-                  key={layer.id}
-                  layer={layer}
-                  index={i}
-                  totalLayers={layers.length}
-                  playheadPercent={playheadPercent}
-                  onToggleVisibility={(idx) => updateLayer(idx, { visible: !(layers[idx].visible !== false) })}
-                  onToggleLock={() => {}}
-                  onSelectLayer={setSelectedLayerIdx}
-                  isSelected={i === selectedLayerIdx}
-                />
-              ))}
+            {/* Layer panel (visible in layers tab on mobile) */}
+            <div className={`${mobileTab === "timeline" ? "hidden lg:block" : "block"} flex-shrink-0 min-h-0 overflow-hidden`}
+              style={{ height: mobileTab === "layers" ? undefined : 260, borderTop: "1px solid rgba(255,255,255,0.06)", flex: mobileTab === "layers" ? 1 : undefined }}>
+              <LayerPanel
+                layers={layers}
+                selectedLayerIdx={selectedLayerIdx}
+                onSelectLayer={setSelectedLayerIdx}
+                onUpdateLayer={updateLayer}
+                onDeleteLayer={deleteLayer}
+                onDuplicateLayer={duplicateLayer}
+                onAddLayer={addLayer}
+                onMoveLayer={moveLayer}
+              />
             </div>
-          </div>
-
-          {/* Layer panel at bottom */}
-          <div className="flex-shrink-0" style={{ height: 260, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-            <LayerPanel
-              layers={layers}
-              selectedLayerIdx={selectedLayerIdx}
-              onSelectLayer={setSelectedLayerIdx}
-              onUpdateLayer={updateLayer}
-              onDeleteLayer={deleteLayer}
-              onDuplicateLayer={duplicateLayer}
-              onAddLayer={addLayer}
-              onMoveLayer={moveLayer}
-            />
-          </div>
-
-          {/* Floating add button */}
-          <div style={{ position: "relative", height: 0 }}>
-            <button
-              onClick={() => addLayer("text")}
-              className="absolute bottom-3 right-3 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 z-30"
-              style={{ background: "#34c759" }}
-            >
-              <Plus className="w-5 h-5 text-white" />
-            </button>
           </div>
         </div>
       </div>
 
+      {/* Floating add button */}
+      <div className="pointer-events-none fixed z-30" style={{ bottom: 80, right: 16 }}>
+        <button
+          onClick={() => { addLayer("text"); setMobileTab("layers"); }}
+          className="pointer-events-auto w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
+          style={{ background: "#34c759" }}
+        >
+          <Plus className="w-5 h-5 text-white" />
+        </button>
+      </div>
+
       {/* ─── AI BAR ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 py-2 flex-shrink-0"
+      <div className="flex items-center gap-2 px-3 sm:px-4 py-2 flex-shrink-0"
         style={{ background: "#1c1c22", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <Sparkles className="w-3.5 h-3.5" style={{ color: "#bf5af2" }} />
+        <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: "#bf5af2" }} />
         <input
           value={aiPrompt}
           onChange={(e) => setAiPrompt(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAI()}
           placeholder="Describe your motion graphics scene…"
-          className="flex-1 px-3 py-1.5 rounded-lg text-[11px] text-white bg-white/5 border border-white/10 outline-none"
+          className="flex-1 px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] text-white bg-white/5 border border-white/10 outline-none min-w-0"
         />
         <button
           onClick={handleAI}
           disabled={isGenerating || !aiPrompt.trim()}
-          className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white disabled:opacity-40 flex items-center gap-1.5 transition-all"
+          className="px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold text-white disabled:opacity-40 flex items-center gap-1.5 transition-all shrink-0"
           style={{ background: "linear-gradient(135deg, #bf5af2, #0a84ff)" }}
         >
           {isGenerating ? (
@@ -383,7 +361,7 @@ Make 3-8 layers. Cinematic, modern, Apple-style motion graphics. Example:
           ) : (
             <Sparkles className="w-3 h-3" />
           )}
-          Generate
+          <span className="hidden sm:inline">Generate</span>
         </button>
       </div>
 
