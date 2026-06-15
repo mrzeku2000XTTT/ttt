@@ -86,6 +86,7 @@ import DoubleOWorkshopPage from './pages/DoubleOWorkshop';
 import WorldWalkerPage from './pages/WorldWalker';
 import MotionFlyPage from './pages/MotionFly';
 import PingguoPage from './pages/Pingguo';
+import ORBTPage from './pages/ORBT';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -212,6 +213,7 @@ const AuthenticatedApp = () => {
         </LayoutWrapper>
       } />
       <Route path="/Pingguo" element={<PingguoPage />} />
+      <Route path="/ORBT" element={<ORBTPage />} />
       <Route path="/Docs" element={
         <LayoutWrapper currentPageName="Docs">
           <DocsPage />
