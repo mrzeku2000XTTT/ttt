@@ -147,7 +147,7 @@ If multiple images exist, map them by order using set_media({ url, slide_number:
                   name: { type: "string" },
                   args: { type: "object" },
                 },
-                required: ["name"],
+                required: ["name", "args"],
               },
             },
           },
