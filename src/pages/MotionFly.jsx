@@ -512,6 +512,10 @@ bgColor should match the mood/theme of the scene. Make 3-8 layers, cinematic App
                 onDuplicateLayer={duplicateLayer}
                 onAddLayer={addLayer}
                 onMoveLayer={moveLayer}
+                bgColor={bgColor}
+                onBgColorChange={setBgColor}
+                bgImage={bgImage}
+                onBgImageChange={setBgImage}
               />
             </div>
           </div>

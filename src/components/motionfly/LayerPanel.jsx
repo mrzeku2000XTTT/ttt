@@ -1,9 +1,26 @@
 import React from "react";
 import { Type, Image, Square, Star, Move, Trash2, Copy, Eye, EyeOff } from "lucide-react";
 
-export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, onUpdateLayer, onDeleteLayer, onDuplicateLayer, onAddLayer, onMoveLayer }) {
+export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, onUpdateLayer, onDeleteLayer, onDuplicateLayer, onAddLayer, onMoveLayer, bgColor, onBgColorChange, bgImage, onBgImageChange }) {
   return (
     <div className="flex flex-col h-full" style={{ background: "#1a1a21" }}>
+      {/* Background controls */}
+      <div className="px-3 py-2 border-b border-white/10 space-y-2">
+        <p className="text-[8px] uppercase tracking-widest text-white/25">Background</p>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded border border-white/20 flex-shrink-0" style={{ background: bgColor || "#141419" }} />
+          <input type="color" value={bgColor || "#141419"}
+            onChange={(e) => onBgColorChange(e.target.value)}
+            className="flex-1 h-7 rounded cursor-pointer border-0 p-0" />
+        </div>
+        <input
+          value={bgImage || ""}
+          onChange={(e) => onBgImageChange(e.target.value)}
+          placeholder="Background image URL (optional)"
+          className="w-full rounded-lg px-2.5 py-1.5 text-[10px] text-white/60 bg-white/5 border border-white/10 outline-none focus:border-[#34c759]/40 transition-colors placeholder:text-white/15"
+        />
+      </div>
+
       {/* Add layer bar */}
       <div className="flex items-center gap-1 p-2 border-b border-white/5">
         {[
