@@ -248,28 +248,45 @@ export default function MotionFly() {
     setIsGenerating(true);
     try {
       const prompt = `Create a set of motion graphics layers for: "${p}"
-Return ONLY valid JSON array. Each layer: type (text/image/shape/logo), name, text, x (0-100), y (0-100), scale (50-200), opacity (0-100), rotation (-180 to 180), fontSize (12-80 for text), color (hex), fontWeight.
-Make 3-8 layers, cinematic Apple-style. Example: [{"type":"shape","name":"Bg","color":"#1a1a2e","x":50,"y":50,"scale":300,"shape":"rect"}]`;
+
+Return ONLY this exact JSON format (no extra text):
+{
+  "bgColor": "#hexcolor", 
+  "layers": [{layer}, {layer}, ...]
+}
+
+Each layer: type (text/image/shape/logo), name, text, x (0-100), y (0-100), scale (50-200), opacity (0-100), rotation (-180 to 180), fontSize (12-80 for text), color (hex), fontWeight.
+bgColor should match the mood/theme of the scene. Make 3-8 layers, cinematic Apple-style.`;
 
       const raw = await base44.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
       const str = typeof raw === "string" ? raw : JSON.stringify(raw);
-      const match = str.match(/\[[\s\S]*\]/);
-      const generated = JSON.parse(match ? match[0] : str);
+      // Try to parse as object with bgColor+layers, or fall back to array
+      let result;
+      try {
+        result = JSON.parse(str);
+      } catch {
+        const match = str.match(/\{[\s\S]*\}/);
+        result = match ? JSON.parse(match[0]) : JSON.parse(str);
+      }
 
-      if (Array.isArray(generated) && generated.length > 0) {
-        const newLayers = generated.map(l => ({
+      const generatedLayers = Array.isArray(result) ? result : result?.layers;
+      const generatedBg = (result && !Array.isArray(result) && result.bgColor) ? result.bgColor : null;
+
+      if (Array.isArray(generatedLayers) && generatedLayers.length > 0) {
+        const newLayers = generatedLayers.map(l => ({
           ...makeLayer(l.type || "text"),
           ...l,
           id: newLayerId(),
           visible: true,
         }));
         setLayers(newLayers);
+        if (generatedBg) setBgColor(generatedBg);
         setSelectedLayerIdx(newLayers.length > 1 ? 1 : 0);
         setAiPrompt("");
         const name = p.slice(0, 40) || "New Project";
         setProjectName(name);
         setHistory(prev => [...prev.slice(0, historyIdx + 1), {
-          layers: JSON.parse(JSON.stringify(newLayers)), bgColor, bgImage, device, projectName: name
+          layers: JSON.parse(JSON.stringify(newLayers)), bgColor: generatedBg || bgColor, bgImage, device, projectName: name
         }]);
         setHistoryIdx(prev => prev + 1);
       }
