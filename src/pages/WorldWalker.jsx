@@ -1,227 +1,240 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { OrbitControls, useTexture, Html, PerspectiveCamera } from "@react-three/drei";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Camera, Download, MapPin, Eye, Move, RotateCcw, Maximize2, X, Plus, Trash2, Film, Image as ImageIcon, ZoomIn, ZoomOut, Crosshair, Layers } from "lucide-react";
+import { Upload, Camera, Download, MapPin, X, Trash2, Image as ImageIcon, Crosshair, RotateCcw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import * as THREE from "three";
 
-// Camera presets for cinematography
-const CAMERA_PRESETS = [
-  { id: "eye", label: "Eye Level", icon: "👁", pitch: 0, desc: "Natural human POV" },
-  { id: "low", label: "Low Angle", icon: "📐", pitch: -25, desc: "Heroic, powerful subjects" },
-  { id: "high", label: "High Angle", icon: "🏔", pitch: 25, desc: "Vulnerable, overview" },
-  { id: "bird", label: "Bird's Eye", icon: "🦅", pitch: 70, desc: "Top-down aerial" },
-  { id: "dutch", label: "Dutch Tilt", icon: "↗", pitch: 0, roll: 15, desc: "Unease, tension" },
-  { id: "worm", label: "Worm's Eye", icon: "🐛", pitch: -60, desc: "Extreme upward drama" },
-];
-
+// ─── Lens presets ─────────────────────────────────────────────────────────────
 const LENS_PRESETS = [
-  { label: "14mm", fov: 100, desc: "Ultra-wide, dramatic distortion" },
-  { label: "24mm", fov: 84, desc: "Wide, environmental storytelling" },
-  { label: "35mm", fov: 63, desc: "Natural, documentary feel" },
-  { label: "50mm", fov: 47, desc: "Human eye, neutral" },
-  { label: "85mm", fov: 29, desc: "Portrait, subject isolation" },
-  { label: "135mm", fov: 18, desc: "Telephoto compression" },
+  { label: "14mm", fov: 100, desc: "Ultra-wide" },
+  { label: "24mm", fov: 84, desc: "Wide" },
+  { label: "35mm", fov: 63, desc: "Natural" },
+  { label: "50mm", fov: 47, desc: "Human eye" },
+  { label: "85mm", fov: 29, desc: "Portrait" },
+  { label: "135mm", fov: 18, desc: "Telephoto" },
 ];
 
-function WorldCanvas({ image, cameraPos, setCameraPos, cameraAngle, setCameraAngle, fov, roll, markers, onAddMarker, activeMarker }) {
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
-  const dragging = useRef(false);
-  const lastMouse = useRef({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+const CAMERA_PRESETS = [
+  { id: "eye", label: "Eye Level", pitch: 0, height: 1.6 },
+  { id: "low", label: "Low Angle", pitch: -0.4, height: 0.4 },
+  { id: "high", label: "High Angle", pitch: 0.35, height: 3.5 },
+  { id: "bird", label: "Bird's Eye", pitch: 1.2, height: 12 },
+  { id: "worm", label: "Worm's Eye", pitch: -0.9, height: 0.15 },
+];
 
-  // Draw world view — pan/zoom over the equirectangular image simulating walkable navigation
+// ─── First-person camera controller ───────────────────────────────────────────
+function FPSController({ locked, fov, onPositionChange }) {
+  const { camera, gl } = useThree();
+  const keys = useRef({});
+  const yaw = useRef(0);
+  const pitch = useRef(0);
+  const speed = 6;
+  const mouseSensitivity = 0.002;
+  const position = useRef(new THREE.Vector3(0, 1.6, 0));
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !image) return;
-    const ctx = canvas.getContext("2d");
-    const W = canvas.width;
-    const H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
+    if (locked) return;
 
-    const img = new window.Image();
-    img.onload = () => {
-      // Compute visible window based on cameraPos (yaw 0-360, pitch -90..90), fov, zoom
-      const yaw = ((cameraPos.x % 360) + 360) % 360;
-      const pitch = Math.max(-85, Math.min(85, cameraPos.y));
-
-      // Map yaw/pitch to source rect in equirectangular image
-      const srcXFraction = yaw / 360;
-      const srcYFraction = (pitch + 90) / 180;
-
-      const srcW = img.naturalWidth / (fov / 90) / zoom;
-      const srcH = img.naturalHeight / (fov / 90) / zoom;
-
-      const srcX = (img.naturalWidth * srcXFraction - srcW / 2 + img.naturalWidth) % img.naturalWidth;
-      const srcY = Math.max(0, Math.min(img.naturalHeight - srcH, img.naturalHeight * srcYFraction - srcH / 2));
-
-      // Apply roll via canvas rotation
-      ctx.save();
-      ctx.translate(W / 2, H / 2);
-      ctx.rotate((roll || 0) * Math.PI / 180);
-      ctx.translate(-W / 2, -H / 2);
-
-      // Handle wrap-around at seam
-      if (srcX + srcW <= img.naturalWidth) {
-        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, W, H);
-      } else {
-        const part1W = img.naturalWidth - srcX;
-        const part1Frac = part1W / srcW;
-        ctx.drawImage(img, srcX, srcY, part1W, srcH, 0, 0, W * part1Frac, H);
-        ctx.drawImage(img, 0, srcY, srcW - part1W, srcH, W * part1Frac, 0, W * (1 - part1Frac), H);
-      }
-
-      // Vignette overlay
-      const grad = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.75);
-      grad.addColorStop(0, "rgba(0,0,0,0)");
-      grad.addColorStop(1, "rgba(0,0,0,0.45)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Draw markers visible in current FOV
-      markers.forEach((m) => {
-        const markerYaw = ((m.yaw % 360) + 360) % 360;
-        const relYaw = markerYaw - yaw;
-        const normRelYaw = ((relYaw + 540) % 360) - 180;
-        const halfFOV = fov / 2;
-        if (Math.abs(normRelYaw) < halfFOV * 1.1) {
-          const relPitch = m.pitch - pitch;
-          const halfVFOV = (H / W) * halfFOV;
-          if (Math.abs(relPitch) < halfVFOV * 1.2) {
-            const markerX = W / 2 + (normRelYaw / halfFOV) * (W / 2);
-            const markerY = H / 2 - (relPitch / halfVFOV) * (H / 2);
-            const isActive = activeMarker === m.id;
-            ctx.beginPath();
-            ctx.arc(markerX, markerY, isActive ? 10 : 7, 0, Math.PI * 2);
-            ctx.fillStyle = isActive ? "rgba(255,214,10,0.9)" : "rgba(10,132,255,0.85)";
-            ctx.fill();
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.fillStyle = "white";
-            ctx.font = "bold 9px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(m.label || "📍", markerX, markerY + 20);
-          }
-        }
-      });
-
-      // Crosshair
-      ctx.restore();
-      ctx.save();
-      ctx.strokeStyle = "rgba(255,255,255,0.4)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath(); ctx.moveTo(W / 2 - 16, H / 2); ctx.lineTo(W / 2 + 16, H / 2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W / 2, H / 2 - 16); ctx.lineTo(W / 2, H / 2 + 16); ctx.stroke();
-      ctx.restore();
+    const onKeyDown = (e) => { keys.current[e.code] = true; };
+    const onKeyUp = (e) => { keys.current[e.code] = false; };
+    const onMouseMove = (e) => {
+      if (document.pointerLockElement !== gl.domElement) return;
+      yaw.current -= e.movementX * mouseSensitivity;
+      pitch.current = Math.max(-Math.PI / 2.4, Math.min(Math.PI / 2.4, pitch.current - e.movementY * mouseSensitivity));
     };
-    img.src = image;
-  }, [image, cameraPos, fov, roll, zoom, markers, activeMarker]);
+    const onClick = () => { gl.domElement.requestPointerLock(); };
 
-  const handleMouseDown = (e) => {
-    dragging.current = true;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
-  };
-  const handleMouseMove = (e) => {
-    if (!dragging.current) return;
-    const dx = e.clientX - lastMouse.current.x;
-    const dy = e.clientY - lastMouse.current.y;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
-    setCameraPos(p => ({ x: p.x - dx * 0.15, y: Math.max(-85, Math.min(85, p.y + dy * 0.1)) }));
-  };
-  const handleMouseUp = () => { dragging.current = false; };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    document.addEventListener("mousemove", onMouseMove);
+    gl.domElement.addEventListener("click", onClick);
 
-  const handleTouchStart = (e) => {
-    dragging.current = true;
-    lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  };
-  const handleTouchMove = (e) => {
-    if (!dragging.current) return;
-    const dx = e.touches[0].clientX - lastMouse.current.x;
-    const dy = e.touches[0].clientY - lastMouse.current.y;
-    lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    setCameraPos(p => ({ x: p.x - dx * 0.2, y: Math.max(-85, Math.min(85, p.y + dy * 0.15)) }));
-  };
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      document.removeEventListener("mousemove", onMouseMove);
+      gl.domElement.removeEventListener("click", onClick);
+    };
+  }, [locked, gl]);
 
-  const handleDoubleClick = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const W = canvasRef.current.width;
-    const H = canvasRef.current.height;
-    const halfFOV = fov / 2;
-    const halfVFOV = (H / W) * halfFOV;
-    const yaw = ((cameraPos.x % 360) + 360) % 360;
-    const relYaw = ((mx - W / 2) / (W / 2)) * halfFOV;
-    const relPitch = -((my - H / 2) / (H / 2)) * halfVFOV;
-    const markerYaw = (yaw + relYaw + 360) % 360;
-    const markerPitch = cameraPos.y + relPitch;
-    onAddMarker({ yaw: markerYaw, pitch: markerPitch });
-  };
+  useFrame((_, delta) => {
+    if (locked) return;
+    const dt = delta;
 
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+
+    const forward = new THREE.Vector3(-Math.sin(yaw.current), 0, -Math.cos(yaw.current)).normalize();
+    const right = new THREE.Vector3(Math.cos(yaw.current), 0, -Math.sin(yaw.current)).normalize();
+
+    if (keys.current["KeyW"]) position.current.addScaledVector(forward, speed * dt);
+    if (keys.current["KeyS"]) position.current.addScaledVector(forward, -speed * dt);
+    if (keys.current["KeyA"]) position.current.addScaledVector(right, -speed * dt);
+    if (keys.current["KeyD"]) position.current.addScaledVector(right, speed * dt);
+
+    // Clamp inside sphere
+    if (position.current.length() > 48) {
+      position.current.normalize().multiplyScalar(48);
+    }
+
+    camera.position.copy(position.current);
+
+    const lookDir = new THREE.Vector3(
+      -Math.sin(yaw.current) * Math.cos(pitch.current),
+      Math.sin(pitch.current),
+      -Math.cos(yaw.current) * Math.cos(pitch.current)
+    ).normalize();
+
+    camera.lookAt(position.current.clone().add(lookDir));
+
+    if (onPositionChange) {
+      onPositionChange({
+        x: Math.round(position.current.x * 10) / 10,
+        y: Math.round(position.current.y * 10) / 10,
+        z: Math.round(position.current.z * 10) / 10,
+        yaw: Math.round(((yaw.current * 180 / Math.PI) % 360 + 360) % 360),
+        pitch: Math.round(pitch.current * 180 / Math.PI),
+      });
+    }
+  });
+
+  return null;
+}
+
+// ─── Sky sphere ───────────────────────────────────────────────────────────────
+function SkySphere({ imageUrl }) {
+  const texture = useTexture(imageUrl);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
   return (
-    <div ref={containerRef} className="relative w-full" style={{ aspectRatio: "16/9" }}>
-      <canvas
-        ref={canvasRef}
-        width={1280}
-        height={720}
-        className="w-full h-full rounded-2xl"
-        style={{ cursor: dragging.current ? "grabbing" : "grab", background: "#000", display: "block" }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleMouseUp}
-        onDoubleClick={handleDoubleClick}
-      />
-      {/* Zoom controls */}
-      <div className="absolute bottom-4 right-4 flex flex-col gap-1.5">
-        <button onClick={() => setZoom(z => Math.min(3, z + 0.2))} className="w-8 h-8 rounded-full flex items-center justify-center text-white transition-all" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
-          <ZoomIn className="w-4 h-4" />
-        </button>
-        <button onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} className="w-8 h-8 rounded-full flex items-center justify-center text-white transition-all" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
-          <ZoomOut className="w-4 h-4" />
-        </button>
-        <button onClick={() => { setZoom(1); setCameraPos({ x: 0, y: 0 }); }} className="w-8 h-8 rounded-full flex items-center justify-center text-white transition-all" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    </div>
+    <mesh scale={[-1, 1, 1]}>
+      <sphereGeometry args={[50, 64, 32]} />
+      <meshBasicMaterial map={texture} side={THREE.BackSide} />
+    </mesh>
   );
 }
 
+// ─── Ground ring (subtle reference plane) ─────────────────────────────────────
+function GroundRing() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
+      <ringGeometry args={[2, 50, 64]} />
+      <meshBasicMaterial color="#111" side={THREE.DoubleSide} transparent opacity={0.25} />
+    </mesh>
+  );
+}
+
+// ─── 3D Marker ────────────────────────────────────────────────────────────────
+function WorldMarker({ position, color, label, isActive, onClick }) {
+  const meshRef = useRef();
+
+  useFrame(() => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.01;
+    }
+  });
+
+  return (
+    <group position={position}>
+      <mesh ref={meshRef} onClick={onClick}>
+        <coneGeometry args={[0.35, 1.2, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={isActive ? 0.8 : 0.3} />
+      </mesh>
+      <mesh position={[0, 1.1, 0]}>
+        <sphereGeometry args={[isActive ? 0.3 : 0.2, 16, 16]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={isActive ? 1 : 0.5} />
+      </mesh>
+      {label && (
+        <Html position={[0, 1.8, 0]} center style={{ pointerEvents: "none" }}>
+          <div className="bg-black/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+            📍 {label}
+          </div>
+        </Html>
+      )}
+    </group>
+  );
+}
+
+// ─── 3D Scene ─────────────────────────────────────────────────────────────────
+function WorldScene({ imageUrl, locked, fov, markers, activeMarker, onMarkerClick, onPositionChange, onDoubleClickPlace }) {
+  const { camera, gl } = useThree();
+  const lastClick = useRef(0);
+
+  useEffect(() => {
+    const handler = (e) => {
+      const now = Date.now();
+      if (now - lastClick.current < 300) {
+        // Double click detected - place marker at camera look direction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(0, 0); // center of screen
+        raycaster.setFromCamera(mouse, camera);
+        const sphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 49);
+        const intersect = new THREE.Vector3();
+        if (raycaster.ray.intersectSphere(sphere, intersect)) {
+          onDoubleClickPlace({
+            x: Math.round(intersect.x * 10) / 10,
+            y: Math.round(intersect.y * 10) / 10,
+            z: Math.round(intersect.z * 10) / 10,
+          });
+        }
+      }
+      lastClick.current = now;
+    };
+    gl.domElement.addEventListener("dblclick", handler);
+    return () => gl.domElement.removeEventListener("dblclick", handler);
+  }, [camera, gl, onDoubleClickPlace]);
+
+  return (
+    <>
+      <FPSController locked={locked} fov={fov} onPositionChange={onPositionChange} />
+      <SkySphere imageUrl={imageUrl} />
+      <GroundRing />
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 10, 5]} intensity={0.3} />
+      {markers.map((m) => (
+        <WorldMarker
+          key={m.id}
+          position={[m.x, m.y, m.z]}
+          color={activeMarker === m.id ? "#ffd60a" : "#0a84ff"}
+          label={m.label}
+          isActive={activeMarker === m.id}
+          onClick={() => onMarkerClick(m)}
+        />
+      ))}
+    </>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function WorldWalker() {
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const [cameraPos, setCameraPos] = useState({ x: 0, y: 0 });
-  const [cameraAngle, setCameraAngle] = useState({ pitch: 0, roll: 0 });
+  const [locked, setLocked] = useState(false);
+  const [selectedLens, setSelectedLens] = useState(3); // 50mm
   const [selectedPreset, setSelectedPreset] = useState("eye");
-  const [selectedLens, setSelectedLens] = useState(1); // index into LENS_PRESETS
   const [markers, setMarkers] = useState([]);
   const [activeMarker, setActiveMarker] = useState(null);
   const [screenshots, setScreenshots] = useState([]);
-  const [tab, setTab] = useState("camera"); // camera | markers | shots
+  const [tab, setTab] = useState("lens");
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
-  const [newMarkerLabel, setNewMarkerLabel] = useState("");
   const [pendingMarker, setPendingMarker] = useState(null);
+  const [newMarkerLabel, setNewMarkerLabel] = useState("");
+  const [camPos, setCamPos] = useState({ x: 0, y: 1.6, z: 0, yaw: 0, pitch: 0 });
   const fileRef = useRef(null);
   const canvasRef = useRef(null);
 
   const lens = LENS_PRESETS[selectedLens];
-  const preset = CAMERA_PRESETS.find(p => p.id === selectedPreset);
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImageFile(file);
-    const url = URL.createObjectURL(file);
-    setImage(url);
+    setImage(URL.createObjectURL(file));
     setMarkers([]);
     setScreenshots([]);
-    setCameraPos({ x: 0, y: 0 });
   };
 
   const handleDrop = (e) => {
@@ -232,28 +245,21 @@ export default function WorldWalker() {
     setImage(URL.createObjectURL(file));
     setMarkers([]);
     setScreenshots([]);
-    setCameraPos({ x: 0, y: 0 });
-  };
-
-  const applyPreset = (p) => {
-    setSelectedPreset(p.id);
-    setCameraAngle({ pitch: p.pitch || 0, roll: p.roll || 0 });
   };
 
   const takeScreenshot = () => {
-    // Find the canvas element rendered by WorldCanvas
-    const canvas = document.querySelector("canvas");
-    if (!canvas) return;
-    const dataUrl = canvas.toDataURL("image/png");
+    const c = document.querySelector("canvas");
+    if (!c) return;
+    const dataUrl = c.toDataURL("image/png");
     const shot = {
       id: Date.now(),
       url: dataUrl,
       label: `Shot ${screenshots.length + 1}`,
-      yaw: Math.round(((cameraPos.x % 360) + 360) % 360),
-      pitch: Math.round(cameraPos.y),
+      yaw: camPos.yaw,
+      pitch: camPos.pitch,
       lens: lens.label,
-      preset: preset?.label,
-      marker: markers.find(m => m.id === activeMarker)?.label || null,
+      preset: CAMERA_PRESETS.find(p => p.id === selectedPreset)?.label,
+      pos: { ...camPos },
     };
     setScreenshots(prev => [shot, ...prev]);
     setTab("shots");
@@ -266,22 +272,21 @@ export default function WorldWalker() {
     a.click();
   };
 
-  const addMarker = ({ yaw, pitch }) => {
-    setPendingMarker({ yaw, pitch });
+  const handleDoubleClickPlace = (pos) => {
+    setPendingMarker(pos);
   };
 
   const confirmMarker = () => {
     if (!pendingMarker) return;
-    const m = { id: Date.now(), label: newMarkerLabel || `Shot ${markers.length + 1}`, ...pendingMarker };
+    const m = {
+      id: Date.now(),
+      label: newMarkerLabel || `Pos ${markers.length + 1}`,
+      ...pendingMarker,
+    };
     setMarkers(prev => [...prev, m]);
     setActiveMarker(m.id);
     setPendingMarker(null);
     setNewMarkerLabel("");
-  };
-
-  const jumpToMarker = (m) => {
-    setCameraPos({ x: m.yaw, y: m.pitch });
-    setActiveMarker(m.id);
   };
 
   const generateAIWorld = async () => {
@@ -289,278 +294,254 @@ export default function WorldWalker() {
     setIsGenerating(true);
     try {
       const result = await base44.integrations.Core.GenerateImage({
-        prompt: `360-degree equirectangular panoramic photograph, ${aiPrompt}, seamlessly tileable horizontally, ultra-wide spherical projection, cinematic lighting, photorealistic, no text, no watermarks, wide establishing shot`
+        prompt: `360-degree equirectangular spherical panorama, ${aiPrompt}, seamlessly tileable horizontally, photorealistic, no text, no watermarks, epic establishing shot`
       });
       setImage(result.url);
       setMarkers([]);
       setScreenshots([]);
-      setCameraPos({ x: 0, y: 0 });
     } catch {}
     setIsGenerating(false);
   };
 
+  const preset = CAMERA_PRESETS.find(p => p.id === selectedPreset);
+
   return (
-    <div className="min-h-screen text-white" style={{ background: "#000" }}>
-      {/* Header */}
-      <div className="sticky top-0 z-30 px-5 py-3 flex items-center justify-between gap-3"
-        style={{ background: "rgba(0,0,0,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="fixed inset-0 text-white flex flex-col" style={{ background: "#000" }}>
+      {/* Minimal top bar */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2.5"
+        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)" }}>
         <div>
-          <h1 className="text-[18px] font-[900] text-white">WorldWalker</h1>
-          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>Drop a panorama · walk it · set camera positions · screenshot</p>
+          <h1 className="text-[15px] font-[900] text-white">WorldWalker</h1>
+          <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>WASD walk · mouse look · cinematic positioning</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {image && (
             <button onClick={takeScreenshot}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-black"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-black"
               style={{ background: "#ffd60a" }}>
-              <Camera className="w-3.5 h-3.5" /> Screenshot
+              <Camera className="w-3 h-3" /> Screenshot
             </button>
           )}
           <button onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-semibold text-white"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <Upload className="w-3.5 h-3.5" /> Upload
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold text-white"
+            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}>
+            <Upload className="w-3 h-3" />
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 pb-24">
-        {/* Drop zone / canvas */}
-        {!image ? (
-          <div className="space-y-6">
-            <div
-              onDragOver={e => e.preventDefault()}
-              onDrop={handleDrop}
-              className="rounded-3xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-all"
-              style={{ minHeight: 300, border: "2px dashed rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)" }}
-              onClick={() => fileRef.current?.click()}
-            >
-              <ImageIcon className="w-12 h-12" style={{ color: "rgba(255,255,255,0.15)" }} />
-              <p className="text-[15px] font-[700] text-white">Drop a panoramic / 360° image here</p>
-              <p className="text-[12px] text-center max-w-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                Works best with equirectangular 360° photos. Any wide-angle or landscape image also works.
-              </p>
-              <button className="px-5 py-2.5 rounded-full text-[13px] font-bold text-white" style={{ background: "#0a84ff" }}>
-                Choose Image
+      {!image ? (
+        /* Landing / upload screen */
+        <div className="flex-1 flex flex-col items-center justify-center px-4 gap-8">
+          <div
+            onDragOver={e => e.preventDefault()}
+            onDrop={handleDrop}
+            className="rounded-3xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-all max-w-md w-full"
+            style={{ minHeight: 260, border: "2px dashed rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)" }}
+            onClick={() => fileRef.current?.click()}>
+            <ImageIcon className="w-12 h-12" style={{ color: "rgba(255,255,255,0.15)" }} />
+            <p className="text-[16px] font-[700] text-white">Drop a panoramic / 360° image</p>
+            <p className="text-[12px] text-center max-w-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+              Works best with equirectangular 360° photos. You'll walk INSIDE this world in true 3D.
+            </p>
+            <button className="px-5 py-2.5 rounded-full text-[13px] font-bold text-white" style={{ background: "#0a84ff" }}>
+              Choose Image
+            </button>
+          </div>
+          <div className="max-w-md w-full p-5 rounded-3xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <p className="text-[13px] font-[700] text-white mb-3">✨ AI-generate a world</p>
+            <div className="flex gap-2">
+              <input value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}
+                placeholder="Rainy Tokyo alley, ancient temple forest…"
+                className="flex-1 rounded-2xl px-4 py-2.5 text-[13px] text-white outline-none"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                onKeyDown={e => e.key === "Enter" && generateAIWorld()} />
+              <button onClick={generateAIWorld} disabled={isGenerating || !aiPrompt.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[13px] font-bold text-white disabled:opacity-50"
+                style={{ background: "#bf5af2" }}>
+                {isGenerating ? "…" : "Generate"}
               </button>
             </div>
+          </div>
+        </div>
+      ) : (
+        /* 3D View */
+        <div className="flex-1 relative">
+          <Canvas
+            ref={canvasRef}
+            gl={{ preserveDrawingBuffer: true }}
+            style={{ position: "absolute", inset: 0 }}
+          >
+            <Suspense fallback={null}>
+              <WorldScene
+                imageUrl={image}
+                locked={locked}
+                fov={lens.fov}
+                markers={markers}
+                activeMarker={activeMarker}
+                onMarkerClick={(m) => setActiveMarker(m.id)}
+                onPositionChange={setCamPos}
+                onDoubleClickPlace={handleDoubleClickPlace}
+              />
+            </Suspense>
+          </Canvas>
 
-            {/* AI generation */}
-            <div className="p-5 rounded-3xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-[13px] font-[700] text-white mb-3">✨ Or generate a world with AI</p>
-              <div className="flex gap-2">
-                <input value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}
-                  placeholder="e.g. rainy Tokyo street at night, ancient temple forest, modern cyberpunk alley…"
-                  className="flex-1 rounded-2xl px-4 py-2.5 text-[13px] text-white outline-none"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
-                  onKeyDown={e => e.key === "Enter" && generateAIWorld()} />
-                <button onClick={generateAIWorld} disabled={isGenerating || !aiPrompt.trim()}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[13px] font-bold text-white disabled:opacity-50"
-                  style={{ background: "#bf5af2" }}>
-                  {isGenerating ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" /> Generating…</> : "Generate"}
-                </button>
-              </div>
+          {/* HUD */}
+          <div className="absolute top-14 sm:top-16 left-3 flex flex-col gap-1.5 pointer-events-none">
+            <div className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
+              YAW {camPos.yaw}° · PITCH {camPos.pitch}°
+            </div>
+            <div className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", color: "#ffd60a" }}>
+              {lens.label} · {preset?.label}
             </div>
           </div>
-        ) : (
-          <div className="space-y-5">
-            {/* World canvas */}
-            <div className="relative">
-              <WorldCanvas
-                image={image}
-                cameraPos={cameraPos}
-                setCameraPos={setCameraPos}
-                cameraAngle={cameraAngle}
-                setCameraAngle={setCameraAngle}
-                fov={lens.fov}
-                roll={cameraAngle.roll}
-                markers={markers}
-                onAddMarker={addMarker}
-                activeMarker={activeMarker}
-              />
-              {/* HUD overlay */}
-              <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-                <div className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", color: "rgba(255,255,255,0.7)" }}>
-                  YAW {Math.round(((cameraPos.x % 360) + 360) % 360)}° · PITCH {Math.round(cameraPos.y)}°
-                </div>
-                <div className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", color: "#ffd60a" }}>
-                  {lens.label} · {preset?.label}
-                </div>
-              </div>
-              <div className="absolute top-3 right-3 text-[10px] px-2.5 py-1 rounded-full" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", color: "rgba(255,255,255,0.5)" }}>
-                Drag to look · Double-tap to pin marker
-              </div>
-            </div>
 
-            {/* Pending marker modal */}
-            <AnimatePresence>
-              {pendingMarker && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                  className="p-4 rounded-2xl flex items-center gap-3"
-                  style={{ background: "rgba(10,132,255,0.12)", border: "1px solid rgba(10,132,255,0.3)" }}>
-                  <MapPin className="w-5 h-5 flex-shrink-0" style={{ color: "#0a84ff" }} />
-                  <input value={newMarkerLabel} onChange={e => setNewMarkerLabel(e.target.value)}
-                    placeholder="Label this camera position…"
-                    className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder-white/30"
-                    autoFocus onKeyDown={e => e.key === "Enter" && confirmMarker()} />
-                  <button onClick={confirmMarker} className="px-4 py-1.5 rounded-full text-[12px] font-bold text-white" style={{ background: "#0a84ff" }}>Pin</button>
-                  <button onClick={() => setPendingMarker(null)} className="p-1 rounded-full" style={{ color: "rgba(255,255,255,0.4)" }}><X className="w-4 h-4" /></button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="absolute top-14 sm:top-16 right-3 text-[9px] px-2.5 py-1 rounded-full pointer-events-none" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", color: "rgba(255,255,255,0.45)" }}>
+            Click = look · Double-tap = pin · ESC = menu
+          </div>
 
-            {/* Controls row */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {["camera", "markers", "shots"].map(t => (
-                <button key={t} onClick={() => setTab(t)}
-                  className="flex-shrink-0 px-4 py-1.5 rounded-full text-[12px] font-semibold capitalize transition-all"
-                  style={{ background: tab === t ? "#0a84ff" : "rgba(255,255,255,0.06)", color: tab === t ? "#fff" : "rgba(255,255,255,0.5)" }}>
-                  {t === "shots" ? `Shots (${screenshots.length})` : t}
+          {/* Pending marker modal */}
+          <AnimatePresence>
+            {pendingMarker && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                className="absolute bottom-44 left-4 right-4 max-w-sm mx-auto p-4 rounded-2xl flex items-center gap-3 z-20"
+                style={{ background: "rgba(10,132,255,0.15)", backdropFilter: "blur(12px)", border: "1px solid rgba(10,132,255,0.35)" }}>
+                <MapPin className="w-5 h-5 flex-shrink-0" style={{ color: "#0a84ff" }} />
+                <input value={newMarkerLabel} onChange={e => setNewMarkerLabel(e.target.value)}
+                  placeholder="Label this position…"
+                  className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder-white/30"
+                  autoFocus onKeyDown={e => e.key === "Enter" && confirmMarker()} />
+                <button onClick={confirmMarker} className="px-4 py-1.5 rounded-full text-[12px] font-bold text-white" style={{ background: "#0a84ff" }}>Pin</button>
+                <button onClick={() => setPendingMarker(null)} className="p-1 rounded-full" style={{ color: "rgba(255,255,255,0.4)" }}><X className="w-4 h-4" /></button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Bottom panel */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            {/* Tab bar */}
+            <div className="flex items-center gap-1.5 px-4 pb-2 overflow-x-auto scrollbar-hide">
+              {[
+                { key: "lens", label: "Lens" },
+                { key: "angle", label: "Angles" },
+                { key: "markers", label: `Markers (${markers.length})` },
+                { key: "shots", label: `Shots (${screenshots.length})` },
+              ].map(t => (
+                <button key={t.key} onClick={() => setTab(t.key)}
+                  className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+                  style={{ background: tab === t.key ? "#0a84ff" : "rgba(255,255,255,0.08)", color: tab === t.key ? "#fff" : "rgba(255,255,255,0.5)" }}>
+                  {t.label}
                 </button>
               ))}
               <div className="flex-1" />
               <button onClick={() => { setImage(null); setMarkers([]); setScreenshots([]); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] text-white/40 hover:text-white/70 transition-all">
-                <X className="w-3.5 h-3.5" /> Clear
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] text-white/30 hover:text-white/60 transition-all">
+                <X className="w-3 h-3" />
               </button>
             </div>
 
             {/* Tab content */}
             <AnimatePresence mode="wait">
-              {tab === "camera" && (
-                <motion.div key="camera" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
-                  {/* Lens presets */}
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "rgba(255,255,255,0.3)" }}>🎞 Lens / Focal Length</p>
-                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                      {LENS_PRESETS.map((l, i) => (
-                        <button key={l.label} onClick={() => setSelectedLens(i)}
-                          className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 rounded-2xl transition-all min-w-[80px]"
-                          style={{ background: selectedLens === i ? "rgba(10,132,255,0.15)" : "rgba(255,255,255,0.04)", border: `1px solid ${selectedLens === i ? "rgba(10,132,255,0.4)" : "rgba(255,255,255,0.07)"}` }}>
-                          <span className="text-[14px] font-[900]" style={{ color: selectedLens === i ? "#0a84ff" : "rgba(255,255,255,0.7)" }}>{l.label}</span>
-                          <span className="text-[9px] text-center" style={{ color: "rgba(255,255,255,0.3)" }}>{l.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {tab === "lens" && (
+                <motion.div key="lens" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="px-4 pb-4 flex gap-2 overflow-x-auto scrollbar-hide"
+                  style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 100%)" }}>
+                  {LENS_PRESETS.map((l, i) => (
+                    <button key={l.label} onClick={() => setSelectedLens(i)}
+                      className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 rounded-2xl transition-all min-w-[72px]"
+                      style={{ background: selectedLens === i ? "rgba(10,132,255,0.2)" : "rgba(255,255,255,0.05)", border: `1px solid ${selectedLens === i ? "rgba(10,132,255,0.5)" : "rgba(255,255,255,0.08)"}` }}>
+                      <span className="text-[14px] font-[900]" style={{ color: selectedLens === i ? "#0a84ff" : "rgba(255,255,255,0.75)" }}>{l.label}</span>
+                      <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.3)" }}>{l.desc}</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
 
-                  {/* Camera angle presets */}
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "rgba(255,255,255,0.3)" }}>🎬 Camera Angle</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                      {CAMERA_PRESETS.map(p => (
-                        <button key={p.id} onClick={() => applyPreset(p)}
-                          className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-2xl transition-all"
-                          style={{ background: selectedPreset === p.id ? "rgba(191,90,242,0.15)" : "rgba(255,255,255,0.04)", border: `1px solid ${selectedPreset === p.id ? "rgba(191,90,242,0.4)" : "rgba(255,255,255,0.07)"}` }}>
-                          <span className="text-[18px]">{p.icon}</span>
-                          <span className="text-[11px] font-bold" style={{ color: selectedPreset === p.id ? "#bf5af2" : "rgba(255,255,255,0.7)" }}>{p.label}</span>
-                          <span className="text-[9px] text-center leading-tight" style={{ color: "rgba(255,255,255,0.3)" }}>{p.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Manual controls */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>Yaw (horizontal)</p>
-                      <input type="range" min={0} max={360} value={((cameraPos.x % 360) + 360) % 360}
-                        onChange={e => setCameraPos(p => ({ ...p, x: parseFloat(e.target.value) }))}
-                        className="w-full accent-blue-500" />
-                      <span className="text-[12px] text-white font-bold">{Math.round(((cameraPos.x % 360) + 360) % 360)}°</span>
-                    </div>
-                    <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>Pitch (vertical)</p>
-                      <input type="range" min={-85} max={85} value={cameraPos.y}
-                        onChange={e => setCameraPos(p => ({ ...p, y: parseFloat(e.target.value) }))}
-                        className="w-full accent-purple-500" />
-                      <span className="text-[12px] text-white font-bold">{Math.round(cameraPos.y)}°</span>
-                    </div>
-                  </div>
-
-                  <button onClick={takeScreenshot}
-                    className="w-full py-4 rounded-2xl text-[15px] font-[800] text-black flex items-center justify-center gap-2 transition-all hover:brightness-110"
-                    style={{ background: "#ffd60a", boxShadow: "0 0 32px rgba(255,214,10,0.3)" }}>
-                    <Camera className="w-5 h-5" /> Take Screenshot
-                  </button>
+              {tab === "angle" && (
+                <motion.div key="angle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="px-4 pb-4 flex gap-2 overflow-x-auto scrollbar-hide"
+                  style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 100%)" }}>
+                  {CAMERA_PRESETS.map(p => (
+                    <button key={p.id} onClick={() => setSelectedPreset(p.id)}
+                      className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 rounded-2xl transition-all min-w-[80px]"
+                      style={{ background: selectedPreset === p.id ? "rgba(191,90,242,0.2)" : "rgba(255,255,255,0.05)", border: `1px solid ${selectedPreset === p.id ? "rgba(191,90,242,0.5)" : "rgba(255,255,255,0.08)"}` }}>
+                      <span className="text-[14px] font-[900]" style={{ color: selectedPreset === p.id ? "#bf5af2" : "rgba(255,255,255,0.75)" }}>{p.label}</span>
+                      <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.3)" }}>{p.height}m height</span>
+                    </button>
+                  ))}
                 </motion.div>
               )}
 
               {tab === "markers" && (
-                <motion.div key="markers" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-                  <div className="p-4 rounded-2xl text-[12px]" style={{ background: "rgba(255,214,10,0.06)", border: "1px solid rgba(255,214,10,0.2)", color: "rgba(255,214,10,0.8)" }}>
-                    💡 <strong>Double-tap anywhere in the world view</strong> to drop a camera position marker. Then click a marker to jump back to that exact spot.
-                  </div>
+                <motion.div key="markers" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="px-4 pb-4 max-h-48 overflow-y-auto space-y-2"
+                  style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 100%)" }}>
                   {markers.length === 0 ? (
-                    <p className="text-center py-10 text-[13px]" style={{ color: "rgba(255,255,255,0.3)" }}>No markers yet — double-tap in the world view</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {markers.map(m => (
-                        <motion.div key={m.id} layout
-                          className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all"
-                          style={{ background: activeMarker === m.id ? "rgba(10,132,255,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${activeMarker === m.id ? "rgba(10,132,255,0.3)" : "rgba(255,255,255,0.07)"}` }}
-                          onClick={() => jumpToMarker(m)}>
-                          <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: activeMarker === m.id ? "#0a84ff" : "rgba(255,255,255,0.4)" }} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-bold text-white">{m.label}</p>
-                            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>YAW {Math.round(m.yaw)}° · PITCH {Math.round(m.pitch)}°</p>
-                          </div>
-                          <button onClick={e => { e.stopPropagation(); setCameraPos({ x: m.yaw, y: m.pitch }); takeScreenshot(); }}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-black"
-                            style={{ background: "#ffd60a" }}>
-                            <Camera className="w-3 h-3" /> Shoot
-                          </button>
-                          <button onClick={e => { e.stopPropagation(); setMarkers(prev => prev.filter(x => x.id !== m.id)); if (activeMarker === m.id) setActiveMarker(null); }}
-                            className="p-1.5 rounded-full transition-all" style={{ color: "rgba(255,69,58,0.7)" }}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </motion.div>
-                      ))}
+                    <p className="text-center py-4 text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>Double-tap in the world to place markers</p>
+                  ) : markers.map(m => (
+                    <div key={m.id} className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all"
+                      style={{ background: activeMarker === m.id ? "rgba(10,132,255,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${activeMarker === m.id ? "rgba(10,132,255,0.3)" : "rgba(255,255,255,0.07)"}` }}
+                      onClick={() => setActiveMarker(m.id)}>
+                      <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: activeMarker === m.id ? "#0a84ff" : "rgba(255,255,255,0.4)" }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-bold text-white">{m.label}</p>
+                        <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>{m.x} · {m.y} · {m.z}</p>
+                      </div>
+                      <button onClick={e => { e.stopPropagation(); setMarkers(prev => prev.filter(x => x.id !== m.id)); if (activeMarker === m.id) setActiveMarker(null); }}
+                        className="p-1.5 rounded-full" style={{ color: "rgba(255,69,58,0.7)" }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  )}
+                  ))}
                 </motion.div>
               )}
 
               {tab === "shots" && (
-                <motion.div key="shots" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <motion.div key="shots" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="px-4 pb-4 max-h-48 overflow-y-auto"
+                  style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 100%)" }}>
                   {screenshots.length === 0 ? (
-                    <p className="text-center py-10 text-[13px]" style={{ color: "rgba(255,255,255,0.3)" }}>No screenshots yet — hit the yellow Screenshot button</p>
+                    <p className="text-center py-4 text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>No screenshots yet — hit the yellow button</p>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {screenshots.map(s => (
                         <motion.div key={s.id} layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
-                          className="rounded-2xl overflow-hidden group relative"
-                          style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                          className="rounded-xl overflow-hidden group relative cursor-pointer"
+                          style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                          onClick={() => downloadShot(s)}>
                           <img src={s.url} alt={s.label} className="w-full object-cover" style={{ aspectRatio: "16/9" }} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                          <div className="absolute bottom-0 left-0 right-0 p-3">
-                            <p className="text-[11px] font-bold text-white">{s.label}</p>
-                            <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.45)" }}>{s.lens} · {s.preset} · {s.yaw}° {s.pitch}°</p>
-                            {s.marker && <p className="text-[9px]" style={{ color: "#ffd60a" }}>📍 {s.marker}</p>}
+                          <div className="absolute bottom-0 left-0 right-0 p-1.5" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.8))" }}>
+                            <p className="text-[10px] font-bold text-white">{s.label}</p>
+                            <p className="text-[8px]" style={{ color: "rgba(255,255,255,0.45)" }}>{s.lens} · {s.preset} · {s.yaw}°</p>
                           </div>
-                          <button onClick={() => downloadShot(s)}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full flex items-center justify-center text-white"
-                            style={{ background: "rgba(0,0,0,0.6)" }}>
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Download className="w-3 h-3 text-white" />
+                          </div>
                         </motion.div>
                       ))}
                     </div>
                   )}
                   {screenshots.length > 0 && (
                     <button onClick={() => screenshots.forEach(s => downloadShot(s))}
-                      className="w-full mt-4 py-3 rounded-2xl text-[13px] font-bold text-white flex items-center justify-center gap-2"
+                      className="w-full mt-3 py-2.5 rounded-2xl text-[12px] font-bold text-white flex items-center justify-center gap-2"
                       style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                      <Download className="w-4 h-4" /> Download All ({screenshots.length})
+                      <Download className="w-3.5 h-3.5" /> Download All ({screenshots.length})
                     </button>
                   )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-        )}
-      </div>
+
+          {/* Overlay cinematography shot button */}
+          <button onClick={takeScreenshot}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
+            style={{ background: "rgba(255,214,10,0.2)", border: "3px solid #ffd60a", boxShadow: "0 0 36px rgba(255,214,10,0.25)" }}>
+            <Camera className="w-6 h-6" style={{ color: "#ffd60a" }} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
