@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect, useCallback, Suspense } from "react
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, useTexture, Html, PerspectiveCamera } from "@react-three/drei";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Camera, Download, MapPin, X, Trash2, Image as ImageIcon, Crosshair, RotateCcw } from "lucide-react";
+import { Upload, Camera, Download, MapPin, X, Trash2, Image as ImageIcon, Crosshair, RotateCcw, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import * as THREE from "three";
 
@@ -310,9 +312,16 @@ export default function WorldWalker() {
       {/* Minimal top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2.5"
         style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)" }}>
-        <div>
-          <h1 className="text-[15px] font-[900] text-white">WorldWalker</h1>
-          <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>WASD walk · mouse look · cinematic positioning</p>
+        <div className="flex items-center gap-3">
+          <Link to={createPageUrl("AppStoreV2")}
+            className="flex items-center justify-center w-8 h-8 rounded-full transition-all"
+            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <ArrowLeft className="w-4 h-4 text-white" />
+          </Link>
+          <div>
+            <h1 className="text-[15px] font-[900] text-white">WorldWalker</h1>
+            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>WASD walk · mouse look · cinematic positioning</p>
+          </div>
         </div>
         <div className="flex items-center gap-1.5">
           {image && (
