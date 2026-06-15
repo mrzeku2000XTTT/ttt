@@ -84,6 +84,7 @@ import DoubleOPage from './pages/DoubleO';
 import DoubleONotesPage from './pages/DoubleONotes';
 import DoubleOWorkshopPage from './pages/DoubleOWorkshop';
 import WorldWalkerPage from './pages/WorldWalker';
+import MotionFlyPage from './pages/MotionFly';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -204,6 +205,7 @@ const AuthenticatedApp = () => {
       <Route path="/DoubleONotes" element={<DoubleONotesPage />} />
       <Route path="/DoubleOWorkshop" element={<DoubleOWorkshopPage />} />
       <Route path="/WorldWalker" element={<WorldWalkerPage />} />
+      <Route path="/MotionFly" element={<MotionFlyPage />} />
       <Route path="/Docs" element={
         <LayoutWrapper currentPageName="Docs">
           <DocsPage />
