@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Film, Download, Copy, Check, Sparkles, ImageIcon } from "lucide-react";
+import { ArrowLeft, Film, Download, Copy, Check, Sparkles, ImageIcon, Wand2, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function StoryboardBRollPage() {
@@ -10,6 +10,8 @@ export default function StoryboardBRollPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState(null);
+  const [generatingImg, setGeneratingImg] = useState({});
+  const [brollImages, setBrollImages] = useState({});
 
   // Read project id from URL
   const projectId = new URLSearchParams(window.location.search).get("id");
@@ -80,6 +82,17 @@ Return a JSON object with a "brolls" array of 8 items. Each item has:
     navigator.clipboard.writeText(prompt);
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
+  };
+
+  const generateBRollImage = async (b, idx) => {
+    setGeneratingImg((prev) => ({ ...prev, [idx]: true }));
+    try {
+      const res = await base44.integrations.Core.GenerateImage({ prompt: b.prompt });
+      setBrollImages((prev) => ({ ...prev, [idx]: res.url }));
+    } catch (e) {
+      // silently fail
+    }
+    setGeneratingImg((prev) => ({ ...prev, [idx]: false }));
   };
 
   const moodColor = (mood = "") => {
@@ -169,6 +182,13 @@ Return a JSON object with a "brolls" array of 8 items. Each item has:
                   </div>
                 </div>
 
+                {/* Generated image */}
+                {brollImages[idx] && (
+                  <div className="mb-3 overflow-hidden rounded-xl border border-white/10">
+                    <img src={brollImages[idx]} alt={b.shot} className="w-full object-contain bg-black max-h-48" />
+                  </div>
+                )}
+
                 {/* Prompt */}
                 <div className="relative rounded-xl bg-black/30 border border-white/[0.06] p-3">
                   <p className="pr-8 text-[11px] leading-relaxed text-white/40 line-clamp-3">{b.prompt}</p>
@@ -179,6 +199,17 @@ Return a JSON object with a "brolls" array of 8 items. Each item has:
                       : <Copy className="h-3 w-3" />}
                   </button>
                 </div>
+
+                {/* Generate image button */}
+                <button
+                  onClick={() => generateBRollImage(b, idx)}
+                  disabled={generatingImg[idx]}
+                  className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500/20 to-orange-500/20 border border-pink-500/30 px-3 py-2 text-[12px] font-semibold text-white/80 transition hover:from-pink-500/30 hover:to-orange-500/30 disabled:opacity-50"
+                >
+                  {generatingImg[idx]
+                    ? <><Loader2 className="h-3 w-3 animate-spin" /> Generating…</>
+                    : <><Wand2 className="h-3 w-3" /> {brollImages[idx] ? "Regenerate Image" : "Generate Image"}</>}
+                </button>
               </div>
             ))}
           </div>

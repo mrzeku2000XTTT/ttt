@@ -45,12 +45,16 @@ export default function StoryboardProjectsPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {projects.map((p) => (
-              <div key={p.id} onClick={() => navigate(`/StoryboardBRoll?id=${p.id}`)} className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-black/40 cursor-pointer">
-                {p.image_url ? (
-                  <img src={p.image_url} alt={p.idea} className="h-full w-full object-cover transition group-hover:scale-105" />
-                ) : (
-                  <div className="flex h-full items-center justify-center"><ImageIcon className="h-8 w-8 text-white/20" /></div>
-                )}
+              <div key={p.id} onClick={() => navigate(`/StoryboardBRoll?id=${p.id}`)} className="group relative rounded-2xl border border-white/10 bg-black/40 cursor-pointer overflow-hidden">
+                <div className="w-full" style={{ paddingBottom: "56.25%" }}>
+                  <div className="absolute inset-0">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.idea} className="h-full w-full object-contain bg-black transition group-hover:scale-105" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center"><ImageIcon className="h-8 w-8 text-white/20" /></div>
+                    )}
+                  </div>
+                </div>
                 <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-transparent p-2.5">
                   <p className="truncate text-xs font-bold text-white/90">{p.idea || "Untitled"}</p>
                   <p className="text-[10px] text-white/50">{p.style || "Custom"}</p>
