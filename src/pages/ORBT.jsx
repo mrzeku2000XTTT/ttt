@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Sparkles, Search, X } from "lucide-react";
+import { ArrowLeft, Sparkles, Search, X, Film } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ORBTAgent from "@/components/orbt/ORBTAgent";
@@ -434,6 +434,38 @@ export default function ORBTPage() {
             // NO AGENTS MATCH QUERY
           </div>
         )}
+
+        {/* Video Studio Feature Card */}
+        <div className="mt-10 pt-8" style={{ borderTop: "1px solid rgba(0,255,136,0.15)" }}>
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 text-[10px] tracking-widest mb-3" style={{ border: "1px solid rgba(255,45,120,0.4)", color: "rgba(255,45,120,0.7)", background: "rgba(255,45,120,0.05)" }}>
+              [STUDIO] FEATURED TOOL
+            </div>
+            <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "'Courier New', Courier, monospace" }}>Generate videos with AI + auto-edit + music</p>
+          </div>
+          <Link to="/VideoStudio">
+            <motion.div
+              whileHover={{ y: -3 }}
+              whileTap={{ scale: 0.98 }}
+              className="p-5 cursor-pointer transition-all"
+              style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(255,45,120,0.1))", border: "1px solid rgba(168,85,247,0.4)" }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 text-2xl" style={{ border: "1px solid rgba(168,85,247,0.5)", background: "rgba(168,85,247,0.1)" }}>
+                  🎬
+                </div>
+                <div className="flex-1">
+                  <div className="text-[13px] font-black tracking-widest uppercase mb-1" style={{ color: "#fff" }}>VIDEO STUDIO</div>
+                  <div className="text-[10px] font-bold tracking-wider uppercase mb-1.5" style={{ color: "#a78bfa" }}>Video</div>
+                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>Describe your idea → AI generates video → Auto-edit with agent → Add AI music</p>
+                </div>
+                <div className="text-[11px] font-bold tracking-wider flex-shrink-0" style={{ color: "#a78bfa" }}>
+                  Launch →
+                </div>
+              </div>
+            </motion.div>
+          </Link>
+        </div>
       </div>
 
       <style>{`.scrollbar-hide::-webkit-scrollbar{display:none;}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none;}`}</style>
