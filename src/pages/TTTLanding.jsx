@@ -457,7 +457,7 @@ export default function TTTLandingPage() {
         whileTap={{ scale: 0.96 }}
         onClick={() => { setShowResearcher(true); setShowAgent(false); }}
         className="absolute right-0 top-0 h-56 w-56 sm:h-80 sm:w-80 cursor-pointer focus:outline-none"
-        style={{ zIndex: 20, transform: "scaleX(-1)" }}
+        style={{ zIndex: 20 }}
         aria-label="Open Researcher"
       >
         <img src={CORNER_ART} alt="Researcher" className="h-full w-full object-contain opacity-70" style={{ transform: "scaleX(-1)" }} />
