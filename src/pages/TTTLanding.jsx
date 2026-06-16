@@ -6,29 +6,34 @@ import { X, Send, ChevronDown, Lock, Unlock, Eye, Cpu, FlaskConical, Play, Pause
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
-const YOUTUBE_VIDEO_ID = "k8eynkLKmfU";
+const YOUTUBE_VIDEO_ID = "aUSD-WFhKwY";
 
-// "Mind On My Kaspa" lyrics — written to capture the vibe
+// "The Dollar Is Dying" by Kas Tunes — actual lyrics
 const SONG_LYRICS = [
-  { line: "Moving blocks at the speed of light," },
-  { line: "DAG confirmations through the night," },
-  { line: "No waiting, no hesitation," },
-  { line: "Kaspa's my foundation." },
+  { line: "The dollar is dying, Bitcoin can't scale," },
+  { line: "Gold is too heavy, Solana transactions fail." },
+  { line: "I've tried them all and I must confess —" },
+  { line: "Kaspa is the best money." },
   { line: "" },
-  { line: "Got my mind on my Kaspa," },
-  { line: "Kaspa on my mind," },
-  { line: "Building something real here," },
-  { line: "Leaving slow chains behind." },
+  { line: "When the fiat falls and the market screams," },
+  { line: "Central banks crumble chasing broken dreams." },
+  { line: "The dollar's a ghost, it's a valueless race," },
+  { line: "Print up another trillion, watch them hyperinflate." },
   { line: "" },
-  { line: "From the Earth to Mars we trade," },
-  { line: "In the shade of the GHOSTDAG," },
-  { line: "Every block a new parade," },
-  { line: "Truth in every hash we made." },
+  { line: "The speed blew my mind, scalability defined." },
+  { line: "Kaspa is the future — leave the fiat life behind." },
+  { line: "The system is rigged, starting to crack," },
+  { line: "But I ain't tripping 'cause Kaspa's got my back." },
   { line: "" },
-  { line: "Got my mind on my Kaspa," },
-  { line: "Kaspa on my mind," },
-  { line: "Parallel precision," },
-  { line: "One of a kind." },
+  { line: "No CEO chains, no centralized control." },
+  { line: "Digital freedom for everyone to hold." },
+  { line: "No blocks, no wasted energy, just raw precision." },
+  { line: "Kaspa community — no more middleman commission." },
+  { line: "" },
+  { line: "The dollar is dying, Bitcoin can't scale," },
+  { line: "Gold is too heavy, Solana transactions fail." },
+  { line: "I've tried them all and I must confess —" },
+  { line: "Kaspa is the best money." },
 ];
 
 const AI_MODELS = [
@@ -322,8 +327,8 @@ function MusicPlayer({ isPlaying, onToggle, onEnter }) {
             <Music2 className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-bold text-slate-900 truncate">Mind On My Kaspa</div>
-            <div className="text-[11px] text-slate-500 truncate">Kas Tunes · From Earth to Mars</div>
+            <div className="text-[13px] font-bold text-slate-900 truncate">The Dollar Is Dying</div>
+            <div className="text-[11px] text-slate-500 truncate">Kas Tunes · Crypto Hip-Hop</div>
           </div>
           <motion.button
             whileTap={{ scale: 0.9 }}
