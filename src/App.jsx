@@ -73,6 +73,7 @@ import QuickStoryboardPage from './pages/QuickStoryboard';
 import StoryboardStylesPage from './pages/StoryboardStyles';
 import StoryboardPresetsPage from './pages/StoryboardPresets';
 import StoryboardProjectsPage from './pages/StoryboardProjects';
+import StoryboardBRollPage from './pages/StoryboardBRoll';
 import StoryboardThemePage from './pages/StoryboardTheme';
 import MoodBoardPage from './pages/MoodBoard';
 import AboutPage from './pages/About';
@@ -196,6 +197,7 @@ const AuthenticatedApp = () => {
       <Route path="/StoryboardStyles" element={<StoryboardStylesPage />} />
       <Route path="/StoryboardPresets" element={<StoryboardPresetsPage />} />
       <Route path="/StoryboardProjects" element={<StoryboardProjectsPage />} />
+      <Route path="/StoryboardBRoll" element={<StoryboardBRollPage />} />
       <Route path="/StoryboardTheme" element={<StoryboardThemePage />} />
       <Route path="/MoodBoard" element={<MoodBoardPage />} />
       <Route path="/About" element={<AboutPage />} />

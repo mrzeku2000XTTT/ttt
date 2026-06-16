@@ -45,7 +45,7 @@ export default function StoryboardProjectsPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {projects.map((p) => (
-              <div key={p.id} className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+              <div key={p.id} onClick={() => navigate(`/StoryboardBRoll?id=${p.id}`)} className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-black/40 cursor-pointer">
                 {p.image_url ? (
                   <img src={p.image_url} alt={p.idea} className="h-full w-full object-cover transition group-hover:scale-105" />
                 ) : (
