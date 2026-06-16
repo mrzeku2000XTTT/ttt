@@ -1,12 +1,35 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Lock, Unlock, Eye, Cpu, FlaskConical } from "lucide-react";
+import { X, Send, ChevronDown, Lock, Unlock, Eye, Cpu, FlaskConical, Play, Pause, Music2 } from "lucide-react";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
 const YOUTUBE_VIDEO_ID = "k8eynkLKmfU";
+
+// "Mind On My Kaspa" lyrics — written to capture the vibe
+const SONG_LYRICS = [
+  { line: "Moving blocks at the speed of light," },
+  { line: "DAG confirmations through the night," },
+  { line: "No waiting, no hesitation," },
+  { line: "Kaspa's my foundation." },
+  { line: "" },
+  { line: "Got my mind on my Kaspa," },
+  { line: "Kaspa on my mind," },
+  { line: "Building something real here," },
+  { line: "Leaving slow chains behind." },
+  { line: "" },
+  { line: "From the Earth to Mars we trade," },
+  { line: "In the shade of the GHOSTDAG," },
+  { line: "Every block a new parade," },
+  { line: "Truth in every hash we made." },
+  { line: "" },
+  { line: "Got my mind on my Kaspa," },
+  { line: "Kaspa on my mind," },
+  { line: "Parallel precision," },
+  { line: "One of a kind." },
+];
 
 const AI_MODELS = [
   { id: "claude_opus_4_8", label: "Claude Opus 4.8", maker: "Anthropic", color: "#c084fc" },
@@ -271,9 +294,111 @@ function ResearcherPanel({ onClose }) {
   );
 }
 
+// ── Apple-style music player popup with lyrics ──
+function MusicPlayer({ isPlaying, onToggle, onEnter }) {
+  const [scrolled, setScrolled] = useState(false);
+  const lyricsRef = useRef(null);
+
+  const handleScroll = (e) => {
+    const el = e.target;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) setScrolled(true);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 60, scale: 0.94 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 40, scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+      className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-6"
+    >
+      <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl"
+        style={{ background: "rgba(255,255,255,0.88)", backdropFilter: "blur(40px) saturate(180%)", WebkitBackdropFilter: "blur(40px) saturate(180%)", border: "1px solid rgba(0,0,0,0.06)" }}>
+
+        {/* Now playing bar */}
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: "linear-gradient(135deg, #f97316, #ec4899, #8b5cf6)" }}>
+            <Music2 className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-bold text-slate-900 truncate">Mind On My Kaspa</div>
+            <div className="text-[11px] text-slate-500 truncate">Kas Tunes · From Earth to Mars</div>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={onToggle}
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+            style={{ background: "rgba(0,0,0,0.08)" }}>
+            {isPlaying
+              ? <Pause className="w-4 h-4 text-slate-800" />
+              : <Play className="w-4 h-4 text-slate-800 ml-0.5" />}
+          </motion.button>
+        </div>
+
+        {/* Progress bar — decorative */}
+        <div className="px-4 pb-3">
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.08)" }}>
+            <motion.div className="h-full rounded-full"
+              style={{ background: "linear-gradient(90deg, #f97316, #ec4899)" }}
+              animate={{ width: isPlaying ? "100%" : "35%" }}
+              transition={{ duration: isPlaying ? 180 : 0.5, ease: "linear" }} />
+          </div>
+          <div className="flex justify-between mt-1">
+            <span className="text-[9px] text-slate-400">0:00</span>
+            <span className="text-[9px] text-slate-400">3:12</span>
+          </div>
+        </div>
+
+        {/* Lyrics scroll */}
+        <div className="px-4 pb-2">
+          <div className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">Lyrics</div>
+          <div
+            ref={lyricsRef}
+            onScroll={handleScroll}
+            className="overflow-y-auto"
+            style={{ maxHeight: 140, scrollbarWidth: "none" }}>
+            <div className="space-y-1 pb-4">
+              {SONG_LYRICS.map((l, i) =>
+                l.line ? (
+                  <motion.p key={i}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="text-[13px] leading-relaxed text-slate-700 font-medium">{l.line}</motion.p>
+                ) : <div key={i} className="h-3" />
+              )}
+            </div>
+          </div>
+          {!scrolled && (
+            <div className="text-center mt-1">
+              <span className="text-[9px] tracking-widest text-slate-400 animate-pulse">scroll to read ↓</span>
+            </div>
+          )}
+        </div>
+
+        {/* Enter button — unlocks after scrolling */}
+        <div className="px-4 pb-4 pt-1">
+          <motion.button
+            onClick={scrolled ? onEnter : undefined}
+            whileTap={scrolled ? { scale: 0.97 } : {}}
+            animate={{ opacity: scrolled ? 1 : 0.35 }}
+            transition={{ duration: 0.4 }}
+            className="w-full py-3 rounded-2xl text-[13px] font-bold tracking-wide transition-all"
+            style={{ background: scrolled ? "linear-gradient(135deg, #f97316, #ec4899, #8b5cf6)" : "rgba(0,0,0,0.06)", color: scrolled ? "white" : "rgba(0,0,0,0.3)", cursor: scrolled ? "pointer" : "default" }}>
+            {scrolled ? "Enter →" : "Read the lyrics first"}
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function TTTLandingPage() {
+  const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [hasStartedMusic, setHasStartedMusic] = React.useState(false);
+  const [showPlayer, setShowPlayer] = useState(false);
   const [showAgent, setShowAgent] = useState(false);
   const [showResearcher, setShowResearcher] = useState(false);
   const [showTapHint, setShowTapHint] = useState(false);
@@ -294,11 +419,21 @@ export default function TTTLandingPage() {
     );
   };
 
-  const toggleMusic = () => {
-    if (!hasStartedMusic) { setHasStartedMusic(true); setIsPlaying(true); return; }
+  const handlePlayButton = () => {
+    if (!hasStartedMusic) { setHasStartedMusic(true); setIsPlaying(true); }
+    else {
+      sendPlayerCommand(isPlaying ? "pauseVideo" : "playVideo");
+      setIsPlaying(!isPlaying);
+    }
+    setShowPlayer(true);
+  };
+
+  const toggleMusicFromPlayer = () => {
     sendPlayerCommand(isPlaying ? "pauseVideo" : "playVideo");
     setIsPlaying(!isPlaying);
   };
+
+  const toggleMusic = handlePlayButton;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-slate-950">
@@ -314,11 +449,6 @@ export default function TTTLandingPage() {
         aria-label="Open AI Agent"
       >
         <img src={CORNER_ART} alt="AI Agent" className="h-full w-full object-contain opacity-70" />
-        <div className="absolute bottom-6 left-6 flex items-center gap-1.5 px-2 py-1 rounded"
-          style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)" }}>
-          <Cpu className="w-3 h-3" style={{ color: "#a78bfa" }} />
-          <span className="text-[9px] font-bold tracking-widest" style={{ color: "#a78bfa", fontFamily: "system-ui" }}>WATCHER</span>
-        </div>
       </motion.button>
 
       {/* Corner art — top-right: clickable Researcher */}
@@ -331,11 +461,6 @@ export default function TTTLandingPage() {
         aria-label="Open Researcher"
       >
         <img src={CORNER_ART} alt="Researcher" className="h-full w-full object-contain opacity-70" style={{ transform: "scaleX(-1)" }} />
-        <div className="absolute bottom-6 right-6 flex items-center gap-1.5 px-2 py-1 rounded"
-          style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.25)", transform: "scaleX(-1)" }}>
-          <FlaskConical className="w-3 h-3" style={{ color: "#22d3ee" }} />
-          <span className="text-[9px] font-bold tracking-widest" style={{ color: "#22d3ee", fontFamily: "system-ui" }}>RESEARCH</span>
-        </div>
       </motion.button>
 
       {/* Bottom corners — decorative only */}
@@ -398,7 +523,7 @@ export default function TTTLandingPage() {
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.55 }}
           className="mt-4 rounded-full border border-slate-900/10 bg-white/75 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-900 shadow-sm backdrop-blur-xl transition hover:bg-white hover:shadow-md active:scale-95">
-          {isPlaying ? "Pause" : "Play"}
+          {showPlayer ? (isPlaying ? "Pause" : "Play") : "Play"}
         </motion.button>
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.7 }}
@@ -406,6 +531,17 @@ export default function TTTLandingPage() {
           ttt
         </motion.footer>
       </section>
+
+      {/* Music Player popup */}
+      <AnimatePresence>
+        {showPlayer && (
+          <MusicPlayer
+            isPlaying={isPlaying}
+            onToggle={toggleMusicFromPlayer}
+            onEnter={() => navigate("/TTTGate")}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Panels */}
       <AnimatePresence>
