@@ -13,6 +13,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import HworkPage from './pages/Hwork';
 import XunhuaPage from './pages/Xunhua';
 import ValorantArenaPage from './pages/ValorantArena';
+import ValorantRangePage from './pages/ValorantRange';
 import FreedomPage from './pages/Freedom';
 import VoxaPage from './pages/Voxa';
 import VoxaLearnPage from './pages/VoxaLearn';
@@ -165,6 +166,7 @@ const AuthenticatedApp = () => {
       <Route path="/Explore" element={<ExplorePage />} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
+      <Route path="/ValorantRange" element={<ValorantRangePage />} />
       <Route path="/UICloner" element={<UIClonerPage />} />
       <Route path="/OneShotStudio" element={<OneShotStudioPage />} />
       <Route path="/SlideDeckBuilder" element={<SlideDeckBuilderPage />} />
