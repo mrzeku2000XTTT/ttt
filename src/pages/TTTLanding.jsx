@@ -497,7 +497,7 @@ export default function TTTLandingPage() {
         whileHover={{ scale: 1.04, opacity: 0.9 }}
         whileTap={{ scale: 0.96 }}
         onClick={() => { setShowAgent(true); setShowResearcher(false); }}
-        className="absolute left-0 top-0 h-56 w-56 sm:h-80 sm:w-80 cursor-pointer focus:outline-none"
+        className="absolute left-0 top-0 h-32 w-32 sm:h-80 sm:w-80 cursor-pointer focus:outline-none"
         style={{ zIndex: 20 }}
         aria-label="Open AI Agent"
       >
@@ -509,7 +509,7 @@ export default function TTTLandingPage() {
         whileHover={{ scale: 1.04, opacity: 0.9 }}
         whileTap={{ scale: 0.96 }}
         onClick={() => { setShowResearcher(true); setShowAgent(false); }}
-        className="absolute right-0 top-0 h-56 w-56 sm:h-80 sm:w-80 cursor-pointer focus:outline-none"
+        className="absolute right-0 top-0 h-32 w-32 sm:h-80 sm:w-80 cursor-pointer focus:outline-none"
         style={{ zIndex: 20 }}
         aria-label="Open Researcher"
       >
@@ -517,8 +517,8 @@ export default function TTTLandingPage() {
       </motion.button>
 
       {/* Bottom corners — decorative only */}
-      <img src={CORNER_ART} alt="" className="pointer-events-none absolute bottom-0 left-0 h-56 w-56 scale-y-[-1] object-contain opacity-45 sm:h-80 sm:w-80" />
-      <img src={CORNER_ART} alt="" className="pointer-events-none absolute bottom-0 right-0 h-56 w-56 scale-[-1] object-contain opacity-45 sm:h-80 sm:w-80" />
+      <img src={CORNER_ART} alt="" className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 scale-y-[-1] object-contain opacity-45 sm:h-80 sm:w-80" />
+      <img src={CORNER_ART} alt="" className="pointer-events-none absolute bottom-0 right-0 h-32 w-32 scale-[-1] object-contain opacity-45 sm:h-80 sm:w-80" />
 
       {/* Orb */}
       <motion.div className="absolute inset-0"
