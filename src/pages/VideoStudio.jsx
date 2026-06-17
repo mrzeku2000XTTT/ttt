@@ -137,17 +137,33 @@ Return ONLY the new enhanced video prompt.`,
       setEditedPrompt(refined);
       addLog("🔄 Re-generating video with edits...", "agent");
 
-      const result = await base44.integrations.Core.GenerateVideo({
-        prompt: refined,
-        duration: 6,
-        aspect_ratio: "16:9"
-      });
+      let editResult;
+      try {
+        editResult = await base44.integrations.Core.GenerateVideo({
+          prompt: refined,
+          duration: 6,
+          aspect_ratio: "16:9"
+        });
+      } catch (filterErr) {
+        // Auto-retry with a simplified version of the prompt
+        addLog("⚠️ Retrying with simplified prompt...", "agent");
+        const simplified = await base44.integrations.Core.InvokeLLM({
+          prompt: `Rewrite this video prompt to be more generic and visually focused, removing any specific character descriptors or brand references that might cause content filters to trigger. Keep the visual style and mood. Original: "${refined}". Return ONLY the rewritten prompt.`
+        });
+        const safePrompt = typeof simplified === "string" ? simplified : refined;
+        editResult = await base44.integrations.Core.GenerateVideo({
+          prompt: safePrompt,
+          duration: 6,
+          aspect_ratio: "16:9"
+        });
+        setEditedPrompt(safePrompt);
+      }
 
-      setVideoUrl(result.url);
+      setVideoUrl(editResult.url);
       addLog("✅ Edited video ready!", "success");
       setEditInstruction("");
     } catch (err) {
-      addLog("❌ Edit failed: " + err.message, "error");
+      addLog("⚠️ Edit couldn't be applied — try a different description.", "error");
     } finally {
       setIsEditLoading(false);
     }
