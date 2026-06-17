@@ -30,17 +30,30 @@ const NARRATOR_VOICES = [
   { id: "spark", label: "Spark", desc: "Energetic & quick", emoji: "⚡" },
 ];
 
+const LS_KEY = "video_studio_project";
+
+function loadProject() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch { return null; }
+}
+function saveProject(data) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
+}
+function clearProject() {
+  try { localStorage.removeItem(LS_KEY); } catch {}
+}
+
 export default function VideoStudio() {
-  const [stage, setStage] = useState("idea");
-  const [idea, setIdea] = useState("");
-  const [agentLog, setAgentLog] = useState([]);
-  const [videoUrl, setVideoUrl] = useState(null);
-  const [videoPrompt, setVideoPrompt] = useState("");
+  const saved = loadProject();
+  const [stage, setStage] = useState(saved?.stage || "idea");
+  const [idea, setIdea] = useState(saved?.idea || "");
+  const [agentLog, setAgentLog] = useState(saved?.agentLog || []);
+  const [videoUrl, setVideoUrl] = useState(saved?.videoUrl || null);
+  const [videoPrompt, setVideoPrompt] = useState(saved?.videoPrompt || "");
   const [editInstruction, setEditInstruction] = useState("");
-  const [editedPrompt, setEditedPrompt] = useState("");
-  const [selectedVoice, setSelectedVoice] = useState(NARRATOR_VOICES[0]);
-  const [narratorText, setNarratorText] = useState("");
-  const [musicUrl, setMusicUrl] = useState(null);
+  const [editedPrompt, setEditedPrompt] = useState(saved?.editedPrompt || "");
+  const [selectedVoice, setSelectedVoice] = useState(NARRATOR_VOICES.find(v => v.id === saved?.voiceId) || NARRATOR_VOICES[0]);
+  const [narratorText, setNarratorText] = useState(saved?.narratorText || "");
+  const [musicUrl, setMusicUrl] = useState(saved?.musicUrl || null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [isMusicLoading, setIsMusicLoading] = useState(false);
@@ -49,6 +62,12 @@ export default function VideoStudio() {
   const videoRef = useRef(null);
   const audioRef = useRef(null);
   const logRef = useRef(null);
+
+  // Persist project state to localStorage whenever key values change
+  useEffect(() => {
+    if (stage === "idea" && !videoUrl) return; // don't save blank state
+    saveProject({ stage, idea, videoUrl, videoPrompt, editedPrompt, narratorText, musicUrl, voiceId: selectedVoice?.id, agentLog });
+  }, [stage, idea, videoUrl, videoPrompt, editedPrompt, narratorText, musicUrl, selectedVoice]);
 
   const addLog = (msg, type = "info") => {
     setAgentLog(prev => [...prev, { msg, type, time: new Date().toLocaleTimeString() }]);
@@ -175,6 +194,7 @@ Return ONLY the new enhanced video prompt.`,
 
   const handleSkipToMusic = () => setStage("music");
   const handleReset = () => {
+    clearProject();
     setStage("idea");
     setIdea("");
     setVideoUrl(null);
