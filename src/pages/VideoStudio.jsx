@@ -22,13 +22,12 @@ const EDIT_SUGGESTIONS = [
   "Add a vintage film grain aesthetic",
 ];
 
-const MUSIC_MOODS = [
-  { label: "Epic & Cinematic", emoji: "🎬", vibe: "orchestral, powerful, sweeping cinematic score" },
-  { label: "Chill Lo-Fi", emoji: "🎧", vibe: "relaxed lo-fi beats, soft piano, warm atmosphere" },
-  { label: "Energetic Hype", emoji: "⚡", vibe: "upbeat electronic, driving beat, high energy" },
-  { label: "Emotional Drama", emoji: "🎭", vibe: "emotional strings, melancholic piano, deep feeling" },
-  { label: "Futuristic Synth", emoji: "🚀", vibe: "cyberpunk synthwave, neon vibes, retro-future" },
-  { label: "Nature & Calm", emoji: "🌿", vibe: "ambient nature sounds, peaceful acoustic, serene" },
+const NARRATOR_VOICES = [
+  { id: "river", label: "River", desc: "Calm & neutral", emoji: "🌊" },
+  { id: "honey", label: "Honey", desc: "Warm & soft", emoji: "🍯" },
+  { id: "sunny", label: "Sunny", desc: "Bright & upbeat", emoji: "☀️" },
+  { id: "storm", label: "Storm", desc: "Formal & authoritative", emoji: "⛈️" },
+  { id: "spark", label: "Spark", desc: "Energetic & quick", emoji: "⚡" },
 ];
 
 export default function VideoStudio() {
@@ -39,8 +38,8 @@ export default function VideoStudio() {
   const [videoPrompt, setVideoPrompt] = useState("");
   const [editInstruction, setEditInstruction] = useState("");
   const [editedPrompt, setEditedPrompt] = useState("");
-  const [selectedMood, setSelectedMood] = useState(null);
-  const [customMood, setCustomMood] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState(NARRATOR_VOICES[0]);
+  const [narratorText, setNarratorText] = useState("");
   const [musicUrl, setMusicUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditLoading, setIsEditLoading] = useState(false);
@@ -135,30 +134,22 @@ Return ONLY the new enhanced video prompt.`,
     }
   };
 
-  const handleGenerateMusic = async () => {
-    const moodText = customMood.trim() || (selectedMood ? selectedMood.vibe : "");
-    if (!moodText) return;
+  const handleGenerateNarrator = async () => {
+    if (!narratorText.trim()) return;
     setIsMusicLoading(true);
-    addLog("🎵 Generating music from mood: " + moodText.substring(0, 50) + "...", "agent");
+    addLog("🎙️ Generating narrator voiceover with " + selectedVoice.label + " voice...", "agent");
 
     try {
-      const musicPrompt = await base44.integrations.Core.InvokeLLM({
-        prompt: `Create a detailed music generation prompt for a background track that matches this vibe: "${moodText}". Also relate it to this video concept: "${idea}". Return a rich descriptive paragraph for a music AI model.`,
-      });
-
-      const speechText = typeof musicPrompt === "string" ? musicPrompt : moodText;
-      
-      // Use GenerateSpeech as background ambient audio
       const audio = await base44.integrations.Core.GenerateSpeech({
-        text: `This is your generated music atmosphere: ${speechText.substring(0, 200)}`,
-        voice: "river",
+        text: narratorText.trim(),
+        voice: selectedVoice.id,
       });
 
       setMusicUrl(audio.url);
-      addLog("🎵 Music track generated!", "success");
+      addLog("🎙️ Narrator voiceover ready!", "success");
       setStage("done");
     } catch (err) {
-      addLog("❌ Music generation failed: " + err.message, "error");
+      addLog("❌ Narrator generation failed: " + err.message, "error");
     } finally {
       setIsMusicLoading(false);
     }
@@ -191,8 +182,8 @@ Return ONLY the new enhanced video prompt.`,
     setEditedPrompt("");
     setMusicUrl(null);
     setAgentLog([]);
-    setSelectedMood(null);
-    setCustomMood("");
+    setSelectedVoice(NARRATOR_VOICES[0]);
+    setNarratorText("");
   };
 
   return (
@@ -235,7 +226,7 @@ Return ONLY the new enhanced video prompt.`,
               { id: "idea", label: "Idea", icon: Sparkles },
               { id: "generating", label: "Generate", icon: Video },
               { id: "editing", label: "Edit", icon: Edit3 },
-              { id: "music", label: "Music", icon: Music },
+              { id: "music", label: "Voice", icon: Volume2 },
               { id: "done", label: "Done", icon: Check },
             ].map((s, i) => {
               const Icon = s.icon;
@@ -355,15 +346,15 @@ Return ONLY the new enhanced video prompt.`,
                     </div>
                   </div>
 
-                  {/* Music Player (if generated) */}
+                  {/* Narrator Audio Player (if generated) */}
                   {musicUrl && (
                     <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4 flex items-center gap-3">
                       <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Music className="w-5 h-5 text-purple-400" />
+                        <Volume2 className="w-5 h-5 text-purple-400" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-white">Background Music</p>
-                        <p className="text-xs text-white/50">{selectedMood?.label || customMood.substring(0, 30)}</p>
+                        <p className="text-sm font-medium text-white">Narrator Voiceover</p>
+                        <p className="text-xs text-white/50">{selectedVoice.label} · {selectedVoice.desc}</p>
                       </div>
                       <audio ref={audioRef} src={musicUrl} controls className="h-8 w-full max-w-[180px]" />
                     </div>
@@ -419,53 +410,59 @@ Return ONLY the new enhanced video prompt.`,
                     </div>
                   )}
 
-                  {/* Music Stage */}
+                  {/* Narrator Stage */}
                   {stage === "music" && !musicUrl && (
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Music className="w-4 h-4 text-pink-400" />
-                        <h3 className="font-semibold text-sm">Generate Background Music</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Volume2 className="w-4 h-4 text-pink-400" />
+                        <h3 className="font-semibold text-sm">Generate Narrator Voiceover</h3>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                        {MUSIC_MOODS.map((mood) => (
+                      <p className="text-xs text-white/40 mb-4">Type the narration text and choose a voice. The AI will generate a real TTS audio track.</p>
+
+                      {/* Voice picker */}
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
+                        {NARRATOR_VOICES.map((v) => (
                           <button
-                            key={mood.label}
-                            onClick={() => setSelectedMood(mood)}
-                            className={`p-3 rounded-xl border text-left transition-all ${
-                              selectedMood?.label === mood.label
+                            key={v.id}
+                            onClick={() => setSelectedVoice(v)}
+                            className={`p-2.5 rounded-xl border text-center transition-all ${
+                              selectedVoice?.id === v.id
                                 ? "bg-pink-500/20 border-pink-500/50 text-pink-200"
                                 : "bg-white/5 border-white/10 hover:border-white/30 text-white/70 hover:text-white"
                             }`}
                           >
-                            <div className="text-lg mb-1">{mood.emoji}</div>
-                            <div className="text-xs font-medium">{mood.label}</div>
+                            <div className="text-lg mb-1">{v.emoji}</div>
+                            <div className="text-xs font-semibold">{v.label}</div>
+                            <div className="text-[10px] text-white/40 mt-0.5 leading-tight">{v.desc}</div>
                           </button>
                         ))}
                       </div>
-                      <div className="flex gap-2">
-                        <input
-                          value={customMood}
-                          onChange={e => setCustomMood(e.target.value)}
-                          placeholder="Or describe your own vibe..."
-                          className="flex-1 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-pink-500/50"
-                        />
-                        <Button
-                          onClick={handleGenerateMusic}
-                          disabled={(!selectedMood && !customMood.trim()) || isMusicLoading}
-                          size="sm"
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white border-0"
-                        >
-                          {isMusicLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Music className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                      <div className="flex justify-end mt-3">
+
+                      {/* Narrator text */}
+                      <Textarea
+                        value={narratorText}
+                        onChange={e => setNarratorText(e.target.value)}
+                        placeholder="Type your narrator script here... e.g. 'In a world where technology meets nature, one journey begins...'"
+                        className="bg-white/5 border-white/20 text-white placeholder:text-white/30 min-h-[90px] text-sm resize-none mb-3"
+                      />
+
+                      <div className="flex items-center justify-between">
                         <button
                           onClick={() => setStage("done")}
                           className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
                         >
-                          Skip Music
+                          Skip Narration
                           <ArrowRight className="w-3 h-3" />
                         </button>
+                        <Button
+                          onClick={handleGenerateNarrator}
+                          disabled={!narratorText.trim() || isMusicLoading}
+                          size="sm"
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white border-0"
+                        >
+                          {isMusicLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Volume2 className="w-4 h-4 mr-1" />}
+                          Generate Voice
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -478,7 +475,7 @@ Return ONLY the new enhanced video prompt.`,
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">Project Complete!</p>
-                          <p className="text-xs text-white/50">Video + music ready to download</p>
+                          <p className="text-xs text-white/50">Video + voiceover ready to download</p>
                         </div>
                       </div>
                       <Button onClick={handleReset} size="sm" className="bg-white/10 hover:bg-white/20 text-white border-0 text-xs">
