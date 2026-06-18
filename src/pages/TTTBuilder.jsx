@@ -4,28 +4,33 @@ import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Glob
 import { base44 } from "@/api/base44Client";
 
 const EXAMPLES = [
-  "Landing page for a Kaspa mining pool with dark neon theme",
-  "Crypto consulting firm homepage with stats and team section",
-  "NFT collection launch page with countdown timer",
-  "DeFi protocol site with TVL dashboard and gradient hero",
-  "Personal brand site for a Web3 developer",
+  "Kaspa staking dashboard with live price ticker and animated stats",
+  "NFT marketplace with gallery, filters, and wallet connect UI",
+  "DeFi protocol app with TVL counter, swap interface, and charts",
+  "Crypto portfolio tracker with holdings table and pie chart",
+  "Web3 developer portfolio with project cards and contact form",
 ];
 
 const SYSTEM_PROMPT = `You are TTT Builder — an expert full-stack web developer for Kaspa ecosystem projects.
-Generate a COMPLETE, beautiful, single-file HTML landing page based on the user's prompt.
+Generate a COMPLETE, production-quality web application as a SINGLE self-contained HTML file that works like a real React/Next.js app.
 
 RULES:
 - Output ONLY raw HTML — no markdown, no code fences, no explanation
-- Use inline CSS only (no external stylesheets except Google Fonts via @import in <style>)
+- Use React via CDN: <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script> and <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+- Use Babel standalone for JSX: <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 - Use Tailwind CDN: <script src="https://cdn.tailwindcss.com"></script>
-- Make it visually stunning — dark theme, gradients, animations
-- Include: hero section, features/benefits, CTA, footer
+- Use Google Fonts via @import in <style> for nice typography
+- Write REAL React components with useState, useEffect, hooks — NOT just static HTML
+- Include multiple interactive components: nav with mobile menu, animated hero, feature cards, stats counter, testimonials or social proof, CTA, footer
 - Use Kaspa green (#70C7BA) and dark (#0d1117) as base colors unless user specifies otherwise
-- Add subtle CSS animations (fade-in, float, glow effects)
-- Make it fully responsive
-- No external JS libraries except Tailwind CDN
-- Include a nav bar with the brand name
-- The HTML must be complete and renderable as-is`;
+- Add real interactivity: animated counters, tab switching, accordion FAQ, live price tickers (mock data ok), hover effects
+- Make it fully responsive — mobile hamburger menu, responsive grid
+- All React code goes in <script type="text/babel"> tags
+- Mount with ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+- The body should just have <div id="root"></div>
+- Build a REAL APP with state, navigation, interactive sections — not a brochure
+- Include at least: animated number counters, a working nav with active states, smooth scroll, one interactive demo/widget relevant to the topic
+- Use framer-motion via CDN if animations are needed: <script src="https://unpkg.com/framer-motion@10/dist/framer-motion.js"></script>`;
 
 export default function TTTBuilderPage() {
   const [prompt, setPrompt] = useState("");
@@ -147,7 +152,7 @@ Output ONLY the complete HTML — nothing else.`,
           <span className="text-[10px] font-bold bg-[#70C7BA] text-black px-1.5 py-0.5 rounded">BUILDER</span>
         </div>
         <div className="hidden sm:flex items-center gap-4 text-xs text-white/50">
-          <span>Powered by Claude</span>
+          <span>React · Tailwind · Claude</span>
           <span>·</span>
           <span>Built on Kaspa</span>
         </div>
@@ -223,7 +228,7 @@ Output ONLY the complete HTML — nothing else.`,
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate(prompt)}
-                    placeholder="Describe your site — e.g. 'Landing page for a Kaspa staking protocol'"
+                    placeholder="Describe your app — e.g. 'Kaspa staking dashboard with live stats and wallet connect'"
                     className="flex-1 bg-transparent outline-none text-white placeholder:text-white/30 text-sm px-3 py-3"
                   />
                   <button
@@ -263,9 +268,9 @@ Output ONLY the complete HTML — nothing else.`,
                 className="mt-16 flex items-center justify-center gap-8 text-center"
               >
                 {[
-                  { label: "Generation time", value: "~10s" },
+                  { label: "Generation time", value: "~15s" },
                   { label: "AI model", value: "Claude" },
-                  { label: "Output", value: "Full HTML" },
+                  { label: "Output", value: "React App" },
                 ].map(s => (
                   <div key={s.label}>
                     <div className="text-2xl font-black text-[#70C7BA]">{s.value}</div>
@@ -381,7 +386,7 @@ Output ONLY the complete HTML — nothing else.`,
                       onClick={() => setTab("code")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === "code" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
                     >
-                      <Code2 className="w-3 h-3" /> Code
+                      <Code2 className="w-3 h-3" /> React Source
                     </button>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
