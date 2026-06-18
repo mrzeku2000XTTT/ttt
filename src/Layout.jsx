@@ -257,9 +257,8 @@ export default function Layout({ children, currentPageName }) {
     { name: "Agent ZK", icon: Bot, path: "AgentZK", premium: true },
     { name: "Courses", icon: BookOpen, path: "Courses" },
     { name: "Zeku AI", icon: Bot, path: "ZekuAI", premium: true },
+    { name: "TTT OS", icon: Monitor, path: "TTTOS", highlight: true },
   ];
-
-  const osNavItem = { name: "TTT OS", icon: Monitor, path: "TTTOS" };
 
   const morePages = [
     { name: "App Store", icon: LayoutGrid, path: "AppStore" },
@@ -343,7 +342,7 @@ export default function Layout({ children, currentPageName }) {
           </button>
           
           <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide py-2">
-            {[...mainNavItems, osNavItem, { name: "Categories", icon: LayoutGrid, path: "Categories" }].map((item) => {
+            {[...mainNavItems, { name: "Categories", icon: LayoutGrid, path: "Categories" }].map((item) => {
               const Icon = item.icon;
               const isActive = currentPageName === item.path;
               
@@ -354,7 +353,7 @@ export default function Layout({ children, currentPageName }) {
                       isActive
                         ? 'text-cyan-400 bg-cyan-500/10 border-l-2 border-cyan-400'
                         : 'text-white/60 hover:text-white hover:bg-white/5'
-                    }`}
+                    } ${item.highlight ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-l-2 border-purple-400' : ''}`}
                     title={item.name}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
@@ -363,6 +362,9 @@ export default function Layout({ children, currentPageName }) {
                     )}
                     {item.premium && (
                       <Crown className="w-2 h-2 text-yellow-400 absolute bottom-1 right-1" />
+                    )}
+                    {item.highlight && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
                     )}
                   </div>
                 </Link>
@@ -451,7 +453,7 @@ export default function Layout({ children, currentPageName }) {
 
               <div className="hidden lg:flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
                 <div className="flex items-center gap-2 min-w-max">
-                  {[...mainNavItems, osNavItem].map((item) => {
+                  {[...mainNavItems].map((item) => {
                     const Icon = item.icon;
                     const isActive = currentPageName === item.name || currentPageName === item.path; 
                     
@@ -460,10 +462,17 @@ export default function Layout({ children, currentPageName }) {
                         isActive
                           ? "bg-white/10 text-white"
                           : "text-gray-400 hover:text-white hover:bg-white/5"
-                      }`}>
+                      } ${item.highlight ? 'bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30' : ''}`}>
                         {item.isTTTV ? (
                           <div className="bg-cyan-500 rounded px-2 py-1 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.6)]">
                             <span className="text-black font-black text-sm tracking-tight">TV</span>
+                          </div>
+                        ) : item.highlight ? (
+                          <div className="flex items-center gap-2">
+                            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded px-2 py-1 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.6)]">
+                              <Icon className="w-4 h-4 text-white" />
+                            </div>
+                            <span className="text-sm font-medium text-purple-300">{item.name}</span>
                           </div>
                         ) : (
                           <>
