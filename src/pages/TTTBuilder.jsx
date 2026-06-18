@@ -33,6 +33,35 @@ CRITICAL RULES — MUST FOLLOW EXACTLY:
 - Build whatever the user asks, fully functional, beautiful, production quality`;
 
 export default function TTTBuilderPage() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    base44.auth.me().then(u => { setUser(u); setAuthLoading(false); }).catch(() => setAuthLoading(false));
+  }, []);
+
+  if (authLoading) {
+    return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#70C7BA]/40 border-t-[#70C7BA] rounded-full animate-spin" /></div>;
+  }
+
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-center px-5">
+        <div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <span className="text-2xl">🔒</span>
+          </div>
+          <h2 className="text-white font-bold text-xl mb-2">Admin Only</h2>
+          <p className="text-white/40 text-sm">TTT Builder is restricted to admins.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <TTTBuilderStudio />;
+}
+
+function TTTBuilderStudio() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState("preview");
