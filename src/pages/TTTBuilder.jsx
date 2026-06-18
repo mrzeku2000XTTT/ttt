@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
+const OUR_REPO = "TTT-Build/ttt-sites";
+
 const EXAMPLES = [
   "Kaspa staking dashboard with live price ticker and animated stats",
   "NFT marketplace with gallery, filters, and wallet connect UI",
@@ -68,7 +70,7 @@ function TTTBuilderStudio() {
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
-  const [publishForm, setPublishForm] = useState({ siteName: "", repo: "" });
+  const [publishForm, setPublishForm] = useState({ siteName: "", repo: OUR_REPO });
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
   const [iframeKey, setIframeKey] = useState(0);
@@ -150,14 +152,14 @@ Output ONLY the complete HTML — nothing else.`,
   };
 
   const publishToGitHub = async () => {
-    if (!html || !publishForm.siteName.trim() || !publishForm.repo.trim()) return;
+    if (!html || !publishForm.siteName.trim()) return;
     setPublishing(true);
     setPublishResult(null);
     try {
       const res = await base44.functions.invoke("publishToGitHub", {
         html,
         siteName: publishForm.siteName.trim(),
-        repo: publishForm.repo.trim(),
+        repo: publishForm.repo.trim() || OUR_REPO,
       });
       setPublishResult({ success: true, ...res.data });
     } catch (err) {
@@ -539,14 +541,14 @@ Output ONLY the complete HTML — nothing else.`,
                   <div>
                     <label className="text-xs text-white/50 mb-1.5 block">GitHub repo <span className="text-white/30">(owner/repo-name)</span></label>
                     <input
-                      value={publishForm.repo}
+                      value={publishForm.repo || OUR_REPO}
                       onChange={e => setPublishForm(f => ({ ...f, repo: e.target.value }))}
-                      placeholder="myorg/ttt-sites"
+                      placeholder={OUR_REPO}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50"
                     />
                   </div>
                   <p className="text-[11px] text-white/30">
-                    The HTML will be pushed to <code className="text-[#70C7BA]/70">sites/[sitename]/index.html</code> in your repo. Enable GitHub Pages on that repo to get a live URL.
+                    The HTML will be pushed to <code className="text-[#70C7BA]/70">sites/[sitename]/index.html</code> in <code className="text-[#70C7BA]/70">{OUR_REPO}</code>. Enable GitHub Pages to get a live URL.
                   </p>
                   <div className="flex gap-2 pt-1">
                     <button
@@ -557,7 +559,7 @@ Output ONLY the complete HTML — nothing else.`,
                     </button>
                     <button
                       onClick={publishToGitHub}
-                      disabled={publishing || !publishForm.siteName.trim() || !publishForm.repo.trim()}
+                      disabled={publishing || !publishForm.siteName.trim()}
                       className="flex-1 h-10 rounded-xl bg-[#70C7BA] text-black text-sm font-bold hover:bg-[#70C7BA]/90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                     >
                       {publishing ? <><Loader2 className="w-4 h-4 animate-spin" /> Pushing…</> : <><GitBranch className="w-4 h-4" /> Push to GitHub</>}
