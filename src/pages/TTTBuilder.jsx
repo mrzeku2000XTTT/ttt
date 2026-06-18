@@ -29,13 +29,33 @@ RULES:
 
 export default function TTTBuilderPage() {
   const [prompt, setPrompt] = useState("");
-  const [html, setHtml] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState("preview"); // preview | code
-  const [messages, setMessages] = useState([]);
-  const [phase, setPhase] = useState("hero"); // hero | studio
+  const [tab, setTab] = useState("preview");
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
+
+  // Persist session across refreshes
+  const [html, setHtml] = useState(() => {
+    try { return localStorage.getItem("ttt_builder_html") || ""; } catch { return ""; }
+  });
+  const [messages, setMessages] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ttt_builder_messages") || "[]"); } catch { return []; }
+  });
+  const [phase, setPhase] = useState(() => {
+    try { return localStorage.getItem("ttt_builder_phase") || "hero"; } catch { return "hero"; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem("ttt_builder_html", html); } catch {}
+  }, [html]);
+
+  useEffect(() => {
+    try { localStorage.setItem("ttt_builder_messages", JSON.stringify(messages)); } catch {}
+  }, [messages]);
+
+  useEffect(() => {
+    try { localStorage.setItem("ttt_builder_phase", phase); } catch {}
+  }, [phase]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -250,7 +270,15 @@ Output ONLY the complete HTML — nothing else.`,
                     <Sparkles className="w-3.5 h-3.5 text-black" />
                   </div>
                   <span className="font-bold text-sm">TTT Builder</span>
-                  <span className="ml-auto text-[10px] text-white/30">Claude Sonnet</span>
+                  <button
+                    onClick={() => {
+                      setHtml(""); setMessages([]); setPhase("hero");
+                      try { localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); } catch {}
+                    }}
+                    className="ml-auto text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                  >
+                    + New
+                  </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
