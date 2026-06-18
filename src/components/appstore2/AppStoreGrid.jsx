@@ -61,6 +61,7 @@ const APPS = [
 
   // ── Games ──
   { name: "VALORANT", path: "ValorantArena", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/501fefdc2_generated_image.png", desc: "Arena mode" },
+  { name: "Training Range", path: "ValorantRange", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/501fefdc2_generated_image.png", desc: "Realistic bot training · 6 modes" },
   { name: "KasPlay", path: "KasPlay", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e3c47106d_generated_image.png", desc: "Kaspa games" },
   { name: "Poki", path: "Poki", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1e9b920b3_generated_image.png", desc: "Mini games" },
   { name: "Duel", path: "DuelLobby", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/da7e5b70b_generated_image.png", desc: "1v1 duels" },
