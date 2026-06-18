@@ -72,10 +72,17 @@ export default function TTTOS() {
   };
 
   const formatTime = (date) => {
-    return date.toLocaleTimeString("en-US", { 
-      hour: osType === "mac" ? "12" : "24",
+    if (osType === "mac") {
+      return date.toLocaleTimeString("en-US", { 
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      });
+    }
+    return date.toLocaleTimeString("en-GB", { 
+      hour: "2-digit",
       minute: "2-digit",
-      hour12: osType === "mac"
+      hour12: false
     });
   };
 
