@@ -13,6 +13,20 @@ import { Input } from "@/components/ui/input";
 
 // Custom TTT-branded SVG logos for each app
 const TTTLogos = {
+  Node: () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <defs>
+        <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#06b6d4"/>
+          <stop offset="100%" stopColor="#0891b2"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="20" fill="url(#nodeGrad)"/>
+      <circle cx="50" cy="50" r="25" stroke="white" strokeWidth="6" fill="none"/>
+      <circle cx="50" cy="50" r="8" fill="white"/>
+      <path d="M50 25 L50 35 M50 65 L50 75 M25 50 L35 50 M65 50 L75 50" stroke="white" strokeWidth="6" strokeLinecap="round"/>
+    </svg>
+  ),
   TTTV: () => (
     <svg viewBox="0 0 100 100" className="w-full h-full">
       <defs>
@@ -104,6 +118,7 @@ const TTTLogos = {
 };
 
 const OS_APPS = [
+  { name: "NODE", logo: TTTLogos.Node, path: "Node", color: "from-cyan-500 to-teal-500" },
   { name: "TTTV", logo: TTTLogos.TTTV, path: "Browser", color: "from-cyan-500 to-blue-500" },
   { name: "Feed", logo: TTTLogos.Feed, path: "Feed", color: "from-blue-500 to-indigo-500" },
   { name: "Agent ZK", logo: TTTLogos.AgentZK, path: "AgentZK", color: "from-purple-500 to-violet-500" },
