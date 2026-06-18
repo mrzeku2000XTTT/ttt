@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Monitor, Laptop, LayoutGrid, Search, Settings, 
-  User, LogOut, X, Minus, Square, Wifi, Volume2, Battery,
+  User, LogOut, X, Minus, Square, Wifi, WifiOff, Volume2, Battery,
   MessageSquare, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -180,14 +180,15 @@ export default function TTTOS() {
   const openAppInWindow = (app) => {
     const windowId = `iframe-${app.path}-${Date.now()}`;
     const offset = iframeWindows.length * 30;
-    // Use relative URL to avoid cross-origin issues in live mode
+    // Use relative URL but detect if iframe loading fails
     const appUrl = createPageUrl(app.path);
     
     setIframeWindows(prev => [...prev, { 
       ...app, 
       windowId,
       url: appUrl,
-      isLoading: true
+      isLoading: true,
+      loadFailed: false
     }]);
     setWindowPositions(prev => ({
       ...prev,
@@ -202,6 +203,20 @@ export default function TTTOS() {
         w.windowId === windowId ? { ...w, isLoading: false } : w
       ));
     }, 1500);
+  };
+
+  const handleIframeError = (windowId, app) => {
+    // If iframe fails to load (X-Frame-Options block), open in new tab
+    setIframeWindows(prev => prev.map(w => 
+      w.windowId === windowId ? { ...w, loadFailed: true } : w
+    ));
+    
+    // Show fallback message and offer to open in new tab
+    setTimeout(() => {
+      const appUrl = window.location.origin + createPageUrl(app.path);
+      window.open(appUrl, '_blank');
+      closeIframeWindow(windowId);
+    }, 1000);
   };
 
   const closeIframeWindow = (windowId, e) => {
@@ -405,10 +420,28 @@ export default function TTTOS() {
                       </div>
                     </div>
                   )}
+                  {win.loadFailed && (
+                    <div className={`absolute inset-0 flex items-center justify-center ${
+                      isWindows ? "bg-gray-900" : "bg-gray-100"
+                    }`}>
+                      <div className="text-center p-8">
+                        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <WifiOff className="w-8 h-8 text-red-400" />
+                        </div>
+                        <p className={`${isWindows ? "text-white" : "text-gray-800"} font-bold mb-2`}>
+                          Cannot load in window
+                        </p>
+                        <p className={`${isWindows ? "text-gray-400" : "text-gray-600"} text-sm mb-4`}>
+                          Opening {win.name} in new tab...
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <iframe
                     src={win.url}
                     className="w-full h-full border-0"
                     onLoad={() => handleIframeLoad(win.windowId)}
+                    onError={() => handleIframeError(win.windowId, win)}
                     title={win.name}
                     sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
                   />
