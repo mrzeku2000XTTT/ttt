@@ -165,7 +165,8 @@ export default function TTTOS() {
   const openAppInWindow = (app) => {
     const windowId = `iframe-${app.path}-${Date.now()}`;
     const offset = iframeWindows.length * 30;
-    const appUrl = window.location.origin + createPageUrl(app.path);
+    // Use relative URL to avoid cross-origin issues in live mode
+    const appUrl = createPageUrl(app.path);
     
     setIframeWindows(prev => [...prev, { 
       ...app, 
