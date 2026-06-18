@@ -1,26 +1,116 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
 import { Link, useNavigate } from "react-router-dom";
 import { 
-  Monitor, Laptop, Command, LayoutGrid, Search, Settings, 
-  User, LogOut, X, Minus, Square, Bell, Wifi, Battery,
-  ChevronRight, Folder, FileText, Globe, MessageSquare,
-  Play, Pause, SkipForward, Volume2
+  Monitor, Laptop, LayoutGrid, Search, Settings, 
+  User, LogOut, X, Minus, Square, Wifi, Volume2, Battery,
+  MessageSquare, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+
+// Custom TTT-branded SVG logos for each app
+const TTTLogos = {
+  TTTV: () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <defs>
+        <linearGradient id="tttvGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#06b6d4"/>
+          <stop offset="100%" stopColor="#3b82f6"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="20" fill="url(#tttvGrad)"/>
+      <text x="50" y="68" textAnchor="middle" fill="white" fontSize="50" fontWeight="900" fontFamily="system-ui">TV</text>
+    </svg>
+  ),
+  Feed: () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <defs>
+        <linearGradient id="feedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3b82f6"/>
+          <stop offset="100%" stopColor="#2563eb"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="20" fill="url(#feedGrad)"/>
+      <path d="M30 35h40M30 50h40M30 65h25" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+    </svg>
+  ),
+  AgentZK: () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <defs>
+        <linearGradient id="zkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#a855f7"/>
+          <stop offset="100%" stopColor="#7c3aed"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="20" fill="url(#zkGrad)"/>
+      <circle cx="50" cy="45" r="20" fill="white"/>
+      <path d="M25 80 Q50 60 75 80" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+    </svg>
+  ),
+  Bridge: () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <defs>
+        <linearGradient id="bridgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#22c55e"/>
+          <stop offset="100%" stopColor="#16a34a"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="20" fill="url(#bridgeGrad)"/>
+      <path d="M20 65 L35 45 L50 65 L65 45 L80 65" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  ),
+  Marketplace: () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <defs>
+        <linearGradient id="marketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#f97316"/>
+          <stop offset="100%" stopColor="#ea580c"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="20" fill="url(#marketGrad)"/>
+      <path d="M30 40 L50 25 L70 40 L70 75 L30 75 Z" stroke="white" strokeWidth="6" fill="none"/>
+      <circle cx="50" cy="55" r="8" fill="white"/>
+    </svg>
+  ),
+  Profile: () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <defs>
+        <linearGradient id="profileGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ec4899"/>
+          <stop offset="100%" stopColor="#db2777"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="20" fill="url(#profileGrad)"/>
+      <circle cx="50" cy="40" r="18" fill="white"/>
+      <path d="M30 80 Q50 60 70 80" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+    </svg>
+  ),
+  Settings: () => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <defs>
+        <linearGradient id="settingsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#6b7280"/>
+          <stop offset="100%" stopColor="#4b5563"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="20" fill="url(#settingsGrad)"/>
+      <circle cx="50" cy="50" r="15" stroke="white" strokeWidth="8" fill="none"/>
+      <path d="M50 25 L50 35 M50 65 L50 75 M25 50 L35 50 M65 50 L75 50" stroke="white" strokeWidth="6" strokeLinecap="round"/>
+    </svg>
+  ),
+};
 
 const OS_APPS = [
-  { name: "TTTV", icon: Search, path: "Browser", color: "bg-cyan-500" },
-  { name: "Feed", icon: MessageSquare, path: "Feed", color: "bg-blue-500" },
-  { name: "Agent ZK", icon: User, path: "AgentZK", color: "bg-purple-500" },
-  { name: "Bridge", icon: LayoutGrid, path: "Bridge", color: "bg-green-500" },
-  { name: "Marketplace", icon: Folder, path: "Marketplace", color: "bg-orange-500" },
-  { name: "Profile", icon: User, path: "Profile", color: "bg-pink-500" },
-  { name: "Settings", icon: Settings, path: "Settings", color: "bg-gray-500" },
+  { name: "TTTV", logo: TTTLogos.TTTV, path: "Browser", color: "from-cyan-500 to-blue-500" },
+  { name: "Feed", logo: TTTLogos.Feed, path: "Feed", color: "from-blue-500 to-indigo-500" },
+  { name: "Agent ZK", logo: TTTLogos.AgentZK, path: "AgentZK", color: "from-purple-500 to-violet-500" },
+  { name: "Bridge", logo: TTTLogos.Bridge, path: "Bridge", color: "from-green-500 to-emerald-500" },
+  { name: "Marketplace", logo: TTTLogos.Marketplace, path: "Marketplace", color: "from-orange-500 to-red-500" },
+  { name: "Profile", logo: TTTLogos.Profile, path: "Profile", color: "from-pink-500 to-rose-500" },
+  { name: "Settings", logo: TTTLogos.Settings, path: "Settings", color: "from-gray-500 to-slate-500" },
 ];
 
 export default function TTTOS() {
@@ -32,6 +122,7 @@ export default function TTTOS() {
   const [activeWindow, setActiveWindow] = useState(null);
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [windowPositions, setWindowPositions] = useState({});
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -59,16 +150,38 @@ export default function TTTOS() {
 
   const openApp = (app) => {
     const windowId = `${app.path}-${Date.now()}`;
+    const offset = openWindows.length * 30;
     setOpenWindows(prev => [...prev, { ...app, windowId }]);
+    setWindowPositions(prev => ({
+      ...prev,
+      [windowId]: { x: 100 + offset, y: 80 + offset }
+    }));
     setActiveWindow(windowId);
     setStartMenuOpen(false);
   };
 
-  const closeWindow = (windowId) => {
+  const closeWindow = (windowId, e) => {
+    e?.stopPropagation();
     setOpenWindows(prev => prev.filter(w => w.windowId !== windowId));
+    setWindowPositions(prev => {
+      const newPos = { ...prev };
+      delete newPos[windowId];
+      return newPos;
+    });
     if (activeWindow === windowId) {
-      setActiveWindow(openWindows.length > 1 ? openWindows[openWindows.length - 2].windowId : null);
+      const remaining = openWindows.filter(w => w.windowId !== windowId);
+      setActiveWindow(remaining.length > 0 ? remaining[remaining.length - 1].windowId : null);
     }
+  };
+
+  const handleDragEnd = (windowId, info) => {
+    setWindowPositions(prev => ({
+      ...prev,
+      [windowId]: {
+        x: (prev[windowId]?.x || 0) + info.offset.x,
+        y: (prev[windowId]?.y || 0) + info.offset.y
+      }
+    }));
   };
 
   const formatTime = (date) => {
@@ -103,7 +216,7 @@ export default function TTTOS() {
         {/* Desktop Icons */}
         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 max-w-6xl mx-auto">
           {OS_APPS.map((app) => {
-            const Icon = app.icon;
+            const Logo = app.logo;
             return (
               <motion.button
                 key={app.path}
@@ -116,8 +229,8 @@ export default function TTTOS() {
                     : "hover:bg-white/20 backdrop-blur-sm"
                 }`}
               >
-                <div className={`w-12 h-12 ${app.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <Icon className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 rounded-xl shadow-lg overflow-hidden">
+                  <Logo />
                 </div>
                 <span className="text-xs text-white font-medium text-center drop-shadow-lg">
                   {app.name}
@@ -130,18 +243,22 @@ export default function TTTOS() {
         {/* Windows */}
         <AnimatePresence>
           {openWindows.map((win, index) => {
-            const Icon = win.icon;
+            const Logo = win.logo;
             const isActive = activeWindow === win.windowId;
             const zIndex = 10 + index;
+            const pos = windowPositions[win.windowId] || { x: 100 + index * 30, y: 80 + index * 30 };
             
             return (
               <motion.div
                 key={win.windowId}
                 initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                animate={{ scale: 1, opacity: 1, x: pos.x, y: pos.y }}
                 exit={{ scale: 0.8, opacity: 0 }}
+                drag
+                dragMomentum={false}
+                onDragEnd={(e, info) => handleDragEnd(win.windowId, info)}
                 onClick={() => setActiveWindow(win.windowId)}
-                className={`absolute top-20 left-1/4 right-1/4 bottom-32 rounded-lg overflow-hidden shadow-2xl ${
+                className={`absolute w-[600px] h-[400px] rounded-lg overflow-hidden shadow-2xl ${
                   isWindows 
                     ? "bg-gray-900/95 backdrop-blur-xl border border-white/10" 
                     : "bg-white/90 backdrop-blur-xl border border-white/20"
@@ -149,12 +266,14 @@ export default function TTTOS() {
                 style={{ zIndex }}
               >
                 {/* Window Title Bar */}
-                <div className={`h-10 flex items-center justify-between px-4 ${
-                  isWindows ? "bg-gray-800/50" : "bg-gray-100/50"
-                }`}>
+                <div 
+                  className={`h-10 flex items-center justify-between px-4 cursor-move ${
+                    isWindows ? "bg-gray-800/50" : "bg-gray-100/50"
+                  }`}
+                >
                   <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 ${win.color} rounded flex items-center justify-center`}>
-                      <Icon className="w-4 h-4 text-white" />
+                    <div className="w-6 h-6 rounded overflow-hidden">
+                      <Logo />
                     </div>
                     <span className={`text-sm font-medium ${isWindows ? "text-white" : "text-gray-800"}`}>
                       {win.name}
@@ -168,7 +287,7 @@ export default function TTTOS() {
                       <Square className="w-3 h-3" />
                     </button>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); closeWindow(win.windowId); }}
+                      onClick={(e) => closeWindow(win.windowId, e)}
                       className={`w-6 h-6 flex items-center justify-center rounded ${isWindows ? "hover:bg-red-500" : "hover:bg-red-400 hover:text-white"}`}
                     >
                       <X className="w-3 h-3" />
@@ -177,16 +296,20 @@ export default function TTTOS() {
                 </div>
                 
                 {/* Window Content */}
-                <div className="flex-1 h-[calc(100%-2.5rem)] bg-black/50 flex items-center justify-center">
+                <div className="h-[calc(100%-2.5rem)] flex items-center justify-center p-8" style={{
+                  background: isWindows 
+                    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+                    : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+                }}>
                   <div className="text-center">
-                    <div className={`w-16 h-16 ${win.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                      <Icon className="w-8 h-8 text-white" />
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden shadow-xl">
+                      <Logo />
                     </div>
-                    <p className="text-white text-lg font-medium mb-2">{win.name}</p>
-                    <p className="text-gray-400 text-sm mb-4">Opening app...</p>
+                    <p className={`text-lg font-medium mb-2 ${isWindows ? "text-white" : "text-gray-800"}`}>{win.name}</p>
+                    <p className={`text-sm mb-6 ${isWindows ? "text-gray-400" : "text-gray-600"}`}>Ready to open</p>
                     <Button 
                       onClick={() => navigate(createPageUrl(win.path))}
-                      className="bg-cyan-500 hover:bg-cyan-600"
+                      className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold px-6 py-2 rounded-full shadow-lg"
                     >
                       Open Full App
                     </Button>
@@ -267,15 +390,15 @@ export default function TTTOS() {
                     {OS_APPS.filter(app => 
                       app.name.toLowerCase().includes(searchQuery.toLowerCase())
                     ).map((app) => {
-                      const Icon = app.icon;
+                      const Logo = app.logo;
                       return (
                         <button
                           key={app.path}
                           onClick={() => openApp(app)}
                           className="w-full flex items-center gap-3 p-2 rounded hover:bg-white/10 transition-colors"
                         >
-                          <div className={`w-8 h-8 ${app.color} rounded flex items-center justify-center`}>
-                            <Icon className="w-4 h-4 text-white" />
+                          <div className="w-8 h-8 rounded overflow-hidden">
+                            <Logo />
                           </div>
                           <span className="text-white text-sm">{app.name}</span>
                         </button>
@@ -299,7 +422,7 @@ export default function TTTOS() {
           {/* Taskbar Apps */}
           <div className="flex items-center gap-2">
             {openWindows.map((win) => {
-              const Icon = win.icon;
+              const Logo = win.logo;
               const isActive = activeWindow === win.windowId;
               return (
                 <button
@@ -311,7 +434,9 @@ export default function TTTOS() {
                       : "hover:bg-white/10 border-b-2 border-transparent"
                   }`}
                 >
-                  <Icon className="w-4 h-4 text-white" />
+                  <div className="w-5 h-5 rounded overflow-hidden">
+                    <Logo />
+                  </div>
                   <span className="text-xs text-white">{win.name}</span>
                 </button>
               );
@@ -360,7 +485,7 @@ export default function TTTOS() {
           <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
             <div className="flex items-end gap-2 p-3 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl">
               {OS_APPS.map((app) => {
-                const Icon = app.icon;
+                const Logo = app.logo;
                 const isOpen = openWindows.some(w => w.path === app.path);
                 return (
                   <motion.button
@@ -370,8 +495,8 @@ export default function TTTOS() {
                     onClick={() => openApp(app)}
                     className="relative group"
                   >
-                    <div className={`w-12 h-12 ${app.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                      <Icon className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-xl shadow-lg overflow-hidden">
+                      <Logo />
                     </div>
                     {isOpen && (
                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full" />
