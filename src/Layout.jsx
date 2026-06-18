@@ -257,7 +257,6 @@ export default function Layout({ children, currentPageName }) {
     { name: "Agent ZK", icon: Bot, path: "AgentZK", premium: true },
     { name: "Courses", icon: BookOpen, path: "Courses" },
     { name: "Zeku AI", icon: Bot, path: "ZekuAI", premium: true },
-    { name: "TTT OS", icon: Monitor, path: "TTTOS", highlight: true },
   ];
 
   const morePages = [
