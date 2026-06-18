@@ -11,26 +11,26 @@ const EXAMPLES = [
   "Web3 developer portfolio with project cards and contact form",
 ];
 
-const SYSTEM_PROMPT = `You are TTT Builder — an expert full-stack web developer for Kaspa ecosystem projects.
-Generate a COMPLETE, production-quality web application as a SINGLE self-contained HTML file that works like a real React/Next.js app.
+const SYSTEM_PROMPT = `You are TTT Builder — an expert full-stack web developer. Generate a COMPLETE, fully interactive web application as a SINGLE self-contained HTML file.
 
-RULES:
-- Output ONLY raw HTML — no markdown, no code fences, no explanation
-- Use React via CDN: <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script> and <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-- Use Babel standalone for JSX: <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-- Use Tailwind CDN: <script src="https://cdn.tailwindcss.com"></script>
-- Use Google Fonts via @import in <style> for nice typography
-- Write REAL React components with useState, useEffect, hooks — NOT just static HTML
-- Include multiple interactive components: nav with mobile menu, animated hero, feature cards, stats counter, testimonials or social proof, CTA, footer
-- Use Kaspa green (#70C7BA) and dark (#0d1117) as base colors unless user specifies otherwise
-- Add real interactivity: animated counters, tab switching, accordion FAQ, live price tickers (mock data ok), hover effects
-- Make it fully responsive — mobile hamburger menu, responsive grid
-- All React code goes in <script type="text/babel"> tags
-- Mount with ReactDOM.createRoot(document.getElementById('root')).render(<App />)
-- The body should just have <div id="root"></div>
-- Build a REAL APP with state, navigation, interactive sections — not a brochure
-- Include at least: animated number counters, a working nav with active states, smooth scroll, one interactive demo/widget relevant to the topic
-- Use framer-motion via CDN if animations are needed: <script src="https://unpkg.com/framer-motion@10/dist/framer-motion.js"></script>`;
+CRITICAL RULES — MUST FOLLOW EXACTLY:
+- Output ONLY raw HTML — no markdown, no code fences, no explanation, no \`\`\`html wrapper
+- NO external CDN scripts — the iframe has NO internet access. Everything must be inline.
+- Write ALL logic in pure vanilla JavaScript inside <script> tags
+- Write ALL styles in <style> tags using CSS (no Tailwind, no external CSS)
+- The app must be 100% self-contained — zero external dependencies
+- Use CSS custom properties, CSS animations, CSS Grid/Flexbox for beautiful layouts
+- Write REAL interactivity: event listeners, DOM manipulation, state variables in JS
+- For games: implement full game logic (win detection, turn switching, score tracking, AI if needed)
+- For dashboards: use setInterval for live-updating mock data, charts drawn with SVG or Canvas
+- For apps: full CRUD, local storage persistence, form validation
+- Use dark theme with these colors unless user says otherwise: bg #0d1117, accent #70C7BA (Kaspa green), text #e6edf3
+- Add CSS animations: keyframes, transitions, hover effects, pulse effects
+- Make it fully responsive with media queries
+- Structure: complete <!DOCTYPE html> ... </html> document
+- IMPORTANT: The HTML must render and work immediately — no loading, no missing assets
+- For a tic tac toe game example: implement the board, X/O turns, win detection, restart button, score tracker — all working
+- Build whatever the user asks, fully functional, beautiful, production quality`;
 
 export default function TTTBuilderPage() {
   const [prompt, setPrompt] = useState("");
@@ -152,7 +152,7 @@ Output ONLY the complete HTML — nothing else.`,
           <span className="text-[10px] font-bold bg-[#70C7BA] text-black px-1.5 py-0.5 rounded">BUILDER</span>
         </div>
         <div className="hidden sm:flex items-center gap-4 text-xs text-white/50">
-          <span>React · Tailwind · Claude</span>
+          <span>Vanilla JS · CSS · Claude</span>
           <span>·</span>
           <span>Built on Kaspa</span>
         </div>
@@ -270,7 +270,7 @@ Output ONLY the complete HTML — nothing else.`,
                 {[
                   { label: "Generation time", value: "~15s" },
                   { label: "AI model", value: "Claude" },
-                  { label: "Output", value: "React App" },
+                  { label: "Output", value: "Pure HTML" },
                 ].map(s => (
                   <div key={s.label}>
                     <div className="text-2xl font-black text-[#70C7BA]">{s.value}</div>
@@ -386,7 +386,7 @@ Output ONLY the complete HTML — nothing else.`,
                       onClick={() => setTab("code")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === "code" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
                     >
-                      <Code2 className="w-3 h-3" /> React Source
+                      <Code2 className="w-3 h-3" /> Source Code
                     </button>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
@@ -446,7 +446,7 @@ Output ONLY the complete HTML — nothing else.`,
                     <iframe
                       ref={iframeRef}
                       srcDoc={html}
-                      sandbox="allow-scripts allow-same-origin"
+                      sandbox="allow-scripts"
                       className="w-full h-full border-0"
                       title="Site Preview"
                     />
