@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight, Bot, Menu, X, FileText, MapPin, Dumbbell } from "lucide-react";
+import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight, Bot, Menu, X, FileText, MapPin, Dumbbell, Monitor } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import {
@@ -40,6 +40,7 @@ const STORE_MENU_ITEMS = [
   { label: "Explore", path: "/AppStoreV2", icon: Sparkles },
   { label: "Products", path: "/AppStoreV2", icon: ShoppingBag },
   { label: "Kaspa", path: "/WhatIsKaspa", icon: Shield },
+  { label: "TTT OS", path: "/TTTOS", icon: Monitor },
   { label: "TTTV", path: "/Browser", icon: Search },
   { label: "Community", path: "/Feed", icon: Users },
   { label: "What's New", path: "/TTTV2", icon: TrendingUp },
