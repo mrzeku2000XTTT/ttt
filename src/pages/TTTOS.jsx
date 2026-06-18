@@ -329,34 +329,52 @@ export default function TTTOS() {
                     isWindows ? "bg-gray-800/50" : "bg-gray-100/50"
                   }`}
                 >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-5 h-5 rounded overflow-hidden flex-shrink-0">
+                  {/* macOS-style traffic light controls on left */}
+                  {!isWindows && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button 
+                        onClick={(e) => closeIframeWindow(win.windowId, e)}
+                        className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center group"
+                        title="Close"
+                      >
+                        <X className="w-2 h-2 text-red-900 opacity-0 group-hover:opacity-100" />
+                      </button>
+                      <button className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 flex items-center justify-center group" title="Minimize">
+                        <Minus className="w-2 h-2 text-yellow-900 opacity-0 group-hover:opacity-100" />
+                      </button>
+                      <button className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center group" title="Maximize">
+                        <Square className="w-1.5 h-1.5 text-green-900 opacity-0 group-hover:opacity-100" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Center - App name with icon */}
+                  <div className="flex items-center gap-2 flex-1 justify-center">
+                    <div className="w-4 h-4 rounded overflow-hidden flex-shrink-0">
                       <Logo />
                     </div>
                     <span className={`text-sm font-medium ${isWindows ? "text-white" : "text-gray-800"}`}>
                       {win.name}
                     </span>
-                    {/* URL Bar */}
-                    <div className={`flex-1 max-w-xl mx-4 px-3 py-1 rounded text-xs ${
-                      isWindows ? "bg-gray-700/50 text-gray-300" : "bg-white/50 text-gray-600"
-                    }`}>
-                      {win.url}
+                  </div>
+                  
+                  {/* Windows-style controls on right */}
+                  {isWindows && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <button className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
+                        <Square className="w-3 h-3" />
+                      </button>
+                      <button 
+                        onClick={(e) => closeIframeWindow(win.windowId, e)}
+                        className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-red-500" : "hover:bg-red-400 hover:text-white"}`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
-                      <Minus className="w-3.5 h-3.5" />
-                    </button>
-                    <button className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
-                      <Square className="w-3 h-3" />
-                    </button>
-                    <button 
-                      onClick={(e) => closeIframeWindow(win.windowId, e)}
-                      className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-red-500" : "hover:bg-red-400 hover:text-white"}`}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  )}
                 </div>
                 
                 {/* Browser Content - Iframe */}
