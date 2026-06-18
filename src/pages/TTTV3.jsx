@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowUpRight, Sparkles, Zap, Shield, Lock, Loader2 } from "lucide-react";
+import { ArrowUpRight, Sparkles, Zap, Shield, Lock, Loader2, RefreshCw, CheckCircle } from "lucide-react";
 import VisionCanvas from "@/components/tttv3/VisionCanvas";
 import FlyOverlay from "@/components/tttv3/FlyOverlay";
 import SakuraPetals from "@/components/tttv3/SakuraPetals";
@@ -13,6 +13,8 @@ export default function TTTV3Page() {
   const navigate = useNavigate();
   const [authState, setAuthState] = useState("checking"); // checking | allowed | denied
   const [zoomingOut, setZoomingOut] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
   const { scrollY } = useScroll();
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
   const heroScale = useTransform(scrollY, [0, 400], [1, 1.1]);
@@ -20,19 +22,15 @@ export default function TTTV3Page() {
   const handleExploreVision = (e) => {
     e.preventDefault();
     setZoomingOut(true);
-    // After the zoom-out flash, smooth-scroll all the way down to the chat
-    // section, naturally passing through Vision → Connected Apps along the way.
     setTimeout(() => {
       const chat = document.getElementById("chat");
       if (chat) {
-        // Scroll so the BOTTOM of the chat section (input box) is visible — not the top.
         const rect = chat.getBoundingClientRect();
         const chatBottom = rect.bottom + window.pageYOffset;
         const targetY = chatBottom - window.innerHeight + 40;
-        // Custom long-duration smooth scroll so the user actually sees each section pass by
         const startY = window.pageYOffset;
         const distance = targetY - startY;
-        const duration = 4500; // ms — slow cinematic scroll
+        const duration = 4500;
         const startTime = performance.now();
         const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
         const tick = (now) => {
@@ -47,6 +45,19 @@ export default function TTTV3Page() {
         setZoomingOut(false);
       }
     }, 900);
+  };
+
+  const handleSyncApps = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await base44.functions.invoke("syncAppRegistry", {});
+      setSyncResult({ success: true, count: res.data.synced });
+    } catch (err) {
+      setSyncResult({ success: false, error: err.message });
+    } finally {
+      setSyncing(false);
+    }
   };
 
   useEffect(() => {
@@ -121,9 +132,20 @@ export default function TTTV3Page() {
           <a href="#pillars" className="hover:text-white transition-colors">Pillars</a>
           <a href="#timeline" className="hover:text-white transition-colors">Timeline</a>
         </div>
-        <Link to="/" className="text-[13px] font-semibold text-black bg-white hover:bg-zinc-200 px-4 py-1.5 rounded-full transition-colors">
-          Exit Preview
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSyncApps}
+            disabled={syncing}
+            className="text-[11px] font-semibold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            title="Sync apps from AppStoreV2"
+          >
+            {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : syncResult?.success ? <CheckCircle className="w-3 h-3" /> : <RefreshCw className="w-3 h-3" />}
+            {syncing ? "Syncing..." : syncResult?.success ? `Synced ${syncResult.count}` : "Sync Apps"}
+          </button>
+          <Link to="/" className="text-[13px] font-semibold text-black bg-white hover:bg-zinc-200 px-4 py-1.5 rounded-full transition-colors">
+            Exit Preview
+          </Link>
+        </div>
       </nav>
 
       {/* Hero */}
