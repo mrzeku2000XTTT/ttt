@@ -42,6 +42,7 @@ export default function TTTBuilderPage() {
   const [publishForm, setPublishForm] = useState({ siteName: "", repo: "" });
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
+  const [iframeKey, setIframeKey] = useState(0);
 
   // Persist session across refreshes
   const [html, setHtml] = useState(() => {
@@ -96,10 +97,16 @@ Output ONLY the complete HTML — nothing else.`,
         model: "claude_sonnet_4_6",
       });
 
-      const generated = typeof result === "string" ? result : result?.html || result?.code || String(result);
-      const cleaned = generated.replace(/^```html\n?/, "").replace(/^```\n?/, "").replace(/```$/, "").trim();
+      const generated = typeof result === "string" ? result : result?.html || result?.code || JSON.stringify(result);
+      // Strip any markdown fences Claude might add
+      const cleaned = generated
+        .replace(/^```html\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .trim();
 
       setHtml(cleaned);
+      setIframeKey(k => k + 1);
       setMessages(prev => [...prev, { role: "assistant", content: "✅ Site generated! You can see the preview on the right. Ask me to change anything." }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: "assistant", content: "⚠️ Generation failed. Try again or rephrase your prompt." }]);
@@ -442,12 +449,14 @@ Output ONLY the complete HTML — nothing else.`,
                     </div>
                   )}
 
-                  {html && tab === "preview" && !loading && (
+                  {html && tab === "preview" && (
                     <iframe
+                      key={iframeKey}
                       ref={iframeRef}
                       srcDoc={html}
                       sandbox="allow-scripts"
                       className="w-full h-full border-0"
+                      style={{ display: loading ? "none" : "block" }}
                       title="Site Preview"
                     />
                   )}
