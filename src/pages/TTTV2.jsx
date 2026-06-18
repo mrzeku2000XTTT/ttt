@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -242,6 +242,9 @@ export default function TTTV2Page() {
           <Link to="/Explore" className="hover:text-zinc-900 transition-colors">Explore</Link>
           <Link to="/AppStoreV2" className="hover:text-zinc-900 transition-colors">Products</Link>
           <Link to="/WhatIsKaspa" className="hover:text-zinc-900 transition-colors">Kaspa</Link>
+          <Link to="/TTTOS" className="hover:text-zinc-900 transition-colors flex items-center gap-1">
+            <Monitor className="w-3.5 h-3.5" /> TTT OS
+          </Link>
           <a href="#tttv" className="hover:text-zinc-900 transition-colors">TTTV</a>
           <a href="#community" className="hover:text-zinc-900 transition-colors">Community</a>
           <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
