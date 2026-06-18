@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft, BookOpen, Monitor, Laptop } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -259,6 +259,8 @@ export default function Layout({ children, currentPageName }) {
     { name: "Zeku AI", icon: Bot, path: "ZekuAI", premium: true },
   ];
 
+  const osNavItem = { name: "TTT OS", icon: Monitor, path: "TTTOS" };
+
   const morePages = [
     { name: "App Store", icon: LayoutGrid, path: "AppStore" },
     { name: "K-University", icon: BookOpen, path: "KUniversity" },
@@ -341,7 +343,7 @@ export default function Layout({ children, currentPageName }) {
           </button>
           
           <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide py-2">
-            {[...mainNavItems, { name: "Categories", icon: LayoutGrid, path: "Categories" }].map((item) => {
+            {[...mainNavItems, osNavItem, { name: "Categories", icon: LayoutGrid, path: "Categories" }].map((item) => {
               const Icon = item.icon;
               const isActive = currentPageName === item.path;
               
@@ -449,7 +451,7 @@ export default function Layout({ children, currentPageName }) {
 
               <div className="hidden lg:flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
                 <div className="flex items-center gap-2 min-w-max">
-                  {mainNavItems.map((item) => {
+                  {[...mainNavItems, osNavItem].map((item) => {
                     const Icon = item.icon;
                     const isActive = currentPageName === item.name || currentPageName === item.path; 
                     
