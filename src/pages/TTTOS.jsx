@@ -123,6 +123,8 @@ export default function TTTOS() {
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [windowPositions, setWindowPositions] = useState({});
+  const [iframeWindows, setIframeWindows] = useState([]);
+  const [activeIframeWindow, setActiveIframeWindow] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -158,6 +160,62 @@ export default function TTTOS() {
     }));
     setActiveWindow(windowId);
     setStartMenuOpen(false);
+  };
+
+  const openAppInWindow = (app) => {
+    const windowId = `iframe-${app.path}-${Date.now()}`;
+    const offset = iframeWindows.length * 30;
+    const appUrl = window.location.origin + createPageUrl(app.path);
+    
+    setIframeWindows(prev => [...prev, { 
+      ...app, 
+      windowId,
+      url: appUrl,
+      isLoading: true
+    }]);
+    setWindowPositions(prev => ({
+      ...prev,
+      [windowId]: { x: 50 + offset, y: 50 + offset }
+    }));
+    setActiveIframeWindow(windowId);
+    setStartMenuOpen(false);
+
+    // Mark as loaded after a short delay
+    setTimeout(() => {
+      setIframeWindows(prev => prev.map(w => 
+        w.windowId === windowId ? { ...w, isLoading: false } : w
+      ));
+    }, 1500);
+  };
+
+  const closeIframeWindow = (windowId, e) => {
+    e?.stopPropagation();
+    setIframeWindows(prev => prev.filter(w => w.windowId !== windowId));
+    setWindowPositions(prev => {
+      const newPos = { ...prev };
+      delete newPos[windowId];
+      return newPos;
+    });
+    if (activeIframeWindow === windowId) {
+      const remaining = iframeWindows.filter(w => w.windowId !== windowId);
+      setActiveIframeWindow(remaining.length > 0 ? remaining[remaining.length - 1].windowId : null);
+    }
+  };
+
+  const handleIframeDragEnd = (windowId, info) => {
+    setWindowPositions(prev => ({
+      ...prev,
+      [windowId]: {
+        x: (prev[windowId]?.x || 0) + info.offset.x,
+        y: (prev[windowId]?.y || 0) + info.offset.y
+      }
+    }));
+  };
+
+  const handleIframeLoad = (windowId) => {
+    setIframeWindows(prev => prev.map(w => 
+      w.windowId === windowId ? { ...w, isLoading: false } : w
+    ));
   };
 
   const closeWindow = (windowId, e) => {
@@ -222,7 +280,7 @@ export default function TTTOS() {
                 key={app.path}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => openApp(app)}
+                onClick={() => openAppInWindow(app)}
                 className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${
                   isWindows 
                     ? "hover:bg-white/10 border border-white/5" 
@@ -240,80 +298,86 @@ export default function TTTOS() {
           })}
         </div>
 
-        {/* Windows */}
+        {/* Embedded Browser Windows */}
         <AnimatePresence>
-          {openWindows.map((win, index) => {
+          {iframeWindows.map((win, index) => {
             const Logo = win.logo;
-            const isActive = activeWindow === win.windowId;
-            const zIndex = 10 + index;
-            const pos = windowPositions[win.windowId] || { x: 100 + index * 30, y: 80 + index * 30 };
+            const isActive = activeIframeWindow === win.windowId;
+            const zIndex = 100 + index;
+            const pos = windowPositions[win.windowId] || { x: 50 + index * 30, y: 50 + index * 30 };
             
             return (
               <motion.div
                 key={win.windowId}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1, x: pos.x, y: pos.y }}
-                exit={{ scale: 0.8, opacity: 0 }}
+                exit={{ scale: 0.8, opacity: 0, transition: { duration: 0.2 } }}
                 drag
                 dragMomentum={false}
-                onDragEnd={(e, info) => handleDragEnd(win.windowId, info)}
-                onClick={() => setActiveWindow(win.windowId)}
-                className={`absolute w-[600px] h-[400px] rounded-lg overflow-hidden shadow-2xl ${
+                onDragEnd={(e, info) => handleIframeDragEnd(win.windowId, info)}
+                onClick={() => setActiveIframeWindow(win.windowId)}
+                className={`absolute w-[90vw] max-w-[1200px] h-[75vh] max-h-[700px] rounded-lg overflow-hidden shadow-2xl ${
                   isWindows 
                     ? "bg-gray-900/95 backdrop-blur-xl border border-white/10" 
                     : "bg-white/90 backdrop-blur-xl border border-white/20"
                 }`}
                 style={{ zIndex }}
               >
-                {/* Window Title Bar */}
+                {/* Browser Title Bar */}
                 <div 
                   className={`h-10 flex items-center justify-between px-4 cursor-move ${
                     isWindows ? "bg-gray-800/50" : "bg-gray-100/50"
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded overflow-hidden">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-5 h-5 rounded overflow-hidden flex-shrink-0">
                       <Logo />
                     </div>
                     <span className={`text-sm font-medium ${isWindows ? "text-white" : "text-gray-800"}`}>
                       {win.name}
                     </span>
+                    {/* URL Bar */}
+                    <div className={`flex-1 max-w-xl mx-4 px-3 py-1 rounded text-xs ${
+                      isWindows ? "bg-gray-700/50 text-gray-300" : "bg-white/50 text-gray-600"
+                    }`}>
+                      {win.url}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button className={`w-6 h-6 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
-                      <Minus className="w-3 h-3" />
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <button className={`w-6 h-6 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
+                    <button className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
                       <Square className="w-3 h-3" />
                     </button>
                     <button 
-                      onClick={(e) => closeWindow(win.windowId, e)}
-                      className={`w-6 h-6 flex items-center justify-center rounded ${isWindows ? "hover:bg-red-500" : "hover:bg-red-400 hover:text-white"}`}
+                      onClick={(e) => closeIframeWindow(win.windowId, e)}
+                      className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-red-500" : "hover:bg-red-400 hover:text-white"}`}
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
                 
-                {/* Window Content */}
-                <div className="h-[calc(100%-2.5rem)] flex items-center justify-center p-8" style={{
-                  background: isWindows 
-                    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
-                    : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
-                }}>
-                  <div className="text-center">
-                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden shadow-xl">
-                      <Logo />
+                {/* Browser Content - Iframe */}
+                <div className="relative h-[calc(100%-2.5rem)] bg-white">
+                  {win.isLoading && (
+                    <div className={`absolute inset-0 flex items-center justify-center ${
+                      isWindows ? "bg-gray-900" : "bg-gray-100"
+                    }`}>
+                      <div className="text-center">
+                        <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                        <p className={`${isWindows ? "text-white" : "text-gray-800"} font-medium`}>Loading {win.name}...</p>
+                      </div>
                     </div>
-                    <p className={`text-lg font-medium mb-2 ${isWindows ? "text-white" : "text-gray-800"}`}>{win.name}</p>
-                    <p className={`text-sm mb-6 ${isWindows ? "text-gray-400" : "text-gray-600"}`}>Ready to open</p>
-                    <Button 
-                      onClick={() => navigate(createPageUrl(win.path))}
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold px-6 py-2 rounded-full shadow-lg"
-                    >
-                      Open Full App
-                    </Button>
-                  </div>
+                  )}
+                  <iframe
+                    src={win.url}
+                    className="w-full h-full border-0"
+                    onLoad={() => handleIframeLoad(win.windowId)}
+                    title={win.name}
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+                  />
                 </div>
               </motion.div>
             );
@@ -379,12 +443,28 @@ export default function TTTOS() {
                         <p className="text-gray-400 text-xs">{user?.email || ""}</p>
                       </div>
                     </div>
-                    <Input
-                      placeholder="Search apps..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                    />
+                    <div className="flex gap-2 mb-3">
+                      <Input
+                        placeholder="Search apps..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 flex-1"
+                      />
+                      <Button
+                        onClick={() => {
+                          const filtered = OS_APPS.filter(app => 
+                            app.name.toLowerCase().includes(searchQuery.toLowerCase())
+                          );
+                          if (filtered.length > 0) {
+                            openAppInWindow(filtered[0]);
+                          }
+                        }}
+                        className="bg-cyan-500 hover:bg-cyan-600"
+                        size="sm"
+                      >
+                        Open
+                      </Button>
+                    </div>
                   </div>
                   <div className="p-2 max-h-64 overflow-y-auto">
                     {OS_APPS.filter(app => 
@@ -394,7 +474,7 @@ export default function TTTOS() {
                       return (
                         <button
                           key={app.path}
-                          onClick={() => openApp(app)}
+                          onClick={() => openAppInWindow(app)}
                           className="w-full flex items-center gap-3 p-2 rounded hover:bg-white/10 transition-colors"
                         >
                           <div className="w-8 h-8 rounded overflow-hidden">
@@ -421,13 +501,13 @@ export default function TTTOS() {
 
           {/* Taskbar Apps */}
           <div className="flex items-center gap-2">
-            {openWindows.map((win) => {
+            {iframeWindows.map((win) => {
               const Logo = win.logo;
-              const isActive = activeWindow === win.windowId;
+              const isActive = activeIframeWindow === win.windowId;
               return (
                 <button
                   key={win.windowId}
-                  onClick={() => setActiveWindow(win.windowId)}
+                  onClick={() => setActiveIframeWindow(win.windowId)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all ${
                     isActive 
                       ? "bg-white/20 border-b-2 border-cyan-400" 
@@ -486,13 +566,13 @@ export default function TTTOS() {
             <div className="flex items-end gap-2 p-3 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl">
               {OS_APPS.map((app) => {
                 const Logo = app.logo;
-                const isOpen = openWindows.some(w => w.path === app.path);
+                const isOpen = iframeWindows.some(w => w.path === app.path);
                 return (
                   <motion.button
                     key={app.path}
                     whileHover={{ scale: 1.2, y: -10 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => openApp(app)}
+                    onClick={() => openAppInWindow(app)}
                     className="relative group"
                   >
                     <div className="w-12 h-12 rounded-xl shadow-lg overflow-hidden">
