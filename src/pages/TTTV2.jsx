@@ -238,12 +238,12 @@ export default function TTTV2Page() {
         {/* Mobile: back button */}
         <button 
           onClick={() => navigate(-1)} 
-          className="sm:hidden flex items-center gap-1.5 h-12 min-w-[72px] px-3 rounded-xl active:bg-zinc-200/70 touch-manipulation text-zinc-500 hover:text-zinc-900 transition-colors"
-          style={{ touchAction: 'manipulation', minHeight: '44px' }}
+          className="sm:hidden flex items-center gap-1.5 h-11 min-w-[80px] ml-1 px-3 rounded-xl active:scale-95 transition-all duration-150 ease-out text-zinc-500"
+          style={{ touchAction: 'manipulation', minHeight: '44px', WebkitTapHighlightColor: 'transparent' }}
           aria-label="Go back"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-[12px] font-medium">Back</span>
+          <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+          <span className="text-[13px] font-semibold">Back</span>
         </button>
         
         {/* Desktop: logo link */}
@@ -289,8 +289,8 @@ export default function TTTV2Page() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden flex items-center justify-center w-10 h-10 rounded-lg active:bg-zinc-200/70 touch-manipulation"
-            style={{ touchAction: 'manipulation', minHeight: '44px', minWidth: '44px' }}
+            className="sm:hidden flex items-center justify-center w-11 h-11 rounded-xl active:scale-90 transition-all duration-150 ease-out"
+            style={{ touchAction: 'manipulation', minHeight: '44px', minWidth: '44px', WebkitTapHighlightColor: 'transparent' }}
             aria-label="Menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5 text-zinc-900" /> : <Menu className="w-5 h-5 text-zinc-600" />}
