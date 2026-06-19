@@ -122,9 +122,14 @@ Keep it punchy, visionary, and practical.`,
 
       {/* Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-white/80 backdrop-blur-2xl border-b border-zinc-100">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-900 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-[13px] font-medium">Back</span>
+        <button 
+          onClick={() => navigate(-1)} 
+          className="flex items-center justify-center gap-1.5 h-full px-4 -ml-3 rounded-full active:bg-zinc-100 transition-colors duration-150 text-zinc-400 cursor-pointer"
+          style={{ touchAction: 'manipulation', minHeight: '48px', minWidth: '88px', WebkitTapHighlightColor: 'transparent' }}
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+          <span className="text-[15px] font-semibold select-none">Back</span>
         </button>
         <span className="text-[15px] font-[800] tracking-tight text-zinc-900">Idea Lab</span>
         <Link to="/TTTV2" className="text-[12px] font-semibold text-zinc-400 hover:text-zinc-700 transition-colors">

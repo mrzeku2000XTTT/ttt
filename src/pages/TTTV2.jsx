@@ -235,15 +235,15 @@ export default function TTTV2Page() {
 
       {/* ── nav ── */}
       <nav className="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-5 bg-[#F5F5F7]/70 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-200/50">
-        {/* Mobile: back button */}
+        {/* Mobile: back button — full-height pill for iOS touch */}
         <button 
           onClick={() => navigate(-1)} 
-          className="sm:hidden flex items-center gap-1.5 h-11 min-w-[80px] ml-1 px-3 rounded-xl active:scale-95 transition-all duration-150 ease-out text-zinc-500"
-          style={{ touchAction: 'manipulation', minHeight: '44px', WebkitTapHighlightColor: 'transparent' }}
+          className="sm:hidden flex items-center justify-center gap-1.5 h-full px-4 -ml-2 rounded-full active:bg-zinc-200/70 transition-colors duration-150 text-zinc-500 cursor-pointer"
+          style={{ touchAction: 'manipulation', minHeight: '56px', minWidth: '88px', WebkitTapHighlightColor: 'transparent' }}
           aria-label="Go back"
         >
-          <ArrowLeft className="w-4 h-4 flex-shrink-0" />
-          <span className="text-[13px] font-semibold">Back</span>
+          <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+          <span className="text-[15px] font-semibold select-none">Back</span>
         </button>
         
         {/* Desktop: logo link */}
