@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
-  CheckCircle2, ExternalLink, ArrowUpRight,
+  CheckCircle2, ExternalLink, ArrowUpRight, ArrowLeft,
   ChevronRight, ChevronDown, Monitor, Upload, X,
-  Volume2, VolumeX, LogIn, LogOut, Sparkles
+  Volume2, VolumeX, LogIn, LogOut, Sparkles, Menu
 } from "lucide-react";
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
@@ -89,6 +89,7 @@ export default function TTTV2Page() {
   const [navigating, setNavigating] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [portalOrigin, setPortalOrigin] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleOpenV3 = (e) => {
     e.preventDefault();
@@ -234,10 +235,24 @@ export default function TTTV2Page() {
 
       {/* ── nav ── */}
       <nav className="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-5 bg-[#F5F5F7]/70 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-200/50">
-        <Link to="/" className="flex items-center gap-1.5 group h-14 min-w-[72px] -ml-3 px-3 rounded-xl active:bg-zinc-200/70 touch-manipulation" style={{ touchAction: 'manipulation' }} title="Go to TTT landing page" aria-label="Go to TTT landing page">
+        {/* Mobile: back button */}
+        <button 
+          onClick={() => navigate(-1)} 
+          className="sm:hidden flex items-center gap-1.5 h-12 min-w-[72px] px-3 rounded-xl active:bg-zinc-200/70 touch-manipulation text-zinc-500 hover:text-zinc-900 transition-colors"
+          style={{ touchAction: 'manipulation', minHeight: '44px' }}
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-[12px] font-medium">Back</span>
+        </button>
+        
+        {/* Desktop: logo link */}
+        <Link to="/" className="hidden sm:flex items-center gap-1.5 group h-14 min-w-[72px] -ml-3 px-3 rounded-xl active:bg-zinc-200/70 touch-manipulation" style={{ touchAction: 'manipulation' }} title="Go to TTT landing page" aria-label="Go to TTT landing page">
           <span className="text-[15px] font-[900] tracking-tight text-zinc-900 group-hover:text-cyan-600 transition-colors">TTT</span>
           <span className="text-[9px] font-bold bg-black text-white px-1.5 py-[1px] rounded">2.0</span>
         </Link>
+        
+        {/* Desktop nav links */}
         <div className="hidden sm:flex items-center gap-6 text-[13px] font-medium text-zinc-500">
           <Link to="/Explore" className="hover:text-zinc-900 transition-colors">Explore</Link>
           <Link to="/AppStoreV2" className="hover:text-zinc-900 transition-colors">Products</Link>
@@ -250,6 +265,7 @@ export default function TTTV2Page() {
           <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
+        
         <div className="flex items-center gap-2">
           {isAdmin && (
             <button
@@ -269,8 +285,61 @@ export default function TTTV2Page() {
             Open TTT
           </Link>
           <Base44LoginButton />
+          
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="sm:hidden flex items-center justify-center w-10 h-10 rounded-lg active:bg-zinc-200/70 touch-manipulation"
+            style={{ touchAction: 'manipulation', minHeight: '44px', minWidth: '44px' }}
+            aria-label="Menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5 text-zinc-900" /> : <Menu className="w-5 h-5 text-zinc-600" />}
+          </button>
         </div>
       </nav>
+      
+      {/* Mobile dropdown menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm sm:hidden"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="fixed top-14 left-0 right-0 z-50 sm:hidden bg-white/95 backdrop-blur-2xl border-b border-zinc-200/50 shadow-lg"
+            >
+              <div className="px-5 py-4 space-y-1">
+                <Link to="/Explore" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">Explore</Link>
+                <Link to="/AppStoreV2" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">Products</Link>
+                <Link to="/WhatIsKaspa" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">Kaspa</Link>
+                <Link to="/TTTOS" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">
+                  <Monitor className="w-4 h-4" /> TTT OS
+                </Link>
+                <a href="#tttv" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">TTTV</a>
+                <a href="#community" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">Community</a>
+                <a href="#news" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">What's New</a>
+                <a href="#roadmap" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">Roadmap</a>
+                <div className="pt-3 mt-3 border-t border-zinc-100">
+                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-bold text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">
+                    <span className="flex items-center gap-2">
+                      <span>TTT</span>
+                      <span className="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded">2.0</span>
+                      <span className="text-[12px] font-normal text-zinc-400">— Home</span>
+                    </span>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Navigation loading overlay — prevents flash of unstyled content */}
       {navigating && (
