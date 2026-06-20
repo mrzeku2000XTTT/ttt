@@ -235,7 +235,15 @@ export default function TTTV2Page() {
 
       {/* ── nav ── */}
       <nav className="fixed top-0 inset-x-0 z-50 h-14 flex items-center justify-between px-5 bg-[#F5F5F7]/70 backdrop-blur-2xl backdrop-saturate-150 border-b border-zinc-200/50">
-        {/* Desktop: logo link */}
+        {/* TTT logo — mobile */}
+        <Link to="/" className="sm:hidden flex items-center gap-1.5 h-full px-2 -ml-2 rounded-full active:bg-zinc-200/70 transition-colors cursor-pointer"
+          style={{ touchAction: 'manipulation', minHeight: '56px', WebkitTapHighlightColor: 'transparent' }}
+          aria-label="Go to TTT landing page">
+          <span className="text-[15px] font-[900] tracking-tight text-zinc-900">TTT</span>
+          <span className="text-[9px] font-bold bg-black text-white px-1.5 py-[1px] rounded">2.0</span>
+        </Link>
+
+        {/* TTT logo — desktop */}
         <Link to="/" className="hidden sm:flex items-center gap-1.5 group h-14 min-w-[72px] -ml-3 px-3 rounded-xl active:bg-zinc-200/70 touch-manipulation" style={{ touchAction: 'manipulation' }} title="Go to TTT landing page" aria-label="Go to TTT landing page">
           <span className="text-[15px] font-[900] tracking-tight text-zinc-900 group-hover:text-cyan-600 transition-colors">TTT</span>
           <span className="text-[9px] font-bold bg-black text-white px-1.5 py-[1px] rounded">2.0</span>
