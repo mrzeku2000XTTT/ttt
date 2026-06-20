@@ -637,8 +637,7 @@ export default function TTTV2Page() {
       {/* KAI floating chat */}
       <KaspaAvatarChat />
 
-      {/* Mobile nav toast */}
-      <MobileNavToast />
+
 
       {/* Cookie/privacy notice */}
       <CookieNotice />
