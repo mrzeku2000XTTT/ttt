@@ -215,11 +215,7 @@ const AuthenticatedApp = () => {
       <Route path="/DoubleONotes" element={<DoubleONotesPage />} />
       <Route path="/DoubleOWorkshop" element={<DoubleOWorkshopPage />} />
       <Route path="/WorldWalker" element={<WorldWalkerPage />} />
-      <Route path="/MotionFly" element={
-        <LayoutWrapper currentPageName="MotionFly">
-          <MotionFlyPage />
-        </LayoutWrapper>
-      } />
+      <Route path="/MotionFly" element={<MotionFlyPage />} />
       <Route path="/Pingguo" element={<PingguoPage />} />
       <Route path="/ORBT" element={<ORBTPage />} />
       <Route path="/VideoStudio" element={<VideoStudioPage />} />
