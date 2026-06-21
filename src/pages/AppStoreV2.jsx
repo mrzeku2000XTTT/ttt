@@ -74,7 +74,8 @@ export default function AppStoreV2Page() {
         <div className="flex items-center justify-between w-full h-14">
           <Link
             to="/TTTV2"
-            className="flex items-center gap-1.5 text-zinc-700 hover:text-zinc-900 transition-colors h-11 px-3 -ml-1 rounded-lg active:bg-zinc-200/60"
+            className="flex items-center gap-1.5 text-zinc-700 hover:text-zinc-900 transition-colors h-14 px-3 -ml-3 rounded-lg active:bg-zinc-200/60"
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-[14px] font-medium">Back</span>
