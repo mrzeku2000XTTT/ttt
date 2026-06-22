@@ -539,8 +539,7 @@ export default function TipPage() {
                                     </span>
                                   )}
                                 </div>
-                                {!isCur && (
-                                  <button
+                                <button
                                     onClick={e => {
                                       e.stopPropagation();
                                       const params = new URLSearchParams({
@@ -555,7 +554,6 @@ export default function TipPage() {
                                     style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
                                     💼 HIRE
                                   </button>
-                                )}
                               </div>
                               {(user.agent_persona || (isCur && currentUser?.agent_persona)) && (
                                 <p className="text-xs leading-relaxed mb-2" style={{ color: "rgba(196,181,253,0.7)" }}>
@@ -575,23 +573,21 @@ export default function TipPage() {
                               {agentRate && (
                                 <p className="text-xs mb-3 font-mono" style={{ color: "#fbbf24" }}>⚡ {agentRate} KAS / hour</p>
                               )}
-                              {!isCur && (
-                                <button
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    const params = new URLSearchParams({
-                                      name: agentName,
-                                      ...(agentSkills ? { skills: agentSkills } : {}),
-                                      ...(agentRate ? { rate: agentRate } : {}),
-                                      ...(user.email ? { agent: user.email } : {}),
-                                    });
-                                    navigate(`/Hire?${params.toString()}`);
-                                  }}
-                                  className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
-                                  style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)" }}>
-                                  💼 HIRE
-                                </button>
-                              )}
+                              <button
+                                   onClick={e => {
+                                     e.stopPropagation();
+                                     const params = new URLSearchParams({
+                                       name: agentName,
+                                       ...(agentSkills ? { skills: agentSkills } : {}),
+                                       ...(agentRate ? { rate: agentRate } : {}),
+                                       ...(user.email ? { agent: user.email } : {}),
+                                     });
+                                     navigate(`/Hire?${params.toString()}`);
+                                   }}
+                                   className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                                   style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)" }}>
+                                   💼 HIRE
+                                 </button>
                             </div>
                           )}
 
