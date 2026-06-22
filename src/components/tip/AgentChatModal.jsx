@@ -21,6 +21,18 @@ export default function AgentChatModal({
 }) {
   if (!chatUser) return null;
 
+  // Strip markdown bold (**) and format numbers in chat messages
+  const formatMessage = (text) => {
+    if (!text) return "";
+    // Remove markdown bold syntax
+    let formatted = text.replace(/\*\*/g, "");
+    // Format numbers with commas (e.g., 1000 -> 1,000)
+    formatted = formatted.replace(/\b(\d+)\s*KAS\b/gi, (match, num) => {
+      return `${parseInt(num).toLocaleString()} KAS`;
+    });
+    return formatted;
+  };
+
   const commonContent = (
     <>
       {/* Header */}
@@ -103,7 +115,7 @@ export default function AgentChatModal({
             <div key={i} className="space-y-2">
               <div className="flex justify-start gap-2">
                 <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5"><img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" /></div>
-                <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm text-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(220,240,255,0.85)" }}>{msg.content}</div>
+                <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm text-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(220,240,255,0.85)" }}>{formatMessage(msg.content)}</div>
               </div>
               <div className="pl-10 flex flex-wrap gap-1.5">
                 {msg.options.map(opt => (
@@ -118,7 +130,7 @@ export default function AgentChatModal({
             <div key={i} className="space-y-2">
               <div className="flex justify-start gap-2">
                 <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5"><img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" /></div>
-                <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm text-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(220,240,255,0.85)" }}>{msg.content}</div>
+                <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm text-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(220,240,255,0.85)" }}>{formatMessage(msg.content)}</div>
               </div>
               <div className="pl-10 flex gap-2">
                 <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(0,30,80,0.5)", border: "1px solid rgba(185,241,138,0.2)" }}>
@@ -135,7 +147,7 @@ export default function AgentChatModal({
               {!isUser && <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5"><img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" /></div>}
               <div className="max-w-[75%] px-3 py-2.5 rounded-2xl text-sm leading-relaxed"
                 style={isUser ? { background: "rgba(185,241,138,0.15)", color: "#b9f18a", border: "1px solid rgba(185,241,138,0.2)", borderRadius: "1rem 1rem 0.25rem 1rem" } : { background: "rgba(255,255,255,0.05)", color: "rgba(220,240,255,0.85)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem 1rem 1rem 0.25rem" }}>
-                {msg.content}
+                {formatMessage(msg.content)}
               </div>
             </div>
           );
