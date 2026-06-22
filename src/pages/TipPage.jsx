@@ -429,6 +429,34 @@ export default function TipPage() {
     }
   };
 
+  const handleAcceptJob = async (job) => {
+    // Find the agent who posted this job
+    const agent = users.find(u => u.email === job.hirer_email);
+    if (!agent) {
+      alert("Could not find the job poster");
+      return;
+    }
+    // Update job status
+    try {
+      await base44.entities.JobRequest.update(job.id, { status: "in_progress" });
+      setAllJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: "in_progress" } : j));
+    } catch (err) {
+      console.error("Failed to update job status:", err);
+    }
+    // Redirect to chat with the agent
+    setShowJobsBoard(false);
+    setSelectedJob(null);
+    openChat(null, agent);
+    // Add a system message about the accepted job
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, {
+        role: "assistant",
+        content: `🎉 Great! I've accepted the job **"${job.title}"**.\n\nBudget: **${job.budget_kas?.toLocaleString()} KAS** (${job.timeline})\n\nLet's discuss the details and get started!`,
+        type: "text"
+      }]);
+    }, 500);
+  };
+
   const handleUrlSubmit = async (url) => {
     const answers = hireFlow?.answers || {};
     const agentN = chatUser?.agent_name || chatUser?.username;
@@ -530,7 +558,45 @@ Return JSON with:
   };
 
   const sendChatMessage = async () => {
-    if (!chatInput.trim() || chatLoading || hireFlow) return;
+    if (!chatInput.trim() || chatLoading) return;
+    
+    // If in hire flow, treat input as answer to current question
+    if (hireFlow && hireFlow.step < 5) {
+      const userMsg = chatInput.trim();
+      setChatInput("");
+      setChatMessages(prev => [...prev, { role: "user", content: userMsg, type: "text" }]);
+      
+      const qKey = HIRE_QUESTIONS[hireFlow.step].id;
+      const newAnswers = { ...hireFlow.answers, [qKey]: userMsg };
+      const nextStep = hireFlow.step + 1;
+      
+      if (nextStep < HIRE_QUESTIONS.length) {
+        setHireFlow({ step: nextStep, answers: newAnswers });
+        setTimeout(() => {
+          setChatMessages(prev => [...prev, {
+            role: "assistant",
+            content: `Got it! **${HIRE_QUESTIONS[nextStep].q}**`,
+            type: "quickreply",
+            options: HIRE_QUESTIONS[nextStep].options,
+            step: nextStep
+          }]);
+        }, 400);
+      } else {
+        // Ask for URL
+        setHireFlow({ step: 4, answers: newAnswers });
+        setTimeout(() => {
+          setChatMessages(prev => [...prev, {
+            role: "assistant",
+            content: `Almost done! Do you have a project link or reference URL? (Optional — paste it below or tap Skip)`,
+            type: "url_input",
+            step: 4
+          }]);
+        }, 400);
+      }
+      return;
+    }
+    
+    // Normal chat message
     const userMsg = chatInput.trim();
     setChatInput("");
     const newMsgs = [...chatMessages, { role: "user", content: userMsg, type: "text" }];
@@ -1317,6 +1383,25 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                           {selectedJob.hirer_wallet && <code className="text-[9px] font-mono ml-1" style={{ color: "rgba(96,165,250,0.4)" }}>{selectedJob.hirer_wallet?.slice(0,10)}...{selectedJob.hirer_wallet?.slice(-6)}</code>}
                         </div>
                       )}
+                      {selectedJob.project_url && (
+                        <div className="px-4 pb-3">
+                          <div className="flex items-center gap-2 p-2 rounded-xl" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.2)" }}>
+                            <Globe className="w-3 h-3" style={{ color: "rgba(103,232,249,0.5)" }} />
+                            <a href={selectedJob.project_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold truncate flex-1" style={{ color: "#67e8f9" }}>{selectedJob.project_url}</a>
+                            <ExternalLink className="w-3 h-3" style={{ color: "rgba(103,232,249,0.4)" }} />
+                          </div>
+                        </div>
+                      )}
+                      {/* Accept Job Button */}
+                      {selectedJob.target_agent_email && selectedJob.target_agent_email === currentUser?.email && selectedJob.status === "open" && (
+                        <div className="px-4 pb-4">
+                          <button onClick={() => handleAcceptJob(selectedJob)}
+                            className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
+                            style={{ background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)", border: "1px solid rgba(34,197,94,0.4)", boxShadow: "0 4px 16px rgba(34,197,94,0.3)" }}>
+                            ✓ Accept Job & Open Chat
+                          </button>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1521,22 +1606,25 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Input bar */}
-                {!hireFlow && (
-                  <div className="flex-shrink-0 px-5 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                      <input value={chatInput} onChange={e => setChatInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
-                        placeholder={`Message ${chatUser.agent_name || chatUser.username}...`}
-                        className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/20" />
-                      <button onClick={sendChatMessage} disabled={!chatInput.trim() || chatLoading}
-                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all"
-                        style={{ background: "rgba(0,100,255,0.5)" }}>
-                        <Send className="w-3.5 h-3.5 text-white" />
-                      </button>
-                    </div>
+                {/* Input bar - always visible */}
+                <div className="flex-shrink-0 px-5 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                      placeholder={hireFlow ? "Or type your answer..." : `Message ${chatUser.agent_name || chatUser.username}...`}
+                      className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/20" />
+                    <button onClick={sendChatMessage} disabled={!chatInput.trim() || chatLoading}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all"
+                      style={{ background: "rgba(0,100,255,0.5)" }}>
+                      <Send className="w-3.5 h-3.5 text-white" />
+                    </button>
                   </div>
-                )}
+                  {!hireFlow && (
+                    <p className="text-center text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.12)" }}>
+                      Tap <strong style={{ color: "rgba(196,181,253,0.4)" }}>Hire</strong> to post a job · AI-powered
+                    </p>
+                  )}
+                </div>
               </motion.div>
             </div>
 
@@ -1650,22 +1738,25 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Input bar */}
-                {!hireFlow && (
-                  <div className="flex-shrink-0 px-4 pb-6 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}>
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                      <input value={chatInput} onChange={e => setChatInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
-                        placeholder={`Message ${chatUser.agent_name || chatUser.username}...`}
-                        className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/20" />
-                      <button onClick={sendChatMessage} disabled={!chatInput.trim() || chatLoading}
-                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all"
-                        style={{ background: "rgba(0,100,255,0.5)" }}>
-                        <Send className="w-3.5 h-3.5 text-white" />
-                      </button>
-                    </div>
+                {/* Input bar - always visible */}
+                <div className="flex-shrink-0 px-4 pb-6 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}>
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                      placeholder={hireFlow ? "Or type your answer..." : `Message ${chatUser.agent_name || chatUser.username}...`}
+                      className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/20" />
+                    <button onClick={sendChatMessage} disabled={!chatInput.trim() || chatLoading}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all"
+                      style={{ background: "rgba(0,100,255,0.5)" }}>
+                      <Send className="w-3.5 h-3.5 text-white" />
+                    </button>
                   </div>
-                )}
+                  {!hireFlow && (
+                    <p className="text-center text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.12)" }}>
+                      Tap <strong style={{ color: "rgba(196,181,253,0.4)" }}>Hire</strong> to post a job · AI-powered
+                    </p>
+                  )}
+                </div>
               </motion.div>
             </div>
           </>
