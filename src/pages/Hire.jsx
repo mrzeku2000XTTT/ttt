@@ -354,91 +354,121 @@ Return JSON with:
 
         {/* ── INSTRUCTIONS ── */}
         {stage === "instructions" && instructions && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4" style={{ color: "#a78bfa" }} />
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(139,92,246,0.6)" }}>
-                {agentName} · Your Instructions
-              </p>
-            </div>
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
 
-            <div className="p-4 rounded-2xl" style={{ background: "rgba(80,40,140,0.15)", border: "1px solid rgba(139,92,246,0.3)" }}>
-              <p className="text-sm text-white leading-relaxed">{instructions.summary}</p>
-              <div className="flex gap-4 mt-3">
+            {/* Agent summary banner */}
+            <div className="relative overflow-hidden rounded-2xl p-4"
+              style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.25), rgba(168,85,247,0.12))", border: "1px solid rgba(167,139,250,0.3)" }}>
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
+                style={{ background: "radial-gradient(circle, #a855f7, transparent)", transform: "translate(30%, -30%)" }} />
+              <div className="flex items-center gap-2 mb-2">
+                <Bot className="w-4 h-4" style={{ color: "#a78bfa" }} />
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(167,139,250,0.7)" }}>{agentName} · Mission Brief</span>
+              </div>
+              <p className="text-sm text-white font-medium leading-relaxed">{instructions.summary}</p>
+              <div className="flex gap-3 mt-3">
                 {instructions.estimatedTime && (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" style={{ color: "#a78bfa" }} />
-                    <span className="text-xs" style={{ color: "rgba(196,181,253,0.6)" }}>{instructions.estimatedTime}</span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                    style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.2)" }}>
+                    <Clock className="w-3 h-3" style={{ color: "#a78bfa" }} />
+                    <span className="text-[11px] font-semibold" style={{ color: "rgba(196,181,253,0.8)" }}>{instructions.estimatedTime}</span>
                   </div>
                 )}
                 {instructions.estimatedKAS && (
-                  <div className="flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5" style={{ color: "#fbbf24" }} />
-                    <span className="text-xs font-mono" style={{ color: "#fbbf24" }}>{instructions.estimatedKAS} KAS</span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                    style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)" }}>
+                    <Zap className="w-3 h-3" style={{ color: "#fbbf24" }} />
+                    <span className="text-[11px] font-bold font-mono" style={{ color: "#fbbf24" }}>{instructions.estimatedKAS} KAS</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(196,181,253,0.4)" }}>How to Complete This Job</p>
-              {instructions.steps?.map((step, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
-                  className="flex gap-3 p-3.5 rounded-2xl"
-                  style={{ background: "rgba(0,12,35,0.8)", border: "1px solid rgba(139,92,246,0.15)" }}>
-                  <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 text-white font-black text-xs"
-                    style={{ background: "linear-gradient(135deg, #6d28d9, #a855f7)" }}>
-                    {step.stepNumber || i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white">{step.title}</p>
-                    <p className="text-xs mt-1 leading-relaxed" style={{ color: "rgba(200,220,255,0.6)" }}>{step.description}</p>
-                    {step.tip && (
-                      <div className="mt-2 flex items-start gap-1.5 p-2 rounded-lg" style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)" }}>
-                        <span className="text-xs">💡</span>
-                        <p className="text-[11px] leading-relaxed" style={{ color: "rgba(251,191,36,0.7)" }}>{step.tip}</p>
+            {/* Steps */}
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.15em] mb-4" style={{ color: "rgba(167,139,250,0.45)" }}>
+                Step-by-Step Instructions
+              </p>
+              <div className="relative">
+                {/* Vertical connector line */}
+                <div className="absolute left-[18px] top-8 bottom-8 w-px" style={{ background: "linear-gradient(to bottom, rgba(109,40,217,0.6), rgba(109,40,217,0.1))" }} />
+                <div className="space-y-3">
+                  {instructions.steps?.map((step, i) => (
+                    <motion.div key={i}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.07, ease: "easeOut" }}>
+                      <div className="flex gap-3">
+                        {/* Step number bubble */}
+                        <div className="relative flex-shrink-0">
+                          <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-white font-black text-sm z-10 relative"
+                            style={{ background: "linear-gradient(135deg, #6d28d9, #a855f7)", boxShadow: "0 4px 16px rgba(120,50,255,0.4)" }}>
+                            {step.stepNumber || i + 1}
+                          </div>
+                        </div>
+                        {/* Card */}
+                        <div className="flex-1 pb-1 rounded-2xl overflow-hidden"
+                          style={{ background: "rgba(8,4,28,0.85)", border: "1px solid rgba(109,40,217,0.2)" }}>
+                          {/* Card header */}
+                          <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(109,40,217,0.12)" }}>
+                            <p className="text-white font-bold text-sm">{step.title}</p>
+                          </div>
+                          {/* Card body */}
+                          <div className="px-4 py-3">
+                            <p className="text-xs leading-relaxed" style={{ color: "rgba(200,215,255,0.6)" }}>{step.description}</p>
+                            {step.tip && (
+                              <div className="mt-3 flex gap-2.5 p-2.5 rounded-xl"
+                                style={{ background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.18)" }}>
+                                <span className="text-sm flex-shrink-0">💡</span>
+                                <p className="text-[11px] leading-relaxed" style={{ color: "rgba(253,224,110,0.75)" }}>{step.tip}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
             </div>
 
+            {/* Requirements checklist */}
             {instructions.requirements?.length > 0 && (
-              <div className="p-4 rounded-2xl space-y-2" style={{ background: "rgba(0,40,100,0.12)", border: "1px solid rgba(59,130,246,0.2)" }}>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(96,165,250,0.5)" }}>Your Upload Must Include</p>
-                {instructions.requirements.map((req, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#60a5fa" }} />
-                    <p className="text-xs leading-relaxed" style={{ color: "rgba(200,225,255,0.65)" }}>{req}</p>
-                  </div>
-                ))}
+              <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(59,130,246,0.25)" }}>
+                <div className="px-4 py-3" style={{ background: "rgba(37,99,235,0.12)", borderBottom: "1px solid rgba(59,130,246,0.15)" }}>
+                  <p className="text-xs font-black uppercase tracking-widest" style={{ color: "rgba(96,165,250,0.7)" }}>✓ Upload Must Include</p>
+                </div>
+                <div className="px-4 py-3 space-y-2.5" style={{ background: "rgba(0,20,60,0.4)" }}>
+                  {instructions.requirements.map((req, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{ background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.3)" }}>
+                        <CheckCircle className="w-2.5 h-2.5" style={{ color: "#60a5fa" }} />
+                      </div>
+                      <p className="text-xs leading-relaxed" style={{ color: "rgba(200,225,255,0.65)" }}>{req}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="video/*,image/*,audio/*,.pdf,.doc,.docx,.txt,.zip"
-              className="hidden"
-              onChange={handleFileSelect}
-            />
+            {/* Upload CTA */}
+            <input ref={fileInputRef} type="file" accept="video/*,image/*,audio/*,.pdf,.doc,.docx,.txt,.zip" className="hidden" onChange={handleFileSelect} />
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="w-full py-3.5 rounded-2xl text-sm font-black text-white transition-all disabled:opacity-40 hover:opacity-90 flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-2xl text-sm font-black text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
               style={{ background: "linear-gradient(135deg, #059669, #10b981)", border: "1px solid rgba(16,185,129,0.4)", boxShadow: "0 8px 32px rgba(16,185,129,0.25)" }}>
               {isUploading
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</>
                 : <><Upload className="w-4 h-4" /> Upload Your Completed Work</>}
             </button>
-            <p className="text-center text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
-              Video, image, audio, PDF, ZIP — any file type supported
+            <p className="text-center text-[11px]" style={{ color: "rgba(255,255,255,0.18)" }}>
+              Video · Image · Audio · PDF · ZIP — any format supported
             </p>
 
             <button onClick={() => setStage("brief")} className="w-full text-xs py-2"
-              style={{ color: "rgba(196,181,253,0.35)" }}>
+              style={{ color: "rgba(196,181,253,0.3)" }}>
               ← Edit job brief
             </button>
           </motion.div>
