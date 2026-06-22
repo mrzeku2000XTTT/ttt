@@ -119,6 +119,7 @@ export const NODE_TEMPLATES = [
     tags: ["mp4", "video", "animation", "mockup", "ultramock", "canvas"],
     defaultConfig: {
       tagline: "{{result}}",
+      aspect_ratio: "16:9",
       device: "iphone",
       background: "sunset",
       preset: "spin",

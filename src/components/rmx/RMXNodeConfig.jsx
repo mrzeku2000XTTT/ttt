@@ -194,6 +194,7 @@ function getFields(type) {
     case "ultramock_mp4":
       return [
         { key: "tagline", label: "Tagline / Headline", type: "textarea", placeholder: "Your tagline here", hint: "Use {{result}} to pull text from the previous step" },
+        { key: "aspect_ratio", label: "Aspect Ratio", type: "select", options: ["16:9", "9:16"] },
         { key: "device", label: "Device", type: "select", options: ["iphone", "android", "ipad", "macbook", "imac", "browser", "none"] },
         { key: "background", label: "Background", type: "select", options: ["sunset", "ocean", "forest", "peach", "mono", "ivory", "midnight", "candy", "white", "black"] },
         { key: "preset", label: "Animation Preset", type: "select", options: ["spin", "tilt", "pop", "float", "reveal", "flip", "wobble", "zoomin", "showcase", "shake", "slide-in-left", "slide-in-right", "drop-in", "orbit", "swoop", "chat-zoom"] },
