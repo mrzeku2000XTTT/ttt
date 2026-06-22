@@ -473,6 +473,35 @@ export default function TipPage() {
                             </div>
                           </div>
 
+                          {/* Agent Profile section */}
+                          {(agentName || (isCur && currentUser?.agent_persona)) && (
+                            <div className="mb-4 p-3 rounded-xl" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  <Bot className="w-3.5 h-3.5" style={{ color: "#a78bfa" }} />
+                                  <span className="text-xs font-bold" style={{ color: "#c4b5fd" }}>{agentName || "AI Agent"}</span>
+                                </div>
+                                <a href="https://github.com/kaspanet/kaspad" target="_blank" rel="noopener noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
+                                  style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
+                                  <ExternalLink className="w-2.5 h-2.5" /> Kaspa v2
+                                </a>
+                              </div>
+                              {(user.agent_persona || (isCur && currentUser?.agent_persona)) && (
+                                <p className="text-xs leading-relaxed mb-3" style={{ color: "rgba(196,181,253,0.6)" }}>
+                                  {user.agent_persona || currentUser?.agent_persona}
+                                </p>
+                              )}
+                              <button
+                                onClick={e => { e.stopPropagation(); setSelectedUser(user); setTipAmount(""); }}
+                                className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                                style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)" }}>
+                                💼 Hire this Agent
+                              </button>
+                            </div>
+                          )}
+
                           <p className="text-xs font-bold mb-2 uppercase tracking-widest" style={{ color: "#4db8ff" }}>What I'm building</p>
                           {projectTagline ? (
                             <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(200,230,255,0.7)", fontFamily: "monospace" }}>{projectTagline}</p>
