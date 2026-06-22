@@ -1,0 +1,54 @@
+{
+  "name": "GhostFrame",
+  "type": "object",
+  "properties": {
+    "shot_run_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "frame_number": {
+      "type": "number"
+    },
+    "auto_generated_prompt": {
+      "type": "string"
+    },
+    "reference_frame_image": {
+      "type": "string"
+    },
+    "generated_image_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "generating",
+        "done",
+        "needs_regen"
+      ],
+      "default": "draft"
+    },
+    "manual_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "shot_run_id",
+    "project_id",
+    "frame_number"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

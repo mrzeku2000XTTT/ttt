@@ -1,0 +1,39 @@
+{
+  "name": "GhostFrameProject",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "locked_character_a": {
+      "type": "string"
+    },
+    "locked_character_b": {
+      "type": "string"
+    },
+    "locked_style": {
+      "type": "string"
+    },
+    "locked_environment": {
+      "type": "string"
+    },
+    "constraint_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

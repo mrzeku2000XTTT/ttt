@@ -1,0 +1,48 @@
+{
+  "name": "GhostShotRun",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "frame_count": {
+      "type": "number",
+      "default": 20
+    },
+    "starting_state": {
+      "type": "string"
+    },
+    "ending_state": {
+      "type": "string"
+    },
+    "motion_notes": {
+      "type": "string"
+    },
+    "camera_notes": {
+      "type": "string"
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "project_id",
+    "name"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

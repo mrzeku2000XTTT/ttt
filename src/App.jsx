@@ -94,6 +94,8 @@ import ORBTPage from './pages/ORBT';
 import VideoStudioPage from './pages/VideoStudio';
 import TTTBuilderPage from './pages/TTTBuilder';
 import TTTOSPage from './pages/TTTOS';
+import GhostFrameLandingPage from './pages/GhostFrameLanding';
+import GhostFrameStudioPage from './pages/GhostFrameStudio';
 import NodePage from './pages/Node';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
@@ -225,6 +227,8 @@ const AuthenticatedApp = () => {
       <Route path="/VideoStudio" element={<VideoStudioPage />} />
       <Route path="/TTTBuilder" element={<TTTBuilderPage />} />
       <Route path="/TTTOS" element={<TTTOSPage />} />
+      <Route path="/GhostFrame" element={<GhostFrameLandingPage />} />
+      <Route path="/GhostFrameStudio" element={<GhostFrameStudioPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
