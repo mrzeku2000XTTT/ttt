@@ -56,6 +56,11 @@ export default function TipPage() {
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [editAgentName, setEditAgentName] = useState("");
   const [editAgentPersona, setEditAgentPersona] = useState("");
+  const [editAgentSkills, setEditAgentSkills] = useState("");
+  const [editAgentRate, setEditAgentRate] = useState("");
+  const [editAgentAvailability, setEditAgentAvailability] = useState("available");
+  const [hireUser, setHireUser] = useState(null);
+  const [hireMessage, setHireMessage] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showZkVerification, setShowZkVerification] = useState(false);
@@ -199,6 +204,9 @@ export default function TipPage() {
     setEditAvatarUrl(currentUser?.avatar_url || "");
     setEditAgentName(currentUser?.agent_name || "");
     setEditAgentPersona(currentUser?.agent_persona || "");
+    setEditAgentSkills(currentUser?.agent_skills || "");
+    setEditAgentRate(currentUser?.agent_rate_kas || "");
+    setEditAgentAvailability(currentUser?.agent_availability || "available");
     setEditTab("profile");
     setShowEditProfile(true);
   };
@@ -227,6 +235,9 @@ export default function TipPage() {
         avatar_url: editAvatarUrl.trim(),
         agent_name: editAgentName.trim(),
         agent_persona: editAgentPersona.trim(),
+        agent_skills: editAgentSkills.trim(),
+        agent_rate_kas: editAgentRate.trim(),
+        agent_availability: editAgentAvailability,
       });
       const updated = await base44.auth.me();
       setCurrentUser(updated);
@@ -394,6 +405,9 @@ export default function TipPage() {
               const githubUrl = user.github_url || (isCur && currentUser?.github_url) || null;
               const tiptreeUrl = user.tiptree_url || (isCur && currentUser?.tiptree_url) || null;
               const agentName = user.agent_name || (isCur && currentUser?.agent_name) || null;
+              const agentSkills = user.agent_skills || (isCur && currentUser?.agent_skills) || null;
+              const agentRate = user.agent_rate_kas || (isCur && currentUser?.agent_rate_kas) || null;
+              const agentAvailability = user.agent_availability || (isCur && currentUser?.agent_availability) || null;
               const avatarUrl = getAvatarUrl(isCur ? { ...user, avatar_url: currentUser?.avatar_url || user.avatar_url } : user);
 
               return (
@@ -474,31 +488,52 @@ export default function TipPage() {
                           </div>
 
                           {/* Agent Profile section */}
-                          {(agentName || (isCur && currentUser?.agent_persona)) && (
+                          {agentName && (
                             <div className="mb-4 p-3 rounded-xl" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}>
                               <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-2">
                                   <Bot className="w-3.5 h-3.5" style={{ color: "#a78bfa" }} />
-                                  <span className="text-xs font-bold" style={{ color: "#c4b5fd" }}>{agentName || "AI Agent"}</span>
+                                  <span className="text-xs font-bold" style={{ color: "#c4b5fd" }}>{agentName}</span>
+                                  {agentAvailability && (
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
+                                      style={{ background: agentAvailability === "available" ? "rgba(34,197,94,0.2)" : "rgba(234,179,8,0.2)", color: agentAvailability === "available" ? "#4ade80" : "#fbbf24", border: `1px solid ${agentAvailability === "available" ? "rgba(34,197,94,0.4)" : "rgba(234,179,8,0.4)"}` }}>
+                                      {agentAvailability === "available" ? "● Available" : "● Busy"}
+                                    </span>
+                                  )}
                                 </div>
-                                <a href="https://github.com/kaspanet/kaspad" target="_blank" rel="noopener noreferrer"
+                                <a href="https://github.com/kaspanet/rusty-kaspa" target="_blank" rel="noopener noreferrer"
                                   onClick={e => e.stopPropagation()}
                                   className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
                                   style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
-                                  <ExternalLink className="w-2.5 h-2.5" /> Kaspa v2
+                                  <ExternalLink className="w-2.5 h-2.5" /> Toccata
                                 </a>
                               </div>
                               {(user.agent_persona || (isCur && currentUser?.agent_persona)) && (
-                                <p className="text-xs leading-relaxed mb-3" style={{ color: "rgba(196,181,253,0.6)" }}>
+                                <p className="text-xs leading-relaxed mb-2" style={{ color: "rgba(196,181,253,0.7)" }}>
                                   {user.agent_persona || currentUser?.agent_persona}
                                 </p>
                               )}
-                              <button
-                                onClick={e => { e.stopPropagation(); setSelectedUser(user); setTipAmount(""); }}
-                                className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
-                                style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)" }}>
-                                💼 Hire this Agent
-                              </button>
+                              {agentSkills && (
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                  {agentSkills.split(",").map(s => s.trim()).filter(Boolean).map(skill => (
+                                    <span key={skill} className="text-[9px] px-2 py-0.5 rounded-full font-bold"
+                                      style={{ background: "rgba(139,92,246,0.15)", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.25)" }}>
+                                      {skill}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {agentRate && (
+                                <p className="text-xs mb-3 font-mono" style={{ color: "#fbbf24" }}>⚡ {agentRate} KAS / hour</p>
+                              )}
+                              {!isCur && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setHireUser(user); setHireMessage(""); }}
+                                  className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                                  style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)" }}>
+                                  💼 Hire this Agent
+                                </button>
+                              )}
                             </div>
                           )}
 
@@ -760,20 +795,48 @@ export default function TipPage() {
                   {editTab === "agent" && <>
                     <div className="p-3 rounded-xl mb-2 flex items-center gap-2" style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)" }}>
                       <Bot className="w-4 h-4 flex-shrink-0" style={{ color: "#a78bfa" }} />
-                      <p className="text-xs" style={{ color: "rgba(196,181,253,0.8)" }}>Give yourself a custom AI agent persona visible on your profile card.</p>
+                      <p className="text-xs" style={{ color: "rgba(196,181,253,0.8)" }}>Build your agent profile — others can discover and hire you, paid in KAS via the Toccata mainnet.</p>
                     </div>
                     <div>
                       <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Agent Name</label>
-                      <input value={editAgentName} onChange={e => setEditAgentName(e.target.value)} placeholder="e.g. KaspaBot, DeFi Guide..."
+                      <input value={editAgentName} onChange={e => setEditAgentName(e.target.value)} placeholder="e.g. KaspaBot, DeFi Guide, Code Wizard..."
                         className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
                         style={{ background: "rgba(80,40,140,0.15)", border: "1px solid rgba(139,92,246,0.25)", caretColor: "#a78bfa" }} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Agent Persona / Description</label>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Persona / Description</label>
                       <textarea value={editAgentPersona} onChange={e => setEditAgentPersona(e.target.value)}
-                        placeholder="e.g. I help people navigate the Kaspa ecosystem and explain KRC-20 tokens..." rows={4}
+                        placeholder="What do you do? What problems do you solve on Kaspa?" rows={3}
                         className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none resize-none"
                         style={{ background: "rgba(80,40,140,0.15)", border: "1px solid rgba(139,92,246,0.25)", caretColor: "#a78bfa" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Skills (comma separated)</label>
+                      <input value={editAgentSkills} onChange={e => setEditAgentSkills(e.target.value)} placeholder="e.g. KRC-20, Smart Contracts, UI Design, Trading..."
+                        className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
+                        style={{ background: "rgba(80,40,140,0.15)", border: "1px solid rgba(139,92,246,0.25)", caretColor: "#a78bfa" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Rate (KAS / hour)</label>
+                      <input value={editAgentRate} onChange={e => setEditAgentRate(e.target.value)} placeholder="e.g. 500"
+                        className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm font-mono"
+                        style={{ background: "rgba(80,40,140,0.15)", border: "1px solid rgba(139,92,246,0.25)", caretColor: "#a78bfa" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Availability</label>
+                      <div className="flex gap-2">
+                        {["available", "busy"].map(opt => (
+                          <button key={opt} onClick={() => setEditAgentAvailability(opt)}
+                            className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
+                            style={{
+                              background: editAgentAvailability === opt ? (opt === "available" ? "rgba(34,197,94,0.25)" : "rgba(234,179,8,0.25)") : "rgba(80,40,140,0.1)",
+                              border: `1px solid ${editAgentAvailability === opt ? (opt === "available" ? "rgba(34,197,94,0.5)" : "rgba(234,179,8,0.5)") : "rgba(139,92,246,0.2)"}`,
+                              color: editAgentAvailability === opt ? (opt === "available" ? "#4ade80" : "#fbbf24") : "rgba(196,181,253,0.4)",
+                            }}>
+                            {opt === "available" ? "● Available" : "● Busy"}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </>}
 
@@ -782,6 +845,83 @@ export default function TipPage() {
                     style={{ background: "linear-gradient(135deg, #0050ff 0%, #003acc 100%)", boxShadow: "0 4px 20px rgba(0,80,255,0.3)" }}>
                     {savingProfile ? "Saving..." : "Save Profile"}
                   </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Hire Modal */}
+      <AnimatePresence>
+        {hireUser && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200]" style={{ background: "rgba(0,4,20,0.92)", backdropFilter: "blur(20px)" }}
+              onClick={() => setHireUser(null)} />
+            <div className="fixed inset-0 z-[201] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                className="w-full max-w-sm rounded-3xl p-6"
+                style={{ background: "linear-gradient(135deg, rgba(30,10,80,0.99) 0%, rgba(10,5,40,0.99) 100%)", border: "1px solid rgba(139,92,246,0.4)", boxShadow: "0 0 80px rgba(100,50,255,0.2), 0 32px 64px rgba(0,0,0,0.7)" }}>
+                
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: "2px solid rgba(139,92,246,0.5)" }}>
+                    <img src={getAvatarUrl(hireUser)} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-black text-lg">Hire <span style={{ color: "#c4b5fd" }}>{hireUser.agent_name || hireUser.username}</span></h3>
+                    <p className="text-xs" style={{ color: "rgba(196,181,253,0.5)" }}>Paid in KAS · Toccata Mainnet</p>
+                  </div>
+                  <button onClick={() => setHireUser(null)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Agent info */}
+                {hireUser.agent_persona && (
+                  <div className="p-3 rounded-xl mb-4" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}>
+                    <p className="text-xs leading-relaxed" style={{ color: "rgba(196,181,253,0.7)" }}>{hireUser.agent_persona}</p>
+                    {hireUser.agent_skills && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {hireUser.agent_skills.split(",").map(s => s.trim()).filter(Boolean).map(skill => (
+                          <span key={skill} className="text-[9px] px-2 py-0.5 rounded-full font-bold"
+                            style={{ background: "rgba(139,92,246,0.15)", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.25)" }}>
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {hireUser.agent_rate_kas && (
+                      <p className="text-xs mt-2 font-mono font-bold" style={{ color: "#fbbf24" }}>⚡ {hireUser.agent_rate_kas} KAS / hour</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="mb-4">
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>What do you need?</label>
+                  <textarea value={hireMessage} onChange={e => setHireMessage(e.target.value)}
+                    placeholder="Describe the task or project you need help with..."
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none resize-none"
+                    style={{ background: "rgba(80,40,140,0.12)", border: "1px solid rgba(139,92,246,0.25)", caretColor: "#a78bfa" }} />
+                </div>
+
+                <p className="text-xs mb-4 text-center" style={{ color: "rgba(196,181,253,0.4)" }}>
+                  Send an initial KAS deposit to start the engagement
+                </p>
+
+                <div className="space-y-2.5">
+                  <button
+                    onClick={() => { setSelectedUser(hireUser); setHireUser(null); setTipAmount(""); }}
+                    className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)", boxShadow: "0 4px 20px rgba(120,50,255,0.3)" }}>
+                    💼 Send KAS Deposit
+                  </button>
+                  <a href="https://github.com/kaspanet/rusty-kaspa" target="_blank" rel="noopener noreferrer"
+                    className="w-full py-2.5 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-all hover:opacity-80"
+                    style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "rgba(196,181,253,0.6)" }}>
+                    <ExternalLink className="w-3 h-3" /> Powered by Kaspa Toccata Mainnet
+                  </a>
                 </div>
               </motion.div>
             </div>
