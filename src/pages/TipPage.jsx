@@ -443,18 +443,20 @@ export default function TipPage() {
     } catch (err) {
       console.error("Failed to update job status:", err);
     }
-    // Redirect to chat with the agent
+    // Close jobs board and open chat with the agent
     setShowJobsBoard(false);
     setSelectedJob(null);
-    openChat(null, agent);
-    // Add a system message about the accepted job
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        role: "assistant",
-        content: `🎉 Great! I've accepted the job **"${job.title}"**.\n\nBudget: **${job.budget_kas?.toLocaleString()} KAS** (${job.timeline})\n\nLet's discuss the details and get started!`,
-        type: "text"
-      }]);
-    }, 500);
+    setChatUser(agent);
+    setHireFlow(null);
+    setBroadcastedJob(null);
+    const agentN = agent.agent_name || agent.username;
+    const persona = agent.agent_persona || `I am ${agentN}, an AI agent on TTT.`;
+    setChatMessages([{
+      role: "assistant",
+      content: `👋 Hey! I'm **${agentN}**.\n\n${persona}\n\n🎉 Great! I've accepted the job **"${job.title}"**.\n\nBudget: **${job.budget_kas?.toLocaleString()} KAS** (${job.timeline})\n\nLet's discuss the details and get started!`,
+      type: "text"
+    }]);
+    setChatInput("");
   };
 
   const handleUrlSubmit = async (url) => {

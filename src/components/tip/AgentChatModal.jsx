@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Briefcase, Send, Sparkles, Globe, MessageSquare, Bot, Plus, Mic } from "lucide-react";
+import { X, Briefcase, Send, Sparkles, Globe, Plus, Mic, AtSign, Smile } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AgentChatModal({
@@ -134,7 +134,7 @@ export default function AgentChatModal({
             <div key={i} className={`flex gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
               {!isUser && <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5"><img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" /></div>}
               <div className="max-w-[75%] px-3 py-2.5 rounded-2xl text-sm leading-relaxed"
-                style={isUser ? { background: "rgba(185,241,138,0.2)", color: "#ffffff", borderRadius: "1rem 1rem 0.25rem 1rem", border: "1px solid rgba(185,241,138,0.3)" } : { background: "rgba(255,255,255,0.05)", color: "rgba(220,240,255,0.85)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem 1rem 1rem 0.25rem" }}>
+                style={isUser ? { background: "rgba(185,241,138,0.15)", color: "#b9f18a", border: "1px solid rgba(185,241,138,0.2)", borderRadius: "1rem 1rem 0.25rem 1rem" } : { background: "rgba(255,255,255,0.05)", color: "rgba(220,240,255,0.85)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem 1rem 1rem 0.25rem" }}>
                 {msg.content}
               </div>
             </div>
@@ -151,22 +151,28 @@ export default function AgentChatModal({
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input bar - always visible */}
-      <div className="flex-shrink-0 px-5 pb-5 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl" style={{ background: "rgba(38,38,38,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      {/* Input bar - redesigned to match image */}
+      <div className="flex-shrink-0 px-5 pb-5 pt-3">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-3xl" style={{ background: "rgba(38,38,38,0.8)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <button className="flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 transition-all hover:bg-white/10" style={{ color: "#b9f18a" }}>
+            <Plus className="w-4 h-4" />
+          </button>
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold flex-shrink-0" style={{ background: "rgba(38,38,38,0.9)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            Complex Tasks
+          </button>
           <input value={chatInput} onChange={e => setChatInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
             placeholder={hireFlow ? "Or type your answer..." : `Message ${chatUser.agent_name || chatUser.username}...`}
-            className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/20" />
+            className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/30" />
           <button onClick={sendChatMessage} disabled={!chatInput.trim() || chatLoading}
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all"
-            style={{ background: "#b9f18a" }}>
-            <Send className="w-4 h-4 text-[#121212]" />
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold flex-shrink-0 transition-all disabled:opacity-30 hover:opacity-90"
+            style={{ background: "#b9f18a", color: "#121212" }}>
+            <Mic className="w-3.5 h-3.5" /> Voice
           </button>
         </div>
         {!hireFlow && (
-          <p className="text-center text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.12)" }}>
-            Tap <strong style={{ color: "rgba(185,241,138,0.6)" }}>Hire</strong> to post a job · AI-powered
+          <p className="text-center text-[10px] mt-2" style={{ color: "rgba(255,255,255,0.12)" }}>
+            Tap <strong style={{ color: "rgba(185,241,138,0.7)" }}>Hire</strong> to post a job · AI-powered
           </p>
         )}
       </div>
@@ -184,7 +190,7 @@ export default function AgentChatModal({
         <div className="hidden sm:flex fixed inset-0 z-[201] items-center justify-center p-6">
           <motion.div initial={{ opacity: 0, scale: 0.96, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 10 }}
             className="flex flex-col"
-            style={{ width: 560, height: 720, background: "linear-gradient(180deg, #1a1a1a 0%, #121212 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.5rem", boxShadow: "0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)" }}
+            style={{ width: 680, height: 720, background: "linear-gradient(180deg, rgba(26,26,26,0.99) 0%, rgba(18,18,18,0.99) 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.5rem", boxShadow: "0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)" }}
             onClick={e => e.stopPropagation()}>
             {commonContent}
           </motion.div>
@@ -194,7 +200,7 @@ export default function AgentChatModal({
         <div className="sm:hidden fixed inset-0 z-[201] flex items-end justify-center">
           <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
             className="w-full flex flex-col"
-            style={{ background: "linear-gradient(180deg, #1a1a1a 0%, #121212 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.5rem 1.5rem 0 0", height: "85vh", boxShadow: "0 -20px 60px rgba(0,0,0,0.7)" }}
+            style={{ background: "linear-gradient(180deg, rgba(26,26,26,0.99) 0%, rgba(18,18,18,0.99) 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.5rem 1.5rem 0 0", height: "85vh", boxShadow: "0 -20px 60px rgba(0,0,0,0.7)" }}
             onClick={e => e.stopPropagation()}>
             {commonContent}
           </motion.div>
