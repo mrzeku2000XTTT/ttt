@@ -97,6 +97,7 @@ import TTTOSPage from './pages/TTTOS';
 import GhostFrameLandingPage from './pages/GhostFrameLanding';
 import GhostFrameStudioPage from './pages/GhostFrameStudio';
 import TipPageComponent from './pages/TipPage';
+import HirePage from './pages/Hire';
 import NodePage from './pages/Node';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
@@ -231,6 +232,7 @@ const AuthenticatedApp = () => {
       <Route path="/GhostFrame" element={<GhostFrameLandingPage />} />
       <Route path="/GhostFrameStudio" element={<GhostFrameStudioPage />} />
       <Route path="/Tip" element={<TipPageComponent />} />
+      <Route path="/Hire" element={<HirePage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Search, Wallet, Copy, Check, Send, ArrowRight, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon } from "lucide-react";
 
 const BG_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/df3ad1026_generated_image.png";
@@ -38,6 +39,7 @@ function getAvatarUrl(user) {
 }
 
 export default function TipPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,8 +61,7 @@ export default function TipPage() {
   const [editAgentSkills, setEditAgentSkills] = useState("");
   const [editAgentRate, setEditAgentRate] = useState("");
   const [editAgentAvailability, setEditAgentAvailability] = useState("available");
-  const [hireUser, setHireUser] = useState(null);
-  const [hireMessage, setHireMessage] = useState("");
+
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [tttWalletBalance, setTttWalletBalance] = useState(null);
@@ -565,10 +566,19 @@ export default function TipPage() {
                               )}
                               {!isCur && (
                                 <button
-                                  onClick={e => { e.stopPropagation(); setHireUser(user); setHireMessage(""); }}
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    const params = new URLSearchParams({
+                                      name: agentName,
+                                      ...(agentSkills ? { skills: agentSkills } : {}),
+                                      ...(agentRate ? { rate: agentRate } : {}),
+                                      ...(user.email ? { agent: user.email } : {}),
+                                    });
+                                    navigate(`/Hire?${params.toString()}`);
+                                  }}
                                   className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
                                   style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)" }}>
-                                  💼 Hire this Agent
+                                  💼 HIRE
                                 </button>
                               )}
                             </div>
@@ -920,82 +930,7 @@ export default function TipPage() {
         )}
       </AnimatePresence>
 
-      {/* Hire Modal */}
-      <AnimatePresence>
-        {hireUser && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[200]" style={{ background: "rgba(0,4,20,0.92)", backdropFilter: "blur(20px)" }}
-              onClick={() => setHireUser(null)} />
-            <div className="fixed inset-0 z-[201] flex items-center justify-center p-4">
-              <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-sm rounded-3xl p-6"
-                style={{ background: "linear-gradient(135deg, rgba(30,10,80,0.99) 0%, rgba(10,5,40,0.99) 100%)", border: "1px solid rgba(139,92,246,0.4)", boxShadow: "0 0 80px rgba(100,50,255,0.2), 0 32px 64px rgba(0,0,0,0.7)" }}>
-                
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: "2px solid rgba(139,92,246,0.5)" }}>
-                    <img src={getAvatarUrl(hireUser)} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-black text-lg">Hire <span style={{ color: "#c4b5fd" }}>{hireUser.agent_name || hireUser.username}</span></h3>
-                    <p className="text-xs" style={{ color: "rgba(196,181,253,0.5)" }}>Paid in KAS · Toccata Mainnet</p>
-                  </div>
-                  <button onClick={() => setHireUser(null)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
 
-                {/* Agent info */}
-                {hireUser.agent_persona && (
-                  <div className="p-3 rounded-xl mb-4" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}>
-                    <p className="text-xs leading-relaxed" style={{ color: "rgba(196,181,253,0.7)" }}>{hireUser.agent_persona}</p>
-                    {hireUser.agent_skills && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {hireUser.agent_skills.split(",").map(s => s.trim()).filter(Boolean).map(skill => (
-                          <span key={skill} className="text-[9px] px-2 py-0.5 rounded-full font-bold"
-                            style={{ background: "rgba(139,92,246,0.15)", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.25)" }}>
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {hireUser.agent_rate_kas && (
-                      <p className="text-xs mt-2 font-mono font-bold" style={{ color: "#fbbf24" }}>⚡ {hireUser.agent_rate_kas} KAS / hour</p>
-                    )}
-                  </div>
-                )}
-
-                <div className="mb-4">
-                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>What do you need?</label>
-                  <textarea value={hireMessage} onChange={e => setHireMessage(e.target.value)}
-                    placeholder="Describe the task or project you need help with..."
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none resize-none"
-                    style={{ background: "rgba(80,40,140,0.12)", border: "1px solid rgba(139,92,246,0.25)", caretColor: "#a78bfa" }} />
-                </div>
-
-                <p className="text-xs mb-4 text-center" style={{ color: "rgba(196,181,253,0.4)" }}>
-                  Send an initial KAS deposit to start the engagement
-                </p>
-
-                <div className="space-y-2.5">
-                  <button
-                    onClick={() => { setSelectedUser(hireUser); setHireUser(null); setTipAmount(""); }}
-                    className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)", boxShadow: "0 4px 20px rgba(120,50,255,0.3)" }}>
-                    💼 Send KAS Deposit
-                  </button>
-                  <a href="https://github.com/kaspanet/rusty-kaspa" target="_blank" rel="noopener noreferrer"
-                    className="w-full py-2.5 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-all hover:opacity-80"
-                    style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "rgba(196,181,253,0.6)" }}>
-                    <ExternalLink className="w-3 h-3" /> Powered by Kaspa Toccata Mainnet
-                  </a>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
 
 
     </div>
