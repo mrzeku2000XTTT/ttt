@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Search, Wallet, Copy, Check, Send, ArrowRight, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon } from "lucide-react";
+import { Search, Wallet, Copy, Check, Send, ArrowRight, ArrowLeft, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon } from "lucide-react";
 
 const BG_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/df3ad1026_generated_image.png";
 
@@ -333,6 +333,20 @@ export default function TipPage() {
       <div className="fixed inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(1,10,26,0.5) 0%, rgba(1,10,26,0.2) 40%, rgba(1,10,26,0.7) 100%)" }} />
 
       <div className="relative z-10 px-4 sm:px-6 max-w-2xl mx-auto" style={{ paddingTop: "4rem", paddingBottom: "6rem" }}>
+
+        {/* Back button */}
+        <div className="flex items-center gap-2 mb-4">
+          <button onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-80"
+            style={{ background: "rgba(0,40,120,0.3)", border: "1px solid rgba(0,100,200,0.25)", color: "rgba(96,165,250,0.7)" }}>
+            <ArrowLeft className="w-3.5 h-3.5" /> Back
+          </button>
+          <button onClick={() => navigate("/")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-80"
+            style={{ background: "rgba(0,40,120,0.3)", border: "1px solid rgba(0,100,200,0.25)", color: "rgba(96,165,250,0.7)" }}>
+            Home
+          </button>
+        </div>
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
