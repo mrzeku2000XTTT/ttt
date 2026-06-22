@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Ghost Frame", path: "GhostFrame", cat: "Creative", logo: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&h=200&fit=crop", desc: "Frame consistency suite · AI music video" },
   { name: "ORIN", path: "ORINLanding", cat: "Tools", logo: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&h=200&fit=crop", desc: "Travel intelligence · hotel matching" },
   { name: "TTT Builder", path: "TTTBuilder", cat: "Dev Tools", logo: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=200&h=200&fit=crop", desc: "AI site builder — prompt to live site", community: false },
   { name: "ORBT", path: "ORBT", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ecf033abc_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/6fa1d3056_generated_video.mp4", desc: "AI brand voice & copy transformer" },
@@ -139,8 +140,6 @@ const APPS = [
   { name: "Krust", path: "Krust", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e2e8601a9_generated_image.png", desc: "Web weaver" },
   { name: "OneShot", path: "UICloner", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/17316d6b3_generated_image.png", desc: "Clone & vibe-code any UI", admin: true },
 
-  // ── Ghost Frame Studio ──
-  { name: "Ghost Frame", path: "GhostFrame", cat: "AI", desc: "Frame consistency suite" },
 ];
 
 function AppIcon({ app, hovered }) {
