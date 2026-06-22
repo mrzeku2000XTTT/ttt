@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Search, Wallet, Copy, Check, Send, ArrowRight, ArrowLeft, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon } from "lucide-react";
+import { Search, Wallet, Copy, Check, Send, ArrowRight, ArrowLeft, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon, MessageSquare, Briefcase, Loader2 } from "lucide-react";
 
 const BG_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/df3ad1026_generated_image.png";
 
@@ -71,6 +71,18 @@ export default function TipPage() {
   const [expandedRow, setExpandedRow] = useState(null);
   const [editTab, setEditTab] = useState("profile"); // profile | avatar | agent
   const fileInputRef = useRef(null);
+
+  // Recent Jobs modal
+  const [recentJobsUser, setRecentJobsUser] = useState(null); // user whose jobs to show
+  const [recentJobs, setRecentJobs] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+
+  // Chat modal
+  const [chatUser, setChatUser] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]); // [{role, content}]
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
     loadCurrentUser(); // loadCurrentUser already calls loadUsers(user) with fresh data
@@ -329,6 +341,73 @@ export default function TipPage() {
     }
   };
 
+  const openRecentJobs = async (e, user) => {
+    e.stopPropagation();
+    setRecentJobsUser(user);
+    setRecentJobs([]);
+    setLoadingJobs(true);
+    try {
+      // Pull TipTransactions where recipient matches this user's wallet
+      const tips = await base44.entities.TipTransaction.filter(
+        { recipient_wallet: user.created_wallet_address },
+        "-created_date", 20
+      );
+      setRecentJobs(tips);
+    } catch {
+      setRecentJobs([]);
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
+
+  const openChat = (e, user) => {
+    e.stopPropagation();
+    setChatUser(user);
+    const agentN = user.agent_name || user.username;
+    const persona = user.agent_persona || `I am ${agentN}, an AI agent on TTT.`;
+    setChatMessages([{
+      role: "assistant",
+      content: `👋 Hey! I'm **${agentN}**. ${persona}\n\nHow can I help you today? You can also hire me directly from this chat.`
+    }]);
+    setChatInput("");
+  };
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = chatInput.trim();
+    setChatInput("");
+    const newMsgs = [...chatMessages, { role: "user", content: userMsg }];
+    setChatMessages(newMsgs);
+    setChatLoading(true);
+    try {
+      const agentN = chatUser?.agent_name || chatUser?.username;
+      const persona = chatUser?.agent_persona || "";
+      const skills = chatUser?.agent_skills || "";
+      const rate = chatUser?.agent_rate_kas || "";
+      const history = newMsgs.slice(-8).map(m => `${m.role === "user" ? "User" : agentN}: ${m.content}`).join("\n");
+      const reply = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are ${agentN}, a professional agent on TTT (Kaspa ecosystem).
+Persona: ${persona}
+Skills: ${skills}
+Rate: ${rate} KAS/hr
+
+Conversation so far:
+${history}
+
+Reply helpfully as ${agentN}. If the user wants to hire you, tell them to click the HIRE button below. Keep responses concise and natural. Use markdown sparingly.`,
+      });
+      setChatMessages(prev => [...prev, { role: "assistant", content: reply }]);
+    } catch {
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I ran into an issue. Please try again." }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
   const getBadges = (user) => {
     const n = user.username?.toLowerCase().trim().replace(/\s+/g, "");
     const a = (user.created_wallet_address || "").toLowerCase();
@@ -575,7 +654,20 @@ export default function TipPage() {
                                     </span>
                                   )}
                                 </div>
-                                <button
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={e => openChat(e, user)}
+                                    className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
+                                    style={{ background: "rgba(6,182,212,0.15)", border: "1px solid rgba(6,182,212,0.3)", color: "#67e8f9" }}>
+                                    <MessageSquare className="w-2.5 h-2.5" /> Chat
+                                  </button>
+                                  <button
+                                    onClick={e => openRecentJobs(e, user)}
+                                    className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
+                                    style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", color: "#4ade80" }}>
+                                    <Briefcase className="w-2.5 h-2.5" /> Jobs
+                                  </button>
+                                  <button
                                     onClick={e => {
                                       e.stopPropagation();
                                       const params = new URLSearchParams({
@@ -586,10 +678,11 @@ export default function TipPage() {
                                       });
                                       navigate(`/Hire?${params.toString()}`);
                                     }}
-                                    className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
+                                    className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
                                     style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
                                     💼 Hire
-                                    </button>
+                                  </button>
+                                </div>
                               </div>
                               {(user.agent_persona || (isCur && currentUser?.agent_persona)) && (
                                 <p className="text-xs leading-relaxed mb-2" style={{ color: "rgba(196,181,253,0.7)" }}>
@@ -975,6 +1068,172 @@ export default function TipPage() {
 
 
 
+
+      {/* ── RECENT JOBS MODAL ── */}
+      <AnimatePresence>
+        {recentJobsUser && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200]" style={{ background: "rgba(0,4,20,0.92)", backdropFilter: "blur(20px)" }}
+              onClick={() => setRecentJobsUser(null)} />
+            <div className="fixed inset-0 z-[201] flex items-end sm:items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+                className="w-full max-w-sm rounded-3xl overflow-hidden"
+                style={{ background: "linear-gradient(135deg, rgba(0,20,60,0.99), rgba(0,10,35,0.99))", border: "1px solid rgba(34,197,94,0.3)", boxShadow: "0 0 60px rgba(34,197,94,0.1), 0 32px 64px rgba(0,0,0,0.7)", maxHeight: "80vh" }}>
+                <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(34,197,94,0.15)" }}>
+                  <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
+                    <img src={getAvatarUrl(recentJobsUser)} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-bold text-sm">{recentJobsUser.agent_name || recentJobsUser.username}</p>
+                    <p className="text-[10px]" style={{ color: "rgba(74,222,128,0.5)" }}>Recent Jobs & Hirers</p>
+                  </div>
+                  <button onClick={() => setRecentJobsUser(null)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="overflow-y-auto" style={{ maxHeight: "calc(80vh - 80px)" }}>
+                  {loadingJobs ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#4ade80" }} />
+                    </div>
+                  ) : recentJobs.length === 0 ? (
+                    <div className="px-5 py-10 text-center">
+                      <Briefcase className="w-8 h-8 mx-auto mb-3" style={{ color: "rgba(74,222,128,0.2)" }} />
+                      <p className="text-white/40 text-sm font-semibold">No jobs found yet</p>
+                      <p className="text-white/20 text-xs mt-1">Jobs will appear here after being hired</p>
+                    </div>
+                  ) : (
+                    <div className="p-4 space-y-2">
+                      {recentJobs.map((job, i) => (
+                        <div key={job.id || i} className="p-3 rounded-xl" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-white font-bold text-xs">{job.job_title || job.message || "Job completed"}</p>
+                            {job.amount_kas && <span className="text-xs font-mono font-bold" style={{ color: "#fbbf24" }}>+{job.amount_kas} KAS</span>}
+                          </div>
+                          {job.sender_wallet && (
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="text-[9px]" style={{ color: "rgba(74,222,128,0.5)" }}>Hired by:</span>
+                              <code className="text-[9px] font-mono" style={{ color: "rgba(96,165,250,0.6)" }}>
+                                {job.sender_wallet?.slice(0,14)}...{job.sender_wallet?.slice(-6)}
+                              </code>
+                              <button onClick={() => { navigator.clipboard.writeText(job.sender_wallet); }}
+                                className="ml-auto" style={{ color: "rgba(96,165,250,0.3)" }}>
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                          {job.created_date && (
+                            <p className="text-[9px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+                              {new Date(job.created_date).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── AGENT CHAT MODAL ── */}
+      <AnimatePresence>
+        {chatUser && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200]" style={{ background: "rgba(0,4,20,0.92)", backdropFilter: "blur(20px)" }}
+              onClick={() => setChatUser(null)} />
+            <div className="fixed inset-0 z-[201] flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 60 }}
+                className="w-full sm:max-w-sm flex flex-col"
+                style={{ background: "linear-gradient(135deg, rgba(0,15,50,0.99), rgba(0,8,30,0.99))", border: "1px solid rgba(6,182,212,0.3)", boxShadow: "0 0 60px rgba(6,182,212,0.1), 0 -8px 40px rgba(0,0,0,0.5)", borderRadius: "1.5rem 1.5rem 0 0", height: "88vh", maxHeight: "680px" }}
+                onClick={e => e.stopPropagation()}>
+
+                {/* Chat header */}
+                <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid rgba(6,182,212,0.15)" }}>
+                  <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0" style={{ border: "1px solid rgba(6,182,212,0.4)" }}>
+                    <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-bold text-sm">{chatUser.agent_name || chatUser.username}</p>
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[10px]" style={{ color: "#4ade80" }}>Online · {chatUser.agent_rate_kas || "—"} KAS/hr</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={e => { e.stopPropagation(); const params = new URLSearchParams({ name: chatUser.agent_name || chatUser.username, ...(chatUser.agent_skills ? { skills: chatUser.agent_skills } : {}), ...(chatUser.agent_rate_kas ? { rate: chatUser.agent_rate_kas } : {}), ...(chatUser.email ? { agent: chatUser.email } : {}) }); navigate(`/Hire?${params.toString()}`); }}
+                    className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg font-bold flex-shrink-0"
+                    style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)", color: "white" }}>
+                    💼 Hire
+                  </button>
+                  <button onClick={() => setChatUser(null)} className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                      {msg.role === "assistant" && (
+                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-0.5" style={{ border: "1px solid rgba(6,182,212,0.4)" }}>
+                          <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="max-w-[78%] px-3 py-2 rounded-2xl text-sm leading-relaxed"
+                        style={msg.role === "user"
+                          ? { background: "rgba(0,90,220,0.7)", color: "white", borderRadius: "1rem 1rem 0.25rem 1rem" }
+                          : { background: "rgba(6,182,212,0.1)", color: "rgba(220,240,255,0.85)", border: "1px solid rgba(6,182,212,0.15)", borderRadius: "1rem 1rem 1rem 0.25rem" }}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="flex justify-start">
+                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2">
+                        <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="px-3 py-2 rounded-2xl" style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.15)" }}>
+                        <div className="flex gap-1 items-center h-5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Input */}
+                <div className="flex-shrink-0 px-4 py-3" style={{ borderTop: "1px solid rgba(6,182,212,0.1)" }}>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(0,30,80,0.6)", border: "1px solid rgba(6,182,212,0.2)" }}>
+                    <input
+                      value={chatInput}
+                      onChange={e => setChatInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                      placeholder={`Message ${chatUser.agent_name || chatUser.username}...`}
+                      className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/20"
+                    />
+                    <button onClick={sendChatMessage} disabled={!chatInput.trim() || chatLoading}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-all"
+                      style={{ background: "linear-gradient(135deg, #0ea5e9, #0050ff)" }}>
+                      {chatLoading ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" /> : <Send className="w-3.5 h-3.5 text-white" />}
+                    </button>
+                  </div>
+                  <p className="text-center text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.15)" }}>
+                    AI-powered · Tap 💼 Hire to start a job
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
 
     </div>
   );
