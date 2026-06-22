@@ -441,7 +441,7 @@ export default function TipPage() {
                       onClick={e => { e.stopPropagation(); setSelectedUser(user); setTipAmount(""); }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold flex-shrink-0 transition-all hover:opacity-90 active:scale-95"
                       style={{ background: "rgba(0,90,220,0.85)", border: "1px solid rgba(0,150,255,0.5)", color: "#93c5fd", boxShadow: "0 2px 14px rgba(0,80,200,0.35)" }}>
-                      ⚡ Tip
+                      Tip KAS
                     </button>
 
                     <div className="flex-shrink-0 ml-1" style={{ color: "rgba(96,165,250,0.4)" }}>
