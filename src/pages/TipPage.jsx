@@ -315,7 +315,7 @@ export default function TipPage() {
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-            filter: "drop-shadow(0 0 30px rgba(0,150,255,0.9)) drop-shadow(0 0 60px rgba(0,100,255,0.6)) drop-shadow(0 0 100px rgba(0,80,200,0.4))",
+            filter: "none",
             letterSpacing: "-0.03em",
           }}>
             TapToTip
