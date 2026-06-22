@@ -667,11 +667,7 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
             style={{ background: "rgba(0,40,120,0.3)", border: "1px solid rgba(0,100,200,0.25)", color: "rgba(96,165,250,0.7)" }}>
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
-          <button onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-80"
-            style={{ background: "rgba(0,40,120,0.3)", border: "1px solid rgba(0,100,200,0.25)", color: "rgba(96,165,250,0.7)" }}>
-            Home
-          </button>
+
         </div>
 
         {/* Header */}
