@@ -536,7 +536,7 @@ export default function TTTLandingPage() {
       <iframe ref={playerRef} title="Mind On My Kaspa" src={hasStartedMusic ? musicSrc : "about:blank"}
         allow="autoplay; encrypted-media" className="pointer-events-none absolute h-px w-px opacity-0" />
 
-      {/* Tap the eye hint */}
+      {/* Tap the eye hint — shown below the Play button near the bottom */}
       <AnimatePresence>
         {showTapHint && (
           <motion.div
@@ -545,10 +545,10 @@ export default function TTTLandingPage() {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.6 }}
             className="absolute z-20 flex flex-col items-center gap-1 pointer-events-none"
-            style={{ top: "50%", left: "50%", transform: "translate(-50%, -180px)" }}
+            style={{ bottom: "5.5rem", left: "50%", transform: "translateX(-50%)" }}
           >
-            <Eye className="w-4 h-4 animate-pulse" style={{ color: "rgba(100,100,120,0.4)" }} />
-            <span className="text-[10px] tracking-[0.3em] font-medium" style={{ color: "rgba(100,100,120,0.35)", fontFamily: "system-ui" }}>
+            <Eye className="w-4 h-4 animate-pulse" style={{ color: "rgba(100,100,120,0.55)" }} />
+            <span className="text-[10px] tracking-[0.3em] font-medium" style={{ color: "rgba(100,100,120,0.5)", fontFamily: "system-ui" }}>
               tap the eye
             </span>
           </motion.div>
