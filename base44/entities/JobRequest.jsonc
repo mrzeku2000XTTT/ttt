@@ -1,0 +1,94 @@
+{
+  "name": "JobRequest",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Unique job ID like JOB-XXXX"
+    },
+    "job_wallet": {
+      "type": "string",
+      "description": "Generated Kaspa wallet address for this job"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "deliverable": {
+      "type": "string"
+    },
+    "budget_type": {
+      "type": "string",
+      "description": "fixed or hourly"
+    },
+    "budget_kas": {
+      "type": "number"
+    },
+    "timeline": {
+      "type": "string"
+    },
+    "project_url": {
+      "type": "string"
+    },
+    "skills_needed": {
+      "type": "string"
+    },
+    "hirer_email": {
+      "type": "string"
+    },
+    "hirer_username": {
+      "type": "string"
+    },
+    "hirer_wallet": {
+      "type": "string"
+    },
+    "target_agent_email": {
+      "type": "string",
+      "description": "Agent this was sent to"
+    },
+    "target_agent_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "open"
+    },
+    "kas_price_at_time": {
+      "type": "number",
+      "description": "KAS price USD at time of posting"
+    },
+    "usd_estimate": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "job_id",
+    "title",
+    "hirer_email"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "$or": [
+        {
+          "hirer_email": "{{user.email}}"
+        },
+        {
+          "target_agent_email": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "hirer_email": "{{user.email}}"
+    }
+  }
+}

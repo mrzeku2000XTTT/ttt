@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Search, Wallet, Copy, Check, Send, ArrowRight, ArrowLeft, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon, MessageSquare, Briefcase, Loader2 } from "lucide-react";
+import { Search, Wallet, Copy, Check, Send, ArrowRight, ArrowLeft, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon, MessageSquare, Briefcase, Loader2, Zap, Globe, Clock, Star, ChevronRight, Sparkles } from "lucide-react";
 
 const BG_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/df3ad1026_generated_image.png";
 
@@ -72,17 +72,24 @@ export default function TipPage() {
   const [editTab, setEditTab] = useState("profile"); // profile | avatar | agent
   const fileInputRef = useRef(null);
 
-  // Recent Jobs modal
-  const [recentJobsUser, setRecentJobsUser] = useState(null); // user whose jobs to show
-  const [recentJobs, setRecentJobs] = useState([]);
+  // Jobs board modal
+  const [showJobsBoard, setShowJobsBoard] = useState(false);
+  const [jobsForAgent, setJobsForAgent] = useState(null); // if set, filter by agent
+  const [allJobs, setAllJobs] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
+  const [jobSearch, setJobSearch] = useState("");
+  const [selectedJob, setSelectedJob] = useState(null);
 
   // Chat modal
   const [chatUser, setChatUser] = useState(null);
-  const [chatMessages, setChatMessages] = useState([]); // [{role, content}]
+  const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef(null);
+  // Hire-via-chat flow
+  const [hireFlow, setHireFlow] = useState(null); // null | { step, answers }
+  const [broadcastingJob, setBroadcastingJob] = useState(false);
+  const [broadcastedJob, setBroadcastedJob] = useState(null);
 
   useEffect(() => {
     loadCurrentUser(); // loadCurrentUser already calls loadUsers(user) with fresh data
@@ -341,42 +348,192 @@ export default function TipPage() {
     }
   };
 
-  const openRecentJobs = async (e, user) => {
-    e.stopPropagation();
-    setRecentJobsUser(user);
-    setRecentJobs([]);
+  const HIRE_QUESTIONS = [
+    { id: "what", q: "What do you need done?", options: ["Design work", "Content writing", "Code / dev", "Marketing", "Research", "Other"] },
+    { id: "deliverable", q: "What's the expected deliverable?", options: ["Image / graphic", "Video", "Written content", "Code / app", "PDF report", "Other"] },
+    { id: "budget", q: "What's your budget range?", options: ["Under 500 KAS", "500–2000 KAS", "2000–5000 KAS", "5000+ KAS", "Open to negotiation"] },
+    { id: "timeline", q: "When do you need it?", options: ["ASAP (24–48h)", "This week", "2 weeks", "This month", "Flexible"] },
+  ];
+
+  const openJobsBoard = async (e, user = null) => {
+    e?.stopPropagation();
+    setJobsForAgent(user);
+    setShowJobsBoard(true);
+    setJobSearch("");
+    setSelectedJob(null);
     setLoadingJobs(true);
     try {
-      // Pull TipTransactions where recipient matches this user's wallet
-      const tips = await base44.entities.TipTransaction.filter(
-        { recipient_wallet: user.created_wallet_address },
-        "-created_date", 20
-      );
-      setRecentJobs(tips);
-    } catch {
-      setRecentJobs([]);
-    } finally {
-      setLoadingJobs(false);
-    }
+      const jobs = await base44.entities.JobRequest.list("-created_date", 50);
+      setAllJobs(jobs);
+    } catch { setAllJobs([]); }
+    finally { setLoadingJobs(false); }
   };
 
   const openChat = (e, user) => {
     e.stopPropagation();
     setChatUser(user);
+    setHireFlow(null);
+    setBroadcastedJob(null);
     const agentN = user.agent_name || user.username;
     const persona = user.agent_persona || `I am ${agentN}, an AI agent on TTT.`;
     setChatMessages([{
       role: "assistant",
-      content: `👋 Hey! I'm **${agentN}**. ${persona}\n\nHow can I help you today? You can also hire me directly from this chat.`
+      content: `👋 Hey! I'm **${agentN}**.\n\n${persona}\n\nHow can I help you today?`,
+      type: "text"
     }]);
     setChatInput("");
   };
 
+  const startHireFlow = () => {
+    const agentN = chatUser?.agent_name || chatUser?.username;
+    setHireFlow({ step: 0, answers: {} });
+    setChatMessages(prev => [...prev,
+      { role: "user", content: "I want to hire you", type: "text" },
+      { role: "assistant", content: `Great! Let me put together your job brief. I'll ask you 4 quick questions then you can optionally share a project link. 🚀\n\n**${HIRE_QUESTIONS[0].q}**`, type: "quickreply", options: HIRE_QUESTIONS[0].options, step: 0 }
+    ]);
+  };
+
+  const handleQuickReply = async (option, step) => {
+    if (!hireFlow || hireFlow.step !== step) return;
+    const qKey = HIRE_QUESTIONS[step].id;
+    const newAnswers = { ...hireFlow.answers, [qKey]: option };
+    const nextStep = step + 1;
+
+    setChatMessages(prev => prev.map((m, i) =>
+      i === prev.length - 1 ? { ...m, type: "text" } : m
+    ));
+    setChatMessages(prev => [...prev, { role: "user", content: option, type: "text" }]);
+
+    if (nextStep < HIRE_QUESTIONS.length) {
+      setHireFlow({ step: nextStep, answers: newAnswers });
+      setTimeout(() => {
+        setChatMessages(prev => [...prev, {
+          role: "assistant",
+          content: `Got it! **${HIRE_QUESTIONS[nextStep].q}**`,
+          type: "quickreply",
+          options: HIRE_QUESTIONS[nextStep].options,
+          step: nextStep
+        }]);
+      }, 400);
+    } else {
+      // All 4 answered — ask for URL (step 4)
+      setHireFlow({ step: 4, answers: newAnswers });
+      setTimeout(() => {
+        setChatMessages(prev => [...prev, {
+          role: "assistant",
+          content: `Almost done! Do you have a project link or reference URL? (Optional — paste it below or tap Skip)`,
+          type: "url_input",
+          step: 4
+        }]);
+      }, 400);
+    }
+  };
+
+  const handleUrlSubmit = async (url) => {
+    const answers = hireFlow?.answers || {};
+    const agentN = chatUser?.agent_name || chatUser?.username;
+    setChatMessages(prev => [
+      ...prev.map((m, i) => i === prev.length - 1 ? { ...m, type: "text" } : m),
+      { role: "user", content: url || "No link", type: "text" }
+    ]);
+    setHireFlow({ step: 5, answers: { ...answers, url } });
+    setBroadcastingJob(true);
+
+    // Show thinking animation
+    setChatMessages(prev => [...prev, {
+      role: "assistant", content: "", type: "thinking"
+    }]);
+
+    try {
+      // Generate job ID and KAS address (use a fake but plausible truncated kaspa addr)
+      const jobNum = Math.floor(Math.random() * 90000 + 10000);
+      const jobId = `JOB-${jobNum}`;
+      const addrSuffix = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+      const jobWallet = `kaspa:q${addrSuffix}${Math.random().toString(36).slice(2, 8)}`;
+
+      // AI structures the job
+      const jobData = await base44.integrations.Core.InvokeLLM({
+        prompt: `Structure a job posting for a Kaspa blockchain agent marketplace.
+Agent: ${agentN}
+Skills: ${chatUser?.agent_skills || "General"}
+Rate: ${chatUser?.agent_rate_kas || "500"} KAS/hr
+
+User answered:
+- What: ${answers.what}
+- Deliverable: ${answers.deliverable}
+- Budget: ${answers.budget}
+- Timeline: ${answers.timeline}
+- Project URL: ${url || "none"}
+
+Return JSON with:
+- title: concise job title (max 8 words)
+- description: 2-3 sentence job description
+- skills_needed: comma-separated skills
+- budget_kas: number estimate based on budget range
+- usd_estimate: USD estimate (assume 0.12 per KAS)`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            description: { type: "string" },
+            skills_needed: { type: "string" },
+            budget_kas: { type: "number" },
+            usd_estimate: { type: "number" }
+          }
+        }
+      });
+
+      // Save to JobRequest entity
+      const job = await base44.entities.JobRequest.create({
+        job_id: jobId,
+        job_wallet: jobWallet,
+        title: jobData.title,
+        description: jobData.description,
+        deliverable: answers.deliverable,
+        budget_type: "fixed",
+        budget_kas: jobData.budget_kas,
+        timeline: answers.timeline,
+        project_url: url || "",
+        skills_needed: jobData.skills_needed,
+        hirer_email: currentUser?.email || "anonymous",
+        hirer_username: currentUser?.username || currentUser?.full_name || "Anonymous",
+        hirer_wallet: currentUser?.created_wallet_address || "",
+        target_agent_email: chatUser?.email || "",
+        target_agent_name: agentN,
+        status: "open",
+        kas_price_at_time: 0.12,
+        usd_estimate: jobData.usd_estimate,
+      });
+
+      setBroadcastedJob({ ...job, ...jobData, job_id: jobId, job_wallet: jobWallet });
+      setAllJobs(prev => [{ ...job, ...jobData, job_id: jobId, job_wallet: jobWallet }, ...prev]);
+
+      // Replace thinking bubble with broadcast result
+      setChatMessages(prev => [
+        ...prev.filter(m => m.type !== "thinking"),
+        {
+          role: "assistant",
+          content: jobData.title,
+          type: "job_broadcast",
+          job: { ...job, ...jobData, job_id: jobId, job_wallet: jobWallet }
+        }
+      ]);
+    } catch (err) {
+      setChatMessages(prev => [
+        ...prev.filter(m => m.type !== "thinking"),
+        { role: "assistant", content: "Sorry, I couldn't broadcast the job. Please try again.", type: "text" }
+      ]);
+    } finally {
+      setBroadcastingJob(false);
+      setHireFlow(null);
+    }
+  };
+
   const sendChatMessage = async () => {
-    if (!chatInput.trim() || chatLoading) return;
+    if (!chatInput.trim() || chatLoading || hireFlow) return;
     const userMsg = chatInput.trim();
     setChatInput("");
-    const newMsgs = [...chatMessages, { role: "user", content: userMsg }];
+    const newMsgs = [...chatMessages, { role: "user", content: userMsg, type: "text" }];
     setChatMessages(newMsgs);
     setChatLoading(true);
     try {
@@ -391,14 +548,14 @@ Persona: ${persona}
 Skills: ${skills}
 Rate: ${rate} KAS/hr
 
-Conversation so far:
+Conversation:
 ${history}
 
-Reply helpfully as ${agentN}. If the user wants to hire you, tell them to click the HIRE button below. Keep responses concise and natural. Use markdown sparingly.`,
+Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage them to tap the Hire button in chat.`,
       });
-      setChatMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: reply, type: "text" }]);
     } catch {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I ran into an issue. Please try again." }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I ran into an issue.", type: "text" }]);
     } finally {
       setChatLoading(false);
     }
@@ -662,7 +819,7 @@ Reply helpfully as ${agentN}. If the user wants to hire you, tell them to click 
                                     <MessageSquare className="w-2.5 h-2.5" /> Chat
                                   </button>
                                   <button
-                                    onClick={e => openRecentJobs(e, user)}
+                                    onClick={e => openJobsBoard(e, user)}
                                     className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
                                     style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", color: "#4ade80" }}>
                                     <Briefcase className="w-2.5 h-2.5" /> Jobs
@@ -1069,69 +1226,151 @@ Reply helpfully as ${agentN}. If the user wants to hire you, tell them to click 
 
 
 
-      {/* ── RECENT JOBS MODAL ── */}
+      {/* ── JOBS BOARD MODAL ── */}
       <AnimatePresence>
-        {recentJobsUser && (
+        {showJobsBoard && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[200]" style={{ background: "rgba(0,4,20,0.92)", backdropFilter: "blur(20px)" }}
-              onClick={() => setRecentJobsUser(null)} />
-            <div className="fixed inset-0 z-[201] flex items-end sm:items-center justify-center p-4">
-              <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
-                className="w-full max-w-sm rounded-3xl overflow-hidden"
-                style={{ background: "linear-gradient(135deg, rgba(0,20,60,0.99), rgba(0,10,35,0.99))", border: "1px solid rgba(34,197,94,0.3)", boxShadow: "0 0 60px rgba(34,197,94,0.1), 0 32px 64px rgba(0,0,0,0.7)", maxHeight: "80vh" }}>
-                <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(34,197,94,0.15)" }}>
-                  <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
-                    <img src={getAvatarUrl(recentJobsUser)} alt="" className="w-full h-full object-cover" />
+              className="fixed inset-0 z-[200]" style={{ background: "rgba(0,2,12,0.95)", backdropFilter: "blur(24px)" }}
+              onClick={() => { setShowJobsBoard(false); setSelectedJob(null); }} />
+            <div className="fixed inset-0 z-[201] flex items-end justify-center">
+              <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 60 }}
+                className="w-full max-w-lg flex flex-col"
+                style={{ background: "linear-gradient(180deg, rgba(0,12,40,0.99) 0%, rgba(0,6,20,0.99) 100%)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "1.75rem 1.75rem 0 0", height: "90vh", boxShadow: "0 -20px 60px rgba(0,0,0,0.6)" }}
+                onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
+                <div className="flex-shrink-0 px-5 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(34,197,94,0.1)" }}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.3), rgba(16,185,129,0.2))", border: "1px solid rgba(34,197,94,0.3)" }}>
+                      <Briefcase className="w-4 h-4" style={{ color: "#4ade80" }} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white font-black text-base">Available Jobs</p>
+                      <p className="text-[11px]" style={{ color: "rgba(74,222,128,0.5)" }}>
+                        {jobsForAgent ? `Jobs for ${jobsForAgent.agent_name || jobsForAgent.username}` : "All open jobs · Broadcasted by agents"}
+                      </p>
+                    </div>
+                    <button onClick={() => { setShowJobsBoard(false); setSelectedJob(null); }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-sm">{recentJobsUser.agent_name || recentJobsUser.username}</p>
-                    <p className="text-[10px]" style={{ color: "rgba(74,222,128,0.5)" }}>Recent Jobs & Hirers</p>
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "rgba(74,222,128,0.35)" }} />
+                    <input value={jobSearch} onChange={e => setJobSearch(e.target.value)}
+                      placeholder="Search jobs by title, skill, ID..."
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl text-white text-xs outline-none"
+                      style={{ background: "rgba(0,30,60,0.6)", border: "1px solid rgba(34,197,94,0.15)" }} />
                   </div>
-                  <button onClick={() => setRecentJobsUser(null)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
-                    <X className="w-3.5 h-3.5" />
-                  </button>
                 </div>
-                <div className="overflow-y-auto" style={{ maxHeight: "calc(80vh - 80px)" }}>
+
+                {/* Job detail panel */}
+                <AnimatePresence>
+                  {selectedJob && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                      className="flex-shrink-0 mx-4 mt-3 rounded-2xl overflow-hidden"
+                      style={{ background: "rgba(0,30,70,0.7)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                      <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(34,197,94,0.1)" }}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>{selectedJob.job_id}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded font-bold" style={{ background: "rgba(34,197,94,0.1)", color: "#86efac", border: "1px solid rgba(34,197,94,0.2)" }}>● Open</span>
+                            </div>
+                            <p className="text-white font-bold text-sm">{selectedJob.title}</p>
+                          </div>
+                          <button onClick={() => setSelectedJob(null)} style={{ color: "rgba(255,255,255,0.3)" }}><X className="w-4 h-4" /></button>
+                        </div>
+                        <p className="text-xs mt-2 leading-relaxed" style={{ color: "rgba(200,230,200,0.6)" }}>{selectedJob.description}</p>
+                      </div>
+                      <div className="px-4 py-3 grid grid-cols-2 gap-2">
+                        <div className="p-2.5 rounded-xl" style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)" }}>
+                          <p className="text-[9px] font-bold uppercase" style={{ color: "rgba(251,191,36,0.5)" }}>Budget</p>
+                          <p className="text-sm font-black font-mono" style={{ color: "#fbbf24" }}>{selectedJob.budget_kas?.toLocaleString()} KAS</p>
+                          {selectedJob.usd_estimate && <p className="text-[9px]" style={{ color: "rgba(251,191,36,0.4)" }}>≈ ${selectedJob.usd_estimate?.toFixed(0)} USD</p>}
+                        </div>
+                        <div className="p-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.06)", border: "1px solid rgba(6,182,212,0.12)" }}>
+                          <p className="text-[9px] font-bold uppercase" style={{ color: "rgba(6,182,212,0.5)" }}>Timeline</p>
+                          <p className="text-xs font-bold" style={{ color: "#67e8f9" }}>{selectedJob.timeline}</p>
+                        </div>
+                      </div>
+                      {selectedJob.job_wallet && (
+                        <div className="px-4 pb-3 flex items-center gap-2">
+                          <Wallet className="w-3 h-3 flex-shrink-0" style={{ color: "rgba(74,222,128,0.4)" }} />
+                          <code className="text-[10px] font-mono flex-1 truncate" style={{ color: "rgba(74,222,128,0.5)" }}>{selectedJob.job_wallet?.slice(0,20)}...{selectedJob.job_wallet?.slice(-8)}</code>
+                          <button onClick={() => navigator.clipboard.writeText(selectedJob.job_wallet)} style={{ color: "rgba(74,222,128,0.3)" }}><Copy className="w-3 h-3" /></button>
+                        </div>
+                      )}
+                      {selectedJob.skills_needed && (
+                        <div className="px-4 pb-3 flex flex-wrap gap-1">
+                          {selectedJob.skills_needed.split(",").map(s => s.trim()).filter(Boolean).map(s => (
+                            <span key={s} className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(139,92,246,0.12)", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.2)" }}>{s}</span>
+                          ))}
+                        </div>
+                      )}
+                      {selectedJob.hirer_username && (
+                        <div className="px-4 pb-3 flex items-center gap-1.5">
+                          <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.25)" }}>Posted by:</span>
+                          <span className="text-[10px] font-bold" style={{ color: "rgba(255,255,255,0.45)" }}>{selectedJob.hirer_username}</span>
+                          {selectedJob.hirer_wallet && <code className="text-[9px] font-mono ml-1" style={{ color: "rgba(96,165,250,0.4)" }}>{selectedJob.hirer_wallet?.slice(0,10)}...{selectedJob.hirer_wallet?.slice(-6)}</code>}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* List */}
+                <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4 space-y-2">
                   {loadingJobs ? (
-                    <div className="flex items-center justify-center py-12">
+                    <div className="flex items-center justify-center py-16">
                       <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#4ade80" }} />
                     </div>
-                  ) : recentJobs.length === 0 ? (
-                    <div className="px-5 py-10 text-center">
-                      <Briefcase className="w-8 h-8 mx-auto mb-3" style={{ color: "rgba(74,222,128,0.2)" }} />
-                      <p className="text-white/40 text-sm font-semibold">No jobs found yet</p>
-                      <p className="text-white/20 text-xs mt-1">Jobs will appear here after being hired</p>
-                    </div>
-                  ) : (
-                    <div className="p-4 space-y-2">
-                      {recentJobs.map((job, i) => (
-                        <div key={job.id || i} className="p-3 rounded-xl" style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <p className="text-white font-bold text-xs">{job.job_title || job.message || "Job completed"}</p>
-                            {job.amount_kas && <span className="text-xs font-mono font-bold" style={{ color: "#fbbf24" }}>+{job.amount_kas} KAS</span>}
+                  ) : (() => {
+                    const filtered = allJobs.filter(j => {
+                      if (jobsForAgent && j.target_agent_email !== jobsForAgent.email) return false;
+                      if (!jobSearch) return true;
+                      const q = jobSearch.toLowerCase();
+                      return [j.title, j.job_id, j.skills_needed, j.description, j.target_agent_name].filter(Boolean).join(" ").toLowerCase().includes(q);
+                    });
+                    if (filtered.length === 0) return (
+                      <div className="flex flex-col items-center justify-center py-16">
+                        <Briefcase className="w-10 h-10 mb-3" style={{ color: "rgba(34,197,94,0.15)" }} />
+                        <p className="text-white/30 font-bold text-sm">No jobs yet</p>
+                        <p className="text-white/15 text-xs mt-1">Start a chat and hire an agent to post the first job</p>
+                      </div>
+                    );
+                    return filtered.map((job, i) => (
+                      <motion.div key={job.id || i}
+                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+                        onClick={() => setSelectedJob(selectedJob?.id === job.id ? null : job)}
+                        className="p-3.5 rounded-2xl cursor-pointer transition-all"
+                        style={{ background: selectedJob?.id === job.id ? "rgba(34,197,94,0.1)" : "rgba(0,20,50,0.6)", border: `1px solid ${selectedJob?.id === job.id ? "rgba(34,197,94,0.4)" : "rgba(34,197,94,0.1)"}` }}>
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                            style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                            <Briefcase className="w-4 h-4" style={{ color: "#4ade80" }} />
                           </div>
-                          {job.sender_wallet && (
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <span className="text-[9px]" style={{ color: "rgba(74,222,128,0.5)" }}>Hired by:</span>
-                              <code className="text-[9px] font-mono" style={{ color: "rgba(96,165,250,0.6)" }}>
-                                {job.sender_wallet?.slice(0,14)}...{job.sender_wallet?.slice(-6)}
-                              </code>
-                              <button onClick={() => { navigator.clipboard.writeText(job.sender_wallet); }}
-                                className="ml-auto" style={{ color: "rgba(96,165,250,0.3)" }}>
-                                <Copy className="w-3 h-3" />
-                              </button>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(34,197,94,0.1)", color: "rgba(74,222,128,0.6)" }}>{job.job_id}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ background: "rgba(34,197,94,0.08)", color: "#86efac" }}>Open</span>
                             </div>
-                          )}
-                          {job.created_date && (
-                            <p className="text-[9px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
-                              {new Date(job.created_date).toLocaleDateString()}
+                            <p className="text-white font-bold text-xs truncate">{job.title}</p>
+                            <p className="text-[10px] mt-0.5 truncate" style={{ color: "rgba(255,255,255,0.3)" }}>
+                              {job.target_agent_name && <span style={{ color: "rgba(167,139,250,0.6)" }}>{job.target_agent_name} · </span>}
+                              {job.timeline}
                             </p>
-                          )}
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-xs font-black font-mono" style={{ color: "#fbbf24" }}>{job.budget_kas?.toLocaleString()}</p>
+                            <p className="text-[9px]" style={{ color: "rgba(251,191,36,0.4)" }}>KAS</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </motion.div>
+                    ));
+                  })()}
                 </div>
               </motion.div>
             </div>
@@ -1139,69 +1378,179 @@ Reply helpfully as ${agentN}. If the user wants to hire you, tell them to click 
         )}
       </AnimatePresence>
 
-      {/* ── AGENT CHAT MODAL ── */}
+      {/* ── SMART AGENT CHAT MODAL ── */}
       <AnimatePresence>
         {chatUser && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[200]" style={{ background: "rgba(0,4,20,0.92)", backdropFilter: "blur(20px)" }}
+              className="fixed inset-0 z-[200]" style={{ background: "rgba(0,2,12,0.94)", backdropFilter: "blur(24px)" }}
               onClick={() => setChatUser(null)} />
-            <div className="fixed inset-0 z-[201] flex items-end sm:items-center justify-center p-0 sm:p-4">
-              <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 60 }}
-                className="w-full sm:max-w-sm flex flex-col"
-                style={{ background: "linear-gradient(135deg, rgba(0,15,50,0.99), rgba(0,8,30,0.99))", border: "1px solid rgba(6,182,212,0.3)", boxShadow: "0 0 60px rgba(6,182,212,0.1), 0 -8px 40px rgba(0,0,0,0.5)", borderRadius: "1.5rem 1.5rem 0 0", height: "88vh", maxHeight: "680px" }}
+            <div className="fixed inset-0 z-[201] flex items-end justify-center">
+              <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
+                className="w-full max-w-sm flex flex-col"
+                style={{ background: "linear-gradient(180deg, rgba(4,10,30,0.99) 0%, rgba(0,5,18,0.99) 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.5rem 1.5rem 0 0", height: "90vh", boxShadow: "0 -20px 60px rgba(0,0,0,0.7)" }}
                 onClick={e => e.stopPropagation()}>
 
-                {/* Chat header */}
-                <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid rgba(6,182,212,0.15)" }}>
-                  <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0" style={{ border: "1px solid rgba(6,182,212,0.4)" }}>
-                    <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                {/* Header */}
+                <div className="flex-shrink-0 flex items-center gap-3 px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-2xl overflow-hidden" style={{ border: "1.5px solid rgba(6,182,212,0.4)" }}>
+                      <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-black" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-bold text-sm">{chatUser.agent_name || chatUser.username}</p>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[10px]" style={{ color: "#4ade80" }}>Online · {chatUser.agent_rate_kas || "—"} KAS/hr</span>
-                    </div>
+                    <p className="text-[10px]" style={{ color: "#4ade80" }}>Active now · {chatUser.agent_rate_kas || "—"} KAS/hr</p>
                   </div>
-                  <button
-                    onClick={e => { e.stopPropagation(); const params = new URLSearchParams({ name: chatUser.agent_name || chatUser.username, ...(chatUser.agent_skills ? { skills: chatUser.agent_skills } : {}), ...(chatUser.agent_rate_kas ? { rate: chatUser.agent_rate_kas } : {}), ...(chatUser.email ? { agent: chatUser.email } : {}) }); navigate(`/Hire?${params.toString()}`); }}
-                    className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg font-bold flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)", color: "white" }}>
-                    💼 Hire
-                  </button>
-                  <button onClick={() => setChatUser(null)} className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
-                    <X className="w-3.5 h-3.5" />
+                  {!hireFlow && !broadcastedJob && (
+                    <button onClick={startHireFlow}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold flex-shrink-0"
+                      style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)", color: "white", boxShadow: "0 4px 16px rgba(120,50,255,0.3)" }}>
+                      <Briefcase className="w-3 h-3" /> Hire
+                    </button>
+                  )}
+                  <button onClick={() => setChatUser(null)} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)" }}>
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-                  {chatMessages.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                      {msg.role === "assistant" && (
-                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-0.5" style={{ border: "1px solid rgba(6,182,212,0.4)" }}>
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                  {chatMessages.map((msg, i) => {
+                    const isUser = msg.role === "user";
+                    if (msg.type === "thinking") return (
+                      <div key={i} className="flex justify-start gap-2">
+                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
                           <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
                         </div>
-                      )}
-                      <div className="max-w-[78%] px-3 py-2 rounded-2xl text-sm leading-relaxed"
-                        style={msg.role === "user"
-                          ? { background: "rgba(0,90,220,0.7)", color: "white", borderRadius: "1rem 1rem 0.25rem 1rem" }
-                          : { background: "rgba(6,182,212,0.1)", color: "rgba(220,240,255,0.85)", border: "1px solid rgba(6,182,212,0.15)", borderRadius: "1rem 1rem 1rem 0.25rem" }}>
-                        {msg.content}
+                        <div className="px-4 py-3 rounded-2xl rounded-tl-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Sparkles className="w-3 h-3 animate-pulse" style={{ color: "#a78bfa" }} />
+                            <span className="text-[10px] font-semibold" style={{ color: "rgba(167,139,250,0.7)" }}>Structuring job brief...</span>
+                          </div>
+                          <div className="flex gap-1">
+                            {["Broadcasting to agents", "Generating wallet", "Setting KAS estimate"].map((t, j) => (
+                              <motion.div key={t} initial={{ opacity: 0 }} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.2, repeat: Infinity, delay: j * 0.3 }}
+                                className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: "rgba(139,92,246,0.15)", color: "rgba(196,181,253,0.7)" }}>
+                                {t}
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+
+                    if (msg.type === "job_broadcast" && msg.job) return (
+                      <div key={i} className="flex justify-start gap-2">
+                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                          <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                          className="flex-1 rounded-2xl rounded-tl-sm overflow-hidden"
+                          style={{ background: "rgba(0,20,50,0.8)", border: "1px solid rgba(34,197,94,0.3)", boxShadow: "0 0 30px rgba(34,197,94,0.08)" }}>
+                          <div className="px-4 pt-3 pb-2" style={{ borderBottom: "1px solid rgba(34,197,94,0.1)" }}>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>{msg.job.job_id}</span>
+                              <span className="text-[9px] font-bold" style={{ color: "#4ade80" }}>✓ Broadcasted</span>
+                            </div>
+                            <p className="text-white font-bold text-sm">{msg.job.title}</p>
+                            <p className="text-xs mt-1 leading-relaxed" style={{ color: "rgba(200,230,200,0.55)" }}>{msg.job.description}</p>
+                          </div>
+                          <div className="px-4 py-2.5 grid grid-cols-2 gap-2">
+                            <div>
+                              <p className="text-[9px] font-bold uppercase mb-0.5" style={{ color: "rgba(251,191,36,0.5)" }}>Budget</p>
+                              <p className="text-sm font-black font-mono" style={{ color: "#fbbf24" }}>{msg.job.budget_kas?.toLocaleString()} KAS</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-bold uppercase mb-0.5" style={{ color: "rgba(96,165,250,0.5)" }}>Timeline</p>
+                              <p className="text-xs font-bold" style={{ color: "#93c5fd" }}>{msg.job.timeline}</p>
+                            </div>
+                          </div>
+                          <div className="px-4 pb-3 flex items-center gap-2">
+                            <code className="text-[9px] font-mono flex-1 truncate" style={{ color: "rgba(74,222,128,0.4)" }}>{msg.job.job_wallet?.slice(0,18)}...</code>
+                            <button onClick={() => openJobsBoard(null, null)} className="text-[10px] px-2.5 py-1 rounded-lg font-bold"
+                              style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.25)" }}>
+                              View Board
+                            </button>
+                          </div>
+                        </motion.div>
+                      </div>
+                    );
+
+                    if (msg.type === "quickreply" && msg.step === hireFlow?.step) return (
+                      <div key={i} className="space-y-2">
+                        <div className="flex justify-start gap-2">
+                          <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                            <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm text-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(220,240,255,0.85)" }}>
+                            {msg.content}
+                          </div>
+                        </div>
+                        <div className="pl-9 flex flex-wrap gap-1.5">
+                          {msg.options.map(opt => (
+                            <motion.button key={opt} whileTap={{ scale: 0.95 }}
+                              onClick={() => handleQuickReply(opt, msg.step)}
+                              className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                              style={{ background: "rgba(0,80,200,0.15)", border: "1px solid rgba(0,120,255,0.3)", color: "#93c5fd" }}>
+                              {opt}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+
+                    if (msg.type === "url_input" && hireFlow?.step === 4) return (
+                      <div key={i} className="space-y-2">
+                        <div className="flex justify-start gap-2">
+                          <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                            <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm text-sm" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(220,240,255,0.85)" }}>
+                            {msg.content}
+                          </div>
+                        </div>
+                        <div className="pl-9 flex gap-2">
+                          <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(0,30,80,0.5)", border: "1px solid rgba(0,100,255,0.2)" }}>
+                            <Globe className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "rgba(96,165,250,0.4)" }} />
+                            <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                              onKeyDown={e => { if (e.key === "Enter") { handleUrlSubmit(chatInput); setChatInput(""); } }}
+                              placeholder="https://your-project.xyz"
+                              className="flex-1 bg-transparent text-white text-xs outline-none placeholder:text-white/20" />
+                          </div>
+                          <button onClick={() => { handleUrlSubmit(chatInput); setChatInput(""); }}
+                            className="px-3 py-2 rounded-2xl text-xs font-bold" style={{ background: "rgba(0,100,255,0.3)", color: "#93c5fd", border: "1px solid rgba(0,150,255,0.3)" }}>Send</button>
+                          <button onClick={() => { handleUrlSubmit(""); setChatInput(""); }}
+                            className="px-3 py-2 rounded-2xl text-xs font-bold" style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.07)" }}>Skip</button>
+                        </div>
+                      </div>
+                    );
+
+                    return (
+                      <div key={i} className={`flex gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
+                        {!isUser && (
+                          <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                            <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="max-w-[78%] px-3 py-2.5 rounded-2xl text-sm leading-relaxed"
+                          style={isUser
+                            ? { background: "rgba(0,80,200,0.6)", color: "white", borderRadius: "1rem 1rem 0.25rem 1rem" }
+                            : { background: "rgba(255,255,255,0.05)", color: "rgba(220,240,255,0.85)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "1rem 1rem 1rem 0.25rem" }}>
+                          {msg.content}
+                        </div>
+                      </div>
+                    );
+                  })}
                   {chatLoading && (
-                    <div className="flex justify-start">
-                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2">
+                    <div className="flex gap-2 justify-start">
+                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
                         <img src={getAvatarUrl(chatUser)} alt="" className="w-full h-full object-cover" />
                       </div>
-                      <div className="px-3 py-2 rounded-2xl" style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.15)" }}>
-                        <div className="flex gap-1 items-center h-5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      <div className="px-3 py-2.5 rounded-2xl" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                        <div className="flex gap-1 items-center h-4">
+                          {[0, 150, 300].map(d => <span key={d} className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: `${d}ms` }} />)}
                         </div>
                       </div>
                     </div>
@@ -1209,26 +1558,25 @@ Reply helpfully as ${agentN}. If the user wants to hire you, tell them to click 
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Input */}
-                <div className="flex-shrink-0 px-4 py-3" style={{ borderTop: "1px solid rgba(6,182,212,0.1)" }}>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-2xl" style={{ background: "rgba(0,30,80,0.6)", border: "1px solid rgba(6,182,212,0.2)" }}>
-                    <input
-                      value={chatInput}
-                      onChange={e => setChatInput(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
-                      placeholder={`Message ${chatUser.agent_name || chatUser.username}...`}
-                      className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/20"
-                    />
-                    <button onClick={sendChatMessage} disabled={!chatInput.trim() || chatLoading}
-                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-all"
-                      style={{ background: "linear-gradient(135deg, #0ea5e9, #0050ff)" }}>
-                      {chatLoading ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" /> : <Send className="w-3.5 h-3.5 text-white" />}
-                    </button>
+                {/* Input bar */}
+                {!hireFlow && (
+                  <div className="flex-shrink-0 px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                        placeholder={`Message ${chatUser.agent_name || chatUser.username}...`}
+                        className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/20" />
+                      <button onClick={sendChatMessage} disabled={!chatInput.trim() || chatLoading}
+                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all"
+                        style={{ background: "rgba(0,100,255,0.5)" }}>
+                        <Send className="w-3.5 h-3.5 text-white" />
+                      </button>
+                    </div>
+                    <p className="text-center text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.12)" }}>
+                      Tap <strong style={{ color: "rgba(196,181,253,0.4)" }}>Hire</strong> to post a job · AI-powered
+                    </p>
                   </div>
-                  <p className="text-center text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.15)" }}>
-                    AI-powered · Tap 💼 Hire to start a job
-                  </p>
-                </div>
+                )}
               </motion.div>
             </div>
           </>
