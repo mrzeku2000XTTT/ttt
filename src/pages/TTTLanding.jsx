@@ -602,7 +602,7 @@ export default function TTTLandingPage() {
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">TO</span>
           </motion.button>
 
-          {/* TIP → TipPage (futuristic blue) */}
+          {/* TIP → TipPage */}
           <motion.button
             type="button"
             onClick={() => navigate("/Tip")}
@@ -610,15 +610,15 @@ export default function TTTLandingPage() {
             whileHover={{ scale: 1.04 }}
             className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
             style={{
-              background: "linear-gradient(135deg, rgba(0,80,220,0.88) 0%, rgba(0,40,180,0.92) 100%)",
-              border: "1px solid rgba(100,160,255,0.45)",
-              boxShadow: "0 4px 24px rgba(0,80,255,0.25), 0 0 0 1px rgba(100,160,255,0.15), inset 0 1px 0 rgba(255,255,255,0.15)",
+              background: "linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)",
+              border: "1px solid rgba(249,115,22,0.35)",
+              boxShadow: "0 4px 24px rgba(236,72,153,0.25), inset 0 1px 0 rgba(255,255,255,0.2)",
               backdropFilter: "blur(20px)",
               fontFamily: "'SF Pro Display', -apple-system, sans-serif",
             }}
           >
-            <Zap className="w-4 h-4 mb-1 text-blue-200" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">TIP</span>
+            <Send className="w-4 h-4 mb-1 text-white/90" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">TIP</span>
           </motion.button>
         </motion.div>
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }}
