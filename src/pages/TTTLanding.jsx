@@ -536,21 +536,30 @@ export default function TTTLandingPage() {
       <iframe ref={playerRef} title="Mind On My Kaspa" src={hasStartedMusic ? musicSrc : "about:blank"}
         allow="autoplay; encrypted-media" className="pointer-events-none absolute h-px w-px opacity-0" />
 
-      {/* Tap the eye hint — shown below the Play button near the bottom */}
+      {/* Tap the eye hint — centered over the orb */}
       <AnimatePresence>
         {showTapHint && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.6 }}
-            className="absolute z-20 flex flex-col items-center gap-1 pointer-events-none"
-            style={{ bottom: "5.5rem", left: "50%", transform: "translateX(-50%)" }}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.7 }}
+            className="absolute z-30 flex flex-col items-center gap-2 pointer-events-none"
+            style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
           >
-            <Eye className="w-4 h-4 animate-pulse" style={{ color: "rgba(100,100,120,0.55)" }} />
-            <span className="text-[10px] tracking-[0.3em] font-medium" style={{ color: "rgba(100,100,120,0.5)", fontFamily: "system-ui" }}>
-              tap the eye
-            </span>
+            <motion.div
+              animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="rounded-full p-3" style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)", border: "1px solid rgba(100,100,120,0.15)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
+                <Eye className="w-6 h-6" style={{ color: "rgba(80,80,110,0.7)" }} />
+              </div>
+              <span className="text-[11px] tracking-[0.35em] font-semibold px-3 py-1 rounded-full"
+                style={{ color: "rgba(80,80,110,0.65)", fontFamily: "system-ui", background: "rgba(255,255,255,0.65)", backdropFilter: "blur(8px)" }}>
+                tap the eye
+              </span>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
