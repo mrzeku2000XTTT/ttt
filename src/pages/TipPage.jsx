@@ -73,8 +73,7 @@ export default function TipPage() {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    loadCurrentUser();
-    loadUsers();
+    loadCurrentUser(); // loadCurrentUser already calls loadUsers(user) with fresh data
   }, []);
 
   useEffect(() => {
@@ -104,6 +103,8 @@ export default function TipPage() {
       setCurrentUser(user);
       const addr = localStorage.getItem('ttt_wallet_address') || user?.created_wallet_address;
       if (addr) loadTttBalance(addr);
+      // Pass fresh user directly so loadUsers doesn't rely on stale state
+      loadUsers(user);
     } catch { setCurrentUser(null); }
   };
 
@@ -255,6 +256,27 @@ export default function TipPage() {
       const updated = await base44.auth.me();
       setCurrentUser(updated);
       setShowEditProfile(false);
+
+      // Immediately patch local list so the banner & row reflect the change right away
+      const patchUser = (u) => u.email === updated.email ? {
+        ...u,
+        username: updated.username || u.username,
+        created_wallet_address: updated.created_wallet_address || u.created_wallet_address,
+        project_tagline: updated.project_tagline,
+        project_site: updated.project_site,
+        github_url: updated.github_url,
+        tiptree_url: updated.tiptree_url,
+        avatar_url: updated.avatar_url,
+        agent_name: updated.agent_name,
+        agent_persona: updated.agent_persona,
+        agent_skills: updated.agent_skills,
+        agent_rate_kas: updated.agent_rate_kas,
+        agent_availability: updated.agent_availability,
+      } : u;
+      setUsers(prev => prev.map(patchUser));
+      setFilteredUsers(prev => prev.map(patchUser));
+
+      // Then do a full reload in the background to sync with other users
       loadUsers(updated);
     } catch {} finally { setSavingProfile(false); }
   };
