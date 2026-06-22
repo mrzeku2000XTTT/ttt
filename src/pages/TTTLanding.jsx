@@ -454,17 +454,12 @@ export default function TTTLandingPage() {
   const [showPlayer, setShowPlayer] = useState(false);
   const [showAgent, setShowAgent] = useState(false);
   const [showResearcher, setShowResearcher] = useState(false);
-  const [showTapHint, setShowTapHint] = useState(false);
+
   const playerRef = React.useRef(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const musicSrc = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&autoplay=1&playsinline=1&controls=0&rel=0&origin=${origin}`;
 
-  // Show tap hint after 2.5s, hide after 5s
-  useEffect(() => {
-    const show = setTimeout(() => setShowTapHint(true), 2500);
-    const hide = setTimeout(() => setShowTapHint(false), 7000);
-    return () => { clearTimeout(show); clearTimeout(hide); };
-  }, []);
+
 
   const sendPlayerCommand = (command) => {
     playerRef.current?.contentWindow?.postMessage(
@@ -536,33 +531,7 @@ export default function TTTLandingPage() {
       <iframe ref={playerRef} title="Mind On My Kaspa" src={hasStartedMusic ? musicSrc : "about:blank"}
         allow="autoplay; encrypted-media" className="pointer-events-none absolute h-px w-px opacity-0" />
 
-      {/* Tap the eye hint — centered over the orb */}
-      <AnimatePresence>
-        {showTapHint && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.7 }}
-            className="absolute z-30 flex flex-col items-center gap-2 pointer-events-none"
-            style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
-          >
-            <motion.div
-              animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="flex flex-col items-center gap-2"
-            >
-              <div className="rounded-full p-3" style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)", border: "1px solid rgba(100,100,120,0.15)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-                <Eye className="w-6 h-6" style={{ color: "rgba(80,80,110,0.7)" }} />
-              </div>
-              <span className="text-[11px] tracking-[0.35em] font-semibold px-3 py-1 rounded-full"
-                style={{ color: "rgba(80,80,110,0.65)", fontFamily: "system-ui", background: "rgba(255,255,255,0.65)", backdropFilter: "blur(8px)" }}>
-                tap the eye
-              </span>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-8 pt-10 text-center sm:px-6">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
@@ -586,6 +555,27 @@ export default function TTTLandingPage() {
           transition={{ duration: 0.8, delay: 0.55 }}
           className="mt-4 rounded-full border border-slate-900/10 bg-white/75 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-900 shadow-sm backdrop-blur-xl transition hover:bg-white hover:shadow-md active:scale-95">
           {showPlayer ? (isPlaying ? "Pause" : "Play") : "Play"}
+        </motion.button>
+
+        <motion.button
+          type="button"
+          onClick={() => navigate("/TTTGate")}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.68 }}
+          whileTap={{ scale: 0.96 }}
+          whileHover={{ scale: 1.03 }}
+          className="mt-3 rounded-full px-7 py-3 text-[12px] font-black uppercase tracking-[0.22em] text-white shadow-xl active:scale-95 transition-all"
+          style={{
+            background: "linear-gradient(135deg, #1a1a1a 0%, #000000 100%)",
+            letterSpacing: "0.22em",
+            fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.22), 0 1.5px 6px rgba(0,0,0,0.13)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <Eye className="inline w-4 h-4 mr-2 mb-0.5" />
+          TAP TO TIP
         </motion.button>
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.7 }}
