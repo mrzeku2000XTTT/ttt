@@ -231,6 +231,12 @@ Also provide:
           <h1 className="text-white font-black text-lg leading-none">HIRE</h1>
           {agentName && <p className="text-xs mt-0.5" style={{ color: "rgba(196,181,253,0.5)" }}>Agent: {agentName}</p>}
         </div>
+        <Link to="/">
+          <button className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-80"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}>
+            Home
+          </button>
+        </Link>
         {/* Stage progress dots */}
         <div className="flex items-center gap-1.5">
           {STAGES.map((s, i) => (
