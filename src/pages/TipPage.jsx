@@ -63,9 +63,10 @@ export default function TipPage() {
   const [hireMessage, setHireMessage] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [showZkVerification, setShowZkVerification] = useState(false);
-  const [zkVerifying, setZkVerifying] = useState(false);
-  const [zkWalletBalance, setZkWalletBalance] = useState(null);
+  const [tttWalletBalance, setTttWalletBalance] = useState(null);
+  const [sendPin, setSendPin] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState(null);
   const [expandedRow, setExpandedRow] = useState(null);
   const [editTab, setEditTab] = useState("profile"); // profile | avatar | agent
   const fileInputRef = useRef(null);
@@ -76,29 +77,40 @@ export default function TipPage() {
   }, []);
 
   useEffect(() => {
-    if (searchQuery.trim()) {
-      setFilteredUsers(users.filter(u =>
-        u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.created_wallet_address?.toLowerCase().includes(searchQuery.toLowerCase())
-      ));
-    } else {
-      setFilteredUsers(users);
-    }
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) { setFilteredUsers(users); return; }
+    // Support multi-term: "krc20 design" matches both skills
+    const terms = q.split(/\s+/);
+    setFilteredUsers(users.filter(u => {
+      const haystack = [
+        u.username, u.email,
+        u.created_wallet_address,
+        u.project_tagline,
+        u.agent_name,
+        u.agent_persona,
+        u.agent_skills,
+        u.agent_availability,
+        u.github_url,
+        u.project_site,
+      ].filter(Boolean).join(" ").toLowerCase();
+      return terms.every(t => haystack.includes(t));
+    }));
   }, [searchQuery, users]);
 
   const loadCurrentUser = async () => {
     try {
       const user = await base44.auth.me();
       setCurrentUser(user);
-      if (user?.created_wallet_address) loadZkWalletBalance(user.created_wallet_address);
+      const addr = localStorage.getItem('ttt_wallet_address') || user?.created_wallet_address;
+      if (addr) loadTttBalance(addr);
     } catch { setCurrentUser(null); }
   };
 
-  const loadZkWalletBalance = async (address) => {
+  const loadTttBalance = async (addr) => {
     try {
-      const r = await base44.functions.invoke("getKaspaBalance", { address });
-      if (r.data?.balance) setZkWalletBalance(r.data.balance);
+      const r = await base44.functions.invoke("getKaspaBalance", { address: addr });
+      const bal = r.data?.balanceKAS ?? r.data?.balance;
+      if (typeof bal === 'number') setTttWalletBalance(bal);
     } catch {}
   };
 
@@ -262,25 +274,36 @@ export default function TipPage() {
     } catch (e) { alert(`Failed: ${e.message}`); }
   };
 
-  const handleZkTip = async () => {
-    if (!currentUser?.created_wallet_address) { alert("Please connect your TTT wallet first"); return; }
-    if (!tipAmount || parseFloat(tipAmount) <= 0) { alert("Enter a valid amount"); return; }
-    const ts = Date.now(); setZkVerifying(true); setShowZkVerification(true);
-    let attempts = 0;
-    const check = async () => {
-      attempts++;
-      try {
-        const r = await base44.functions.invoke("verifyKaspaSelfTransaction", { address: currentUser.created_wallet_address, expectedAmount: parseFloat(tipAmount), timestamp: ts });
-        if (r.data?.verified) {
-          setZkVerifying(false);
-          alert(`✅ Sent ${tipAmount} KAS to ${selectedUser.username} via ZK!`);
-          setShowZkVerification(false); setSelectedUser(null); setTipAmount(""); return;
-        }
-      } catch {}
-      if (attempts < 200) setTimeout(check, 3000);
-      else { setZkVerifying(false); alert("Verification timeout."); }
-    };
-    check();
+  const handleTttWalletSend = async () => {
+    const storedPK = localStorage.getItem('ttt_wallet_pk');
+    const storedPinHash = localStorage.getItem('ttt_wallet_pin_hash') || currentUser?.wallet_pin_hash;
+    if (!storedPK) { alert("No TTT wallet found. Please set up your wallet first at /Wallet."); return; }
+    if (!storedPinHash) { alert("Set your 6-digit wallet PIN at /Wallet first."); return; }
+    if (sendPin.length !== 6) { alert("Enter your 6-digit wallet PIN."); return; }
+    if (!tipAmount || parseFloat(tipAmount) <= 0) { alert("Enter a valid amount."); return; }
+    const fromAddress = localStorage.getItem('ttt_wallet_address') || currentUser?.created_wallet_address;
+    const toAddress = selectedUser?.created_wallet_address || selectedUser?.agent_zk_id;
+    if (!fromAddress || !toAddress) { alert("Wallet addresses missing."); return; }
+    setIsSending(true);
+    setSendSuccess(null);
+    try {
+      const pinRes = await base44.functions.invoke('hashPin', { pin: sendPin });
+      if (pinRes.data?.hash !== storedPinHash) throw new Error('Incorrect PIN');
+      const res = await base44.functions.invoke('sendKaspaTransaction', {
+        privateKey: storedPK,
+        fromAddress,
+        toAddress,
+        amountKas: parseFloat(tipAmount),
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setSendSuccess(`✅ Sent ${tipAmount} KAS to ${selectedUser.username}! TX: ${String(res.data.txId || '').slice(0, 16)}...`);
+      setSendPin("");
+      setTimeout(() => { setSelectedUser(null); setTipAmount(""); setSendSuccess(null); loadTttBalance(fromAddress); }, 3000);
+    } catch (e) {
+      alert(`Send failed: ${e.message}`);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const getBadges = (user) => {
@@ -373,13 +396,27 @@ export default function TipPage() {
         )}
 
         {/* Search */}
-        <div className="mb-6 relative">
+        <div className="mb-3 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(96,165,250,0.4)" }} />
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search by name, email, or wallet..."
+            placeholder="Search name, skill, project, agent… e.g. 'KRC-20 design'"
             className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white outline-none"
             style={{ background: "rgba(0,25,70,0.6)", border: "1px solid rgba(0,100,200,0.25)", backdropFilter: "blur(12px)" }}
           />
+        </div>
+        {/* Quick skill filters */}
+        <div className="flex gap-1.5 flex-wrap mb-5">
+          {["KRC-20","DeFi","Design","Code","Trading","Available"].map(tag => (
+            <button key={tag} onClick={() => setSearchQuery(q => q === tag.toLowerCase() ? "" : tag.toLowerCase())}
+              className="text-[10px] px-2.5 py-1 rounded-full font-bold transition-all hover:opacity-80"
+              style={{
+                background: searchQuery === tag.toLowerCase() ? "rgba(139,92,246,0.4)" : "rgba(0,60,160,0.2)",
+                border: `1px solid ${searchQuery === tag.toLowerCase() ? "rgba(139,92,246,0.6)" : "rgba(0,100,200,0.25)"}`,
+                color: searchQuery === tag.toLowerCase() ? "#c4b5fd" : "rgba(96,165,250,0.6)",
+              }}>
+              {tag}
+            </button>
+          ))}
         </div>
 
         {/* Directory list */}
@@ -601,7 +638,7 @@ export default function TipPage() {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-[200]" style={{ background: "rgba(0,4,20,0.92)", backdropFilter: "blur(20px)" }}
-              onClick={() => setSelectedUser(null)} />
+              onClick={() => { setSelectedUser(null); setSendPin(""); setSendSuccess(null); }} />
             <div className="fixed inset-0 z-[201] flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-sm rounded-3xl p-6"
@@ -612,7 +649,7 @@ export default function TipPage() {
                     <img src={getAvatarUrl(selectedUser)} alt="" className="w-full h-full object-cover" />
                   </div>
                   <h3 className="text-white font-black text-xl flex-1">Tip <span style={{ color: "#60a5fa" }}>{selectedUser.username}</span></h3>
-                  <button onClick={() => setSelectedUser(null)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
+                  <button onClick={() => { setSelectedUser(null); setSendPin(""); setSendSuccess(null); }} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -627,24 +664,55 @@ export default function TipPage() {
                     {copiedAddress === (selectedUser.created_wallet_address || selectedUser.agent_zk_id) ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy</>}
                   </button>
                 </div>
-                <div className="mb-4">
-                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Amount (KAS)</label>
-                  <input type="number" step="0.01" value={tipAmount} onChange={e => setTipAmount(e.target.value)} placeholder="0.00"
-                    className="w-full py-3 text-center text-2xl font-black text-white rounded-xl outline-none"
-                    style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.25)", caretColor: "#60a5fa" }} />
-                </div>
-                <div className="space-y-2.5">
-                  <button onClick={handleZkTip} disabled={!tipAmount || parseFloat(tipAmount) <= 0}
-                    className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-40 hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #0050ff 0%, #003acc 100%)", color: "white", border: "1px solid rgba(0,120,255,0.5)" }}>
-                    <Wallet className="inline w-4 h-4 mr-1.5 mb-0.5" /> ZK · Send via Kaspium
-                  </button>
-                  <button onClick={handleKaswareTip} disabled={!tipAmount || parseFloat(tipAmount) <= 0}
-                    className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-40 hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, rgba(234,179,8,0.9) 0%, rgba(234,88,12,0.9) 100%)", color: "white" }}>
-                    <Send className="inline w-4 h-4 mr-1.5 mb-0.5" /> Kasware Wallet
-                  </button>
-                </div>
+                {sendSuccess ? (
+                  <div className="text-center py-4">
+                    <p className="text-green-400 font-bold text-sm">{sendSuccess}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-3">
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Amount (KAS)</label>
+                      <input type="number" step="0.01" value={tipAmount} onChange={e => setTipAmount(e.target.value)} placeholder="0.00"
+                        className="w-full py-3 text-center text-2xl font-black text-white rounded-xl outline-none"
+                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.25)", caretColor: "#60a5fa" }} />
+                      {tttWalletBalance !== null && (
+                        <p className="text-xs mt-1 text-center" style={{ color: "rgba(96,165,250,0.4)" }}>
+                          TTT Wallet: {tttWalletBalance.toFixed(4)} KAS
+                        </p>
+                      )}
+                    </div>
+
+                    {/* TTT Wallet send */}
+                    {localStorage.getItem('ttt_wallet_pk') ? (
+                      <>
+                        <div className="mb-3">
+                          <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Wallet PIN (6 digits)</label>
+                          <input type="password" inputMode="numeric" maxLength={6}
+                            value={sendPin} onChange={e => setSendPin(e.target.value.replace(/\D/g, ""))}
+                            placeholder="••••••"
+                            className="w-full py-3 text-center text-xl font-black text-white rounded-xl outline-none tracking-widest"
+                            style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.25)", caretColor: "#60a5fa" }} />
+                        </div>
+                        <button onClick={handleTttWalletSend}
+                          disabled={isSending || !tipAmount || parseFloat(tipAmount) <= 0 || sendPin.length !== 6}
+                          className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-40 hover:opacity-90 mb-2.5"
+                          style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #0050ff 100%)", color: "white", border: "1px solid rgba(0,150,255,0.5)" }}>
+                          {isSending ? "Sending..." : <><Wallet className="inline w-4 h-4 mr-1.5 mb-0.5" /> TTT Wallet · Send KAS</>}
+                        </button>
+                      </>
+                    ) : (
+                      <div className="mb-3 p-3 rounded-xl text-center" style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.2)" }}>
+                        <p className="text-xs" style={{ color: "rgba(234,179,8,0.8)" }}>Set up your TTT Wallet at <a href="/Wallet" className="underline">TTT Wallet</a> to send directly</p>
+                      </div>
+                    )}
+
+                    <button onClick={handleKaswareTip} disabled={!tipAmount || parseFloat(tipAmount) <= 0}
+                      className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-40 hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, rgba(234,179,8,0.9) 0%, rgba(234,88,12,0.9) 100%)", color: "white" }}>
+                      <Send className="inline w-4 h-4 mr-1.5 mb-0.5" /> Kasware Wallet
+                    </button>
+                  </>
+                )}
               </motion.div>
             </div>
           </>
@@ -929,46 +997,7 @@ export default function TipPage() {
         )}
       </AnimatePresence>
 
-      {/* ZK Modal */}
-      <AnimatePresence>
-        {showZkVerification && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[300]" style={{ background: "rgba(0,4,20,0.95)", backdropFilter: "blur(20px)" }} />
-            <div className="fixed inset-0 z-[301] flex items-center justify-center p-4">
-              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-                className="w-full max-w-sm rounded-3xl p-6 text-center"
-                style={{ background: "linear-gradient(135deg, rgba(0,20,80,0.99), rgba(0,8,30,0.99))", border: "1px solid rgba(0,120,255,0.3)", boxShadow: "0 0 80px rgba(0,80,255,0.25)" }}>
-                <div className="w-16 h-16 rounded-full mx-auto mb-4 animate-spin" style={{ border: "3px solid rgba(0,120,255,0.2)", borderTop: "3px solid #3b82f6" }} />
-                <h3 className="text-white font-black text-xl mb-2">ZK Verification</h3>
-                <p className="text-sm mb-6" style={{ color: "rgba(96,165,250,0.6)" }}>Send <span className="text-blue-300 font-bold">{tipAmount} KAS</span> to yourself in Kaspium</p>
-                {zkWalletBalance !== null && (
-                  <div className="p-3 rounded-xl mb-4" style={{ background: "rgba(0,40,140,0.12)", border: "1px solid rgba(0,120,255,0.15)" }}>
-                    <p className="text-xs mb-1" style={{ color: "rgba(96,165,250,0.5)" }}>Balance</p>
-                    <p className="text-white text-xl font-black">{zkWalletBalance.toFixed(2)} KAS</p>
-                  </div>
-                )}
-                {currentUser?.created_wallet_address && (
-                  <div className="p-3 rounded-xl mb-4" style={{ background: "rgba(0,40,140,0.12)", border: "1px solid rgba(0,120,255,0.15)" }}>
-                    <p className="text-xs mb-1 text-center" style={{ color: "rgba(96,165,250,0.5)" }}>Your Address</p>
-                    <p className="text-blue-300/70 text-xs font-mono break-all">{currentUser.created_wallet_address}</p>
-                    <button onClick={() => navigator.clipboard.writeText(currentUser.created_wallet_address)}
-                      className="mt-2 mx-auto flex items-center gap-1 text-xs px-3 py-1 rounded-lg"
-                      style={{ background: "rgba(0,80,255,0.15)", color: "#60a5fa", border: "1px solid rgba(0,120,255,0.2)" }}>
-                      Copy
-                    </button>
-                  </div>
-                )}
-                <button onClick={() => { setZkVerifying(false); setShowZkVerification(false); setTipAmount(""); }}
-                  className="w-full py-2.5 rounded-xl text-sm font-bold"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}>
-                  Cancel
-                </button>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+
     </div>
   );
 }
