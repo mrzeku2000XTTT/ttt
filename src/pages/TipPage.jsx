@@ -539,12 +539,23 @@ export default function TipPage() {
                                     </span>
                                   )}
                                 </div>
-                                <a href="https://github.com/kaspanet/rusty-kaspa" target="_blank" rel="noopener noreferrer"
-                                  onClick={e => e.stopPropagation()}
-                                  className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
-                                  style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
-                                  <ExternalLink className="w-2.5 h-2.5" /> Toccata
-                                </a>
+                                {!isCur && (
+                                  <button
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      const params = new URLSearchParams({
+                                        name: agentName,
+                                        ...(agentSkills ? { skills: agentSkills } : {}),
+                                        ...(agentRate ? { rate: agentRate } : {}),
+                                        ...(user.email ? { agent: user.email } : {}),
+                                      });
+                                      navigate(`/Hire?${params.toString()}`);
+                                    }}
+                                    className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
+                                    style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
+                                    💼 HIRE
+                                  </button>
+                                )}
                               </div>
                               {(user.agent_persona || (isCur && currentUser?.agent_persona)) && (
                                 <p className="text-xs leading-relaxed mb-2" style={{ color: "rgba(196,181,253,0.7)" }}>
