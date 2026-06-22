@@ -370,7 +370,8 @@ export default function ImageHistoryPage() {
                 '1:1': '1024x1024',
                 '4:3': '1024x768',
                 '3:4': '768x1024',
-                '16:9': '1280x720'
+                '16:9': '1280x720',
+                '9:16': '720x1280'
               };
               const dimensions = dimensionsMap[aspectRatio] || '1024x1024';
               
@@ -483,7 +484,8 @@ export default function ImageHistoryPage() {
                 '1:1': '1024x1024',
                 '4:3': '1024x768',
                 '3:4': '768x1024',
-                '16:9': '1280x720'
+                '16:9': '1280x720',
+                '9:16': '720x1280'
               };
               const dimensions = dimensionsMap[aspectRatio] || '1024x1024';
               
@@ -1231,7 +1233,8 @@ export default function ImageHistoryPage() {
                     { ratio: '1:1', label: 'Square (1:1)' },
                     { ratio: '4:3', label: 'Landscape (4:3)' },
                     { ratio: '3:4', label: 'Portrait (3:4)' },
-                    { ratio: '16:9', label: 'Widescreen (16:9)' }
+                    { ratio: '16:9', label: 'Widescreen (16:9)' },
+                    { ratio: '9:16', label: 'Vertical (9:16)' }
                   ].map((option) => (
                     <button
                       key={option.ratio}
@@ -1258,7 +1261,8 @@ export default function ImageHistoryPage() {
                       '1:1': '1024x1024 Square',
                       '4:3': '1024x768 Landscape',
                       '3:4': '768x1024 Portrait',
-                      '16:9': '1280x720 Widescreen'
+                      '16:9': '1280x720 Widescreen',
+                      '9:16': '720x1280 Vertical'
                     };
                     const aspectInfo = dimensionsMap[aspectRatio] || '1024x1024 Square';
                     const additionalInstruction = `\n\n[ASPECT RATIO APPLIED: ${aspectInfo}]`;
