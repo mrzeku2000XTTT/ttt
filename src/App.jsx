@@ -96,6 +96,7 @@ import TTTBuilderPage from './pages/TTTBuilder';
 import TTTOSPage from './pages/TTTOS';
 import GhostFrameLandingPage from './pages/GhostFrameLanding';
 import GhostFrameStudioPage from './pages/GhostFrameStudio';
+import TipPageComponent from './pages/TipPage';
 import NodePage from './pages/Node';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
@@ -229,6 +230,7 @@ const AuthenticatedApp = () => {
       <Route path="/TTTOS" element={<TTTOSPage />} />
       <Route path="/GhostFrame" element={<GhostFrameLandingPage />} />
       <Route path="/GhostFrameStudio" element={<GhostFrameStudioPage />} />
+      <Route path="/Tip" element={<TipPageComponent />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Lock, Unlock, Eye, Cpu, FlaskConical, Play, Pause, Music2 } from "lucide-react";
+import { X, Send, ChevronDown, Lock, Unlock, Cpu, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap } from "lucide-react";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
@@ -557,26 +557,70 @@ export default function TTTLandingPage() {
           {showPlayer ? (isPlaying ? "Pause" : "Play") : "Play"}
         </motion.button>
 
-        <motion.button
-          type="button"
-          onClick={() => navigate("/TTTGate")}
+        {/* Three-button row */}
+        <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.68 }}
-          whileTap={{ scale: 0.96 }}
-          whileHover={{ scale: 1.03 }}
-          className="mt-3 rounded-full px-7 py-3 text-[12px] font-black uppercase tracking-[0.22em] text-white shadow-xl active:scale-95 transition-all"
-          style={{
-            background: "linear-gradient(135deg, #1a1a1a 0%, #000000 100%)",
-            letterSpacing: "0.22em",
-            fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.22), 0 1.5px 6px rgba(0,0,0,0.13)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
+          className="mt-3 flex items-center gap-2"
         >
-          <Eye className="inline w-4 h-4 mr-2 mb-0.5" />
-          TAP TO TIP
-        </motion.button>
+          {/* TAP → AppStoreV2 */}
+          <motion.button
+            type="button"
+            onClick={() => navigate("/AppStoreV2")}
+            whileTap={{ scale: 0.96 }}
+            whileHover={{ scale: 1.04 }}
+            className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(220,220,230,0.88) 100%)",
+              border: "1px solid rgba(255,255,255,0.6)",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
+              backdropFilter: "blur(20px)",
+              fontFamily: "'SF Pro Display', -apple-system, sans-serif",
+            }}
+          >
+            <LayoutGrid className="w-4 h-4 mb-1 text-slate-800" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-800">TAP</span>
+          </motion.button>
+
+          {/* TO → Feed */}
+          <motion.button
+            type="button"
+            onClick={() => navigate("/Feed")}
+            whileTap={{ scale: 0.96 }}
+            whileHover={{ scale: 1.04 }}
+            className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
+            style={{
+              background: "linear-gradient(135deg, rgba(240,240,248,0.90) 0%, rgba(200,200,220,0.86) 100%)",
+              border: "1px solid rgba(255,255,255,0.55)",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.85)",
+              backdropFilter: "blur(20px)",
+              fontFamily: "'SF Pro Display', -apple-system, sans-serif",
+            }}
+          >
+            <Users className="w-4 h-4 mb-1 text-slate-700" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">TO</span>
+          </motion.button>
+
+          {/* TIP → TipPage (futuristic blue) */}
+          <motion.button
+            type="button"
+            onClick={() => navigate("/Tip")}
+            whileTap={{ scale: 0.96 }}
+            whileHover={{ scale: 1.04 }}
+            className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
+            style={{
+              background: "linear-gradient(135deg, rgba(0,80,220,0.88) 0%, rgba(0,40,180,0.92) 100%)",
+              border: "1px solid rgba(100,160,255,0.45)",
+              boxShadow: "0 4px 24px rgba(0,80,255,0.25), 0 0 0 1px rgba(100,160,255,0.15), inset 0 1px 0 rgba(255,255,255,0.15)",
+              backdropFilter: "blur(20px)",
+              fontFamily: "'SF Pro Display', -apple-system, sans-serif",
+            }}
+          >
+            <Zap className="w-4 h-4 mb-1 text-blue-200" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">TIP</span>
+          </motion.button>
+        </motion.div>
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.7 }}
           className="mt-5 text-[10px] font-semibold uppercase tracking-[0.5em] text-slate-500/60">
