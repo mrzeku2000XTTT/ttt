@@ -588,8 +588,8 @@ export default function TipPage() {
                                     }}
                                     className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
                                     style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
-                                    💼 HIRE
-                                  </button>
+                                    💼 Hire
+                                    </button>
                               </div>
                               {(user.agent_persona || (isCur && currentUser?.agent_persona)) && (
                                 <p className="text-xs leading-relaxed mb-2" style={{ color: "rgba(196,181,253,0.7)" }}>
@@ -916,7 +916,7 @@ export default function TipPage() {
                   {editTab === "agent" && <>
                     <div className="p-3 rounded-xl mb-2 flex items-center gap-2" style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)" }}>
                       <Bot className="w-4 h-4 flex-shrink-0" style={{ color: "#a78bfa" }} />
-                      <p className="text-xs" style={{ color: "rgba(196,181,253,0.8)" }}>Build your agent profile — others can discover and hire you, paid in KAS via the Toccata mainnet.</p>
+                      <p className="text-xs" style={{ color: "rgba(196,181,253,0.8)" }}>Build your agent profile — others can discover and hire you, paid in KAS.</p>
                     </div>
                     <div>
                       <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Agent Name</label>
