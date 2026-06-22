@@ -1,16 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, ArrowRight, X, Pencil, Star, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Wallet, Copy, Check, Send, ArrowRight, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon } from "lucide-react";
 
-// Star particle background
-const STARS = Array.from({ length: 60 }, (_, i) => ({
-  id: i,
-  x: Math.random() * 100,
-  y: Math.random() * 100,
-  size: Math.random() * 1.5 + 0.5,
-  opacity: Math.random() * 0.5 + 0.1,
-}));
+const BG_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/df3ad1026_generated_image.png";
+
+// Preset Kaspa anime avatars
+const PRESET_AVATARS = [
+  { id: "destroyer", url: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3b1e6b952_generated_image.png", label: "Destroyer" },
+  { id: "esp", url: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/39ee5b58e_generated_image.png", label: "ESP" },
+  { id: "professor", url: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0094b4662_generated_image.png", label: "Professor" },
+  { id: "king", url: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/020cd962c_generated_image.png", label: "King" },
+  { id: "builder", url: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1516cfcca_generated_image.png", label: "Builder" },
+  { id: "warrior", url: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2e6837d45_generated_image.png", label: "Warrior" },
+  { id: "phantom", url: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/aaefa5272_generated_image.png", label: "Phantom" },
+];
+
+// Per-username hardcoded avatars
+const USERNAME_AVATARS = {
+  destroyer: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3b1e6b952_generated_image.png",
+  esp: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/39ee5b58e_generated_image.png",
+  professor: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0094b4662_generated_image.png",
+  ayomuiz: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/020cd962c_generated_image.png",
+};
+
+function getAvatarUrl(user) {
+  if (user.avatar_url) return user.avatar_url;
+  const n = user.username?.toLowerCase().trim().replace(/\s+/g, "");
+  if (n && USERNAME_AVATARS[n]) return USERNAME_AVATARS[n];
+  // Deterministic preset by username hash
+  if (n) {
+    let hash = 0;
+    for (let i = 0; i < n.length; i++) hash = ((hash << 5) - hash) + n.charCodeAt(i);
+    return PRESET_AVATARS[Math.abs(hash) % PRESET_AVATARS.length].url;
+  }
+  return PRESET_AVATARS[0].url;
+}
 
 export default function TipPage() {
   const [users, setUsers] = useState([]);
@@ -27,12 +52,18 @@ export default function TipPage() {
   const [editProject, setEditProject] = useState("");
   const [editProjectSite, setEditProjectSite] = useState("");
   const [editGithub, setEditGithub] = useState("");
+  const [editTiptree, setEditTiptree] = useState("");
+  const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [editAgentName, setEditAgentName] = useState("");
+  const [editAgentPersona, setEditAgentPersona] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showZkVerification, setShowZkVerification] = useState(false);
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
-  const [zkTimestamp, setZkTimestamp] = useState(null);
   const [expandedRow, setExpandedRow] = useState(null);
+  const [editTab, setEditTab] = useState("profile"); // profile | avatar | agent
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadCurrentUser();
@@ -79,7 +110,8 @@ export default function TipPage() {
             id: post.id, username: post.author_name, email: post.created_by,
             created_wallet_address: post.author_wallet_address,
             agent_zk_id: post.author_agent_zk_id, role: post.author_role || "user",
-            created_date: post.created_date
+            created_date: post.created_date,
+            avatar_url: post.author_avatar_url || null,
           });
         }
       });
@@ -98,7 +130,20 @@ export default function TipPage() {
       if (activeUser?.created_wallet_address) {
         const idx = allUsers.findIndex(u => u.email === activeUser.email);
         if (idx !== -1) allUsers.splice(idx, 1);
-        allUsers.unshift({ id: activeUser.id || "current", username: activeUser.username || activeUser.full_name || activeUser.email?.split("@")[0], email: activeUser.email, created_wallet_address: activeUser.created_wallet_address, role: activeUser.role || "user", project_tagline: activeUser.project_tagline, project_site: activeUser.project_site, github_url: activeUser.github_url });
+        allUsers.unshift({
+          id: activeUser.id || "current",
+          username: activeUser.username || activeUser.full_name || activeUser.email?.split("@")[0],
+          email: activeUser.email,
+          created_wallet_address: activeUser.created_wallet_address,
+          role: activeUser.role || "user",
+          project_tagline: activeUser.project_tagline,
+          project_site: activeUser.project_site,
+          github_url: activeUser.github_url,
+          tiptree_url: activeUser.tiptree_url,
+          avatar_url: activeUser.avatar_url,
+          agent_name: activeUser.agent_name,
+          agent_persona: activeUser.agent_persona,
+        });
       }
 
       const filtered = allUsers.filter(u => {
@@ -150,7 +195,23 @@ export default function TipPage() {
     setEditProject(currentUser?.project_tagline || "");
     setEditProjectSite(currentUser?.project_site || "");
     setEditGithub(currentUser?.github_url || "");
+    setEditTiptree(currentUser?.tiptree_url || "");
+    setEditAvatarUrl(currentUser?.avatar_url || "");
+    setEditAgentName(currentUser?.agent_name || "");
+    setEditAgentPersona(currentUser?.agent_persona || "");
+    setEditTab("profile");
     setShowEditProfile(true);
+  };
+
+  const handleAvatarFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const r = await base44.integrations.Core.UploadFile({ file });
+      if (r?.file_url) setEditAvatarUrl(r.file_url);
+    } catch (err) { console.error(err); }
+    finally { setUploadingAvatar(false); }
   };
 
   const handleSaveProfile = async () => {
@@ -162,6 +223,10 @@ export default function TipPage() {
         project_tagline: editProject.trim(),
         project_site: editProjectSite.trim(),
         github_url: editGithub.trim(),
+        tiptree_url: editTiptree.trim(),
+        avatar_url: editAvatarUrl.trim(),
+        agent_name: editAgentName.trim(),
+        agent_persona: editAgentPersona.trim(),
       });
       const updated = await base44.auth.me();
       setCurrentUser(updated);
@@ -189,7 +254,7 @@ export default function TipPage() {
   const handleZkTip = async () => {
     if (!currentUser?.created_wallet_address) { alert("Please connect your TTT wallet first"); return; }
     if (!tipAmount || parseFloat(tipAmount) <= 0) { alert("Enter a valid amount"); return; }
-    const ts = Date.now(); setZkTimestamp(ts); setZkVerifying(true); setShowZkVerification(true);
+    const ts = Date.now(); setZkVerifying(true); setShowZkVerification(true);
     let attempts = 0;
     const check = async () => {
       attempts++;
@@ -198,7 +263,7 @@ export default function TipPage() {
         if (r.data?.verified) {
           setZkVerifying(false);
           alert(`✅ Sent ${tipAmount} KAS to ${selectedUser.username} via ZK!`);
-          setShowZkVerification(false); setSelectedUser(null); setTipAmount(""); setZkTimestamp(null); return;
+          setShowZkVerification(false); setSelectedUser(null); setTipAmount(""); return;
         }
       } catch {}
       if (attempts < 200) setTimeout(check, 3000);
@@ -227,49 +292,48 @@ export default function TipPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: "#010a1a" }}>
-      {/* Star field */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {STARS.map(s => (
-          <div key={s.id} className="absolute rounded-full bg-white"
-            style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, opacity: s.opacity }} />
-        ))}
-        {/* Blue nebula glows */}
-        <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", width: 600, height: 300, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(0,80,200,0.18) 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: "20%", right: "10%", width: 400, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(0,60,160,0.10) 0%, transparent 70%)", pointerEvents: "none" }} />
-      </div>
+      {/* BG image */}
+      <div className="fixed inset-0 pointer-events-none"
+        style={{ backgroundImage: `url(${BG_IMAGE})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.35 }} />
+      <div className="fixed inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(1,10,26,0.5) 0%, rgba(1,10,26,0.2) 40%, rgba(1,10,26,0.7) 100%)" }} />
 
       <div className="relative z-10 px-4 sm:px-6 max-w-2xl mx-auto" style={{ paddingTop: "4rem", paddingBottom: "6rem" }}>
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest uppercase"
+          {/* Badge - no icon */}
+          <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest uppercase"
             style={{ background: "rgba(0,100,255,0.12)", border: "1px solid rgba(0,150,255,0.3)", color: "#60a5fa" }}>
-            <Zap className="w-3 h-3" /> Instant KAS Tips
+            Instant KAS Tips
           </div>
-          <h1 className="font-black mb-2 leading-none"
-            style={{
-              fontSize: "clamp(3rem,10vw,4.5rem)",
-              fontFamily: "system-ui, sans-serif",
-              color: "#4db8ff",
-              textShadow: "0 0 40px rgba(0,140,255,0.6), 0 0 80px rgba(0,100,255,0.3)",
-              letterSpacing: "-0.02em",
-            }}>
+
+          {/* TapToTip with heavy shader */}
+          <h1 className="font-black mb-3 leading-none select-none" style={{
+            fontSize: "clamp(3.5rem,12vw,6rem)",
+            fontFamily: "'Arial Black', 'Impact', system-ui, sans-serif",
+            background: "linear-gradient(180deg, #ffffff 0%, #7dd3fc 30%, #3b82f6 60%, #1d4ed8 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            filter: "drop-shadow(0 0 30px rgba(0,150,255,0.9)) drop-shadow(0 0 60px rgba(0,100,255,0.6)) drop-shadow(0 0 100px rgba(0,80,200,0.4))",
+            letterSpacing: "-0.03em",
+          }}>
             TapToTip
           </h1>
-          <p className="text-white/50 text-base">Send KAS to anyone, instantly</p>
+          <p className="text-white/40 text-sm tracking-wide">Send KAS to anyone, instantly</p>
         </motion.div>
 
         {/* Status banner */}
         {!currentUser && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5 p-4 rounded-xl flex items-center gap-3"
-            style={{ background: "rgba(0,30,80,0.6)", border: "1px solid rgba(0,100,200,0.3)", backdropFilter: "blur(10px)" }}>
+            style={{ background: "rgba(0,30,80,0.7)", border: "1px solid rgba(0,100,200,0.35)", backdropFilter: "blur(12px)" }}>
             <div className="flex-1">
               <p className="text-white font-bold text-sm">Want to receive KAS tips?</p>
               <p className="text-white/40 text-xs mt-0.5">Sign in and add your Kaspa address</p>
             </div>
             <button onClick={() => base44.auth.redirectToLogin()}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition-all hover:opacity-90"
-              style={{ background: "rgba(0,100,255,0.7)", border: "1px solid rgba(0,150,255,0.5)" }}>
+              style={{ background: "rgba(0,100,255,0.8)", border: "1px solid rgba(0,150,255,0.5)" }}>
               Sign In <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </motion.div>
@@ -277,8 +341,12 @@ export default function TipPage() {
 
         {currentUser && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5 p-4 rounded-xl flex items-center gap-3"
-            style={{ background: "rgba(0,30,80,0.6)", border: "1px solid rgba(0,100,200,0.3)", backdropFilter: "blur(10px)" }}>
-            <Star className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            style={{ background: "rgba(0,30,80,0.7)", border: "1px solid rgba(0,100,200,0.35)", backdropFilter: "blur(12px)" }}>
+            {/* Mini avatar */}
+            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2"
+              style={{ borderColor: "rgba(0,150,255,0.5)", boxShadow: "0 0 12px rgba(0,100,255,0.4)" }}>
+              <img src={getAvatarUrl(currentUser)} alt="" className="w-full h-full object-cover" />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-bold text-sm">{currentUser.created_wallet_address ? "Your address is live" : "Add your wallet to receive tips"}</p>
               {currentUser.created_wallet_address && (
@@ -299,7 +367,7 @@ export default function TipPage() {
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search by name, email, or wallet..."
             className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white outline-none"
-            style={{ background: "rgba(0,25,70,0.5)", border: "1px solid rgba(0,100,200,0.25)", backdropFilter: "blur(10px)", color: "rgba(255,255,255,0.8)" }}
+            style={{ background: "rgba(0,25,70,0.6)", border: "1px solid rgba(0,100,200,0.25)", backdropFilter: "blur(12px)" }}
           />
         </div>
 
@@ -324,35 +392,33 @@ export default function TipPage() {
               const projectTagline = user.project_tagline || (isCur && currentUser?.project_tagline) || null;
               const projectSite = user.project_site || (isCur && currentUser?.project_site) || null;
               const githubUrl = user.github_url || (isCur && currentUser?.github_url) || null;
+              const tiptreeUrl = user.tiptree_url || (isCur && currentUser?.tiptree_url) || null;
+              const agentName = user.agent_name || (isCur && currentUser?.agent_name) || null;
+              const avatarUrl = getAvatarUrl(isCur ? { ...user, avatar_url: currentUser?.avatar_url || user.avatar_url } : user);
 
               return (
                 <motion.div key={user.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
-                  {/* Main row */}
                   <div
                     onClick={() => toggleRow(user.id)}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all"
                     style={{
-                      background: isExpanded ? "rgba(0,60,160,0.25)" : isCur ? "rgba(0,50,130,0.18)" : "rgba(0,25,70,0.4)",
-                      border: isExpanded ? "1px solid rgba(0,150,255,0.45)" : isCur ? "1px solid rgba(0,120,255,0.35)" : "1px solid rgba(0,80,180,0.2)",
-                      backdropFilter: "blur(12px)",
+                      background: isExpanded ? "rgba(0,60,160,0.3)" : isCur ? "rgba(0,50,130,0.22)" : "rgba(0,25,70,0.5)",
+                      border: isExpanded ? "1px solid rgba(0,150,255,0.5)" : isCur ? "1px solid rgba(0,120,255,0.4)" : "1px solid rgba(0,80,180,0.25)",
+                      backdropFilter: "blur(14px)",
                     }}
                   >
                     {/* Rank */}
                     <div className="text-2xl font-black w-8 flex-shrink-0 text-right"
-                      style={{ color: rank <= 3 ? "#4db8ff" : "rgba(96,165,250,0.3)", fontFamily: "monospace", textShadow: rank <= 3 ? "0 0 12px rgba(0,140,255,0.5)" : "none" }}>
+                      style={{ color: rank <= 3 ? "#4db8ff" : "rgba(96,165,250,0.25)", fontFamily: "monospace", textShadow: rank <= 3 ? "0 0 16px rgba(0,140,255,0.7)" : "none" }}>
                       {rank}
                     </div>
 
-                    {/* Avatar */}
-                    <div className="relative w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-black text-white"
-                      style={{
-                        background: "linear-gradient(135deg, rgba(0,60,180,0.7), rgba(0,30,100,0.9))",
-                        border: "2px solid rgba(0,120,255,0.4)",
-                        boxShadow: "0 0 12px rgba(0,100,255,0.25)",
-                      }}>
-                      {(user.username || "?")[0].toUpperCase()}
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-500"
-                        style={{ border: "1.5px solid #010a1a", boxShadow: "0 0 6px rgba(59,130,246,0.8)" }} />
+                    {/* Anime avatar */}
+                    <div className="relative w-11 h-11 rounded-full flex-shrink-0 overflow-hidden"
+                      style={{ border: "2px solid rgba(0,150,255,0.5)", boxShadow: "0 0 14px rgba(0,100,255,0.35)" }}>
+                      <img src={avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full"
+                        style={{ background: "#22c55e", border: "1.5px solid #010a1a", boxShadow: "0 0 6px rgba(34,197,94,0.8)" }} />
                     </div>
 
                     {/* Name + badges */}
@@ -360,6 +426,7 @@ export default function TipPage() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-white font-bold text-sm">{user.username || "Anonymous"}</span>
                         {isCur && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(0,100,255,0.25)", color: "#93c5fd", border: "1px solid rgba(0,150,255,0.35)" }}>YOU</span>}
+                        {agentName && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-0.5" style={{ background: "rgba(139,92,246,0.25)", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.35)" }}><Bot className="w-2 h-2" /> AI</span>}
                         {badges}
                       </div>
                       {projectTagline ? (
@@ -373,11 +440,10 @@ export default function TipPage() {
                     <button
                       onClick={e => { e.stopPropagation(); setSelectedUser(user); setTipAmount(""); }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold flex-shrink-0 transition-all hover:opacity-90 active:scale-95"
-                      style={{ background: "rgba(0,90,220,0.8)", border: "1px solid rgba(0,150,255,0.5)", color: "#93c5fd", boxShadow: "0 2px 12px rgba(0,80,200,0.3)" }}>
-                      <Zap className="w-3 h-3" /> Tip
+                      style={{ background: "rgba(0,90,220,0.85)", border: "1px solid rgba(0,150,255,0.5)", color: "#93c5fd", boxShadow: "0 2px 14px rgba(0,80,200,0.35)" }}>
+                      ⚡ Tip
                     </button>
 
-                    {/* Expand chevron */}
                     <div className="flex-shrink-0 ml-1" style={{ color: "rgba(96,165,250,0.4)" }}>
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
@@ -386,18 +452,28 @@ export default function TipPage() {
                   {/* Expanded panel */}
                   <AnimatePresence>
                     {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        style={{ overflow: "hidden" }}
-                      >
-                        <div className="mx-4 mb-1 px-4 py-4 rounded-b-xl"
-                          style={{ background: "rgba(0,20,60,0.7)", border: "1px solid rgba(0,100,200,0.2)", borderTop: "none", backdropFilter: "blur(12px)" }}>
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} style={{ overflow: "hidden" }}>
+                        <div className="mx-2 mb-1 px-4 py-4 rounded-b-xl"
+                          style={{ background: "rgba(0,15,50,0.8)", border: "1px solid rgba(0,100,200,0.2)", borderTop: "none", backdropFilter: "blur(14px)" }}>
+
+                          {/* Profile header */}
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0"
+                              style={{ border: "2px solid rgba(0,150,255,0.4)", boxShadow: "0 0 20px rgba(0,100,255,0.3)" }}>
+                              <img src={avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-white font-bold">{user.username}</p>
+                              {agentName && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Bot className="w-3 h-3" style={{ color: "#a78bfa" }} />
+                                  <span className="text-xs" style={{ color: "#a78bfa" }}>{agentName}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
                           <p className="text-xs font-bold mb-2 uppercase tracking-widest" style={{ color: "#4db8ff" }}>What I'm building</p>
-
                           {projectTagline ? (
                             <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(200,230,255,0.7)", fontFamily: "monospace" }}>{projectTagline}</p>
                           ) : (
@@ -408,40 +484,39 @@ export default function TipPage() {
 
                           {/* Links */}
                           <div className="flex items-center gap-3 flex-wrap mb-3">
-                            {projectSite && (
-                              <a href={projectSite} target="_blank" rel="noopener noreferrer"
+                            {tiptreeUrl && (
+                              <a href={tiptreeUrl.startsWith("http") ? tiptreeUrl : `https://tiptr.ee/${tiptreeUrl}`} target="_blank" rel="noopener noreferrer"
                                 onClick={e => e.stopPropagation()}
-                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80"
-                                style={{ color: "#60a5fa" }}>
+                                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
+                                style={{ background: "rgba(234,88,12,0.2)", border: "1px solid rgba(234,88,12,0.4)", color: "#fb923c" }}>
+                                🌳 TipTree <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            )}
+                            {projectSite && (
+                              <a href={projectSite} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80" style={{ color: "#60a5fa" }}>
                                 Project Site <ExternalLink className="w-3 h-3" />
                               </a>
                             )}
                             {githubUrl && (
-                              <a href={githubUrl} target="_blank" rel="noopener noreferrer"
-                                onClick={e => e.stopPropagation()}
-                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80"
-                                style={{ color: "#60a5fa" }}>
+                              <a href={githubUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80" style={{ color: "#60a5fa" }}>
                                 GitHub <ExternalLink className="w-3 h-3" />
                               </a>
-                            )}
-                            {!projectSite && !githubUrl && isCur && (
-                              <span className="text-xs" style={{ color: "rgba(96,165,250,0.3)" }}>Add links via Edit</span>
                             )}
                           </div>
 
                           {/* Wallet row */}
                           <div className="flex items-center gap-2 pt-3" style={{ borderTop: "1px solid rgba(0,80,180,0.2)" }}>
                             <code className="text-xs flex-1 truncate" style={{ color: "rgba(96,165,250,0.5)" }}>{address}</code>
-                            <button onClick={e => handleCopyAddress(address, e)}
-                              className="flex-shrink-0 transition-all"
-                              style={{ color: isCopied ? "#34d399" : "rgba(96,165,250,0.4)" }}>
+                            <button onClick={e => handleCopyAddress(address, e)} style={{ color: isCopied ? "#34d399" : "rgba(96,165,250,0.4)" }}>
                               {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                             </button>
                             {isCur && (
                               <button onClick={openEditProfile}
-                                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg ml-1 transition-all hover:opacity-80"
+                                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg ml-1"
                                 style={{ background: "rgba(0,80,200,0.2)", border: "1px solid rgba(0,120,255,0.25)", color: "#93c5fd" }}>
-                                <Pencil className="w-2.5 h-2.5" /> Edit Profile
+                                <Pencil className="w-2.5 h-2.5" /> Edit
                               </button>
                             )}
                           </div>
@@ -467,15 +542,18 @@ export default function TipPage() {
               <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-sm rounded-3xl p-6"
                 style={{ background: "linear-gradient(135deg, rgba(0,20,80,0.98) 0%, rgba(0,10,40,0.99) 100%)", border: "1px solid rgba(0,120,255,0.3)", boxShadow: "0 0 80px rgba(0,80,255,0.2), 0 32px 64px rgba(0,0,0,0.6)" }}>
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-white font-black text-xl">Tip <span style={{ color: "#60a5fa" }}>{selectedUser.username}</span></h3>
+                {/* Header with avatar */}
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: "2px solid rgba(0,150,255,0.5)" }}>
+                    <img src={getAvatarUrl(selectedUser)} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <h3 className="text-white font-black text-xl flex-1">Tip <span style={{ color: "#60a5fa" }}>{selectedUser.username}</span></h3>
                   <button onClick={() => setSelectedUser(null)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <div className="bg-white p-3 rounded-2xl mb-4">
-                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}`}
-                    alt="QR" className="w-full h-auto rounded-xl" />
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}`} alt="QR" className="w-full h-auto rounded-xl" />
                 </div>
                 <div className="p-3 rounded-xl mb-4 text-center" style={{ background: "rgba(0,60,180,0.1)", border: "1px solid rgba(0,120,255,0.2)" }}>
                   <p className="text-xs mb-1" style={{ color: "rgba(96,165,250,0.5)" }}>Recipient Address</p>
@@ -502,7 +580,6 @@ export default function TipPage() {
                     style={{ background: "linear-gradient(135deg, rgba(234,179,8,0.9) 0%, rgba(234,88,12,0.9) 100%)", color: "white" }}>
                     <Send className="inline w-4 h-4 mr-1.5 mb-0.5" /> Kasware Wallet
                   </button>
-                  <p className="text-center text-[10px]" style={{ color: "rgba(96,165,250,0.3)" }}>ZK verifies automatically via Kaspium self-send</p>
                 </div>
               </motion.div>
             </div>
@@ -517,40 +594,163 @@ export default function TipPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-[200]" style={{ background: "rgba(0,4,20,0.88)", backdropFilter: "blur(16px)" }}
               onClick={() => setShowEditProfile(false)} />
-            <div className="fixed inset-0 z-[201] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[201] flex items-center justify-center p-4 overflow-y-auto">
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-md rounded-3xl p-6"
-                style={{ background: "linear-gradient(135deg, rgba(0,20,80,0.98), rgba(0,8,30,0.99))", border: "1px solid rgba(0,120,255,0.25)", boxShadow: "0 32px 80px rgba(0,0,0,0.7)" }}>
-                <div className="flex items-center justify-between mb-6">
+                className="w-full max-w-md rounded-3xl p-6 my-4"
+                style={{ background: "linear-gradient(135deg, rgba(0,15,60,0.99), rgba(0,8,30,0.99))", border: "1px solid rgba(0,120,255,0.25)", boxShadow: "0 32px 80px rgba(0,0,0,0.8)" }}>
+                <div className="flex items-center justify-between mb-5">
                   <h3 className="text-white font-black text-xl">Edit Profile</h3>
                   <button onClick={() => setShowEditProfile(false)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="space-y-4">
+
+                {/* Tabs */}
+                <div className="flex gap-1 mb-5 p-1 rounded-xl" style={{ background: "rgba(0,20,60,0.6)" }}>
                   {[
-                    { label: "Display Name", value: editName, setter: setEditName, placeholder: "Your username" },
-                    { label: "Kaspa Wallet Address", value: editWallet, setter: setEditWallet, placeholder: "kaspa:q...", mono: true },
-                    { label: "What I'm building on Kaspa", value: editProject, setter: setEditProject, placeholder: "e.g. Building a KRC-20 DeFi protocol...", textarea: true },
-                    { label: "Project Site URL", value: editProjectSite, setter: setEditProjectSite, placeholder: "https://myproject.xyz" },
-                    { label: "GitHub URL", value: editGithub, setter: setEditGithub, placeholder: "https://github.com/..." },
-                  ].map(field => (
-                    <div key={field.label}>
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>{field.label}</label>
-                      {field.textarea ? (
-                        <textarea value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} rows={3}
-                          className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none resize-none"
-                          style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa", fontFamily: "monospace" }} />
-                      ) : (
-                        <input value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder}
-                          className="w-full px-4 py-3 rounded-xl text-white outline-none"
-                          style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa", fontFamily: field.mono ? "monospace" : "inherit", fontSize: "0.875rem" }} />
-                      )}
-                    </div>
+                    { id: "profile", label: "Profile" },
+                    { id: "avatar", label: "Avatar" },
+                    { id: "agent", label: "Agent" },
+                  ].map(tab => (
+                    <button key={tab.id} onClick={() => setEditTab(tab.id)}
+                      className="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                      style={{
+                        background: editTab === tab.id ? "rgba(0,100,255,0.6)" : "transparent",
+                        color: editTab === tab.id ? "white" : "rgba(96,165,250,0.5)",
+                        border: editTab === tab.id ? "1px solid rgba(0,150,255,0.4)" : "1px solid transparent",
+                      }}>
+                      {tab.label}
+                    </button>
                   ))}
+                </div>
+
+                <div className="space-y-4">
+                  {/* PROFILE TAB */}
+                  {editTab === "profile" && <>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Display Name</label>
+                      <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Your username"
+                        className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
+                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Kaspa Wallet Address</label>
+                      <input value={editWallet} onChange={e => setEditWallet(e.target.value)} placeholder="kaspa:q..."
+                        className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm font-mono"
+                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>What I'm building on Kaspa</label>
+                      <textarea value={editProject} onChange={e => setEditProject(e.target.value)} placeholder="e.g. Building a KRC-20 DeFi protocol..." rows={3}
+                        className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none resize-none"
+                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa", fontFamily: "monospace" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Project Site URL</label>
+                      <input value={editProjectSite} onChange={e => setEditProjectSite(e.target.value)} placeholder="https://myproject.xyz"
+                        className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
+                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>GitHub URL</label>
+                      <input value={editGithub} onChange={e => setEditGithub(e.target.value)} placeholder="https://github.com/..."
+                        className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
+                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: "rgba(96,165,250,0.6)" }}>
+                        <span>🌳</span> TipTree Profile
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-400/40 text-sm pl-1">tiptr.ee/</span>
+                        <input value={editTiptree} onChange={e => setEditTiptree(e.target.value)} placeholder="yourusername"
+                          className="flex-1 px-3 py-3 rounded-xl text-white outline-none text-sm"
+                          style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(234,88,12,0.3)", caretColor: "#fb923c" }} />
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: "rgba(96,165,250,0.3)" }}>Link to your <a href="https://tiptr.ee" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "#fb923c" }}>tiptr.ee</a> profile</p>
+                    </div>
+                  </>}
+
+                  {/* AVATAR TAB */}
+                  {editTab === "avatar" && <>
+                    {/* Current avatar preview */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden" style={{ border: "2px solid rgba(0,150,255,0.4)" }}>
+                        <img src={editAvatarUrl || getAvatarUrl({ username: editName })} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-sm">Current Avatar</p>
+                        <p className="text-xs mt-0.5" style={{ color: "rgba(96,165,250,0.4)" }}>Choose a preset or upload your own</p>
+                      </div>
+                    </div>
+
+                    {/* Upload */}
+                    <div>
+                      <label className="text-xs font-semibold mb-2 block" style={{ color: "rgba(96,165,250,0.6)" }}>Upload Custom Avatar</label>
+                      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFileUpload} />
+                      <button onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}
+                        className="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:opacity-80 disabled:opacity-40"
+                        style={{ background: "rgba(0,80,200,0.2)", border: "1px dashed rgba(0,150,255,0.4)", color: "#93c5fd" }}>
+                        <Upload className="w-4 h-4" />
+                        {uploadingAvatar ? "Uploading..." : "Upload Image"}
+                      </button>
+                    </div>
+
+                    {/* Or custom URL */}
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Or paste image URL</label>
+                      <input value={editAvatarUrl} onChange={e => setEditAvatarUrl(e.target.value)} placeholder="https://..."
+                        className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
+                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                    </div>
+
+                    {/* Preset grid */}
+                    <div>
+                      <label className="text-xs font-semibold mb-2 block" style={{ color: "rgba(96,165,250,0.6)" }}>Kaspa Anime Presets</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {PRESET_AVATARS.map(p => (
+                          <button key={p.id} onClick={() => setEditAvatarUrl(p.url)}
+                            className="relative rounded-xl overflow-hidden transition-all hover:scale-105 active:scale-95"
+                            style={{
+                              border: editAvatarUrl === p.url ? "2px solid #3b82f6" : "2px solid rgba(0,80,180,0.3)",
+                              boxShadow: editAvatarUrl === p.url ? "0 0 12px rgba(59,130,246,0.6)" : "none",
+                              aspectRatio: "1",
+                            }}>
+                            <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
+                            <div className="absolute bottom-0 left-0 right-0 text-[8px] text-white text-center font-bold pb-0.5"
+                              style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}>
+                              {p.label}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>}
+
+                  {/* AGENT TAB */}
+                  {editTab === "agent" && <>
+                    <div className="p-3 rounded-xl mb-2 flex items-center gap-2" style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)" }}>
+                      <Bot className="w-4 h-4 flex-shrink-0" style={{ color: "#a78bfa" }} />
+                      <p className="text-xs" style={{ color: "rgba(196,181,253,0.8)" }}>Give yourself a custom AI agent persona visible on your profile card.</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Agent Name</label>
+                      <input value={editAgentName} onChange={e => setEditAgentName(e.target.value)} placeholder="e.g. KaspaBot, DeFi Guide..."
+                        className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
+                        style={{ background: "rgba(80,40,140,0.15)", border: "1px solid rgba(139,92,246,0.25)", caretColor: "#a78bfa" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(196,181,253,0.6)" }}>Agent Persona / Description</label>
+                      <textarea value={editAgentPersona} onChange={e => setEditAgentPersona(e.target.value)}
+                        placeholder="e.g. I help people navigate the Kaspa ecosystem and explain KRC-20 tokens..." rows={4}
+                        className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none resize-none"
+                        style={{ background: "rgba(80,40,140,0.15)", border: "1px solid rgba(139,92,246,0.25)", caretColor: "#a78bfa" }} />
+                    </div>
+                  </>}
+
                   <button onClick={handleSaveProfile} disabled={savingProfile || !editName.trim()}
                     className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #0050ff 0%, #003acc 100%)" }}>
+                    style={{ background: "linear-gradient(135deg, #0050ff 0%, #003acc 100%)", boxShadow: "0 4px 20px rgba(0,80,255,0.3)" }}>
                     {savingProfile ? "Saving..." : "Save Profile"}
                   </button>
                 </div>
@@ -570,8 +770,7 @@ export default function TipPage() {
               <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
                 className="w-full max-w-sm rounded-3xl p-6 text-center"
                 style={{ background: "linear-gradient(135deg, rgba(0,20,80,0.99), rgba(0,8,30,0.99))", border: "1px solid rgba(0,120,255,0.3)", boxShadow: "0 0 80px rgba(0,80,255,0.25)" }}>
-                <div className="w-16 h-16 rounded-full mx-auto mb-4 animate-spin"
-                  style={{ border: "3px solid rgba(0,120,255,0.2)", borderTop: "3px solid #3b82f6" }} />
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 animate-spin" style={{ border: "3px solid rgba(0,120,255,0.2)", borderTop: "3px solid #3b82f6" }} />
                 <h3 className="text-white font-black text-xl mb-2">ZK Verification</h3>
                 <p className="text-sm mb-6" style={{ color: "rgba(96,165,250,0.6)" }}>Send <span className="text-blue-300 font-bold">{tipAmount} KAS</span> to yourself in Kaspium</p>
                 {zkWalletBalance !== null && (
@@ -581,7 +780,7 @@ export default function TipPage() {
                   </div>
                 )}
                 {currentUser?.created_wallet_address && (
-                  <div className="p-3 rounded-xl mb-4 text-left" style={{ background: "rgba(0,40,140,0.12)", border: "1px solid rgba(0,120,255,0.15)" }}>
+                  <div className="p-3 rounded-xl mb-4" style={{ background: "rgba(0,40,140,0.12)", border: "1px solid rgba(0,120,255,0.15)" }}>
                     <p className="text-xs mb-1 text-center" style={{ color: "rgba(96,165,250,0.5)" }}>Your Address</p>
                     <p className="text-blue-300/70 text-xs font-mono break-all">{currentUser.created_wallet_address}</p>
                     <button onClick={() => navigator.clipboard.writeText(currentUser.created_wallet_address)}
