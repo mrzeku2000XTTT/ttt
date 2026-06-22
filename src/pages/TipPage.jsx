@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, CheckCircle2, ArrowRight, X, Pencil, Star } from "lucide-react";
+import { Zap, Search, Wallet, User as UserIcon, Copy, Check, Send, ArrowRight, X, Pencil, Star, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+
+// Star particle background
+const STARS = Array.from({ length: 60 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  size: Math.random() * 1.5 + 0.5,
+  opacity: Math.random() * 0.5 + 0.1,
+}));
 
 export default function TipPage() {
   const [users, setUsers] = useState([]);
@@ -15,11 +24,15 @@ export default function TipPage() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editWallet, setEditWallet] = useState("");
+  const [editProject, setEditProject] = useState("");
+  const [editProjectSite, setEditProjectSite] = useState("");
+  const [editGithub, setEditGithub] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [showZkVerification, setShowZkVerification] = useState(false);
   const [zkVerifying, setZkVerifying] = useState(false);
   const [zkWalletBalance, setZkWalletBalance] = useState(null);
   const [zkTimestamp, setZkTimestamp] = useState(null);
+  const [expandedRow, setExpandedRow] = useState(null);
 
   useEffect(() => {
     loadCurrentUser();
@@ -72,7 +85,6 @@ export default function TipPage() {
       });
       const allUsers = Array.from(map.values());
 
-      // Hard-coded wallets
       const hardcoded = [
         { id: "destroyer_hc", username: "destroyer", email: "destroyer@ttt.com", created_wallet_address: "kaspa:qpx0pwgksy0g7hzeqyajn9r3tavz2ga07v3p4kuptqgcnp7l6j2m5jp85jdf6", role: "admin", endsWith: "jdf6" },
         { id: "esp_hc", username: "ESP", email: "esp@ttt.com", created_wallet_address: "kaspa:qruat45zkdtuznry8gahmgp7yw78fnelx29wvn0p5cl9slep7x3l553cugx9h", role: "user", endsWith: "gx9h" },
@@ -86,7 +98,7 @@ export default function TipPage() {
       if (activeUser?.created_wallet_address) {
         const idx = allUsers.findIndex(u => u.email === activeUser.email);
         if (idx !== -1) allUsers.splice(idx, 1);
-        allUsers.unshift({ id: activeUser.id || "current", username: activeUser.username || activeUser.full_name || activeUser.email?.split("@")[0], email: activeUser.email, created_wallet_address: activeUser.created_wallet_address, role: activeUser.role || "user" });
+        allUsers.unshift({ id: activeUser.id || "current", username: activeUser.username || activeUser.full_name || activeUser.email?.split("@")[0], email: activeUser.email, created_wallet_address: activeUser.created_wallet_address, role: activeUser.role || "user", project_tagline: activeUser.project_tagline, project_site: activeUser.project_site, github_url: activeUser.github_url });
       }
 
       const filtered = allUsers.filter(u => {
@@ -124,22 +136,33 @@ export default function TipPage() {
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  const handleCopyAddress = (address) => {
+  const handleCopyAddress = (address, e) => {
+    e?.stopPropagation();
     navigator.clipboard.writeText(address);
     setCopiedAddress(address);
     setTimeout(() => setCopiedAddress(""), 2000);
   };
 
-  const openEditProfile = () => {
+  const openEditProfile = (e) => {
+    e?.stopPropagation();
     setEditName(currentUser?.username || currentUser?.full_name || "");
     setEditWallet(currentUser?.created_wallet_address || "");
+    setEditProject(currentUser?.project_tagline || "");
+    setEditProjectSite(currentUser?.project_site || "");
+    setEditGithub(currentUser?.github_url || "");
     setShowEditProfile(true);
   };
 
   const handleSaveProfile = async () => {
     setSavingProfile(true);
     try {
-      await base44.auth.updateMe({ username: editName.trim(), created_wallet_address: editWallet.trim() });
+      await base44.auth.updateMe({
+        username: editName.trim(),
+        created_wallet_address: editWallet.trim(),
+        project_tagline: editProject.trim(),
+        project_site: editProjectSite.trim(),
+        github_url: editGithub.trim(),
+      });
       const updated = await base44.auth.me();
       setCurrentUser(updated);
       setShowEditProfile(false);
@@ -184,174 +207,248 @@ export default function TipPage() {
     check();
   };
 
-  const getBadge = (user) => {
+  const getBadges = (user) => {
     const n = user.username?.toLowerCase().trim().replace(/\s+/g, "");
     const a = (user.created_wallet_address || "").toLowerCase();
-    if (n === "destroyer") return <span className="px-1.5 py-0.5 bg-gradient-to-r from-red-600 to-black rounded text-[9px] font-bold text-white">DEATH</span>;
-    if (n === "esp") return <span className="px-1.5 py-0.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded text-[9px] font-bold text-white">GOD</span>;
-    if (n === "ttt") return <span className="px-1.5 py-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded text-[9px] font-bold text-white">ZEKU</span>;
-    if (n === "hayphase") return <span className="px-1.5 py-0.5 bg-gradient-to-r from-emerald-400 to-teal-600 rounded text-[9px] font-bold text-white">👁️ POV</span>;
-    if (n === "olatomiwa" && a.endsWith("du4")) return <><span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-[9px] font-bold">TTT</span><span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded text-[9px] font-bold text-white">FIRSTLADY</span></>;
-    if (n === "ayomuiz" && a.endsWith("ygt")) return <><span className="px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-orange-600 text-black rounded text-[9px] font-bold">👑 KING</span></>;
-    if (n === "peculiar" && a.endsWith("x20")) return <span className="px-1.5 py-0.5 bg-gradient-to-r from-slate-400 to-slate-500 rounded text-[9px] font-bold text-black">⚔️ KNIGHT</span>;
-    return null;
+    const badges = [];
+    if (n === "destroyer") badges.push(<span key="death" className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style={{ background: "linear-gradient(90deg,#dc2626,#000)" }}>DEATH</span>);
+    if (n === "esp") badges.push(<span key="god" className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style={{ background: "linear-gradient(90deg,#eab308,#ea580c)" }}>GOD</span>);
+    if (n === "ttt") badges.push(<span key="zeku" className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style={{ background: "linear-gradient(90deg,#06b6d4,#8b5cf6)" }}>ZEKU</span>);
+    if (n === "hayphase") badges.push(<span key="pov" className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style={{ background: "linear-gradient(90deg,#34d399,#0d9488)" }}>👁️ POV</span>);
+    if (n === "olatomiwa" && a.endsWith("du4")) badges.push(<span key="fl" className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style={{ background: "linear-gradient(90deg,#3b82f6,#7c3aed)" }}>FIRSTLADY</span>);
+    if (n === "ayomuiz" && a.endsWith("ygt")) badges.push(<span key="king" className="px-1.5 py-0.5 rounded text-[9px] font-bold text-black" style={{ background: "linear-gradient(90deg,#fbbf24,#ea580c)" }}>👑 KING</span>);
+    if (n === "peculiar" && a.endsWith("x20")) badges.push(<span key="knight" className="px-1.5 py-0.5 rounded text-[9px] font-bold text-black" style={{ background: "linear-gradient(90deg,#94a3b8,#64748b)" }}>⚔️ KNIGHT</span>);
+    return badges;
+  };
+
+  const toggleRow = (userId) => {
+    setExpandedRow(prev => prev === userId ? null : userId);
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: "linear-gradient(135deg, #000510 0%, #000d1f 40%, #001233 70%, #000a1a 100%)" }}>
-      {/* Futuristic blue ambient light */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,100,255,0.12) 0%, transparent 70%)" }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 20% 80%, rgba(0,60,200,0.08) 0%, transparent 60%)" }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,180,255,0.06) 0%, transparent 60%)" }} />
+    <div className="min-h-screen relative overflow-hidden" style={{ background: "#010a1a" }}>
+      {/* Star field */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        {STARS.map(s => (
+          <div key={s.id} className="absolute rounded-full bg-white"
+            style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, opacity: s.opacity }} />
+        ))}
+        {/* Blue nebula glows */}
+        <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", width: 600, height: 300, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(0,80,200,0.18) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "20%", right: "10%", width: 400, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(0,60,160,0.10) 0%, transparent 70%)", pointerEvents: "none" }} />
+      </div>
 
-      {/* Animated grid */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.04]"
-        style={{ backgroundImage: "linear-gradient(rgba(0,120,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(0,120,255,0.5) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+      <div className="relative z-10 px-4 sm:px-6 max-w-2xl mx-auto" style={{ paddingTop: "4rem", paddingBottom: "6rem" }}>
 
-      <div className="relative z-10 px-4 sm:px-6 max-w-6xl mx-auto" style={{ paddingTop: "5rem", paddingBottom: "6rem" }}>
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest uppercase"
-            style={{ background: "rgba(0,120,255,0.1)", border: "1px solid rgba(0,120,255,0.3)", color: "#60a5fa" }}>
+            style={{ background: "rgba(0,100,255,0.12)", border: "1px solid rgba(0,150,255,0.3)", color: "#60a5fa" }}>
             <Zap className="w-3 h-3" /> Instant KAS Tips
           </div>
-          <h1 className="text-5xl sm:text-6xl font-black mb-3 tracking-tight"
-            style={{ background: "linear-gradient(135deg, #ffffff 0%, #93c5fd 40%, #3b82f6 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <h1 className="font-black mb-2 leading-none"
+            style={{
+              fontSize: "clamp(3rem,10vw,4.5rem)",
+              fontFamily: "system-ui, sans-serif",
+              color: "#4db8ff",
+              textShadow: "0 0 40px rgba(0,140,255,0.6), 0 0 80px rgba(0,100,255,0.3)",
+              letterSpacing: "-0.02em",
+            }}>
             TapToTip
           </h1>
-          <p className="text-blue-300/60 text-base font-medium">Send KAS to anyone, instantly</p>
+          <p className="text-white/50 text-base">Send KAS to anyone, instantly</p>
         </motion.div>
 
-        {/* Wallet status */}
-        {currentUser && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto mb-6">
-            {currentUser.created_wallet_address ? (
-              <div className="flex items-center gap-3 p-4 rounded-2xl"
-                style={{ background: "rgba(0,80,255,0.08)", border: "1px solid rgba(0,120,255,0.25)", backdropFilter: "blur(12px)" }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(0,120,255,0.15)" }}>
-                  <Star className="w-4 h-4 text-blue-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-blue-300 font-semibold text-sm">Your address is live</p>
-                  <p className="text-blue-400/40 text-xs font-mono truncate mt-0.5">{currentUser.created_wallet_address.slice(0,20)}...{currentUser.created_wallet_address.slice(-8)}</p>
-                </div>
-                <button onClick={openEditProfile} className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs px-3 py-1.5 rounded-lg transition-all"
-                  style={{ border: "1px solid rgba(0,120,255,0.3)", background: "rgba(0,120,255,0.08)" }}>
-                  <Pencil className="w-3 h-3" /> Edit
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 p-4 rounded-2xl"
-                style={{ background: "rgba(0,80,255,0.06)", border: "1px solid rgba(0,120,255,0.2)", backdropFilter: "blur(12px)" }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(0,120,255,0.1)" }}>
-                  <Wallet className="w-4 h-4 text-blue-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-white font-semibold text-sm">Add your wallet to receive tips</p>
-                  <p className="text-blue-400/40 text-xs mt-0.5">Appear in the grid and let the community support you</p>
-                </div>
-                <button onClick={openEditProfile} className="flex items-center gap-1 text-blue-400 text-xs px-3 py-1.5 rounded-lg transition-all"
-                  style={{ border: "1px solid rgba(0,120,255,0.3)", background: "rgba(0,120,255,0.08)" }}>
-                  Add <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
-            )}
+        {/* Status banner */}
+        {!currentUser && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5 p-4 rounded-xl flex items-center gap-3"
+            style={{ background: "rgba(0,30,80,0.6)", border: "1px solid rgba(0,100,200,0.3)", backdropFilter: "blur(10px)" }}>
+            <div className="flex-1">
+              <p className="text-white font-bold text-sm">Want to receive KAS tips?</p>
+              <p className="text-white/40 text-xs mt-0.5">Sign in and add your Kaspa address</p>
+            </div>
+            <button onClick={() => base44.auth.redirectToLogin()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition-all hover:opacity-90"
+              style={{ background: "rgba(0,100,255,0.7)", border: "1px solid rgba(0,150,255,0.5)" }}>
+              Sign In <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </motion.div>
         )}
 
-        {!currentUser && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto mb-6">
-            <div className="flex items-center gap-3 p-4 rounded-2xl"
-              style={{ background: "rgba(0,60,180,0.06)", border: "1px solid rgba(0,100,255,0.15)", backdropFilter: "blur(12px)" }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(0,100,255,0.1)" }}>
-                <Wallet className="w-4 h-4 text-blue-400/60" />
-              </div>
-              <div className="flex-1">
-                <p className="text-white/80 font-semibold text-sm">Want to receive KAS tips?</p>
-                <p className="text-blue-400/40 text-xs mt-0.5">Sign in and add your Kaspa address</p>
-              </div>
-              <button onClick={() => base44.auth.redirectToLogin()} className="flex items-center gap-1 text-blue-400 text-xs px-3 py-1.5 rounded-lg transition-all"
-                style={{ border: "1px solid rgba(0,120,255,0.25)", background: "rgba(0,120,255,0.06)" }}>
-                Sign In <ArrowRight className="w-3 h-3" />
-              </button>
+        {currentUser && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5 p-4 rounded-xl flex items-center gap-3"
+            style={{ background: "rgba(0,30,80,0.6)", border: "1px solid rgba(0,100,200,0.3)", backdropFilter: "blur(10px)" }}>
+            <Star className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-sm">{currentUser.created_wallet_address ? "Your address is live" : "Add your wallet to receive tips"}</p>
+              {currentUser.created_wallet_address && (
+                <p className="text-blue-400/40 text-xs font-mono truncate mt-0.5">{currentUser.created_wallet_address.slice(0,20)}...{currentUser.created_wallet_address.slice(-8)}</p>
+              )}
             </div>
+            <button onClick={openEditProfile}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-300 transition-all hover:opacity-80"
+              style={{ background: "rgba(0,100,255,0.2)", border: "1px solid rgba(0,150,255,0.3)" }}>
+              <Pencil className="w-3 h-3" /> Edit
+            </button>
           </motion.div>
         )}
 
         {/* Search */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(96,165,250,0.5)" }} />
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by name, email, or wallet..."
-              className="w-full pl-11 pr-4 py-3 rounded-xl text-sm outline-none text-white placeholder-blue-400/30"
-              style={{ background: "rgba(0,60,180,0.08)", border: "1px solid rgba(0,120,255,0.2)", backdropFilter: "blur(12px)" }}
-            />
-          </div>
+        <div className="mb-6 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(96,165,250,0.4)" }} />
+          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search by name, email, or wallet..."
+            className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white outline-none"
+            style={{ background: "rgba(0,25,70,0.5)", border: "1px solid rgba(0,100,200,0.25)", backdropFilter: "blur(10px)", color: "rgba(255,255,255,0.8)" }}
+          />
         </div>
 
-        {/* Grid */}
+        {/* Directory list */}
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <div className="w-10 h-10 border-2 border-blue-500/30 border-t-blue-400 rounded-full animate-spin" />
+            <div className="w-10 h-10 rounded-full animate-spin" style={{ border: "2px solid rgba(0,100,255,0.2)", borderTop: "2px solid #3b82f6" }} />
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-24">
-            <UserIcon className="w-14 h-14 mx-auto mb-4" style={{ color: "rgba(59,130,246,0.3)" }} />
-            <p className="text-blue-400/50 font-semibold">No users found</p>
+            <p className="text-blue-400/40 font-semibold">No users found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
             {filteredUsers.map((user, i) => {
               const address = user.created_wallet_address || user.agent_zk_id;
               const isCopied = copiedAddress === address;
               const isCur = currentUser && user.email === currentUser.email;
+              const isExpanded = expandedRow === user.id;
+              const rank = i + 1;
+              const badges = getBadges(user);
+              const projectTagline = user.project_tagline || (isCur && currentUser?.project_tagline) || null;
+              const projectSite = user.project_site || (isCur && currentUser?.project_site) || null;
+              const githubUrl = user.github_url || (isCur && currentUser?.github_url) || null;
+
               return (
-                <motion.div key={user.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <div className="rounded-2xl p-4 transition-all hover:shadow-lg"
+                <motion.div key={user.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
+                  {/* Main row */}
+                  <div
+                    onClick={() => toggleRow(user.id)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all"
                     style={{
-                      background: isCur ? "rgba(0,80,255,0.10)" : "rgba(0,40,120,0.06)",
-                      border: isCur ? "1px solid rgba(0,120,255,0.4)" : "1px solid rgba(0,100,255,0.12)",
-                      backdropFilter: "blur(16px)",
-                      boxShadow: isCur ? "0 0 0 1px rgba(59,130,246,0.15), 0 4px 32px rgba(0,80,255,0.08)" : "none"
-                    }}>
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="relative w-11 h-11 rounded-xl flex items-center justify-center text-base font-black text-white flex-shrink-0"
-                        style={{ background: "linear-gradient(135deg, rgba(0,80,200,0.5) 0%, rgba(0,40,120,0.8) 100%)", border: "1px solid rgba(0,120,255,0.3)" }}>
-                        {(user.username || user.email || "?")[0].toUpperCase()}
-                        {user.created_wallet_address && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center" style={{ border: "2px solid #000d1f" }}>
-                            <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 flex-wrap mb-0.5">
-                          <span className="text-white font-bold text-sm truncate">{user.username || "Anonymous"}</span>
-                          {isCur && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(0,120,255,0.2)", color: "#60a5fa", border: "1px solid rgba(0,120,255,0.3)" }}>YOU</span>}
-                          {getBadge(user)}
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.3), rgba(5,150,105,0.3))", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)" }}>$KAS</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <code className="text-[11px] truncate" style={{ color: "rgba(96,165,250,0.6)" }}>
-                            {address.slice(0,12)}...{address.slice(-6)}
-                          </code>
-                          <button onClick={() => handleCopyAddress(address)} className="flex-shrink-0 transition-all" style={{ color: isCopied ? "#34d399" : "rgba(96,165,250,0.4)" }}>
-                            {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                          </button>
-                        </div>
-                      </div>
+                      background: isExpanded ? "rgba(0,60,160,0.25)" : isCur ? "rgba(0,50,130,0.18)" : "rgba(0,25,70,0.4)",
+                      border: isExpanded ? "1px solid rgba(0,150,255,0.45)" : isCur ? "1px solid rgba(0,120,255,0.35)" : "1px solid rgba(0,80,180,0.2)",
+                      backdropFilter: "blur(12px)",
+                    }}
+                  >
+                    {/* Rank */}
+                    <div className="text-2xl font-black w-8 flex-shrink-0 text-right"
+                      style={{ color: rank <= 3 ? "#4db8ff" : "rgba(96,165,250,0.3)", fontFamily: "monospace", textShadow: rank <= 3 ? "0 0 12px rgba(0,140,255,0.5)" : "none" }}>
+                      {rank}
                     </div>
+
+                    {/* Avatar */}
+                    <div className="relative w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-black text-white"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(0,60,180,0.7), rgba(0,30,100,0.9))",
+                        border: "2px solid rgba(0,120,255,0.4)",
+                        boxShadow: "0 0 12px rgba(0,100,255,0.25)",
+                      }}>
+                      {(user.username || "?")[0].toUpperCase()}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-500"
+                        style={{ border: "1.5px solid #010a1a", boxShadow: "0 0 6px rgba(59,130,246,0.8)" }} />
+                    </div>
+
+                    {/* Name + badges */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-white font-bold text-sm">{user.username || "Anonymous"}</span>
+                        {isCur && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(0,100,255,0.25)", color: "#93c5fd", border: "1px solid rgba(0,150,255,0.35)" }}>YOU</span>}
+                        {badges}
+                      </div>
+                      {projectTagline ? (
+                        <p className="text-xs mt-0.5 truncate" style={{ color: "rgba(148,197,255,0.55)", fontFamily: "monospace" }}>{projectTagline}</p>
+                      ) : (
+                        <p className="text-xs mt-0.5 font-mono truncate" style={{ color: "rgba(96,165,250,0.3)" }}>{address?.slice(0,14)}...{address?.slice(-6)}</p>
+                      )}
+                    </div>
+
+                    {/* Tip button */}
                     <button
-                      onClick={() => { setSelectedUser(user); setTipAmount(""); }}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all hover:opacity-90 active:scale-95"
-                      style={{ background: "linear-gradient(135deg, rgba(0,80,220,0.7) 0%, rgba(0,40,160,0.9) 100%)", border: "1px solid rgba(0,120,255,0.4)", color: "#93c5fd", backdropFilter: "blur(8px)" }}>
-                      <Zap className="inline w-3.5 h-3.5 mr-1.5 mb-0.5" />
-                      Tip
+                      onClick={e => { e.stopPropagation(); setSelectedUser(user); setTipAmount(""); }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold flex-shrink-0 transition-all hover:opacity-90 active:scale-95"
+                      style={{ background: "rgba(0,90,220,0.8)", border: "1px solid rgba(0,150,255,0.5)", color: "#93c5fd", boxShadow: "0 2px 12px rgba(0,80,200,0.3)" }}>
+                      <Zap className="w-3 h-3" /> Tip
                     </button>
+
+                    {/* Expand chevron */}
+                    <div className="flex-shrink-0 ml-1" style={{ color: "rgba(96,165,250,0.4)" }}>
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
                   </div>
+
+                  {/* Expanded panel */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <div className="mx-4 mb-1 px-4 py-4 rounded-b-xl"
+                          style={{ background: "rgba(0,20,60,0.7)", border: "1px solid rgba(0,100,200,0.2)", borderTop: "none", backdropFilter: "blur(12px)" }}>
+
+                          <p className="text-xs font-bold mb-2 uppercase tracking-widest" style={{ color: "#4db8ff" }}>What I'm building</p>
+
+                          {projectTagline ? (
+                            <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(200,230,255,0.7)", fontFamily: "monospace" }}>{projectTagline}</p>
+                          ) : (
+                            <p className="text-sm mb-3" style={{ color: "rgba(96,165,250,0.3)", fontFamily: "monospace" }}>
+                              {isCur ? "Click Edit above to add your project description." : "This builder hasn't added their project yet."}
+                            </p>
+                          )}
+
+                          {/* Links */}
+                          <div className="flex items-center gap-3 flex-wrap mb-3">
+                            {projectSite && (
+                              <a href={projectSite} target="_blank" rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80"
+                                style={{ color: "#60a5fa" }}>
+                                Project Site <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                            {githubUrl && (
+                              <a href={githubUrl} target="_blank" rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80"
+                                style={{ color: "#60a5fa" }}>
+                                GitHub <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                            {!projectSite && !githubUrl && isCur && (
+                              <span className="text-xs" style={{ color: "rgba(96,165,250,0.3)" }}>Add links via Edit</span>
+                            )}
+                          </div>
+
+                          {/* Wallet row */}
+                          <div className="flex items-center gap-2 pt-3" style={{ borderTop: "1px solid rgba(0,80,180,0.2)" }}>
+                            <code className="text-xs flex-1 truncate" style={{ color: "rgba(96,165,250,0.5)" }}>{address}</code>
+                            <button onClick={e => handleCopyAddress(address, e)}
+                              className="flex-shrink-0 transition-all"
+                              style={{ color: isCopied ? "#34d399" : "rgba(96,165,250,0.4)" }}>
+                              {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                            {isCur && (
+                              <button onClick={openEditProfile}
+                                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg ml-1 transition-all hover:opacity-80"
+                                style={{ background: "rgba(0,80,200,0.2)", border: "1px solid rgba(0,120,255,0.25)", color: "#93c5fd" }}>
+                                <Pencil className="w-2.5 h-2.5" /> Edit Profile
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               );
             })}
@@ -376,30 +473,24 @@ export default function TipPage() {
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
-
-                {/* QR */}
                 <div className="bg-white p-3 rounded-2xl mb-4">
                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}`}
                     alt="QR" className="w-full h-auto rounded-xl" />
                 </div>
-
-                <div className="p-3 rounded-xl mb-4 text-center"
-                  style={{ background: "rgba(0,60,180,0.1)", border: "1px solid rgba(0,120,255,0.2)" }}>
+                <div className="p-3 rounded-xl mb-4 text-center" style={{ background: "rgba(0,60,180,0.1)", border: "1px solid rgba(0,120,255,0.2)" }}>
                   <p className="text-xs mb-1" style={{ color: "rgba(96,165,250,0.5)" }}>Recipient Address</p>
                   <code className="text-[11px] break-all" style={{ color: "#60a5fa" }}>{selectedUser.created_wallet_address || selectedUser.agent_zk_id}</code>
-                  <button onClick={() => handleCopyAddress(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}
-                    className="flex items-center gap-1.5 mx-auto mt-2 text-xs transition-all" style={{ color: copiedAddress === (selectedUser.created_wallet_address || selectedUser.agent_zk_id) ? "#34d399" : "rgba(96,165,250,0.5)" }}>
+                  <button onClick={e => handleCopyAddress(selectedUser.created_wallet_address || selectedUser.agent_zk_id, e)}
+                    className="flex items-center gap-1.5 mx-auto mt-2 text-xs" style={{ color: copiedAddress === (selectedUser.created_wallet_address || selectedUser.agent_zk_id) ? "#34d399" : "rgba(96,165,250,0.5)" }}>
                     {copiedAddress === (selectedUser.created_wallet_address || selectedUser.agent_zk_id) ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy</>}
                   </button>
                 </div>
-
                 <div className="mb-4">
                   <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Amount (KAS)</label>
                   <input type="number" step="0.01" value={tipAmount} onChange={e => setTipAmount(e.target.value)} placeholder="0.00"
                     className="w-full py-3 text-center text-2xl font-black text-white rounded-xl outline-none"
                     style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.25)", caretColor: "#60a5fa" }} />
                 </div>
-
                 <div className="space-y-2.5">
                   <button onClick={handleZkTip} disabled={!tipAmount || parseFloat(tipAmount) <= 0}
                     className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-40 hover:opacity-90"
@@ -437,20 +528,28 @@ export default function TipPage() {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Display Name</label>
-                    <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Your username"
-                      className="w-full px-4 py-3 rounded-xl text-white outline-none"
-                      style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Kaspa Wallet Address</label>
-                    <input value={editWallet} onChange={e => setEditWallet(e.target.value)} placeholder="kaspa:q..."
-                      className="w-full px-4 py-3 rounded-xl text-white font-mono text-sm outline-none"
-                      style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
-                  </div>
+                  {[
+                    { label: "Display Name", value: editName, setter: setEditName, placeholder: "Your username" },
+                    { label: "Kaspa Wallet Address", value: editWallet, setter: setEditWallet, placeholder: "kaspa:q...", mono: true },
+                    { label: "What I'm building on Kaspa", value: editProject, setter: setEditProject, placeholder: "e.g. Building a KRC-20 DeFi protocol...", textarea: true },
+                    { label: "Project Site URL", value: editProjectSite, setter: setEditProjectSite, placeholder: "https://myproject.xyz" },
+                    { label: "GitHub URL", value: editGithub, setter: setEditGithub, placeholder: "https://github.com/..." },
+                  ].map(field => (
+                    <div key={field.label}>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>{field.label}</label>
+                      {field.textarea ? (
+                        <textarea value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder} rows={3}
+                          className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none resize-none"
+                          style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa", fontFamily: "monospace" }} />
+                      ) : (
+                        <input value={field.value} onChange={e => field.setter(e.target.value)} placeholder={field.placeholder}
+                          className="w-full px-4 py-3 rounded-xl text-white outline-none"
+                          style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa", fontFamily: field.mono ? "monospace" : "inherit", fontSize: "0.875rem" }} />
+                      )}
+                    </div>
+                  ))}
                   <button onClick={handleSaveProfile} disabled={savingProfile || !editName.trim()}
-                    className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
+                    className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 hover:opacity-90"
                     style={{ background: "linear-gradient(135deg, #0050ff 0%, #003acc 100%)" }}>
                     {savingProfile ? "Saving..." : "Save Profile"}
                   </button>
@@ -471,27 +570,29 @@ export default function TipPage() {
               <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
                 className="w-full max-w-sm rounded-3xl p-6 text-center"
                 style={{ background: "linear-gradient(135deg, rgba(0,20,80,0.99), rgba(0,8,30,0.99))", border: "1px solid rgba(0,120,255,0.3)", boxShadow: "0 0 80px rgba(0,80,255,0.25)" }}>
-                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ border: "3px solid rgba(0,120,255,0.3)", borderTop: "3px solid #3b82f6", animation: "spin 1s linear infinite" }} />
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 animate-spin"
+                  style={{ border: "3px solid rgba(0,120,255,0.2)", borderTop: "3px solid #3b82f6" }} />
                 <h3 className="text-white font-black text-xl mb-2">ZK Verification</h3>
-                <p className="text-sm mb-6" style={{ color: "rgba(96,165,250,0.6)" }}>Send <span className="text-blue-300 font-bold">{tipAmount} KAS</span> to yourself in Kaspium to verify</p>
+                <p className="text-sm mb-6" style={{ color: "rgba(96,165,250,0.6)" }}>Send <span className="text-blue-300 font-bold">{tipAmount} KAS</span> to yourself in Kaspium</p>
                 {zkWalletBalance !== null && (
                   <div className="p-3 rounded-xl mb-4" style={{ background: "rgba(0,40,140,0.12)", border: "1px solid rgba(0,120,255,0.15)" }}>
-                    <p className="text-xs mb-1" style={{ color: "rgba(96,165,250,0.5)" }}>Your Balance</p>
+                    <p className="text-xs mb-1" style={{ color: "rgba(96,165,250,0.5)" }}>Balance</p>
                     <p className="text-white text-xl font-black">{zkWalletBalance.toFixed(2)} KAS</p>
                   </div>
                 )}
                 {currentUser?.created_wallet_address && (
-                  <div className="p-3 rounded-xl mb-4" style={{ background: "rgba(0,40,140,0.12)", border: "1px solid rgba(0,120,255,0.15)" }}>
-                    <p className="text-xs mb-1" style={{ color: "rgba(96,165,250,0.5)" }}>Your Address</p>
+                  <div className="p-3 rounded-xl mb-4 text-left" style={{ background: "rgba(0,40,140,0.12)", border: "1px solid rgba(0,120,255,0.15)" }}>
+                    <p className="text-xs mb-1 text-center" style={{ color: "rgba(96,165,250,0.5)" }}>Your Address</p>
                     <p className="text-blue-300/70 text-xs font-mono break-all">{currentUser.created_wallet_address}</p>
-                    <button onClick={() => { navigator.clipboard.writeText(currentUser.created_wallet_address); }}
-                      className="mt-2 text-xs px-3 py-1 rounded-lg" style={{ background: "rgba(0,80,255,0.15)", color: "#60a5fa", border: "1px solid rgba(0,120,255,0.2)" }}>
-                      Copy Address
+                    <button onClick={() => navigator.clipboard.writeText(currentUser.created_wallet_address)}
+                      className="mt-2 mx-auto flex items-center gap-1 text-xs px-3 py-1 rounded-lg"
+                      style={{ background: "rgba(0,80,255,0.15)", color: "#60a5fa", border: "1px solid rgba(0,120,255,0.2)" }}>
+                      Copy
                     </button>
                   </div>
                 )}
                 <button onClick={() => { setZkVerifying(false); setShowZkVerification(false); setTipAmount(""); }}
-                  className="w-full py-2.5 rounded-xl text-sm font-bold mt-2"
+                  className="w-full py-2.5 rounded-xl text-sm font-bold"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}>
                   Cancel
                 </button>
@@ -500,8 +601,6 @@ export default function TipPage() {
           </>
         )}
       </AnimatePresence>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
