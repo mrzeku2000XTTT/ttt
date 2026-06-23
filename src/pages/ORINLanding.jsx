@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Star, Brain } from "lucide-react";
+import { ArrowRight, Star, Brain, ArrowLeft } from "lucide-react";
 
 // Compass Rose SVG logo
 function CompassRose({ size = 28, className = "" }) {
@@ -78,6 +78,7 @@ const STEPS = [
 ];
 
 export default function ORINLanding() {
+  const navigate = useNavigate();
   return (
     <div style={{ background: "#070B14", color: "#fff", fontFamily: "'Georgia', 'Times New Roman', serif", minHeight: "100vh", overflowX: "hidden" }}>
 
@@ -90,6 +91,12 @@ export default function ORINLanding() {
         borderBottom: "1px solid rgba(201,168,76,0.12)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", padding: "4px 6px 4px 0" }}
+          >
+            <ArrowLeft style={{ width: 18, height: 18 }} />
+          </button>
           <CompassBadge size={30} />
           <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 17, letterSpacing: "0.04em", color: "#fff" }}>ORIN</span>
         </div>
