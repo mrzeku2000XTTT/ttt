@@ -55,6 +55,7 @@ export default function TipPage() {
   const [editProjectSite, setEditProjectSite] = useState("");
   const [editGithub, setEditGithub] = useState("");
   const [editTiptree, setEditTiptree] = useState("");
+  const [editKnsMessaging, setEditKnsMessaging] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [editAgentName, setEditAgentName] = useState("");
   const [editAgentPersona, setEditAgentPersona] = useState("");
@@ -178,6 +179,7 @@ export default function TipPage() {
           project_site: activeUser.project_site,
           github_url: activeUser.github_url,
           tiptree_url: activeUser.tiptree_url,
+          kns_messaging: activeUser.kns_messaging,
           avatar_url: activeUser.avatar_url,
           agent_name: activeUser.agent_name,
           agent_persona: activeUser.agent_persona,
@@ -234,6 +236,7 @@ export default function TipPage() {
     setEditProjectSite(currentUser?.project_site || "");
     setEditGithub(currentUser?.github_url || "");
     setEditTiptree(currentUser?.tiptree_url || "");
+    setEditKnsMessaging(currentUser?.kns_messaging || "");
     setEditAvatarUrl(currentUser?.avatar_url || "");
     setEditAgentName(currentUser?.agent_name || "");
     setEditAgentPersona(currentUser?.agent_persona || "");
@@ -265,6 +268,7 @@ export default function TipPage() {
         project_site: editProjectSite.trim(),
         github_url: editGithub.trim(),
         tiptree_url: editTiptree.trim(),
+        kns_messaging: editKnsMessaging.trim(),
         avatar_url: editAvatarUrl.trim(),
         agent_name: editAgentName.trim(),
         agent_persona: editAgentPersona.trim(),
@@ -285,6 +289,7 @@ export default function TipPage() {
         project_site: updated.project_site,
         github_url: updated.github_url,
         tiptree_url: updated.tiptree_url,
+        kns_messaging: updated.kns_messaging,
         avatar_url: updated.avatar_url,
         agent_name: updated.agent_name,
         agent_persona: updated.agent_persona,
@@ -778,6 +783,7 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
               const projectSite = user.project_site || (isCur && currentUser?.project_site) || null;
               const githubUrl = user.github_url || (isCur && currentUser?.github_url) || null;
               const tiptreeUrl = user.tiptree_url || (isCur && currentUser?.tiptree_url) || null;
+              const knsMessaging = user.kns_messaging || (isCur && currentUser?.kns_messaging) || null;
               const agentName = user.agent_name || (isCur && currentUser?.agent_name) || null;
               const agentSkills = user.agent_skills || (isCur && currentUser?.agent_skills) || null;
               const agentRate = user.agent_rate_kas || (isCur && currentUser?.agent_rate_kas) || null;
@@ -958,6 +964,14 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                                 className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
                                 style={{ background: "rgba(234,88,12,0.2)", border: "1px solid rgba(234,88,12,0.4)", color: "#fb923c" }}>
                                 🌳 TipTree <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            )}
+                            {knsMessaging && (
+                              <a href={`https://kns.kaspa.org/message/${knsMessaging.replace(/\.kas$/i, "")}`} target="_blank" rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
+                                style={{ background: "rgba(0,200,150,0.15)", border: "1px solid rgba(0,200,150,0.35)", color: "#34d399" }}>
+                                💬 Message <span className="font-mono">{knsMessaging.endsWith(".kas") ? knsMessaging : `${knsMessaging}.kas`}</span> <ExternalLink className="w-2.5 h-2.5" />
                               </a>
                             )}
                             {projectSite && (
@@ -1167,6 +1181,18 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                           style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(234,88,12,0.3)", caretColor: "#fb923c" }} />
                       </div>
                       <p className="text-xs mt-1" style={{ color: "rgba(96,165,250,0.3)" }}>Link to your <a href="https://tiptr.ee" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "#fb923c" }}>tiptr.ee</a> profile</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: "rgba(96,165,250,0.6)" }}>
+                        <span>💬</span> KNS Messaging
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input value={editKnsMessaging} onChange={e => setEditKnsMessaging(e.target.value)} placeholder="yourname"
+                          className="flex-1 px-3 py-3 rounded-xl text-white outline-none text-sm font-mono"
+                          style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,200,150,0.3)", caretColor: "#34d399" }} />
+                        <span className="text-emerald-400/50 text-sm pr-1 flex-shrink-0">.kas</span>
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: "rgba(96,165,250,0.3)" }}>Your KNS domain — lets anyone message you on Kaspa messaging apps</p>
                     </div>
                   </>}
 
