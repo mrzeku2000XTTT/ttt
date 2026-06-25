@@ -1,282 +1,304 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Palette, X, ChevronRight } from "lucide-react";
+import { LayoutGrid, Users, Send, Play } from "lucide-react";
 
-const PORTAL_VIDEO = "https://cdn.coverr.co/videos/coverr-abstract-tunnel-of-light-1584/1080p.mp4";
+const BG_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/7b6dd8e5f_generated_image.png";
 
-const PRESET_COLORS = [
-  { name: "AI", color: "#ef4444", glow: "#ff000088", path: "/WorldOfAI" },
-  { name: "Kaspa", color: "#14b8a6", glow: "#14b8a688", path: "/WorldOfKaspa" },
-  { name: "Cosmic", color: "#8b5cf6", glow: "#8b5cf688", path: "/WorldOfAI" },
-  { name: "Gold", color: "#f59e0b", glow: "#f59e0b88", path: "/WorldOfAI" },
-  { name: "Neo", color: "#22c55e", glow: "#22c55e88", path: "/WorldOfKaspa" },
-  { name: "Solar", color: "#f97316", glow: "#f9731688", path: "/WorldOfAI" },
-];
+// Inline color wheel that is always visible in the center of the portal
+function ColorWheelDisc({ onColorChange }) {
+  const ref = useRef(null);
 
-function ColorWheel({ currentColor, onChange, onClose }) {
-  const [hue, setHue] = useState(0);
-  const wheelRef = useRef(null);
-
-  const handleWheel = (e) => {
-    const rect = wheelRef.current.getBoundingClientRect();
-    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left - rect.width / 2;
-    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top - rect.height / 2;
+  const handleInteraction = (e) => {
+    const rect = ref.current.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const x = clientX - rect.left - rect.width / 2;
+    const y = clientY - rect.top - rect.height / 2;
     const angle = Math.atan2(y, x) * (180 / Math.PI) + 180;
     const h = Math.round(angle);
-    const hex = `hsl(${h}, 90%, 55%)`;
-    setHue(h);
-    onChange(hex);
+    // Distance from center for saturation/lightness
+    const dist = Math.sqrt(x * x + y * y) / (rect.width / 2);
+    const s = Math.min(100, Math.round(dist * 100));
+    const hex = `hsl(${h}, ${Math.max(60, s)}%, 55%)`;
+    onColorChange(hex);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.85, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.85, y: 20 }}
-      className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 p-4 rounded-2xl"
-      style={{ background: "rgba(10,10,20,0.95)", border: "1px solid rgba(255,255,255,0.12)", width: 260 }}
+    <div
+      ref={ref}
+      onClick={handleInteraction}
+      onTouchEnd={handleInteraction}
+      className="cursor-crosshair select-none"
+      style={{
+        width: 200,
+        height: 200,
+        borderRadius: "50%",
+        background: "conic-gradient(red 0deg, #ff8000 30deg, yellow 60deg, #80ff00 90deg, lime 120deg, #00ff80 150deg, cyan 180deg, #0080ff 210deg, blue 240deg, #8000ff 270deg, magenta 300deg, #ff0080 330deg, red 360deg)",
+        boxShadow: "0 0 60px rgba(255,255,255,0.15), 0 0 120px rgba(180,100,255,0.2)",
+        position: "relative",
+      }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-bold tracking-widest text-white/60">PORTAL COLOR</span>
-        <button onClick={onClose}><X className="w-4 h-4 text-white/40" /></button>
-      </div>
-
-      {/* Color wheel */}
-      <div
-        ref={wheelRef}
-        onClick={handleWheel}
-        onTouchStart={handleWheel}
-        className="w-full h-36 rounded-xl cursor-crosshair mb-3 relative overflow-hidden"
-        style={{
-          background: "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)",
-          boxShadow: "inset 0 0 20px rgba(0,0,0,0.5)"
-        }}
-      >
-        <div className="absolute inset-0 rounded-xl" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%)" }} />
-        <div className="absolute inset-0 flex items-center justify-center text-[11px] text-white/70 font-bold tracking-widest pointer-events-none">TAP TO PICK</div>
-      </div>
-
-      {/* Presets */}
-      <div className="grid grid-cols-3 gap-2">
-        {PRESET_COLORS.map(p => (
-          <button
-            key={p.name}
-            onClick={() => onChange(p.color)}
-            className="flex flex-col items-center gap-1 p-2 rounded-lg transition-all hover:bg-white/5"
-          >
-            <div className="w-8 h-8 rounded-full border-2 border-white/20" style={{ background: p.color, boxShadow: `0 0 12px ${p.glow}` }} />
-            <span className="text-[9px] text-white/50 font-semibold tracking-wider">{p.name}</span>
-          </button>
-        ))}
-      </div>
-    </motion.div>
+      {/* Inner dark hole */}
+      <div style={{
+        position: "absolute",
+        top: "50%", left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "45%", height: "45%",
+        borderRadius: "50%",
+        background: "radial-gradient(circle, #1a0a2e 0%, #0a0510 100%)",
+        boxShadow: "inset 0 0 20px rgba(0,0,0,0.8)",
+      }} />
+      {/* Grid lines overlay */}
+      <div style={{
+        position: "absolute", inset: 0, borderRadius: "50%",
+        backgroundImage: "radial-gradient(circle, transparent 20%, transparent 20%), repeating-radial-gradient(circle, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 20px)",
+        pointerEvents: "none",
+      }} />
+    </div>
   );
 }
 
 export default function PortalPage() {
   const navigate = useNavigate();
-  const [portalColor, setPortalColor] = useState("#14b8a6");
-  const [showColorWheel, setShowColorWheel] = useState(false);
-  const [portalPulse, setPortalPulse] = useState(false);
+  const [portalColor, setPortalColor] = useState("#a855f7");
   const [entering, setEntering] = useState(false);
-  const videoRef = useRef(null);
 
-  // Determine destination based on color
-  const getDestination = () => {
-    const isKaspa = ["#14b8a6", "#22c55e"].some(c => portalColor === c);
-    // Match by preset
-    const preset = PRESET_COLORS.find(p => p.color === portalColor);
-    if (preset) return preset.path;
-    // Default: red/warm → AI, cool/green → Kaspa
-    const hue = portalColor;
-    return "/WorldOfAI";
-  };
-
-  const isKaspaColor = () => {
-    const preset = PRESET_COLORS.find(p => p.color === portalColor);
-    if (preset) return preset.path === "/WorldOfKaspa";
-    return false;
-  };
-
-  const handlePortalClick = () => {
-    setPortalPulse(true);
+  const handleWorldNav = (path) => {
     setEntering(true);
-    setTimeout(() => {
-      navigate(getDestination());
-    }, 1200);
+    setTimeout(() => navigate(path), 700);
   };
 
-  const glowColor = portalColor;
-  const worldLabel = isKaspaColor() ? "World of Kaspa" : "World of AI";
+  const handlePlay = () => {
+    // navigate to TTTGate or just WorldOfAI as default
+    handleWorldNav("/WorldOfAI");
+  };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black flex flex-col items-center justify-center">
-      {/* Video background */}
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover opacity-30"
-        style={{ filter: `hue-rotate(${portalColor === "#14b8a6" ? "180deg" : portalColor === "#ef4444" ? "0deg" : "270deg"})` }}
-      >
-        <source src={PORTAL_VIDEO} type="video/mp4" />
-      </video>
+    <div
+      className="relative min-h-screen overflow-hidden flex flex-col items-center"
+      style={{ background: "#04020c" }}
+    >
+      {/* Full-bleed background image */}
+      <img
+        src={BG_IMAGE}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        style={{ opacity: 0.85 }}
+      />
 
-      {/* Dark overlay */}
-      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.85) 100%)" }} />
+      {/* Radial dark vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 80% 80% at 50% 40%, transparent 30%, rgba(4,2,12,0.7) 100%)" }}
+      />
 
-      {/* TTT logo — top left → back to AppStore */}
-      <button
-        onClick={() => navigate("/AppStoreV2")}
-        className="absolute top-5 left-5 z-50 text-white font-black text-2xl tracking-tight hover:opacity-70 transition-opacity"
-      >
-        TTT
-      </button>
-
-      {/* Color wheel toggle */}
-      <button
-        onClick={() => setShowColorWheel(!showColorWheel)}
-        className="absolute top-5 right-5 z-50 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
-        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", boxShadow: `0 0 20px ${glowColor}55` }}
-      >
-        <div className="w-5 h-5 rounded-full" style={{ background: "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)" }} />
-      </button>
-
-      {/* Main portal */}
+      {/* Flash overlay on enter */}
       <AnimatePresence>
         {entering && (
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 30, opacity: 0 }}
-            transition={{ duration: 1.2, ease: "easeIn" }}
-            className="absolute inset-0 rounded-full z-40"
-            style={{ background: glowColor, left: "50%", top: "50%", width: 200, height: 200, marginLeft: -100, marginTop: -100 }}
+            className="fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{ background: portalColor, mixBlendMode: "screen" }}
           />
         )}
       </AnimatePresence>
 
-      <motion.div
-        className="relative z-10 flex flex-col items-center"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1, ease: "easeOut" }}
-      >
-        {/* Portal ring */}
-        <motion.button
-          onClick={handlePortalClick}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.97 }}
-          animate={portalPulse ? { scale: [1, 1.15, 0] } : { scale: [1, 1.02, 1] }}
-          transition={portalPulse ? { duration: 1.2 } : { duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="relative flex items-center justify-center cursor-pointer"
-          style={{ width: 240, height: 240 }}
+      {/* ── CONTENT ── */}
+      <div className="relative z-10 flex flex-col items-center w-full min-h-screen px-4 pt-12 pb-8">
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="text-white font-bold text-center mb-2"
+          style={{ fontSize: "clamp(22px, 6vw, 38px)", letterSpacing: "0.02em", textShadow: "0 2px 30px rgba(180,120,255,0.5)" }}
         >
-          {/* Outer glow rings */}
-          {[1, 2, 3].map(i => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full"
-              animate={{ scale: [1, 1 + i * 0.15, 1], opacity: [0.6, 0, 0.6] }}
-              transition={{ duration: 2 + i * 0.5, repeat: Infinity, delay: i * 0.4 }}
-              style={{
-                width: 240 + i * 40,
-                height: 240 + i * 40,
-                border: `2px solid ${glowColor}`,
-                boxShadow: `0 0 30px ${glowColor}`,
-              }}
-            />
-          ))}
+          地球到火星交易
+        </motion.h1>
 
-          {/* Portal disc */}
+        {/* Subtitle pill */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="mb-6"
+          style={{
+            background: "rgba(255,255,255,0.07)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            borderRadius: 8,
+            padding: "4px 16px",
+          }}
+        >
+          <span className="text-white/70 text-sm tracking-wider">由 Kaspa 提供支持</span>
+        </motion.div>
+
+        {/* Portal image area + color wheel stacked */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 0.15 }}
+          className="relative flex items-center justify-center"
+          style={{ width: "min(460px, 96vw)", aspectRatio: "1 / 1.05" }}
+        >
+          {/* The portal ring image fills this space */}
+          <img
+            src={BG_IMAGE}
+            alt="portal"
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            style={{ borderRadius: "50%", opacity: 0 }}
+          />
+
+          {/* Color wheel centered in the lower portion of the portal ring */}
           <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: `radial-gradient(circle at 40% 35%, ${glowColor}cc 0%, ${glowColor}66 30%, ${glowColor}22 60%, transparent 100%)`,
-              boxShadow: `0 0 80px ${glowColor}88, inset 0 0 60px ${glowColor}44`,
-              border: `3px solid ${glowColor}`,
-            }}
-          />
-
-          {/* Animated swirl inside portal */}
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-4 rounded-full"
-            style={{
-              background: `conic-gradient(from 0deg, transparent, ${glowColor}88, transparent, ${glowColor}44, transparent)`,
-            }}
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-8 rounded-full"
-            style={{
-              background: `conic-gradient(from 180deg, transparent, ${glowColor}66, transparent)`,
-            }}
-          />
-
-          {/* Center label */}
-          <div className="relative z-10 text-center">
-            <div className="text-white font-black text-lg tracking-wider drop-shadow-lg">{worldLabel}</div>
-            <div className="text-white/60 text-xs tracking-widest mt-1 flex items-center gap-1 justify-center">
-              ENTER <ChevronRight className="w-3 h-3" />
-            </div>
+            className="absolute flex items-center justify-center"
+            style={{ bottom: "8%", left: "50%", transform: "translateX(-50%)" }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+              style={{ filter: `drop-shadow(0 0 30px ${portalColor})` }}
+            >
+              <ColorWheelDisc onColorChange={setPortalColor} />
+            </motion.div>
           </div>
-        </motion.button>
+        </motion.div>
 
-        {/* Portal label */}
+        {/* Spacer to push buttons below the image */}
+        <div style={{ height: 0 }} />
+
+        {/* World of AI  |  PLAY  |  World of Kaspa */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-10 text-center"
+          transition={{ duration: 0.7, delay: 0.4 }}
+          className="flex items-center gap-2 mt-2 w-full max-w-xs justify-center"
         >
-          <h1 className="text-white font-black text-3xl tracking-tight mb-2">PORTAL</h1>
-          <p className="text-white/40 text-sm tracking-widest">CHOOSE YOUR WORLD</p>
+          {/* World of AI */}
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => handleWorldNav("/WorldOfAI")}
+            className="flex-1 py-3 px-3 rounded-2xl font-black text-white flex items-center justify-center whitespace-nowrap"
+            style={{ fontSize: 13 }}
+            style={{
+              background: "rgba(120, 80, 200, 0.35)",
+              border: "1.5px solid rgba(180, 120, 255, 0.55)",
+              boxShadow: "0 0 20px rgba(160, 80, 255, 0.3)",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            World of AI
+          </motion.button>
 
-          {/* Quick world switch buttons */}
-          <div className="flex gap-3 mt-5 justify-center">
-            <button
-              onClick={() => setPortalColor("#ef4444")}
-              className="px-5 py-2 rounded-full text-xs font-bold tracking-widest transition-all hover:scale-105"
-              style={{
-                background: portalColor === "#ef4444" ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.08)",
-                border: `1px solid ${portalColor === "#ef4444" ? "#ef4444" : "rgba(239,68,68,0.3)"}`,
-                color: "#ef4444",
-                boxShadow: portalColor === "#ef4444" ? "0 0 20px #ef444455" : "none"
-              }}
-            >
-              ⚡ WORLD OF AI
-            </button>
-            <button
-              onClick={() => setPortalColor("#14b8a6")}
-              className="px-5 py-2 rounded-full text-xs font-bold tracking-widest transition-all hover:scale-105"
-              style={{
-                background: portalColor === "#14b8a6" ? "rgba(20,184,166,0.3)" : "rgba(20,184,166,0.08)",
-                border: `1px solid ${portalColor === "#14b8a6" ? "#14b8a6" : "rgba(20,184,166,0.3)"}`,
-                color: "#14b8a6",
-                boxShadow: portalColor === "#14b8a6" ? "0 0 20px #14b8a655" : "none"
-              }}
-            >
-              ◈ WORLD OF KASPA
-            </button>
-          </div>
+          {/* PLAY diamond button */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.93 }}
+            onClick={handlePlay}
+            className="flex flex-col items-center justify-center font-black text-white text-xs tracking-widest flex-shrink-0 relative"
+            style={{
+              width: 60, height: 60,
+              background: "rgba(255,255,255,0.15)",
+              border: "1.5px solid rgba(255,255,255,0.4)",
+              borderRadius: 10,
+              boxShadow: "0 0 24px rgba(255,255,255,0.2)",
+              backdropFilter: "blur(12px)",
+              transform: "rotate(45deg)",
+            }}
+          >
+            <span style={{ transform: "rotate(-45deg)", fontSize: 10, letterSpacing: "0.12em" }}>PLAY</span>
+          </motion.button>
+
+          {/* World of Kaspa */}
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => handleWorldNav("/WorldOfKaspa")}
+            className="flex-1 py-3 px-3 rounded-2xl font-black text-white flex items-center justify-center whitespace-nowrap"
+            style={{ fontSize: 13 }}
+            style={{
+              background: "rgba(0, 160, 140, 0.28)",
+              border: "1.5px solid rgba(20, 200, 180, 0.55)",
+              boxShadow: "0 0 20px rgba(20, 184, 166, 0.3)",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            World of Kaspa
+          </motion.button>
         </motion.div>
-      </motion.div>
 
-      {/* Color wheel panel */}
-      <AnimatePresence>
-        {showColorWheel && (
-          <ColorWheel
-            currentColor={portalColor}
-            onChange={(c) => setPortalColor(c)}
-            onClose={() => setShowColorWheel(false)}
-          />
-        )}
-      </AnimatePresence>
+        {/* TAP · TO · TIP row */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.52 }}
+          className="flex items-center gap-3 mt-4"
+        >
+          {/* TAP */}
+          <motion.button
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/AppStoreV2")}
+            className="flex flex-col items-center justify-center gap-1"
+            style={{
+              width: 64, height: 64,
+              background: "rgba(255,255,255,0.88)",
+              borderRadius: 16,
+              boxShadow: "0 2px 16px rgba(0,0,0,0.25)",
+            }}
+          >
+            <LayoutGrid className="w-5 h-5 text-slate-800" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">TAP</span>
+          </motion.button>
+
+          {/* TO */}
+          <motion.button
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/Feed")}
+            className="flex flex-col items-center justify-center gap-1"
+            style={{
+              width: 64, height: 64,
+              background: "rgba(255,255,255,0.88)",
+              borderRadius: 16,
+              boxShadow: "0 2px 16px rgba(0,0,0,0.25)",
+            }}
+          >
+            <Users className="w-5 h-5 text-slate-800" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">TO</span>
+          </motion.button>
+
+          {/* TIP */}
+          <motion.button
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/Tip")}
+            className="flex flex-col items-center justify-center gap-1"
+            style={{
+              width: 64, height: 64,
+              background: "linear-gradient(135deg, #f97316, #ec4899)",
+              borderRadius: 16,
+              boxShadow: "0 2px 20px rgba(236,72,153,0.4)",
+            }}
+          >
+            <Send className="w-5 h-5 text-white" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-white">TIP</span>
+          </motion.button>
+        </motion.div>
+
+        {/* TTT footer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="mt-5 text-center"
+        >
+          <span className="text-white/40 text-xs font-semibold tracking-[0.5em] uppercase">T T T</span>
+        </motion.div>
+      </div>
     </div>
   );
 }
