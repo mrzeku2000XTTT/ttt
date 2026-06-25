@@ -9,7 +9,7 @@ const FEATURED = [
     desc: "Swap crypto instantly at the best rates",
     external: "https://kaspa.com/buy-kas",
     color: "from-teal-400 to-green-600",
-    logo: "https://kaspa.com/wp-content/uploads/2024/01/kaspa-icon.png",
+    logo: "https://cryptologos.cc/logos/kaspa-kas-logo.png",
     bg: "https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=800&q=70",
   },
   {
