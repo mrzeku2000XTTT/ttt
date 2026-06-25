@@ -114,50 +114,23 @@ Deno.serve(async (req) => {
     // --- IMAGE EDIT / MANIPULATION (uses post image as reference) ---
     if (isImageEdit) {
       try {
-        // Describe the original image
-        let imageDesc = 'a scene with people';
-        try {
-          imageDesc = await base44.asServiceRole.integrations.Core.InvokeLLM({
-            prompt: `Describe this image in detail: who/what is in it, the setting, colors, composition. Be specific. Max 100 words.`,
-            file_urls: postImages,
-            model: 'gemini_3_flash'
-          });
-        } catch (e) { console.log('[@zk Bot] Describe failed:', e.message); }
-
-        // Build generation prompt
-        const manipulationPrompt = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `Create an image generation prompt.
-Original scene: "${imageDesc}"
-User wants: "${userQuestion}"
-Output ONLY a short generation prompt (max 80 words) that recreates the scene with the requested change. Be specific.`
-        });
-
+        // Go straight to generation — use the user's request as the prompt directly with the image as reference
         const imgResult = await base44.asServiceRole.integrations.Core.GenerateImage({
-          prompt: manipulationPrompt,
+          prompt: `Edit this image: ${userQuestion}. Keep the same scene, lighting and composition. High quality photorealistic result.`,
           existing_image_urls: postImages
         });
 
         if (!imgResult?.url) throw new Error('No image URL');
 
-        // Now generate a short witty text response too
-        let wittyText = '';
-        try {
-          wittyText = await base44.asServiceRole.integrations.Core.InvokeLLM({
-            prompt: `You are @zk, a witty AI agent. The user "${author_name}" asked: "${userQuestion}". You just manipulated their image as requested. Give a SHORT, clever 1-2 sentence response (max 30 words). No fluff. End with 1 emoji.`,
-            model: 'gemini_3_flash'
-          });
-        } catch (e) { wittyText = 'Done. ⚡'; }
-
         await base44.asServiceRole.entities.PostComment.update(botComment.id, {
-          comment_text: `${wittyText}\n\n![AI Generated](${imgResult.url})`
+          comment_text: `Done ⚡\n\n![AI Generated](${imgResult.url})`
         });
 
         return Response.json({ success: true, image_url: imgResult.url });
       } catch (err) {
         console.log('[@zk Bot] Image edit failed:', err.message);
-        // Fall through to text response
         await base44.asServiceRole.entities.PostComment.update(botComment.id, {
-          comment_text: `🤖 Couldn't manipulate the image — ${err.message}. Try again!`
+          comment_text: `🤖 Image edit failed. Try again!`
         });
         return Response.json({ success: false, error: err.message });
       }
@@ -203,25 +176,12 @@ Rules:
 - If you don't know, say so briefly`;
 
     try {
-      if (hasPostImages) {
-        analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: textPrompt,
-          file_urls: postImages,
-          model: 'gemini_3_flash'
-        });
-      } else {
-        analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: textPrompt,
-          add_context_from_internet: true,
-          model: 'gemini_3_flash'
-        });
-      }
+      analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: textPrompt,
+        ...(hasPostImages ? { file_urls: postImages, model: 'gemini_3_flash' } : {})
+      });
     } catch (e) {
-      try {
-        analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({ prompt: textPrompt });
-      } catch (e2) {
-        analysis = '🤖 Try again!';
-      }
+      analysis = '🤖 Try again!';
     }
 
     if (!analysis) analysis = '🤖 Try again!';
