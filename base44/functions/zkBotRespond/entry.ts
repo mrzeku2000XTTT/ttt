@@ -385,7 +385,7 @@ Respond directly and cleverly:`;
       });
     } catch {}
 
-    return Response.json({ success: true, analysis });
+    return Response.json({ success: true, analysis, image_url: generatedImageUrl || null });
   } catch (error) {
     console.error('[@zk Bot] Critical error:', error.message);
 

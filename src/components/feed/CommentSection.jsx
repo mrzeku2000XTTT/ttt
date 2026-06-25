@@ -220,15 +220,14 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         setZkIsResponding(true);
 
         try {
-          const lowerMsg = commentText.toLowerCase();
-          const wantsImageAnalysis = /analyz|describ|what('s| is) (this|the) (image|picture|photo)|look at|examine (this|the) (image|picture)/i.test(lowerMsg);
+          // Always fetch the post's images so @zk can see/manipulate them
           let imageUrls = [];
-          if (wantsImageAnalysis) {
+          try {
             const post = await base44.entities.Post.filter({ id: postId });
             imageUrls = post[0]?.media_files 
               ? post[0].media_files.filter(f => f.type === 'image').map(f => f.url)
               : (post[0]?.image_url ? [post[0].image_url] : []);
-          }
+          } catch (e) { console.log('Could not fetch post images:', e.message); }
 
           console.log('[CommentSection] Calling zkBotRespond for top-level comment');
           await base44.functions.invoke('zkBotRespond', { 
