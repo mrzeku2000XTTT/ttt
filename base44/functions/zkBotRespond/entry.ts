@@ -23,14 +23,14 @@ Deno.serve(async (req) => {
                            /\b(draw|paint|design|sketch)\b.{0,30}(me|a|an|the)\b/i.test(userQuestion) ||
                            /\b(create|generate|draw|paint|sketch|design)\s+(a|an|the|me)\s+/i.test(userQuestion);
 
-    // Detect iteration/edit requests ("make it red", "turn the owl into a tiger", "change the background", "make the owl a black tiger")
-    const isIterationRequest = /\b(make|turn|change|transform|convert|edit|modify|replace|add|remove|swap|give)\b.{0,40}\b(it|the|this|into|to|a|an)\b/i.test(userQuestion) ||
-                               /\b(make|turn)\s+(it|the|this|him|her)\b/i.test(userQuestion) ||
+    // Detect iteration/edit requests ("make it red", "turn the owl into a tiger", "change the background")
+    // Note: only treat as iteration if there IS a reference @zk image to iterate on, or explicit "make it X" style
+    const isIterationRequest = /\b(make|turn)\s+(it|the|this|him|her)\b/i.test(userQuestion) ||
                                /\b(can\s*u|canu|could you|can you|please)\s+(make|turn|change|edit|modify|give|create|draw)\b/i.test(userQuestion);
 
     // If user replied to an @zk image comment, always treat as image iteration
     const hasZkRef = !!zk_ref_comment_id;
-    const isImageOrIteration = isImageRequest || isIterationRequest || hasZkRef;
+    const isImageOrIteration = isImageRequest || (isIterationRequest && hasZkRef);
 
     // Create placeholder comment as a REPLY under the caller's comment
     let botComment;
@@ -229,21 +229,47 @@ Deno.serve(async (req) => {
     // --- LLM INVOCATION ---
     const hasImages = image_urls && image_urls.length > 0;
     
+    // Detect if the question is asking for image manipulation on an attached post image
+    const hasPostImage = image_urls && image_urls.length > 0;
+    const wantsImageEditOnPost = hasPostImage && (
+      /\b(remove|delete|erase|take out|cut out)\b.{0,30}\b(person|people|man|woman|him|her|them|someone)\b/i.test(userQuestion) ||
+      /\b(edit|change|modify|alter)\b.{0,30}\b(photo|image|picture|this)\b/i.test(userQuestion) ||
+      /\b(who is|identify|name)\b/i.test(userQuestion)
+    );
+
+    // If user wants to edit/analyze the post image — generate a creative AI image response instead of failing
+    let generatedImageUrl = null;
+    if (wantsImageEditOnPost) {
+      try {
+        console.log('[@zk Bot] Post image edit/analyze request detected, generating creative response image');
+        // Generate a creative/witty related image instead of trying to edit the real photo
+        const creativePrompt = `A creative, artistic, satirical digital illustration inspired by: "${userQuestion.slice(0, 120)}". Modern digital art style, vibrant colors.`;
+        const imgResult = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: creativePrompt });
+        if (imgResult?.url) {
+          generatedImageUrl = imgResult.url;
+          console.log('[@zk Bot] Creative image generated for post-image request');
+        }
+      } catch (imgErr) {
+        console.log('[@zk Bot] Could not generate creative image:', imgErr.message);
+      }
+    }
+
     const prompt = `You are @zk, an elite AI agent in the TTT community (Kaspa blockchain). You have real-time internet access and Grokipedia (xAI's knowledge base).
 
 RULES:
-- Answer the user's ACTUAL QUESTION directly. Do NOT describe images or analyze the post unless explicitly asked.
+- Answer the user's ACTUAL QUESTION directly and wittily.
 - Use real-time web data for prices, news, facts. SEARCH THE WEB for any question you're unsure about.
 - If Grokipedia data is provided below, USE IT as your primary source and cite it.
 - If you can cross-reference with community posts below, mention it briefly.
 - NEVER hallucinate or make up data. Say "not sure" if uncertain.
-- Be concise: max 100 words. Use 1-2 emojis.
+- Be concise: max 80 words. Use 1-2 emojis. Be clever and community-aware.
+- If the question is about removing/editing a photo, give a witty deflection + your actual take on the topic.
 ${grokipediaContext}${anchorContext}${yingKnowledge}${communityContext}
 
 User "${author_name}" asks:
 "${userQuestion || post_content}"
 
-Answer their question directly:`;
+Answer their question directly${hasPostImage ? ' (note: there is an image attached to the post)' : ''}:`;
 
     console.log('[@zk Bot] Invoking LLM, hasImages:', hasImages);
 
@@ -289,9 +315,15 @@ Answer their question directly:`;
     if (!analysis) analysis = '\u{1F916} Could not generate a response. Try again!';
     console.log('[@zk Bot] Final:', analysis.substring(0, 100));
 
+    // Build final comment text — include generated image if we made one
+    let finalCommentText = analysis;
+    if (generatedImageUrl) {
+      finalCommentText = `${analysis}\n\n![AI Generated](${generatedImageUrl})`;
+    }
+
     // Update placeholder comment
     await base44.asServiceRole.entities.PostComment.update(botComment.id, {
-      comment_text: analysis
+      comment_text: finalCommentText
     });
 
     // Save pattern
