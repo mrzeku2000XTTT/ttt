@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft, BookOpen, Monitor, Laptop } from "lucide-react";
+import { ArrowUpDown, TrendingUp, Activity, LogOut, AlertCircle, Crown, User as UserIcon, Menu, X, Clock, Bot, Search, Users, Gamepad2, BarChart3, AlertTriangle, Settings, Bell, Briefcase, ShoppingBag, Brain, Shield, Wallet, Network, Key, MoreHorizontal, FileText, History, Download, ShoppingCart, Trophy, MessageSquare, LayoutGrid, ArrowLeft, BookOpen, Monitor, Laptop, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -255,6 +255,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "TTTV", icon: Search, path: "Browser", isTTTV: true },
     { name: "Send KAS", icon: ArrowUpDown, path: "Bridge" },
     { name: "Agent ZK", icon: Bot, path: "AgentZK", premium: true },
+    { name: "KaspaForge", icon: Zap, path: "KaspaForge" },
     { name: "Courses", icon: BookOpen, path: "Courses" },
     { name: "Zeku AI", icon: Bot, path: "ZekuAI", premium: true },
   ];

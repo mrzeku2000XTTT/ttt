@@ -103,6 +103,7 @@ import PortalPage from './pages/Portal';
 import WorldOfAIPage from './pages/WorldOfAI';
 import WorldOfKaspaPage from './pages/WorldOfKaspa';
 import KaSshiPlayer from './components/KaSshiPlayer';
+import KaspaForgePage from './pages/KaspaForge';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -239,6 +240,7 @@ const AuthenticatedApp = () => {
       <Route path="/WorldOfAI" element={<WorldOfAIPage />} />
       <Route path="/WorldOfKaspa" element={<WorldOfKaspaPage />} />
       <Route path="/Hire" element={<HirePage />} />
+      <Route path="/KaspaForge" element={<KaspaForgePage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
