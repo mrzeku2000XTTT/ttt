@@ -21,29 +21,12 @@ const FEATURED = [
     bg: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=70",
   },
   {
-    name: "Agent ZK",
-    desc: "Cryptographic identity system",
-    path: "/AgentZK",
-    color: "from-violet-500 to-purple-700",
-    logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3e49e39c2_image.png",
-    premium: true,
-    bg: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&q=70",
-  },
-  {
-    name: "StakeDAG",
-    desc: "Prediction markets with escrow",
-    path: "/StakeDAG",
-    color: "from-emerald-500 to-teal-700",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/273ecff83_generated_image.png",
-    bg: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&q=70",
-  },
-  {
-    name: "Hikaru",
-    desc: "AI image generation studio",
-    path: "/Hikaru",
-    color: "from-pink-500 to-rose-700",
-    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ede6944ce_generated_image.png",
-    bg: "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=800&q=70",
+    name: "Portal",
+    desc: "Enter World of AI or World of Kaspa",
+    path: "/Portal",
+    color: "from-teal-500 to-violet-700",
+    logo: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=200&q=80",
+    bg: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800&q=70",
   },
 ];
 
@@ -56,7 +39,7 @@ export default function AppStoreFeatured() {
       className="mb-10"
     >
       <h2 className="text-lg font-[800] mb-4">Featured</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {FEATURED.map((app, i) => {
           const card = (
             <motion.div

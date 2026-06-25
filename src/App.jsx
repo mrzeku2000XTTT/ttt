@@ -99,6 +99,9 @@ import GhostFrameStudioPage from './pages/GhostFrameStudio';
 import TipPageComponent from './pages/TipPage';
 import HirePage from './pages/Hire';
 import NodePage from './pages/Node';
+import PortalPage from './pages/Portal';
+import WorldOfAIPage from './pages/WorldOfAI';
+import WorldOfKaspaPage from './pages/WorldOfKaspa';
 import KaSshiPlayer from './components/KaSshiPlayer';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -232,6 +235,9 @@ const AuthenticatedApp = () => {
       <Route path="/GhostFrame" element={<GhostFrameLandingPage />} />
       <Route path="/GhostFrameStudio" element={<GhostFrameStudioPage />} />
       <Route path="/Tip" element={<TipPageComponent />} />
+      <Route path="/Portal" element={<PortalPage />} />
+      <Route path="/WorldOfAI" element={<WorldOfAIPage />} />
+      <Route path="/WorldOfKaspa" element={<WorldOfKaspaPage />} />
       <Route path="/Hire" element={<HirePage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
