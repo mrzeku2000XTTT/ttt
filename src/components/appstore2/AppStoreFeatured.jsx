@@ -5,6 +5,14 @@ import { ArrowUpRight, Crown } from "lucide-react";
 
 const FEATURED = [
   {
+    name: "Buy KAS",
+    desc: "Swap crypto instantly at the best rates",
+    external: "https://kaspa.com/buy-kas",
+    color: "from-teal-400 to-green-600",
+    logo: "https://kaspa.com/wp-content/uploads/2024/01/kaspa-icon.png",
+    bg: "https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=800&q=70",
+  },
+  {
     name: "Feed",
     desc: "Social feed with KAS tipping",
     path: "/Feed",
@@ -48,9 +56,9 @@ export default function AppStoreFeatured() {
       className="mb-10"
     >
       <h2 className="text-lg font-[800] mb-4">Featured</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {FEATURED.map((app, i) => (
-          <Link key={app.name} to={app.path} onClick={() => { try { localStorage.setItem('came_from_categories', 'true'); } catch {} }}>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {FEATURED.map((app, i) => {
+          const card = (
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -58,17 +66,14 @@ export default function AppStoreFeatured() {
               whileHover={{ y: -4 }}
               className={`relative rounded-2xl bg-gradient-to-br ${app.color} p-4 h-40 flex flex-col justify-between overflow-hidden shadow-lg group cursor-pointer`}
             >
-              {/* Background image */}
               {app.bg && (
                 <div
                   className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500"
                   style={{ backgroundImage: `url(${app.bg})` }}
                 />
               )}
-              {/* Gradient overlay for text readability */}
               <div className={`absolute inset-0 bg-gradient-to-br ${app.color} opacity-60 mix-blend-multiply`} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
               <div className="absolute top-3 right-3 w-14 h-14 rounded-xl overflow-hidden shadow-lg opacity-95 group-hover:scale-110 transition-transform z-10">
                 <img src={app.logo} alt={app.name} className="w-full h-full object-cover" />
               </div>
@@ -82,8 +87,12 @@ export default function AppStoreFeatured() {
               </div>
               <ArrowUpRight className="absolute bottom-3 right-3 w-4 h-4 text-white/60 group-hover:text-white transition-colors z-10" />
             </motion.div>
-          </Link>
-        ))}
+          );
+
+          return app.external
+            ? <a key={app.name} href={app.external} target="_blank" rel="noopener noreferrer">{card}</a>
+            : <Link key={app.name} to={app.path} onClick={() => { try { localStorage.setItem('came_from_categories', 'true'); } catch {} }}>{card}</Link>;
+        })}
       </div>
     </motion.div>
   );
