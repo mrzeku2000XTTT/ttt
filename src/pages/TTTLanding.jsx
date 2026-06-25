@@ -348,14 +348,54 @@ function ResearcherPanel({ onClose }) {
 }
 
 // ── Apple-style music player popup with lyrics ──
-function MusicPlayer({ isPlaying, onToggle, onEnter }) {
+const SONG_DURATION = 192; // 3:12 in seconds
+
+function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapsed }) {
   const [scrolled, setScrolled] = useState(false);
   const lyricsRef = useRef(null);
+  const lineRefs = useRef([]);
+  const timerRef = useRef(null);
+
+  // Tick elapsed time
+  useEffect(() => {
+    if (isPlaying) {
+      timerRef.current = setInterval(() => {
+        setElapsed(prev => {
+          const next = prev + 1;
+          return next >= SONG_DURATION ? SONG_DURATION : next;
+        });
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [isPlaying, setElapsed]);
+
+  // Auto-scroll lyrics based on elapsed time
+  useEffect(() => {
+    if (!isPlaying || !lyricsRef.current) return;
+    const totalLines = SONG_LYRICS.length;
+    const lineIndex = Math.floor((elapsed / SONG_DURATION) * totalLines);
+    const el = lineRefs.current[Math.min(lineIndex, totalLines - 1)];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    // Mark scrolled if past halfway
+    if (elapsed / SONG_DURATION > 0.5) setScrolled(true);
+  }, [elapsed, isPlaying]);
 
   const handleScroll = (e) => {
     const el = e.target;
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) setScrolled(true);
   };
+
+  const formatTime = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const progress = Math.min((elapsed / SONG_DURATION) * 100, 100);
 
   return (
     <motion.div
@@ -387,18 +427,23 @@ function MusicPlayer({ isPlaying, onToggle, onEnter }) {
               ? <Pause className="w-4 h-4 text-slate-800" />
               : <Play className="w-4 h-4 text-slate-800 ml-0.5" />}
           </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all ml-1"
+            style={{ background: "rgba(0,0,0,0.06)" }}>
+            <X className="w-4 h-4 text-slate-500" />
+          </motion.button>
         </div>
 
-        {/* Progress bar — decorative */}
+        {/* Progress bar — real */}
         <div className="px-4 pb-3">
           <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.08)" }}>
-            <motion.div className="h-full rounded-full"
-              style={{ background: "linear-gradient(90deg, #f97316, #ec4899)" }}
-              animate={{ width: isPlaying ? "100%" : "35%" }}
-              transition={{ duration: isPlaying ? 180 : 0.5, ease: "linear" }} />
+            <div className="h-full rounded-full transition-all duration-1000"
+              style={{ background: "linear-gradient(90deg, #f97316, #ec4899)", width: `${progress}%` }} />
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-[9px] text-slate-400">0:00</span>
+            <span className="text-[9px] text-slate-400">{formatTime(elapsed)}</span>
             <span className="text-[9px] text-slate-400">3:12</span>
           </div>
         </div>
@@ -414,12 +459,13 @@ function MusicPlayer({ isPlaying, onToggle, onEnter }) {
             <div className="space-y-1 pb-4">
               {SONG_LYRICS.map((l, i) =>
                 l.line ? (
-                  <motion.p key={i}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="text-[13px] leading-relaxed text-slate-700 font-medium">{l.line}</motion.p>
-                ) : <div key={i} className="h-3" />
+                  <p key={i} ref={el => lineRefs.current[i] = el}
+                    className="text-[13px] leading-relaxed font-medium transition-all duration-300"
+                    style={{
+                      color: Math.abs(i - Math.floor((elapsed / SONG_DURATION) * SONG_LYRICS.length)) < 2 && isPlaying
+                        ? "#f97316" : "#334155"
+                    }}>{l.line}</p>
+                ) : <div key={i} ref={el => lineRefs.current[i] = el} className="h-3" />
               )}
             </div>
           </div>
@@ -454,6 +500,7 @@ export default function TTTLandingPage() {
   const [showPlayer, setShowPlayer] = useState(false);
   const [showAgent, setShowAgent] = useState(false);
   const [showResearcher, setShowResearcher] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
 
   const playerRef = React.useRef(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -468,12 +515,20 @@ export default function TTTLandingPage() {
   };
 
   const handlePlayButton = () => {
-    if (!hasStartedMusic) { setHasStartedMusic(true); setIsPlaying(true); }
-    else {
+    if (!hasStartedMusic) {
+      setHasStartedMusic(true);
+      setIsPlaying(true);
+    } else {
       sendPlayerCommand(isPlaying ? "pauseVideo" : "playVideo");
       setIsPlaying(!isPlaying);
     }
     setShowPlayer(true);
+  };
+
+  const handleClosePlayer = () => {
+    sendPlayerCommand("pauseVideo");
+    setIsPlaying(false);
+    setShowPlayer(false);
   };
 
   const toggleMusicFromPlayer = () => {
@@ -634,7 +689,10 @@ export default function TTTLandingPage() {
           <MusicPlayer
             isPlaying={isPlaying}
             onToggle={toggleMusicFromPlayer}
+            onClose={handleClosePlayer}
             onEnter={() => navigate("/TTTGate")}
+            elapsed={elapsed}
+            setElapsed={setElapsed}
           />
         )}
       </AnimatePresence>
