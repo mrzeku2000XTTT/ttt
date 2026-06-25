@@ -28,11 +28,32 @@ export default function GhostFrameLanding() {
   const navigate = useNavigate();
   const [iconUrl, setIconUrl] = useState(null);
   const [generatingIcon, setGeneratingIcon] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    base44.auth.me().then(u => { setUser(u); setAuthLoading(false); }).catch(() => setAuthLoading(false));
     const cached = sessionStorage.getItem("ghostframe_icon");
     if (cached) setIconUrl(cached);
   }, []);
+
+  if (authLoading) {
+    return <div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-cyan-500/40 border-t-cyan-400 rounded-full animate-spin" /></div>;
+  }
+
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-center px-5">
+        <div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <span className="text-2xl">🔒</span>
+          </div>
+          <h2 className="text-white font-bold text-xl mb-2">Admin Only</h2>
+          <p className="text-white/40 text-sm">Ghost Frame Studio is restricted to admins.</p>
+        </div>
+      </div>
+    );
+  }
 
   const generateIcon = async () => {
     setGeneratingIcon(true);

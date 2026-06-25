@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -64,6 +65,7 @@ export default function TTTBuilderPage() {
 }
 
 function TTTBuilderStudio() {
+  const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState("preview");
@@ -186,6 +188,10 @@ Output ONLY the complete HTML — nothing else.`,
       {/* Top nav */}
       <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-[#0d1117]/80 backdrop-blur-xl border-b border-white/5">
         <div className="flex items-center gap-2">
+          <button onClick={() => navigate("/AppStoreV2")} className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors mr-2">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-xs font-medium">Back</span>
+          </button>
           <span className="font-black text-lg tracking-tight">TTT</span>
           <span className="text-[10px] font-bold bg-[#70C7BA] text-black px-1.5 py-0.5 rounded">BUILDER</span>
         </div>
