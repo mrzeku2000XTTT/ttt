@@ -232,25 +232,71 @@ Deno.serve(async (req) => {
     // Detect if the question is asking for image manipulation on an attached post image
     const hasPostImage = image_urls && image_urls.length > 0;
     const wantsImageEditOnPost = hasPostImage && (
-      /\b(remove|delete|erase|take out|cut out)\b.{0,30}\b(person|people|man|woman|him|her|them|someone)\b/i.test(userQuestion) ||
-      /\b(edit|change|modify|alter)\b.{0,30}\b(photo|image|picture|this)\b/i.test(userQuestion) ||
-      /\b(who is|identify|name)\b/i.test(userQuestion)
+      /\b(remove|delete|erase|take out|cut out)\b/i.test(userQuestion) ||
+      /\b(edit|change|modify|alter|make|add|replace|put|swap)\b.{0,40}\b(photo|image|picture|this|the)\b/i.test(userQuestion) ||
+      /\b(who is|identify|name|which one)\b/i.test(userQuestion) ||
+      /\b(photo|image|picture|this)\b/i.test(userQuestion)
     );
 
-    // If user wants to edit/analyze the post image — generate a creative AI image response instead of failing
+    // If user wants to edit/manipulate the post image — use the post image as reference and generate a new AI image
     let generatedImageUrl = null;
     if (wantsImageEditOnPost) {
       try {
-        console.log('[@zk Bot] Post image edit/analyze request detected, generating creative response image');
-        // Generate a creative/witty related image instead of trying to edit the real photo
-        const creativePrompt = `A creative, artistic, satirical digital illustration inspired by: "${userQuestion.slice(0, 120)}". Modern digital art style, vibrant colors.`;
-        const imgResult = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: creativePrompt });
+        console.log('[@zk Bot] Post image manipulation request detected, generating AI image using post image as reference');
+        
+        // First, use LLM to understand the image and craft a smart generation prompt
+        let imageDesc = '';
+        try {
+          imageDesc = await base44.asServiceRole.integrations.Core.InvokeLLM({
+            prompt: `Describe this image in detail: who is in it, what they are doing, the setting, colors, and composition. Be specific and factual. Max 150 words.`,
+            file_urls: image_urls,
+            model: 'gemini_3_flash'
+          });
+          console.log('[@zk Bot] Image described:', imageDesc.substring(0, 100));
+        } catch (descErr) {
+          console.log('[@zk Bot] Could not describe image:', descErr.message);
+          imageDesc = 'a group of people standing together outdoors';
+        }
+
+        // Build the generation prompt: recreate the scene + apply the user's request
+        const manipulationPrompt = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: `You are crafting an AI image generation prompt. 
+Original image description: "${imageDesc}"
+User's request: "${userQuestion}"
+
+Create a detailed image generation prompt that:
+1. Recreates the original scene/composition closely
+2. Applies the user's requested change (e.g. remove a person, change something)
+3. Keeps photorealistic style, same lighting, same setting
+4. Max 120 words. Output ONLY the prompt, nothing else.`
+        });
+
+        console.log('[@zk Bot] Generation prompt:', manipulationPrompt.substring(0, 100));
+
+        // Generate image using the post image as style reference + the manipulation prompt
+        const imgResult = await base44.asServiceRole.integrations.Core.GenerateImage({
+          prompt: manipulationPrompt,
+          existing_image_urls: image_urls  // use original post image as visual reference
+        });
+
         if (imgResult?.url) {
           generatedImageUrl = imgResult.url;
-          console.log('[@zk Bot] Creative image generated for post-image request');
+          console.log('[@zk Bot] Manipulation image generated successfully');
+        } else {
+          throw new Error('No image URL returned');
         }
       } catch (imgErr) {
-        console.log('[@zk Bot] Could not generate creative image:', imgErr.message);
+        console.log('[@zk Bot] Image generation failed, continuing with text only:', imgErr.message);
+        // Try a simpler fallback generation without reference image
+        try {
+          const fallbackPrompt = `Creative digital art: ${userQuestion.slice(0, 100)}. High quality, detailed, vibrant.`;
+          const fallbackResult = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: fallbackPrompt });
+          if (fallbackResult?.url) {
+            generatedImageUrl = fallbackResult.url;
+          }
+        } catch (fbErr) {
+          console.log('[@zk Bot] Fallback image also failed:', fbErr.message);
+        }
       }
     }
 
@@ -260,16 +306,16 @@ RULES:
 - Answer the user's ACTUAL QUESTION directly and wittily.
 - Use real-time web data for prices, news, facts. SEARCH THE WEB for any question you're unsure about.
 - If Grokipedia data is provided below, USE IT as your primary source and cite it.
-- If you can cross-reference with community posts below, mention it briefly.
-- NEVER hallucinate or make up data. Say "not sure" if uncertain.
 - Be concise: max 80 words. Use 1-2 emojis. Be clever and community-aware.
-- If the question is about removing/editing a photo, give a witty deflection + your actual take on the topic.
+- NEVER hallucinate or make up data. Say "not sure" if uncertain.
+${generatedImageUrl ? '- You have generated an image in response to this request. Reference it briefly with something like "Here\'s my take 👇" or "I got you 🎨".' : ''}
+${hasPostImage && !generatedImageUrl ? '- There is an image attached to the post. Acknowledge it in your response.' : ''}
 ${grokipediaContext}${anchorContext}${yingKnowledge}${communityContext}
 
 User "${author_name}" asks:
 "${userQuestion || post_content}"
 
-Answer their question directly${hasPostImage ? ' (note: there is an image attached to the post)' : ''}:`;
+Respond directly and cleverly:`;
 
     console.log('[@zk Bot] Invoking LLM, hasImages:', hasImages);
 
