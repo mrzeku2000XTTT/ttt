@@ -122,20 +122,20 @@ export default function GhostFrameStudio() {
     setEditingPrompt(f.auto_generated_prompt || "");
   };
 
-  const generateSingleFrame = async (frame, refImageUrl) => {
+  const generateSingleFrame = async (frame, refImageUrl, overridePrompt) => {
     setGeneratingFrame(frame.frame_number);
-    const updated = await base44.entities.GhostFrame.update(frame.id, { status: "generating" });
     setFrames(prev => prev.map(f => f.id === frame.id ? { ...f, status: "generating" } : f));
+    const prompt = overridePrompt || frame.auto_generated_prompt;
     try {
       const res = await base44.integrations.Core.GenerateImage({
-        prompt: editingPrompt || frame.auto_generated_prompt,
+        prompt,
         ...(refImageUrl ? { existing_image_urls: [refImageUrl] } : {}),
       });
       const done = await base44.entities.GhostFrame.update(frame.id, {
         generated_image_url: res.url,
         status: "done",
         reference_frame_image: refImageUrl || null,
-        auto_generated_prompt: editingPrompt || frame.auto_generated_prompt,
+        auto_generated_prompt: prompt,
       });
       setFrames(prev => prev.map(f => f.id === frame.id ? done : f));
       if (selectedFrame?.id === frame.id) setSelectedFrame(done);
@@ -163,7 +163,7 @@ export default function GhostFrameStudio() {
     for (const frame of frames) {
       if (stopRef.current) break;
       if (frame.status === "done") { prevImageUrl = frame.generated_image_url || prevImageUrl; continue; }
-      const url = await generateSingleFrame(frame, prevImageUrl);
+      const url = await generateSingleFrame(frame, prevImageUrl, frame.auto_generated_prompt);
       if (url) prevImageUrl = url;
     }
     setGeneratingAll(false);
@@ -460,7 +460,7 @@ export default function GhostFrameStudio() {
                     <button
                       onClick={async () => {
                         const prevFrame = frames.find(f => f.frame_number === selectedFrame.frame_number - 1);
-                        await generateSingleFrame(selectedFrame, prevFrame?.generated_image_url || null);
+                        await generateSingleFrame(selectedFrame, prevFrame?.generated_image_url || null, editingPrompt || selectedFrame.auto_generated_prompt);
                       }}
                       disabled={!!generatingFrame}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-black disabled:opacity-40 transition-all"
