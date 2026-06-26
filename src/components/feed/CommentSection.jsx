@@ -53,16 +53,29 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
   useEffect(() => {
     loadComments();
-    if (currentUser) {
-      loadUserCommentLikes();
-    }
+    loadUserCommentLikes();
   }, [postId, currentUser?.email]);
 
   const loadUserCommentLikes = async () => {
     try {
-      const likes = await base44.entities.CommentLike.filter({
-        user_email: currentUser.email
-      });
+      let walletAddress = '';
+      if (window.kasware) {
+        try {
+          const accounts = await window.kasware.getAccounts();
+          if (accounts && accounts.length > 0) walletAddress = accounts[0];
+        } catch (err) {}
+      }
+      if (currentUser?.created_wallet_address) walletAddress = currentUser.created_wallet_address;
+      if (!walletAddress) walletAddress = localStorage.getItem('ttt_wallet_address') || localStorage.getItem('manual_kaspa_address') || '';
+
+      const userEmail = currentUser?.email || null;
+      if (!userEmail && !walletAddress) return;
+
+      const filter = userEmail
+        ? { user_email: userEmail }
+        : { user_wallet: walletAddress };
+
+      const likes = await base44.entities.CommentLike.filter(filter);
       const likesMap = {};
       likes.forEach(like => {
         likesMap[like.comment_id] = true;
@@ -390,8 +403,21 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
   };
 
   const handleLikeComment = async (comment) => {
-    if (!currentUser) {
-      alert('Please login to like comments');
+    // Get wallet address from kasware, user, or local storage/manual
+    let walletAddress = '';
+    if (window.kasware) {
+      try {
+        const accounts = await window.kasware.getAccounts();
+        if (accounts && accounts.length > 0) walletAddress = accounts[0];
+      } catch (err) {}
+    }
+    if (currentUser?.created_wallet_address) walletAddress = currentUser.created_wallet_address;
+    if (!walletAddress) walletAddress = localStorage.getItem('ttt_wallet_address') || localStorage.getItem('manual_kaspa_address') || '';
+
+    const userEmail = currentUser?.email || null;
+
+    if (!userEmail && !walletAddress) {
+      alert('Please connect a wallet or login to like comments');
       return;
     }
 
@@ -409,11 +435,11 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
     
     try {
       if (isLiked) {
-        // Unlike: delete CommentLike record
-        const existingLikes = await base44.entities.CommentLike.filter({
-          comment_id: comment.id,
-          user_email: currentUser.email
-        });
+        // Unlike: delete CommentLike record by email or wallet
+        const filter = userEmail
+          ? { comment_id: comment.id, user_email: userEmail }
+          : { comment_id: comment.id, user_wallet: walletAddress };
+        const existingLikes = await base44.entities.CommentLike.filter(filter);
         if (existingLikes.length > 0) {
           await base44.entities.CommentLike.delete(existingLikes[0].id);
         }
@@ -421,8 +447,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
         // Like: create CommentLike record
         await base44.entities.CommentLike.create({
           comment_id: comment.id,
-          user_email: currentUser.email,
-          user_wallet: currentUser.created_wallet_address || ''
+          user_email: userEmail,
+          user_wallet: walletAddress
         });
       }
 
