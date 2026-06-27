@@ -11,6 +11,30 @@
 
 export const TTT_UPDATES = [
   {
+    id: "ok-motion-lab-appstore",
+    title: "oK Motion Lab Added to App Store",
+    summary: "oK — the high-performance 3D studio for rendering and animating brand logos — is now featured in the TTT App Store with fullscreen iframe support.",
+    tag: "New App",
+    date: "2026-06-27",
+    link: "/AppStoreV2",
+  },
+  {
+    id: "kaspa-toccata-mainnet-june-2026",
+    title: "Kaspa Toccata Hard Fork — Mainnet Activation",
+    summary: "Kaspa's biggest upgrade ever is activating on mainnet in late June 2026. Toccata brings native token issuance, covenants, and ZK verification directly to L1.",
+    tag: "Kaspa",
+    date: "2026-06-26",
+    link: "/WhatIsKaspa",
+  },
+  {
+    id: "kaspaforge-launch",
+    title: "KaspaForge — Smart Contract Deployer",
+    summary: "Deploy timelocks, escrows, payment splits, vesting schedules, and custom scripts on Kaspa — no coding required. Connect Kasware and deploy in minutes.",
+    tag: "New App",
+    date: "2026-06-20",
+    link: "/KaspaForge",
+  },
+  {
     id: "quick-storyboard-crab-ai",
     title: "Quick Storyboard Crab AI Upgraded",
     summary: "StoryboardCrabBot now has a cleaner Crab AI button plus continuous voice input for faster creative direction and storyboard feedback.",

@@ -6,11 +6,13 @@ import { base44 } from "@/api/base44Client";
 import { getLatestUpdates } from "./tttUpdates";
 
 const FALLBACK_ITEMS = [
-  { id: "kaspa_toccata_success", title: "Great Success: Toccata Testnet Launched", summary: "Kaspa's Toccata testnet is live, marking a major step toward stronger Layer 1 programmability and native smart-contract capabilities.", tag: "Kaspa" },
-  { id: 1, title: "TTT Feed Now Live", summary: "Share posts, tip creators with KAS, and interact with the @zk AI bot.", tag: "TTT" },
-  { id: 2, title: "Agent ZK Identity", summary: "Verify your wallet and claim your cryptographic Agent ZK identity.", tag: "Agent ZK" },
-  { id: 3, title: "KRC-20 Tipping", summary: "Send PACMAN and other KRC-20 tokens as tips on posts and comments.", tag: "Tipping" },
-  { id: 4, title: "StakeDAG Markets", summary: "Place KAS bets on prediction games and earn from correct outcomes.", tag: "StakeDAG" },
+  { id: "kaspa_toccata_mainnet", title: "Toccata Hard Fork Activating on Mainnet", summary: "Kaspa's largest upgrade ever is live in late June 2026 — native tokens, covenants, ZK verification, and DeFi support all land on L1.", tag: "Kaspa" },
+  { id: "kaspa_htx_upgrade", title: "HTX Supports Kaspa Toccata Upgrade", summary: "Exchange HTX has announced support for the Kaspa network upgrade, temporarily pausing deposits/withdrawals for a smooth mainnet transition.", tag: "Kaspa" },
+  { id: "kaspa_dagknight_q3", title: "DAGKnight Consensus Upgrade Coming Q3 2026", summary: "After Toccata, the next milestone is the DAGKnight consensus upgrade aimed at faster finality and improved network scalability.", tag: "Kaspa" },
+  { id: "kaspa_native_tokens", title: "Native Tokens & NFTs Now Possible on Kaspa L1", summary: "With the Toccata hard fork, native token issuance and NFT standards become available directly on the Kaspa base layer without bridges.", tag: "Kaspa" },
+  { id: "ttt_feed", title: "TTT Feed Now Live", summary: "Share posts, tip creators with KAS, and interact with the @zk AI bot.", tag: "TTT" },
+  { id: "agent_zk", title: "Agent ZK Identity", summary: "Verify your wallet and claim your cryptographic Agent ZK identity.", tag: "Agent ZK" },
+  { id: "kaspaforge_new", title: "KaspaForge — Deploy Smart Contracts", summary: "Deploy timelocks, escrows, and vesting schedules on Kaspa — no coding needed. Connect Kasware and go.", tag: "New App" },
 ];
 
 // Always-fresh TTT platform updates (prepended to every rotation)
@@ -44,6 +46,14 @@ export default function NewsToast() {
   const fetchDailyKaspaNews = async () => {
     const cacheKey = 'kaspa_toast_news';
     const cacheDate = 'kaspa_toast_news_date';
+    const cacheVersion = 'kaspa_toast_news_v';
+    const CURRENT_VERSION = '2026-06-27';
+    // Bust cache if version changed
+    if (localStorage.getItem(cacheVersion) !== CURRENT_VERSION) {
+      localStorage.removeItem(cacheKey);
+      localStorage.removeItem(cacheDate);
+      localStorage.setItem(cacheVersion, CURRENT_VERSION);
+    }
     const today = new Date().toDateString();
     try {
       const cached = localStorage.getItem(cacheKey);
@@ -53,7 +63,7 @@ export default function NewsToast() {
         return;
       }
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Give me 4 brief, real Kaspa blockchain news or community updates as of today. Include the successful Kaspa Toccata testnet launch if current/relevant. Topics: development, hashrate, ecosystem, KRC-20, community milestones. Be factual and current.`,
+        prompt: `Give me 4 brief, real Kaspa (KAS) blockchain news or community updates as of late June 2026. Key context: The Toccata hard fork is activating on mainnet in late June 2026, bringing native tokens, covenants, ZK verification, and DeFi to Kaspa L1. HTX exchange announced support for the upgrade. DAGKnight consensus upgrade is planned for Q3 2026. Topics: Toccata mainnet status, hashrate, exchange listings, ecosystem apps, KRC-20, community milestones. Be factual and current.`,
         add_context_from_internet: true,
         model: 'gemini_3_flash',
         response_json_schema: {
