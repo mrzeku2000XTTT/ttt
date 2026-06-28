@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Plus, Search, ImageIcon, Mic, Globe, Zap, Loader2, ChevronDown } from "lucide-react";
+import { X, Send, Plus, Mic, Globe, Zap, Loader2, ChevronDown, Minimize2, Maximize2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import ReactMarkdown from "react-markdown";
 
@@ -12,13 +12,21 @@ const SUGGESTIONS = [
   "Tell me about TTT — the Kaspa super-app",
 ];
 
+const glassStyle = {
+  background: "linear-gradient(135deg, rgba(10,10,10,0.96) 0%, rgba(20,20,30,0.98) 100%)",
+  backdropFilter: "blur(40px)",
+  WebkitBackdropFilter: "blur(40px)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)",
+};
+
 const ThinkingDots = () => (
   <div className="flex items-center gap-1 py-1">
     {[0, 1, 2].map((i) => (
       <motion.span
         key={i}
-        className="w-2 h-2 rounded-full bg-slate-400"
-        animate={{ opacity: [0.3, 1, 0.3], y: [0, -4, 0] }}
+        className="w-2 h-2 rounded-full bg-white/30"
+        animate={{ opacity: [0.2, 1, 0.2], y: [0, -4, 0] }}
         transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
       />
     ))}
@@ -31,9 +39,9 @@ const ThoughtProcess = ({ text }) => {
     <div className="mb-2">
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors group"
+        className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/60 transition-colors group"
       >
-        <Zap className="w-3 h-3 text-emerald-500" />
+        <Zap className="w-3 h-3 text-emerald-400" />
         <span className="font-medium">Thought for a moment</span>
         <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
@@ -45,7 +53,7 @@ const ThoughtProcess = ({ text }) => {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-1.5 pl-3 border-l-2 border-emerald-200 text-xs text-slate-400 italic leading-relaxed">
+            <div className="mt-1.5 pl-3 border-l-2 border-emerald-500/30 text-xs text-white/30 italic leading-relaxed">
               {text}
             </div>
           </motion.div>
@@ -59,7 +67,15 @@ const MessageBubble = ({ msg }) => {
   if (msg.role === "user") {
     return (
       <div className="flex justify-end mb-4">
-        <div className="max-w-[75%] px-4 py-3 rounded-2xl rounded-tr-sm bg-slate-900 text-white text-sm leading-relaxed">
+        <div
+          className="max-w-[75%] px-4 py-3 text-sm leading-relaxed text-white"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "16px 16px 4px 16px",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+          }}
+        >
           {msg.content}
         </div>
       </div>
@@ -67,15 +83,16 @@ const MessageBubble = ({ msg }) => {
   }
   return (
     <div className="flex gap-3 mb-5">
-      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-slate-800 to-slate-600 flex items-center justify-center mt-0.5">
-        <span className="text-white text-[10px] font-black">G</span>
+      <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5"
+        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <span className="text-white text-[10px] font-black">ZK</span>
       </div>
       <div className="flex-1 min-w-0">
         {msg.thought && <ThoughtProcess text={msg.thought} />}
         {msg.loading ? (
           <ThinkingDots />
         ) : (
-          <div className="prose prose-sm prose-slate max-w-none text-slate-800">
+          <div className="prose prose-sm max-w-none text-white/85 prose-headings:text-white prose-strong:text-white prose-code:text-emerald-400 prose-a:text-emerald-400">
             <ReactMarkdown>{msg.content}</ReactMarkdown>
           </div>
         )}
@@ -88,7 +105,8 @@ export default function GrokChat({ onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState("expert"); // expert | think
+  const [mode, setMode] = useState("expert");
+  const [fullscreen, setFullscreen] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -114,7 +132,7 @@ export default function GrokChat({ onClose }) {
 
     try {
       const useThinking = mode === "think";
-      const systemPrompt = `You are Grok — a truth-seeking, witty AI assistant deeply knowledgeable about Kaspa blockchain, cryptocurrency, DAG technology, and the TTT ecosystem (a Kaspa-based super-app). You give sharp, accurate, well-reasoned answers. Be concise yet thorough. Use markdown for structure when helpful.`;
+      const systemPrompt = `You are ZK — a truth-seeking, witty AI assistant deeply knowledgeable about Kaspa blockchain, cryptocurrency, DAG technology, and the TTT ecosystem (a Kaspa-based super-app). You give sharp, accurate, well-reasoned answers. Be concise yet thorough. Use markdown for structure when helpful.`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `${systemPrompt}\n\nUser: ${q}`,
@@ -133,7 +151,7 @@ export default function GrokChat({ onClose }) {
             : m
         )
       );
-    } catch (err) {
+    } catch {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === placeholderId
@@ -148,6 +166,10 @@ export default function GrokChat({ onClose }) {
 
   const isEmpty = messages.length === 0;
 
+  const windowClass = fullscreen
+    ? "fixed inset-0 z-[201] flex flex-col"
+    : "relative w-full sm:max-w-2xl h-[92vh] sm:h-[82vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 40, scale: 0.96 }}
@@ -161,30 +183,45 @@ export default function GrokChat({ onClose }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/30 backdrop-blur-md"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
       />
 
       {/* Chat window */}
-      <div className="relative w-full sm:max-w-2xl h-[92vh] sm:h-[82vh] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200/80">
+      <div
+        className={windowClass}
+        style={glassStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Gloss sheen */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center">
-              <span className="text-white text-xs font-black">G</span>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              <span className="text-white text-[9px] font-black tracking-tight">ZK</span>
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Grok</h2>
-              <p className="text-[10px] text-slate-400 -mt-0.5">Truth-seeking AI · Powered by TTT</p>
+              <h2 className="text-sm font-bold text-white">ZK</h2>
+              <p className="text-[10px] text-white/40 -mt-0.5">Truth-seeking AI · Powered by TTT</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {/* Mode toggle */}
-            <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1">
+            <div
+              className="flex items-center gap-1 rounded-full p-1"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
               <button
                 onClick={() => setMode("expert")}
                 className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all ${
-                  mode === "expert" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  mode === "expert"
+                    ? "bg-white/10 text-white border border-white/10"
+                    : "text-white/40 hover:text-white/60"
                 }`}
               >
                 Expert
@@ -192,41 +229,67 @@ export default function GrokChat({ onClose }) {
               <button
                 onClick={() => setMode("think")}
                 className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all flex items-center gap-1 ${
-                  mode === "think" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  mode === "think"
+                    ? "bg-white/10 text-white border border-white/10"
+                    : "text-white/40 hover:text-white/60"
                 }`}
               >
                 <Zap className="w-2.5 h-2.5" /> Think
               </button>
             </div>
+
+            {/* Minimize / Fullscreen toggle */}
+            <button
+              onClick={() => setFullscreen((v) => !v)}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-white/10"
+              style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+              title={fullscreen ? "Minimize" : "Fullscreen"}
+            >
+              {fullscreen
+                ? <Minimize2 className="w-3.5 h-3.5 text-white/60" />
+                : <Maximize2 className="w-3.5 h-3.5 text-white/60" />
+              }
+            </button>
+
+            {/* Close */}
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-white/10"
+              style={{ border: "1px solid rgba(255,255,255,0.08)" }}
             >
-              <X className="w-4 h-4 text-slate-500" />
+              <X className="w-4 h-4 text-white/60" />
             </button>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4" style={{ scrollbarColor: "rgba(255,255,255,0.1) transparent" }}>
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center h-full gap-6">
               <div className="text-center">
-                <div className="w-14 h-14 rounded-full bg-slate-900 flex items-center justify-center mx-auto mb-4 shadow-xl">
-                  <span className="text-white text-xl font-black">G</span>
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 100%)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 0 40px rgba(255,255,255,0.04)" }}
+                >
+                  <span className="text-white text-base font-black tracking-tight">ZK</span>
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-1">Ask anything</h3>
-                <p className="text-sm text-slate-500">Kaspa, crypto, Web3, or anything else</p>
+                <h3 className="text-lg font-bold text-white mb-1">Ask anything</h3>
+                <p className="text-sm text-white/40">Kaspa, crypto, Web3, or anything else</p>
               </div>
               <div className="w-full space-y-2">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="w-full text-left px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-sm text-slate-700 font-medium transition-all group flex items-center justify-between"
+                    className="w-full text-left px-4 py-3 text-sm text-white/70 font-medium transition-all group flex items-center justify-between hover:text-white"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: "12px",
+                    }}
                   >
                     <span>{s}</span>
-                    <Send className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 flex-shrink-0 ml-2" />
+                    <Send className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 flex-shrink-0 ml-2" />
                   </button>
                 ))}
               </div>
@@ -242,9 +305,17 @@ export default function GrokChat({ onClose }) {
         </div>
 
         {/* Input */}
-        <div className="px-4 pb-4 pt-2 border-t border-slate-100 bg-white">
-          <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 focus-within:border-slate-400 focus-within:bg-white transition-all shadow-sm">
-            <button className="flex-shrink-0 text-slate-400 hover:text-slate-600 mb-0.5 transition-colors">
+        <div className="px-4 pb-4 pt-2 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div
+            className="flex items-end gap-2 px-4 py-2.5 transition-all"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.09)",
+              borderRadius: "16px",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+            }}
+          >
+            <button className="flex-shrink-0 text-white/30 hover:text-white/60 mb-0.5 transition-colors">
               <Plus className="w-5 h-5" />
             </button>
             <textarea
@@ -259,20 +330,21 @@ export default function GrokChat({ onClose }) {
                 }
               }}
               placeholder="Ask anything…"
-              className="flex-1 bg-transparent resize-none outline-none text-sm text-slate-900 placeholder-slate-400 max-h-32 leading-relaxed"
+              className="flex-1 bg-transparent resize-none outline-none text-sm text-white placeholder-white/25 max-h-32 leading-relaxed"
               style={{ minHeight: "24px" }}
             />
             <div className="flex items-center gap-1 flex-shrink-0 mb-0.5">
-              <button className="text-slate-300 hover:text-slate-500 transition-colors">
+              <button className="text-white/20 hover:text-white/50 transition-colors">
                 <Globe className="w-4 h-4" />
               </button>
-              <button className="text-slate-300 hover:text-slate-500 transition-colors">
+              <button className="text-white/20 hover:text-white/50 transition-colors">
                 <Mic className="w-4 h-4" />
               </button>
               <button
                 onClick={() => send()}
                 disabled={!input.trim() || loading}
-                className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-sm ml-1"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all ml-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.1)" }}
               >
                 {loading ? (
                   <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
@@ -282,8 +354,8 @@ export default function GrokChat({ onClose }) {
               </button>
             </div>
           </div>
-          <p className="text-center text-[10px] text-slate-400 mt-2">
-            Grok can make mistakes. Powered by TTT · Kaspa ecosystem
+          <p className="text-center text-[10px] text-white/20 mt-2">
+            ZK can make mistakes. Powered by TTT · Kaspa ecosystem
           </p>
         </div>
       </div>

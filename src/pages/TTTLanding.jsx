@@ -626,18 +626,20 @@ export default function TTTLandingPage() {
             type="button"
             onClick={() => navigate("/AppStoreV2")}
             whileTap={{ scale: 0.96 }}
-            whileHover={{ scale: 1.04 }}
-            className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
+            whileHover={{ scale: 1.04, boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14)" }}
+            className="flex flex-col items-center px-6 py-3 transition-all"
             style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(220,220,230,0.88) 100%)",
-              border: "1px solid rgba(255,255,255,0.6)",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
-              backdropFilter: "blur(20px)",
+              background: "linear-gradient(160deg, rgba(18,18,18,0.97) 0%, rgba(8,8,12,0.99) 100%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.4)",
+              backdropFilter: "blur(30px)",
+              WebkitBackdropFilter: "blur(30px)",
+              borderRadius: "100px",
               fontFamily: "'SF Pro Display', -apple-system, sans-serif",
             }}
           >
-            <LayoutGrid className="w-4 h-4 mb-1 text-slate-800" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-800">TAP</span>
+            <LayoutGrid className="w-4 h-4 mb-1 text-white/70" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">TAP</span>
           </motion.button>
 
           {/* TO → Feed */}
@@ -645,18 +647,20 @@ export default function TTTLandingPage() {
             type="button"
             onClick={() => navigate("/Feed")}
             whileTap={{ scale: 0.96 }}
-            whileHover={{ scale: 1.04 }}
-            className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
+            whileHover={{ scale: 1.04, boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14)" }}
+            className="flex flex-col items-center px-6 py-3 transition-all"
             style={{
-              background: "linear-gradient(135deg, rgba(240,240,248,0.90) 0%, rgba(200,200,220,0.86) 100%)",
-              border: "1px solid rgba(255,255,255,0.55)",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.85)",
-              backdropFilter: "blur(20px)",
+              background: "linear-gradient(160deg, rgba(18,18,18,0.97) 0%, rgba(8,8,12,0.99) 100%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.4)",
+              backdropFilter: "blur(30px)",
+              WebkitBackdropFilter: "blur(30px)",
+              borderRadius: "100px",
               fontFamily: "'SF Pro Display', -apple-system, sans-serif",
             }}
           >
-            <Users className="w-4 h-4 mb-1 text-slate-700" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">TO</span>
+            <Users className="w-4 h-4 mb-1 text-white/70" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">TO</span>
           </motion.button>
 
           {/* TIP → TipPage */}
@@ -664,37 +668,41 @@ export default function TTTLandingPage() {
             type="button"
             onClick={() => navigate("/Tip")}
             whileTap={{ scale: 0.96 }}
-            whileHover={{ scale: 1.04 }}
-            className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
+            whileHover={{ scale: 1.04, boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14)" }}
+            className="flex flex-col items-center px-6 py-3 transition-all"
             style={{
-              background: "linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)",
-              border: "1px solid rgba(249,115,22,0.35)",
-              boxShadow: "0 4px 24px rgba(236,72,153,0.25), inset 0 1px 0 rgba(255,255,255,0.2)",
-              backdropFilter: "blur(20px)",
+              background: "linear-gradient(160deg, rgba(18,18,18,0.97) 0%, rgba(8,8,12,0.99) 100%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.4)",
+              backdropFilter: "blur(30px)",
+              WebkitBackdropFilter: "blur(30px)",
+              borderRadius: "100px",
               fontFamily: "'SF Pro Display', -apple-system, sans-serif",
             }}
           >
-            <Send className="w-4 h-4 mb-1 text-white/90" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">TIP</span>
+            <Send className="w-4 h-4 mb-1 text-white/70" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">TIP</span>
           </motion.button>
 
-          {/* ASK → Grok Chat */}
+          {/* ZK → GrokChat */}
           <motion.button
             type="button"
             onClick={() => setShowGrok(true)}
             whileTap={{ scale: 0.96 }}
-            whileHover={{ scale: 1.04 }}
-            className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
+            whileHover={{ scale: 1.04, boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14)" }}
+            className="flex flex-col items-center px-6 py-3 transition-all"
             style={{
-              background: "linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08)",
-              backdropFilter: "blur(20px)",
+              background: "linear-gradient(160deg, rgba(18,18,18,0.97) 0%, rgba(8,8,12,0.99) 100%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.4)",
+              backdropFilter: "blur(30px)",
+              WebkitBackdropFilter: "blur(30px)",
+              borderRadius: "100px",
               fontFamily: "'SF Pro Display', -apple-system, sans-serif",
             }}
           >
-            <MessageCircle className="w-4 h-4 mb-1 text-white/80" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">ZK</span>
+            <MessageCircle className="w-4 h-4 mb-1 text-white/70" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">ZK</span>
           </motion.button>
         </motion.div>
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }}
