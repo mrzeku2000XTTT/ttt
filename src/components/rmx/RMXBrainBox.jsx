@@ -78,13 +78,17 @@ USER REQUEST:
                     enum: NODE_TEMPLATES.map((t) => t.type),
                     description: "MUST be one of the allowed node type strings — NOT 'object'.",
                   },
-                  config: { type: "object", additionalProperties: true },
+                  config: {
+                    type: "object",
+                    properties: {},
+                    additionalProperties: true,
+                  },
                 },
                 required: ["type", "config"],
               },
             },
           },
-          required: ["steps"],
+          required: ["workflow_name", "steps"],
         },
       });
 
