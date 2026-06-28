@@ -1,0 +1,79 @@
+{
+  "name": "CommunityLink",
+  "type": "object",
+  "properties": {
+    "wallet_address": {
+      "type": "string",
+      "description": "TTT wallet address of the submitter (public, no email/name stored)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "telegram",
+        "discord",
+        "website",
+        "twitter",
+        "youtube"
+      ],
+      "description": "Type of community link"
+    },
+    "title": {
+      "type": "string",
+      "description": "Display name for the group/community"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of the community"
+    },
+    "url": {
+      "type": "string",
+      "description": "The link URL"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "trading",
+        "developers",
+        "news",
+        "gaming",
+        "education",
+        "general",
+        "nft",
+        "defi"
+      ],
+      "default": "general"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "members_count": {
+      "type": "string",
+      "description": "Optional self-reported member count"
+    },
+    "upvotes": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "wallet_address",
+    "type",
+    "title",
+    "url"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

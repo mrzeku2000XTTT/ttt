@@ -258,7 +258,7 @@ export default function TTTV2Page() {
             <Monitor className="w-3.5 h-3.5" /> TTT OS
           </Link>
           <a href="#tttv" className="hover:text-zinc-900 transition-colors">TTTV</a>
-          <a href="#community" className="hover:text-zinc-900 transition-colors">Community</a>
+          <Link to="/CommunityHub" className="hover:text-zinc-900 transition-colors">Community</Link>
           <a href="#news" className="hover:text-zinc-900 transition-colors">What's New</a>
           <a href="#roadmap" className="hover:text-zinc-900 transition-colors">Roadmap</a>
         </div>
@@ -320,7 +320,7 @@ export default function TTTV2Page() {
                   <Monitor className="w-4 h-4" /> TTT OS
                 </Link>
                 <a href="#tttv" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">TTTV</a>
-                <a href="#community" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">Community</a>
+                <Link to="/CommunityHub" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">Community</Link>
                 <a href="#news" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">What's New</a>
                 <a href="#roadmap" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[15px] font-medium text-zinc-700 hover:text-zinc-900 active:bg-zinc-100 rounded-lg px-3 transition-colors">Roadmap</a>
                 <div className="pt-3 mt-3 border-t border-zinc-100">
