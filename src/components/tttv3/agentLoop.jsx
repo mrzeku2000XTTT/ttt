@@ -47,8 +47,10 @@ const ACTION_SCHEMA = {
         ms: { type: "number" },
         y: { type: "number" },
       },
+      required: ["type"],
     },
   },
+  required: ["thought", "step_complete", "say", "action"],
 };
 
 const AVAILABLE_ROUTES = [
