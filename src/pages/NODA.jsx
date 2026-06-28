@@ -672,13 +672,13 @@ ${prevContext ? `Previous step output (use any numbers from this if relevant):\n
 
 Also return the final numeric answer.`,
             response_json_schema: {
-              type: "object",
-              properties: {
-                expression: { type: "string", description: "Pure arithmetic, e.g. (1500 * 0.15) + 200" },
-                answer: { type: "number" },
-                explanation: { type: "string" },
-              },
-              required: ["expression", "answer"],
+            type: "object",
+            properties: {
+              expression: { type: "string", description: "Pure arithmetic, e.g. (1500 * 0.15) + 200" },
+              answer: { type: "number" },
+              explanation: { type: "string" },
+            },
+            required: ["expression", "answer", "explanation"],
             },
           })
         );
@@ -872,11 +872,13 @@ Be thorough. Use real, current web data — not training data.`,
                   items: {
                     type: "object",
                     properties: { url: { type: "string" }, title: { type: "string" }, summary: { type: "string" } },
+                    required: ["url", "title", "summary"],
                   },
                 },
                 key_questions: { type: "array", items: { type: "string" } },
                 angles: { type: "array", items: { type: "string" } },
               },
+              required: ["sources", "key_questions", "angles"],
             },
             model: "gemini_3_flash",
           })
