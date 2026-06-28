@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Lock, Unlock, Cpu, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap } from "lucide-react";
+import { X, Send, ChevronDown, Lock, Unlock, Cpu, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle } from "lucide-react";
+import GrokChat from "@/components/landing/GrokChat";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
@@ -500,6 +501,7 @@ export default function TTTLandingPage() {
   const [showPlayer, setShowPlayer] = useState(false);
   const [showAgent, setShowAgent] = useState(false);
   const [showResearcher, setShowResearcher] = useState(false);
+  const [showGrok, setShowGrok] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
   const playerRef = React.useRef(null);
@@ -675,6 +677,25 @@ export default function TTTLandingPage() {
             <Send className="w-4 h-4 mb-1 text-white/90" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">TIP</span>
           </motion.button>
+
+          {/* ASK → Grok Chat */}
+          <motion.button
+            type="button"
+            onClick={() => setShowGrok(true)}
+            whileTap={{ scale: 0.96 }}
+            whileHover={{ scale: 1.04 }}
+            className="flex flex-col items-center px-5 py-3 rounded-2xl transition-all"
+            style={{
+              background: "linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08)",
+              backdropFilter: "blur(20px)",
+              fontFamily: "'SF Pro Display', -apple-system, sans-serif",
+            }}
+          >
+            <MessageCircle className="w-4 h-4 mb-1 text-white/80" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">ASK</span>
+          </motion.button>
         </motion.div>
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.7 }}
@@ -703,6 +724,11 @@ export default function TTTLandingPage() {
       </AnimatePresence>
       <AnimatePresence>
         {showResearcher && <ResearcherPanel onClose={() => setShowResearcher(false)} />}
+      </AnimatePresence>
+
+      {/* Grok Chat */}
+      <AnimatePresence>
+        {showGrok && <GrokChat onClose={() => setShowGrok(false)} />}
       </AnimatePresence>
 
       {/* Backdrop */}
