@@ -694,7 +694,7 @@ export default function TTTLandingPage() {
             }}
           >
             <MessageCircle className="w-4 h-4 mb-1 text-white/80" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">ASK</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">ZK</span>
           </motion.button>
         </motion.div>
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }}
