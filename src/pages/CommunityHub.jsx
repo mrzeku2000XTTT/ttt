@@ -11,10 +11,8 @@ import {
 
 const HOT_TELEGRAMS = [
   { title: "Kaspa Official", url: "https://t.me/kaspaenglish", description: "The official Kaspa English community — news, updates, and discussions.", members: "40k+", badge: "🔥 Official" },
-  { title: "Kaspa Trading", url: "https://t.me/Kasparians", description: "Price analysis, market signals and KAS trading strategies.", members: "15k+", badge: "📈 Trading" },
-  { title: "Kaspa Developers", url: "https://t.me/kaspa_devs", description: "Build on Kaspa — KRC-20, smart contracts, and dev tools.", members: "5k+", badge: "🛠 Dev" },
-  { title: "Kaspa News", url: "https://t.me/KaspaNews", description: "Real-time Kaspa news, Toccata hard fork updates, and ecosystem coverage.", members: "20k+", badge: "📰 News" },
-  { title: "KRC-20 Gems", url: "https://t.me/krc20gems", description: "Early-stage KRC-20 token launches and community picks.", members: "8k+", badge: "💎 KRC-20" },
+  { title: "Ybot Premium", url: "https://t.me/YKeyWorldPremiumBot?start=ref_imnottheantichris", description: "Premium Kaspa bot tools, alerts, and exclusive signals for serious holders.", members: null, badge: "⚡ Premium" },
+  { title: "KaspaCasino", url: "https://t.me/+alrT3gAO2Rk4Nzc8", description: "The Kaspa Casino community — games, giveaways, and fun with KAS.", members: null, badge: "🎰 Casino" },
   { title: "Kaspa Mining", url: "https://t.me/KaspaMining", description: "Hashrate, miners, rig configs, and PoW discussion.", members: "12k+", badge: "⛏ Mining" },
 ];
 
