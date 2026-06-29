@@ -414,9 +414,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
 
     const userEmail = currentUser?.email || null;
 
+    // If we have a wallet from any source, that's enough — no login required
     if (!userEmail && !walletAddress) {
-      alert('Please connect a wallet or login to like comments');
-      return;
+      return; // silently do nothing — no wallet connected
     }
 
     const isLiked = likedComments[comment.id];

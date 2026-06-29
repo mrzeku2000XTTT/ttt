@@ -21,8 +21,6 @@
   "rls": {
     "create": true,
     "read": true,
-    "delete": {
-      "created_by": "{{user.email}}"
-    }
+    "delete": true
   }
 }
