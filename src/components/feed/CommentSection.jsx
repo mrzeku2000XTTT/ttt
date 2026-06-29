@@ -190,10 +190,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             : currentUser.email.split('@')[0];
         }
       } else {
-        const manualAddress = localStorage.getItem('manual_kaspa_address');
-        if (!authorWalletAddress && manualAddress?.trim()) {
-          authorWalletAddress = manualAddress.trim();
-        }
+        // Try all local storage wallet sources
+        if (!authorWalletAddress) authorWalletAddress = localStorage.getItem('ttt_wallet_address') || '';
+        if (!authorWalletAddress) authorWalletAddress = localStorage.getItem('manual_kaspa_address') || '';
         
         if (authorWalletAddress) {
           try {
@@ -209,7 +208,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
           }
         } else {
-          alert('Please connect wallet to comment');
+          alert('Please connect a wallet to comment');
           setIsCommenting(false);
           return;
         }
@@ -318,10 +317,9 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             : currentUser.email.split('@')[0];
         }
       } else {
-        const manualAddress = localStorage.getItem('manual_kaspa_address');
-        if (!authorWalletAddress && manualAddress?.trim()) {
-          authorWalletAddress = manualAddress.trim();
-        }
+        // Try all local storage wallet sources
+        if (!authorWalletAddress) authorWalletAddress = localStorage.getItem('ttt_wallet_address') || '';
+        if (!authorWalletAddress) authorWalletAddress = localStorage.getItem('manual_kaspa_address') || '';
 
         if (authorWalletAddress) {
           try {
@@ -337,7 +335,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }) 
             authorName = `${authorWalletAddress.slice(0, 6)}...${authorWalletAddress.slice(-4)}`;
           }
         } else {
-          alert('Please connect wallet to reply');
+          alert('Please connect a wallet to reply');
           setIsCommenting(false);
           return;
         }
