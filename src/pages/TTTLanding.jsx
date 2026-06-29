@@ -2,9 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Lock, Unlock, Cpu, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, ExternalLink } from "lucide-react";
+import { X, Send, ChevronDown, Lock, Unlock, Cpu, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, ExternalLink, Monitor, MonitorOff, StopCircle, Copy, Check, ArrowDown, Bot } from "lucide-react";
 import GrokChat from "@/components/landing/GrokChat";
 import { createPageUrl } from "@/utils";
+import AgentComputer from "@/components/tttv3/AgentComputer";
+import { runAutonomousAgent } from "@/components/tttv3/agentLoop";
+import AgentStepLog from "@/components/tttv3/AgentStepLog";
+import AgentReasoningBubble from "@/components/tttv3/AgentReasoningBubble";
+import AgentPlanChecklist from "@/components/tttv3/AgentPlanChecklist";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
@@ -85,13 +90,11 @@ function saveMessages(msgs) {
   try { localStorage.setItem(ENCRYPTED_MESSAGES_KEY, JSON.stringify(msgs.slice(-20))); } catch {}
 }
 
-// ── Main ZK Chat Panel with real LLM + search + image gen ──
+// ── Main ZK Chat Panel — full TTT 3.0 agent power ──
 function ZKChatPanel({ onClose }) {
   const [model, setModel] = useState(AI_MODELS[0]);
   const [showModels, setShowModels] = useState(false);
-  const [messages, setMessages] = useState([
-    { role: "assistant", content: "Ask me anything about Kaspa, crypto, or generate an image. Type naturally — I search as you type." }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
@@ -101,7 +104,22 @@ function ZKChatPanel({ onClose }) {
   const [imagePrompt, setImagePrompt] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
   const [appSearch, setAppSearch] = useState("");
+  const [copied, setCopied] = useState(null);
+
+  // Agent Computer state (TTT 3.0)
+  const [computerOpen, setComputerOpen] = useState(false);
+  const [computerUrl, setComputerUrl] = useState(null);
+  const [computerStatus, setComputerStatus] = useState("Idle");
+  const [computerNarrations, setComputerNarrations] = useState([]);
+  const [computerCursor, setComputerCursor] = useState({ x: 50, y: 50, clicking: false });
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [agentSteps, setAgentSteps] = useState([]);
+  const computerRef = useRef(null);
+  const abortRef = useRef(null);
+
   const bottomRef = useRef(null);
+  const scrollRef = useRef(null);
+  const inputRef = useRef(null);
   const searchTimeout = useRef(null);
 
   // All apps for search
@@ -142,7 +160,7 @@ function ZKChatPanel({ onClose }) {
     : ALL_APPS;
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
   // Live search as user types
@@ -160,24 +178,131 @@ function ZKChatPanel({ onClose }) {
     }, 200);
   };
 
-  const send = async () => {
-    if (!input.trim() || loading) return;
+  const runAutonomousGoal = async (goal) => {
+    if (!computerOpen) setComputerOpen(true);
+    setAgentRunning(true);
+    setAgentSteps([]);
+    setComputerNarrations([]);
+    abortRef.current = { aborted: false };
+
+    setMessages(m => [...m, { role: "reasoning", reasoning: { step: 0, say: "Reading your prompt and building a plan…", status: "thinking" } }]);
+
+    await runAutonomousAgent({
+      goal,
+      signal: abortRef.current,
+      callbacks: {
+        setUrl: setComputerUrl,
+        setStatus: setComputerStatus,
+        addNarration: (text) => setComputerNarrations(prev => [...prev, text]),
+        setCursor: setComputerCursor,
+        getIframe: () => computerRef.current?.getIframe(),
+        onPlan: (plan) => {
+          setMessages(prev => {
+            const copy = [...prev];
+            const idx = copy.findIndex(m => m.role === "reasoning" && m.reasoning?.step === 0);
+            const planMsg = { role: "plan", plan };
+            if (idx >= 0) copy[idx] = planMsg; else copy.push(planMsg);
+            return copy;
+          });
+        },
+        onPlanItemUpdate: (index, patch) => {
+          setMessages(prev => {
+            const copy = [...prev];
+            const idx = copy.findIndex(m => m.role === "plan");
+            if (idx >= 0) { const newPlan = [...copy[idx].plan]; newPlan[index] = { ...newPlan[index], ...patch }; copy[idx] = { ...copy[idx], plan: newPlan }; }
+            return copy;
+          });
+        },
+        onStep: (step) => setAgentSteps(prev => [...prev, step]),
+      },
+    });
+
+    setMessages(m => [...m, { role: "reasoning", reasoning: { step: "✓", say: "All steps complete.", status: "done" } }]);
+    setAgentRunning(false);
+  };
+
+  const stopAgent = () => {
+    if (abortRef.current) abortRef.current.aborted = true;
+    setAgentRunning(false);
+    setComputerStatus("Stopped");
+  };
+
+  const looksLikeTask = (text) => /https?:\/\/\S+/i.test(text);
+
+  const send = async (overrideText) => {
+    const text = (overrideText ?? input).trim();
+    if (!text || loading) return;
     setShowSearch(false);
-    const userMsg = { role: "user", content: input };
-    setMessages(prev => [...prev, userMsg]);
+    const userMsg = { role: "user", content: text };
+    setMessages(prev => [...prev, userMsg, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
+
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are ZK, TTT platform's AI assistant. Be concise, helpful, and slightly edgy. You know everything about Kaspa blockchain, crypto, and the TTT app ecosystem. Context: user is on the TTT landing page which has apps for feed, wallet, AI image gen, video browser, and more.\n\nPrevious messages:\n${messages.slice(-6).map(m => `${m.role}: ${m.content}`).join("\n")}\nuser: ${userMsg.content}\nassistant:`,
+      // Pull live registry context
+      let appsContext = "";
+      try {
+        const apps = await base44.entities.TTTAppRegistry.filter({ is_active: true }, "-created_date", 200);
+        appsContext = apps.map(a => `- ${a.app_name} (${a.category}): ${a.description || ""} [capabilities: ${(a.agent_capabilities || []).join(", ")}]`).join("\n");
+      } catch {}
+
+      const history = [...messages, userMsg].slice(-10).map(m => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`).join("\n\n");
+
+      const decision = await base44.integrations.Core.InvokeLLM({
         model: model.id,
+        prompt: `You are ZK — TTT's most powerful AI agent. You know Kaspa blockchain, crypto, and the entire TTT ecosystem deeply. You also have an Agent Computer: an autonomous arm that can navigate, click, type inside real TTT apps.
+
+You have THREE tools per turn:
+1. **reply** (always): a sharp, concise reply shown in chat.
+2. **launch_computer** (optional): triggers your Agent Computer to autonomously DO something inside TTT apps (open an app, post, send, build workflows, play videos, navigate, automate). Use when user asks you to DO anything inside TTT.
+3. **ask_for_info** (optional): if launchable but missing critical info, set needs_info=true and ask one focused question.
+
+## Connected TTT Apps (live registry)
+${appsContext || "(loading…)"}
+
+## All TTT Pages
+/Feed, /Bridge, /Browser (TTTV), /AgentZK, /Wallet, /Profile, /AppStoreV2, /NODAStudio (workflows), /Hikaru, /ZekuAI, /Terra, /Kine, /Trinity, /BeatCut, /Motion, /FrameZ, /ThumbnailCreator, /QuickStoryboard, /SlideDeckBuilder, /DAGFeed, /KaspaForge, /Hire, /CommunityHub, /Portal, /WorldOfKaspa, /WorldOfAI, /GhostFrame, /APEX, /MIRAGE, /ORBT, /NODA, /About, /Docs, /Kasthletics, /KaspaHub, /AgentZKDirectory
+
+## Conversation
+${history}
+
+Always include a reply. Only launch when there's a real task with no missing info. Set needs_info=true if info is missing. NEVER say "I can't" — the computer can type, click, and navigate.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            reply: { type: "string" },
+            launch: { type: "boolean" },
+            needs_info: { type: "boolean" },
+            goal: { type: "string" },
+          },
+          required: ["reply", "launch"],
+        },
         add_context_from_internet: model.id.includes("gemini"),
       });
-      setMessages(prev => [...prev, { role: "assistant", content: typeof res === "string" ? res : JSON.stringify(res) }]);
+
+      const replyText = (decision?.reply && typeof decision.reply === "string") ? decision.reply : "Hmm, try again?";
+      const needsInfo = decision?.needs_info === true;
+      const shouldLaunch = !needsInfo && (decision?.launch === true || looksLikeTask(text));
+
+      if (shouldLaunch) {
+        const goal = (decision?.goal && decision.goal.trim()) || text;
+        if (!computerOpen) setComputerOpen(true);
+        setTimeout(() => runAutonomousGoal(goal), computerOpen ? 0 : 600);
+      }
+
+      // Stream the reply char by char
+      let i = 0;
+      const total = replyText.length;
+      const tick = () => {
+        i = Math.min(i + Math.max(2, Math.floor(total / 60)), total);
+        setMessages(m => { const copy = [...m]; copy[copy.length - 1] = { role: "assistant", content: replyText.slice(0, i) }; return copy; });
+        if (i < total) setTimeout(tick, 20); else setLoading(false);
+      };
+      setTimeout(tick, 100);
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Signal lost. Try again." }]);
+      setMessages(m => { const copy = [...m]; copy[copy.length - 1] = { role: "assistant", content: "Signal lost. Try again." }; return copy; });
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const generateImage = async () => {
@@ -195,8 +320,8 @@ function ZKChatPanel({ onClose }) {
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
-      className="fixed inset-x-3 bottom-3 z-50 flex flex-col sm:inset-auto sm:right-4 sm:bottom-4 sm:left-auto"
-      style={{ width: "min(96vw, 400px)", maxHeight: "85vh", background: "rgba(6,6,12,0.97)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 16, fontFamily: "system-ui, sans-serif", boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
+      className="fixed inset-x-2 bottom-2 z-50 flex flex-col sm:inset-auto sm:right-4 sm:bottom-4 sm:left-auto"
+      style={{ width: computerOpen ? "min(96vw, 700px)" : "min(96vw, 420px)", maxHeight: "88vh", background: "rgba(6,6,12,0.97)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 16, fontFamily: "system-ui, sans-serif", boxShadow: "0 24px 80px rgba(0,0,0,0.7)", transition: "width 0.3s ease" }}>
 
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(167,139,250,0.12)" }}>
@@ -258,31 +383,74 @@ function ZKChatPanel({ onClose }) {
       {/* CHAT TAB */}
       {activeTab === "chat" && (
         <>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ minHeight: 0 }}>
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className="max-w-[85%] px-3 py-2 text-[12px] leading-relaxed rounded-2xl"
-                  style={{
-                    background: m.role === "user" ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.06)",
-                    border: `1px solid ${m.role === "user" ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.07)"}`,
-                    color: m.role === "user" ? "#e9d5ff" : "rgba(255,255,255,0.8)",
-                  }}>
-                  {m.image ? (
-                    <img src={m.image} alt="Generated" className="rounded-lg max-w-full" />
-                  ) : m.content}
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="px-3 py-2 rounded-2xl" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div className="flex gap-1">
-                    {[0,1,2].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "#a78bfa", animationDelay: `${i*0.12}s` }} />)}
+          {/* Agent Computer toggle bar */}
+          <div className="flex items-center gap-2 px-3 py-1.5 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+            <span className="text-[10px] text-white/30 flex-1">{agentRunning ? "Agent active…" : "ZK · Connected to all TTT apps"}</span>
+            {agentRunning && (
+              <button onClick={stopAgent} className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold" style={{ background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}>
+                <StopCircle className="w-3 h-3" /> Stop
+              </button>
+            )}
+            <button onClick={() => setComputerOpen(v => !v)}
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold transition-all"
+              style={computerOpen ? { background: "linear-gradient(90deg,#06b6d4,#a855f7)", color: "#000" } : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              {computerOpen ? <Monitor className="w-3 h-3" /> : <MonitorOff className="w-3 h-3" />}
+              {computerOpen ? "Computer ON" : "Computer"}
+            </button>
+          </div>
+
+          {/* Split: chat + computer */}
+          <div className={`flex-1 flex overflow-hidden ${computerOpen ? "flex-row" : "flex-col"}`} style={{ minHeight: 0 }}>
+            {/* Messages */}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3" style={{ minHeight: 0 }}>
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                  <div className="w-12 h-12 rounded-2xl mb-3 flex items-center justify-center" style={{ background: "linear-gradient(135deg,#a78bfa,#6366f1)" }}>
+                    <Bot className="w-6 h-6 text-white" />
                   </div>
+                  <div className="text-sm font-bold text-white mb-1">ZK Agent</div>
+                  <div className="text-[11px] text-white/40 max-w-[200px]">Ask me anything, open any app, or let me automate tasks inside TTT for you.</div>
                 </div>
+              )}
+              {messages.map((m, i) => {
+                if (m.role === "plan") return <AgentPlanChecklist key={i} plan={m.plan} />;
+                if (m.role === "reasoning") return <AgentReasoningBubble key={i} msg={m} />;
+                return (
+                  <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className="max-w-[88%] px-3 py-2 text-[12px] leading-relaxed rounded-2xl"
+                      style={{
+                        background: m.role === "user" ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.06)",
+                        border: `1px solid ${m.role === "user" ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.07)"}`,
+                        color: m.role === "user" ? "#e9d5ff" : "rgba(255,255,255,0.82)",
+                      }}>
+                      {m.content || (i === messages.length - 1 && loading && (
+                        <div className="flex gap-1">{[0,1,2].map(j => <div key={j} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "#a78bfa", animationDelay: `${j*0.12}s` }} />)}</div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {(agentSteps.length > 0 || agentRunning) && (
+                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <AgentStepLog steps={agentSteps} running={agentRunning} />
+                </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Agent Computer panel */}
+            {computerOpen && (
+              <div className="w-[220px] flex-shrink-0 border-l" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                <AgentComputer
+                  ref={computerRef}
+                  url={computerUrl}
+                  status={computerStatus}
+                  narrations={computerNarrations}
+                  cursor={computerCursor}
+                  isActive={agentRunning}
+                />
               </div>
             )}
-            <div ref={bottomRef} />
           </div>
 
           {/* Input with live search dropdown */}
@@ -308,17 +476,17 @@ function ZKChatPanel({ onClose }) {
               )}
             </AnimatePresence>
             <div className="flex gap-2">
-              <input value={input} onChange={e => handleInputChange(e.target.value)}
+              <input ref={inputRef} value={input} onChange={e => handleInputChange(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
                 onFocus={() => input.length > 1 && setShowSearch(searchResults.length > 0)}
                 onBlur={() => setTimeout(() => setShowSearch(false), 200)}
-                placeholder="Ask anything or search apps..."
+                placeholder="Ask ZK anything — or give it a task…"
                 className="flex-1 px-3 py-2 text-[12px] outline-none rounded-xl"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(167,139,250,0.2)", color: "rgba(255,255,255,0.85)", caretColor: "#a78bfa" }} />
-              <button onClick={send} disabled={loading || !input.trim()}
+              <button onClick={() => send()} disabled={loading || !input.trim()}
                 className="w-9 h-9 flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all rounded-xl"
                 style={{ background: "rgba(167,139,250,0.2)", border: "1px solid rgba(167,139,250,0.35)" }}>
-                <Send className="w-3.5 h-3.5" style={{ color: "#a78bfa" }} />
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: "#a78bfa" }} /> : <Send className="w-3.5 h-3.5" style={{ color: "#a78bfa" }} />}
               </button>
             </div>
           </div>
