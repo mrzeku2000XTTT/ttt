@@ -639,29 +639,6 @@ export default function TTTLandingPage() {
           {showPlayer ? (isPlaying ? "Pause" : "Play") : "Play"}
         </motion.button>
 
-        {/* App launcher row */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-5 w-full max-w-sm overflow-x-auto">
-          <div className="flex gap-3 px-2 pb-1" style={{ scrollbarWidth: "none" }}>
-            {FEATURED_APPS.map((app, i) => (
-              <Link key={app.path} to={createPageUrl(app.path)}
-                className="flex flex-col items-center gap-1 flex-shrink-0 group">
-                <motion.div whileHover={{ scale: 1.12, y: -3 }} whileTap={{ scale: 0.9 }}
-                  className="w-12 h-12 rounded-2xl overflow-hidden shadow-md group-hover:shadow-xl transition-shadow">
-                  {app.logo ? (
-                    <img src={app.logo} alt={app.name} className="w-full h-full object-cover" loading="lazy" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #a78bfa, #6366f1)" }}>
-                      <LayoutGrid className="w-5 h-5 text-white" />
-                    </div>
-                  )}
-                </motion.div>
-                <span className="text-[9px] font-medium text-slate-700/70 group-hover:text-slate-900 transition-colors truncate w-14 text-center">{app.name}</span>
-              </Link>
-            ))}
-          </div>
-        </motion.div>
-
         {/* Action buttons */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.72 }}
           className="mt-4 flex items-center gap-2">

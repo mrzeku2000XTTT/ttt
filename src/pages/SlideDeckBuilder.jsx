@@ -127,12 +127,17 @@ export default function SlideDeckBuilder() {
       <div className="min-h-screen text-white" style={{ background: "#0a0d13" }}>
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-            <div>
-              <h1 className="text-2xl font-black flex items-center gap-2">
-                <Film className="w-6 h-6" style={{ color: "#00c8b4" }} />
-                Slide Deck Video Builder
-              </h1>
-              <p className="text-white/50 text-sm mt-1">Create video presentations powered by Superagent.</p>
+            <div className="flex items-center gap-3">
+              <button onClick={() => window.history.back()} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors">
+                <ArrowLeft className="w-4 h-4" /> Back
+              </button>
+              <div>
+                <h1 className="text-2xl font-black flex items-center gap-2">
+                  <Film className="w-6 h-6" style={{ color: "#00c8b4" }} />
+                  Slide Deck Video Builder
+                </h1>
+                <p className="text-white/50 text-sm mt-1">Create video presentations powered by Superagent.</p>
+              </div>
             </div>
             <button
               onClick={() => setShowNewModal(true)}
