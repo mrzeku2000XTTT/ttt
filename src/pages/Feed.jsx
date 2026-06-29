@@ -292,6 +292,9 @@ export default function FeedPage() {
       if (currentUser) {
         walletAddress = currentUser.created_wallet_address || walletAddress;
       }
+      if (!walletAddress) {
+        walletAddress = localStorage.getItem('ttt_wallet_address') || localStorage.getItem('manual_kaspa_address') || '';
+      }
 
       if (currentUser || walletAddress) {
         try {
