@@ -199,17 +199,15 @@ export default function TTTOS() {
   };
 
   const handleIframeError = (windowId, app) => {
-    // If iframe fails to load (X-Frame-Options block), open in new tab
+    // If iframe fails to load (X-Frame-Options block), mark as failed
     setIframeWindows(prev => prev.map(w => 
-      w.windowId === windowId ? { ...w, loadFailed: true } : w
+      w.windowId === windowId ? { ...w, loadFailed: true, isLoading: false } : w
     ));
-    
-    // Show fallback message and offer to open in new tab
-    setTimeout(() => {
-      const appUrl = window.location.origin + createPageUrl(app.path);
-      window.open(appUrl, '_blank');
-      closeIframeWindow(windowId);
-    }, 1000);
+  };
+
+  const openInNewTab = (app) => {
+    const appUrl = window.location.origin + createPageUrl(app.path);
+    window.open(appUrl, '_blank', 'noopener,noreferrer');
   };
 
   const closeIframeWindow = (windowId, e) => {
@@ -417,16 +415,31 @@ export default function TTTOS() {
                     <div className={`absolute inset-0 flex items-center justify-center ${
                       isWindows ? "bg-gray-900" : "bg-gray-100"
                     }`}>
-                      <div className="text-center p-8">
+                      <div className="text-center p-8 max-w-md">
                         <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                           <WifiOff className="w-8 h-8 text-red-400" />
                         </div>
                         <p className={`${isWindows ? "text-white" : "text-gray-800"} font-bold mb-2`}>
                           Cannot load in window
                         </p>
-                        <p className={`${isWindows ? "text-gray-400" : "text-gray-600"} text-sm mb-4`}>
-                          Opening {win.name} in new tab...
+                        <p className={`${isWindows ? "text-gray-400" : "text-gray-600"} text-sm mb-6`}>
+                          This app cannot be embedded in an iframe due to security restrictions.
                         </p>
+                        <div className="flex gap-3 justify-center">
+                          <Button
+                            onClick={() => openInNewTab(win)}
+                            className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                          >
+                            Open in New Tab
+                          </Button>
+                          <Button
+                            onClick={(e) => closeIframeWindow(win.windowId, e)}
+                            variant="outline"
+                            className={isWindows ? "border-white/20 text-white hover:bg-white/10" : "border-gray-300 hover:bg-gray-100"}
+                          >
+                            Close
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
