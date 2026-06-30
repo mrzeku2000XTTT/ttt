@@ -68,11 +68,6 @@ export default function CBDCAgendaStrip() {
                   style={{ border: "1px solid rgba(255,40,40,0.4)" }}>
                   <span className="text-[8px] font-black tracking-widest text-red-400">{org.tag}</span>
                 </div>
-                {/* Name + note */}
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/95 to-transparent">
-                  <div className="text-[10px] font-bold text-white/90 leading-tight truncate">{org.name}</div>
-                  <div className="text-[8px] text-red-300/60 tracking-wider truncate">{org.note}</div>
-                </div>
               </div>
 
               {/* Bottom sprocket strip */}
