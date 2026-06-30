@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw, ExternalLink, Loader2, Wallet } from "lucide-react";
+import { ArrowLeft, RefreshCw, Loader2, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -48,29 +48,13 @@ export default function TTTZWalletPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleRefresh}
-                size="sm"
-                className="bg-emerald-500/20 border border-emerald-500 hover:bg-emerald-500/30 text-emerald-400 h-9"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-
-              <a
-                href="https://tttz.xyz/wallet"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button
-                  size="sm"
-                  className="bg-cyan-500/20 border border-cyan-500 hover:bg-cyan-500/30 text-cyan-400 h-9"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  <span className="text-xs">Open External</span>
-                </Button>
-              </a>
-            </div>
+            <Button
+              onClick={handleRefresh}
+              size="sm"
+              className="bg-emerald-500/20 border border-emerald-500 hover:bg-emerald-500/30 text-emerald-400 h-9"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
