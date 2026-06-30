@@ -270,10 +270,17 @@ export default function TerraPage() {
       // Fetch KAS price (don't let failure block balance fetch)
       try {
         const priceRes = await base44.functions.invoke('getKaspaPrice', {});
-        const price = priceRes?.data?.price || priceRes?.data?.usd || null;
-        setKasPrice(price);
+        const price = priceRes?.data?.price || priceRes?.data?.priceUSD || priceRes?.data?.usd || null;
+        console.log('[Terra] KAS Price response:', priceRes?.data, 'Extracted price:', price);
+        if (price !== null && price !== undefined) {
+          setKasPrice(price);
+        } else {
+          console.warn('[Terra] Price returned null, using fallback');
+          setKasPrice(0.12); // Fallback to approximate recent price
+        }
       } catch (priceErr) {
-        console.warn('Price fetch failed, continuing:', priceErr.message);
+        console.warn('Price fetch failed, using fallback:', priceErr.message);
+        setKasPrice(0.12); // Fallback to approximate recent price
       }
 
       // Fetch balances for all wallets (sequential to avoid API rate limits)
