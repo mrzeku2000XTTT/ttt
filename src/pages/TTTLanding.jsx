@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet } from "lucide-react";
+import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem } from "lucide-react";
 import GrokChat from "@/components/landing/GrokChat";
 import { createPageUrl } from "@/utils";
 import AgentComputer from "@/components/tttv3/AgentComputer";
@@ -14,6 +14,7 @@ import ReactMarkdown from "react-markdown";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
+const KASPA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3bab8f8ae_generated_image.png";
 const YOUTUBE_VIDEO_ID = "aUSD-WFhKwY";
 
 const SONG_LYRICS = [
@@ -1163,29 +1164,37 @@ export default function TTTLandingPage() {
               { label: "TAP", path: "/AppStoreV2" },
               { label: "TO", path: "/Feed" },
               { label: "TIP", path: "/Tip" },
-              { label: "GATE", path: "/TTTGate" },
-              { label: "WALLET", path: "/WalletHub", icon: Wallet },
+              { label: "GATE", path: "/TTTGate", iconOnly: true, icon: Gem },
+              { label: "WALLET", path: "/WalletHub", iconOnly: true, icon: "kaspa" },
               { label: "ZK", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); } },
             ].map((item, i) => {
               const isHovered = hoveredItem === item.label;
-              const Icon = item.icon;
+              const Icon = typeof item.icon === 'string' ? null : item.icon;
+              const isKaspa = item.icon === "kaspa";
               return (
                 <motion.button key={item.label} type="button"
                   onClick={() => { sounds.playNavigate(); item.action ? item.action() : navigate(item.path); }}
                   onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.07 }}
-                  className="px-6 py-3 transition-all focus:outline-none flex items-center gap-2"
+                  className="px-6 py-3 transition-all focus:outline-none flex items-center justify-center"
                   style={{
                     border: isHovered ? "2px solid rgba(240,200,60,0.8)" : "2px solid rgba(200,150,40,0.3)",
                     background: isHovered ? "rgba(200,150,40,0.12)" : "transparent",
                   }}>
-                  {Icon && <Icon className="w-4 h-4" style={{ color: isHovered ? "#f5d050" : "rgba(215,170,80,0.6)" }} />}
-                  <span className="text-[14px] tracking-[0.3em] uppercase font-bold block"
-                    style={{ fontFamily: "monospace", color: isHovered ? "#f5d050" : "rgba(215,170,80,0.8)",
-                      textShadow: isHovered ? "0 0 16px rgba(240,200,60,0.6)" : "none", transition: "all 0.15s" }}>
-                    {item.label}
-                  </span>
+                  {item.iconOnly ? (
+                    isKaspa ? (
+                      <img src={KASPA_LOGO} alt="KASPA" className="w-6 h-6 object-contain" style={{ filter: isHovered ? "brightness(1.2)" : "brightness(0.8) saturate(0.8)" }} />
+                    ) : (
+                      <Icon className="w-5 h-5" style={{ color: isHovered ? "#f5d050" : "rgba(215,170,80,0.6)" }} />
+                    )
+                  ) : (
+                    <span className="text-[14px] tracking-[0.3em] uppercase font-bold block"
+                      style={{ fontFamily: "monospace", color: isHovered ? "#f5d050" : "rgba(215,170,80,0.8)",
+                        textShadow: isHovered ? "0 0 16px rgba(240,200,60,0.6)" : "none", transition: "all 0.15s" }}>
+                      {item.label}
+                    </span>
+                  )}
                 </motion.button>
               );
             })}
