@@ -997,6 +997,86 @@ function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapse
   );
 }
 
+// === GTA-STYLE SOUND EFFECTS (Web Audio API, no external files) ===
+function useGameSounds() {
+  const ctxRef = useRef(null);
+  const getCtx = () => {
+    if (!ctxRef.current) ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctxRef.current.state === "suspended") ctxRef.current.resume();
+    return ctxRef.current;
+  };
+
+  const playSelect = () => {
+    try {
+      const ctx = getCtx();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "square"; o.frequency.setValueAtTime(440, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.06);
+      g.gain.setValueAtTime(0.18, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.12);
+    } catch {}
+  };
+
+  const playHover = () => {
+    try {
+      const ctx = getCtx();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "sine"; o.frequency.setValueAtTime(300, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(420, ctx.currentTime + 0.04);
+      g.gain.setValueAtTime(0.06, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.07);
+    } catch {}
+  };
+
+  const playStartup = () => {
+    try {
+      const ctx = getCtx();
+      // whoosh + chord = GTA-style stinger
+      [220, 330, 440, 660].forEach((freq, i) => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = i % 2 === 0 ? "sawtooth" : "sine";
+        o.frequency.setValueAtTime(freq * 0.5, ctx.currentTime + i * 0.07);
+        o.frequency.exponentialRampToValueAtTime(freq, ctx.currentTime + i * 0.07 + 0.15);
+        g.gain.setValueAtTime(0, ctx.currentTime + i * 0.07);
+        g.gain.linearRampToValueAtTime(0.12, ctx.currentTime + i * 0.07 + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.07 + 0.4);
+        o.start(ctx.currentTime + i * 0.07); o.stop(ctx.currentTime + i * 0.07 + 0.5);
+      });
+    } catch {}
+  };
+
+  const playNavigate = () => {
+    try {
+      const ctx = getCtx();
+      // GTA "whoosh" navigate sound
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const src = ctx.createBufferSource(); const g = ctx.createGain();
+      const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 800;
+      src.buffer = buf; src.connect(f); f.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      src.start();
+      // Add a punchy tone on top
+      const o = ctx.createOscillator(); const g2 = ctx.createGain();
+      o.connect(g2); g2.connect(ctx.destination);
+      o.type = "square"; o.frequency.setValueAtTime(200, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.2);
+      g2.gain.setValueAtTime(0.2, ctx.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      o.start(); o.stop(ctx.currentTime + 0.2);
+    } catch {}
+  };
+
+  return { playSelect, playHover, playStartup, playNavigate };
+}
+
 export default function TTTLandingPage() {
   const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = React.useState(false);
@@ -1006,16 +1086,25 @@ export default function TTTLandingPage() {
   const [showZKChat, setShowZKChat] = useState(false);
   const [zkMinimized, setZkMinimized] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [hoveredItem, setHoveredItem] = useState(null);
+  const sounds = useGameSounds();
 
   const playerRef = React.useRef(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const musicSrc = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&autoplay=1&playsinline=1&controls=0&rel=0&origin=${origin}`;
+
+  // Play startup stinger after a short delay
+  useEffect(() => {
+    const t = setTimeout(() => sounds.playStartup(), 800);
+    return () => clearTimeout(t);
+  }, []);
 
   const sendPlayerCommand = (command) => {
     playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: command, args: [] }), "*");
   };
 
   const handlePlayButton = () => {
+    sounds.playSelect();
     if (!hasStartedMusic) { setHasStartedMusic(true); setIsPlaying(true); }
     else { sendPlayerCommand(isPlaying ? "pauseVideo" : "playVideo"); setIsPlaying(!isPlaying); }
     setShowPlayer(true);
@@ -1051,15 +1140,15 @@ export default function TTTLandingPage() {
         style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", backgroundSize: "128px 128px" }} />
 
       {/* === CORNER HUD BUTTONS (top) === */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => setShowResearcher(true)}
-        className="absolute left-4 top-5 focus:outline-none z-20 group">
-        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block transition-all"
-          style={{ border: "1px solid rgba(180,140,60,0.5)", color: "rgba(210,170,80,0.7)", background: "rgba(0,0,0,0.5)", letterSpacing: "0.2em", fontFamily: "monospace" }}>[ REFUEL ]</span>
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowResearcher(true); }}
+        className="absolute left-4 top-5 focus:outline-none z-20">
+        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ REFUEL ]</span>
       </motion.button>
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { setShowZKChat(true); setZkMinimized(false); }}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowZKChat(true); setZkMinimized(false); }}
         className="absolute right-4 top-5 focus:outline-none z-20">
-        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block transition-all"
-          style={{ border: "1px solid rgba(180,140,60,0.5)", color: "rgba(210,170,80,0.7)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ SCAN ]</span>
+        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ SCAN ]</span>
       </motion.button>
 
       {/* Hidden iframe for music */}
@@ -1067,99 +1156,99 @@ export default function TTTLandingPage() {
         allow="autoplay; encrypted-media" className="pointer-events-none absolute h-px w-px opacity-0" />
 
       {/* === MAIN GAME TITLE SCREEN CONTENT === */}
-      <section className="relative z-10 flex min-h-screen flex-col items-center justify-end pb-12 pt-10 text-center px-6">
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-between px-6 py-10 text-center">
 
-        {/* Invisible full-screen tap zone */}
-        <Link to="/TTTGate" aria-label="Enter TTT" className="absolute inset-0 z-0" />
+        {/* TOP — GAME TITLE (centered in upper half) */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.4, ease: "easeOut" }}>
+            {/* Decorative line above */}
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <div className="h-px w-16" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.5))" }} />
+              <div className="text-[9px] tracking-[0.5em] uppercase" style={{ color: "rgba(200,150,40,0.4)", fontFamily: "monospace" }}>EST. 2024</div>
+              <div className="h-px w-16" style={{ background: "linear-gradient(90deg, rgba(200,150,40,0.5), transparent)" }} />
+            </div>
 
-        {/* GAME TITLE */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: "easeOut" }}
-          className="mb-2 relative z-10">
-          <div className="text-[72px] sm:text-[96px] font-black tracking-[-0.02em] leading-none select-none"
-            style={{ fontFamily: "'Georgia', 'Times New Roman', serif",
-              background: "linear-gradient(180deg, #f0d080 0%, #c8960c 40%, #7a5500 100%)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-              filter: "drop-shadow(0 0 40px rgba(200,150,12,0.4)) drop-shadow(0 4px 8px rgba(0,0,0,0.8))" }}>
-            TTT
-          </div>
-          <div className="text-[11px] tracking-[0.6em] uppercase mt-1"
-            style={{ color: "rgba(200,160,60,0.65)", fontFamily: "monospace", letterSpacing: "0.55em" }}>
-            TAP · TO · TIP
-          </div>
-        </motion.div>
+            {/* Giant Title */}
+            <div className="text-[88px] sm:text-[120px] font-black leading-none select-none"
+              style={{ fontFamily: "'Georgia', 'Times New Roman', serif",
+                background: "linear-gradient(180deg, #fff5cc 0%, #f0d060 25%, #c8960c 60%, #6b4200 100%)",
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                filter: "drop-shadow(0 0 60px rgba(200,140,0,0.5)) drop-shadow(0 8px 16px rgba(0,0,0,0.9))",
+                letterSpacing: "-0.02em" }}>
+              TTT
+            </div>
 
-        {/* Subtitle / lore line */}
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.6 }}
-          className="text-[12px] tracking-[0.2em] mb-10 relative z-10"
-          style={{ color: "rgba(180,140,80,0.55)", fontFamily: "monospace" }}>
-          地球到火星 · 由 KASPA 提供支持
-        </motion.p>
+            {/* Subtitle tagline */}
+            <div className="text-[12px] tracking-[0.7em] uppercase mt-2 mb-1"
+              style={{ color: "rgba(210,165,60,0.7)", fontFamily: "monospace" }}>
+              TAP · TO · TIP
+            </div>
+            <div className="text-[10px] tracking-[0.3em]"
+              style={{ color: "rgba(160,120,50,0.45)", fontFamily: "monospace" }}>
+              地球到火星 · POWERED BY KASPA
+            </div>
+          </motion.div>
+        </div>
 
-        {/* MAIN MENU — game-style vertical list */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.8 }}
-          className="relative z-10 flex flex-col items-center gap-1 w-full max-w-xs mb-8">
+        {/* BOTTOM — MENU (anchored to bottom) */}
+        <div className="flex flex-col items-center w-full max-w-sm">
 
-          {/* PRIMARY CTA — PRESS START style */}
+          {/* PRESS START — pulsing */}
           <motion.button type="button" onClick={handlePlayButton}
-            animate={{ opacity: [1, 0.6, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-            className="w-full py-4 text-[14px] tracking-[0.4em] uppercase relative z-10"
-            style={{ color: "#f0d060", fontFamily: "monospace", background: "transparent", border: "none", letterSpacing: "0.4em",
-              textShadow: "0 0 20px rgba(240,200,60,0.6), 0 0 40px rgba(200,140,0,0.3)" }}>
-            {showPlayer ? (isPlaying ? "▌▌  PAUSE MUSIC" : "▶  PLAY MUSIC") : "▶  PRESS START"}
+            animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+            className="mb-6 text-[14px] tracking-[0.5em] uppercase focus:outline-none"
+            style={{ color: "#f5d050", fontFamily: "monospace", background: "transparent", border: "none",
+              textShadow: "0 0 24px rgba(245,200,50,0.7), 0 0 50px rgba(200,130,0,0.4)" }}>
+            {showPlayer ? (isPlaying ? "▌▌  PAUSE" : "▶  PLAY") : "▶  PRESS START"}
           </motion.button>
 
           {/* Divider */}
-          <div className="w-48 h-px my-2" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.4), transparent)" }} />
+          <div className="w-56 h-px mb-4" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.35), transparent)" }} />
 
-          {/* GAME MENU ITEMS */}
-          {[
-            { label: "APPS", sub: "Browse all tools", path: "/AppStoreV2", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
-            { label: "FEED", sub: "Community & tips", path: "/Feed", icon: <Users className="w-3.5 h-3.5" /> },
-            { label: "TIP", sub: "Send KAS", path: "/Tip", icon: <Send className="w-3.5 h-3.5" /> },
-            { label: "AGENT ZK", sub: "AI operator", action: () => { setShowZKChat(true); setZkMinimized(false); }, icon: <MessageCircle className="w-3.5 h-3.5" /> },
-          ].map((item, i) => (
-            item.action ? (
-              <motion.button key={item.label} type="button" onClick={item.action}
-                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.9 + i * 0.08 }}
-                whileHover={{ x: 8 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-left group relative z-10 transition-all">
-                <span style={{ color: "rgba(200,150,40,0.5)" }}>{item.icon}</span>
-                <div className="flex-1">
-                  <span className="text-[13px] tracking-[0.2em] uppercase block transition-all"
-                    style={{ color: "rgba(220,180,100,0.8)", fontFamily: "monospace" }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "#f0d060"; e.currentTarget.style.textShadow = "0 0 12px rgba(240,200,60,0.5)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(220,180,100,0.8)"; e.currentTarget.style.textShadow = "none"; }}>
-                    {item.label}
-                  </span>
-                  <span className="text-[9px] tracking-widest uppercase" style={{ color: "rgba(160,120,40,0.4)", fontFamily: "monospace" }}>{item.sub}</span>
-                </div>
-              </motion.button>
-            ) : (
-              <motion.button key={item.label} type="button" onClick={() => navigate(item.path)}
-                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.9 + i * 0.08 }}
-                whileHover={{ x: 8 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-left group relative z-10 transition-all">
-                <span style={{ color: "rgba(200,150,40,0.5)" }}>{item.icon}</span>
-                <div className="flex-1">
-                  <span className="text-[13px] tracking-[0.2em] uppercase block transition-all"
-                    style={{ color: "rgba(220,180,100,0.8)", fontFamily: "monospace" }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "#f0d060"; e.currentTarget.style.textShadow = "0 0 12px rgba(240,200,60,0.5)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(220,180,100,0.8)"; e.currentTarget.style.textShadow = "none"; }}>
-                    {item.label}
-                  </span>
-                  <span className="text-[9px] tracking-widest uppercase" style={{ color: "rgba(160,120,40,0.4)", fontFamily: "monospace" }}>{item.sub}</span>
-                </div>
-              </motion.button>
-            )
-          ))}
-        </motion.div>
+          {/* MENU ITEMS — GTA-style left-aligned list */}
+          <div className="w-full flex flex-col gap-0.5">
+            {[
+              { label: "APPS", sub: "Browse all tools", path: "/AppStoreV2", icon: <LayoutGrid className="w-4 h-4" /> },
+              { label: "FEED", sub: "Community & tips", path: "/Feed", icon: <Users className="w-4 h-4" /> },
+              { label: "TIP", sub: "Send KAS", path: "/Tip", icon: <Send className="w-4 h-4" /> },
+              { label: "AGENT ZK", sub: "AI operator", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); }, icon: <MessageCircle className="w-4 h-4" /> },
+            ].map((item, i) => {
+              const isHovered = hoveredItem === item.label;
+              return (
+                <motion.button key={item.label} type="button"
+                  onClick={() => { sounds.playNavigate(); item.action ? item.action() : navigate(item.path); }}
+                  onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1 + i * 0.07 }}
+                  className="w-full flex items-center gap-4 px-4 py-3 text-left transition-all focus:outline-none"
+                  style={{
+                    background: isHovered ? "rgba(200,150,40,0.08)" : "transparent",
+                    borderLeft: isHovered ? "2px solid rgba(240,200,60,0.7)" : "2px solid transparent",
+                    transform: isHovered ? "translateX(6px)" : "translateX(0)",
+                  }}>
+                  <span style={{ color: isHovered ? "rgba(240,200,60,0.9)" : "rgba(200,150,40,0.45)", transition: "color 0.15s" }}>{item.icon}</span>
+                  <div className="flex-1">
+                    <div className="text-[13px] tracking-[0.25em] uppercase font-semibold"
+                      style={{ fontFamily: "monospace", color: isHovered ? "#f5d050" : "rgba(215,170,80,0.8)",
+                        textShadow: isHovered ? "0 0 16px rgba(240,200,60,0.6)" : "none", transition: "all 0.15s" }}>
+                      {item.label}
+                    </div>
+                    <div className="text-[9px] tracking-[0.2em] uppercase mt-0.5"
+                      style={{ color: "rgba(150,110,35,0.4)", fontFamily: "monospace" }}>{item.sub}</div>
+                  </div>
+                  {isHovered && <div className="text-[10px]" style={{ color: "rgba(240,200,60,0.6)", fontFamily: "monospace" }}>▶</div>}
+                </motion.button>
+              );
+            })}
+          </div>
 
-        {/* Bottom version stamp */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}
-          className="relative z-10 text-[9px] tracking-[0.5em] uppercase"
-          style={{ color: "rgba(140,100,30,0.35)", fontFamily: "monospace" }}>
-          © TTT · POWERED BY KASPA · V3.0
-        </motion.div>
+          {/* Bottom stamp */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}
+            className="mt-6 text-[9px] tracking-[0.45em] uppercase"
+            style={{ color: "rgba(120,90,25,0.3)", fontFamily: "monospace" }}>
+            © TTT PLATFORM · V3.0
+          </motion.div>
+        </div>
       </section>
 
       {/* Music Player popup */}
