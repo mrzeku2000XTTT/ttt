@@ -998,7 +998,7 @@ function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapse
 }
 
 // === GTA SOUND EFFECT ===
-const GTA_SOUND_URL = "https://media.base44.com/files/public/6901295fa9bcfaa0f5ba2c2a/667b75ed7_gta-menu.mp3";
+const GTA_SOUND_URL = "https://media.base44.com/files/public/6901295fa9bcfaa0f5ba2c2a/e5aa22c46_gta-menu.mp3";
 
 function useGameSounds() {
   const play = () => {
@@ -1141,8 +1141,8 @@ export default function TTTLandingPage() {
             {[
               { label: "APPS", sub: "Browse all tools", path: "/AppStoreV2", icon: <LayoutGrid className="w-4 h-4" /> },
               { label: "FEED", sub: "Community & tips", path: "/Feed", icon: <Users className="w-4 h-4" /> },
-              { label: "TIP", sub: "Send KAS", path: "/Tip", icon: <Send className="w-4 h-4" /> },
-              { label: "AGENT ZK", sub: "AI operator", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); }, icon: <MessageCircle className="w-4 h-4" /> },
+              { label: "TAP TO TIP", sub: "Send KAS", path: "/Tip", icon: <Send className="w-4 h-4" /> },
+              { label: "ZK", sub: "AI operator", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); }, icon: <MessageCircle className="w-4 h-4" /> },
             ].map((item, i) => {
               const isHovered = hoveredItem === item.label;
               return (
