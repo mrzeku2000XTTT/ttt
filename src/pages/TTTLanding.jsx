@@ -1114,15 +1114,17 @@ export default function TTTLandingPage() {
               <div className="h-px w-16" style={{ background: "linear-gradient(90deg, rgba(200,150,40,0.5), transparent)" }} />
             </div>
 
-            {/* Giant Title */}
-            <div className="text-[88px] sm:text-[120px] font-black leading-none select-none"
+            {/* Giant Title — clickable */}
+            <motion.button type="button" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+              onClick={() => { sounds.playSelect(); navigate("/AppStoreV2"); }}
+              className="text-[88px] sm:text-[120px] font-black leading-none select-none focus:outline-none cursor-pointer"
               style={{ fontFamily: "'Georgia', 'Times New Roman', serif",
                 background: "linear-gradient(180deg, #fff5cc 0%, #f0d060 25%, #c8960c 60%, #6b4200 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
                 filter: "drop-shadow(0 0 60px rgba(200,140,0,0.5)) drop-shadow(0 8px 16px rgba(0,0,0,0.9))",
                 letterSpacing: "-0.02em" }}>
               TTT
-            </div>
+            </motion.button>
 
             {/* Subtitle tagline */}
             <div className="text-[12px] tracking-[0.7em] uppercase mt-2 mb-1"
@@ -1157,6 +1159,7 @@ export default function TTTLandingPage() {
               { label: "TAP", path: "/AppStoreV2" },
               { label: "TO", path: "/Feed" },
               { label: "TIP", path: "/Tip" },
+              { label: "GATE", path: "/TTTGate" },
               { label: "ZK", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); } },
             ].map((item, i) => {
               const isHovered = hoveredItem === item.label;
