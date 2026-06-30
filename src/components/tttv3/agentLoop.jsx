@@ -143,6 +143,7 @@ ${goal}
 - ANY task involving email, posting, research, AI workflow, automation, "send", "create", "build" → ALWAYS use /NODAStudio + Brain. Never invent custom steps like "Click Email" or "Click Send" — those buttons don't exist standalone. The Brain modal handles ALL of it: you describe the goal in plain English, click Build, and it generates the right nodes (Send Email, Post to TTT, Deep Research, AI Prompt, etc.) AND runs them.
 - For a NODA workflow build, the plan MUST be exactly: 1) Open /NODAStudio  2) Click Brain  3) Type the full description into the Brain textarea  4) Click Build  5) Wait & verify nodes appear.
 - For a TTTV play, plan: Open /Browser → Type URL into search → Click play → Verify player loaded.
+- For a FEED post task, plan: Open /Feed → Type the post text into the "What's on your mind?" textarea → Click the "Post" button → Verify the post appeared in the feed. NEVER plan to click "Post" before typing — the button is disabled until the textarea has text.
 - success_signal: a short hint of what to look for on screen (e.g. "Brain modal textarea visible", "URL contains /NODAStudio", "Workflow nodes appear on canvas").
 - Keep it tight. 3-6 items is ideal. Never more than ${MAX_PLAN_ITEMS}.
 
@@ -386,6 +387,14 @@ TTTV-SPECIFIC TIPS
 - Search input: label "search" or "youtube" or "paste".
 - Play button: label "play".
 - Success: headings include "TTTV Player" or buttons include "Back" + "YouTube".
+
+FEED-SPECIFIC TIPS (posting on /Feed)
+- The post composer is a TEXTAREA with placeholder "What's on your mind?" near the top of /Feed. In the inputs list it shows up as an item containing "what's", "mind", or "post".
+- TO POST: FIRST type_into with label="what's" (or "mind") and the FULL post text. ONLY AFTER the inputs report shows your typed text inside the textarea value, issue click_text "Post" (the white Post button with the Send icon, next to the textarea).
+- The "Post" button is DISABLED (unclickable) until the textarea has text. NEVER click_text "Post" before typing — it will silently fail. If you click and nothing happens, it means the textarea is empty: go back and type_into first.
+- The typing step is complete ONLY when the inputs report shows your post text as the textarea's value. Then the next action is click_text "Post".
+- Step complete signal: the textarea is empty again (post submitted) OR your post text appears in the feed/headings below.
+- If inputs list is EMPTY after navigate to /Feed, the page is still loading — issue a wait (5000ms) then re-observe. Do NOT blindly click_text "Post".
 
 Return ONLY the JSON.`,
       response_json_schema: ACTION_SCHEMA,
