@@ -2578,7 +2578,7 @@ Provide a clear, accurate answer based on current web information. If you find t
                 className="flex-1 flex flex-col bg-black"
               >
                 {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-6 bg-black">
+                <div className="flex-1 flex flex-col min-h-0 px-3 py-3 sm:px-6 sm:py-6 bg-black">
                   {/* Status Message Banner */}
                   <AnimatePresence>
                     {statusMessage && (
@@ -2604,10 +2604,10 @@ Provide a clear, accurate answer based on current web information. If you find t
                     )}
                   </AnimatePresence>
 
-                  <div className="flex flex-col h-[calc(90vh-280px)]"> {/* Adjusted height calculation for chat content */}
-                    <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 pb-6">
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mb-3 sm:mb-4 pr-1 sm:pr-2 pb-4 sm:pb-6">
                       {messages.length === 0 ? (
-                        <div className="text-center text-gray-400 py-12">
+                        <div className="text-center text-gray-400 py-8 sm:py-12">
                           <Brain className="w-16 h-16 mx-auto mb-4 text-purple-400/50" />
                           <p>Start a conversation with Agent ZK</p>
                           <p className="text-sm mt-2">Type "TTTV" to watch videos • "shop" to browse items</p>
@@ -2688,7 +2688,7 @@ Provide a clear, accurate answer based on current web information. If you find t
                               ) : (
                                 // Regular message bubble
                                 <div
-                                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
+                                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 ${
                                     msg.role === 'user'
                                       ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                                       : 'bg-slate-800 border border-purple-500/20 text-gray-200'
@@ -2707,7 +2707,7 @@ Provide a clear, accurate answer based on current web information. If you find t
                           
                           {thinkingStatus && (
                             <div className="flex justify-start">
-                              <div className="bg-slate-800 border border-purple-500/20 rounded-2xl px-4 py-3 flex items-center gap-2">
+                              <div className="bg-slate-800 border border-purple-500/20 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 flex items-center gap-2">
                                 <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
                                 <span className="text-sm text-gray-300">{thinkingStatus}</span>
                               </div>
@@ -2721,7 +2721,7 @@ Provide a clear, accurate answer based on current web information. If you find t
                 </div>
 
                 {/* Input Area */}
-                <div className="flex-shrink-0 p-4 pb-24 border-t border-white/10 bg-black">
+                <div className="flex-shrink-0 px-3 pt-3 sm:px-4 sm:pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] lg:pb-4 border-t border-white/10 bg-black">
                   <div className="flex gap-2">
                     <Textarea
                       value={inputMessage}
@@ -2733,13 +2733,13 @@ Provide a clear, accurate answer based on current web information. If you find t
                         }
                       }}
                       placeholder="Type 'TTTV' for videos • 'shop' for items"
-                      className="flex-1 bg-slate-800 border-purple-500/30 text-white placeholder:text-gray-500 min-h-[60px] max-h-[120px]"
+                      className="flex-1 bg-slate-800 border-purple-500/30 text-white placeholder:text-gray-500 min-h-[44px] sm:min-h-[60px] max-h-[120px] text-base"
                       disabled={isSending}
                     />
                     <Button
                       onClick={handleSendMessage}
                       disabled={!inputMessage.trim() || isSending}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-[60px] px-6"
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-[44px] sm:h-[60px] px-4 sm:px-6 flex-shrink-0"
                     >
                       <Send className="w-5 h-5" />
                     </Button>
