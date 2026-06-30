@@ -1158,7 +1158,7 @@ export default function TTTLandingPage() {
               { label: "TAP", path: "/AppStoreV2" },
               { label: "TO", path: "/Feed" },
               { label: "TIP", path: "/Tip" },
-              { label: "GATE", path: "/TTTGate" },
+              { label: "GATE", path: "/TTTGate", icon: true },
               { label: "ZK", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); } },
             ].map((item, i) => {
               const isHovered = hoveredItem === item.label;
@@ -1168,16 +1168,24 @@ export default function TTTLandingPage() {
                   onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.07 }}
-                  className="px-6 py-3 transition-all focus:outline-none"
+                  className={`transition-all focus:outline-none ${item.icon ? 'px-4 py-3' : 'px-6 py-3'}`}
                   style={{
                     border: isHovered ? "2px solid rgba(240,200,60,0.8)" : "2px solid rgba(200,150,40,0.3)",
                     background: isHovered ? "rgba(200,150,40,0.12)" : "transparent",
                   }}>
-                  <span className="text-[14px] tracking-[0.3em] uppercase font-bold block"
-                    style={{ fontFamily: "monospace", color: isHovered ? "#f5d050" : "rgba(215,170,80,0.8)",
-                      textShadow: isHovered ? "0 0 16px rgba(240,200,60,0.6)" : "none", transition: "all 0.15s" }}>
-                    {item.label}
-                  </span>
+                  {item.icon ? (
+                    <span className="text-[18px] font-bold block"
+                      style={{ fontFamily: "monospace", color: isHovered ? "#f5d050" : "rgba(215,170,80,0.8)",
+                        textShadow: isHovered ? "0 0 16px rgba(240,200,60,0.6)" : "none", transition: "all 0.15s" }}>
+                      ◆
+                    </span>
+                  ) : (
+                    <span className="text-[14px] tracking-[0.3em] uppercase font-bold block"
+                      style={{ fontFamily: "monospace", color: isHovered ? "#f5d050" : "rgba(215,170,80,0.8)",
+                        textShadow: isHovered ? "0 0 16px rgba(240,200,60,0.6)" : "none", transition: "all 0.15s" }}>
+                      {item.label}
+                    </span>
+                  )}
                 </motion.button>
               );
             })}
