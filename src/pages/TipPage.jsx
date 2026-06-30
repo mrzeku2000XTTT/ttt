@@ -347,7 +347,8 @@ export default function TipPage() {
       setSendPin("");
       setTimeout(() => { setSelectedUser(null); setTipAmount(""); setSendSuccess(null); loadTttBalance(fromAddress); }, 3000);
     } catch (e) {
-      alert(`Send failed: ${e.message}`);
+      console.error('Tip send error:', e);
+      alert(`Send failed: ${e.message || e}`);
     } finally {
       setIsSending(false);
     }
