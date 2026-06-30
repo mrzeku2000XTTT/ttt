@@ -178,31 +178,8 @@ export default function TTTOS() {
   };
 
   const openAppInWindow = (app) => {
-    const windowId = `iframe-${app.path}-${Date.now()}`;
-    const offset = iframeWindows.length * 30;
-    // Use relative URL but detect if iframe loading fails
-    const appUrl = createPageUrl(app.path);
-    
-    setIframeWindows(prev => [...prev, { 
-      ...app, 
-      windowId,
-      url: appUrl,
-      isLoading: true,
-      loadFailed: false
-    }]);
-    setWindowPositions(prev => ({
-      ...prev,
-      [windowId]: { x: 50 + offset, y: 50 + offset }
-    }));
-    setActiveIframeWindow(windowId);
     setStartMenuOpen(false);
-
-    // Mark as loaded after a short delay
-    setTimeout(() => {
-      setIframeWindows(prev => prev.map(w => 
-        w.windowId === windowId ? { ...w, isLoading: false } : w
-      ));
-    }, 1500);
+    navigate(createPageUrl(app.path));
   };
 
   const handleIframeError = (windowId, app) => {
