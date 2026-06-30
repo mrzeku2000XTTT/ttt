@@ -427,18 +427,25 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
   };
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
       className="fixed z-50 flex flex-col"
-      style={{
+      style={minimized ? {
         right: 16, bottom: 16,
-        width: minimized ? "auto" : (computerOpen ? "min(96vw, 700px)" : "min(96vw, 420px)"),
-        maxHeight: minimized ? "auto" : "88vh",
+        width: "auto",
         background: "rgba(6,6,12,0.97)",
         border: "1px solid rgba(167,139,250,0.3)",
-        borderRadius: minimized ? 50 : 16,
+        borderRadius: 50,
         fontFamily: "system-ui, sans-serif",
         boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
-        transition: "width 0.3s ease, border-radius 0.3s ease"
+      } : {
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(6,6,12,0.99)",
+        border: "none",
+        borderRadius: 0,
+        fontFamily: "system-ui, sans-serif",
+        boxShadow: "none",
       }}>
 
       {/* Header — always visible */}
