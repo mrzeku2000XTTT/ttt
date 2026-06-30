@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import GateOverlay from "@/components/tttgate/GateOverlay";
 import LaserLines from "@/components/tttgate/LaserLines";
+import CBDCAgendaStrip from "@/components/tttgate/CBDCAgendaStrip";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9542c3e8a_image.png";
 
@@ -93,6 +94,9 @@ export default function TTTGatePage() {
 
       {/* Laser line UI widget */}
       {phase === "idle" && <LaserLines />}
+
+      {/* CBDC / Agenda 2030 corporate film strip */}
+      {phase === "idle" && <CBDCAgendaStrip />}
 
       {/* Invisible click hotspot — sits on top of the TTT mark in the image */}
       <button
