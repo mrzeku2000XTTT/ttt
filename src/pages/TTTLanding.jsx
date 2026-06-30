@@ -669,8 +669,14 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
 
         {/* CHAT TAB BODY */}
         {activeTab === "chat" && (
-          <div className="flex-1 flex overflow-hidden" style={{ minHeight: 0 }}>
-            <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
+          <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+            {computerOpen && (
+              <div className="flex-shrink-0" style={{ height: "55%", borderBottom: `3px solid ${ACCENT}` }}>
+                <AgentComputer ref={computerRef} url={computerUrl} status={computerStatus}
+                  narrations={computerNarrations} cursor={computerCursor} isActive={agentRunning} />
+              </div>
+            )}
+            <div className="flex-1 flex flex-col" style={{ minWidth: 0, minHeight: 0 }}>
               <div ref={scrollRef} className="flex-1 overflow-y-auto py-6" style={{ minHeight: 0, scrollbarWidth: "thin", scrollbarColor: `rgba(217,119,6,0.3) transparent` }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -770,13 +776,6 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
               </div>
             </div>
 
-            {/* Agent Computer panel */}
-            {computerOpen && (
-              <div className="w-80 flex-shrink-0" style={{ borderLeft: `3px solid ${ACCENT}` }}>
-                <AgentComputer ref={computerRef} url={computerUrl} status={computerStatus}
-                  narrations={computerNarrations} cursor={computerCursor} isActive={agentRunning} />
-              </div>
-            )}
           </div>
         )}
 
