@@ -997,84 +997,19 @@ function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapse
   );
 }
 
-// === GTA-STYLE SOUND EFFECTS (Web Audio API, no external files) ===
+// === GTA SOUND EFFECT ===
+const GTA_SOUND_URL = "https://media.base44.com/files/public/6901295fa9bcfaa0f5ba2c2a/667b75ed7_gta-menu.mp3";
+
 function useGameSounds() {
-  const ctxRef = useRef(null);
-  const getCtx = () => {
-    if (!ctxRef.current) ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    if (ctxRef.current.state === "suspended") ctxRef.current.resume();
-    return ctxRef.current;
-  };
-
-  const playSelect = () => {
+  const play = () => {
     try {
-      const ctx = getCtx();
-      const o = ctx.createOscillator(); const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.type = "square"; o.frequency.setValueAtTime(440, ctx.currentTime);
-      o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.06);
-      g.gain.setValueAtTime(0.18, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.12);
+      const audio = new Audio(GTA_SOUND_URL);
+      audio.volume = 0.7;
+      audio.play().catch(() => {});
     } catch {}
   };
 
-  const playHover = () => {
-    try {
-      const ctx = getCtx();
-      const o = ctx.createOscillator(); const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.type = "sine"; o.frequency.setValueAtTime(300, ctx.currentTime);
-      o.frequency.exponentialRampToValueAtTime(420, ctx.currentTime + 0.04);
-      g.gain.setValueAtTime(0.06, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
-      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.07);
-    } catch {}
-  };
-
-  const playStartup = () => {
-    try {
-      const ctx = getCtx();
-      // whoosh + chord = GTA-style stinger
-      [220, 330, 440, 660].forEach((freq, i) => {
-        const o = ctx.createOscillator(); const g = ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
-        o.type = i % 2 === 0 ? "sawtooth" : "sine";
-        o.frequency.setValueAtTime(freq * 0.5, ctx.currentTime + i * 0.07);
-        o.frequency.exponentialRampToValueAtTime(freq, ctx.currentTime + i * 0.07 + 0.15);
-        g.gain.setValueAtTime(0, ctx.currentTime + i * 0.07);
-        g.gain.linearRampToValueAtTime(0.12, ctx.currentTime + i * 0.07 + 0.05);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.07 + 0.4);
-        o.start(ctx.currentTime + i * 0.07); o.stop(ctx.currentTime + i * 0.07 + 0.5);
-      });
-    } catch {}
-  };
-
-  const playNavigate = () => {
-    try {
-      const ctx = getCtx();
-      // GTA "whoosh" navigate sound
-      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
-      const src = ctx.createBufferSource(); const g = ctx.createGain();
-      const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 800;
-      src.buffer = buf; src.connect(f); f.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.15, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-      src.start();
-      // Add a punchy tone on top
-      const o = ctx.createOscillator(); const g2 = ctx.createGain();
-      o.connect(g2); g2.connect(ctx.destination);
-      o.type = "square"; o.frequency.setValueAtTime(200, ctx.currentTime);
-      o.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.2);
-      g2.gain.setValueAtTime(0.2, ctx.currentTime);
-      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-      o.start(); o.stop(ctx.currentTime + 0.2);
-    } catch {}
-  };
-
-  return { playSelect, playHover, playStartup, playNavigate };
+  return { playSelect: play, playHover: () => {}, playStartup: () => {}, playNavigate: play };
 }
 
 export default function TTTLandingPage() {
@@ -1093,11 +1028,7 @@ export default function TTTLandingPage() {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const musicSrc = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&autoplay=1&playsinline=1&controls=0&rel=0&origin=${origin}`;
 
-  // Play startup stinger after a short delay
-  useEffect(() => {
-    const t = setTimeout(() => sounds.playStartup(), 800);
-    return () => clearTimeout(t);
-  }, []);
+
 
   const sendPlayerCommand = (command) => {
     playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: command, args: [] }), "*");
