@@ -444,7 +444,7 @@ export default function Layout({ children, currentPageName }) {
                   </button>
                 )}
                 <Link 
-                  to={currentPageName === "Wallet" ? createPageUrl("TTTGate") : createPageUrl("Home")}
+                  to={createPageUrl("Home")}
                   className="flex items-center gap-2 group flex-shrink-0"
                 >
                   <span className="text-white font-black text-2xl sm:text-3xl tracking-tight">TTT</span>
@@ -625,7 +625,7 @@ export default function Layout({ children, currentPageName }) {
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                 )}
-                <Link to={currentPageName === "Wallet" ? createPageUrl("TTTGate") : createPageUrl("Home")}>
+                <Link to={createPageUrl("Home")}>
                   <Button
                     variant="ghost"
                     size="sm"
