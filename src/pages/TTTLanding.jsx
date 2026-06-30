@@ -1136,13 +1136,13 @@ export default function TTTLandingPage() {
           {/* Divider */}
           <div className="w-56 h-px mb-4" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.35), transparent)" }} />
 
-          {/* MENU ITEMS — GTA-style left-aligned list */}
-          <div className="w-full flex flex-col gap-0.5">
+          {/* MENU ITEMS — horizontal buttons */}
+          <div className="w-full flex flex-row justify-center gap-3 flex-wrap">
             {[
-              { label: "APPS", sub: "Browse all tools", path: "/AppStoreV2", icon: <LayoutGrid className="w-4 h-4" /> },
-              { label: "FEED", sub: "Community & tips", path: "/Feed", icon: <Users className="w-4 h-4" /> },
-              { label: "TAP TO TIP", sub: "Send KAS", path: "/Tip", icon: <Send className="w-4 h-4" /> },
-              { label: "ZK", sub: "AI operator", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); }, icon: <MessageCircle className="w-4 h-4" /> },
+              { label: "TAP", path: "/AppStoreV2" },
+              { label: "TO", path: "/Feed" },
+              { label: "TIP", path: "/Tip" },
+              { label: "ZK", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); } },
             ].map((item, i) => {
               const isHovered = hoveredItem === item.label;
               return (
@@ -1150,24 +1150,17 @@ export default function TTTLandingPage() {
                   onClick={() => { sounds.playNavigate(); item.action ? item.action() : navigate(item.path); }}
                   onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
-                  initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1 + i * 0.07 }}
-                  className="w-full flex items-center gap-4 px-4 py-3 text-left transition-all focus:outline-none"
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.07 }}
+                  className="px-6 py-3 transition-all focus:outline-none"
                   style={{
-                    background: isHovered ? "rgba(200,150,40,0.08)" : "transparent",
-                    borderLeft: isHovered ? "2px solid rgba(240,200,60,0.7)" : "2px solid transparent",
-                    transform: isHovered ? "translateX(6px)" : "translateX(0)",
+                    border: isHovered ? "2px solid rgba(240,200,60,0.8)" : "2px solid rgba(200,150,40,0.3)",
+                    background: isHovered ? "rgba(200,150,40,0.12)" : "transparent",
                   }}>
-                  <span style={{ color: isHovered ? "rgba(240,200,60,0.9)" : "rgba(200,150,40,0.45)", transition: "color 0.15s" }}>{item.icon}</span>
-                  <div className="flex-1">
-                    <div className="text-[13px] tracking-[0.25em] uppercase font-semibold"
-                      style={{ fontFamily: "monospace", color: isHovered ? "#f5d050" : "rgba(215,170,80,0.8)",
-                        textShadow: isHovered ? "0 0 16px rgba(240,200,60,0.6)" : "none", transition: "all 0.15s" }}>
-                      {item.label}
-                    </div>
-                    <div className="text-[9px] tracking-[0.2em] uppercase mt-0.5"
-                      style={{ color: "rgba(150,110,35,0.4)", fontFamily: "monospace" }}>{item.sub}</div>
-                  </div>
-                  {isHovered && <div className="text-[10px]" style={{ color: "rgba(240,200,60,0.6)", fontFamily: "monospace" }}>▶</div>}
+                  <span className="text-[14px] tracking-[0.3em] uppercase font-bold block"
+                    style={{ fontFamily: "monospace", color: isHovered ? "#f5d050" : "rgba(215,170,80,0.8)",
+                      textShadow: isHovered ? "0 0 16px rgba(240,200,60,0.6)" : "none", transition: "all 0.15s" }}>
+                    {item.label}
+                  </span>
                 </motion.button>
               );
             })}
