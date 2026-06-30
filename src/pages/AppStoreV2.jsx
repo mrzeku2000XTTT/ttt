@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight, Bot, Menu, X, FileText, MapPin, Dumbbell, Monitor } from "lucide-react";
+
+const GTA_SOUND_URL = "https://media.base44.com/files/public/6901295fa9bcfaa0f5ba2c2a/667b75ed7_gta-menu.mp3";
+const playGTA = () => { try { const a = new Audio(GTA_SOUND_URL); a.volume = 0.7; a.play().catch(() => {}); } catch {} };
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import {
@@ -121,6 +124,7 @@ export default function AppStoreV2Page() {
           <div className="flex items-center gap-2">
             <Link
               to="/AIAgentHub"
+              onClick={playGTA}
               className="hidden sm:flex items-center gap-1.5 text-[13px] font-semibold text-white bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-400 hover:opacity-90 h-10 px-3.5 rounded-full transition-opacity shadow-lg shadow-fuchsia-500/30"
             >
               <Bot className="w-3.5 h-3.5" />
@@ -128,6 +132,7 @@ export default function AppStoreV2Page() {
             </Link>
             <Link
               to="/AIAgentHub"
+              onClick={playGTA}
               className="sm:hidden flex items-center justify-center text-white bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-400 h-10 w-10 rounded-full shadow-lg shadow-fuchsia-500/30"
               title="AI Agent Hub"
             >
@@ -135,6 +140,7 @@ export default function AppStoreV2Page() {
             </Link>
             <Link
               to="/Home"
+              onClick={playGTA}
               className="flex items-center text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 h-10 px-4 rounded-full transition-colors"
             >
               Open TTT

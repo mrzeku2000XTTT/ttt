@@ -8,6 +8,9 @@ import {
   Volume2, VolumeX, LogIn, LogOut, Sparkles, Menu
 } from "lucide-react";
 
+const GTA_SOUND_URL = "https://media.base44.com/files/public/6901295fa9bcfaa0f5ba2c2a/667b75ed7_gta-menu.mp3";
+const playGTA = () => { try { const a = new Audio(GTA_SOUND_URL); a.volume = 0.7; a.play().catch(() => {}); } catch {} };
+
 import HeroHeader from "@/components/tttv2/HeroHeader";
 import LoginButton from "@/components/tttv2/LoginButton";
 import Base44LoginButton from "@/components/tttv2/Base44LoginButton";
@@ -275,7 +278,7 @@ export default function TTTV2Page() {
           )}
           <Link
             to="/Home"
-            onClick={() => setNavigating(true)}
+            onClick={() => { playGTA(); setNavigating(true); }}
             className="text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 active:bg-zinc-700 px-4 py-2.5 rounded-full transition-colors touch-manipulation"
             style={{ touchAction: 'manipulation', minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}
           >
@@ -437,13 +440,13 @@ export default function TTTV2Page() {
             Feed. Identity. Prediction markets. AI agents. 80+ apps — all powered by the world's fastest blockDAG.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link to="/Feed">
+            <Link to="/Feed" onClick={playGTA}>
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 className="h-10 px-6 bg-white text-zinc-900 text-[13px] font-semibold rounded-full shadow-lg shadow-black/25 flex items-center gap-2">
                 Get Started <ArrowUpRight className="w-4 h-4" />
               </motion.button>
             </Link>
-            <Link to="/LaunchBrand">
+            <Link to="/LaunchBrand" onClick={playGTA}>
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 className="h-10 px-6 text-[13px] font-semibold rounded-full bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-400 text-black shadow-lg shadow-violet-500/30 flex items-center gap-2">
                 Launch My Own Brand <ArrowUpRight className="w-4 h-4" />
@@ -608,13 +611,13 @@ export default function TTTV2Page() {
               Post, tip, predict, create — the Kaspa super-app is live. Your move.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link to="/Feed">
+              <Link to="/Feed" onClick={playGTA}>
                 <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                   className="h-11 px-8 bg-white text-zinc-900 text-[14px] font-semibold rounded-full flex items-center gap-2">
                   Enter Feed <ArrowUpRight className="w-4 h-4" />
                 </motion.button>
               </Link>
-              <Link to="/AgentZK">
+              <Link to="/AgentZK" onClick={playGTA}>
                 <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                   className="h-11 px-8 text-white text-[14px] font-semibold rounded-full ring-1 ring-white/20 hover:ring-white/40 transition-all flex items-center gap-2">
                   Agent ZK <ChevronRight className="w-4 h-4" />
