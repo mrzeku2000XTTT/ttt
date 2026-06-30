@@ -243,6 +243,7 @@ const AuthenticatedApp = () => {
       <Route path="/Hire" element={<HirePage />} />
       <Route path="/KaspaForge" element={<KaspaForgePage />} />
       <Route path="/CommunityHub" element={<CommunityHubPage />} />
+      <Route path="/WalletHub" element={<WalletHubPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
