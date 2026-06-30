@@ -755,9 +755,9 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
               </div>
 
               {/* Input bar — forge style */}
-              <div className="px-6 py-4 flex-shrink-0" style={{ borderTop: `3px solid ${ACCENT}`, background: "linear-gradient(0deg, #1c1c1c 0%, #111 100%)" }}>
+              <div className="px-6 py-2 flex-shrink-0" style={{ borderTop: `3px solid ${ACCENT}`, background: "linear-gradient(0deg, #1c1c1c 0%, #111 100%)" }}>
                 <div className="max-w-3xl mx-auto">
-                  <div className="flex items-center gap-3 px-4 py-3"
+                  <div className="flex items-center gap-3 px-3 py-2"
                     style={{ background: "rgba(0,0,0,0.4)", border: `2px solid ${input.trim() ? ACCENT : "rgba(217,119,6,0.3)"}`, boxShadow: input.trim() ? `3px 3px 0px #78350f` : "none" }}>
                     <span className="text-[14px] font-black flex-shrink-0" style={{ color: ACCENT, fontFamily: FONT }}>▶</span>
                     <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
