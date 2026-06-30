@@ -113,7 +113,7 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   const [imagePrompt, setImagePrompt] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
   const [appSearch, setAppSearch] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Agent Computer state
   const [computerOpen, setComputerOpen] = useState(false);
