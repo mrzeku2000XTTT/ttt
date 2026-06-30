@@ -28,6 +28,60 @@ const AgentComputer = forwardRef(function AgentComputer({ url, status, narration
     }
   }, [url, isNodaRoute]);
 
+  // Inject agent bridge listener into iframe on load
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !fullUrl) return;
+
+    const handleLoad = () => {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) return;
+
+        // Check if already injected
+        if (iframeDoc.getElementById("ttt-agent-bridge")) return;
+
+        // Create script element
+        const script = iframeDoc.createElement("script");
+        script.id = "ttt-agent-bridge";
+        script.src = "/agentBridgeListener.js";
+        script.async = true;
+        
+        // Inject into iframe head
+        const head = iframeDoc.head || iframeDoc.documentElement;
+        if (head) head.appendChild(script);
+      } catch (err) {
+        console.error("Failed to inject agent bridge:", err);
+      }
+    };
+
+    iframe.addEventListener("load", handleLoad);
+    return () => iframe.removeEventListener("load", handleLoad);
+  }, [fullUrl]);
+
+  // Inject the agent bridge listener script into the iframe after it loads
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !fullUrl) return;
+
+    const handleLoad = () => {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) return;
+
+        // Inject the listener script from public folder
+        const script = iframeDoc.createElement("script");
+        script.src = "/agentBridgeListener.js";
+        iframeDoc.head.appendChild(script);
+      } catch (err) {
+        console.error("Failed to inject agent bridge listener:", err);
+      }
+    };
+
+    iframe.addEventListener("load", handleLoad);
+    return () => iframe.removeEventListener("load", handleLoad);
+  }, [fullUrl]);
+
   return (
     <div className="relative w-full h-full bg-zinc-900 rounded-2xl overflow-hidden ring-1 ring-white/10 flex flex-col">
       {/* Chrome bar */}
