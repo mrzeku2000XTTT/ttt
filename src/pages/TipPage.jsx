@@ -713,17 +713,17 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
           </p>
         </motion.div>
 
-        {/* Status banner */}
+        {/* Status banner - GTA HUD style */}
         {!currentUser && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5 p-4 rounded-xl flex items-center gap-3"
-            style={{ background: "rgba(0,30,80,0.7)", border: "1px solid rgba(0,100,200,0.35)", backdropFilter: "blur(12px)" }}>
+            style={{ background: "rgba(40,30,10,0.7)", border: "1px solid rgba(200,150,40,0.35)", backdropFilter: "blur(12px)" }}>
             <div className="flex-1">
               <p className="text-white font-bold text-sm">Want to receive KAS tips?</p>
               <p className="text-white/40 text-xs mt-0.5">Sign in and add your Kaspa address</p>
             </div>
             <button onClick={() => base44.auth.redirectToLogin()}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition-all hover:opacity-90"
-              style={{ background: "rgba(0,100,255,0.8)", border: "1px solid rgba(0,150,255,0.5)" }}>
+              style={{ background: "rgba(200,150,40,0.8)", border: "1px solid rgba(220,180,60,0.5)", color: "#000" }}>
               Sign In <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </motion.div>
@@ -731,58 +731,58 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
 
         {currentUser && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5 p-4 rounded-xl flex items-center gap-3"
-            style={{ background: "rgba(0,30,80,0.7)", border: "1px solid rgba(0,100,200,0.35)", backdropFilter: "blur(12px)" }}>
+            style={{ background: "rgba(40,30,10,0.7)", border: "1px solid rgba(200,150,40,0.35)", backdropFilter: "blur(12px)" }}>
             {/* Mini avatar */}
             <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2"
-              style={{ borderColor: "rgba(0,150,255,0.5)", boxShadow: "0 0 12px rgba(0,100,255,0.4)" }}>
+              style={{ borderColor: "rgba(200,150,40,0.5)", boxShadow: "0 0 12px rgba(200,150,40,0.4)" }}>
               <img src={getAvatarUrl(currentUser)} alt="" className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-bold text-sm">{currentUser.created_wallet_address ? "Your address is live" : "Add your wallet to receive tips"}</p>
               {currentUser.created_wallet_address && (
-                <p className="text-blue-400/40 text-xs font-mono truncate mt-0.5">{currentUser.created_wallet_address.slice(0,20)}...{currentUser.created_wallet_address.slice(-8)}</p>
+                <p className="text-amber-400/40 text-xs font-mono truncate mt-0.5">{currentUser.created_wallet_address.slice(0,20)}...{currentUser.created_wallet_address.slice(-8)}</p>
               )}
             </div>
             <button onClick={openEditProfile}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-300 transition-all hover:opacity-80"
-              style={{ background: "rgba(0,100,255,0.2)", border: "1px solid rgba(0,150,255,0.3)" }}>
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-80"
+              style={{ background: "rgba(200,150,40,0.2)", border: "1px solid rgba(200,150,40,0.3)", color: "#fbbf24" }}>
               <Pencil className="w-3 h-3" /> Edit
             </button>
           </motion.div>
         )}
 
-        {/* Search */}
+        {/* Search - GTA HUD style */}
         <div className="mb-3 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(96,165,250,0.4)" }} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(200,150,40,0.4)" }} />
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search name, skill, project, agent… e.g. 'KRC-20 design'"
             className="w-full pl-11 pr-4 py-3 rounded-xl text-sm text-white outline-none"
-            style={{ background: "rgba(0,25,70,0.6)", border: "1px solid rgba(0,100,200,0.25)", backdropFilter: "blur(12px)" }}
+            style={{ background: "rgba(30,20,10,0.6)", border: "1px solid rgba(200,150,40,0.25)", backdropFilter: "blur(12px)", color: "#fbbf24" }}
           />
         </div>
-        {/* Quick skill filters */}
+        {/* Quick skill filters - GTA amber/gold */}
         <div className="flex gap-1.5 flex-wrap mb-5">
           {["KRC-20","DeFi","Design","Code","Trading","Available"].map(tag => (
             <button key={tag} onClick={() => setSearchQuery(q => q === tag.toLowerCase() ? "" : tag.toLowerCase())}
               className="text-[10px] px-2.5 py-1 rounded-full font-bold transition-all hover:opacity-80"
               style={{
-                background: searchQuery === tag.toLowerCase() ? "rgba(139,92,246,0.4)" : "rgba(0,60,160,0.2)",
-                border: `1px solid ${searchQuery === tag.toLowerCase() ? "rgba(139,92,246,0.6)" : "rgba(0,100,200,0.25)"}`,
-                color: searchQuery === tag.toLowerCase() ? "#c4b5fd" : "rgba(96,165,250,0.6)",
+                background: searchQuery === tag.toLowerCase() ? "rgba(200,150,40,0.4)" : "rgba(40,30,15,0.3)",
+                border: `1px solid ${searchQuery === tag.toLowerCase() ? "rgba(220,180,60,0.6)" : "rgba(200,150,40,0.25)"}`,
+                color: searchQuery === tag.toLowerCase() ? "#fbbf24" : "rgba(200,150,40,0.6)",
               }}>
               {tag}
             </button>
           ))}
         </div>
 
-        {/* Directory list */}
+        {/* Directory list - GTA amber/gold style */}
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <div className="w-10 h-10 rounded-full animate-spin" style={{ border: "2px solid rgba(0,100,255,0.2)", borderTop: "2px solid #3b82f6" }} />
+            <div className="w-10 h-10 rounded-full animate-spin" style={{ border: "2px solid rgba(200,150,40,0.2)", borderTop: "2px solid #fbbf24" }} />
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-24">
-            <p className="text-blue-400/40 font-semibold">No users found</p>
+            <p className="text-amber-400/40 font-semibold">No users found</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -810,20 +810,20 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                     onClick={() => toggleRow(user.id)}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all"
                     style={{
-                      background: isExpanded ? "rgba(0,60,160,0.3)" : isCur ? "rgba(0,50,130,0.22)" : "rgba(0,25,70,0.5)",
-                      border: isExpanded ? "1px solid rgba(0,150,255,0.5)" : isCur ? "1px solid rgba(0,120,255,0.4)" : "1px solid rgba(0,80,180,0.25)",
+                      background: isExpanded ? "rgba(60,45,15,0.4)" : isCur ? "rgba(50,40,15,0.3)" : "rgba(30,20,10,0.6)",
+                      border: isExpanded ? "1px solid rgba(200,150,40,0.5)" : isCur ? "1px solid rgba(200,150,40,0.4)" : "1px solid rgba(200,150,40,0.25)",
                       backdropFilter: "blur(14px)",
                     }}
                   >
-                    {/* Rank */}
+                    {/* Rank - GTA gold */}
                     <div className="text-2xl font-black w-8 flex-shrink-0 text-right"
-                      style={{ color: rank <= 3 ? "#4db8ff" : "rgba(96,165,250,0.25)", fontFamily: "monospace", textShadow: rank <= 3 ? "0 0 16px rgba(0,140,255,0.7)" : "none" }}>
+                      style={{ color: rank <= 3 ? "#fbbf24" : "rgba(200,150,40,0.25)", fontFamily: "monospace", textShadow: rank <= 3 ? "0 0 16px rgba(250,200,50,0.5)" : "none" }}>
                       {rank}
                     </div>
 
-                    {/* Anime avatar */}
+                    {/* Anime avatar - GTA gold border */}
                     <div className="relative w-11 h-11 rounded-full flex-shrink-0 overflow-hidden"
-                      style={{ border: "2px solid rgba(0,150,255,0.5)", boxShadow: "0 0 14px rgba(0,100,255,0.35)" }}>
+                      style={{ border: "2px solid rgba(200,150,40,0.5)", boxShadow: "0 0 14px rgba(200,150,40,0.35)" }}>
                       <img src={avatarUrl} alt={user.username} className="w-full h-full object-cover" />
                       <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full"
                         style={{ background: "#22c55e", border: "1.5px solid #010a1a", boxShadow: "0 0 6px rgba(34,197,94,0.8)" }} />
@@ -833,26 +833,26 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-white font-bold text-sm">{user.username || "Anonymous"}</span>
-                        {isCur && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(0,100,255,0.25)", color: "#93c5fd", border: "1px solid rgba(0,150,255,0.35)" }}>YOU</span>}
-                        {agentName && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-0.5" style={{ background: "rgba(139,92,246,0.25)", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.35)" }}><Bot className="w-2 h-2" /> AI</span>}
+                        {isCur && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(200,150,40,0.25)", color: "#fbbf24", border: "1px solid rgba(220,180,60,0.35)" }}>YOU</span>}
+                        {agentName && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-0.5" style={{ background: "rgba(200,150,40,0.25)", color: "#fde68a", border: "1px solid rgba(220,180,60,0.35)" }}><Bot className="w-2 h-2" /> AI</span>}
                         {badges}
                       </div>
                       {projectTagline ? (
-                        <p className="text-xs mt-0.5 truncate" style={{ color: "rgba(148,197,255,0.55)", fontFamily: "monospace" }}>{projectTagline}</p>
+                        <p className="text-xs mt-0.5 truncate" style={{ color: "rgba(250,200,100,0.55)", fontFamily: "monospace" }}>{projectTagline}</p>
                       ) : (
-                        <p className="text-xs mt-0.5 font-mono truncate" style={{ color: "rgba(96,165,250,0.3)" }}>{address?.slice(0,14)}...{address?.slice(-6)}</p>
+                        <p className="text-xs mt-0.5 font-mono truncate" style={{ color: "rgba(200,150,40,0.4)" }}>{address?.slice(0,14)}...{address?.slice(-6)}</p>
                       )}
                     </div>
 
-                    {/* Tip button */}
+                    {/* Tip button - GTA gold */}
                     <button
                       onClick={e => { e.stopPropagation(); setSelectedUser(user); setTipAmount(""); }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold flex-shrink-0 transition-all hover:opacity-90 active:scale-95"
-                      style={{ background: "rgba(0,90,220,0.85)", border: "1px solid rgba(0,150,255,0.5)", color: "#93c5fd", boxShadow: "0 2px 14px rgba(0,80,200,0.35)" }}>
+                      style={{ background: "rgba(200,150,40,0.85)", border: "1px solid rgba(220,180,60,0.5)", color: "#000", boxShadow: "0 2px 14px rgba(200,150,40,0.35)" }}>
                       Tip KAS
                     </button>
 
-                    <div className="flex-shrink-0 ml-1" style={{ color: "rgba(96,165,250,0.4)" }}>
+                    <div className="flex-shrink-0 ml-1" style={{ color: "rgba(200,150,40,0.4)" }}>
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </div>
@@ -862,20 +862,20 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                     {isExpanded && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} style={{ overflow: "hidden" }}>
                         <div className="mx-2 mb-1 px-4 py-4 rounded-b-xl"
-                          style={{ background: "rgba(0,15,50,0.8)", border: "1px solid rgba(0,100,200,0.2)", borderTop: "none", backdropFilter: "blur(14px)" }}>
+                          style={{ background: "rgba(30,20,10,0.9)", border: "1px solid rgba(200,150,40,0.2)", borderTop: "none", backdropFilter: "blur(14px)" }}>
 
                           {/* Profile header */}
                           <div className="flex items-start gap-3 mb-3">
                             <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0"
-                              style={{ border: "2px solid rgba(0,150,255,0.4)", boxShadow: "0 0 20px rgba(0,100,255,0.3)" }}>
+                              style={{ border: "2px solid rgba(200,150,40,0.4)", boxShadow: "0 0 20px rgba(200,150,40,0.3)" }}>
                               <img src={avatarUrl} alt={user.username} className="w-full h-full object-cover" />
                             </div>
                             <div className="flex-1">
                               <p className="text-white font-bold">{user.username}</p>
                               {agentName && (
                                 <div className="flex items-center gap-1 mt-1">
-                                  <Bot className="w-3 h-3" style={{ color: "#a78bfa" }} />
-                                  <span className="text-xs" style={{ color: "#a78bfa" }}>{agentName}</span>
+                                  <Bot className="w-3 h-3" style={{ color: "#fbbf24" }} />
+                                  <span className="text-xs" style={{ color: "#fbbf24" }}>{agentName}</span>
                                 </div>
                               )}
                             </div>
@@ -883,11 +883,11 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
 
                           {/* Agent Profile section */}
                           {agentName && (
-                            <div className="mb-4 p-3 rounded-xl" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}>
+                            <div className="mb-4 p-3 rounded-xl" style={{ background: "rgba(200,150,40,0.06)", border: "1px solid rgba(200,150,40,0.2)" }}>
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                  <Bot className="w-3.5 h-3.5" style={{ color: "#a78bfa" }} />
-                                  <span className="text-xs font-bold" style={{ color: "#c4b5fd" }}>{agentName}</span>
+                                  <Bot className="w-3.5 h-3.5" style={{ color: "#fbbf24" }} />
+                                  <span className="text-xs font-bold" style={{ color: "#fde68a" }}>{agentName}</span>
                                   {agentAvailability && (
                                     <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
                                       style={{ background: agentAvailability === "available" ? "rgba(34,197,94,0.2)" : "rgba(234,179,8,0.2)", color: agentAvailability === "available" ? "#4ade80" : "#fbbf24", border: `1px solid ${agentAvailability === "available" ? "rgba(34,197,94,0.4)" : "rgba(234,179,8,0.4)"}` }}>
@@ -899,13 +899,13 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                                   <button
                                     onClick={e => openChat(e, user)}
                                     className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
-                                    style={{ background: "rgba(6,182,212,0.15)", border: "1px solid rgba(6,182,212,0.3)", color: "#67e8f9" }}>
+                                    style={{ background: "rgba(200,150,40,0.15)", border: "1px solid rgba(220,180,60,0.3)", color: "#fbbf24" }}>
                                     <MessageSquare className="w-2.5 h-2.5" /> Chat
                                   </button>
                                   <button
                                     onClick={e => openJobsBoard(e, user)}
                                     className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
-                                    style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", color: "#4ade80" }}>
+                                    style={{ background: "rgba(200,150,40,0.12)", border: "1px solid rgba(200,150,40,0.25)", color: "#fde68a" }}>
                                     <Briefcase className="w-2.5 h-2.5" /> Jobs
                                   </button>
                                   <button
@@ -920,13 +920,13 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                                       navigate(`/Hire?${params.toString()}`);
                                     }}
                                     className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-all hover:opacity-80"
-                                    style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", color: "#c4b5fd" }}>
+                                    style={{ background: "rgba(200,150,40,0.2)", border: "1px solid rgba(220,180,60,0.3)", color: "#fbbf24" }}>
                                     💼 Hire
                                   </button>
                                 </div>
                               </div>
                               {(user.agent_persona || (isCur && currentUser?.agent_persona)) && (
-                                <p className="text-xs leading-relaxed mb-2" style={{ color: "rgba(196,181,253,0.7)" }}>
+                                <p className="text-xs leading-relaxed mb-2" style={{ color: "rgba(250,200,100,0.7)" }}>
                                   {user.agent_persona || currentUser?.agent_persona}
                                 </p>
                               )}
@@ -934,7 +934,7 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                                 <div className="flex flex-wrap gap-1 mb-2">
                                   {agentSkills.split(",").map(s => s.trim()).filter(Boolean).map(skill => (
                                     <span key={skill} className="text-[9px] px-2 py-0.5 rounded-full font-bold"
-                                      style={{ background: "rgba(139,92,246,0.15)", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.25)" }}>
+                                      style={{ background: "rgba(200,150,40,0.15)", color: "#fde68a", border: "1px solid rgba(220,180,60,0.25)" }}>
                                       {skill}
                                     </span>
                                   ))}
@@ -954,18 +954,18 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                                      });
                                      navigate(`/Hire?${params.toString()}`);
                                    }}
-                                   className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
-                                   style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", border: "1px solid rgba(167,139,250,0.4)" }}>
+                                   className="w-full py-2 rounded-lg text-xs font-bold text-black transition-all hover:opacity-90 active:scale-95"
+                                   style={{ background: "linear-gradient(135deg, #c8960c 0%, #f0d060 100%)", border: "1px solid rgba(220,180,60,0.4)" }}>
                                    💼 HIRE
                                  </button>
                             </div>
                           )}
 
-                          <p className="text-xs font-bold mb-2 uppercase tracking-widest" style={{ color: "#4db8ff" }}>What I'm building</p>
+                          <p className="text-xs font-bold mb-2 uppercase tracking-widest" style={{ color: "#fbbf24", fontFamily: "monospace" }}>What I'm building</p>
                           {projectTagline ? (
-                            <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(200,230,255,0.7)", fontFamily: "monospace" }}>{projectTagline}</p>
+                            <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(250,200,100,0.7)", fontFamily: "monospace" }}>{projectTagline}</p>
                           ) : (
-                            <p className="text-sm mb-3" style={{ color: "rgba(96,165,250,0.3)", fontFamily: "monospace" }}>
+                            <p className="text-sm mb-3" style={{ color: "rgba(200,150,40,0.3)", fontFamily: "monospace" }}>
                               {isCur ? "Click Edit above to add your project description." : "This builder hasn't added their project yet."}
                             </p>
                           )}
@@ -976,7 +976,7 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                               <a href={tiptreeUrl.startsWith("http") ? tiptreeUrl : `https://tiptr.ee/${tiptreeUrl}`} target="_blank" rel="noopener noreferrer"
                                 onClick={e => e.stopPropagation()}
                                 className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
-                                style={{ background: "rgba(234,88,12,0.2)", border: "1px solid rgba(234,88,12,0.4)", color: "#fb923c" }}>
+                                style={{ background: "rgba(200,150,40,0.15)", border: "1px solid rgba(220,180,60,0.3)", color: "#fbbf24" }}>
                                 🌳 TipTree <ExternalLink className="w-2.5 h-2.5" />
                               </a>
                             )}
@@ -984,34 +984,34 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                               <a href={`https://kns.kaspa.org/message/${knsMessaging.replace(/\.kas$/i, "")}`} target="_blank" rel="noopener noreferrer"
                                 onClick={e => e.stopPropagation()}
                                 className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
-                                style={{ background: "rgba(0,200,150,0.15)", border: "1px solid rgba(0,200,150,0.35)", color: "#34d399" }}>
+                                style={{ background: "rgba(200,150,40,0.15)", border: "1px solid rgba(220,180,60,0.3)", color: "#fbbf24" }}>
                                 💬 Message <span className="font-mono">{knsMessaging.endsWith(".kas") ? knsMessaging : `${knsMessaging}.kas`}</span> <ExternalLink className="w-2.5 h-2.5" />
                               </a>
                             )}
                             {projectSite && (
                               <a href={projectSite} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80" style={{ color: "#60a5fa" }}>
+                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80" style={{ color: "#fbbf24" }}>
                                 Project Site <ExternalLink className="w-3 h-3" />
                               </a>
                             )}
                             {githubUrl && (
                               <a href={githubUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80" style={{ color: "#60a5fa" }}>
+                                className="flex items-center gap-1 text-xs transition-all hover:opacity-80" style={{ color: "#fbbf24" }}>
                                 GitHub <ExternalLink className="w-3 h-3" />
                               </a>
                             )}
                           </div>
 
                           {/* Wallet row */}
-                          <div className="flex items-center gap-2 pt-3" style={{ borderTop: "1px solid rgba(0,80,180,0.2)" }}>
-                            <code className="text-xs flex-1 truncate" style={{ color: "rgba(96,165,250,0.5)" }}>{address}</code>
-                            <button onClick={e => handleCopyAddress(address, e)} style={{ color: isCopied ? "#34d399" : "rgba(96,165,250,0.4)" }}>
+                          <div className="flex items-center gap-2 pt-3" style={{ borderTop: "1px solid rgba(200,150,40,0.2)" }}>
+                            <code className="text-xs flex-1 truncate" style={{ color: "rgba(200,150,40,0.5)" }}>{address}</code>
+                            <button onClick={e => handleCopyAddress(address, e)} style={{ color: isCopied ? "#34d399" : "rgba(200,150,40,0.4)" }}>
                               {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                             </button>
                             {isCur && (
                               <button onClick={openEditProfile}
                                 className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg ml-1"
-                                style={{ background: "rgba(0,80,200,0.2)", border: "1px solid rgba(0,120,255,0.25)", color: "#93c5fd" }}>
+                                style={{ background: "rgba(200,150,40,0.2)", border: "1px solid rgba(220,180,60,0.25)", color: "#fbbf24" }}>
                                 <Pencil className="w-2.5 h-2.5" /> Edit
                               </button>
                             )}
@@ -1037,13 +1037,13 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
             <div className="fixed inset-0 z-[201] flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-sm rounded-3xl p-6"
-                style={{ background: "linear-gradient(135deg, rgba(0,20,80,0.98) 0%, rgba(0,10,40,0.99) 100%)", border: "1px solid rgba(0,120,255,0.3)", boxShadow: "0 0 80px rgba(0,80,255,0.2), 0 32px 64px rgba(0,0,0,0.6)" }}>
+                style={{ background: "linear-gradient(135deg, rgba(40,30,10,0.98) 0%, rgba(20,15,5,0.99) 100%)", border: "1px solid rgba(200,150,40,0.3)", boxShadow: "0 0 80px rgba(200,150,40,0.2), 0 32px 64px rgba(0,0,0,0.6)" }}>
                 {/* Header with avatar */}
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: "2px solid rgba(0,150,255,0.5)" }}>
+                  <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: "2px solid rgba(200,150,40,0.5)" }}>
                     <img src={getAvatarUrl(selectedUser)} alt="" className="w-full h-full object-cover" />
                   </div>
-                  <h3 className="text-white font-black text-xl flex-1">Tip <span style={{ color: "#60a5fa" }}>{selectedUser.username}</span></h3>
+                  <h3 className="text-white font-black text-xl flex-1">Tip <span style={{ color: "#fbbf24" }}>{selectedUser.username}</span></h3>
                   <button onClick={() => { setSelectedUser(null); setSendPin(""); setSendSuccess(null); }} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -1051,11 +1051,11 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                 <div className="bg-white p-3 rounded-2xl mb-4">
                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedUser.created_wallet_address || selectedUser.agent_zk_id)}`} alt="QR" className="w-full h-auto rounded-xl" />
                 </div>
-                <div className="p-3 rounded-xl mb-4 text-center" style={{ background: "rgba(0,60,180,0.1)", border: "1px solid rgba(0,120,255,0.2)" }}>
-                  <p className="text-xs mb-1" style={{ color: "rgba(96,165,250,0.5)" }}>Recipient Address</p>
-                  <code className="text-[11px] break-all" style={{ color: "#60a5fa" }}>{selectedUser.created_wallet_address || selectedUser.agent_zk_id}</code>
+                <div className="p-3 rounded-xl mb-4 text-center" style={{ background: "rgba(40,30,10,0.4)", border: "1px solid rgba(200,150,40,0.2)" }}>
+                  <p className="text-xs mb-1" style={{ color: "rgba(200,150,40,0.5)" }}>Recipient Address</p>
+                  <code className="text-[11px] break-all" style={{ color: "#fbbf24" }}>{selectedUser.created_wallet_address || selectedUser.agent_zk_id}</code>
                   <button onClick={e => handleCopyAddress(selectedUser.created_wallet_address || selectedUser.agent_zk_id, e)}
-                    className="flex items-center gap-1.5 mx-auto mt-2 text-xs" style={{ color: copiedAddress === (selectedUser.created_wallet_address || selectedUser.agent_zk_id) ? "#34d399" : "rgba(96,165,250,0.5)" }}>
+                    className="flex items-center gap-1.5 mx-auto mt-2 text-xs" style={{ color: copiedAddress === (selectedUser.created_wallet_address || selectedUser.agent_zk_id) ? "#34d399" : "rgba(200,150,40,0.5)" }}>
                     {copiedAddress === (selectedUser.created_wallet_address || selectedUser.agent_zk_id) ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy</>}
                   </button>
                 </div>
@@ -1066,12 +1066,12 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                 ) : (
                   <>
                     <div className="mb-3">
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Amount (KAS)</label>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(200,150,40,0.6)" }}>Amount (KAS)</label>
                       <input type="number" step="0.01" value={tipAmount} onChange={e => setTipAmount(e.target.value)} placeholder="0.00"
                         className="w-full py-3 text-center text-2xl font-black text-white rounded-xl outline-none"
-                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.25)", caretColor: "#60a5fa" }} />
+                        style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.25)", caretColor: "#fbbf24" }} />
                       {tttWalletBalance !== null && (
-                        <p className="text-xs mt-1 text-center" style={{ color: "rgba(96,165,250,0.4)" }}>
+                        <p className="text-xs mt-1 text-center" style={{ color: "rgba(200,150,40,0.4)" }}>
                           TTT Wallet: {tttWalletBalance.toFixed(4)} KAS
                         </p>
                       )}
@@ -1081,17 +1081,17 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                     {localStorage.getItem('ttt_wallet_pk') ? (
                       <>
                         <div className="mb-3">
-                          <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Wallet PIN (6 digits)</label>
+                          <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(200,150,40,0.6)" }}>Wallet PIN (6 digits)</label>
                           <input type="password" inputMode="numeric" maxLength={6}
                             value={sendPin} onChange={e => setSendPin(e.target.value.replace(/\D/g, ""))}
                             placeholder="••••••"
                             className="w-full py-3 text-center text-xl font-black text-white rounded-xl outline-none tracking-widest"
-                            style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.25)", caretColor: "#60a5fa" }} />
+                            style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.25)", caretColor: "#fbbf24" }} />
                         </div>
                         <button onClick={handleTttWalletSend}
                           disabled={isSending || !tipAmount || parseFloat(tipAmount) <= 0 || sendPin.length !== 6}
                           className="w-full py-3 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-40 hover:opacity-90 mb-2.5"
-                          style={{ background: "linear-gradient(135deg, #0ea5e9 0%, #0050ff 100%)", color: "white", border: "1px solid rgba(0,150,255,0.5)" }}>
+                          style={{ background: "linear-gradient(135deg, #c8960c 0%, #f0d060 100%)", color: "#000", border: "1px solid rgba(220,180,60,0.5)" }}>
                           {isSending ? "Sending..." : <><Wallet className="inline w-4 h-4 mr-1.5 mb-0.5" /> TTT Wallet · Send KAS</>}
                         </button>
                       </>
@@ -1124,7 +1124,7 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
             <div className="fixed inset-0 z-[201] flex items-center justify-center p-4 overflow-y-auto">
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-md rounded-3xl p-6 my-4"
-                style={{ background: "linear-gradient(135deg, rgba(0,15,60,0.99), rgba(0,8,30,0.99))", border: "1px solid rgba(0,120,255,0.25)", boxShadow: "0 32px 80px rgba(0,0,0,0.8)" }}>
+                style={{ background: "linear-gradient(135deg, rgba(30,20,5,0.99), rgba(15,10,2,0.99))", border: "1px solid rgba(200,150,40,0.25)", boxShadow: "0 32px 80px rgba(0,0,0,0.8)" }}>
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-white font-black text-xl">Edit Profile</h3>
                   <button onClick={() => setShowEditProfile(false)} className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
@@ -1133,7 +1133,7 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-1 mb-5 p-1 rounded-xl" style={{ background: "rgba(0,20,60,0.6)" }}>
+                <div className="flex gap-1 mb-5 p-1 rounded-xl" style={{ background: "rgba(40,30,10,0.4)" }}>
                   {[
                     { id: "profile", label: "Profile" },
                     { id: "avatar", label: "Avatar" },
@@ -1142,9 +1142,9 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                     <button key={tab.id} onClick={() => setEditTab(tab.id)}
                       className="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
                       style={{
-                        background: editTab === tab.id ? "rgba(0,100,255,0.6)" : "transparent",
-                        color: editTab === tab.id ? "white" : "rgba(96,165,250,0.5)",
-                        border: editTab === tab.id ? "1px solid rgba(0,150,255,0.4)" : "1px solid transparent",
+                        background: editTab === tab.id ? "rgba(200,150,40,0.5)" : "transparent",
+                        color: editTab === tab.id ? "#000" : "rgba(200,150,40,0.5)",
+                        border: editTab === tab.id ? "1px solid rgba(220,180,60,0.4)" : "1px solid transparent",
                       }}>
                       {tab.label}
                     </button>
@@ -1155,58 +1155,58 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                   {/* PROFILE TAB */}
                   {editTab === "profile" && <>
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Display Name</label>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(200,150,40,0.6)" }}>Display Name</label>
                       <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Your username"
                         className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
-                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                        style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24" }} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Kaspa Wallet Address</label>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(200,150,40,0.6)" }}>Kaspa Wallet Address</label>
                       <input value={editWallet} onChange={e => setEditWallet(e.target.value)} placeholder="kaspa:q..."
                         className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm font-mono"
-                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                        style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24" }} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>What I'm building on Kaspa</label>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(200,150,40,0.6)" }}>What I'm building on Kaspa</label>
                       <textarea value={editProject} onChange={e => setEditProject(e.target.value)} placeholder="e.g. Building a KRC-20 DeFi protocol..." rows={3}
                         className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none resize-none"
-                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa", fontFamily: "monospace" }} />
+                        style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24", fontFamily: "monospace" }} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Project Site URL</label>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(200,150,40,0.6)" }}>Project Site URL</label>
                       <input value={editProjectSite} onChange={e => setEditProjectSite(e.target.value)} placeholder="https://myproject.xyz"
                         className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
-                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                        style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24" }} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>GitHub URL</label>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(200,150,40,0.6)" }}>GitHub URL</label>
                       <input value={editGithub} onChange={e => setEditGithub(e.target.value)} placeholder="https://github.com/..."
                         className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
-                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                        style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24" }} />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: "rgba(96,165,250,0.6)" }}>
+                      <label className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: "rgba(200,150,40,0.6)" }}>
                         <span>🌳</span> TipTree Profile
                       </label>
                       <div className="flex items-center gap-2">
-                        <span className="text-blue-400/40 text-sm pl-1">tiptr.ee/</span>
+                        <span className="text-amber-400/40 text-sm pl-1">tiptr.ee/</span>
                         <input value={editTiptree} onChange={e => setEditTiptree(e.target.value)} placeholder="yourusername"
                           className="flex-1 px-3 py-3 rounded-xl text-white outline-none text-sm"
-                          style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(234,88,12,0.3)", caretColor: "#fb923c" }} />
+                          style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24" }} />
                       </div>
-                      <p className="text-xs mt-1" style={{ color: "rgba(96,165,250,0.3)" }}>Link to your <a href="https://tiptr.ee" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "#fb923c" }}>tiptr.ee</a> profile</p>
+                      <p className="text-xs mt-1" style={{ color: "rgba(200,150,40,0.3)" }}>Link to your <a href="https://tiptr.ee" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "#fbbf24" }}>tiptr.ee</a> profile</p>
                     </div>
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: "rgba(96,165,250,0.6)" }}>
+                      <label className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: "rgba(200,150,40,0.6)" }}>
                         <span>💬</span> KNS Messaging
                       </label>
                       <div className="flex items-center gap-2">
                         <input value={editKnsMessaging} onChange={e => setEditKnsMessaging(e.target.value)} placeholder="yourname"
                           className="flex-1 px-3 py-3 rounded-xl text-white outline-none text-sm font-mono"
-                          style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,200,150,0.3)", caretColor: "#34d399" }} />
-                        <span className="text-emerald-400/50 text-sm pr-1 flex-shrink-0">.kas</span>
+                          style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24" }} />
+                        <span className="text-amber-400/50 text-sm pr-1 flex-shrink-0">.kas</span>
                       </div>
-                      <p className="text-xs mt-1" style={{ color: "rgba(96,165,250,0.3)" }}>Your KNS domain — lets anyone message you on Kaspa messaging apps</p>
+                      <p className="text-xs mt-1" style={{ color: "rgba(200,150,40,0.3)" }}>Your KNS domain — lets anyone message you on Kaspa messaging apps</p>
                     </div>
                   </>}
 
@@ -1214,22 +1214,22 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                   {editTab === "avatar" && <>
                     {/* Current avatar preview */}
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden" style={{ border: "2px solid rgba(0,150,255,0.4)" }}>
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden" style={{ border: "2px solid rgba(200,150,40,0.4)" }}>
                         <img src={editAvatarUrl || getAvatarUrl({ username: editName })} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div>
                         <p className="text-white font-bold text-sm">Current Avatar</p>
-                        <p className="text-xs mt-0.5" style={{ color: "rgba(96,165,250,0.4)" }}>Choose a preset or upload your own</p>
+                        <p className="text-xs mt-0.5" style={{ color: "rgba(200,150,40,0.4)" }}>Choose a preset or upload your own</p>
                       </div>
                     </div>
 
                     {/* Upload */}
                     <div>
-                      <label className="text-xs font-semibold mb-2 block" style={{ color: "rgba(96,165,250,0.6)" }}>Upload Custom Avatar</label>
+                      <label className="text-xs font-semibold mb-2 block" style={{ color: "rgba(200,150,40,0.6)" }}>Upload Custom Avatar</label>
                       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFileUpload} />
                       <button onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}
                         className="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:opacity-80 disabled:opacity-40"
-                        style={{ background: "rgba(0,80,200,0.2)", border: "1px dashed rgba(0,150,255,0.4)", color: "#93c5fd" }}>
+                        style={{ background: "rgba(40,30,10,0.2)", border: "1px dashed rgba(200,150,40,0.4)", color: "#fbbf24" }}>
                         <Upload className="w-4 h-4" />
                         {uploadingAvatar ? "Uploading..." : "Upload Image"}
                       </button>
@@ -1237,22 +1237,22 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
 
                     {/* Or custom URL */}
                     <div>
-                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(96,165,250,0.6)" }}>Or paste image URL</label>
+                      <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(200,150,40,0.6)" }}>Or paste image URL</label>
                       <input value={editAvatarUrl} onChange={e => setEditAvatarUrl(e.target.value)} placeholder="https://..."
                         className="w-full px-4 py-3 rounded-xl text-white outline-none text-sm"
-                        style={{ background: "rgba(0,40,140,0.15)", border: "1px solid rgba(0,120,255,0.2)", caretColor: "#60a5fa" }} />
+                        style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24" }} />
                     </div>
 
                     {/* Preset grid */}
                     <div>
-                      <label className="text-xs font-semibold mb-2 block" style={{ color: "rgba(96,165,250,0.6)" }}>Kaspa Anime Presets</label>
+                      <label className="text-xs font-semibold mb-2 block" style={{ color: "rgba(200,150,40,0.6)" }}>Kaspa Anime Presets</label>
                       <div className="grid grid-cols-4 gap-2">
                         {PRESET_AVATARS.map(p => (
                           <button key={p.id} onClick={() => setEditAvatarUrl(p.url)}
                             className="relative rounded-xl overflow-hidden transition-all hover:scale-105 active:scale-95"
                             style={{
-                              border: editAvatarUrl === p.url ? "2px solid #3b82f6" : "2px solid rgba(0,80,180,0.3)",
-                              boxShadow: editAvatarUrl === p.url ? "0 0 12px rgba(59,130,246,0.6)" : "none",
+                              border: editAvatarUrl === p.url ? "2px solid #fbbf24" : "2px solid rgba(200,150,40,0.3)",
+                              boxShadow: editAvatarUrl === p.url ? "0 0 12px rgba(250,200,50,0.5)" : "none",
                               aspectRatio: "1",
                             }}>
                             <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
@@ -1316,8 +1316,8 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                   </>}
 
                   <button onClick={handleSaveProfile} disabled={savingProfile || !editName.trim()}
-                    className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #0050ff 0%, #003acc 100%)", boxShadow: "0 4px 20px rgba(0,80,255,0.3)" }}>
+                    className="w-full py-3 rounded-xl text-sm font-bold text-black transition-all disabled:opacity-40 hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #c8960c 0%, #f0d060 100%)", boxShadow: "0 4px 20px rgba(200,150,40,0.3)" }}>
                     {savingProfile ? "Saving..." : "Save Profile"}
                   </button>
                 </div>
