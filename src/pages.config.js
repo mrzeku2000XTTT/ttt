@@ -278,7 +278,6 @@ import VibeWallet from './pages/VibeWallet';
 import VoxInvicta from './pages/VoxInvicta';
 import Waitlist from './pages/Waitlist';
 import Wallet from './pages/Wallet';
-import WalletHub from './pages/WalletHub';
 import Window from './pages/Window';
 import WorkerTask from './pages/WorkerTask';
 import X from './pages/X';
@@ -525,7 +524,6 @@ export const PAGES = {
     "VoxInvicta": VoxInvicta,
     "Waitlist": Waitlist,
     "Wallet": Wallet,
-    "WalletHub": WalletHub,
     "Window": Window,
     "WorkerTask": WorkerTask,
     "X": X,
@@ -540,7 +538,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "WalletHub",
+    mainPage: "Home",
     Pages: PAGES,
     Layout: __Layout,
 };

@@ -218,7 +218,7 @@ const AuthenticatedApp = () => {
       <Route path="/StoryboardTheme" element={<StoryboardThemePage />} />
       <Route path="/MoodBoard" element={<MoodBoardPage />} />
       <Route path="/About" element={<AboutPage />} />
-      <Route path="/Wallet" element={<WalletHubPage />} />
+      <Route path="/WalletHub" element={<WalletHubPage />} />
       <Route path="/Kasthletics" element={<KasthleticsPage />} />
       <Route path="/MetaMimic" element={<MetaMimicPage />} />
       <Route path="/ARC" element={<ARCPage />} />

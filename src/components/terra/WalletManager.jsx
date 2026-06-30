@@ -357,10 +357,8 @@ function WalletCards({ wallets, activeIdx, onChangeIdx, balances, prices, loadin
   if (!wallet) return null;
 
   const kasBalanceNum = parseFloat(balances[wallet.address]) || 0;
-  const kasPriceNum = prices ? parseFloat(prices) : 0.12; // Fallback price
+  const kasPriceNum = parseFloat(prices) || 0;
   const usdValue = kasBalanceNum * kasPriceNum;
-  
-  console.log('[WalletCards] Balance:', kasBalanceNum, 'Price:', kasPriceNum, 'USD:', usdValue);
 
   return (
     <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{ userSelect: 'none' }}>
