@@ -10,6 +10,7 @@ import { runAutonomousAgent } from "@/components/tttv3/agentLoop";
 import AgentStepLog from "@/components/tttv3/AgentStepLog";
 import AgentReasoningBubble from "@/components/tttv3/AgentReasoningBubble";
 import AgentPlanChecklist from "@/components/tttv3/AgentPlanChecklist";
+import ReactMarkdown from "react-markdown";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
@@ -396,7 +397,7 @@ ${appsContext || "(loading…)"}
 
 ## Response Format
 Always return:
-- reply: Clear, helpful answer. Reference exact routes like "/Hikaru" when directing users. Be specific about what each page does.
+- reply: Clear, helpful answer formatted with Markdown for maximum readability. Use bold for key terms and app names, bullet lists for enumerations, inline code for routes and paths, and subheadings to break up long answers. Keep paragraphs short (2-3 sentences). Be specific about what each page does and reference exact routes like "/Hikaru".
 - launch: true only if the user wants you to actively DO something inside TTT (navigate, post, automate)
 - goal: what the computer should accomplish (if launch=true)
 - needs_info: true if you need more info before launching
@@ -697,7 +698,21 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
                     </div>
                   </div>
                 )}
-                <div className="max-w-3xl mx-auto px-6 space-y-4">
+                <style>{`
+                  .zk-md p { margin: 0.5em 0; line-height: 1.6; }
+                  .zk-md ul, .zk-md ol { margin: 0.5em 0; padding-left: 1.4em; }
+                  .zk-md li { margin: 0.2em 0; }
+                  .zk-md h1, .zk-md h2, .zk-md h3 { font-weight: 700; margin: 0.8em 0 0.3em; color: #fff; line-height: 1.3; }
+                  .zk-md h1 { font-size: 1.05em; } .zk-md h2 { font-size: 0.98em; } .zk-md h3 { font-size: 0.9em; }
+                  .zk-md code { background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; font-family: monospace; }
+                  .zk-md pre { background: rgba(0,0,0,0.4); padding: 0.7em; border-radius: 8px; overflow-x: auto; margin: 0.5em 0; }
+                  .zk-md pre code { background: none; padding: 0; }
+                  .zk-md a { color: #fbbf24; text-decoration: underline; }
+                  .zk-md strong { color: #fff; font-weight: 700; }
+                  .zk-md blockquote { border-left: 3px solid rgba(245,158,11,0.4); padding-left: 0.9em; margin: 0.5em 0; opacity: 0.7; }
+                  .zk-md hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 0.8em 0; }
+                `}</style>
+                <div className="max-w-3xl mx-auto px-6 space-y-5">
                   {messages.map((m, i) => {
                     if (m.role === "plan") return <AgentPlanChecklist key={i} plan={m.plan} />;
                     if (m.role === "reasoning") return <AgentReasoningBubble key={i} msg={m} />;
@@ -705,21 +720,21 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
                     return (
                       <div key={i} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
                         {!isUser && (
-                          <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-0.5 font-black text-[10px]"
-                            style={{ background: ACCENT, color: "#000", clipPath: "polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%)", fontFamily: FONT }}>ZK</div>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[11px] font-bold"
+                            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>ZK</div>
                         )}
-                        <div className={`max-w-[75%] px-4 py-3 text-[13px] leading-relaxed`}
+                        <div className={`max-w-[78%] px-4 py-3 rounded-2xl text-[13.5px] leading-relaxed`}
                           style={{
-                            background: isUser ? "rgba(217,119,6,0.08)" : "rgba(255,255,255,0.03)",
-                            border: `2px solid ${isUser ? ACCENT : "rgba(217,119,6,0.2)"}`,
-                            color: isUser ? ACCENT_BRIGHT : "rgba(220,180,100,0.85)",
-                            boxShadow: isUser ? "3px 3px 0px #78350f" : "2px 2px 0px rgba(0,0,0,0.4)",
+                            background: isUser ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.04)",
+                            border: `1px solid ${isUser ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.08)"}`,
+                            color: isUser ? "#fbbf24" : "rgba(255,255,255,0.9)",
                           }}>
-                          {isUser && <span className="text-[9px] block mb-1 font-black uppercase tracking-widest" style={{ color: "rgba(217,119,6,0.5)", fontFamily: FONT }}>◆ OPERATOR INPUT</span>}
-                          {!isUser && <span className="text-[9px] block mb-1 font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: FONT }}>▶ ZK UNIT RESPONSE</span>}
-                          {m.content || (i === messages.length - 1 && loading && (
-                            <div className="flex gap-1.5 py-1">{[0,1,2].map(j => <div key={j} className="w-2 h-2 animate-bounce" style={{ background: ACCENT, animationDelay: `${j*0.15}s` }} />)}</div>
-                          ))}
+                          {isUser
+                            ? <p className="whitespace-pre-wrap">{m.content}</p>
+                            : <ReactMarkdown className="zk-md">{m.content}</ReactMarkdown>}
+                          {!m.content && i === messages.length - 1 && loading && (
+                            <div className="flex gap-1.5 py-1">{[0,1,2].map(j => <div key={j} className="w-2 h-2 rounded-full animate-bounce" style={{ background: "#f59e0b", animationDelay: `${j*0.15}s` }} />)}</div>
+                          )}
                         </div>
                       </div>
                     );
