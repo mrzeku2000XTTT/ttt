@@ -8,8 +8,25 @@ import {
   Volume2, VolumeX, LogIn, LogOut, Sparkles, Menu
 } from "lucide-react";
 
-const GTA_SOUND_URL = "https://media.base44.com/files/public/6901295fa9bcfaa0f5ba2c2a/667b75ed7_gta-menu.mp3";
-const playGTA = () => { try { const a = new Audio(GTA_SOUND_URL); a.volume = 0.7; a.play().catch(() => {}); } catch {} };
+const playGTA = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const frequencies = [880, 1100, 1320];
+    frequencies.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.06);
+      gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + i * 0.06 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.06 + 0.12);
+      osc.start(ctx.currentTime + i * 0.06);
+      osc.stop(ctx.currentTime + i * 0.06 + 0.12);
+    });
+  } catch {}
+};
 
 import HeroHeader from "@/components/tttv2/HeroHeader";
 import LoginButton from "@/components/tttv2/LoginButton";
