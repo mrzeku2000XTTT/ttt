@@ -1101,22 +1101,22 @@ export default function TTTLandingPage() {
         allow="autoplay; encrypted-media" className="pointer-events-none absolute h-px w-px opacity-0" />
 
       {/* === MAIN GAME TITLE SCREEN CONTENT === */}
-      <section className="relative z-10 min-h-screen flex flex-col items-center justify-between px-6 py-10 text-center">
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-10 text-center">
 
-        {/* TOP — GAME TITLE (centered in upper half) */}
-        <div className="flex-1 flex flex-col items-center justify-center">
+        {/* CENTERED CONTENT BLOCK */}
+        <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center flex-1">
           <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.4, ease: "easeOut" }}>
             {/* Decorative line above */}
             <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="h-px w-16" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.5))" }} />
+              <div className="h-px w-16 sm:w-24" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.5))" }} />
               <div className="text-[9px] tracking-[0.5em] uppercase" style={{ color: "rgba(200,150,40,0.4)", fontFamily: "monospace" }}>EST. 2024</div>
-              <div className="h-px w-16" style={{ background: "linear-gradient(90deg, rgba(200,150,40,0.5), transparent)" }} />
+              <div className="h-px w-16 sm:w-24" style={{ background: "linear-gradient(90deg, rgba(200,150,40,0.5), transparent)" }} />
             </div>
 
             {/* Giant Title — clickable */}
             <motion.button type="button" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
               onClick={() => { sounds.playSelect(); navigate("/AppStoreV2"); }}
-              className="text-[88px] sm:text-[120px] font-black leading-none select-none focus:outline-none cursor-pointer"
+              className="text-[72px] sm:text-[96px] md:text-[120px] font-black leading-none select-none focus:outline-none cursor-pointer"
               style={{ fontFamily: "'Georgia', 'Times New Roman', serif",
                 background: "linear-gradient(180deg, #fff5cc 0%, #f0d060 25%, #c8960c 60%, #6b4200 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
@@ -1126,34 +1126,34 @@ export default function TTTLandingPage() {
             </motion.button>
 
             {/* Subtitle tagline */}
-            <div className="text-[12px] tracking-[0.7em] uppercase mt-2 mb-1"
+            <div className="text-[11px] sm:text-[12px] tracking-[0.6em] uppercase mt-2 mb-1"
               style={{ color: "rgba(210,165,60,0.7)", fontFamily: "monospace" }}>
               TAP · TO · TIP
             </div>
-            <div className="text-[10px] tracking-[0.3em]"
+            <div className="text-[9px] sm:text-[10px] tracking-[0.3em]"
               style={{ color: "rgba(160,120,50,0.45)", fontFamily: "monospace" }}>
               地球到火星 · POWERED BY KASPA
             </div>
           </motion.div>
         </div>
 
-        {/* BOTTOM — MENU (anchored to bottom) */}
-        <div className="flex flex-col items-center w-full max-w-sm">
+        {/* BOTTOM — MENU */}
+        <div className="flex flex-col items-center w-full px-4 pb-8">
 
           {/* PRESS START — pulsing */}
           <motion.button type="button" onClick={handlePlayButton}
             animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-            className="mb-6 text-[14px] tracking-[0.5em] uppercase focus:outline-none"
+            className="mb-6 text-[13px] sm:text-[14px] tracking-[0.5em] uppercase focus:outline-none"
             style={{ color: "#f5d050", fontFamily: "monospace", background: "transparent", border: "none",
               textShadow: "0 0 24px rgba(245,200,50,0.7), 0 0 50px rgba(200,130,0,0.4)" }}>
             {showPlayer ? (isPlaying ? "▌▌  PAUSE" : "▶  PLAY") : "▶  PRESS START"}
           </motion.button>
 
           {/* Divider */}
-          <div className="w-56 h-px mb-4" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.35), transparent)" }} />
+          <div className="w-48 sm:w-56 h-px mb-4" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.35), transparent)" }} />
 
           {/* MENU ITEMS — horizontal buttons */}
-          <div className="w-full flex flex-row justify-center gap-3 flex-wrap">
+          <div className="w-full flex flex-row justify-center gap-2 sm:gap-3 flex-wrap">
             {[
               { label: "TAP", path: "/AppStoreV2" },
               { label: "TO", path: "/Feed" },
