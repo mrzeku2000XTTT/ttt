@@ -1057,25 +1057,23 @@ export default function TTTLandingPage() {
           style={{ background: "rgba(0,0,0,0.6)", border: "1px solid rgba(217,119,6,0.35)", color: "rgba(217,119,6,0.55)", fontFamily: "'Impact', sans-serif" }}>EXIT ◆</span>
       </div>
 
-      {/* Orb — desaturated + amber tinted */}
+      {/* Orb — full bleed, mix-blend-mode to kill gray background */}
       <motion.div className="absolute inset-0"
-        initial={{ scale: 0.42, opacity: 0 }}
+        initial={{ scale: 1.1, opacity: 0 }}
         animate={{ scale: 1, y: [0, -10, 0], opacity: [1, 0.95, 1] }}
         transition={{ scale: { duration: 1.4, ease: "easeOut" }, opacity: { duration: 0.8 }, y: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.4 } }}
-        style={{ filter: "saturate(0.4) sepia(0.4) brightness(0.7) contrast(1.1)" }}>
-        <img src={ORB_IMAGE} alt="TTT orb" className="h-full w-full scale-90 object-contain object-center opacity-80 transform-gpu md:scale-[0.78]" />
+        style={{ mixBlendMode: "luminosity", filter: "saturate(0.3) sepia(0.5) brightness(0.65) contrast(1.2)" }}>
+        <img src={ORB_IMAGE} alt="TTT orb" className="h-full w-full object-cover object-center transform-gpu" style={{ mixBlendMode: "multiply" }} />
       </motion.div>
 
-      <div className="absolute inset-x-0 bottom-0 h-1/2" style={{ background: "linear-gradient(to top, #111 0%, rgba(17,17,17,0.7) 50%, transparent 100%)" }} />
+      <div className="absolute inset-x-0 bottom-0 h-1/2" style={{ background: "linear-gradient(to top, #111 0%, rgba(17,17,17,0.6) 60%, transparent 100%)" }} />
+      <div className="absolute inset-x-0 top-0 h-1/4" style={{ background: "linear-gradient(to bottom, #111 0%, transparent 100%)" }} />
 
       <iframe ref={playerRef} title="Mind On My Kaspa" src={hasStartedMusic ? musicSrc : "about:blank"}
         allow="autoplay; encrypted-media" className="pointer-events-none absolute h-px w-px opacity-0" />
 
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-8 pt-10 text-center sm:px-6">
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative h-[min(62vh,620px)] w-full">
-          <Link to="/TTTGate" aria-label="Launch TTT portal" className="absolute inset-0" />
-        </motion.div>
+        <Link to="/TTTGate" aria-label="Launch TTT portal" className="absolute inset-0 z-0" />
 
         <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25 }}
           className="mb-1 text-sm font-black tracking-[0.3em] uppercase"
