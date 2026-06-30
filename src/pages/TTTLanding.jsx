@@ -671,7 +671,7 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
         {activeTab === "chat" && (
           <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
             {computerOpen && (
-              <div className="flex-shrink-0" style={{ height: "55%", borderBottom: `3px solid ${ACCENT}` }}>
+              <div className="flex-shrink-0" style={{ height: "38%", minHeight: 180, borderBottom: `3px solid ${ACCENT}` }}>
                 <AgentComputer ref={computerRef} url={computerUrl} status={computerStatus}
                   narrations={computerNarrations} cursor={computerCursor} isActive={agentRunning} />
               </div>
