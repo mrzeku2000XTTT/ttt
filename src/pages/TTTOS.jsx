@@ -178,8 +178,24 @@ export default function TTTOS() {
   };
 
   const openAppInWindow = (app) => {
+    const windowId = `iframe-${app.path}-${Date.now()}`;
+    const offset = iframeWindows.length * 30;
+    // Use absolute URL — relative URLs break on published domains
+    const appUrl = window.location.origin + createPageUrl(app.path);
+    
+    setIframeWindows(prev => [...prev, { 
+      ...app, 
+      windowId,
+      url: appUrl,
+      isLoading: true,
+      loadFailed: false
+    }]);
+    setWindowPositions(prev => ({
+      ...prev,
+      [windowId]: { x: 50 + offset, y: 50 + offset }
+    }));
+    setActiveIframeWindow(windowId);
     setStartMenuOpen(false);
-    navigate(createPageUrl(app.path));
   };
 
   const handleIframeError = (windowId, app) => {
