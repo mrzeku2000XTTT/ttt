@@ -443,12 +443,12 @@ export default function Layout({ children, currentPageName }) {
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                 )}
-                <Link 
-                  to={createPageUrl("Home")}
+                <button 
+                  onClick={() => { window.location.href = createPageUrl("Home"); }}
                   className="flex items-center gap-2 group flex-shrink-0"
                 >
                   <span className="text-white font-black text-2xl sm:text-3xl tracking-tight">TTT</span>
-                </Link>
+                </button>
               </div>
 
               <div className="hidden lg:flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
@@ -625,7 +625,7 @@ export default function Layout({ children, currentPageName }) {
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                 )}
-                <Link to={createPageUrl("Home")}>
+                <Link to={createPageUrl("Countdown")}>
                   <Button
                     variant="ghost"
                     size="sm"
