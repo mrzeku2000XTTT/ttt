@@ -467,18 +467,18 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="fixed z-50 bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 cursor-pointer"
         onClick={onToggleMinimize}
-        style={{ background: "rgba(6,6,12,0.97)", border: "1px solid rgba(167,139,250,0.35)", borderRadius: 50, boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
-        <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg,#a78bfa,#6366f1)" }}>
-          <span className="text-white text-[10px] font-black">ZK</span>
-        </div>
-        <Zap className="w-3.5 h-3.5" style={{ color: "#a78bfa" }} />
+        style={{ background: "#020d12", border: "1px solid #00ffe0", borderRadius: 4, boxShadow: "0 0 16px rgba(0,255,224,0.4)", fontFamily: "'Courier New', monospace" }}>
+        <span className="text-[11px] font-bold" style={{ color: "#00ffe0" }}>[ZK_TERMINAL]</span>
+        <Zap className="w-3.5 h-3.5" style={{ color: "#00ffe0" }} />
       </motion.div>
     );
   }
 
-  const BG = "#0d0d14";
-  const SIDEBAR_BG = "#0a0a11";
-  const BORDER = "rgba(255,255,255,0.07)";
+  const BG = "#020d12";
+  const SIDEBAR_BG = "#010a0e";
+  const BORDER = "rgba(0,255,224,0.15)";
+  const CYAN = "#00ffe0";
+  const FONT = "'Courier New', 'JetBrains Mono', monospace";
 
   // Groups sessions by time
   const today = new Date(); today.setHours(0,0,0,0);
@@ -501,62 +501,69 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex"
-      style={{ background: BG, fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      style={{ background: BG, fontFamily: FONT,
+        backgroundImage: "linear-gradient(rgba(0,255,224,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,224,0.03) 1px, transparent 1px)",
+        backgroundSize: "32px 32px" }}>
 
-      {/* LEFT SIDEBAR — DeepSeek style */}
-      <div className="flex flex-col flex-shrink-0" style={{ width: sidebarOpen ? 240 : 0, background: SIDEBAR_BG, borderRight: `1px solid ${BORDER}`, overflow: "hidden", transition: "width 0.2s ease" }}>
+      {/* LEFT SIDEBAR — Cyber Terminal */}
+      <div className="flex flex-col flex-shrink-0" style={{ width: sidebarOpen ? 220 : 0, background: SIDEBAR_BG, borderRight: `1px solid ${BORDER}`, overflow: "hidden", transition: "width 0.2s ease" }}>
         {sidebarOpen && <>
           {/* Logo */}
-          <div className="flex items-center gap-2.5 px-4 pt-5 pb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg,#a78bfa,#6366f1)" }}>
-              <span className="text-white text-[12px] font-black">ZK</span>
+          <div className="flex items-center gap-2 px-4 pt-5 pb-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${CYAN}`, boxShadow: `0 0 8px ${CYAN}` }}>
+              <span className="text-[10px] font-bold" style={{ color: CYAN }}>ZK</span>
             </div>
-            <span className="text-white font-bold text-sm tracking-wide">ZK Agent</span>
+            <span className="text-[13px] font-bold tracking-widest uppercase" style={{ color: CYAN }}>ZK_TERMINAL</span>
           </div>
 
           {/* New Chat button */}
-          <div className="px-3 pb-3">
+          <div className="px-3 pt-3 pb-2">
             <button onClick={newChat}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all hover:bg-white/5"
-              style={{ border: `1px solid ${BORDER}`, color: "rgba(255,255,255,0.7)" }}>
-              <span className="text-lg leading-none" style={{ color: "#a78bfa" }}>+</span> New chat
+              className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-widest transition-all"
+              style={{ border: `1px solid ${BORDER}`, color: CYAN, background: "rgba(0,255,224,0.04)" }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 8px rgba(0,255,224,0.3)`}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+              + NEW_CHAT
             </button>
           </div>
 
           {/* Session list */}
-          <div className="flex-1 overflow-y-auto px-2 space-y-4 pb-4" style={{ scrollbarWidth: "none" }}>
+          <div className="flex-1 overflow-y-auto px-2 space-y-3 pb-4 pt-2" style={{ scrollbarWidth: "none" }}>
             {Object.entries(grouped).map(([label, items]) => items.length > 0 && (
               <div key={label}>
-                <div className="px-2 py-1 text-[11px] font-semibold text-white/30 tracking-wider">{label}</div>
+                <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: "rgba(0,255,224,0.35)" }}>{label}</div>
                 {items.map(s => (
                   <div key={s.id} onClick={() => selectSession(s.id)}
-                    className="group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all text-[13px]"
-                    style={{ background: activeSessionId === s.id ? "rgba(167,139,250,0.12)" : "transparent", color: activeSessionId === s.id ? "#c4b5fd" : "rgba(255,255,255,0.55)" }}>
-                    <span className="truncate flex-1">{s.title || "New chat"}</span>
+                    className="group flex items-center justify-between px-2 py-1.5 cursor-pointer transition-all text-[11px]"
+                    style={{
+                      borderLeft: activeSessionId === s.id ? `2px solid ${CYAN}` : "2px solid transparent",
+                      color: activeSessionId === s.id ? CYAN : "rgba(0,255,224,0.45)",
+                      background: activeSessionId === s.id ? "rgba(0,255,224,0.06)" : "transparent",
+                    }}>
+                    <span className="truncate flex-1">SESSION: {(s.title || "NEW_CHAT").toUpperCase()}</span>
                     <button onClick={(e) => deleteSession(s.id, e)}
-                      className="opacity-0 group-hover:opacity-100 ml-1 flex-shrink-0 p-0.5 rounded hover:bg-white/10 transition-all"
-                      style={{ color: "rgba(255,255,255,0.3)" }}>
-                      <X className="w-3 h-3" />
+                      className="opacity-0 group-hover:opacity-100 ml-1 flex-shrink-0"
+                      style={{ color: "rgba(0,255,224,0.4)" }}>
+                      <X className="w-2.5 h-2.5" />
                     </button>
                   </div>
                 ))}
               </div>
             ))}
             {sessions.length === 0 && (
-              <div className="px-3 text-[12px] text-white/20">No conversations yet</div>
+              <div className="px-3 text-[10px]" style={{ color: "rgba(0,255,224,0.25)" }}>// no sessions</div>
             )}
           </div>
 
-          {/* Bottom profile */}
+          {/* Bottom — LOG_OUT style */}
           <div className="px-3 py-3" style={{ borderTop: `1px solid ${BORDER}` }}>
-            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-all">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg,#a78bfa,#6366f1)" }}>
-                <span className="text-white text-[11px] font-bold">U</span>
-              </div>
+            <div className="flex items-center gap-2 px-2 py-2 cursor-pointer transition-all hover:bg-cyan-900/10">
+              <div className="w-6 h-6 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${CYAN}`, color: CYAN, fontSize: 9, fontWeight: 700 }}>U</div>
               <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-semibold text-white/80 truncate">My Account</div>
-                <div className="text-[10px] text-white/30">TTT User</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: CYAN }}>MY_ACCOUNT</div>
+                <div className="text-[9px]" style={{ color: "rgba(0,255,224,0.35)" }}>TTT_USER</div>
               </div>
+              <span className="text-[9px] font-bold" style={{ color: "rgba(0,255,224,0.4)" }}>[LOG_OUT]</span>
             </div>
           </div>
         </>}
@@ -566,30 +573,31 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
       <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
 
         {/* Top nav bar */}
-        <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ borderBottom: `1px solid ${BORDER}` }}>
-          <button onClick={() => setSidebarOpen(v => !v)} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: "rgba(255,255,255,0.4)" }}>
-            <LayoutGrid className="w-4 h-4" />
+        <div className="flex items-center gap-2 px-4 py-2 flex-shrink-0" style={{ borderBottom: `1px solid ${BORDER}` }}>
+          <button onClick={() => setSidebarOpen(v => !v)} className="p-1.5 transition-colors" style={{ color: CYAN }}>
+            <LayoutGrid className="w-3.5 h-3.5" />
           </button>
 
-          <span className="text-white/60 text-sm font-medium flex-1 truncate">
-            {activeSessionId ? (sessions.find(s => s.id === activeSessionId)?.title || "ZK Agent") : "ZK Agent"}
+          <span className="text-[11px] font-bold flex-1 truncate tracking-wider" style={{ color: "rgba(0,255,224,0.5)" }}>
+            {">"} {(activeSessionId ? (sessions.find(s => s.id === activeSessionId)?.title || "ZK_AGENT") : "ZK_AGENT").toUpperCase()}
           </span>
 
-          {/* Tab pills — DeepSeek style */}
+          {/* Tab pills — terminal bracket style */}
           <div className="flex items-center gap-1">
             {[
-              { id: "chat", icon: <MessageCircle className="w-3.5 h-3.5" />, label: "Chat" },
-              { id: "apps", icon: <LayoutGrid className="w-3.5 h-3.5" />, label: "Apps" },
-              { id: "image", icon: <ImageIcon className="w-3.5 h-3.5" />, label: "Image" },
+              { id: "chat", label: "CHAT" },
+              { id: "apps", label: "APPS" },
+              { id: "image", label: "IMAGE" },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-full transition-all"
+                className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest transition-all"
                 style={{
-                  background: activeTab === tab.id ? "rgba(167,139,250,0.15)" : "transparent",
-                  color: activeTab === tab.id ? "#c4b5fd" : "rgba(255,255,255,0.4)",
-                  border: activeTab === tab.id ? "1px solid rgba(167,139,250,0.3)" : "1px solid transparent",
+                  border: `1px solid ${activeTab === tab.id ? CYAN : "rgba(0,255,224,0.2)"}`,
+                  color: activeTab === tab.id ? CYAN : "rgba(0,255,224,0.35)",
+                  background: activeTab === tab.id ? "rgba(0,255,224,0.08)" : "transparent",
+                  boxShadow: activeTab === tab.id ? `0 0 8px rgba(0,255,224,0.25)` : "none",
                 }}>
-                {tab.icon} {tab.label}
+                [{tab.label}]
               </button>
             ))}
           </div>
@@ -597,23 +605,23 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
           {/* Model picker */}
           <div className="relative">
             <button onClick={() => setShowModels(!showModels)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-full transition-all"
-              style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}`, color: model.color }}>
-              {model.label.split(" ")[0]} <ChevronDown className="w-3 h-3" />
+              className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all"
+              style={{ border: `1px solid rgba(0,255,224,0.2)`, color: CYAN, background: "transparent" }}>
+              {model.label.split(" ")[0]} <ChevronDown className="w-2.5 h-2.5" />
             </button>
             <AnimatePresence>
               {showModels && (
                 <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="absolute top-full right-0 mt-1 z-10 py-1 rounded-xl shadow-2xl"
-                  style={{ background: "#13131f", border: `1px solid ${BORDER}`, minWidth: 190 }}>
+                  className="absolute top-full right-0 mt-1 z-10 py-1"
+                  style={{ background: "#010a0e", border: `1px solid ${CYAN}`, boxShadow: `0 0 20px rgba(0,255,224,0.2)`, minWidth: 180 }}>
                   {AI_MODELS.map(m => (
                     <button key={m.id} onClick={() => { setModel(m); setShowModels(false); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left hover:bg-white/5 transition-colors">
-                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
-                      <div>
-                        <div className="text-[12px] font-semibold" style={{ color: model.id === m.id ? m.color : "rgba(255,255,255,0.75)" }}>{m.label}</div>
-                        <div className="text-[10px] text-white/30">{m.maker}</div>
-                      </div>
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors"
+                      style={{ background: model.id === m.id ? "rgba(0,255,224,0.08)" : "transparent" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(0,255,224,0.05)"}
+                      onMouseLeave={e => e.currentTarget.style.background = model.id === m.id ? "rgba(0,255,224,0.08)" : "transparent"}>
+                      <div className="w-1.5 h-1.5 flex-shrink-0" style={{ background: CYAN }} />
+                      <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: model.id === m.id ? CYAN : "rgba(0,255,224,0.5)" }}>{m.label}</div>
                     </button>
                   ))}
                 </motion.div>
@@ -623,55 +631,55 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
 
           {/* Computer toggle */}
           <button onClick={() => setComputerOpen(v => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-full transition-all"
+            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all"
             style={computerOpen
-              ? { background: "linear-gradient(90deg,#06b6d4,#a855f7)", color: "#000" }
-              : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", border: `1px solid ${BORDER}` }}>
-            {computerOpen ? <Monitor className="w-3.5 h-3.5" /> : <MonitorOff className="w-3.5 h-3.5" />}
-            Computer
+              ? { border: `1px solid ${CYAN}`, color: "#000", background: CYAN, boxShadow: `0 0 12px rgba(0,255,224,0.5)` }
+              : { border: `1px solid rgba(0,255,224,0.2)`, color: "rgba(0,255,224,0.5)", background: "transparent" }}>
+            {computerOpen ? <Monitor className="w-3 h-3" /> : <MonitorOff className="w-3 h-3" />}
+            [SYS]
           </button>
 
           {agentRunning && (
-            <button onClick={stopAgent} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-bold"
-              style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)" }}>
-              <StopCircle className="w-3.5 h-3.5" /> Stop
+            <button onClick={stopAgent} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold uppercase"
+              style={{ border: "1px solid rgba(239,68,68,0.5)", color: "#f87171", background: "rgba(239,68,68,0.08)" }}>
+              <StopCircle className="w-3 h-3" /> [STOP]
             </button>
           )}
 
-          <button onClick={onToggleMinimize} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: "rgba(255,255,255,0.3)" }} title="Minimize">
-            <ChevronDown className="w-4 h-4" />
+          <button onClick={onToggleMinimize} className="px-2 py-1 text-[10px] font-bold transition-colors" style={{ color: "rgba(0,255,224,0.4)" }} title="Minimize">
+            [MIN]
           </button>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: "rgba(255,255,255,0.3)" }}>
-            <X className="w-4 h-4" />
+          <button onClick={onClose} className="px-2 py-1 text-[10px] font-bold transition-colors" style={{ color: "rgba(0,255,224,0.4)" }}>
+            [X]
           </button>
         </div>
 
         {/* CHAT TAB BODY */}
         {activeTab === "chat" && (
           <div className="flex-1 flex overflow-hidden" style={{ minHeight: 0 }}>
-            {/* Messages */}
             <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
-              <div ref={scrollRef} className="flex-1 overflow-y-auto py-6" style={{ minHeight: 0, scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.08) transparent" }}>
+              <div ref={scrollRef} className="flex-1 overflow-y-auto py-6" style={{ minHeight: 0, scrollbarWidth: "thin", scrollbarColor: `rgba(0,255,224,0.15) transparent` }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center px-8">
-                    <div className="w-16 h-16 rounded-2xl mb-4 flex items-center justify-center" style={{ background: "linear-gradient(135deg,#a78bfa,#6366f1)" }}>
-                      <Bot className="w-8 h-8 text-white" />
+                    <div className="w-20 h-20 mb-5 flex items-center justify-center" style={{ border: `2px solid ${CYAN}`, boxShadow: `0 0 24px rgba(0,255,224,0.4), inset 0 0 24px rgba(0,255,224,0.05)` }}>
+                      <Bot className="w-8 h-8" style={{ color: CYAN }} />
                     </div>
-                    <div className="text-xl font-bold text-white mb-2">ZK Agent</div>
-                    <div className="text-sm text-white/40 max-w-sm leading-relaxed">Ask me anything about TTT, open any app, or let me automate tasks for you.</div>
-                    {/* Suggestion chips */}
+                    <div className="text-[18px] font-bold tracking-widest mb-2 uppercase" style={{ color: CYAN, textShadow: `0 0 16px ${CYAN}` }}>ZK_AGENT</div>
+                    <div className="text-[11px] max-w-xs leading-relaxed" style={{ color: "rgba(0,255,224,0.45)" }}>// Ask anything about TTT, open any app, or trigger autonomous tasks</div>
                     <div className="mt-6 flex flex-wrap gap-2 justify-center max-w-lg">
                       {["What apps does TTT have?", "Show me the Kaspa price", "Open the Feed", "Generate an image", "How do I send KAS?"].map(q => (
                         <button key={q} onClick={() => send(q)}
-                          className="px-4 py-2 rounded-full text-[13px] transition-all hover:bg-white/10"
-                          style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, color: "rgba(255,255,255,0.6)" }}>
-                          {q}
+                          className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all"
+                          style={{ border: `1px solid rgba(0,255,224,0.25)`, color: "rgba(0,255,224,0.6)", background: "rgba(0,255,224,0.03)" }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = CYAN}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,255,224,0.25)"}>
+                          {">"} {q}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-                <div className="max-w-3xl mx-auto px-6 space-y-6">
+                <div className="max-w-3xl mx-auto px-6 space-y-4">
                   {messages.map((m, i) => {
                     if (m.role === "plan") return <AgentPlanChecklist key={i} plan={m.plan} />;
                     if (m.role === "reasoning") return <AgentReasoningBubble key={i} msg={m} />;
@@ -679,25 +687,26 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
                     return (
                       <div key={i} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
                         {!isUser && (
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "linear-gradient(135deg,#a78bfa,#6366f1)" }}>
-                            <span className="text-white text-[11px] font-black">ZK</span>
-                          </div>
+                          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ border: `1px solid ${CYAN}`, color: CYAN, fontSize: 9, fontWeight: 700, boxShadow: `0 0 6px rgba(0,255,224,0.3)` }}>ZK</div>
                         )}
-                        <div className={`max-w-[75%] px-4 py-3 text-[14px] leading-relaxed rounded-2xl ${isUser ? "rounded-tr-sm" : "rounded-tl-sm"}`}
+                        <div className={`max-w-[75%] px-4 py-3 text-[13px] leading-relaxed`}
                           style={{
-                            background: isUser ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.05)",
-                            border: `1px solid ${isUser ? "rgba(167,139,250,0.25)" : BORDER}`,
-                            color: isUser ? "#e9d5ff" : "rgba(255,255,255,0.85)",
+                            background: isUser ? "rgba(0,255,224,0.06)" : "rgba(0,255,224,0.03)",
+                            border: `1px solid ${isUser ? "rgba(0,255,224,0.3)" : "rgba(0,255,224,0.12)"}`,
+                            color: isUser ? CYAN : "rgba(0,255,224,0.75)",
+                            boxShadow: isUser ? `0 0 8px rgba(0,255,224,0.1)` : "none",
                           }}>
+                          {isUser && <span className="text-[10px] block mb-1 opacity-50">[USER_INPUT]</span>}
+                          {!isUser && <span className="text-[10px] block mb-1" style={{ color: CYAN }}>{">"} ZK_RESPONSE</span>}
                           {m.content || (i === messages.length - 1 && loading && (
-                            <div className="flex gap-1 py-1">{[0,1,2].map(j => <div key={j} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "#a78bfa", animationDelay: `${j*0.15}s` }} />)}</div>
+                            <div className="flex gap-1 py-1">{[0,1,2].map(j => <div key={j} className="w-1.5 h-1.5 animate-bounce" style={{ background: CYAN, animationDelay: `${j*0.15}s` }} />)}</div>
                           ))}
                         </div>
                       </div>
                     );
                   })}
                   {(agentSteps.length > 0 || agentRunning) && (
-                    <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
+                    <div className="overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
                       <AgentStepLog steps={agentSteps} running={agentRunning} />
                     </div>
                   )}
@@ -705,23 +714,24 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
                 </div>
               </div>
 
-              {/* Input bar — DeepSeek style */}
-              <div className="px-6 py-4 flex-shrink-0">
+              {/* Input bar — terminal style */}
+              <div className="px-6 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${BORDER}` }}>
                 <div className="max-w-3xl mx-auto">
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                    style={{ background: "rgba(255,255,255,0.05)", border: `1px solid rgba(167,139,250,0.2)` }}>
+                  <div className="flex items-center gap-3 px-4 py-3"
+                    style={{ background: "rgba(0,255,224,0.04)", border: `1px solid rgba(0,255,224,0.25)`, boxShadow: input.trim() ? `0 0 12px rgba(0,255,224,0.15)` : "none" }}>
+                    <span className="text-[12px] font-bold flex-shrink-0" style={{ color: CYAN }}>{">"}_</span>
                     <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
-                      placeholder="Ask ZK anything — or give it a task…"
-                      className="flex-1 bg-transparent text-[14px] outline-none"
-                      style={{ color: "rgba(255,255,255,0.85)", caretColor: "#a78bfa" }} />
+                      placeholder="ENTER_COMMAND..."
+                      className="flex-1 bg-transparent text-[13px] outline-none font-mono uppercase"
+                      style={{ color: CYAN, caretColor: CYAN }} />
                     <button onClick={() => send()} disabled={loading || !input.trim()}
-                      className="w-8 h-8 flex items-center justify-center rounded-xl disabled:opacity-30 transition-all flex-shrink-0"
-                      style={{ background: input.trim() ? "linear-gradient(135deg,#a78bfa,#6366f1)" : "rgba(255,255,255,0.06)" }}>
-                      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <Send className="w-3.5 h-3.5 text-white" />}
+                      className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider disabled:opacity-30 transition-all flex-shrink-0"
+                      style={{ border: `1px solid ${CYAN}`, color: "#000", background: input.trim() ? CYAN : "transparent", boxShadow: input.trim() ? `0 0 8px rgba(0,255,224,0.4)` : "none" }}>
+                      {loading ? <Loader2 className="w-3 h-3 animate-spin" style={{ color: input.trim() ? "#000" : CYAN }} /> : "[SEND]"}
                     </button>
                   </div>
-                  <div className="text-center mt-2 text-[11px] text-white/20">ZK · Connected to all TTT apps</div>
+                  <div className="mt-1.5 text-[9px] tracking-widest uppercase" style={{ color: "rgba(0,255,224,0.2)" }}>// ZK_AGENT · CONNECTED TO ALL TTT NODES</div>
                 </div>
               </div>
             </div>
@@ -739,32 +749,35 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
         {/* APPS TAB */}
         {activeTab === "apps" && (
           <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
-            <div className="max-w-3xl mx-auto w-full px-6 pt-6 pb-3">
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}` }}>
-                <Search className="w-4 h-4 text-white/30 flex-shrink-0" />
+            <div className="max-w-3xl mx-auto w-full px-6 pt-5 pb-3">
+              <div className="flex items-center gap-2 px-4 py-2" style={{ background: "rgba(0,255,224,0.04)", border: `1px solid rgba(0,255,224,0.2)` }}>
+                <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: CYAN }} />
                 <input value={appSearch} onChange={e => setAppSearch(e.target.value)}
-                  placeholder="Search apps..."
-                  className="flex-1 text-[14px] bg-transparent outline-none"
-                  style={{ color: "rgba(255,255,255,0.8)", caretColor: "#a78bfa" }} />
-                {appSearch && <button onClick={() => setAppSearch("")} className="text-white/30 hover:text-white/60"><X className="w-3.5 h-3.5" /></button>}
+                  placeholder="SEARCH_APPS..."
+                  className="flex-1 text-[12px] bg-transparent outline-none font-mono uppercase"
+                  style={{ color: CYAN, caretColor: CYAN }} />
+                {appSearch && <button onClick={() => setAppSearch("")} style={{ color: "rgba(0,255,224,0.4)" }}><X className="w-3 h-3" /></button>}
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
               <div className="max-w-3xl mx-auto px-6 pb-6">
-                <div className="grid grid-cols-5 sm:grid-cols-7 gap-4">
+                <div className="grid grid-cols-5 sm:grid-cols-7 gap-3">
                   {filteredApps.map(app => (
                     <Link key={app.path} to={createPageUrl(app.path)} className="flex flex-col items-center gap-1.5 group">
                       <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-                        className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg">
+                        className="w-14 h-14 overflow-hidden relative"
+                        style={{ border: `1px solid rgba(0,255,224,0.2)` }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = CYAN}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,255,224,0.2)"}>
                         {app.logo
                           ? <img src={app.logo} alt={app.name} className="w-full h-full object-cover" loading="lazy" />
-                          : <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg,#a78bfa,#6366f1)" }}><LayoutGrid className="w-6 h-6 text-white" /></div>}
+                          : <div className="w-full h-full flex items-center justify-center" style={{ background: "rgba(0,255,224,0.08)" }}><LayoutGrid className="w-5 h-5" style={{ color: CYAN }} /></div>}
                       </motion.div>
-                      <span className="text-[11px] font-medium text-white/50 group-hover:text-white/80 text-center truncate w-full transition-colors">{app.name}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-center truncate w-full transition-colors" style={{ color: "rgba(0,255,224,0.45)" }}>{app.name}</span>
                     </Link>
                   ))}
                 </div>
-                {filteredApps.length === 0 && <div className="text-center py-12 text-white/25 text-sm">No apps found</div>}
+                {filteredApps.length === 0 && <div className="text-center py-12 text-[12px] font-mono" style={{ color: "rgba(0,255,224,0.25)" }}>// NO_APPS_FOUND</div>}
               </div>
             </div>
           </div>
@@ -774,32 +787,32 @@ NEVER say "I can't" or "I don't know" — you have the full site map. Always gui
         {activeTab === "image" && (
           <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
             <div className="max-w-2xl mx-auto w-full px-6 pt-8 pb-4 flex flex-col gap-4 flex-1">
-              <div className="text-lg font-bold text-white">AI Image Generator</div>
+              <div className="text-[13px] font-bold tracking-widest uppercase" style={{ color: CYAN }}>// AI_IMAGE_GENERATOR</div>
               <textarea value={imagePrompt} onChange={e => setImagePrompt(e.target.value)}
-                placeholder="Describe your image… e.g. 'Kaspa coin floating in deep space, cinematic'"
+                placeholder="DESCRIBE_IMAGE..."
                 rows={4}
-                className="w-full px-4 py-3 text-[14px] outline-none resize-none rounded-2xl"
-                style={{ background: "rgba(255,255,255,0.05)", border: `1px solid rgba(167,139,250,0.2)`, color: "rgba(255,255,255,0.85)", caretColor: "#a78bfa" }} />
+                className="w-full px-4 py-3 text-[13px] outline-none resize-none font-mono uppercase"
+                style={{ background: "rgba(0,255,224,0.03)", border: `1px solid rgba(0,255,224,0.2)`, color: CYAN, caretColor: CYAN }} />
               <button onClick={generateImage} disabled={generatingImage || !imagePrompt.trim()}
-                className="py-3 rounded-2xl text-[14px] font-bold flex items-center justify-center gap-2 disabled:opacity-40 transition-all"
-                style={{ background: generatingImage ? "rgba(167,139,250,0.1)" : "linear-gradient(135deg,#a78bfa,#6366f1)", color: "white" }}>
-                {generatingImage ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : <><Sparkles className="w-4 h-4" /> Generate Image</>}
+                className="py-3 text-[12px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-40 transition-all"
+                style={{ border: `1px solid ${CYAN}`, color: "#000", background: generatingImage ? "rgba(0,255,224,0.3)" : CYAN, boxShadow: `0 0 16px rgba(0,255,224,0.3)` }}>
+                {generatingImage ? <><Loader2 className="w-4 h-4 animate-spin" /> GENERATING...</> : <><Sparkles className="w-4 h-4" /> [GENERATE_IMAGE]</>}
               </button>
               <div className="flex-1 overflow-y-auto">
                 {generatedImage && (
-                  <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl overflow-hidden">
-                    <img src={generatedImage} alt="Generated" className="w-full rounded-2xl" />
+                  <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} style={{ border: `1px solid rgba(0,255,224,0.2)` }}>
+                    <img src={generatedImage} alt="Generated" className="w-full" />
                     <a href={generatedImage} download target="_blank" rel="noopener noreferrer"
-                      className="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold text-white/50 hover:text-white/80 transition-colors"
-                      style={{ border: `1px solid ${BORDER}` }}>
-                      Download
+                      className="flex items-center justify-center gap-2 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-colors"
+                      style={{ color: CYAN, borderTop: `1px solid rgba(0,255,224,0.15)` }}>
+                      [DOWNLOAD]
                     </a>
                   </motion.div>
                 )}
                 {!generatedImage && !generatingImage && (
-                  <div className="flex flex-col items-center justify-center h-48 text-white/20">
-                    <ImageIcon className="w-12 h-12 mb-3 opacity-25" />
-                    <span className="text-sm">Your image will appear here</span>
+                  <div className="flex flex-col items-center justify-center h-48" style={{ color: "rgba(0,255,224,0.2)" }}>
+                    <ImageIcon className="w-10 h-10 mb-3 opacity-30" />
+                    <span className="text-[11px] font-mono">// AWAITING_PROMPT</span>
                   </div>
                 )}
               </div>
@@ -990,38 +1003,41 @@ export default function TTTLandingPage() {
   const toggleMusicFromPlayer = () => { sendPlayerCommand(isPlaying ? "pauseVideo" : "playVideo"); setIsPlaying(!isPlaying); };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-white text-slate-950">
-      <div className="absolute inset-0 bg-white" />
+    <main className="relative min-h-screen overflow-hidden text-white"
+      style={{ background: "#020d12", backgroundImage: "linear-gradient(rgba(0,255,224,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,224,0.04) 1px, transparent 1px)", backgroundSize: "40px 40px", fontFamily: "'Courier New', monospace" }}>
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 50% 40%, rgba(0,255,224,0.04) 0%, transparent 70%)" }} />
 
-      {/* Corner art — top-left: clickable Researcher */}
-      <motion.button whileHover={{ scale: 1.04, opacity: 0.9 }} whileTap={{ scale: 0.96 }}
+      {/* Terminal corner labels */}
+      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
         onClick={() => { setShowResearcher(true); }}
-        className="absolute left-0 top-0 h-32 w-32 sm:h-80 sm:w-80 cursor-pointer focus:outline-none" style={{ zIndex: 20 }}>
-        <img src={CORNER_ART} alt="Researcher" className="h-full w-full object-contain opacity-70" />
+        className="absolute left-3 top-3 focus:outline-none" style={{ zIndex: 20 }}>
+        <span className="text-[11px] font-bold tracking-widest px-2 py-1" style={{ border: "1px solid rgba(0,255,224,0.4)", color: "#00ffe0", background: "rgba(0,255,224,0.06)", fontFamily: "'Courier New', monospace" }}>[REFUEL]</span>
       </motion.button>
-
-      {/* Corner art — top-right: clickable ZK Chat */}
-      <motion.button whileHover={{ scale: 1.04, opacity: 0.9 }} whileTap={{ scale: 0.96 }}
+      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
         onClick={() => { setShowZKChat(true); setZkMinimized(false); }}
-        className="absolute right-0 top-0 h-32 w-32 sm:h-80 sm:w-80 cursor-pointer focus:outline-none" style={{ zIndex: 20 }}>
-        <img src={CORNER_ART} alt="ZK Chat" className="h-full w-full object-contain opacity-70" style={{ transform: "scaleX(-1)" }} />
+        className="absolute right-3 top-3 focus:outline-none" style={{ zIndex: 20 }}>
+        <span className="text-[11px] font-bold tracking-widest px-2 py-1" style={{ border: "1px solid rgba(0,255,224,0.4)", color: "#00ffe0", background: "rgba(0,255,224,0.06)", fontFamily: "'Courier New', monospace" }}>[SCAN]</span>
       </motion.button>
+      <div className="absolute left-3 bottom-16 z-20">
+        <span className="text-[11px] font-bold tracking-widest px-2 py-1" style={{ border: "1px solid rgba(0,255,224,0.25)", color: "rgba(0,255,224,0.5)", background: "rgba(0,255,224,0.04)", fontFamily: "'Courier New', monospace" }}>[REFUEL]</span>
+      </div>
+      <div className="absolute left-3 bottom-8 z-20">
+        <span className="text-[11px] font-bold tracking-widest px-2 py-1" style={{ border: "1px solid rgba(0,255,224,0.25)", color: "rgba(0,255,224,0.5)", background: "rgba(0,255,224,0.04)", fontFamily: "'Courier New', monospace" }}>[SCAN]</span>
+      </div>
+      <div className="absolute right-3 bottom-8 z-20">
+        <span className="text-[11px] font-bold tracking-widest px-2 py-1" style={{ border: "1px solid rgba(0,255,224,0.25)", color: "rgba(0,255,224,0.5)", background: "rgba(0,255,224,0.04)", fontFamily: "'Courier New', monospace" }}>[LOG_OUT]</span>
+      </div>
 
-      {/* Bottom corners */}
-      <img src={CORNER_ART} alt="" className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 scale-y-[-1] object-contain opacity-45 sm:h-80 sm:w-80" />
-      <img src={CORNER_ART} alt="" className="pointer-events-none absolute bottom-0 right-0 h-32 w-32 scale-[-1] object-contain opacity-45 sm:h-80 sm:w-80" />
-
-      {/* Orb */}
+      {/* Orb — tinted cyan for terminal feel */}
       <motion.div className="absolute inset-0"
         initial={{ scale: 0.42, opacity: 0 }}
         animate={{ scale: 1, y: [0, -12, 0], opacity: [1, 0.96, 1] }}
-        transition={{ scale: { duration: 1.4, ease: "easeOut" }, opacity: { duration: 0.8 }, y: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.4 } }}>
-        <img src={ORB_IMAGE} alt="TTT cosmic orb" className="h-full w-full scale-90 object-contain object-center opacity-100 transform-gpu md:scale-[0.78]" />
+        transition={{ scale: { duration: 1.4, ease: "easeOut" }, opacity: { duration: 0.8 }, y: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.4 } }}
+        style={{ filter: "hue-rotate(160deg) saturate(1.5) brightness(0.85)" }}>
+        <img src={ORB_IMAGE} alt="TTT cosmic orb" className="h-full w-full scale-90 object-contain object-center opacity-90 transform-gpu md:scale-[0.78]" />
       </motion.div>
 
-      <img src={ORB_IMAGE} alt="" className="absolute inset-x-0 bottom-0 h-1/3 w-full origin-bottom scale-y-[-1] object-contain object-bottom opacity-18" />
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white via-white/65 to-transparent" />
-      <div className="absolute inset-0 bg-white/5" />
+      <div className="absolute inset-x-0 bottom-0 h-1/3" style={{ background: "linear-gradient(to top, #020d12 0%, rgba(2,13,18,0.6) 60%, transparent 100%)" }} />
 
       <iframe ref={playerRef} title="Mind On My Kaspa" src={hasStartedMusic ? musicSrc : "about:blank"}
         allow="autoplay; encrypted-media" className="pointer-events-none absolute h-px w-px opacity-0" />
@@ -1033,52 +1049,55 @@ export default function TTTLandingPage() {
         </motion.div>
 
         <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25 }}
-          className="mb-2 text-sm font-medium tracking-[0.45em] text-slate-900/80 sm:text-base">
+          className="mb-1 text-sm font-bold tracking-[0.3em]"
+          style={{ color: "#00ffe0", textShadow: "0 0 16px rgba(0,255,224,0.6)" }}>
           地球到火星交易
         </motion.p>
         <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-xs font-medium tracking-[0.32em] text-slate-600/70 sm:text-sm">
+          className="text-xs font-medium tracking-[0.2em]" style={{ color: "rgba(0,255,224,0.55)" }}>
           由 Kaspa 提供支持
         </motion.p>
 
         <motion.button type="button" onClick={handlePlayButton}
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.55 }}
-          className="mt-4 rounded-full border border-slate-900/10 bg-white/75 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-900 shadow-sm backdrop-blur-xl transition hover:bg-white hover:shadow-md active:scale-95">
-          {showPlayer ? (isPlaying ? "Pause" : "Play") : "Play"}
+          className="mt-5 px-10 py-3 text-[13px] font-black uppercase tracking-[0.35em] transition-all active:scale-95"
+          style={{ border: "2px solid #00ffe0", color: "#00ffe0", background: "rgba(0,255,224,0.06)", boxShadow: "0 0 24px rgba(0,255,224,0.35), inset 0 0 24px rgba(0,255,224,0.05)", fontFamily: "'Courier New', monospace" }}>
+          {showPlayer ? (isPlaying ? "[PAUSE]" : "[PLAY]") : "[PLAY]"}
         </motion.button>
 
-        {/* Action buttons */}
+        {/* Action buttons — hexagon terminal style */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.72 }}
-          className="mt-4 flex items-center gap-2">
+          className="mt-6 flex items-center gap-3">
           {[
-            { label: "TAP", icon: <LayoutGrid className="w-4 h-4 mb-1 text-white/70" />, path: "/AppStoreV2" },
-            { label: "TO", icon: <Users className="w-4 h-4 mb-1 text-white/70" />, path: "/Feed" },
-            { label: "TIP", icon: <Send className="w-4 h-4 mb-1 text-white/70" />, path: "/Tip" },
-            { label: "ZK", icon: <MessageCircle className="w-4 h-4 mb-1 text-white/70" />, action: () => { setShowZKChat(true); setZkMinimized(false); } },
+            { label: "TAP", icon: <LayoutGrid className="w-5 h-5 mb-1.5" />, path: "/AppStoreV2" },
+            { label: "TO", icon: <Users className="w-5 h-5 mb-1.5" />, path: "/Feed" },
+            { label: "TIP", icon: <Send className="w-5 h-5 mb-1.5" />, path: "/Tip" },
+            { label: "ZK", icon: <MessageCircle className="w-5 h-5 mb-1.5" />, action: () => { setShowZKChat(true); setZkMinimized(false); } },
           ].map(btn => (
             btn.action ? (
               <motion.button key={btn.label} type="button" onClick={btn.action}
-                whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.04 }}
-                className="flex flex-col items-center px-6 py-3 transition-all"
-                style={{ background: "linear-gradient(160deg, rgba(18,18,18,0.97) 0%, rgba(8,8,12,0.99) 100%)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 4px 24px rgba(0,0,0,0.5)", borderRadius: 100, fontFamily: "'SF Pro Display', -apple-system, sans-serif" }}>
+                whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.06, boxShadow: "0 0 20px rgba(0,255,224,0.5)" }}
+                className="flex flex-col items-center px-5 py-4 transition-all"
+                style={{ border: "1px solid #00ffe0", color: "#00ffe0", background: "rgba(0,255,224,0.06)", boxShadow: "0 0 12px rgba(0,255,224,0.2)", fontFamily: "'Courier New', monospace", clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
                 {btn.icon}
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">{btn.label}</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em]">{btn.label}</span>
               </motion.button>
             ) : (
               <motion.button key={btn.label} type="button" onClick={() => navigate(btn.path)}
-                whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.04 }}
-                className="flex flex-col items-center px-6 py-3 transition-all"
-                style={{ background: "linear-gradient(160deg, rgba(18,18,18,0.97) 0%, rgba(8,8,12,0.99) 100%)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 4px 24px rgba(0,0,0,0.5)", borderRadius: 100, fontFamily: "'SF Pro Display', -apple-system, sans-serif" }}>
+                whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.06, boxShadow: "0 0 20px rgba(0,255,224,0.5)" }}
+                className="flex flex-col items-center px-5 py-4 transition-all"
+                style={{ border: "1px solid #00ffe0", color: "#00ffe0", background: "rgba(0,255,224,0.06)", boxShadow: "0 0 12px rgba(0,255,224,0.2)", fontFamily: "'Courier New', monospace", clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
                 {btn.icon}
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">{btn.label}</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em]">{btn.label}</span>
               </motion.button>
             )
           ))}
         </motion.div>
 
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-5 text-[10px] font-semibold uppercase tracking-[0.5em] text-slate-500/60">
-          ttt
+          className="mt-6 text-[10px] font-bold uppercase tracking-[0.6em]"
+          style={{ color: "rgba(0,255,224,0.3)", fontFamily: "'Courier New', monospace" }}>
+          T T T
         </motion.footer>
       </section>
 
