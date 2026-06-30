@@ -218,7 +218,7 @@ const AuthenticatedApp = () => {
       <Route path="/StoryboardTheme" element={<StoryboardThemePage />} />
       <Route path="/MoodBoard" element={<MoodBoardPage />} />
       <Route path="/About" element={<AboutPage />} />
-      <Route path="/WalletHub" element={<WalletHubPage />} />
+      <Route path="/Wallet" element={<WalletHubPage />} />
       <Route path="/Kasthletics" element={<KasthleticsPage />} />
       <Route path="/MetaMimic" element={<MetaMimicPage />} />
       <Route path="/ARC" element={<ARCPage />} />
@@ -243,7 +243,6 @@ const AuthenticatedApp = () => {
       <Route path="/Hire" element={<HirePage />} />
       <Route path="/KaspaForge" element={<KaspaForgePage />} />
       <Route path="/CommunityHub" element={<CommunityHubPage />} />
-      <Route path="/WalletHub" element={<WalletHubPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />

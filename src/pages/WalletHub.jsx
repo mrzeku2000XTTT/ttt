@@ -110,6 +110,11 @@ export default function WalletHubPage() {
   const [totalBalance, setTotalBalance] = useState(null);
 
   useEffect(() => {
+    // Redirect directly to Terra wallet
+    navigate("/Terra", { replace: true });
+  }, []);
+
+  useEffect(() => {
     loadUser();
   }, []);
 
