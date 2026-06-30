@@ -1025,109 +1025,141 @@ export default function TTTLandingPage() {
   const toggleMusicFromPlayer = () => { sendPlayerCommand(isPlaying ? "pauseVideo" : "playVideo"); setIsPlaying(!isPlaying); };
 
   return (
-    <main className="relative min-h-screen overflow-hidden text-white"
-      style={{ background: "#111111", fontFamily: "'Arial Narrow', Arial, sans-serif",
-        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(180,120,40,0.06) 39px, rgba(180,120,40,0.06) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(180,120,40,0.06) 39px, rgba(180,120,40,0.06) 40px)" }}>
-      {/* Radial vignette */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.7) 100%)" }} />
-      {/* Warning stripe top */}
-      <div className="absolute top-0 left-0 right-0 h-1 z-10" style={{ background: "repeating-linear-gradient(90deg, #d97706 0px, #d97706 20px, #111 20px, #111 40px)" }} />
-      {/* Warning stripe bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 z-10" style={{ background: "repeating-linear-gradient(90deg, #d97706 0px, #d97706 20px, #111 20px, #111 40px)" }} />
+    <main className="relative min-h-screen overflow-hidden text-white" style={{ background: "#000", fontFamily: "'Georgia', serif" }}>
 
-      {/* Corner buttons — industrial stencil */}
-      <motion.button whileTap={{ scale: 0.95 }}
-        onClick={() => { setShowResearcher(true); }}
-        className="absolute left-3 top-4 focus:outline-none" style={{ zIndex: 20 }}>
-        <span className="text-[10px] font-black tracking-[0.2em] uppercase px-3 py-1.5 block"
-          style={{ background: "linear-gradient(180deg, #292929, #1a1a1a)", border: "2px solid #d97706", color: "#f59e0b", boxShadow: "3px 3px 0px #78350f", fontFamily: "'Impact', sans-serif" }}>◆ REFUEL</span>
-      </motion.button>
-      <motion.button whileTap={{ scale: 0.95 }}
-        onClick={() => { setShowZKChat(true); setZkMinimized(false); }}
-        className="absolute right-3 top-4 focus:outline-none" style={{ zIndex: 20 }}>
-        <span className="text-[10px] font-black tracking-[0.2em] uppercase px-3 py-1.5 block"
-          style={{ background: "linear-gradient(180deg, #292929, #1a1a1a)", border: "2px solid #d97706", color: "#f59e0b", boxShadow: "3px 3px 0px #78350f", fontFamily: "'Impact', sans-serif" }}>SCAN ◆</span>
-      </motion.button>
-      <div className="absolute left-3 bottom-16 z-20">
-        <span className="text-[10px] font-black tracking-[0.15em] uppercase px-3 py-1.5 block"
-          style={{ background: "rgba(0,0,0,0.6)", border: "1px solid rgba(217,119,6,0.35)", color: "rgba(217,119,6,0.55)", fontFamily: "'Impact', sans-serif" }}>◆ REFUEL</span>
-      </div>
-      <div className="absolute right-3 bottom-16 z-20">
-        <span className="text-[10px] font-black tracking-[0.15em] uppercase px-3 py-1.5 block"
-          style={{ background: "rgba(0,0,0,0.6)", border: "1px solid rgba(217,119,6,0.35)", color: "rgba(217,119,6,0.55)", fontFamily: "'Impact', sans-serif" }}>EXIT ◆</span>
+      {/* === FULL-SCREEN BACKGROUND ART === */}
+      <div className="absolute inset-0">
+        <img src={ORB_IMAGE} alt="" className="w-full h-full object-cover object-center"
+          style={{ filter: "brightness(0.55) contrast(1.1) saturate(0.6)", transform: "scale(1.05)" }} />
       </div>
 
-      {/* Orb — full bleed, mix-blend-mode to kill gray background */}
-      <motion.div className="absolute inset-0"
-        initial={{ scale: 1.1, opacity: 0 }}
-        animate={{ scale: 1, y: [0, -10, 0], opacity: [1, 0.95, 1] }}
-        transition={{ scale: { duration: 1.4, ease: "easeOut" }, opacity: { duration: 0.8 }, y: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.4 } }}
-        style={{ mixBlendMode: "luminosity", filter: "saturate(0.3) sepia(0.5) brightness(0.65) contrast(1.2)" }}>
-        <img src={ORB_IMAGE} alt="TTT orb" className="h-full w-full object-cover object-center transform-gpu" style={{ mixBlendMode: "multiply" }} />
-      </motion.div>
+      {/* === LAYERED ATMOSPHERIC OVERLAYS === */}
+      {/* Deep black vignette edges */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 80% 80% at 50% 50%, transparent 20%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.95) 100%)" }} />
+      {/* Heavy bottom fade for menu area */}
+      <div className="absolute inset-x-0 bottom-0 h-2/3 pointer-events-none"
+        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.4) 65%, transparent 100%)" }} />
+      {/* Top fade */}
+      <div className="absolute inset-x-0 top-0 h-1/3 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)" }} />
+      {/* Scanlines overlay — CRT feel */}
+      <div className="absolute inset-0 pointer-events-none opacity-20"
+        style={{ backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,0.5) 0px, rgba(0,0,0,0.5) 1px, transparent 1px, transparent 3px)", backgroundSize: "100% 3px" }} />
+      {/* Subtle noise grain */}
+      <div className="absolute inset-0 pointer-events-none opacity-5"
+        style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", backgroundSize: "128px 128px" }} />
 
-      <div className="absolute inset-x-0 bottom-0 h-1/2" style={{ background: "linear-gradient(to top, #111 0%, rgba(17,17,17,0.6) 60%, transparent 100%)" }} />
-      <div className="absolute inset-x-0 top-0 h-1/4" style={{ background: "linear-gradient(to bottom, #111 0%, transparent 100%)" }} />
+      {/* === CORNER HUD BUTTONS (top) === */}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => setShowResearcher(true)}
+        className="absolute left-4 top-5 focus:outline-none z-20 group">
+        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block transition-all"
+          style={{ border: "1px solid rgba(180,140,60,0.5)", color: "rgba(210,170,80,0.7)", background: "rgba(0,0,0,0.5)", letterSpacing: "0.2em", fontFamily: "monospace" }}>[ REFUEL ]</span>
+      </motion.button>
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { setShowZKChat(true); setZkMinimized(false); }}
+        className="absolute right-4 top-5 focus:outline-none z-20">
+        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block transition-all"
+          style={{ border: "1px solid rgba(180,140,60,0.5)", color: "rgba(210,170,80,0.7)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ SCAN ]</span>
+      </motion.button>
 
-      <iframe ref={playerRef} title="Mind On My Kaspa" src={hasStartedMusic ? musicSrc : "about:blank"}
+      {/* Hidden iframe for music */}
+      <iframe ref={playerRef} title="TTT Music" src={hasStartedMusic ? musicSrc : "about:blank"}
         allow="autoplay; encrypted-media" className="pointer-events-none absolute h-px w-px opacity-0" />
 
-      <section className="relative z-10 flex min-h-screen flex-col items-center justify-end px-4 pb-8 pt-10 text-center sm:px-6">
-        <Link to="/TTTGate" aria-label="Launch TTT portal" className="absolute inset-0 z-0" />
+      {/* === MAIN GAME TITLE SCREEN CONTENT === */}
+      <section className="relative z-10 flex min-h-screen flex-col items-center justify-end pb-12 pt-10 text-center px-6">
 
-        <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.25 }}
-          className="mb-1 text-sm font-black tracking-[0.3em] uppercase"
-          style={{ color: "#d97706", fontFamily: "'Impact', sans-serif", textShadow: "2px 2px 0px #78350f" }}>
-          地球到火星交易
+        {/* Invisible full-screen tap zone */}
+        <Link to="/TTTGate" aria-label="Enter TTT" className="absolute inset-0 z-0" />
+
+        {/* GAME TITLE */}
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: "easeOut" }}
+          className="mb-2 relative z-10">
+          <div className="text-[72px] sm:text-[96px] font-black tracking-[-0.02em] leading-none select-none"
+            style={{ fontFamily: "'Georgia', 'Times New Roman', serif",
+              background: "linear-gradient(180deg, #f0d080 0%, #c8960c 40%, #7a5500 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+              filter: "drop-shadow(0 0 40px rgba(200,150,12,0.4)) drop-shadow(0 4px 8px rgba(0,0,0,0.8))" }}>
+            TTT
+          </div>
+          <div className="text-[11px] tracking-[0.6em] uppercase mt-1"
+            style={{ color: "rgba(200,160,60,0.65)", fontFamily: "monospace", letterSpacing: "0.55em" }}>
+            TAP · TO · TIP
+          </div>
+        </motion.div>
+
+        {/* Subtitle / lore line */}
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.6 }}
+          className="text-[12px] tracking-[0.2em] mb-10 relative z-10"
+          style={{ color: "rgba(180,140,80,0.55)", fontFamily: "monospace" }}>
+          地球到火星 · 由 KASPA 提供支持
         </motion.p>
-        <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-xs font-black tracking-[0.2em] uppercase" style={{ color: "rgba(217,119,6,0.5)", fontFamily: "'Impact', sans-serif" }}>
-          由 Kaspa 提供支持
-        </motion.p>
 
-        <motion.button type="button" onClick={handlePlayButton}
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.55 }}
-          className="mt-6 px-12 py-4 text-[15px] font-black uppercase tracking-[0.3em] transition-all active:translate-y-1"
-          style={{ background: "linear-gradient(180deg, #d97706 0%, #b45309 100%)", color: "#000", border: "2px solid #f59e0b", boxShadow: "0 6px 0px #78350f, 0 8px 20px rgba(0,0,0,0.5)", fontFamily: "'Impact', sans-serif" }}
-          onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 0px #78350f, 0 6px 15px rgba(0,0,0,0.5)"}
-          onMouseLeave={e => e.currentTarget.style.boxShadow = "0 6px 0px #78350f, 0 8px 20px rgba(0,0,0,0.5)"}>
-          {showPlayer ? (isPlaying ? "■ PAUSE" : "▶ PLAY") : "▶ PLAY"}
-        </motion.button>
+        {/* MAIN MENU — game-style vertical list */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.8 }}
+          className="relative z-10 flex flex-col items-center gap-1 w-full max-w-xs mb-8">
 
-        {/* Action buttons — industrial bolted plates */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.72 }}
-          className="mt-6 flex items-center gap-2">
+          {/* PRIMARY CTA — PRESS START style */}
+          <motion.button type="button" onClick={handlePlayButton}
+            animate={{ opacity: [1, 0.6, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+            className="w-full py-4 text-[14px] tracking-[0.4em] uppercase relative z-10"
+            style={{ color: "#f0d060", fontFamily: "monospace", background: "transparent", border: "none", letterSpacing: "0.4em",
+              textShadow: "0 0 20px rgba(240,200,60,0.6), 0 0 40px rgba(200,140,0,0.3)" }}>
+            {showPlayer ? (isPlaying ? "▌▌  PAUSE MUSIC" : "▶  PLAY MUSIC") : "▶  PRESS START"}
+          </motion.button>
+
+          {/* Divider */}
+          <div className="w-48 h-px my-2" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.4), transparent)" }} />
+
+          {/* GAME MENU ITEMS */}
           {[
-            { label: "TAP", icon: <LayoutGrid className="w-4 h-4 mb-1" />, path: "/AppStoreV2" },
-            { label: "TO", icon: <Users className="w-4 h-4 mb-1" />, path: "/Feed" },
-            { label: "TIP", icon: <Send className="w-4 h-4 mb-1" />, path: "/Tip" },
-            { label: "ZK", icon: <MessageCircle className="w-4 h-4 mb-1" />, action: () => { setShowZKChat(true); setZkMinimized(false); } },
-          ].map(btn => (
-            btn.action ? (
-              <motion.button key={btn.label} type="button" onClick={btn.action}
-                whileTap={{ scale: 0.94, y: 3 }}
-                className="flex flex-col items-center px-6 py-3 transition-all"
-                style={{ background: "linear-gradient(180deg, #1c1c1c 0%, #111 100%)", border: "2px solid #d97706", color: "#f59e0b", boxShadow: "0 4px 0px #78350f", fontFamily: "'Impact', sans-serif" }}>
-                {btn.icon}
-                <span className="text-[10px] font-black uppercase tracking-[0.15em]">{btn.label}</span>
+            { label: "APPS", sub: "Browse all tools", path: "/AppStoreV2", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+            { label: "FEED", sub: "Community & tips", path: "/Feed", icon: <Users className="w-3.5 h-3.5" /> },
+            { label: "TIP", sub: "Send KAS", path: "/Tip", icon: <Send className="w-3.5 h-3.5" /> },
+            { label: "AGENT ZK", sub: "AI operator", action: () => { setShowZKChat(true); setZkMinimized(false); }, icon: <MessageCircle className="w-3.5 h-3.5" /> },
+          ].map((item, i) => (
+            item.action ? (
+              <motion.button key={item.label} type="button" onClick={item.action}
+                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.9 + i * 0.08 }}
+                whileHover={{ x: 8 }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left group relative z-10 transition-all">
+                <span style={{ color: "rgba(200,150,40,0.5)" }}>{item.icon}</span>
+                <div className="flex-1">
+                  <span className="text-[13px] tracking-[0.2em] uppercase block transition-all"
+                    style={{ color: "rgba(220,180,100,0.8)", fontFamily: "monospace" }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#f0d060"; e.currentTarget.style.textShadow = "0 0 12px rgba(240,200,60,0.5)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(220,180,100,0.8)"; e.currentTarget.style.textShadow = "none"; }}>
+                    {item.label}
+                  </span>
+                  <span className="text-[9px] tracking-widest uppercase" style={{ color: "rgba(160,120,40,0.4)", fontFamily: "monospace" }}>{item.sub}</span>
+                </div>
               </motion.button>
             ) : (
-              <motion.button key={btn.label} type="button" onClick={() => navigate(btn.path)}
-                whileTap={{ scale: 0.94, y: 3 }}
-                className="flex flex-col items-center px-6 py-3 transition-all"
-                style={{ background: "linear-gradient(180deg, #1c1c1c 0%, #111 100%)", border: "2px solid #d97706", color: "#f59e0b", boxShadow: "0 4px 0px #78350f", fontFamily: "'Impact', sans-serif" }}>
-                {btn.icon}
-                <span className="text-[10px] font-black uppercase tracking-[0.15em]">{btn.label}</span>
+              <motion.button key={item.label} type="button" onClick={() => navigate(item.path)}
+                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.9 + i * 0.08 }}
+                whileHover={{ x: 8 }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left group relative z-10 transition-all">
+                <span style={{ color: "rgba(200,150,40,0.5)" }}>{item.icon}</span>
+                <div className="flex-1">
+                  <span className="text-[13px] tracking-[0.2em] uppercase block transition-all"
+                    style={{ color: "rgba(220,180,100,0.8)", fontFamily: "monospace" }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#f0d060"; e.currentTarget.style.textShadow = "0 0 12px rgba(240,200,60,0.5)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(220,180,100,0.8)"; e.currentTarget.style.textShadow = "none"; }}>
+                    {item.label}
+                  </span>
+                  <span className="text-[9px] tracking-widest uppercase" style={{ color: "rgba(160,120,40,0.4)", fontFamily: "monospace" }}>{item.sub}</span>
+                </div>
               </motion.button>
             )
           ))}
         </motion.div>
 
-        <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-6 text-[11px] font-black uppercase tracking-[0.8em]"
-          style={{ color: "rgba(217,119,6,0.35)", fontFamily: "'Impact', sans-serif", letterSpacing: "0.6em" }}>
-          T · T · T
-        </motion.footer>
+        {/* Bottom version stamp */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}
+          className="relative z-10 text-[9px] tracking-[0.5em] uppercase"
+          style={{ color: "rgba(140,100,30,0.35)", fontFamily: "monospace" }}>
+          © TTT · POWERED BY KASPA · V3.0
+        </motion.div>
       </section>
 
       {/* Music Player popup */}
