@@ -1115,7 +1115,7 @@ export default function TTTLandingPage() {
 
             {/* Giant Title — clickable */}
             <motion.button type="button" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-              onClick={() => { sounds.playSelect(); navigate("/AppStoreV2"); }}
+              onClick={() => { sounds.playSelect(); navigate("/TTTV3"); }}
               className="text-[72px] sm:text-[96px] md:text-[120px] font-black leading-none select-none focus:outline-none cursor-pointer"
               style={{ fontFamily: "'Georgia', 'Times New Roman', serif",
                 background: "linear-gradient(180deg, #fff5cc 0%, #f0d060 25%, #c8960c 60%, #6b4200 100%)",
