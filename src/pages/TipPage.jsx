@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Search, Wallet, Copy, Check, Send, ArrowRight, ArrowLeft, X, Pencil, ExternalLink, ChevronDown, ChevronUp, Upload, Bot, Link as LinkIcon, MessageSquare, Briefcase, Loader2, Zap, Globe, Clock, Star, ChevronRight, Sparkles } from "lucide-react";
 
-const BG_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/df3ad1026_generated_image.png";
+const BG_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png"; // Orb image from TTTLanding
 
 // Preset Kaspa anime avatars
 const PRESET_AVATARS = [
@@ -657,46 +657,60 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: "#010a1a" }}>
-      {/* BG image */}
-      <div className="fixed inset-0 pointer-events-none"
-        style={{ backgroundImage: `url(${BG_IMAGE})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.35 }} />
-      <div className="fixed inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(1,10,26,0.5) 0%, rgba(1,10,26,0.2) 40%, rgba(1,10,26,0.7) 100%)" }} />
+    <div className="min-h-screen relative overflow-hidden text-white" style={{ background: "#000", fontFamily: "'Georgia', serif" }}>
+      {/* === FULL-SCREEN BACKGROUND ART === */}
+      <div className="absolute inset-0">
+        <img src={BG_IMAGE} alt="" className="w-full h-full object-cover object-center"
+          style={{ filter: "brightness(0.55) contrast(1.1) saturate(0.6)", transform: "scale(1.05)" }} />
+      </div>
 
-      <div className="relative z-10 px-4 sm:px-6 max-w-2xl mx-auto" style={{ paddingTop: "4rem", paddingBottom: "6rem" }}>
+      {/* === ATMOSPHERIC OVERLAYS === */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 70% 70% at 50% 50%, transparent 15%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0.95) 100%)" }} />
+      <div className="absolute inset-0 pointer-events-none opacity-15"
+        style={{ backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 1px, transparent 1px, transparent 2px)", backgroundSize: "100% 2px" }} />
 
-        {/* Back button */}
-        <div className="flex items-center gap-2 mb-4">
+      <div className="relative z-10 px-4 sm:px-6 max-w-3xl mx-auto" style={{ paddingTop: "5rem", paddingBottom: "7rem" }}>
+
+        {/* Back button - GTA HUD style */}
+        <div className="flex items-center gap-2 mb-6">
           <button onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-80"
-            style={{ background: "rgba(0,40,120,0.3)", border: "1px solid rgba(0,100,200,0.25)", color: "rgba(96,165,250,0.7)" }}>
-            <ArrowLeft className="w-3.5 h-3.5" /> Back
+            className="flex items-center gap-2 px-4 py-2 text-[10px] tracking-[0.25em] uppercase transition-all hover:opacity-80"
+            style={{ border: "1px solid rgba(200,150,40,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>
+            <ArrowLeft className="w-3.5 h-3.5" /> [ BACK ]
           </button>
-
         </div>
 
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          {/* Badge - no icon */}
-          <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest uppercase"
-            style={{ background: "rgba(0,100,255,0.12)", border: "1px solid rgba(0,150,255,0.3)", color: "#60a5fa" }}>
-            Instant KAS Tips
+        {/* Header - GTA Title Screen Style */}
+        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+          {/* Decorative line above */}
+          <div className="flex items-center justify-center gap-4 mb-5">
+            <div className="h-px w-16 sm:w-24" style={{ background: "linear-gradient(90deg, transparent, rgba(200,150,40,0.5))" }} />
+            <div className="text-[9px] tracking-[0.5em] uppercase" style={{ color: "rgba(200,150,40,0.4)", fontFamily: "monospace" }}>INSTANT KAS TIPS</div>
+            <div className="h-px w-16 sm:w-24" style={{ background: "linear-gradient(90deg, rgba(200,150,40,0.5), transparent)" }} />
           </div>
 
-          {/* TapToTip with heavy shader */}
+          {/* Giant Title — GTA Georgia serif with gold gradient */}
           <h1 className="font-black mb-3 leading-none select-none" style={{
-            fontSize: "clamp(3.5rem,12vw,6rem)",
-            fontFamily: "'Arial Black', 'Impact', system-ui, sans-serif",
-            background: "linear-gradient(180deg, #ffffff 0%, #7dd3fc 30%, #3b82f6 60%, #1d4ed8 100%)",
+            fontSize: "clamp(3.5rem,10vw,7rem)",
+            fontFamily: "'Georgia', 'Times New Roman', serif",
+            background: "linear-gradient(180deg, #fff5cc 0%, #f0d060 25%, #c8960c 60%, #6b4200 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-            filter: "none",
-            letterSpacing: "-0.03em",
+            filter: "drop-shadow(0 0 60px rgba(200,140,0,0.5)) drop-shadow(0 8px 16px rgba(0,0,0,0.9))",
+            letterSpacing: "-0.02em",
           }}>
             TapToTip
           </h1>
-          <p className="text-white/40 text-sm tracking-wide">Send KAS to anyone, instantly</p>
+          <div className="text-[11px] sm:text-[12px] tracking-[0.6em] uppercase mt-2 mb-1"
+            style={{ color: "rgba(210,165,60,0.7)", fontFamily: "monospace" }}>
+            TAP · TO · TIP
+          </div>
+          <p className="text-[9px] sm:text-[10px] tracking-[0.3em]"
+            style={{ color: "rgba(160,120,50,0.45)", fontFamily: "monospace" }}>
+            SEND KAS TO ANYONE · INSTANTLY
+          </p>
         </motion.div>
 
         {/* Status banner */}
