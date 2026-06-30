@@ -91,7 +91,7 @@ function saveMessages(msgs) {
 }
 
 // ── Main ZK Chat Panel — full TTT 3.0 agent power ──
-function ZKChatPanel({ onClose }) {
+function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   const [model, setModel] = useState(AI_MODELS[0]);
   const [showModels, setShowModels] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -320,68 +320,92 @@ Always include a reply. Only launch when there's a real task with no missing inf
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
-      className="fixed inset-x-2 bottom-2 z-50 flex flex-col sm:inset-auto sm:right-4 sm:bottom-4 sm:left-auto"
-      style={{ width: computerOpen ? "min(96vw, 700px)" : "min(96vw, 420px)", maxHeight: "88vh", background: "rgba(6,6,12,0.97)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 16, fontFamily: "system-ui, sans-serif", boxShadow: "0 24px 80px rgba(0,0,0,0.7)", transition: "width 0.3s ease" }}>
+      className="fixed z-50 flex flex-col"
+      style={{
+        right: 16, bottom: 16,
+        width: minimized ? "auto" : (computerOpen ? "min(96vw, 700px)" : "min(96vw, 420px)"),
+        maxHeight: minimized ? "auto" : "88vh",
+        background: "rgba(6,6,12,0.97)",
+        border: "1px solid rgba(167,139,250,0.3)",
+        borderRadius: minimized ? 50 : 16,
+        fontFamily: "system-ui, sans-serif",
+        boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
+        transition: "width 0.3s ease, border-radius 0.3s ease"
+      }}>
 
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(167,139,250,0.12)" }}>
+      {/* Header — always visible */}
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: minimized ? "none" : "1px solid rgba(167,139,250,0.12)" }}>
         <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #a78bfa, #6366f1)" }}>
           <span className="text-white text-[11px] font-black">ZK</span>
         </div>
-        <span className="text-sm font-bold" style={{ color: "#a78bfa" }}>ZK Assistant</span>
+        {!minimized && <span className="text-sm font-bold" style={{ color: "#a78bfa" }}>ZK Assistant</span>}
 
-        {/* Tabs */}
-        <div className="ml-auto flex items-center gap-1">
-          {[
-            { id: "chat", icon: <MessageCircle className="w-3 h-3" />, label: "Chat" },
-            { id: "apps", icon: <LayoutGrid className="w-3 h-3" />, label: "Apps" },
-            { id: "image", icon: <ImageIcon className="w-3 h-3" />, label: "Image" },
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full transition-all"
-              style={{
-                background: activeTab === tab.id ? "rgba(167,139,250,0.2)" : "transparent",
-                color: activeTab === tab.id ? "#a78bfa" : "rgba(255,255,255,0.35)",
-                border: activeTab === tab.id ? "1px solid rgba(167,139,250,0.3)" : "1px solid transparent",
-              }}>
-              {tab.icon}
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
-          {/* Model picker */}
-          <div className="relative ml-1">
-            <button onClick={() => setShowModels(!showModels)}
-              className="flex items-center gap-1 px-2 py-1 text-[9px] font-semibold rounded-full"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: model.color }}>
-              {model.label.split(" ")[0]} <ChevronDown className="w-2 h-2" />
-            </button>
-            <AnimatePresence>
-              {showModels && (
-                <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full right-0 mt-1 z-[60] py-1 rounded-xl"
-                  style={{ background: "rgba(6,6,12,0.99)", border: "1px solid rgba(167,139,250,0.3)", minWidth: 170 }}>
-                  {AI_MODELS.map(m => (
-                    <button key={m.id} onClick={() => { setModel(m); setShowModels(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-colors">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.color }} />
-                      <div>
-                        <div className="text-[11px] font-semibold" style={{ color: model.id === m.id ? m.color : "rgba(255,255,255,0.7)" }}>{m.label}</div>
-                        <div className="text-[9px] text-white/30">{m.maker}</div>
-                      </div>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {/* Tabs — hidden when minimized */}
+        {!minimized && (
+          <div className="ml-auto flex items-center gap-1">
+            {[
+              { id: "chat", icon: <MessageCircle className="w-3 h-3" />, label: "Chat" },
+              { id: "apps", icon: <LayoutGrid className="w-3 h-3" />, label: "Apps" },
+              { id: "image", icon: <ImageIcon className="w-3 h-3" />, label: "Image" },
+            ].map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full transition-all"
+                style={{
+                  background: activeTab === tab.id ? "rgba(167,139,250,0.2)" : "transparent",
+                  color: activeTab === tab.id ? "#a78bfa" : "rgba(255,255,255,0.35)",
+                  border: activeTab === tab.id ? "1px solid rgba(167,139,250,0.3)" : "1px solid transparent",
+                }}>
+                {tab.icon}
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+            {/* Model picker */}
+            <div className="relative ml-1">
+              <button onClick={() => setShowModels(!showModels)}
+                className="flex items-center gap-1 px-2 py-1 text-[9px] font-semibold rounded-full"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: model.color }}>
+                {model.label.split(" ")[0]} <ChevronDown className="w-2 h-2" />
+              </button>
+              <AnimatePresence>
+                {showModels && (
+                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                    className="absolute top-full right-0 mt-1 z-[60] py-1 rounded-xl"
+                    style={{ background: "rgba(6,6,12,0.99)", border: "1px solid rgba(167,139,250,0.3)", minWidth: 170 }}>
+                    {AI_MODELS.map(m => (
+                      <button key={m.id} onClick={() => { setModel(m); setShowModels(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-colors">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.color }} />
+                        <div>
+                          <div className="text-[11px] font-semibold" style={{ color: model.id === m.id ? m.color : "rgba(255,255,255,0.7)" }}>{m.label}</div>
+                          <div className="text-[9px] text-white/30">{m.maker}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-          <button onClick={onClose} className="ml-1 w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" style={{ color: "rgba(255,255,255,0.3)" }}>
-            <X className="w-3.5 h-3.5" />
+        )}
+
+        {/* Minimize + Close — always visible */}
+        <div className={`flex items-center gap-1 ${minimized ? "ml-2" : "ml-1"}`}>
+          <button onClick={onToggleMinimize}
+            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+            title={minimized ? "Expand" : "Minimize"}>
+            {minimized ? <Zap className="w-3 h-3" style={{ color: "#a78bfa" }} /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
+          {!minimized && (
+            <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" style={{ color: "rgba(255,255,255,0.3)" }}>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* CHAT TAB */}
-      {activeTab === "chat" && (
+      {!minimized && activeTab === "chat" && (
         <>
           {/* Agent Computer toggle bar */}
           <div className="flex items-center gap-2 px-3 py-1.5 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
@@ -494,7 +518,7 @@ Always include a reply. Only launch when there's a real task with no missing inf
       )}
 
       {/* APPS TAB */}
-      {activeTab === "apps" && (
+      {!minimized && activeTab === "apps" && (
         <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
           <div className="px-4 pt-3 pb-2">
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -534,7 +558,7 @@ Always include a reply. Only launch when there's a real task with no missing inf
       )}
 
       {/* IMAGE TAB */}
-      {activeTab === "image" && (
+      {!minimized && activeTab === "image" && (
         <div className="flex-1 flex flex-col overflow-hidden p-4 gap-3" style={{ minHeight: 0 }}>
           <div className="text-[11px] text-white/40 font-semibold tracking-wider">AI IMAGE GENERATOR</div>
           <textarea value={imagePrompt} onChange={e => setImagePrompt(e.target.value)}
@@ -730,6 +754,7 @@ export default function TTTLandingPage() {
   const [showPlayer, setShowPlayer] = useState(false);
   const [showResearcher, setShowResearcher] = useState(false);
   const [showZKChat, setShowZKChat] = useState(false);
+  const [zkMinimized, setZkMinimized] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
   const playerRef = React.useRef(null);
@@ -762,7 +787,7 @@ export default function TTTLandingPage() {
 
       {/* Corner art — top-right: clickable ZK Chat */}
       <motion.button whileHover={{ scale: 1.04, opacity: 0.9 }} whileTap={{ scale: 0.96 }}
-        onClick={() => setShowZKChat(true)}
+        onClick={() => { setShowZKChat(true); setZkMinimized(false); }}
         className="absolute right-0 top-0 h-32 w-32 sm:h-80 sm:w-80 cursor-pointer focus:outline-none" style={{ zIndex: 20 }}>
         <img src={CORNER_ART} alt="ZK Chat" className="h-full w-full object-contain opacity-70" style={{ transform: "scaleX(-1)" }} />
       </motion.button>
@@ -814,7 +839,7 @@ export default function TTTLandingPage() {
             { label: "TAP", icon: <LayoutGrid className="w-4 h-4 mb-1 text-white/70" />, path: "/AppStoreV2" },
             { label: "TO", icon: <Users className="w-4 h-4 mb-1 text-white/70" />, path: "/Feed" },
             { label: "TIP", icon: <Send className="w-4 h-4 mb-1 text-white/70" />, path: "/Tip" },
-            { label: "ZK", icon: <MessageCircle className="w-4 h-4 mb-1 text-white/70" />, action: () => setShowZKChat(true) },
+            { label: "ZK", icon: <MessageCircle className="w-4 h-4 mb-1 text-white/70" />, action: () => { setShowZKChat(true); setZkMinimized(false); } },
           ].map(btn => (
             btn.action ? (
               <motion.button key={btn.label} type="button" onClick={btn.action}
@@ -852,7 +877,13 @@ export default function TTTLandingPage() {
 
       {/* ZK Chat Panel */}
       <AnimatePresence>
-        {showZKChat && <ZKChatPanel onClose={() => setShowZKChat(false)} />}
+        {showZKChat && (
+          <ZKChatPanel
+            onClose={() => { setShowZKChat(false); setZkMinimized(false); }}
+            minimized={zkMinimized}
+            onToggleMinimize={() => setZkMinimized(v => !v)}
+          />
+        )}
       </AnimatePresence>
 
       {/* Researcher Panel */}
