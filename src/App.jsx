@@ -106,6 +106,7 @@ import KaSshiPlayer from './components/KaSshiPlayer';
 import KaspaForgePage from './pages/KaspaForge';
 import CommunityHubPage from './pages/CommunityHub';
 import TTTZWalletPage from './pages/TTTZWallet';
+import ScenarioBotPage from './pages/ScenarioBot';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -245,6 +246,7 @@ const AuthenticatedApp = () => {
       <Route path="/KaspaForge" element={<KaspaForgePage />} />
       <Route path="/CommunityHub" element={<CommunityHubPage />} />
       <Route path="/TTTZWallet" element={<TTTZWalletPage />} />
+      <Route path="/ScenarioBot" element={<ScenarioBotPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
