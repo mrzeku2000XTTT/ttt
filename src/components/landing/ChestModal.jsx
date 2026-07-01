@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 
 const CLAIM_AMOUNT = 0.01;
 const COOLDOWN_HOURS = 24;
-const CHEST_LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2ffd002ae_grok-35cb7a89-f63f-4698-805b-61e5dfd750ce.jpg";
+const CHEST_LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8497b000a_generated_image.png";
 const CHEST_WALLET_KEY = "chest_wallet_address";
 const CHEST_CLAIM_KEY = "chest_last_claim";
 
