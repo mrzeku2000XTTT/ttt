@@ -21,13 +21,12 @@ export default function WalletHubPage() {
           return;
         }
         const user = await base44.auth.me();
-        if (user?.created_wallet_address) {
-          const balanceData = await base44.integrations.Core.InvokeLLM({
-            prompt: `Get the KAS balance for wallet address: ${user.created_wallet_address}`,
-            add_context_from_internet: true,
-          });
-          const match = balanceData?.match(/(\d+\.?\d*)\s*KAS/i);
-          setBalance(match ? parseFloat(match[1]) : 0);
+        const localAddr = localStorage.getItem('ttt_wallet_address');
+        const walletAddress = localAddr || user?.created_wallet_address;
+        
+        if (walletAddress) {
+          const res = await base44.functions.invoke('getKaspaBalance', { address: walletAddress });
+          setBalance(res.data?.balanceKAS || 0);
         }
       } catch (err) {
         console.error('Balance load error:', err);
