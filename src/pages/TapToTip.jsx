@@ -36,6 +36,13 @@ export default function TapToTipPage() {
     loadBackgroundMedia();
   }, []);
 
+  // Ensure loading state is cleared if component unmounts
+  useEffect(() => {
+    return () => {
+      setLoading(false);
+    };
+  }, []);
+
   const openEditProfile = () => {
     setEditName(currentUser?.username || currentUser?.full_name || '');
     setEditWallet(currentUser?.created_wallet_address || '');
@@ -152,11 +159,17 @@ export default function TapToTipPage() {
 
   const loadUsers = async (freshUser = null) => {
     const activeUser = freshUser || currentUser;
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      
       // Fetch all posts to get unique users (posts are publicly readable)
-      const allPosts = await base44.entities.Post.list('-created_date');
+      let allPosts = [];
+      try {
+        allPosts = await base44.entities.Post.list('-created_date');
+      } catch (postErr) {
+        console.error('Failed to fetch posts:', postErr);
+        allPosts = [];
+      }
       
       // Extract unique users from posts
       const uniqueUsersMap = new Map();
@@ -314,7 +327,12 @@ export default function TapToTipPage() {
       });
       
       // Load all active badges
-      const allBadges = await base44.entities.UserBadge.filter({ is_active: true });
+      let allBadges = [];
+      try {
+        allBadges = await base44.entities.UserBadge.filter({ is_active: true });
+      } catch (badgeErr) {
+        console.error('Failed to fetch badges:', badgeErr);
+      }
       const badgesMap = {};
       allBadges.forEach(badge => {
         if (!badgesMap[badge.username]) {
@@ -364,6 +382,9 @@ export default function TapToTipPage() {
       setFilteredUsers(sortedUsers);
     } catch (err) {
       console.error('Failed to load users:', err);
+      // Still set empty users on error so page doesn't stuck loading
+      setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setLoading(false);
     }
