@@ -105,6 +105,13 @@ export default function ChestModal({ onClose, sounds }) {
           setChestAddress(data.chestAddress);
           setChestReady(true);
         }
+      } else if (data?.status === "utxo_too_large") {
+        setAiMessage("Chest UTXOs are too large. An admin needs to send smaller donations (under 2.5 KAS each) to the chest address.");
+        setStatus("error");
+        if (data.chestAddress) {
+          setChestAddress(data.chestAddress);
+          setChestReady(true);
+        }
       } else {
         setAiMessage(data?.error || data?.message || "Something went wrong.");
         setStatus("error");

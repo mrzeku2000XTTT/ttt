@@ -5,6 +5,8 @@ import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
 const KASPA_API = 'https://api.kaspa.org';
 const FEE_SOMPI = 50000n; // 0.0005 KAS (minimum floor, raised for safety)
 const MAX_UTXOS = 80;
+const MAX_TX_MASS = 500000n; // Kaspa consensus: max transaction mass
+const STORAGE_MASS_DIVISOR = 500n; // empirically observed: storage_mass = amount_sompi / 500
 
 // Dynamic fee: Kaspa requires fees to cover transaction "mass", which is
 // dominated by storage mass — each output costs ~100k mass and each input
@@ -239,6 +241,20 @@ Deno.serve(async (req) => {
     const fromScript = p2pkScriptFromAddress(normalizedFromAddress);
     const toScript = p2pkScriptFromAddress(normalizedToAddress);
     const change = totalIn - amountSompi - feeSompi;
+
+    // Pre-check: Kaspa rejects transactions whose total storage mass exceeds 500,000.
+    // Storage mass is proportional to total output amount (amount_sompi / 500).
+    // A single large UTXO (e.g. 5 KAS) produces ~1,000,000 mass — unsplittable.
+    const totalOutputSompi = amountSompi + (change > 0n ? change : 0n);
+    const estimatedStorageMass = totalOutputSompi / STORAGE_MASS_DIVISOR;
+    if (estimatedStorageMass > MAX_TX_MASS) {
+      const maxSpendableKas = Number(MAX_TX_MASS * STORAGE_MASS_DIVISOR) / 1e8;
+      throw new Error(
+        `UTXO too large: estimated mass ${estimatedStorageMass} exceeds limit ${MAX_TX_MASS}. ` +
+        `Max spendable per tx ≈ ${maxSpendableKas} KAS. ` +
+        `This wallet needs smaller UTXOs (send multiple small amounts to the address from an external wallet).`
+      );
+    }
 
     const inputs = selectedUtxos.map(u => ({
       prevTxId: u.outpoint.transactionId,

@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     const chestAddress = chestWallet.kaspa_address;
     const mnemonic = chestWallet.seed_phrase;
 
-    // 2. Check chest balance
+    // 2. Check chest balance and UTXO health
     let chestBalance = 0;
     try {
       const res = await fetch(`${KASPA_API}/addresses/${chestAddress}/balance`, {
@@ -64,6 +64,31 @@ Deno.serve(async (req) => {
         status: 'empty',
         chestAddress,
         chestBalance,
+      }, { status: 503 });
+    }
+
+    // 2b. Pre-check UTXO sizes — Kaspa rejects transactions whose storage mass
+    // exceeds 500,000. Storage mass ≈ total_output_sompi / 500, so any single
+    // UTXO over ~2.5 KAS is unspendable. We need multiple small UTXOs.
+    let utxos = [];
+    try {
+      const utxoRes = await fetch(`${KASPA_API}/addresses/${chestAddress}/utxos`, {
+        signal: AbortSignal.timeout(10000),
+      });
+      if (utxoRes.ok) utxos = await utxoRes.json();
+    } catch {}
+
+    const MAX_SPENDABLE_SOMPI = 500000n * 500n; // 250,000,000 sompi = 2.5 KAS
+    const spendableUtxos = utxos.filter(u => BigInt(u.utxoEntry.amount) <= MAX_SPENDABLE_SOMPI);
+    if (utxos.length > 0 && spendableUtxos.length === 0) {
+      const largestUtxo = utxos.reduce((max, u) => Number(u.utxoEntry.amount) > Number(max.utxoEntry.amount) ? u : max);
+      return Response.json({
+        success: false,
+        status: 'utxo_too_large',
+        message: 'Chest UTXOs are too large for Kaspa\'s transaction mass limit. An admin needs to send smaller donations (under 2.5 KAS each) to the chest address to create spendable UTXOs.',
+        chestAddress,
+        chestBalance,
+        largestUtxoKas: Number(largestUtxo.utxoEntry.amount) / 1e8,
       }, { status: 503 });
     }
 
@@ -140,14 +165,15 @@ User's wish: "${wish}"`,
         amountKas: CLAIM_AMOUNT,
       });
     } catch (sendErr) {
-      console.error('[submitChestWish] sendKaspaTransaction threw:', sendErr.message);
+      const sendErrDetail = sendErr?.response?.data?.error || sendErr?.response?.data?.message || sendErr?.message || String(sendErr);
+      console.error('[submitChestWish] sendKaspaTransaction threw:', sendErrDetail, JSON.stringify(sendErr?.response?.data));
       await base44.asServiceRole.entities.ChestWish.update(wishRecord.id, {
         status: 'failed',
       });
       return Response.json({
         success: false,
         status: 'send_failed',
-        message: `Transaction signing failed: ${sendErr.message}`,
+        message: `Transaction failed: ${sendErrDetail}`,
         chestAddress,
       }, { status: 500 });
     }
