@@ -131,12 +131,26 @@ User's wish: "${wish}"`,
     });
 
     // 5. Send KAS from chest wallet (real transaction signing)
-    const sendResult = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
-      mnemonic,
-      fromAddress: chestAddress,
-      toAddress: normalizedAddress,
-      amountKas: CLAIM_AMOUNT,
-    });
+    let sendResult;
+    try {
+      sendResult = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
+        mnemonic,
+        fromAddress: chestAddress,
+        toAddress: normalizedAddress,
+        amountKas: CLAIM_AMOUNT,
+      });
+    } catch (sendErr) {
+      console.error('[submitChestWish] sendKaspaTransaction threw:', sendErr.message);
+      await base44.asServiceRole.entities.ChestWish.update(wishRecord.id, {
+        status: 'failed',
+      });
+      return Response.json({
+        success: false,
+        status: 'send_failed',
+        message: `Transaction signing failed: ${sendErr.message}`,
+        chestAddress,
+      }, { status: 500 });
+    }
 
     const txHash = sendResult?.data?.txId || sendResult?.txId;
 

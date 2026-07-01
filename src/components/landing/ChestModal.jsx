@@ -110,7 +110,10 @@ export default function ChestModal({ onClose, sounds }) {
         setStatus("error");
       }
     } catch (err) {
-      setAiMessage("Network error. Please try again.");
+      console.error("[ChestModal] Claim error:", err);
+      const backendError = err?.response?.data?.error || err?.response?.data?.message;
+      const statusText = err?.response?.status ? `(${err.response.status}) ` : "";
+      setAiMessage(backendError ? `${statusText}${backendError}` : "Network error. Please try again.");
       setStatus("error");
     } finally {
       setLoading(false);
