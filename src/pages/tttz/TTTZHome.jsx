@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, Zap, Activity, Lock, TrendingUp } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 const AGENT_ADDRESS = "kaspa:qpkn4aczvuqpmhvzv2lunjudfnda6wlk258w90yptjxv6v2q7dlkq2cm8e58e";
 const KASPA_API = "https://api.kaspa.org";
@@ -27,11 +28,14 @@ export default function TTTZHome() {
   const [error, setError] = useState({});
 
   useEffect(() => {
-    fetch(`${KASPA_API}/addresses/${AGENT_ADDRESS}/utxos`)
-      .then(r => r.json())
-      .then(data => {
-        const total = (data || []).reduce((sum, u) => sum + (u.amount || 0), 0);
-        setBalance(total / 1e8);
+    base44.functions.invoke('getKaspaBalance', { address: AGENT_ADDRESS })
+      .then(res => {
+        const data = res.data || res;
+        if (data?.success || data?.balanceKAS != null) {
+          setBalance(data.balanceKAS ?? 0);
+        } else {
+          setError(p => ({ ...p, balance: data?.error || 'Failed to load' }));
+        }
       })
       .catch(e => setError(p => ({ ...p, balance: e.message })));
 
@@ -71,7 +75,9 @@ export default function TTTZHome() {
         </div>
         <div className="space-y-1">
           <div className="flex items-baseline gap-2">
-            {balance === null ? <Spinner /> : (
+            {balance === null ? (error.balance ? (
+              <span className="text-sm font-mono" style={{ color: "#ff6666" }}>Load failed</span>
+            ) : <Spinner />) : (
               <span className="text-3xl font-black font-mono" style={{ color: "#e0e0e0" }}>
                 {balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}
               </span>

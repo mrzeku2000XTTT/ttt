@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Home, Rocket, Search, Coins, Terminal } from "lucide-react";
+import { Home, Rocket, Search, Coins, Terminal, ArrowLeft } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Home", path: "/TTTZ", icon: Home },
@@ -17,13 +17,20 @@ export default function TTTZLayout() {
       {/* Top Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b" style={{ background: "#0a0a0a", borderColor: "#1a1a1a" }}>
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/TTTZ" className="flex items-center gap-2">
-            <Terminal className="w-5 h-5" style={{ color: "#00ffcc" }} />
-            <span className="font-black text-lg tracking-tight" style={{ color: "#00ffcc" }}>TTTZ</span>
-            <span className="hidden sm:inline text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ background: "#111", color: "#00ffcc", border: "1px solid #1a1a1a" }}>
-              TOCCATA
-            </span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/AppStoreV2" className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors"
+              style={{ background: "rgba(0,255,204,0.05)", color: "#00ffcc", border: "1px solid rgba(0,255,204,0.15)" }}>
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">App Store</span>
+            </Link>
+            <Link to="/TTTZ" className="flex items-center gap-2">
+              <Terminal className="w-5 h-5" style={{ color: "#00ffcc" }} />
+              <span className="font-black text-lg tracking-tight" style={{ color: "#00ffcc" }}>TTTZ</span>
+              <span className="hidden sm:inline text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ background: "#111", color: "#00ffcc", border: "1px solid #1a1a1a" }}>
+                TOCCATA
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-1">
