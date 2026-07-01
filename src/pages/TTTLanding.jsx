@@ -1171,7 +1171,7 @@ export default function TTTLandingPage() {
 
           {/* PRESS START — pulsing */}
           <motion.button type="button" onClick={handlePlayButton}
-            animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+            animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
             className="mb-6 text-[13px] sm:text-[14px] tracking-[0.5em] uppercase focus:outline-none"
             style={{ color: "#f5d050", fontFamily: "monospace", background: "transparent", border: "none",
               textShadow: "0 0 24px rgba(245,200,50,0.7), 0 0 50px rgba(200,130,0,0.4)" }}>
@@ -1199,7 +1199,7 @@ export default function TTTLandingPage() {
                   onClick={() => { sounds.playNavigate(); item.action ? item.action() : navigate(item.path); }}
                   onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.07 }}
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.04, duration: 0.3 }}
                   className="px-6 py-3 transition-all focus:outline-none flex items-center justify-center"
                   style={{
                     border: isHovered ? "2px solid rgba(240,200,60,0.8)" : "2px solid rgba(200,150,40,0.3)",
