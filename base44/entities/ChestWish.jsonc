@@ -1,0 +1,72 @@
+{
+  "name": "ChestWish",
+  "type": "object",
+  "properties": {
+    "kaspa_address": {
+      "type": "string",
+      "description": "Claimant's Kaspa wallet address"
+    },
+    "wish": {
+      "type": "string",
+      "description": "The user's wish message (AI-sanitized before storage)"
+    },
+    "sanitized_wish": {
+      "type": "string",
+      "description": "AI-cleaned version of the wish (sensitive info removed)"
+    },
+    "ai_approved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether AI moderation approved the wish"
+    },
+    "ai_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Any flags raised by AI moderation (sensitive_info, spam, etc.)"
+    },
+    "amount_kas": {
+      "type": "number",
+      "description": "KAS amount sent"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Transaction hash of the KAS payout"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "sent",
+        "flagged",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Wish processing status"
+    }
+  },
+  "required": [
+    "kaspa_address",
+    "wish"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
