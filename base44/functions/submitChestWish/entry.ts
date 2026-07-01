@@ -15,6 +15,27 @@ Deno.serve(async (req) => {
 
     const normalizedAddress = kaspa_address.startsWith('kaspa:') ? kaspa_address : `kaspa:${kaspa_address}`;
 
+    // 0. Server-side 24h per-address cooldown check
+    const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+    const recentClaims = await base44.asServiceRole.entities.ChestWish.filter({
+      kaspa_address: normalizedAddress,
+      status: 'sent',
+    }, '-created_date', 5);
+
+    if (recentClaims.length > 0) {
+      const lastClaim = new Date(recentClaims[0].created_date).getTime();
+      const elapsed = Date.now() - lastClaim;
+      if (elapsed < COOLDOWN_MS) {
+        const hoursLeft = Math.ceil((COOLDOWN_MS - elapsed) / (60 * 60 * 1000));
+        return Response.json({
+          success: false,
+          status: 'cooldown',
+          message: `Already claimed. Try again in ~${hoursLeft}h.`,
+          hoursLeft,
+        }, { status: 429 });
+      }
+    }
+
     // 1. Get the chest wallet
     const wallets = await base44.asServiceRole.entities.ChestWallet.filter({ is_active: true });
     if (wallets.length === 0) {
@@ -97,8 +118,8 @@ User's wish: "${wish}"`,
       });
     }
 
-    // 4. Store the approved wish
-    await base44.asServiceRole.entities.ChestWish.create({
+    // 4. Store the approved wish (single record, updated after send)
+    const wishRecord = await base44.asServiceRole.entities.ChestWish.create({
       kaspa_address: normalizedAddress,
       wish,
       sanitized_wish: sanitized,
@@ -108,7 +129,7 @@ User's wish: "${wish}"`,
       status: 'approved',
     });
 
-    // 5. Send KAS from chest wallet
+    // 5. Send KAS from chest wallet (real transaction signing)
     const sendResult = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
       mnemonic,
       fromAddress: chestAddress,
@@ -119,6 +140,9 @@ User's wish: "${wish}"`,
     const txHash = sendResult?.data?.txId || sendResult?.txId;
 
     if (!txHash) {
+      await base44.asServiceRole.entities.ChestWish.update(wishRecord.id, {
+        status: 'failed',
+      });
       return Response.json({
         success: false,
         status: 'send_failed',
@@ -127,14 +151,8 @@ User's wish: "${wish}"`,
       }, { status: 500 });
     }
 
-    // 6. Update wish status
-    await base44.asServiceRole.entities.ChestWish.create({
-      kaspa_address: normalizedAddress,
-      wish,
-      sanitized_wish: sanitized,
-      ai_approved: true,
-      ai_flags: flags,
-      amount_kas: CLAIM_AMOUNT,
+    // 6. Update wish record to sent with tx hash
+    await base44.asServiceRole.entities.ChestWish.update(wishRecord.id, {
       tx_hash: txHash,
       status: 'sent',
     });

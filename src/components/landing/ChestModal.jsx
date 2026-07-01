@@ -91,6 +91,10 @@ export default function ChestModal({ onClose, sounds }) {
         localStorage.setItem(CHEST_CLAIM_KEY, Date.now().toString());
         setStatus("success");
         loadChestInfo();
+      } else if (data?.status === "cooldown") {
+        setCooldownRemaining(data.hoursLeft || 24);
+        setAiMessage(data.message || "Already claimed recently.");
+        setStatus("cooldown");
       } else if (data?.status === "flagged") {
         setAiMessage(data.message || "Wish flagged by AI moderation.");
         setStatus("flagged");
