@@ -146,11 +146,7 @@ const AuthenticatedApp = () => {
       <Route path="/Xunhua" element={<XunhuaPage />} />
       <Route path="/" element={<TTTLandingPage />} />
       <Route path="/TTTGate" element={<TTTGatePage />} />
-      <Route path="/Home" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
-        </LayoutWrapper>
-      } />
+      <Route path="/Home" element={<TTTLandingPage />} />
       {Object.entries(Pages).filter(([path]) => path !== 'Xunhua').map(([path, Page]) => (
         <Route
           key={path}
