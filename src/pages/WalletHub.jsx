@@ -78,7 +78,7 @@ export default function WalletHubPage() {
           transition={{ delay: 0.15 }}
           className="mb-10"
         >
-          <Link to={createPageUrl("TTTZWallet")} className="block">
+          <Link to={createPageUrl("Wallet")} className="block">
             <div className="rounded-[28px] bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-emerald-900/20">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg">
