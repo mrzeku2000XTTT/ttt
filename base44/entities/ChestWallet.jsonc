@@ -1,0 +1,50 @@
+{
+  "name": "ChestWallet",
+  "type": "object",
+  "properties": {
+    "kaspa_address": {
+      "type": "string",
+      "description": "Public Kaspa address of the covenant chest wallet"
+    },
+    "seed_phrase": {
+      "type": "string",
+      "description": "Mnemonic seed phrase (admin-only)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this is the active chest wallet"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When wallet was created"
+    }
+  },
+  "required": [
+    "kaspa_address",
+    "seed_phrase"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Gift, Lock, Coins, Sparkles, ShieldCheck } from "lucide-react";
+import { X, Loader2, Gift, Lock, Coins, Sparkles, ShieldCheck, Copy, Check, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-const CLAIM_AMOUNT = 2; // KAS per claim
+const CLAIM_AMOUNT = 2;
 const COOLDOWN_HOURS = 24;
 const CHEST_WALLET_KEY = "chest_wallet_address";
 const CHEST_CLAIM_KEY = "chest_last_claim";
@@ -11,18 +11,22 @@ const CHEST_CLAIM_KEY = "chest_last_claim";
 export default function ChestModal({ onClose, sounds }) {
   const [walletAddress, setWalletAddress] = useState("");
   const [wish, setWish] = useState("");
+  const [chestAddress, setChestAddress] = useState(null);
   const [chestBalance, setChestBalance] = useState(null);
+  const [chestReady, setChestReady] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null); // null | 'moderating' | 'claiming' | 'success' | 'error' | 'cooldown' | 'flagged'
+  const [status, setStatus] = useState(null);
   const [txHash, setTxHash] = useState(null);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const [aiMessage, setAiMessage] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [initializing, setInitializing] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(CHEST_WALLET_KEY);
     if (saved) setWalletAddress(saved);
     checkCooldown();
-    loadChestBalance();
+    loadChestInfo();
   }, []);
 
   const checkCooldown = () => {
@@ -39,49 +43,28 @@ export default function ChestModal({ onClose, sounds }) {
     return false;
   };
 
-  const loadChestBalance = async () => {
+  const loadChestInfo = async () => {
     try {
-      const res = await base44.functions.invoke("getKaspaBalance", {});
-      setChestBalance(res.data?.balanceKAS || 0);
+      const res = await base44.functions.invoke("getChestInfo", {});
+      if (res.data?.initialized && res.data?.address) {
+        setChestAddress(res.data.address);
+        setChestBalance(res.data.balance);
+        setChestReady(true);
+      } else {
+        setChestReady(false);
+      }
     } catch {
-      setChestBalance(null);
+      setChestReady(false);
     }
   };
 
-  const moderateWish = async (wishText) => {
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a content moderator for a crypto community chest. A user is making a wish to receive free KAS.
-
-Check the wish for:
-1. SENSITIVE INFO: Private keys, seed phrases, mnemonics, passwords, API keys, email addresses, phone numbers, physical addresses — these MUST be stripped from the stored wish.
-2. SPAM: Pure promotional content, repeated characters, links to scams.
-3. ABUSE: Hate speech, threats, illegal requests.
-
-If the wish contains sensitive info, REMOVE it and return the cleaned version in sanitized_wish.
-If the wish is pure spam or abuse, set approved=false.
-
-Return JSON:
-{
-  "approved": boolean,
-  "sanitized_wish": "cleaned version with sensitive info removed",
-  "flags": ["list of any issues found"],
-  "reason": "brief explanation"
-}
-
-The user's wish:
-"${wishText}"`,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          approved: { type: "boolean" },
-          sanitized_wish: { type: "string" },
-          flags: { type: "array", items: { type: "string" } },
-          reason: { type: "string" },
-        },
-        required: ["approved", "sanitized_wish"],
-      },
-    });
-    return res;
+  const copyAddress = async () => {
+    if (!chestAddress) return;
+    try {
+      await navigator.clipboard.writeText(chestAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
   };
 
   const claim = async () => {
@@ -92,63 +75,37 @@ The user's wish:
     try {
       localStorage.setItem(CHEST_WALLET_KEY, walletAddress.trim());
 
-      // Step 1: AI moderation
       setStatus("moderating");
       setAiMessage("AI is reviewing your wish...");
-      const moderation = await moderateWish(wish.trim());
 
-      const approved = moderation?.approved !== false;
-      const sanitized = moderation?.sanitized_wish || wish.trim();
-      const flags = moderation?.flags || [];
-      const reason = moderation?.reason || "";
-
-      if (!approved) {
-        setAiMessage(reason || "Wish flagged by AI moderation.");
-        setStatus("flagged");
-
-        // Store the flagged wish (admin only can see)
-        await base44.entities.ChestWish.create({
-          kaspa_address: walletAddress.trim(),
-          wish: wish.trim(),
-          sanitized_wish: sanitized,
-          ai_approved: false,
-          ai_flags: flags,
-          status: "flagged",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Step 2: Store the approved wish
-      await base44.entities.ChestWish.create({
+      const res = await base44.functions.invoke("submitChestWish", {
         kaspa_address: walletAddress.trim(),
         wish: wish.trim(),
-        sanitized_wish: sanitized,
-        ai_approved: true,
-        ai_flags: flags,
-        amount_kas: CLAIM_AMOUNT,
-        status: "approved",
       });
 
-      // Step 3: Send KAS
-      setStatus("claiming");
-      setAiMessage("Sending KAS to your wallet...");
-      const res = await base44.functions.invoke("sendKaspaTransaction", {
-        recipientAddress: walletAddress.trim(),
-        amount: CLAIM_AMOUNT,
-        note: "TTT Community Chest Wish",
-      });
+      const data = res.data;
 
-      if (res.data?.txHash || res.data?.success) {
-        const hash = res.data?.txHash || res.data?.transaction_id;
-        setTxHash(hash);
+      if (data?.success && data?.status === "sent") {
+        setTxHash(data.txHash);
         localStorage.setItem(CHEST_CLAIM_KEY, Date.now().toString());
         setStatus("success");
-        loadChestBalance();
+        loadChestInfo();
+      } else if (data?.status === "flagged") {
+        setAiMessage(data.message || "Wish flagged by AI moderation.");
+        setStatus("flagged");
+      } else if (data?.status === "empty") {
+        setAiMessage("The chest is empty — donations needed!");
+        setStatus("error");
+        if (data.chestAddress) {
+          setChestAddress(data.chestAddress);
+          setChestReady(true);
+        }
       } else {
+        setAiMessage(data?.error || data?.message || "Something went wrong.");
         setStatus("error");
       }
     } catch (err) {
+      setAiMessage("Network error. Please try again.");
       setStatus("error");
     } finally {
       setLoading(false);
@@ -180,11 +137,9 @@ The user's wish:
             boxShadow: `0 0 80px rgba(200,150,40,0.3), 0 20px 60px rgba(0,0,0,0.8)`,
           }}
         >
-          {/* Scanline overlay */}
           <div className="absolute inset-0 pointer-events-none opacity-10"
-            style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(200,150,40,0.3) 2px, rgba(200,150,40,0.3) 3px)" }} />
+            style={{ backgroundImage: "repeating-linear-gradient(0deg,!transparent,!transparent 2px, rgba(200,150,40,0.3) 2px, rgba(200,150,40,0.3) 3px)".replace(/!/g, "") }} />
 
-          {/* Close */}
           <button onClick={onClose} className="absolute top-3 right-3 z-10 p-1.5 transition-colors" style={{ color: "rgba(200,150,40,0.4)" }}>
             <X className="w-4 h-4" />
           </button>
@@ -216,18 +171,37 @@ The user's wish:
               <div className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: ACCENT_BRIGHT, boxShadow: `0 0 6px ${ACCENT_BRIGHT}` }} />
             </motion.div>
 
-            {/* Title */}
             <h2 className="text-[20px] font-black tracking-[0.3em] uppercase mb-1" style={{ color: ACCENT_BRIGHT, fontFamily: "monospace", textShadow: "0 0 20px rgba(245,208,80,0.4)" }}>
-              COMMUNITY CHEST
+              ARK OF COVENANTS
             </h2>
             <p className="text-[10px] tracking-[0.25em] uppercase mb-5" style={{ color: "rgba(200,150,40,0.4)", fontFamily: "monospace" }}>
               MAKE A WISH · RECEIVE FREE KAS
             </p>
 
-            {/* Chest balance */}
-            {chestBalance !== null && (
-              <div className="mb-4 text-[11px] font-bold tracking-wider" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>
-                CHEST FUNDS: {chestBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} KAS
+            {/* Donation address + balance */}
+            {chestReady && chestAddress && (
+              <div className="mb-5 p-3 rounded-lg" style={{ background: "rgba(0,0,0,0.4)", border: `1px solid rgba(200,150,40,0.15)` }}>
+                <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                  <Wallet className="w-3 h-3" style={{ color: ACCENT }} />
+                  <span className="text-[9px] tracking-[0.2em] uppercase" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>
+                    Donate to the Chest
+                  </span>
+                </div>
+                <button onClick={copyAddress} className="w-full flex items-center justify-center gap-2 group">
+                  <span className="text-[10px] font-bold truncate max-w-[200px]" style={{ color: ACCENT_BRIGHT, fontFamily: "monospace" }}>
+                    {chestAddress}
+                  </span>
+                  {copied ? (
+                    <Check className="w-3 h-3 flex-shrink-0" style={{ color: "#22c55e" }} />
+                  ) : (
+                    <Copy className="w-3 h-3 flex-shrink-0 transition-colors" style={{ color: "rgba(200,150,40,0.5)" }} />
+                  )}
+                </button>
+                {chestBalance !== null && (
+                  <div className="mt-2 text-[11px] font-bold tracking-wider" style={{ color: chestBalance > CLAIM_AMOUNT ? ACCENT_BRIGHT : "#ef4444", fontFamily: "monospace" }}>
+                    {chestBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} KAS AVAILABLE
+                  </div>
+                )}
               </div>
             )}
 
@@ -270,32 +244,66 @@ The user's wish:
                   {aiMessage || "Your wish was flagged. Please revise and try again."}
                 </p>
                 <button onClick={() => { setStatus(null); setAiMessage(""); }}
-                  className="w-full py-3 text-[11px] font-black tracking-[0.2em] uppercase transition-all"
+                  className="w-full py-3 text-[11px] font-black tracking-[0.2em]!uppercase transition-all"
                   style={{ border: `2px solid ${ACCENT}`, color: ACCENT_BRIGHT, background: "rgba(200,150,40,0.08)", fontFamily: "monospace" }}>
                   REVISE WISH
                 </button>
               </div>
             ) : status === "error" ? (
               <div className="py-4">
-                <p className="text-[12px] font-bold mb-3" style={{ color: "#ef4444", fontFamily: "monospace" }}>
-                  CHEST EMPTY OR OFFLINE
+                <p className="text-[12px] font-bold mb-2" style={{ color: "#ef4444", fontFamily: "monospace" }}>
+                  {aiMessage?.includes("empty") ? "CHEST EMPTY" : "ERROR"}
                 </p>
-                <button onClick={() => { setStatus(null); setLoading(false); }}
+                <p className="text-[10px] leading-relaxed mb-4 px-2" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "monospace" }}>
+                  {aiMessage || "Something went wrong."}
+                </p>
+                <button onClick={() => { setStatus(null); setLoading(false); setAiMessage(""); }}
                   className="w-full py-3 text-[11px] font-black tracking-[0.2em] uppercase transition-all"
                   style={{ border: `2px solid ${ACCENT}`, color: ACCENT_BRIGHT, background: "rgba(200,150,40,0.08)", fontFamily: "monospace" }}>
                   TRY AGAIN
                 </button>
               </div>
+            ) : !chestReady ? (
+              <div className="py-4">
+                <p className="text-[11px] mb-4" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>
+                  The Ark has not been initialized yet.
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      setInitializing(true);
+                      const res = await base44.functions.invoke("initChestWallet", {});
+                      if (res.data?.success) {
+                        await loadChestInfo();
+                      } else {
+                        setAiMessage(res.data?.error || "Admin access required.");
+                        setStatus("error");
+                      }
+                    } catch {
+                      setAiMessage("Admin access required to initialize.");
+                      setStatus("error");
+                    } finally {
+                      setInitializing(false);
+                    }
+                  }}
+                  disabled={initializing}
+                  className="w-full py-3 text-[11px] font-black tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all"
+                  style={{
+                    border: `2px solid ${ACCENT}`, color: ACCENT_BRIGHT,
+                    background: "rgba(200,150,40,0.08)", fontFamily: "monospace",
+                  }}
+                >
+                  {initializing ? <><Loader2 className="w-4 h-4 animate-spin" /> INITIALIZING...</> : "▶ INITIALIZE CHEST (ADMIN)"}
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
-                {/* AI status message */}
                 {loading && aiMessage && (
                   <div className="text-[10px] tracking-wider animate-pulse py-1" style={{ color: ACCENT_BRIGHT, fontFamily: "monospace" }}>
                     ◆ {aiMessage}
                   </div>
                 )}
 
-                {/* Wallet input */}
                 <input
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
@@ -308,7 +316,6 @@ The user's wish:
                   }}
                 />
 
-                {/* Wish textarea */}
                 <textarea
                   value={wish}
                   onChange={(e) => setWish(e.target.value)}
