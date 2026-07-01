@@ -17,37 +17,38 @@ const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2
 const KASPA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3bab8f8ae_generated_image.png";
 const YOUTUBE_VIDEO_ID = "aUSD-WFhKwY";
 
+// Each line has an explicit timestamp (seconds) for proper sync with the song
 const SONG_LYRICS = [
-  { line: "The dollar is dying, Bitcoin can't scale," },
-  { line: "Gold is too heavy, Solana transactions fail." },
-  { line: "I've tried them all and I must confess —" },
-  { line: "Kaspa is the best money." },
-  { line: "" },
-  { line: "Bitcoin can't scale, Solana is down again," },
-  { line: "Ethereum gas fees and scaling solutions went." },
-  { line: "Shiny objects flash and making me sick," },
-  { line: "Token unlocks flood — I burns out quick." },
-  { line: "Markets pumping, dump it's a gambler's dream," },
-  { line: "Whales are running like a whale of your machine." },
-  { line: "Your favorite influencer's changing up the profile pic," },
-  { line: "They say we're still early — better aping quick." },
-  { line: "" },
-  { line: "The dollar is dying, Bitcoin can't scale," },
-  { line: "Gold is too heavy, Solana transactions fail." },
-  { line: "I've tried them all and I must confess —" },
-  { line: "Kaspa is the best money." },
-  { line: "" },
-  { line: "The speed blew my mind, scalability defined." },
-  { line: "Kaspa is the future — leave the fiat life behind." },
-  { line: "No CEO chains, no centralized control," },
-  { line: "Digital freedom for everyone to hold." },
-  { line: "" },
-  { line: "The dollar is dying, Bitcoin can't scale," },
-  { line: "Gold is too heavy, Solana transactions fail." },
-  { line: "I've tried them all and I must confess —" },
-  { line: "Kaspa is the best money." },
-  { line: "" },
-  { line: "Dollar is… dollar is… dollar is dying." },
+  { time: 0,  line: "The dollar is dying, Bitcoin can't scale," },
+  { time: 4,  line: "Gold is too heavy, Solana transactions fail." },
+  { time: 8,  line: "I've tried them all and I must confess —" },
+  { time: 12, line: "Kaspa is the best money." },
+  { time: 16, line: "" },
+  { time: 19, line: "Bitcoin can't scale, Solana is down again," },
+  { time: 23, line: "Ethereum gas fees and scaling solutions went." },
+  { time: 27, line: "Shiny objects flash and making me sick," },
+  { time: 31, line: "Token unlocks flood — I burns out quick." },
+  { time: 35, line: "Markets pumping, dump it's a gambler's dream," },
+  { time: 39, line: "Whales are running like a whale of your machine." },
+  { time: 43, line: "Your favorite influencer's changing up the profile pic," },
+  { time: 47, line: "They say we're still early — better aping quick." },
+  { time: 51, line: "" },
+  { time: 54, line: "The dollar is dying, Bitcoin can't scale," },
+  { time: 58, line: "Gold is too heavy, Solana transactions fail." },
+  { time: 62, line: "I've tried them all and I must confess —" },
+  { time: 66, line: "Kaspa is the best money." },
+  { time: 70, line: "" },
+  { time: 73, line: "The speed blew my mind, scalability defined." },
+  { time: 77, line: "Kaspa is the future — leave the fiat life behind." },
+  { time: 81, line: "No CEO chains, no centralized control," },
+  { time: 85, line: "Digital freedom for everyone to hold." },
+  { time: 89, line: "" },
+  { time: 92,  line: "The dollar is dying, Bitcoin can't scale," },
+  { time: 96,  line: "Gold is too heavy, Solana transactions fail." },
+  { time: 100, line: "I've tried them all and I must confess —" },
+  { time: 104, line: "Kaspa is the best money." },
+  { time: 108, line: "" },
+  { time: 112, line: "Dollar is… dollar is… dollar is dying." },
 ];
 
 const AI_MODELS = [
@@ -943,9 +944,13 @@ function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapse
 
   useEffect(() => {
     if (!isPlaying || !lyricsRef.current) return;
-    const totalLines = SONG_LYRICS.length;
-    const lineIndex = Math.floor((elapsed / SONG_DURATION) * totalLines);
-    const el = lineRefs.current[Math.min(lineIndex, totalLines - 1)];
+    // Find the last lyric line whose timestamp has passed
+    let lineIndex = 0;
+    for (let i = 0; i < SONG_LYRICS.length; i++) {
+      if (SONG_LYRICS[i].time <= elapsed) lineIndex = i;
+      else break;
+    }
+    const el = lineRefs.current[lineIndex];
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     if (elapsed / SONG_DURATION > 0.5) setScrolled(true);
   }, [elapsed, isPlaying]);
@@ -992,14 +997,19 @@ function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapse
           <div className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">Lyrics</div>
           <div ref={lyricsRef} onScroll={handleScroll} className="overflow-y-auto" style={{ maxHeight: 140, scrollbarWidth: "none" }}>
             <div className="space-y-1 pb-4">
-              {SONG_LYRICS.map((l, i) =>
-                l.line ? (
+              {SONG_LYRICS.map((l, i) => {
+                let activeIndex = 0;
+                for (let j = 0; j < SONG_LYRICS.length; j++) {
+                  if (SONG_LYRICS[j].time <= elapsed) activeIndex = j;
+                  else break;
+                }
+                return l.line ? (
                   <p key={i} ref={el => lineRefs.current[i] = el} className="text-[13px] leading-relaxed font-medium transition-all duration-300"
-                    style={{ color: Math.abs(i - Math.floor((elapsed / SONG_DURATION) * SONG_LYRICS.length)) < 2 && isPlaying ? "#f97316" : "#334155" }}>
+                    style={{ color: Math.abs(i - activeIndex) < 2 && isPlaying ? "#f97316" : "#334155" }}>
                     {l.line}
                   </p>
                 ) : <div key={i} ref={el => lineRefs.current[i] = el} className="h-3" />
-              )}
+              })}
             </div>
           </div>
           {!scrolled && <div className="text-center mt-1"><span className="text-[9px] tracking-widest text-slate-400 animate-pulse">scroll to read ↓</span></div>}
