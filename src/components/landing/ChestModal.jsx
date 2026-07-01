@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Gift, Lock, Coins, Sparkles, ShieldCheck, Copy, Check, Wallet } from "lucide-react";
+import { X, Loader2, Sparkles, ShieldCheck, Copy, Check, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-const CLAIM_AMOUNT = 2;
+const CLAIM_AMOUNT = 0.01;
 const COOLDOWN_HOURS = 24;
+const CHEST_LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2ffd002ae_grok-35cb7a89-f63f-4698-805b-61e5dfd750ce.jpg";
 const CHEST_WALLET_KEY = "chest_wallet_address";
 const CHEST_CLAIM_KEY = "chest_last_claim";
 
@@ -145,38 +146,44 @@ export default function ChestModal({ onClose, sounds }) {
           </button>
 
           <div className="relative p-8 text-center">
-            {/* Chest icon */}
+            {/* Chest logo */}
             <motion.div
-              animate={loading ? { rotate: [-2, 2, -2] } : { y: [0, -4, 0] }}
-              transition={{ duration: loading ? 0.2 : 2.5, repeat: Infinity }}
-              className="mx-auto mb-4 w-24 h-24 flex items-center justify-center relative"
-              style={{
-                background: "linear-gradient(145deg, #2a2210, #1a1408)",
-                border: `2px solid ${ACCENT}`,
-                boxShadow: `0 0 40px rgba(200,150,40,0.2), inset 0 1px 0 rgba(255,255,255,0.05)`,
-              }}
+              animate={loading ? { rotate: [-1, 1, -1] } : { y: [0, -4, 0] }}
+              transition={{ duration: loading ? 0.3 : 2.5, repeat: Infinity }}
+              className="mx-auto mb-3 w-20 h-20 flex items-center justify-center relative"
             >
-              {status === "success" ? (
-                <Gift className="w-10 h-10" style={{ color: ACCENT_BRIGHT }} />
-              ) : status === "cooldown" ? (
-                <Lock className="w-10 h-10" style={{ color: "rgba(200,150,40,0.5)" }} />
-              ) : status === "flagged" ? (
-                <ShieldCheck className="w-10 h-10" style={{ color: "#ef4444" }} />
-              ) : status === "moderating" ? (
-                <Sparkles className="w-10 h-10 animate-pulse" style={{ color: ACCENT_BRIGHT }} />
-              ) : (
-                <Coins className="w-10 h-10" style={{ color: ACCENT }} />
+              <img
+                src={CHEST_LOGO_URL}
+                alt="Community Chest"
+                className="w-full h-full object-contain"
+                style={{ filter: `drop-shadow(0 0 12px rgba(200,150,40,0.4))` }}
+              />
+              {status === "moderating" && (
+                <Sparkles className="absolute -top-1 -right-1 w-5 h-5 animate-pulse" style={{ color: ACCENT_BRIGHT }} />
               )}
-              <div className="absolute top-1 left-1 w-2 h-2 rounded-full" style={{ background: ACCENT_BRIGHT, boxShadow: `0 0 6px ${ACCENT_BRIGHT}` }} />
-              <div className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: ACCENT_BRIGHT, boxShadow: `0 0 6px ${ACCENT_BRIGHT}` }} />
             </motion.div>
 
             <h2 className="text-[20px] font-black tracking-[0.3em] uppercase mb-1" style={{ color: ACCENT_BRIGHT, fontFamily: "monospace", textShadow: "0 0 20px rgba(245,208,80,0.4)" }}>
-              ARK OF COVENANTS
+              COMMUNITY CHEST
             </h2>
-            <p className="text-[10px] tracking-[0.25em] uppercase mb-5" style={{ color: "rgba(200,150,40,0.4)", fontFamily: "monospace" }}>
+            <p className="text-[10px] tracking-[0.25em] uppercase mb-4" style={{ color: "rgba(200,150,40,0.4)", fontFamily: "monospace" }}>
               MAKE A WISH · RECEIVE FREE KAS
             </p>
+
+            {/* Rules */}
+            <div className="mb-5 p-3 rounded-lg text-left" style={{ background: "rgba(0,0,0,0.3)", border: `1px solid rgba(200,150,40,0.1)` }}>
+              <p className="text-[9px] tracking-[0.2em] uppercase mb-2 text-center" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>
+                ◆ RULES OF THE COVENANT ◆
+              </p>
+              <ul className="space-y-1 text-[9px] leading-relaxed" style={{ color: "rgba(255,255,255,0.45)", fontFamily: "monospace" }}>
+                <li>• One wish per {COOLDOWN_HOURS} hours per wallet</li>
+                <li>• All wishes are AI-moderated for safety</li>
+                <li>• Sensitive info (keys, emails) is auto-stripped</li>
+                <li>• Spam, abuse, and scams are rejected</li>
+                <li>• {CLAIM_AMOUNT} KAS per approved wish — keep it sustainable</li>
+                <li>• Donations refill the chest for everyone</li>
+              </ul>
+            </div>
 
             {/* Donation address + balance */}
             {chestReady && chestAddress && (
@@ -208,7 +215,7 @@ export default function ChestModal({ onClose, sounds }) {
             {/* States */}
             {status === "success" ? (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-4">
-                <div className="text-[28px] font-black mb-2" style={{ color: ACCENT_BRIGHT, fontFamily: "monospace" }}>
+                <div className="text-[32px] font-black mb-2" style={{ color: ACCENT_BRIGHT, fontFamily: "monospace" }}>
                   +{CLAIM_AMOUNT} KAS
                 </div>
                 <p className="text-[11px] tracking-wider mb-3" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "monospace" }}>
@@ -346,10 +353,6 @@ export default function ChestModal({ onClose, sounds }) {
                 >
                   {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> PROCESSING...</> : `▶ CLAIM ${CLAIM_AMOUNT} KAS`}
                 </button>
-
-                <p className="text-[9px] tracking-wider flex items-center justify-center gap-1" style={{ color: "rgba(200,150,40,0.25)", fontFamily: "monospace" }}>
-                  <ShieldCheck className="w-2.5 h-2.5" /> AI-PROTECTED · ONE WISH PER {COOLDOWN_HOURS}H
-                </p>
               </div>
             )}
           </div>
