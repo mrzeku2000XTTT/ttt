@@ -149,10 +149,12 @@ export default function TTTZHome() {
       </div>
 
       <div className="text-center pb-4">
-        <Link to="/TTTZLaunch" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-105"
-          style={{ background: "#00ffcc", color: "#0a0a0a" }}>
+        <a href={ZK_AGENT_URL} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all hover:scale-105"
+          style={{ background: "#00ffcc", color: "#0a0a0a" }}
+          title="Open SUPERZK to deploy your covenant">
           <Zap className="w-4 h-4" /> Deploy Covenant →
-        </Link>
+        </a>
       </div>
     </div>
   );
