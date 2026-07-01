@@ -27,10 +27,10 @@ export default function TTTZHome() {
   const [error, setError] = useState({});
 
   useEffect(() => {
-    fetch(`${KASPA_API}/addresses/${AGENT_ADDRESS}/utxos`)
+    fetch(`${KASPA_API}/addresses/${AGENT_ADDRESS}/balance`)
       .then(r => r.json())
       .then(data => {
-        const total = (data || []).reduce((sum, u) => sum + (u.amount || 0), 0);
+        const total = typeof data === "number" ? data : (data?.balance || 0);
         setBalance(total / 1e8);
       })
       .catch(e => setError(p => ({ ...p, balance: e.message })));
