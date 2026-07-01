@@ -108,11 +108,6 @@ import CommunityHubPage from './pages/CommunityHub';
 import TTTZWalletPage from './pages/TTTZWallet';
 import ScenarioBotPage from './pages/ScenarioBot';
 import KasBillboardPage from './pages/KasBillboard';
-import TTTZLayout from '@/components/tttz/TTTZLayout';
-import TTTZHome from './pages/tttz/TTTZHome';
-import TTTZLaunch from './pages/tttz/TTTZLaunch';
-import TTTZExplorer from './pages/tttz/TTTZExplorer';
-import TTTZToken from './pages/tttz/TTTZToken';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -151,7 +146,12 @@ const AuthenticatedApp = () => {
       <Route path="/Xunhua" element={<XunhuaPage />} />
       <Route path="/" element={<TTTLandingPage />} />
       <Route path="/TTTGate" element={<TTTGatePage />} />
-      {Object.entries(Pages).filter(([path]) => path !== 'Xunhua' && path !== 'Home').map(([path, Page]) => (
+      <Route path="/Home" element={
+        <LayoutWrapper currentPageName={mainPageKey}>
+          <MainPage />
+        </LayoutWrapper>
+      } />
+      {Object.entries(Pages).filter(([path]) => path !== 'Xunhua').map(([path, Page]) => (
         <Route
           key={path}
           path={`/${path}`}
@@ -249,12 +249,6 @@ const AuthenticatedApp = () => {
       <Route path="/TTTZWallet" element={<TTTZWalletPage />} />
       <Route path="/ScenarioBot" element={<ScenarioBotPage />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
-      <Route element={<TTTZLayout />}>
-        <Route path="/TTTZ" element={<TTTZHome />} />
-        <Route path="/TTTZLaunch" element={<TTTZLaunch />} />
-        <Route path="/TTTZExplorer" element={<TTTZExplorer />} />
-        <Route path="/TTTZToken" element={<TTTZToken />} />
-      </Route>
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />

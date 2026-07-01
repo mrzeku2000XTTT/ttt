@@ -7,7 +7,6 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
-  { name: "TTTZ", path: "TTTZ", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff9fc0b58_generated_image.png", desc: "Toccata covenant launchpad", admin: true },
   { name: "KasBillboard", path: "KasBillboard", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/571fc08c6_image.png", desc: "Kaspa billboard advertising" },
   { name: "KaScan", path: null, externalUrl: "https://kascan.io", cat: "Tools", logo: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=200&h=200&fit=crop", desc: "Kaspa blockchain scanner" },
   { name: "Ghost Frame", path: "GhostFrame", cat: "Creative", logo: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&h=200&fit=crop", desc: "Frame consistency suite · AI music video", admin: true },

@@ -30,7 +30,7 @@ export default function NavigationTracker() {
         let pageName;
         
         if (pathname === '/' || pathname === '') {
-            pageName = 'TTTLanding';
+            pageName = mainPageKey;
         } else {
             // Remove leading slash and get the first segment
             const pathSegment = pathname.replace(/^\//, '').split('/')[0];

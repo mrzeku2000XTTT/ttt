@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem } from "lucide-react";
 import GrokChat from "@/components/landing/GrokChat";
-import ChestModal from "@/components/landing/ChestModal";
 import { createPageUrl } from "@/utils";
 import AgentComputer from "@/components/tttv3/AgentComputer";
 import { runAutonomousAgent } from "@/components/tttv3/agentLoop";
@@ -1055,7 +1054,7 @@ export default function TTTLandingPage() {
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [hasStartedMusic, setHasStartedMusic] = React.useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
-  const [showChest, setShowChest] = useState(false);
+  const [showResearcher, setShowResearcher] = useState(false);
   const [showZKChat, setShowZKChat] = useState(false);
   const [zkMinimized, setZkMinimized] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -1114,10 +1113,10 @@ export default function TTTLandingPage() {
         style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", backgroundSize: "128px 128px" }} />
 
       {/* === CORNER HUD BUTTONS (top) === */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowChest(true); }}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowResearcher(true); }}
         className="absolute left-4 top-5 focus:outline-none z-20">
         <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ CHEST ]</span>
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ REFUEL ]</span>
       </motion.button>
       <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowZKChat(true); setZkMinimized(false); }}
         className="absolute right-4 top-5 focus:outline-none z-20">
@@ -1171,7 +1170,7 @@ export default function TTTLandingPage() {
 
           {/* PRESS START — pulsing */}
           <motion.button type="button" onClick={handlePlayButton}
-            animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+            animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
             className="mb-6 text-[13px] sm:text-[14px] tracking-[0.5em] uppercase focus:outline-none"
             style={{ color: "#f5d050", fontFamily: "monospace", background: "transparent", border: "none",
               textShadow: "0 0 24px rgba(245,200,50,0.7), 0 0 50px rgba(200,130,0,0.4)" }}>
@@ -1199,7 +1198,7 @@ export default function TTTLandingPage() {
                   onClick={() => { sounds.playNavigate(); item.action ? item.action() : navigate(item.path); }}
                   onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.04, duration: 0.3 }}
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.07 }}
                   className="px-6 py-3 transition-all focus:outline-none flex items-center justify-center"
                   style={{
                     border: isHovered ? "2px solid rgba(240,200,60,0.8)" : "2px solid rgba(200,150,40,0.3)",
@@ -1251,8 +1250,19 @@ export default function TTTLandingPage() {
         )}
       </AnimatePresence>
 
-      {/* Chest Modal */}
-      {showChest && <ChestModal onClose={() => setShowChest(false)} sounds={sounds} />}
+      {/* Researcher Panel */}
+      <AnimatePresence>
+        {showResearcher && <ResearcherPanel onClose={() => setShowResearcher(false)} />}
+      </AnimatePresence>
+
+      {/* Backdrop */}
+      <AnimatePresence>
+        {showResearcher && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+            onClick={() => setShowResearcher(false)} />
+        )}
+      </AnimatePresence>
     </main>
   );
 }
