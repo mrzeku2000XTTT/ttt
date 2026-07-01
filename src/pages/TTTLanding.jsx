@@ -59,6 +59,7 @@ const AI_MODELS = [
 
 // Top apps for the launcher
 const FEATURED_APPS = [
+  { name: "KasBillboard", path: "KasBillboard", logo: "https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?w=200&h=200&fit=crop", desc: "Kaspa ads" },
   { name: "Feed", path: "Feed", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fdf274d16_generated_image.png", desc: "Social feed" },
   { name: "Agent ZK", path: "AgentZK", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3e49e39c2_image.png", desc: "Crypto ID" },
   { name: "TTTV", path: "Browser", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f510ff896_generated_image.png", desc: "Video" },
@@ -163,6 +164,7 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   };
 
   const ALL_APPS = [
+    { name: "KasBillboard", path: "KasBillboard", logo: "https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?w=200&h=200&fit=crop", desc: "Kaspa billboard advertising" },
     { name: "Feed", path: "Feed", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fdf274d16_generated_image.png", desc: "Social feed + KAS tips" },
     { name: "Agent ZK", path: "AgentZK", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3e49e39c2_image.png", desc: "Crypto identity" },
     { name: "Scenario Bot", path: "ScenarioBot", logo: null, desc: "AI scenario simulation" },
