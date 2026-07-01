@@ -139,7 +139,14 @@ export default function TapToTipPage() {
       return () => clearInterval(checkWalletChange);
     } catch (err) {
       console.log('User not logged in');
-      setCurrentUser(null);
+      // Check for local wallet (non-logged-in users)
+      const localWallet = localStorage.getItem('ttt_wallet_address');
+      if (localWallet) {
+        setCurrentUser({ created_wallet_address: localWallet, email: null, username: null });
+        loadZkWalletBalance(localWallet);
+      } else {
+        setCurrentUser(null);
+      }
     }
   };
 
@@ -413,7 +420,9 @@ export default function TapToTipPage() {
   };
 
   const handleZkTip = async () => {
-    if (!currentUser?.created_wallet_address) {
+    const walletAddress = currentUser?.created_wallet_address || localStorage.getItem('ttt_wallet_address');
+    
+    if (!walletAddress) {
       alert('Please connect your TTT wallet first');
       return;
     }
@@ -439,7 +448,7 @@ export default function TapToTipPage() {
 
         try {
           const response = await base44.functions.invoke('verifyKaspaSelfTransaction', {
-            address: currentUser.created_wallet_address,
+            address: walletAddress,
             expectedAmount: targetAmount,
             timestamp: timestamp
           });
@@ -585,9 +594,9 @@ export default function TapToTipPage() {
         </div>
 
         {/* Wallet Status Banner */}
-        {currentUser && (
+        {(currentUser || localStorage.getItem('ttt_wallet_address')) && (
         <div className="max-w-2xl mx-auto mb-8">
-        {currentUser.created_wallet_address ? (
+        {(currentUser?.created_wallet_address || localStorage.getItem('ttt_wallet_address')) ? (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -598,8 +607,9 @@ export default function TapToTipPage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-green-400 font-semibold text-sm">Your Kaspa address is live on TapToTip</p>
-              <p className="text-white/50 text-xs truncate font-mono mt-0.5">{currentUser.created_wallet_address.slice(0, 20)}...{currentUser.created_wallet_address.slice(-8)}</p>
+              <p className="text-white/50 text-xs truncate font-mono mt-0.5">{(currentUser?.created_wallet_address || localStorage.getItem('ttt_wallet_address')).slice(0, 20)}...{(currentUser?.created_wallet_address || localStorage.getItem('ttt_wallet_address')).slice(-8)}</p>
             </div>
+            {currentUser && (
             <button
               onClick={openEditProfile}
               className="flex items-center gap-1.5 text-green-400 hover:text-green-300 text-xs border border-green-500/30 px-3 py-1.5 rounded-lg hover:bg-green-500/10 transition-all whitespace-nowrap"
@@ -607,6 +617,7 @@ export default function TapToTipPage() {
               <Pencil className="w-3 h-3" />
               Edit
             </button>
+            )}
           </motion.div>
         ) : (
           <motion.div
@@ -621,6 +632,7 @@ export default function TapToTipPage() {
               <p className="text-white font-semibold text-sm">Ready to receive KAS tips?</p>
               <p className="text-white/50 text-xs mt-0.5">Add your Kaspa wallet address to appear on TapToTip and let the community support you.</p>
             </div>
+            {currentUser && (
             <button
               onClick={openEditProfile}
               className="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 text-xs border border-cyan-500/30 px-3 py-1.5 rounded-lg hover:bg-cyan-500/10 transition-all whitespace-nowrap"
@@ -628,12 +640,13 @@ export default function TapToTipPage() {
               Add Wallet
               <ArrowRight className="w-3 h-3" />
             </button>
+            )}
           </motion.div>
         )}
         </div>
         )}
 
-        {!currentUser && (
+        {!currentUser && !localStorage.getItem('ttt_wallet_address') && (
         <div className="max-w-2xl mx-auto mb-8">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -999,11 +1012,11 @@ export default function TapToTipPage() {
                     <p className="text-white/40 text-xs mb-1">Your Address</p>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-white text-xs font-mono break-all">
-                        {currentUser?.created_wallet_address}
+                        {currentUser?.created_wallet_address || localStorage.getItem('ttt_wallet_address')}
                       </p>
                       <Button
                         onClick={() => {
-                          navigator.clipboard.writeText(currentUser?.created_wallet_address || '');
+                          navigator.clipboard.writeText(currentUser?.created_wallet_address || localStorage.getItem('ttt_wallet_address') || '');
                           alert('Address copied');
                         }}
                         size="sm"

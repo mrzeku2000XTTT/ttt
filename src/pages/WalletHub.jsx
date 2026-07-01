@@ -15,14 +15,16 @@ export default function WalletHubPage() {
   useEffect(() => {
     const loadBalance = async () => {
       try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) {
-          setLoading(false);
-          return;
-        }
-        const user = await base44.auth.me();
         const localAddr = localStorage.getItem('ttt_wallet_address');
-        const walletAddress = localAddr || user?.created_wallet_address;
+        let walletAddress = localAddr;
+        
+        if (!walletAddress) {
+          const isAuth = await base44.auth.isAuthenticated();
+          if (isAuth) {
+            const user = await base44.auth.me();
+            walletAddress = user?.created_wallet_address;
+          }
+        }
         
         if (walletAddress) {
           const res = await base44.functions.invoke('getKaspaBalance', { address: walletAddress });
