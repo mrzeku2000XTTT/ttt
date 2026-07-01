@@ -71,13 +71,14 @@ Deno.serve(async (req) => {
     const moderation = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You are a content moderator for a crypto community chest called "Ark of Covenants". A user is making a wish to receive free KAS.
 
-Check the wish for:
-1. SENSITIVE INFO: Private keys, seed phrases, mnemonics, passwords, API keys, email addresses, phone numbers, physical addresses — these MUST be stripped.
-2. SPAM: Pure promotional content, repeated characters, scam links.
-3. ABUSE: Hate speech, threats, illegal requests.
+This is a LEGITIMATE use case — people describe what they'll do with the KAS (marketing, content creation, learning, tipping, etc). Only reject for the following:
 
-If sensitive info is found, REMOVE it and return the cleaned version.
-If the wish is pure spam or abuse, set approved=false.
+1. SENSITIVE INFO: Private keys, seed phrases, mnemonics, passwords, API keys — strip these from the wish but DO NOT reject for them.
+2. SCAM LINKS: URLs to phishing sites, fake giveaways, or scam projects — reject.
+3. ABUSE: Hate speech, threats, illegal activity, targeted harassment — reject.
+4. BOT SPAM: Gibberish, repeated characters (e.g. "aaaaaa"), or empty/near-empty content — reject.
+
+DO NOT reject for: promotional language, mentioning projects or products, expressing enthusiasm, or describing how KAS will be used for content/marketing/education. These are all valid wishes.
 
 Return JSON: { "approved": boolean, "sanitized_wish": "cleaned version", "flags": ["issues"], "reason": "brief explanation" }
 
