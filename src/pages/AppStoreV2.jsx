@@ -138,7 +138,7 @@ export default function AppStoreV2Page() {
               <Bot className="w-4 h-4" />
             </Link>
             <Link
-              to="/Home"
+              to="/"
               onClick={playGTA}
               className="flex items-center text-[13px] font-semibold text-white bg-black hover:bg-zinc-800 h-10 px-4 rounded-full transition-colors"
             >
