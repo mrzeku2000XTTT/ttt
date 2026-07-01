@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Rocket, Lock, Shield, Droplet, Users, Hash, Terminal, ExternalLink } from "lucide-react";
+import { ZK_AGENT_URL } from "@/components/tttz/ZKChatWidget";
 
 const TEMPLATES = [
   {
@@ -235,14 +236,14 @@ export default function TTTZLaunch() {
           </div>
 
           {/* Deploy Button */}
-          <button disabled
-            className="w-full py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed"
-            style={{ background: "#111", border: "1px solid #1a1a1a", color: "#444" }}
-            title="Connect via ZK Agent to deploy">
-            <Terminal className="w-4 h-4" /> Connect via ZK Agent
-          </button>
-          <p className="text-center text-[10px] font-mono" style={{ color: "#333" }}>
-            Deployment requires ZK Agent authentication
+          <a href={ZK_AGENT_URL} target="_blank" rel="noopener noreferrer"
+            className="w-full py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all hover:opacity-90"
+            style={{ background: "#00ffcc", color: "#0a0a0a" }}
+            title="Open ZK Superagent to deploy this covenant">
+            <Rocket className="w-4 h-4" /> Deploy Covenant via ZK Agent
+          </a>
+          <p className="text-center text-[10px] font-mono" style={{ color: "#444" }}>
+            Opens the ZK Superagent — it compiles & deploys your covenant on-chain
           </p>
 
           {/* Code Block */}

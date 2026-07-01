@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Home, Rocket, Search, Coins, Terminal } from "lucide-react";
+import ZKChatWidget from "@/components/tttz/ZKChatWidget";
 
 const NAV_ITEMS = [
   { label: "Home", path: "/TTTZ", icon: Home },
@@ -51,6 +52,9 @@ export default function TTTZLayout() {
       <main className="pt-14 pb-16 sm:pb-4 max-w-5xl mx-auto px-4">
         <Outlet />
       </main>
+
+      {/* ZK Agent Chat Widget */}
+      <ZKChatWidget />
 
       {/* Mobile Bottom Tab Bar */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 border-t flex items-center justify-around"
