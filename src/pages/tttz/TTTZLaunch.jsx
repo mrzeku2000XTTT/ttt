@@ -240,10 +240,10 @@ export default function TTTZLaunch() {
             className="w-full py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all hover:opacity-90"
             style={{ background: "#00ffcc", color: "#0a0a0a" }}
             title="Open ZK Superagent to deploy this covenant">
-            <Rocket className="w-4 h-4" /> Deploy Covenant via ZK Agent
+            <Rocket className="w-4 h-4" /> Deploy Covenant via SUPERZK
           </a>
           <p className="text-center text-[10px] font-mono" style={{ color: "#444" }}>
-            Opens the ZK Superagent — it compiles & deploys your covenant on-chain
+            SUPERZK compiles & deploys your covenant on-chain
           </p>
 
           {/* Code Block */}

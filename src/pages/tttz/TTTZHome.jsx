@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Zap, Activity, Lock, TrendingUp } from "lucide-react";
+import { ExternalLink, Zap, Activity, Lock, TrendingUp, Bot, Sparkles } from "lucide-react";
+import { ZK_AGENT_URL, SUPERZK_NAME } from "@/components/tttz/ZKChatWidget";
 
 const AGENT_ADDRESS = "kaspa:qpkn4aczvuqpmhvzv2lunjudfnda6wlk258w90yptjxv6v2q7dlkq2cm8e58e";
 const KASPA_API = "https://api.kaspa.org";
@@ -61,6 +62,19 @@ export default function TTTZHome() {
           <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#00ffcc" }} />
           TOCCATA MAINNET · LIVE
         </div>
+
+        {/* SUPERZK Badge */}
+        <a href={ZK_AGENT_URL} target="_blank" rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all hover:scale-105 group"
+          style={{ background: "linear-gradient(135deg, rgba(0,255,204,0.12), rgba(0,255,204,0.04))", border: "1px solid rgba(0,255,204,0.3)", color: "#00ffcc" }}
+          title="SUPERZK — Covenant creation agent">
+          <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: "rgba(0,255,204,0.15)", border: "1px solid rgba(0,255,204,0.3)" }}>
+            <Bot className="w-3 h-3" style={{ color: "#00ffcc" }} />
+          </div>
+          <span className="tracking-wide">{SUPERZK_NAME}</span>
+          <span className="text-[9px] font-mono opacity-60">· Covenant Agent</span>
+          <Sparkles className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+        </a>
       </div>
 
       {/* Balance Card */}

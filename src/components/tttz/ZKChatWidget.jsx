@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Bot, X, ExternalLink } from "lucide-react";
 
 export const ZK_AGENT_URL = "https://app.base44.com/superagent/6a444b036408e68ec8d6f2a6";
+export const SUPERZK_NAME = "SUPERZK";
 
 export default function ZKChatWidget() {
   const [open, setOpen] = useState(false);
@@ -13,10 +14,10 @@ export default function ZKChatWidget() {
         onClick={() => setOpen(!open)}
         className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg transition-all hover:scale-105"
         style={{ background: "#00ffcc", color: "#0a0a0a", boxShadow: "0 0 20px rgba(0,255,204,0.3)" }}
-        title="Chat with ZK Agent"
+        title="Chat with SUPERZK — Covenant Creation Agent"
       >
         <Bot className="w-4 h-4" />
-        <span className="text-xs font-bold">Ask ZK</span>
+        <span className="text-xs font-bold">SUPERZK</span>
       </button>
 
       {/* Popover */}
@@ -29,8 +30,8 @@ export default function ZKChatWidget() {
                 <Bot className="w-3.5 h-3.5" style={{ color: "#00ffcc" }} />
               </div>
               <div>
-                <div className="text-xs font-bold" style={{ color: "#00ffcc" }}>ZK Agent</div>
-                <div className="text-[9px] font-mono" style={{ color: "#555" }}>On-chain covenant deployer</div>
+                <div className="text-xs font-bold" style={{ color: "#00ffcc" }}>SUPERZK</div>
+                <div className="text-[9px] font-mono" style={{ color: "#555" }}>Covenant creation agent</div>
               </div>
             </div>
             <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-white">
@@ -38,12 +39,12 @@ export default function ZKChatWidget() {
             </button>
           </div>
           <p className="text-[11px] leading-relaxed" style={{ color: "#888" }}>
-            The ZK Superagent compiles and deploys Silverscript covenants directly on-chain. Open the chat to deploy, inspect, or manage your covenant.
+            SUPERZK compiles and deploys Silverscript covenants directly on-chain on Kaspa Toccata. Open the chat to deploy, inspect, or manage your covenant.
           </p>
           <a href={ZK_AGENT_URL} target="_blank" rel="noopener noreferrer"
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90"
             style={{ background: "#00ffcc", color: "#0a0a0a" }}>
-            <Bot className="w-3.5 h-3.5" /> Open ZK Chat
+            <Bot className="w-3.5 h-3.5" /> Open SUPERZK Chat
             <ExternalLink className="w-3 h-3 opacity-60" />
           </a>
         </div>
