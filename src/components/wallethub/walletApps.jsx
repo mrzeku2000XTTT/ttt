@@ -1,7 +1,5 @@
 // All wallet & finance apps living inside TTT
 export const WALLET_APPS = [
-  { name: "Terra", path: "Terra", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/02e4109c7_generated_image.png", desc: "Kaspa wallet manager", tag: "Wallet" },
-  { name: "DAGKnight", path: "DAGKnightWallet", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/90ec7400b_generated_image.png", desc: "Advanced multi-layer wallet", tag: "Wallet", premium: true },
   { name: "Bridge", path: "Bridge", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1678c90a9_generated_image.png", desc: "Send KAS cross-layer", tag: "Bridge" },
   { name: "KC Bridge", path: "KCbridge", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3ffa2873f_generated_image.png", desc: "Cross-chain bridge", tag: "Bridge" },
   { name: "TapToTip", path: "TapToTip", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ea6112210_generated_image.png", desc: "Quick KAS tipping", tag: "Payments" },
@@ -10,6 +8,5 @@ export const WALLET_APPS = [
   { name: "Kurncy", path: "Kurncy", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/567e67ab8_generated_image.png", desc: "Currency exchange", tag: "Exchange" },
   { name: "CoinSpace", path: "CoinSpace", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/5b76c63a9_generated_image.png", desc: "Wallet app", tag: "Wallet" },
   { name: "Kurve", path: "Kurve", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/926f3b5ef_generated_image.png", desc: "Kaspa charts", tag: "Markets" },
-  { name: "VAULT", path: "Vault", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/6cf3bf06c_generated_image.png", desc: "Secure vault", tag: "Storage" },
   { name: "Keystone", path: "Keystone", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/efafddda8_generated_image.png", desc: "Hardware wallet", tag: "Wallet" },
 ];
