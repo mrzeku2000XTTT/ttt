@@ -240,20 +240,42 @@ Deno.serve(async (req) => {
 
     const fromScript = p2pkScriptFromAddress(normalizedFromAddress);
     const toScript = p2pkScriptFromAddress(normalizedToAddress);
-    const change = totalIn - amountSompi - feeSompi;
+    let change = totalIn - amountSompi - feeSompi;
 
-    // Pre-check: Kaspa rejects transactions whose total storage mass exceeds 500,000.
-    // Storage mass is proportional to total output amount (amount_sompi / 500).
-    // A single large UTXO (e.g. 5 KAS) produces ~1,000,000 mass — unsplittable.
-    const totalOutputSompi = amountSompi + (change > 0n ? change : 0n);
-    const estimatedStorageMass = totalOutputSompi / STORAGE_MASS_DIVISOR;
-    if (estimatedStorageMass > MAX_TX_MASS) {
-      const maxSpendableKas = Number(MAX_TX_MASS * STORAGE_MASS_DIVISOR) / 1e8;
-      throw new Error(
-        `UTXO too large: estimated mass ${estimatedStorageMass} exceeds limit ${MAX_TX_MASS}. ` +
-        `Max spendable per tx ≈ ${maxSpendableKas} KAS. ` +
-        `This wallet needs smaller UTXOs (send multiple small amounts to the address from an external wallet).`
-      );
+    // Storage mass check: Kaspa rejects transactions whose total mass exceeds 500,000.
+    // Mass ≈ 38753 * N_outputs + 0.001845 * total_output_sompi (empirically derived).
+    // When a wallet has a single large UTXO, the change output pushes mass over the limit.
+    // Fix: drop the change output (remainder becomes fee) so the send succeeds.
+    const MASS_PER_OUTPUT = 38753n;
+    const MASS_PER_SOMPI_X_MILLION = 1845n; // 0.001845 * 1,000,000
+    const SAFE_MASS_LIMIT = 450000n;
+
+    function estimateMass(numOut, totalOutSompi) {
+      return MASS_PER_OUTPUT * BigInt(numOut) + (MASS_PER_SOMPI_X_MILLION * totalOutSompi) / 1000000n;
+    }
+
+    let outputs = [{ amount: amountSompi, scriptVersion: 0, scriptPubKey: toScript }];
+    if (change > 0n) outputs.push({ amount: change, scriptVersion: 0, scriptPubKey: fromScript });
+
+    let totalOutSompi = outputs.reduce((s, o) => s + o.amount, 0n);
+    let estMass = estimateMass(outputs.length, totalOutSompi);
+
+    if (estMass > SAFE_MASS_LIMIT && change > 0n) {
+      // Drop change output: send requested amount, rest becomes fee
+      outputs = [{ amount: amountSompi, scriptVersion: 0, scriptPubKey: toScript }];
+      totalOutSompi = amountSompi;
+      estMass = estimateMass(1, totalOutSompi);
+      feeSompi = estimateFee(selectedUtxos.length, 1);
+      change = totalIn - amountSompi - feeSompi;
+      // If even without change the mass is too high, cap the amount
+      if (estMass > SAFE_MASS_LIMIT) {
+        const maxOutSompi = (SAFE_MASS_LIMIT - MASS_PER_OUTPUT) * 1000000n / MASS_PER_SOMPI_X_MILLION;
+        if (maxOutSompi <= 0n) throw new Error('Balance too low to send');
+        amountSompi = maxOutSompi;
+        feeSompi = totalIn - amountSompi;
+        change = 0n;
+        outputs = [{ amount: amountSompi, scriptVersion: 0, scriptPubKey: toScript }];
+      }
     }
 
     const inputs = selectedUtxos.map(u => ({
@@ -265,9 +287,6 @@ Deno.serve(async (req) => {
       sequence: 0n,
       sigOpCount: 1,
     }));
-
-    const outputs = [{ amount: amountSompi, scriptVersion: 0, scriptPubKey: toScript }];
-    if (change > 0n) outputs.push({ amount: change, scriptVersion: 0, scriptPubKey: fromScript });
 
     const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
     const signatureScripts = inputs.map((_, i) => {
@@ -315,12 +334,17 @@ Deno.serve(async (req) => {
     let submitData;
     try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
 
+    const note = change === 0n && !sendAll
+      ? `High fee applied (${Number(feeSompi) / 1e8} KAS) due to UTXO mass limit. Send smaller amounts to this address from an external wallet to create smaller UTXOs and reduce fees.`
+      : undefined;
+
     return Response.json({
       success: true,
       txId: submitData.transactionId || submitData.txid || submitData,
       amountKas: Number(amountSompi) / 1e8,
       fee: Number(feeSompi) / 1e8,
       inputsCompounded: selectedUtxos.length,
+      note,
     });
   } catch (error) {
     const msg = error?.message || String(error) || 'Unknown error';

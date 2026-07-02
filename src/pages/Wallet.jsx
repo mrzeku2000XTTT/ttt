@@ -173,7 +173,8 @@ export default function WalletPage() {
         amountKas: parseFloat(sendAmount),
       });
       if (res.data?.error) throw new Error(res.data.error);
-      showToast(`Sent! TX: ${String(res.data.txId).slice(0, 16)}...`, 'success');
+      const feeNote = res.data?.note ? ` ⚠️ ${res.data.note}` : '';
+      showToast(`Sent ${res.data.amountKas?.toFixed(4) || sendAmount} KAS! TX: ${String(res.data.txId).slice(0, 16)}...${feeNote}`, 'success', 6000);
       setShowSend(false);
       setSendTo('');
       setSendAmount('');
