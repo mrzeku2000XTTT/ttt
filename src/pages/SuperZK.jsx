@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2, ShieldAlert } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import SZKLogo from "@/components/superzk/SZKLogo";
 
 const SUPER_ZK_URL = "https://super-zk-vault.base44.app";
@@ -9,6 +10,39 @@ const SUPER_ZK_URL = "https://super-zk-vault.base44.app";
 export default function SuperZKPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [authState, setAuthState] = useState({ loading: true, isAdmin: false });
+
+  useEffect(() => {
+    base44.auth.me()
+      .then((user) => setAuthState({ loading: false, isAdmin: user?.role === "admin" }))
+      .catch(() => setAuthState({ loading: false, isAdmin: false }));
+  }, []);
+
+  if (authState.loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#f59e0b" }} />
+      </div>
+    );
+  }
+
+  if (!authState.isAdmin) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center px-6 text-center">
+        <ShieldAlert className="w-12 h-12 mb-4" style={{ color: "#ef4444" }} />
+        <h1 className="text-xl font-black uppercase tracking-widest mb-2" style={{ color: "#f59e0b", fontFamily: "'Impact', 'Arial Black', sans-serif" }}>Access Denied</h1>
+        <p className="text-sm mb-6" style={{ color: "rgba(217,119,6,0.5)" }}>SuperZK is restricted to administrators only.</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all"
+          style={{ color: "#f59e0b", fontFamily: "'Impact', 'Arial Black', sans-serif", border: "2px solid rgba(217,119,6,0.4)" }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-[12px] font-black uppercase tracking-wider">Go Back</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black flex flex-col" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
