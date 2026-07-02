@@ -1189,7 +1189,7 @@ export default function TTTLandingPage() {
               { label: "TIP", path: "/Tip" },
               { label: "GATE", path: "/TTTGate", iconOnly: true, icon: Gem },
               { label: "WALLET", path: "/WalletHub", iconOnly: true, icon: "kaspa" },
-              { label: "ZK", action: () => { sounds.playNavigate(); setShowZKChat(true); setZkMinimized(false); } },
+              { label: "ZK", path: "/SuperZK" },
             ].map((item, i) => {
               const isHovered = hoveredItem === item.label;
               const Icon = typeof item.icon === 'string' ? null : item.icon;

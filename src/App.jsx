@@ -107,6 +107,7 @@ import KaspaForgePage from './pages/KaspaForge';
 import CommunityHubPage from './pages/CommunityHub';
 import TTTZWalletPage from './pages/TTTZWallet';
 import ScenarioBotPage from './pages/ScenarioBot';
+import SuperZKPage from './pages/SuperZK';
 import KasBillboardPage from './pages/KasBillboard';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -248,6 +249,7 @@ const AuthenticatedApp = () => {
       <Route path="/CommunityHub" element={<CommunityHubPage />} />
       <Route path="/TTTZWallet" element={<TTTZWalletPage />} />
       <Route path="/ScenarioBot" element={<ScenarioBotPage />} />
+      <Route path="/SuperZK" element={<SuperZKPage />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
