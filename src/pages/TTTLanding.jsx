@@ -166,7 +166,7 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   };
 
   const ALL_APPS = [
-    { name: "KAS SWORD", path: "KasSword", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/32e250713_image.png", desc: "Post-quantum DAG vault" },
+    { name: "KAS SWORD", path: "KasSword", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/636eaa7be_generated_image.png", desc: "Post-quantum DAG vault" },
     { name: "KasBillboard", path: "KasBillboard", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/571fc08c6_image.png", desc: "Kaspa billboard advertising" },
     { name: "Feed", path: "Feed", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fdf274d16_generated_image.png", desc: "Social feed + KAS tips" },
     { name: "Agent ZK", path: "AgentZK", logo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/3e49e39c2_image.png", desc: "Crypto identity" },
