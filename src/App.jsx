@@ -109,6 +109,7 @@ import TTTZWalletPage from './pages/TTTZWallet';
 import ScenarioBotPage from './pages/ScenarioBot';
 import SuperZKPage from './pages/SuperZK';
 import KasBillboardPage from './pages/KasBillboard';
+import KasSwordPage from './pages/KasSword';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -251,6 +252,7 @@ const AuthenticatedApp = () => {
       <Route path="/ScenarioBot" element={<ScenarioBotPage />} />
       <Route path="/SuperZK" element={<SuperZKPage />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
+      <Route path="/KasSword" element={<KasSwordPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
