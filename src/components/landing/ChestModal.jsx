@@ -22,12 +22,14 @@ export default function ChestModal({ onClose, sounds }) {
   const [aiMessage, setAiMessage] = useState("");
   const [copied, setCopied] = useState(false);
   const [initializing, setInitializing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(CHEST_WALLET_KEY);
     if (saved) setWalletAddress(saved);
     checkCooldown();
     loadChestInfo();
+    base44.auth.me().then((u) => setIsAdmin(u?.role === "admin")).catch(() => setIsAdmin(false));
   }, []);
 
   const checkCooldown = () => {
@@ -289,6 +291,7 @@ export default function ChestModal({ onClose, sounds }) {
                 <p className="text-[11px] mb-4" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>
                   The Ark has not been initialized yet.
                 </p>
+                {isAdmin ? (
                 <button
                   onClick={async () => {
                     try {
@@ -316,6 +319,22 @@ export default function ChestModal({ onClose, sounds }) {
                 >
                   {initializing ? <><Loader2 className="w-4 h-4 animate-spin" /> INITIALIZING...</> : "▶ INITIALIZE CHEST (ADMIN)"}
                 </button>
+                ) : (
+                  <div className="space-y-3">
+                    <motion.div
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2.5, repeat: Infinity }}
+                      className="py-6 text-center"
+                    >
+                      <div className="text-[18px] font-black tracking-[0.3em] uppercase mb-2" style={{ color: ACCENT_BRIGHT, fontFamily: "monospace", textShadow: "0 0 20px rgba(245,208,80,0.4)" }}>
+                        🔒 SOON TO UNLOCK
+                      </div>
+                      <p className="text-[10px] leading-relaxed tracking-wider" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "monospace" }}>
+                        The Ark is being prepared. Check back shortly!
+                      </p>
+                    </motion.div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
