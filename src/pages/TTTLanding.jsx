@@ -1252,6 +1252,13 @@ export default function TTTLandingPage() {
         )}
       </AnimatePresence>
 
+      {/* VISION BUTTON — bottom left */}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); navigate("/Vision"); }}
+        className="absolute left-4 bottom-5 focus:outline-none z-20">
+        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ VISION ]</span>
+      </motion.button>
+
       {/* Chest Modal */}
       {showChest && <ChestModal onClose={() => setShowChest(false)} sounds={sounds} />}
     </main>
