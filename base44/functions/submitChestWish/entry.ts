@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-const CLAIM_AMOUNT = 0.01; // Minimum sustainable KAS per claim
+const CLAIM_AMOUNT = 1; // KAS per approved wish
 const KASPA_API = 'https://api.kaspa.org';
 
 Deno.serve(async (req) => {
