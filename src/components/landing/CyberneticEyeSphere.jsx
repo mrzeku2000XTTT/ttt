@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
 
 const vertexShader = `
@@ -76,93 +75,109 @@ const fragmentShader = `
   }
 `;
 
-function EyeSphere() {
-  const groupRef = useRef();
-  const meshRef = useRef();
-  const mouseRef = useRef({ x: 0, y: 0 });
-
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader,
-        fragmentShader,
-        uniforms: {
-          uTime: { value: 0 },
-          uGold: { value: new THREE.Color("#C5A059") },
-          uBrightGold: { value: new THREE.Color("#FDB931") },
-          uBase: { value: new THREE.Color("#0A0A0A") },
-        },
-      }),
-    []
-  );
+export default function CyberneticEyeSphere() {
+  const mountRef = useRef(null);
+  const stateRef = useRef({ renderer: null, animId: null, material: null });
 
   useEffect(() => {
-    if (meshRef.current) {
-      meshRef.current.material = material;
-    }
-  }, [material]);
+    const mount = mountRef.current;
+    if (!mount) return;
+    const W = mount.clientWidth;
+    const H = mount.clientHeight;
 
-  useEffect(() => {
-    const handler = (e) => {
-      mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#0A0A0A");
+
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+    camera.position.set(0, 0, 3.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    mount.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+    const pointLight = new THREE.PointLight("#FDB931", 1.8, 12);
+    pointLight.position.set(0, 0, 2);
+    scene.add(pointLight);
+
+    const group = new THREE.Group();
+
+    const material = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        uTime: { value: 0 },
+        uGold: { value: new THREE.Color("#C5A059") },
+        uBrightGold: { value: new THREE.Color("#FDB931") },
+        uBase: { value: new THREE.Color("#0A0A0A") },
+      },
+    });
+
+    const geometry = new THREE.SphereGeometry(1, 128, 128);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.scale.setScalar(1.5);
+    group.add(mesh);
+
+    scene.add(group);
+
+    const s = stateRef.current;
+    s.renderer = renderer;
+    s.material = material;
+
+    const mouse = { x: 0, y: 0 };
+    const onMouseMove = (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
-    window.addEventListener("mousemove", handler);
-    return () => window.removeEventListener("mousemove", handler);
+    window.addEventListener("mousemove", onMouseMove);
+
+    const handleResize = () => {
+      const w = mount.clientWidth;
+      const h = mount.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+    const ro = new ResizeObserver(handleResize);
+    ro.observe(mount);
+
+    let last = performance.now();
+    const animate = () => {
+      const now = performance.now();
+      const delta = Math.min((now - last) / 1000, 0.05);
+      last = now;
+
+      mesh.rotation.y += delta * 0.06;
+      group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, mouse.y * 0.12, 0.04);
+      group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, -mouse.x * 0.08, 0.04);
+      pointLight.intensity = 1.8 + Math.sin(now / 1000 * 1.3) * 0.5;
+
+      material.uniforms.uTime.value += delta;
+
+      renderer.render(scene, camera);
+      s.animId = requestAnimationFrame(animate);
+    };
+    s.animId = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(s.animId);
+      ro.disconnect();
+      window.removeEventListener("mousemove", onMouseMove);
+      geometry.dispose();
+      material.dispose();
+      if (renderer.domElement.parentNode === mount) {
+        mount.removeChild(renderer.domElement);
+      }
+      renderer.dispose();
+      s.renderer = null;
+      s.material = null;
+    };
   }, []);
 
-  useFrame((_, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.06;
-    }
-    if (groupRef.current) {
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(
-        groupRef.current.rotation.x,
-        mouseRef.current.y * 0.12,
-        0.04
-      );
-      groupRef.current.rotation.z = THREE.MathUtils.lerp(
-        groupRef.current.rotation.z,
-        -mouseRef.current.x * 0.08,
-        0.04
-      );
-    }
-    material.uniforms.uTime.value += delta;
-  });
-
   return (
-    <group ref={groupRef}>
-      <mesh ref={meshRef} scale={1.5}>
-        <sphereGeometry args={[1, 128, 128]} />
-      </mesh>
-    </group>
-  );
-}
-
-function CenterLight() {
-  const ref = useRef();
-  useFrame((state) => {
-    if (ref.current) {
-      ref.current.intensity = 1.8 + Math.sin(state.clock.elapsedTime * 1.3) * 0.5;
-    }
-  });
-  return (
-    <pointLight
-      ref={ref}
-      position={[0, 0, 2]}
-      color="#FDB931"
-      intensity={1.8}
-      distance={12}
-    />
-  );
-}
-
-export default function CyberneticEyeSphere() {
-  return (
-    <Canvas
-      camera={{ position: [0, 0, 3.5], fov: 45 }}
-      gl={{ antialias: true, alpha: false }}
-      dpr={[1, 2]}
+    <div
+      ref={mountRef}
       style={{
         position: "absolute",
         inset: 0,
@@ -170,11 +185,6 @@ export default function CyberneticEyeSphere() {
         height: "100%",
         background: "#0A0A0A",
       }}
-    >
-      <color attach="background" args={["#0A0A0A"]} />
-      <ambientLight intensity={0.1} />
-      <CenterLight />
-      <EyeSphere />
-    </Canvas>
+    />
   );
 }
