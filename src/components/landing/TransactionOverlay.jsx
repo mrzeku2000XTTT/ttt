@@ -60,7 +60,7 @@ export default function TransactionOverlay() {
   return (
     <>
       <div
-        className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
+        className="pointer-events-none absolute inset-0 z-30 overflow-hidden"
         aria-hidden="true"
       >
         {txPool.length > 0 &&
@@ -93,8 +93,11 @@ export default function TransactionOverlay() {
                     }}
                   />
                   <button
-                    onClick={() => setSelected(tx)}
-                    className="pointer-events-auto absolute font-mono whitespace-nowrap cursor-pointer transition-all hover:scale-125 hover:z-20"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(tx);
+                    }}
+                    className="pointer-events-auto absolute font-mono whitespace-nowrap cursor-pointer transition-transform hover:scale-125"
                     style={{
                       left: "0.5vmin",
                       top: "0",
@@ -104,8 +107,10 @@ export default function TransactionOverlay() {
                       textShadow: "0 0 6px rgba(253, 185, 49, 0.55)",
                       background: "transparent",
                       border: "none",
-                      padding: "2px 4px",
+                      padding: "8px 10px",
                       lineHeight: 1,
+                      zIndex: 5,
+                      position: "relative",
                     }}
                     title="View transaction details"
                   >
