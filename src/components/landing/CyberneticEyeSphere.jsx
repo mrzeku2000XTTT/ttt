@@ -79,18 +79,28 @@ const fragmentShader = `
 function EyeSphere() {
   const groupRef = useRef();
   const meshRef = useRef();
-  const matRef = useRef();
   const mouseRef = useRef({ x: 0, y: 0 });
 
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uGold: { value: new THREE.Color("#C5A059") },
-      uBrightGold: { value: new THREE.Color("#FDB931") },
-      uBase: { value: new THREE.Color("#0A0A0A") },
-    }),
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          uTime: { value: 0 },
+          uGold: { value: new THREE.Color("#C5A059") },
+          uBrightGold: { value: new THREE.Color("#FDB931") },
+          uBase: { value: new THREE.Color("#0A0A0A") },
+        },
+      }),
     []
   );
+
+  useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.material = material;
+    }
+  }, [material]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -117,21 +127,13 @@ function EyeSphere() {
         0.04
       );
     }
-    if (matRef.current) {
-      matRef.current.uniforms.uTime.value += delta;
-    }
+    material.uniforms.uTime.value += delta;
   });
 
   return (
     <group ref={groupRef}>
       <mesh ref={meshRef} scale={1.5}>
         <sphereGeometry args={[1, 128, 128]} />
-        <shaderMaterial
-          ref={matRef}
-          vertexShader={vertexShader}
-          fragmentShader={fragmentShader}
-          uniforms={uniforms}
-        />
       </mesh>
     </group>
   );
