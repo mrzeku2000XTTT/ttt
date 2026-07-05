@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
+import TransactionOverlay from "./TransactionOverlay";
 
 const vertexShader = `
   varying vec3 vViewNormal;
@@ -177,7 +178,6 @@ export default function CyberneticEyeSphere() {
 
   return (
     <div
-      ref={mountRef}
       style={{
         position: "absolute",
         inset: 0,
@@ -185,6 +185,17 @@ export default function CyberneticEyeSphere() {
         height: "100%",
         background: "#0A0A0A",
       }}
-    />
+    >
+      <div
+        ref={mountRef}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+        }}
+      />
+      <TransactionOverlay />
+    </div>
   );
 }
