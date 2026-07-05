@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -41,7 +41,6 @@ const fragmentShader = `
     float r = length(p);
     float theta = atan(p.y, p.x);
 
-    // Radial circuit lines converging toward center
     float numLines = 28.0;
     float angleSeg = theta / 6.2831853 * numLines;
     float lineFract = abs(fract(angleSeg) - 0.5);
@@ -52,23 +51,16 @@ const fragmentShader = `
     float breakN = noise(vec2(theta * 6.0, r * 16.0 + uTime * 0.4));
     radialLines *= step(0.3, breakN);
 
-    // Concentric circuit rings
     float ringFract = abs(fract(r * 9.0) - 0.5);
     float rings = smoothstep(0.02, 0.0, ringFract);
     rings *= smoothstep(0.1, 0.22, r) * smoothstep(0.85, 0.5, r);
     rings *= step(0.42, noise(vec2(r * 11.0, theta * 2.0 - uTime * 0.2)));
 
-    // Pulse traveling outward
     float pulse = 0.5 + 0.5 * sin(r * 22.0 - uTime * 2.5);
-
-    // Pupil glow (center)
     float pupil = smoothstep(0.2, 0.0, r);
     float pupilPulse = 0.75 + 0.25 * sin(uTime * 1.3);
-
-    // Iris ring
     float irisRing = smoothstep(0.006, 0.0, abs(r - 0.16)) * 0.5;
 
-    // Fresnel rim
     vec3 viewDir = normalize(vViewPosition);
     float fresnel = pow(1.0 - max(dot(n, viewDir), 0.0), 3.0);
 
@@ -87,20 +79,16 @@ const fragmentShader = `
 function EyeSphere() {
   const groupRef = useRef();
   const meshRef = useRef();
+  const matRef = useRef();
   const mouseRef = useRef({ x: 0, y: 0 });
 
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader,
-        fragmentShader,
-        uniforms: {
-          uTime: { value: 0 },
-          uGold: { value: new THREE.Color("#C5A059") },
-          uBrightGold: { value: new THREE.Color("#FDB931") },
-          uBase: { value: new THREE.Color("#0A0A0A") },
-        },
-      }),
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uGold: { value: new THREE.Color("#C5A059") },
+      uBrightGold: { value: new THREE.Color("#FDB931") },
+      uBase: { value: new THREE.Color("#0A0A0A") },
+    }),
     []
   );
 
@@ -129,13 +117,21 @@ function EyeSphere() {
         0.04
       );
     }
-    material.uniforms.uTime.value += delta;
+    if (matRef.current) {
+      matRef.current.uniforms.uTime.value += delta;
+    }
   });
 
   return (
     <group ref={groupRef}>
-      <mesh ref={meshRef} scale={1.5} material={material}>
+      <mesh ref={meshRef} scale={1.5}>
         <sphereGeometry args={[1, 128, 128]} />
+        <shaderMaterial
+          ref={matRef}
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          uniforms={uniforms}
+        />
       </mesh>
     </group>
   );
