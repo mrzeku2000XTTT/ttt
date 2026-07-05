@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 
-const NUM_RADIAL_LINES = 28;
-const MAX_VISIBLE = 9;
+const NUM_SLOTS = 10;
 const POLL_MS = 12000;
 
 function shortHash(hash) {
@@ -12,30 +11,29 @@ function shortHash(hash) {
 }
 
 export default function TransactionOverlay() {
-  const [txs, setTxs] = useState([]);
-  const [error, setError] = useState(false);
+  const [hashPool, setHashPool] = useState([]);
   const mountedRef = useRef(true);
+
+  // Precompute slot geometry: full 360° spread, varied speed/delay for organic flow
+  const slots = useMemo(() => {
+    return Array.from({ length: NUM_SLOTS }, (_, i) => {
+      const angle = (i / NUM_SLOTS) * 360 + (Math.random() * 18 - 9);
+      const duration = 7 + Math.random() * 5; // 7–12s per inward cycle
+      const delay = -Math.random() * duration; // negative = start mid-cycle
+      return { angle, duration, delay, key: i };
+    });
+  }, []);
 
   const fetchTxs = useCallback(async () => {
     try {
       const res = await base44.functions.invoke("getLiveKaspaTransactions", {});
       const list = res?.data?.transactions || res?.transactions || [];
-      if (!Array.isArray(list) || list.length === 0) {
-        setError(true);
-        return;
+      if (Array.isArray(list) && list.length > 0) {
+        const hashes = list.map((t) => shortHash(t.hash)).filter(Boolean);
+        if (mountedRef.current && hashes.length > 0) setHashPool(hashes);
       }
-      setError(false);
-      // Pick a rotating slice so positions shift over time
-      const slice = list.slice(0, MAX_VISIBLE).map((t, i) => ({
-        id: t.hash || `${t.timestamp}-${i}`,
-        hash: shortHash(t.hash),
-        amount: t.amount,
-        lineIndex: i % NUM_RADIAL_LINES,
-        radius: 30 + ((i * 13) % 38), // 30–68% from center
-      }));
-      if (mountedRef.current) setTxs(slice);
     } catch (e) {
-      if (mountedRef.current) setError(true);
+      // silent — overlay just stays empty
     }
   }, []);
 
@@ -49,50 +47,67 @@ export default function TransactionOverlay() {
     };
   }, [fetchTxs]);
 
-  if (error || txs.length === 0) return null;
+  if (hashPool.length === 0) return null;
 
   return (
     <div
       className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
       aria-hidden="true"
     >
-      {txs.map((tx, i) => {
-        const angle = (tx.lineIndex / NUM_RADIAL_LINES) * 360;
-        const rad = (angle * Math.PI) / 180;
-        const xPct = 50 + tx.radius * Math.cos(rad);
-        const yPct = 50 + tx.radius * Math.sin(rad);
-        // Rotate text to lie along the radial line; flip if on left half for readability
-        const onLeft = Math.cos(rad) < 0;
-        const rotation = onLeft ? angle + 180 : angle;
-
+      {slots.map((slot, i) => {
+        const hash = hashPool[i % hashPool.length] || "";
+        // Flip text on the left half so it reads upright, not upside-down
+        const flip = Math.cos((slot.angle * Math.PI) / 180) < 0;
         return (
           <div
-            key={tx.id}
-            className="absolute"
-            style={{
-              left: `${xPct}%`,
-              top: `${yPct}%`,
-              transform: `translate(-50%, -50%) rotate(${rotation}deg) translate(${onLeft ? "-50%" : "0"}, -50%)`,
-              animation: `txFade 600ms ease-out both`,
-              animationDelay: `${i * 70}ms`,
-            }}
+            key={slot.key}
+            className="absolute left-1/2 top-1/2"
+            style={{ transform: `rotate(${slot.angle}deg)` }}
           >
-            <span
-              className="font-mono text-[8px] sm:text-[9px] tracking-wider whitespace-nowrap"
+            <div
+              className="absolute"
               style={{
-                color: "rgba(253, 185, 49, 0.85)",
-                textShadow: "0 0 6px rgba(253, 185, 49, 0.6)",
+                animation: `tttFlowToCenter ${slot.duration}s linear infinite`,
+                animationDelay: `${slot.delay}s`,
+                willChange: "transform, opacity",
               }}
             >
-              {tx.hash}
-            </span>
+              {/* Trailing streak pointing toward center (-X in rotated frame) */}
+              <div
+                className="absolute"
+                style={{
+                  left: "-20vmin",
+                  top: "-0.5px",
+                  width: "20vmin",
+                  height: "1px",
+                  background:
+                    "linear-gradient(to right, rgba(253,185,49,0) 0%, rgba(253,185,49,0.55) 100%)",
+                }}
+              />
+              {/* Transaction hash, riding the line; flipped upright on left half */}
+              <span
+                className="absolute font-mono whitespace-nowrap"
+                style={{
+                  left: "0.5vmin",
+                  top: "0",
+                  transform: `translateY(-50%) ${flip ? "rotate(180deg)" : ""}`,
+                  fontSize: "9px",
+                  color: "rgba(253, 185, 49, 0.9)",
+                  textShadow: "0 0 6px rgba(253, 185, 49, 0.55)",
+                }}
+              >
+                {hash}
+              </span>
+            </div>
           </div>
         );
       })}
       <style>{`
-        @keyframes txFade {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        @keyframes tttFlowToCenter {
+          0%   { transform: translateX(44vmin); opacity: 0; }
+          8%   { opacity: 1; }
+          92%  { opacity: 1; }
+          100% { transform: translateX(13vmin); opacity: 0; }
         }
       `}</style>
     </div>
