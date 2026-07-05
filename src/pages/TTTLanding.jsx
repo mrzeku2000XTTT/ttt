@@ -12,6 +12,7 @@ import AgentStepLog from "@/components/tttv3/AgentStepLog";
 import AgentReasoningBubble from "@/components/tttv3/AgentReasoningBubble";
 import AgentPlanChecklist from "@/components/tttv3/AgentPlanChecklist";
 import ReactMarkdown from "react-markdown";
+import CyberneticEyeSphere from "@/components/landing/CyberneticEyeSphere";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
@@ -1091,11 +1092,8 @@ export default function TTTLandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden text-white" style={{ background: "#000", fontFamily: "'Georgia', serif" }}>
 
-      {/* === FULL-SCREEN BACKGROUND ART === */}
-      <div className="absolute inset-0">
-        <img src={ORB_IMAGE} alt="" className="w-full h-full object-cover object-center"
-          style={{ filter: "brightness(0.55) contrast(1.1) saturate(0.6)", transform: "scale(1.05)" }} />
-      </div>
+      {/* === 3D CYBERNETIC EYE SPHERE BACKGROUND === */}
+      <CyberneticEyeSphere />
 
       {/* === LAYERED ATMOSPHERIC OVERLAYS === */}
       {/* Deep black vignette edges */}
