@@ -421,6 +421,11 @@ function TransactionView({ data, explorerUrl }) {
                   <span className="inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">
                     +{fmtKas(out.amount)}
                   </span>
+                  {outputOps[i]?.some((op) => op.covenant) && (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-medium">
+                      <Shield className="w-2.5 h-2.5" /> Covenant (#{out.index ?? i})
+                    </span>
+                  )}
                   {out.script_public_key_type && <span className="text-[10px] text-zinc-500">{out.script_public_key_type}</span>}
                   {confirmed && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">Accepted</span>}
                 </div>
