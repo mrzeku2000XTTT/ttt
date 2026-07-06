@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Film, Plus, Play, Pause, RefreshCw, Download, Settings, ChevronRight,
-  ChevronLeft, Sparkles, AlertTriangle, Check, Loader2, Trash2, Edit2, X
+  ChevronLeft, Sparkles, AlertTriangle, Check, Loader2, Trash2, Edit2, X, ArrowLeft
 } from "lucide-react";
 
 const DEFAULT_CHAR_A = `short dark cropped hair, glasses, light beard, light-to-medium brown skin tone, white dress shirt with sleeves down, fitted dark vest, dark trousers, calm composed expression`;
@@ -42,6 +43,7 @@ Constraints: ${project.constraint_notes}`;
 const TABS = ["Project", "Shot Runs", "Filmstrip", "Export"];
 
 export default function GhostFrameStudio() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState(0);
   const [project, setProject] = useState(null);
   const [loadingProject, setLoadingProject] = useState(true);
@@ -209,6 +211,9 @@ export default function GhostFrameStudio() {
     <div className="min-h-screen bg-black text-white flex flex-col" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-3 border-b border-white/10">
+        <button onClick={() => navigate(-1)} className="flex items-center justify-center w-8 h-8 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 transition-all flex-shrink-0" title="Back">
+          <ArrowLeft className="w-4 h-4" />
+        </button>
         <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #0ea5e9, #6366f1)" }}>
           <Film className="w-4 h-4 text-white" />
         </div>

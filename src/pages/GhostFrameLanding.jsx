@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Film, Zap, Layers, Download, ArrowRight, Cpu, Eye, Sparkles } from "lucide-react";
+import { Film, Zap, Layers, Download, ArrowRight, ArrowLeft, Cpu, Eye, Sparkles } from "lucide-react";
 
 const FEATURES = [
   { icon: Layers, title: "Locked Characters", desc: "Seed your human and digital guardian once — every frame inherits the exact same design." },
@@ -74,6 +74,9 @@ export default function GhostFrameLanding() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="flex items-center justify-center w-8 h-8 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 transition-all" title="Back">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           {iconUrl ? (
             <img src={iconUrl} alt="icon" className="w-8 h-8 rounded-xl object-cover" />
           ) : (
