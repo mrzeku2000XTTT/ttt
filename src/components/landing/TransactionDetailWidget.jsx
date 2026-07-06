@@ -241,7 +241,7 @@ export default function TransactionDetailWidget({ transaction, onClose }) {
               onBlur={() => setTimeout(() => setShowHistory(false), 150)}
               placeholder="Search transaction, address, or block…"
               className="w-full pl-9 pr-20 py-2 text-[12px] text-zinc-200 placeholder-zinc-600 bg-black/40 border border-white/10 rounded-lg focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
-              autoFocus
+              autoFocus={window.matchMedia("(min-width: 1024px)").matches}
             />
             <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-black bg-emerald-500 hover:bg-emerald-400 rounded-md transition-colors">
               Enter <CornerDownLeft className="w-3 h-3" />
