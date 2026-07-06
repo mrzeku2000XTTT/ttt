@@ -16,20 +16,33 @@ function isKaspaAddress(s) {
   return /^[a-z0-9]{34,62}$/i.test(v);
 }
 
-// Tag detection based on subnetwork ID
+// Tag detection based on subnetwork ID + payload inspection
 // Native (all zeros) = regular Kaspa tx
-// 97b1... = Igra L2
-// 8900... / krc20 prefix = KRC-20
+// 97b1... = Igra L2 subnetwork
+// KRC-20 = detected from payload inscription ({"p":"krc-20",...})
 function detectTags(tx) {
   const tags = [];
-  const sn = String(tx.subnetwork_id || '');
+  const sn = String(tx.subnetwork_id || '').toLowerCase();
   const isNative = sn === '0000000000000000000000000000000000000000' || sn === '';
   const isIgra = sn.startsWith('97b1');
-  const isKrc20 = sn.startsWith('8900') || sn.startsWith('89');
 
-  if (isNative) tags.push('Native');
+  // KRC-20 / KRC-721 inscription detection from payload
+  // The payload is hex-encoded; "krc-20" in ASCII hex = 6b72632d3230
+  let isKrc20 = false;
+  let isKrc721 = false;
+  const payload = String(tx.payload || '');
+  if (payload) {
+    const lp = payload.toLowerCase();
+    isKrc20 = lp.includes('6b72632d3230');   // "krc-20"
+    isKrc721 = lp.includes('6b72632d373231'); // "krc-721"
+  }
+
+  // Tags are mutually exclusive for the "type" tag
   if (isIgra) tags.push('Igra L2');
-  if (isKrc20) tags.push('KRC-20');
+  else if (isKrc20) tags.push('KRC-20');
+  else if (isKrc721) tags.push('KRC-721');
+  else if (isNative) tags.push('Native');
+
   if (tx.covenant_id) tags.push('Covenant++');
   return tags;
 }
@@ -65,6 +78,7 @@ function parseTransaction(tx) {
       index: out.index ?? 0,
       amount: sompiToKas(out.amount),
       amount_sompi: out.amount,
+      script_public_key: out.script_public_key || null,
       script_public_key_address: out.script_public_key_address ||
         out.script_public_key?.address || null,
       script_public_key_type: out.script_public_key_type || null,
