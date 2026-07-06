@@ -312,18 +312,18 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
       {(view === "kaspa" || (category === "All" && !search)) && (
         <div className="flex items-center gap-3 mb-5">
           <button
-            onClick={() => onViewChange?.("all")}
-            className={`text-lg font-[800] transition-colors ${view === "all" ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
-          >
-            All Apps
-          </button>
-          <span className="text-zinc-300">·</span>
-          <button
             onClick={() => onViewChange?.("kaspa")}
             className={`text-lg font-[800] transition-colors flex items-center gap-1.5 ${view === "kaspa" ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
           >
             <Shield className="w-4 h-4" />
             KASPA
+          </button>
+          <span className="text-zinc-300">·</span>
+          <button
+            onClick={() => onViewChange?.("all")}
+            className={`text-lg font-[800] transition-colors ${view === "all" ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
+          >
+            ALL TTT APPS
           </button>
         </div>
       )}

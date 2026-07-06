@@ -59,7 +59,7 @@ export default function AppStoreV2Page() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [blueprintOpen, setBlueprintOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [view, setView] = useState("all");
+  const [view, setView] = useState("kaspa");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -208,7 +208,7 @@ export default function AppStoreV2Page() {
         </motion.div>
 
         {/* Featured (only when no search) */}
-        {!search && category === "All" && view === "all" && <AppStoreFeatured />}
+        {!search && category === "All" && <AppStoreFeatured />}
 
         {/* Category pills — larger, below Featured */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8 flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
