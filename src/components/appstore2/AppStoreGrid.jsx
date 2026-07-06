@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { Crown, ExternalLink } from "lucide-react";
+import { Crown, ExternalLink, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const APPS = [
@@ -146,6 +146,41 @@ const APPS = [
 
 ];
 
+// Curated Kaspa apps in priority order (KaspaHub first, Ksocial second, etc.)
+const KASPA_APPS_ORDER = [
+  "KaspaHub",
+  "Ksocial",
+  "CineKas",
+  "Flux Kmail",
+  "KAS SWORD",
+  "KasBillboard",
+  "KaScan",
+  "Kasthletics",
+  "K6ix",
+  "StakeDAG",
+  "Terra",
+  "TapToTip",
+  "Kurve",
+  "CoinSpace",
+  "OnChain POS",
+  "KC Bridge",
+  "Kurncy",
+  "KivR",
+  "KasPlay",
+  "KASIA",
+  "KFlow",
+  "KasCompute",
+  "K GigZ",
+  "Keystone",
+  "KasLens",
+  "K Learning",
+  "BMT Univ",
+  "K-University",
+  "KaSkool",
+  "SilverScript",
+  "KaShop",
+];
+
 function AppIcon({ app, hovered }) {
   const videoRef = React.useRef(null);
 
@@ -190,7 +225,7 @@ function AppIcon({ app, hovered }) {
   );
 }
 
-export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0 }) {
+export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0, view = "all", onViewChange }) {
   const [communityApps, setCommunityApps] = useState([]);
 
   useEffect(() => {
@@ -218,17 +253,29 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
     return /\bkaspa\b|\bkas\b|krc20|krc-20|\bdag\b/.test(text);
   };
 
-  const filtered = allApps.filter((app) => {
-    if (app.admin && !isAdmin) return false;
-    if (category === "Kaspa") {
-      if (!isKaspaApp(app)) return false;
-    } else if (category !== "All" && app.cat !== category) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return app.name.toLowerCase().includes(q) || app.cat.toLowerCase().includes(q) || app.desc.toLowerCase().includes(q);
-    }
-    return true;
-  });
+  const filtered = view === "kaspa"
+    ? KASPA_APPS_ORDER
+        .map((name) => allApps.find((a) => a.name.toLowerCase() === name.toLowerCase()))
+        .filter(Boolean)
+        .filter((app) => {
+          if (app.admin && !isAdmin) return false;
+          if (search) {
+            const q = search.toLowerCase();
+            return app.name.toLowerCase().includes(q) || app.desc.toLowerCase().includes(q);
+          }
+          return true;
+        })
+    : allApps.filter((app) => {
+        if (app.admin && !isAdmin) return false;
+        if (category === "Kaspa") {
+          if (!isKaspaApp(app)) return false;
+        } else if (category !== "All" && app.cat !== category) return false;
+        if (search) {
+          const q = search.toLowerCase();
+          return app.name.toLowerCase().includes(q) || app.cat.toLowerCase().includes(q) || app.desc.toLowerCase().includes(q);
+        }
+        return true;
+      });
 
   if (filtered.length === 0) {
     return (
@@ -240,7 +287,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
 
   // Re-key the container on filter change so the stagger replays when user
   // searches or switches categories — adds a satisfying re-shuffle feel.
-  const containerKey = `${category}|${search}|${filtered.length}`;
+  const containerKey = `${view}|${category}|${search}|${filtered.length}`;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -262,8 +309,23 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
 
   return (
     <div>
-      {category === "All" && !search && (
-        <h2 className="text-lg font-[800] mb-4">All Apps</h2>
+      {(view === "kaspa" || (category === "All" && !search)) && (
+        <div className="flex items-center gap-3 mb-5">
+          <button
+            onClick={() => onViewChange?.("all")}
+            className={`text-lg font-[800] transition-colors ${view === "all" ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
+          >
+            All Apps
+          </button>
+          <span className="text-zinc-300">·</span>
+          <button
+            onClick={() => onViewChange?.("kaspa")}
+            className={`text-lg font-[800] transition-colors flex items-center gap-1.5 ${view === "kaspa" ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
+          >
+            <Shield className="w-4 h-4" />
+            KASPA
+          </button>
+        </div>
       )}
       <motion.div
         key={containerKey}

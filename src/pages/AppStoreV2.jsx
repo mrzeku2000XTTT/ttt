@@ -59,6 +59,7 @@ export default function AppStoreV2Page() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [blueprintOpen, setBlueprintOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [view, setView] = useState("all");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -206,33 +207,33 @@ export default function AppStoreV2Page() {
           </div>
         </motion.div>
 
-        {/* Category pills */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8 flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+        {/* Featured (only when no search) */}
+        {!search && category === "All" && view === "all" && <AppStoreFeatured />}
+
+        {/* Category pills — larger, below Featured */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8 flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
-            const active = category === cat.id;
+            const active = view === "all" && category === cat.id;
             return (
               <button
                 key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold transition-all ${
+                onClick={() => { setCategory(cat.id); setView("all"); }}
+                className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all ${
                   active
-                    ? "bg-zinc-900 text-white shadow-sm"
+                    ? "bg-zinc-900 text-white shadow-md"
                     : "bg-white text-zinc-500 ring-1 ring-zinc-200/60 hover:bg-zinc-50"
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-4 h-4" />
                 {cat.label}
               </button>
             );
           })}
         </motion.div>
 
-        {/* Featured (only when no search) */}
-        {!search && category === "All" && <AppStoreFeatured />}
-
         {/* Grid */}
-        <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} />
+        <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} view={view} onViewChange={setView} />
 
         {/* Footer */}
         <div className="mt-16 pt-8 border-t border-zinc-200/60 text-center">
