@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Loader2, ArrowDown, Bot, User as UserIcon, Copy, Check, Zap, Monitor, MonitorOff, StopCircle, Play, Workflow, Lightbulb, Coins } from "lucide-react";
+import { Send, Sparkles, Loader2, ArrowDown, Bot, User as UserIcon, Copy, Check, Zap, Monitor, MonitorOff, StopCircle, Play, Workflow, Lightbulb, Coins, Minimize2, Maximize2, Maximize, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AgentComputer from "./AgentComputer";
 import { runAutonomousAgent } from "./agentLoop";
@@ -101,6 +101,7 @@ export default function AgentChatGPT() {
 
   // Agent Computer state
   const [computerOpen, setComputerOpen] = useState(true);
+  const [computerMode, setComputerMode] = useState("normal"); // normal | minimized | expanded | fullscreen
   const [computerUrl, setComputerUrl] = useState(null);
   const [computerStatus, setComputerStatus] = useState("Idle");
   const [computerNarrations, setComputerNarrations] = useState([]);
@@ -109,6 +110,43 @@ export default function AgentChatGPT() {
   const [agentSteps, setAgentSteps] = useState([]);
   const computerRef = useRef(null);
   const abortRef = useRef(null);
+
+  const computer = (
+    <AgentComputer
+      ref={computerRef}
+      url={computerUrl}
+      status={computerStatus}
+      narrations={computerNarrations}
+      cursor={computerCursor}
+      isActive={agentRunning}
+    />
+  );
+
+  const computerControls = (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => setComputerMode("minimized")}
+        title="Minimize"
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+      >
+        <Minimize2 className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => setComputerMode(computerMode === "expanded" ? "normal" : "expanded")}
+        title={computerMode === "expanded" ? "Restore width" : "Expand width"}
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+      >
+        <Maximize2 className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => setComputerMode("fullscreen")}
+        title="Fullscreen"
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+      >
+        <Maximize className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
 
   // Quick fallback: treat URLs as tasks even if the LLM mis-classifies
   const looksLikeTask = (text) => /https?:\/\/\S+/i.test(text);
@@ -202,6 +240,14 @@ export default function AgentChatGPT() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
+
+  // Exit fullscreen on Escape
+  useEffect(() => {
+    if (computerMode !== "fullscreen") return;
+    const onKey = (e) => { if (e.key === "Escape") setComputerMode("normal"); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [computerMode]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
@@ -335,7 +381,9 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
         {/* Toggle bar */}
         <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
           <span className="text-[11px] text-white/40">
-            {computerOpen ? "Autonomous mode · agent observes & acts on its own" : "Phase 1 · Feed, Bridge, TTTV"}
+            {computerOpen && computerMode !== "minimized"
+              ? computerMode === "fullscreen" ? "Fullscreen mode · press Esc or X to exit" : "Autonomous mode · agent observes & acts on its own"
+              : "Phase 1 · Feed, Bridge, TTTV"}
           </span>
           <div className="flex items-center gap-2">
             {agentRunning && (
@@ -346,8 +394,9 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
                 <StopCircle className="w-3.5 h-3.5" /> Stop
               </button>
             )}
+            {computerOpen && computerMode !== "minimized" && computerControls}
             <button
-              onClick={() => setComputerOpen((v) => !v)}
+              onClick={() => { setComputerOpen((v) => !v); setComputerMode("normal"); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                 computerOpen
                   ? "bg-gradient-to-r from-cyan-400 to-violet-400 text-black"
@@ -361,7 +410,7 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
         </div>
 
         {/* Split: Chat + Computer */}
-        <div className={`grid gap-3 sm:gap-4 ${computerOpen ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+        <div className={`grid gap-3 sm:gap-4 ${computerOpen && computerMode !== "minimized" ? (computerMode === "expanded" ? "lg:grid-cols-3" : "lg:grid-cols-2") : "grid-cols-1"}`}>
         {/* Chat shell */}
         <div className="relative rounded-2xl sm:rounded-[28px] ring-1 ring-white/10 bg-zinc-950/60 backdrop-blur-2xl overflow-hidden flex flex-col h-[70vh] sm:h-[640px] min-h-[480px]">
           {/* Header */}
@@ -513,24 +562,17 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
 
         {/* Agent Computer */}
         <AnimatePresence>
-          {computerOpen && (
+          {computerOpen && computerMode !== "minimized" && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.4 }}
-              className="h-[70vh] sm:h-[640px] min-h-[480px]"
+              className={`h-[70vh] sm:h-[640px] min-h-[480px] ${computerMode === "expanded" ? "lg:col-span-2" : ""}`}
             >
               <div className="h-full flex flex-col gap-2">
                 <div className="flex-1 min-h-0">
-                  <AgentComputer
-                    ref={computerRef}
-                    url={computerUrl}
-                    status={computerStatus}
-                    narrations={computerNarrations}
-                    cursor={computerCursor}
-                    isActive={agentRunning}
-                  />
+                  {computer}
                 </div>
                 {(agentSteps.length > 0 || agentRunning) && (
                   <div className="rounded-2xl ring-1 ring-white/10 bg-zinc-950/80 backdrop-blur-xl overflow-hidden">
@@ -542,6 +584,61 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
           )}
         </AnimatePresence>
         </div>
+
+        {/* Minimized computer — floating restore pill */}
+        <AnimatePresence>
+          {computerOpen && computerMode === "minimized" && (
+            <motion.button
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              onClick={() => setComputerMode("normal")}
+              className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900 ring-1 ring-cyan-400/40 shadow-2xl hover:ring-cyan-400/70 transition-all"
+            >
+              <Monitor className="w-4 h-4 text-cyan-400" />
+              <span className="text-[12px] font-semibold text-white">Restore Computer</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Fullscreen computer — floating overlay */}
+        <AnimatePresence>
+          {computerOpen && computerMode === "fullscreen" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md p-3 sm:p-6"
+              onClick={(e) => { if (e.target === e.currentTarget) setComputerMode("normal"); }}
+            >
+              <motion.div
+                initial={{ scale: 0.96, y: 10 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.96, y: 10 }}
+                className="w-full h-full rounded-2xl ring-1 ring-white/15 overflow-hidden flex flex-col"
+              >
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-zinc-950/90">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="w-4 h-4 text-cyan-400" />
+                    <span className="text-[12px] font-semibold text-white/80">Agent Computer · Fullscreen</span>
+                    {agentRunning && <span className="text-[10px] font-bold text-cyan-400 animate-pulse">● LIVE</span>}
+                  </div>
+                  <button
+                    onClick={() => setComputerMode("normal")}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                    title="Exit fullscreen (Esc)"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex-1 min-h-0">
+                  {computer}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );
