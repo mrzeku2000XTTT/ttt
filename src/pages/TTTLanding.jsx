@@ -1068,7 +1068,19 @@ export default function TTTLandingPage() {
   const [zkMinimized, setZkMinimized] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const sounds = useGameSounds();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const me = await base44.auth.me();
+        setIsAdmin(me?.role === "admin");
+      } catch {
+        setIsAdmin(false);
+      }
+    })();
+  }, []);
 
   const playerRef = React.useRef(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -1124,11 +1136,13 @@ export default function TTTLandingPage() {
         <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
           style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ CHEST ]</span>
       </motion.button>
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowZKChat(true); setZkMinimized(false); }}
-        className="absolute right-4 top-5 focus:outline-none z-20">
-        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ SCAN ]</span>
-      </motion.button>
+      {isAdmin && (
+        <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowZKChat(true); setZkMinimized(false); }}
+          className="absolute right-4 top-5 focus:outline-none z-20">
+          <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
+            style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ SCAN ]</span>
+        </motion.button>
+      )}
 
       {/* Hidden iframe for music */}
       <iframe ref={playerRef} title="TTT Music" src={hasStartedMusic ? musicSrc : "about:blank"}
