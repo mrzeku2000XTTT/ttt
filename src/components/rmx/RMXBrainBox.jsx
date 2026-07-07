@@ -39,6 +39,7 @@ Node config schemas:
 - post_to_ttt: { author_name?: string, content_override?: string }   // Auto-posts to the TTT social feed. Empty config = uses previous text step + auto-attaches previous ai_image. Use when user says "post to TTT", "publish to feed", "share on TTT", "auto-post".
 - send_email: { to: string, subject: string, body: string, from_name?: string }
    - body supports {{result}} which inserts the previous step's output (text OR image — images auto-embed)
+   - CRITICAL EMAIL RULE: The "to" field MUST be the EXACT email address the user wrote in their request. Copy it VERBATIM — do not paraphrase, abbreviate, or substitute your own address. If the user wrote "email it to jane@example.com", then to = "jane@example.com". Only default to ${currentEmail || "user@example.com"} if the user said "me"/"my email" and wrote NO explicit address anywhere in the request.
 - delay: { seconds: number }
 - filter: { contains: string }
 - webhook: { url: string, method: "POST"|"GET" }
@@ -181,12 +182,21 @@ USER REQUEST:
               mergedConfig.email_to = emailMatch ? emailMatch[0] : (currentEmail || "");
             }
           }
-          // Guarantee send_email always has a valid recipient — fall back to current user
+          // Guarantee send_email has the EXACT recipient the user asked for.
+          // The LLM sometimes hallucinates or leaves "to" blank; we rescue it by pulling
+          // the email straight out of the user's Brain description BEFORE falling back to
+          // the current user's email (which caused wrong-recipient bugs).
           if (tpl.type === "send_email") {
             const to = (mergedConfig.to || "").trim();
             const looksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
-            if (!looksValid && currentEmail) {
-              mergedConfig.to = currentEmail;
+            // First email address mentioned in the user's raw Brain request.
+            const emailInInput = input.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+            if (!looksValid) {
+              // LLM gave no/bad recipient — prefer the one in the request, else current user.
+              mergedConfig.to = emailInInput ? emailInInput[0] : (currentEmail || "");
+            } else if (emailInInput && to !== emailInInput[0] && to === currentEmail) {
+              // LLM fell back to current user's email, but the request named a different one.
+              mergedConfig.to = emailInInput[0];
             }
             if (!mergedConfig.subject) mergedConfig.subject = "Your NODA workflow result";
             if (!mergedConfig.body) mergedConfig.body = "Hey 👋\n\n{{result}}\n\n— NODA";
