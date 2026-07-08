@@ -119,6 +119,7 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   const [generatedImage, setGeneratedImage] = useState(null);
   const [appSearch, setAppSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileView, setMobileView] = useState("chat"); // "chat" | "computer"
 
   // Agent Computer state
   const [computerOpen, setComputerOpen] = useState(false);
@@ -686,12 +687,30 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
         {activeTab === "chat" && (
           <div className="flex-1 flex flex-col lg:flex-row overflow-hidden" style={{ minHeight: 0 }}>
             {computerOpen && (
-              <div className="flex-shrink-0 lg:w-1/2 h-[38%] lg:h-auto border-b-[3px] lg:border-b-0 lg:border-r-[3px] border-[#d97706]" style={{ minHeight: 180 }}>
-                <AgentComputer ref={computerRef} url={computerUrl} status={computerStatus}
-                  narrations={computerNarrations} cursor={computerCursor} isActive={agentRunning} />
-              </div>
+              <>
+                {/* Mobile panel toggle */}
+                <div className="lg:hidden flex flex-shrink-0" style={{ background: SIDEBAR_BG, borderBottom: `2px solid ${ACCENT}` }}>
+                  {["chat", "computer"].map(v => (
+                    <button key={v} onClick={() => setMobileView(v)}
+                      className="flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all"
+                      style={{
+                        background: mobileView === v ? ACCENT : "transparent",
+                        color: mobileView === v ? "#000" : "rgba(217,119,6,0.55)",
+                        fontFamily: FONT,
+                      }}>
+                      {v === "chat" ? "◆ ZK UNIT" : "▣ SYS"}
+                    </button>
+                  ))}
+                </div>
+                {/* Agent Computer */}
+                <div className={`flex-shrink-0 lg:w-1/2 border-[#d97706] ${mobileView === "computer" ? "flex flex-col flex-1 h-full" : "hidden"} lg:flex lg:h-auto lg:border-b-0 lg:border-r-[3px]`}
+                  style={{ minHeight: 180, borderBottom: "3px solid #d97706" }}>
+                  <AgentComputer ref={computerRef} url={computerUrl} status={computerStatus}
+                    narrations={computerNarrations} cursor={computerCursor} isActive={agentRunning} />
+                </div>
+              </>
             )}
-            <div className="flex-1 lg:w-1/2 flex flex-col" style={{ minWidth: 0, minHeight: 0 }}>
+            <div className={`flex-1 lg:w-1/2 flex flex-col ${computerOpen && mobileView === "computer" ? "hidden lg:flex" : "flex"}`} style={{ minWidth: 0, minHeight: 0 }}>
               <div ref={scrollRef} className="flex-1 overflow-y-auto py-6" style={{ minHeight: 0, scrollbarWidth: "thin", scrollbarColor: `rgba(217,119,6,0.3) transparent` }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center px-8">
