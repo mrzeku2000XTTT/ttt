@@ -14,6 +14,7 @@ import AgentPlanChecklist from "@/components/tttv3/AgentPlanChecklist";
 import ReactMarkdown from "react-markdown";
 import CyberneticEyeSphere from "@/components/landing/CyberneticEyeSphere";
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
+import KaspaPanel from "@/components/landing/KaspaPanel";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
@@ -1011,6 +1012,7 @@ export default function TTTLandingPage() {
   const [elapsed, setElapsed] = useState(0);
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showKaspa, setShowKaspa] = useState(false);
   const sounds = useGameSounds();
 
   useEffect(() => {
@@ -1249,8 +1251,20 @@ export default function TTTLandingPage() {
           style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ VISION ]</span>
       </motion.button>
 
+      {/* KASPA BUTTON — bottom right */}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowKaspa(true); }}
+        className="absolute right-4 bottom-5 focus:outline-none z-20">
+        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ KASPA ]</span>
+      </motion.button>
+
       {/* Chest Modal */}
       {showChest && <ChestModal onClose={() => setShowChest(false)} sounds={sounds} />}
+
+      {/* Kaspa Panel — full screen */}
+      <AnimatePresence>
+        {showKaspa && <KaspaPanel onClose={() => setShowKaspa(false)} />}
+      </AnimatePresence>
     </main>
   );
 }
