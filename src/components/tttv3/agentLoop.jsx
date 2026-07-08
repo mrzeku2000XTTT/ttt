@@ -80,6 +80,7 @@ export async function runAutonomousAgent({ goal, callbacks, signal }) {
   addNarration(`Plan ready · ${plan.length} step${plan.length > 1 ? "s" : ""}.`);
 
   // ── PHASE 2: EXECUTE EACH PLAN ITEM ────────────────────────────────────
+  let failedSteps = 0;
   for (let pi = 0; pi < plan.length; pi++) {
     if (signal?.aborted) break;
     const item = plan[pi];
@@ -102,22 +103,23 @@ export async function runAutonomousAgent({ goal, callbacks, signal }) {
 
     if (result.completed) {
       onPlanItemUpdate?.(pi, { status: "done", note: null });
-      // Back-fill: if a later step succeeded, any earlier steps that failed/stuck
-      // must have actually worked (you can't reach step N+1 without step N's effects).
-      for (let prev = 0; prev < pi; prev++) {
-        onPlanItemUpdate?.(prev, { status: "done", note: null });
-      }
     } else {
       onPlanItemUpdate?.(pi, { status: "failed", note: result.reason || "could not verify" });
-      addNarration(`Step ${pi + 1} didn't verify — continuing anyway.`);
+      addNarration(`Step ${pi + 1} couldn't be verified — ${result.reason || "no signal seen"}.`);
+      failedSteps++;
     }
 
     // breather between plan items
     await sleep(800);
   }
 
-  setStatus("Goal complete ✓");
-  addNarration("All steps done.");
+  if (failedSteps === 0) {
+    setStatus("Goal complete ✓");
+    addNarration("All steps done.");
+  } else {
+    setStatus(`${failedSteps} step${failedSteps > 1 ? "s" : ""} couldn't be verified`);
+    addNarration(`Done, but ${failedSteps} step${failedSteps > 1 ? "s" : ""} didn't verify — check the log.`);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -179,6 +181,17 @@ async function executePlanItem({ goal, planItem, planIndex, fullPlan, callbacks,
     let observation = { ok: false };
     if (iframe) {
       observation = await sendCommand(iframe, { action: "read_page" }, 2500);
+      // SPA pages (NODA, Feed) render after load — if the page looks empty,
+      // wait and re-observe so we don't act on a blank DOM.
+      const looksEmpty = observation.ok &&
+        (observation.buttons || []).length === 0 &&
+        (observation.inputs || []).length === 0 &&
+        (observation.headings || []).length === 0;
+      if (looksEmpty) {
+        setStatus(`⏳ Page still rendering — waiting…`);
+        await sleep(2500);
+        observation = await sendCommand(iframe, { action: "read_page" }, 2500);
+      }
     }
 
     // THINK
