@@ -13,45 +13,12 @@ import AgentReasoningBubble from "@/components/tttv3/AgentReasoningBubble";
 import AgentPlanChecklist from "@/components/tttv3/AgentPlanChecklist";
 import ReactMarkdown from "react-markdown";
 import CyberneticEyeSphere from "@/components/landing/CyberneticEyeSphere";
+import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
 const KASPA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3bab8f8ae_generated_image.png";
 const YOUTUBE_VIDEO_ID = "aUSD-WFhKwY";
-
-// Timestamps account for the ~10s instrumental intro before vocals start
-const SONG_LYRICS = [
-  { time: 10, line: "The dollar is dying, Bitcoin can't scale," },
-  { time: 14, line: "Gold is too heavy, Solana transactions fail." },
-  { time: 18, line: "I've tried them all and I must confess —" },
-  { time: 22, line: "Kaspa is the best money." },
-  { time: 26, line: "" },
-  { time: 29, line: "Bitcoin can't scale, Solana is down again," },
-  { time: 33, line: "Ethereum gas fees and scaling solutions went." },
-  { time: 37, line: "Shiny objects flash and making me sick," },
-  { time: 41, line: "Token unlocks flood — I burns out quick." },
-  { time: 45, line: "Markets pumping, dump it's a gambler's dream," },
-  { time: 49, line: "Whales are running like a whale of your machine." },
-  { time: 53, line: "Your favorite influencer's changing up the profile pic," },
-  { time: 57, line: "They say we're still early — better aping quick." },
-  { time: 61, line: "" },
-  { time: 64, line: "The dollar is dying, Bitcoin can't scale," },
-  { time: 68, line: "Gold is too heavy, Solana transactions fail." },
-  { time: 72, line: "I've tried them all and I must confess —" },
-  { time: 76, line: "Kaspa is the best money." },
-  { time: 80, line: "" },
-  { time: 83, line: "The speed blew my mind, scalability defined." },
-  { time: 87, line: "Kaspa is the future — leave the fiat life behind." },
-  { time: 91, line: "No CEO chains, no centralized control," },
-  { time: 95, line: "Digital freedom for everyone to hold." },
-  { time: 99, line: "" },
-  { time: 102, line: "The dollar is dying, Bitcoin can't scale," },
-  { time: 106, line: "Gold is too heavy, Solana transactions fail." },
-  { time: 110, line: "I've tried them all and I must confess —" },
-  { time: 114, line: "Kaspa is the best money." },
-  { time: 118, line: "" },
-  { time: 122, line: "Dollar is… dollar is… dollar is dying." },
-];
 
 const AI_MODELS = [
   { id: "claude_opus_4_8", label: "Claude Opus 4.8", maker: "Anthropic", color: "#c084fc" },
@@ -953,43 +920,15 @@ function ResearcherPanel({ onClose }) {
 }
 
 // Music Player
-const SONG_DURATION = 192;
-
 function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapsed, onSeek }) {
   const [scrolled, setScrolled] = useState(false);
-  const lyricsRef = useRef(null);
-  const lineRefs = useRef([]);
-  const timerRef = useRef(null);
 
+  // Unlock the "Enter" button once the song is past the halfway mark
   useEffect(() => {
-    if (isPlaying) {
-      timerRef.current = setInterval(() => {
-        setElapsed(prev => { const next = prev + 1; return next >= SONG_DURATION ? SONG_DURATION : next; });
-      }, 1000);
-    } else { clearInterval(timerRef.current); }
-    return () => clearInterval(timerRef.current);
-  }, [isPlaying, setElapsed]);
-
-  useEffect(() => {
-    if (!isPlaying || !lyricsRef.current) return;
-    // Find the last lyric line whose timestamp has passed (-1 during intro)
-    let lineIndex = -1;
-    for (let i = 0; i < SONG_LYRICS.length; i++) {
-      if (SONG_LYRICS[i].time <= elapsed) lineIndex = i;
-      else break;
-    }
-    if (lineIndex < 0) return;
-    const el = lineRefs.current[lineIndex];
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     if (elapsed / SONG_DURATION > 0.5) setScrolled(true);
-  }, [elapsed, isPlaying]);
+  }, [elapsed]);
 
-  const handleScroll = (e) => {
-    const el = e.target;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) setScrolled(true);
-  };
-
-  const formatTime = (s) => { const m = Math.floor(s / 60); const sec = s % 60; return `${m}:${sec.toString().padStart(2, "0")}`; };
+  const formatTime = (s) => { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return `${m}:${sec.toString().padStart(2, "0")}`; };
   const progress = Math.min((elapsed / SONG_DURATION) * 100, 100);
 
   return (
@@ -1031,23 +970,7 @@ function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapse
         </div>
         <div className="px-4 pb-2">
           <div className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">Lyrics</div>
-          <div ref={lyricsRef} onScroll={handleScroll} className="overflow-y-auto" style={{ maxHeight: 140, scrollbarWidth: "none" }}>
-            <div className="space-y-1 pb-4">
-              {SONG_LYRICS.map((l, i) => {
-                let activeIndex = -1;
-                for (let j = 0; j < SONG_LYRICS.length; j++) {
-                  if (SONG_LYRICS[j].time <= elapsed) activeIndex = j;
-                  else break;
-                }
-                return l.line ? (
-                  <p key={i} ref={el => lineRefs.current[i] = el} className="text-[13px] leading-relaxed font-medium transition-all duration-300"
-                    style={{ color: activeIndex >= 0 && Math.abs(i - activeIndex) < 2 && isPlaying ? "#f97316" : "#334155" }}>
-                    {l.line}
-                  </p>
-                ) : <div key={i} ref={el => lineRefs.current[i] = el} className="h-3" />
-              })}
-            </div>
-          </div>
+          <LyricsTracker elapsed={elapsed} onScrolledToBottom={() => setScrolled(true)} />
           {!scrolled && <div className="text-center mt-1"><span className="text-[9px] tracking-widest text-slate-400 animate-pulse">scroll to read ↓</span></div>}
         </div>
         <div className="px-4 pb-4 pt-1">
@@ -1106,6 +1029,36 @@ export default function TTTLandingPage() {
   const musicSrc = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&autoplay=1&playsinline=1&controls=0&rel=0&origin=${origin}`;
 
 
+
+  // === REAL-TIME LYRICS SYNC ===
+  // The YouTube player reports its true playback position via "infoDelivery"
+  // messages; we snap `elapsed` to it so lyrics stay locked to the actual audio
+  // instead of a drifting 1-second timer.
+  useEffect(() => {
+    const handler = (e) => {
+      const data = e.data;
+      if (data && data.event === "infoDelivery" && data.info && typeof data.info.currentTime === "number") {
+        setElapsed(data.info.currentTime);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  // While playing: subscribe to player info, request the true current time, and
+  // advance smoothly between responses (the real-time snaps above correct drift).
+  useEffect(() => {
+    if (!hasStartedMusic || !isPlaying) return;
+    const interval = setInterval(() => {
+      const w = playerRef.current?.contentWindow;
+      if (w) {
+        w.postMessage(JSON.stringify({ event: "listening" }), "*");
+        w.postMessage(JSON.stringify({ event: "command", func: "getCurrentTime", args: [] }), "*");
+      }
+      setElapsed(prev => (prev >= SONG_DURATION ? SONG_DURATION : prev + 0.25));
+    }, 250);
+    return () => clearInterval(interval);
+  }, [hasStartedMusic, isPlaying]);
 
   const sendPlayerCommand = (command) => {
     playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: command, args: [] }), "*");
