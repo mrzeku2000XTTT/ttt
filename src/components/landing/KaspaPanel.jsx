@@ -6,10 +6,13 @@ import { Loader2, RefreshCw, Copy, Check, ArrowRight, Zap, Network, Shield, Spar
 
 const SESSION_KEY = "kaspa_panel_wallet";
 const ONBOARDING_KEY = "kaspa_onboarding_v1";
-const KASPA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3bab8f8ae_generated_image.png";
+const KASPA_LOGO = "https://cryptologos.cc/logos/kaspa-kas-logo.png";
 
 const IOS_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 const SPRING = { type: "spring", stiffness: 320, damping: 32 };
+// iOS-style step transition — fade + subtle scale (no horizontal slide, which
+// caused text to render poorly on first mount)
+const STEP_TRANSITION = { duration: 0.35, ease: [0.4, 0, 0.2, 1] };
 
 function truncateAddress(addr) {
   if (!addr) return "";
@@ -22,7 +25,9 @@ function StepIcon({ type }) {
   if (type === "kaspa") {
     return (
       <div className={common}>
-        <img src={KASPA_LOGO} alt="Kaspa" className="w-16 h-16 object-contain" style={{ filter: "drop-shadow(0 0 24px rgba(70,130,255,0.35))" }} />
+        <img src={KASPA_LOGO} alt="Kaspa" width={64} height={64} draggable={false}
+          className="w-16 h-16 object-contain"
+          style={{ filter: "drop-shadow(0 0 24px rgba(70,130,255,0.35))" }} />
       </div>
     );
   }
@@ -309,10 +314,11 @@ export default function KaspaPanel({ onClose }) {
     <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
       <AnimatePresence mode="wait">
         <motion.div key={currentStep}
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={SPRING}
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.96 }}
+          transition={STEP_TRANSITION}
+          style={{ willChange: "opacity" }}
           className="w-full max-w-sm flex flex-col items-center">
           {children}
         </motion.div>
