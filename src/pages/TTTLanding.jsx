@@ -450,7 +450,7 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
   if (minimized) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed z-50 bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 cursor-pointer"
+        className="fixed z-50 top-16 right-4 flex items-center gap-2 px-4 py-2.5 cursor-pointer"
         onClick={onToggleMinimize}
         style={{ background: "#1a1a1a", border: "2px solid #d97706", fontFamily: "'Impact', 'Arial Narrow', sans-serif", boxShadow: "4px 4px 0px #78350f, inset 0 1px 0 rgba(255,255,255,0.1)" }}>
         <span className="text-[11px] font-black tracking-widest uppercase" style={{ color: "#f59e0b" }}>◆ ZK UNIT</span>
