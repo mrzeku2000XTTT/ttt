@@ -1018,8 +1018,11 @@ export default function TTTLandingPage() {
 
   // Defer the heavy WebGL background until after first paint so
   // buttons are clickable immediately on initial load.
+  // On mobile, wait longer — the WebGL init blocks the main thread
+  // exactly when the user is trying to tap the menu buttons.
   useEffect(() => {
-    const t = setTimeout(() => setBgReady(true), 150);
+    const isMobile = window.innerWidth < 768 || "ontouchstart" in window;
+    const t = setTimeout(() => setBgReady(true), isMobile ? 1500 : 150);
     return () => clearTimeout(t);
   }, []);
 
@@ -1202,7 +1205,8 @@ export default function TTTLandingPage() {
               return (
                 <motion.button key={item.label} type="button"
                   onClick={() => { item.action ? item.action() : navigate(item.path); sounds.playNavigate(); }}
-                  onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
+                  onTouchEnd={(e) => { e.preventDefault(); item.action ? item.action() : navigate(item.path); sounds.playNavigate(); }}
+                  onMouseEnter={(e) => { if (e.nativeEvent.sourceCapabilities?.firesTouchEvents) return; setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.05 }}
                   className="px-6 py-3 transition-all focus:outline-none flex items-center justify-center touch-manipulation"
