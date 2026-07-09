@@ -509,7 +509,6 @@ async function buildAndSubmitRevealTx({
   // 6. Build transaction inputs and outputs
   const p2shAmount = BigInt(p2shUtxo.utxoEntry.amount);
   const totalIn = p2shAmount + gasTotal;
-  const changeAmount = totalIn - REVEAL_FEE_SOMPI;
 
   const inputs = [];
 
@@ -540,82 +539,79 @@ async function buildAndSubmitRevealTx({
     });
   }
 
-  // Output: change back to sender
-  const outputs = [];
-  if (changeAmount >= MIN_REVEAL_OUTPUT) {
-    outputs.push({
-      amount: changeAmount,
-      scriptVersion: 0,
-      scriptPubKey: senderScriptPubKey,
-    });
-  } else {
-    console.warn(`[reveal] Change ${changeAmount} sompi below min output ${MIN_REVEAL_OUTPUT}, burning as fee`);
-  }
-
-  const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
-
-  // 7. Sign each input
-  const signatureScripts = [];
-  for (let i = 0; i < inputs.length; i++) {
-    const inp = inputs[i];
-    const sigHash = computeSigHash(tx, i);
-    console.log(`[reveal] Input ${i} sigHash: ${bytesToHex(sigHash)} (${inp.isP2SH ? 'P2SH' : 'P2PK'})`);
-
-    const sig = schnorrSign(sigHash, privateKeyHex);
-    const sigWithType = concatBytes(sig, new Uint8Array([0x01])); // SigHashAll
-
-    if (inp.isP2SH) {
-      // P2SH signatureScript: <sig+hashtype> <redeemScript>
-      // This mirrors coinchimp: script.encodePayToScriptHashSignatureScript(signature)
-      const sigScript = concatBytes(
-        canonicalDataPush(sigWithType),
-        canonicalDataPush(redeemScript)
-      );
-      signatureScripts.push(bytesToHex(sigScript));
-      console.log(`[reveal] P2SH input ${i} signed (${sigScript.length} bytes)`);
-    } else {
-      // P2PK signatureScript: <sig+hashtype>
-      const sigScript = canonicalDataPush(sigWithType);
-      signatureScripts.push(bytesToHex(sigScript));
-      console.log(`[reveal] P2PK input ${i} signed`);
-    }
-  }
-
-  // 8. Build raw TX for REST API submission
-  const rawTx = {
-    version: 0,
-    inputs: inputs.map((inp, i) => ({
-      previousOutpoint: {
-        transactionId: inp.prevTxId,
-        index: inp.prevIndex,
-      },
-      signatureScript: signatureScripts[i],
-      sequence: "0",
-      sigOpCount: inp.sigOpCount,
-    })),
-    outputs: outputs.map(out => ({
-      amount: out.amount.toString(),
-      scriptPublicKey: {
-        version: out.scriptVersion,
-        scriptPublicKey: bytesToHex(out.scriptPubKey),
-      },
-    })),
-    lockTime: "0",
-    subnetworkId: "0000000000000000000000000000000000000000",
-  };
-
-  console.log('[reveal] Submitting reveal TX...');
-  console.log(`[reveal] Inputs: ${rawTx.inputs.length}, Outputs: ${rawTx.outputs.length}`);
-  console.log(`[reveal] P2SH sigScript length: ${signatureScripts[0].length / 2} bytes`);
-
-  // Submit with retry + backoff
+  // Build → sign → submit with DYNAMIC FEE retry.
+  // The reveal TX carries a large inscription script, so its mass (and required
+  // fee) is much higher than a standard TX. If the network rejects our fee,
+  // parse the exact required amount from the error and re-sign with it.
+  let currentFee = REVEAL_FEE_SOMPI;
   let lastErr = '';
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
     if (attempt > 0) {
-      const wait = attempt * 5000;
-      console.log(`[reveal] Retry ${attempt}/3 after ${wait / 1000}s...`);
+      const wait = 3000;
+      console.log(`[reveal] Retry ${attempt}/4 after ${wait / 1000}s (fee: ${Number(currentFee) / 1e8} KAS)...`);
       await new Promise(r => setTimeout(r, wait));
     }
+
+    // Recompute outputs with current fee
+    const changeAmount = totalIn - currentFee;
+    const outputs = [];
+    if (changeAmount >= MIN_REVEAL_OUTPUT) {
+      outputs.push({
+        amount: changeAmount,
+        scriptVersion: 0,
+        scriptPubKey: senderScriptPubKey,
+      });
+    } else {
+      console.warn(`[reveal] Change ${changeAmount} sompi below min output ${MIN_REVEAL_OUTPUT}, burning as fee`);
+    }
+
+    const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
+
+    // Sign each input (must re-sign because outputs changed)
+    const signatureScripts = [];
+    for (let i = 0; i < inputs.length; i++) {
+      const inp = inputs[i];
+      const sigHash = computeSigHash(tx, i);
+      const sig = schnorrSign(sigHash, privateKeyHex);
+      const sigWithType = concatBytes(sig, new Uint8Array([0x01])); // SigHashAll
+
+      if (inp.isP2SH) {
+        // P2SH signatureScript: <sig+hashtype> <redeemScript>
+        const sigScript = concatBytes(
+          canonicalDataPush(sigWithType),
+          canonicalDataPush(redeemScript)
+        );
+        signatureScripts.push(bytesToHex(sigScript));
+      } else {
+        // P2PK signatureScript: <sig+hashtype>
+        signatureScripts.push(bytesToHex(canonicalDataPush(sigWithType)));
+      }
+    }
+
+    // Build raw TX for REST API submission
+    const rawTx = {
+      version: 0,
+      inputs: inputs.map((inp, i) => ({
+        previousOutpoint: {
+          transactionId: inp.prevTxId,
+          index: inp.prevIndex,
+        },
+        signatureScript: signatureScripts[i],
+        sequence: "0",
+        sigOpCount: inp.sigOpCount,
+      })),
+      outputs: outputs.map(out => ({
+        amount: out.amount.toString(),
+        scriptPublicKey: {
+          version: out.scriptVersion,
+          scriptPublicKey: bytesToHex(out.scriptPubKey),
+        },
+      })),
+      lockTime: "0",
+      subnetworkId: "0000000000000000000000000000000000000000",
+    };
+
+    console.log(`[reveal] Submitting reveal TX attempt ${attempt + 1} (${rawTx.inputs.length} inputs, ${rawTx.outputs.length} outputs, fee: ${Number(currentFee) / 1e8} KAS)...`);
 
     const submitRes = await fetch(`${KASPA_API}/transactions`, {
       method: 'POST',
@@ -635,12 +631,22 @@ async function buildAndSubmitRevealTx({
     }
 
     const errText = await submitRes.text();
-    lastErr = errText.slice(0, 300);
+    lastErr = errText.slice(0, 400);
     console.warn(`[reveal] Submit attempt ${attempt + 1} failed (${submitRes.status}): ${lastErr}`);
 
-    // If it's not an orphan error, try with allowOrphan on next attempt
+    // Network told us the exact required fee — parse it and re-sign with it.
+    const requiredMatch = errText.match(/required amount of (\d+)/);
+    if (requiredMatch && attempt < 4) {
+      currentFee = BigInt(requiredMatch[1]) + BigInt(requiredMatch[1]) / 10n; // 10% buffer
+      if (currentFee > totalIn - 1000n) {
+        throw new Error(`Required fee ${Number(currentFee) / 1e8} KAS exceeds available funds in reveal inputs`);
+      }
+      console.log(`[reveal] Fee too low — retrying with required fee: ${Number(currentFee) / 1e8} KAS`);
+      continue;
+    }
+
+    // Retry transient propagation errors; fail fast on signature/script rejections.
     if (!errText.includes('orphan') && !errText.includes('missing')) {
-      // Non-orphan error — likely signature/script issue, don't retry
       break;
     }
   }
@@ -960,58 +966,60 @@ Deno.serve(async (req) => {
       }
 
       const totalIn = totalStuck + gasTotal;
-      const changeAmount = totalIn - REVEAL_FEE_SOMPI;
-      const outputs = [];
-      if (changeAmount >= MIN_REVEAL_OUTPUT) {
-        outputs.push({
-          amount: changeAmount,
-          scriptVersion: 0,
-          scriptPubKey: senderScriptPubKey,
-        });
-      }
 
-      const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
-
-      // Sign each input
-      const signatureScripts = [];
-      for (let i = 0; i < inputs.length; i++) {
-        const inp = inputs[i];
-        const sigHash = computeSigHash(tx, i);
-        const sig = schnorrSign(sigHash, privateKey);
-        const sigWithType = concatBytes(sig, new Uint8Array([0x01]));
-
-        if (inp.isP2SH) {
-          signatureScripts.push(bytesToHex(concatBytes(
-            canonicalDataPush(sigWithType),
-            canonicalDataPush(redeemScriptBytes)
-          )));
-        } else {
-          signatureScripts.push(bytesToHex(canonicalDataPush(sigWithType)));
-        }
-      }
-
-      // Build raw TX
-      const rawTx = {
-        version: 0,
-        inputs: inputs.map((inp, i) => ({
-          previousOutpoint: { transactionId: inp.prevTxId, index: inp.prevIndex },
-          signatureScript: signatureScripts[i],
-          sequence: "0",
-          sigOpCount: inp.sigOpCount,
-        })),
-        outputs: outputs.map(out => ({
-          amount: out.amount.toString(),
-          scriptPublicKey: { version: out.scriptVersion, scriptPublicKey: bytesToHex(out.scriptPubKey) },
-        })),
-        lockTime: "0",
-        subnetworkId: "0000000000000000000000000000000000000000",
-      };
-
-      // Submit
-      console.log(`[recover] Submitting recovery TX (${inputs.length} inputs, ${outputs.length} outputs)...`);
+      // Submit with dynamic fee retry (same as reveal: inscription script makes mass high)
+      let currentFee = REVEAL_FEE_SOMPI;
       let lastErr = '';
-      for (let attempt = 0; attempt < 3; attempt++) {
+      for (let attempt = 0; attempt < 4; attempt++) {
         if (attempt > 0) await new Promise(r => setTimeout(r, 3000));
+
+        const changeAmount = totalIn - currentFee;
+        const outputs = [];
+        if (changeAmount >= MIN_REVEAL_OUTPUT) {
+          outputs.push({
+            amount: changeAmount,
+            scriptVersion: 0,
+            scriptPubKey: senderScriptPubKey,
+          });
+        }
+
+        const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
+
+        // Sign each input (re-sign each attempt since outputs change with fee)
+        const signatureScripts = [];
+        for (let i = 0; i < inputs.length; i++) {
+          const inp = inputs[i];
+          const sigHash = computeSigHash(tx, i);
+          const sig = schnorrSign(sigHash, privateKey);
+          const sigWithType = concatBytes(sig, new Uint8Array([0x01]));
+
+          if (inp.isP2SH) {
+            signatureScripts.push(bytesToHex(concatBytes(
+              canonicalDataPush(sigWithType),
+              canonicalDataPush(redeemScriptBytes)
+            )));
+          } else {
+            signatureScripts.push(bytesToHex(canonicalDataPush(sigWithType)));
+          }
+        }
+
+        const rawTx = {
+          version: 0,
+          inputs: inputs.map((inp, i) => ({
+            previousOutpoint: { transactionId: inp.prevTxId, index: inp.prevIndex },
+            signatureScript: signatureScripts[i],
+            sequence: "0",
+            sigOpCount: inp.sigOpCount,
+          })),
+          outputs: outputs.map(out => ({
+            amount: out.amount.toString(),
+            scriptPublicKey: { version: out.scriptVersion, scriptPublicKey: bytesToHex(out.scriptPubKey) },
+          })),
+          lockTime: "0",
+          subnetworkId: "0000000000000000000000000000000000000000",
+        };
+
+        console.log(`[recover] Submitting recovery TX attempt ${attempt + 1} (${inputs.length} inputs, fee: ${Number(currentFee) / 1e8} KAS)...`);
         const submitRes = await fetch(`${KASPA_API}/transactions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1031,8 +1039,15 @@ Deno.serve(async (req) => {
             message: `Successfully recovered ${Number(changeAmount) / 1e8} KAS from ${p2shUtxos.length} stuck UTXO(s)`,
           });
         }
-        lastErr = (await submitRes.text()).slice(0, 300);
+        lastErr = (await submitRes.text()).slice(0, 400);
         console.warn(`[recover] Attempt ${attempt + 1} failed: ${lastErr}`);
+
+        const requiredMatch = lastErr.match(/required amount of (\d+)/);
+        if (requiredMatch && attempt < 3) {
+          currentFee = BigInt(requiredMatch[1]) + BigInt(requiredMatch[1]) / 10n;
+          console.log(`[recover] Retrying with required fee: ${Number(currentFee) / 1e8} KAS`);
+          continue;
+        }
         if (!lastErr.includes('orphan')) break;
       }
 
