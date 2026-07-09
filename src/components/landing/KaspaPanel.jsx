@@ -51,15 +51,60 @@ function StepIcon({ type }) {
 }
 
 const STEPS = [
-  { icon: "kaspa", title: "Welcome to Kaspa", subtitle: "The fastest proof-of-work cryptocurrency",
-    body: "Kaspa is a Layer-1 blockchain built on BlockDAG — a revolutionary architecture that processes blocks in parallel instead of one at a time." },
+  { icon: "kaspa", title: "Welcome to Kaspa!", subtitle: "New here? You're in the right place",
+    body: "Whether you're crypto-curious or a seasoned pro, Kaspa is the fastest, fairest proof-of-work blockchain ever built. Let's get you set up — it's easy, we promise." },
   { icon: "network", title: "Not a Chain. A Graph.", subtitle: "GhostDAG protocol",
-    body: "Traditional blockchains orphan conflicting blocks. Kaspa's GhostDAG orders them in parallel — more throughput, no wasted work, true decentralization." },
-  { icon: "zap", title: "1 Block Per Second", subtitle: "Instant confirmation",
-    body: "Transactions settle in seconds. Send KAS to anyone, anywhere on Earth — faster than any traditional payment rail." },
+    body: "Traditional blockchains process one block at a time. Kaspa's BlockDAG processes many in parallel — more speed, no wasted work, and true decentralization." },
+  { icon: "zap", title: "10 Blocks Per Second", subtitle: "Lightning-fast confirmation",
+    body: "Transactions settle in seconds. Send KAS to anyone, anywhere on Earth — faster than any traditional payment rail, and you don't need to be a tech expert to use it." },
   { icon: "shield", title: "Fair From Day One", subtitle: "No premine · No ICO · No dev tax",
-    body: "Kaspa launched with zero premine and zero developer allocation. The creators mined alongside everyone else. Truly fair, truly decentralized." },
+    body: "Kaspa launched with zero premine and zero developer allocation. The creators mined alongside everyone else. Truly fair, truly decentralized — no insiders, just community." },
 ];
+
+// ============ PROGRESS DOTS (module-level for stable identity) ============
+const ProgressDots = ({ current, total }) => (
+  <div className="flex items-center justify-center gap-1.5">
+    {Array.from({ length: total }).map((_, i) => (
+      <div key={i} className="h-1.5 rounded-full transition-all duration-300" style={{
+        width: i === current ? 24 : 6,
+        background: i <= current ? "#0A84FF" : "rgba(255,255,255,0.15)",
+      }} />
+    ))}
+  </div>
+);
+
+// ============ NEXT BUTTON (module-level for stable identity) ============
+const NextButton = ({ label = "Continue", onClick }) => (
+  <button onClick={onClick}
+    className="w-full mt-7 py-4 rounded-2xl text-base font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+    style={{ background: "#0A84FF", color: "#fff", fontFamily: IOS_FONT, boxShadow: "0 4px 24px rgba(10,132,255,0.3)" }}>
+    {label} <ArrowRight className="w-4 h-4" />
+  </button>
+);
+
+// ============ STEP SHELL (module-level — prevents remount glitch on state changes) ============
+const StepShell = ({ children, step: currentStep, total }) => (
+  <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex-1 overflow-y-auto">
+      <div className="min-h-full flex flex-col items-center justify-center px-6 py-4">
+        <AnimatePresence mode="wait">
+          <motion.div key={currentStep}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={STEP_TRANSITION}
+            style={{ willChange: "opacity" }}
+            className="w-full max-w-sm flex flex-col items-center">
+            {children}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+    <div className="px-6 pb-8 pt-2 flex-shrink-0">
+      <ProgressDots current={currentStep} total={total} />
+    </div>
+  </div>
+);
 
 export default function KaspaPanel({ onClose }) {
   const navigate = useNavigate();
@@ -158,13 +203,16 @@ export default function KaspaPanel({ onClose }) {
   // ============ TOP BAR (shared) ============
   const TopBar = () => (
     <div className="flex items-center justify-between px-5 pt-4 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}>
-      <button onClick={onClose} className="focus:outline-none active:scale-95 transition-transform" title="Back to landing">
-        <span className="text-2xl font-bold tracking-tight" style={{
-          fontFamily: IOS_FONT,
-          background: "linear-gradient(180deg, #fff5cc 0%, #f0d060 25%, #c8960c 60%, #6b4200 100%)",
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-        }}>TTT</span>
-      </button>
+      <div className="flex items-center gap-2">
+        <img src={KASPA_LOGO} alt="Kaspa" width={28} height={28} className="w-7 h-7 object-contain" style={{ filter: "drop-shadow(0 0 8px rgba(70,130,255,0.3))" }} />
+        <button onClick={onClose} className="focus:outline-none active:scale-95 transition-transform" title="Back to landing">
+          <span className="text-2xl font-bold tracking-tight" style={{
+            fontFamily: IOS_FONT,
+            background: "linear-gradient(180deg, #fff5cc 0%, #f0d060 25%, #c8960c 60%, #6b4200 100%)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+          }}>TTT</span>
+        </button>
+      </div>
 
       {/* Top-right: price + wallet address */}
       <div className="flex items-center gap-3">
@@ -193,18 +241,6 @@ export default function KaspaPanel({ onClose }) {
           </button>
         )}
       </div>
-    </div>
-  );
-
-  // ============ PROGRESS DOTS ============
-  const ProgressDots = ({ current, total }) => (
-    <div className="flex items-center justify-center gap-1.5">
-      {Array.from({ length: total }).map((_, i) => (
-        <div key={i} className="h-1.5 rounded-full transition-all duration-300" style={{
-          width: i === current ? 24 : 6,
-          background: i <= current ? "#0A84FF" : "rgba(255,255,255,0.15)",
-        }} />
-      ))}
     </div>
   );
 
@@ -339,8 +375,8 @@ export default function KaspaPanel({ onClose }) {
             className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: "rgba(48,209,88,0.15)", border: "1px solid rgba(48,209,88,0.3)" }}>
             <Check className="w-8 h-8 text-[#30D158]" strokeWidth={2.5} />
           </motion.div>
-          <h1 className="text-2xl font-bold text-white text-center mt-5" style={{ fontFamily: IOS_FONT }}>You're Ready</h1>
-          <p className="text-sm text-white/50 text-center mt-1.5 px-2" style={{ fontFamily: IOS_FONT }}>Welcome to the Kaspa ecosystem</p>
+          <h1 className="text-2xl font-bold text-white text-center mt-5" style={{ fontFamily: IOS_FONT }}>You're All Set! 🎉</h1>
+          <p className="text-sm text-white/50 text-center mt-1.5 px-2" style={{ fontFamily: IOS_FONT }}>Welcome to the Kaspa family — let's explore together</p>
 
           <div className="w-full mt-7 rounded-2xl p-4 space-y-3" style={{ background: "rgba(28,28,30,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="flex items-center gap-3">
@@ -384,35 +420,6 @@ export default function KaspaPanel({ onClose }) {
       </StepShell>
     );
   };
-
-  // ============ STEP SHELL ============
-  const StepShell = ({ children, step: currentStep, total }) => (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
-      <AnimatePresence mode="wait">
-        <motion.div key={currentStep}
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.96 }}
-          transition={STEP_TRANSITION}
-          style={{ willChange: "opacity" }}
-          className="w-full max-w-sm flex flex-col items-center">
-          {children}
-        </motion.div>
-      </AnimatePresence>
-      <div className="mt-8">
-        <ProgressDots current={currentStep} total={total} />
-      </div>
-    </div>
-  );
-
-  // ============ NEXT BUTTON ============
-  const NextButton = ({ label = "Continue", onClick }) => (
-    <button onClick={onClick}
-      className="w-full mt-7 py-4 rounded-2xl text-base font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-      style={{ background: "#0A84FF", color: "#fff", fontFamily: IOS_FONT, boxShadow: "0 4px 24px rgba(10,132,255,0.3)" }}>
-      {label} <ArrowRight className="w-4 h-4" />
-    </button>
-  );
 
   // ============ DASHBOARD-READY VIEW (onboarding already done) ============
   const renderReadyView = () => (
