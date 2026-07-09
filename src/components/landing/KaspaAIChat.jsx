@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { base44 } from "@/api/base44Client";
-import { X, Plus, Send, ChevronDown, Loader2, Globe, PanelLeft, Trash2, Paperclip, FileText, Film, MessageCircle } from "lucide-react";
+import { X, Send, ChevronDown, Loader2, Globe, PanelLeft, Trash2, Paperclip, FileText, Film, MessageCircle, Rocket } from "lucide-react";
 import { KASPA_AI_MODELS, runSkillTurn, AGENT_LOGO } from "./kaspaAIModels";
+import { EARN_TASKS, loadCreditState, saveCredits, computeCost } from "./agentCredits";
 import ModelLogo from "./agentModelLogos";
 import AgentAttachment from "./AgentAttachment";
 
@@ -24,7 +25,7 @@ function saveSessions(s) {
 
 const Logo = ({ size = 28 }) => (
   <img src={AGENT_LOGO} alt="AGENT." width={size} height={size}
-    className="object-cover flex-shrink-0" style={{ width: size, height: size, mixBlendMode: "screen" }} />
+    className="rounded-full object-cover flex-shrink-0" style={{ width: size, height: size, mixBlendMode: "screen" }} />
 );
 
 const NewBadge = () => (
@@ -50,8 +51,17 @@ export default function KaspaAIChat({ onClose }) {
   const [thoughts, setThoughts] = useState([]);
   const [attachedFiles, setAttachedFiles] = useState([]); // {name, url, kind, uploading}
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+  const [creditState, setCreditState] = useState({ loggedIn: false, isAdmin: false, credits: 0, completedTasks: [], loaded: false });
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => { loadCreditState().then(s => setCreditState({ ...s, loaded: true })); }, []);
+
+  const earnTasksText = EARN_TASKS.map(t => `- **${t.label}** — +${t.reward} K-CREDITS`).join("\n");
+
+  const showEarnTasks = () => {
+    setMessages(prev => [...prev, { role: "assistant", content: `**AGENT K-CREDITS**\n\nEvery agent call costs K-CREDITS — the price depends on the model (shown in the model picker), plus **+1** per attached file and **+1** for web search. Admins run unlimited.\n\nEarn credits by completing a task, then send me a screenshot as proof right here — I'll analyze it and confirm or deny:\n\n${earnTasksText}\n\nAttach your proof and tell me which task you completed.` }]);
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -118,6 +128,16 @@ export default function KaspaAIChat({ onClose }) {
     if (!activeId) setActiveId(id);
     const userMsg = { role: "user", content: text || "(see attached files)", files: readyFiles.map(f => ({ name: f.name, url: f.url, kind: f.kind })) };
     const base = [...messages, userMsg];
+
+    // K-CREDITS gate — admins run unlimited
+    const cost = computeCost(model, { fileCount: readyFiles.length, webSearch });
+    if (creditState.loaded && !creditState.isAdmin && creditState.credits < cost) {
+      const denied = [...base, { role: "assistant", content: `You're out of **K-CREDITS** — this call costs **${cost} KC** and you have **${creditState.credits}**.\n\nEarn more by completing a task and sending me a screenshot as proof right here — I'll verify it:\n\n${earnTasksText}` }];
+      setMessages(denied); persist(id, denied);
+      setInput(""); setAttachedFiles([]);
+      return;
+    }
+
     setMessages([...base, { role: "assistant", content: "", pending: true }]);
     setInput("");
     setAttachedFiles([]);
@@ -129,6 +149,17 @@ export default function KaspaAIChat({ onClose }) {
         fileUrls: readyFiles.map(f => f.url),
         onThought: (t) => setThoughts(prev => [...prev, t]),
       });
+      // Charge the call + award verified task credits
+      if (creditState.loaded && !creditState.isAdmin) {
+        let credits = creditState.credits - cost;
+        let tasks = creditState.completedTasks;
+        if (attachment?.type === "task" && attachment.approved) {
+          if (tasks.includes(attachment.taskId)) attachment.alreadyClaimed = true;
+          else { credits += attachment.reward; tasks = [...tasks, attachment.taskId]; }
+        }
+        setCreditState({ ...creditState, credits, completedTasks: tasks });
+        saveCredits(creditState, credits, tasks);
+      }
       const done = [...base, { role: "assistant", content: reply, attachment }];
       setMessages(done);
       persist(id, done);
@@ -222,6 +253,9 @@ export default function KaspaAIChat({ onClose }) {
                       {!m.badge && m.tag === "Fast" && (
                         <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md text-white/40" style={{ border: `1px solid ${BORDER}` }}>Fast</span>
                       )}
+                      {!creditState.isAdmin && (
+                        <span className="text-[9px] text-white/30 tabular-nums flex-shrink-0">{m.cost} KC</span>
+                      )}
                     </button>
                   ))}
                 </motion.div>
@@ -230,6 +264,13 @@ export default function KaspaAIChat({ onClose }) {
           </div>
 
           <div className="flex-1" />
+          <button onClick={showEarnTasks} title="AGENT K-CREDITS — tap to earn more"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl mr-2 active:scale-95 transition-transform"
+            style={{ background: GLASS, border: `1px solid ${BORDER}` }}>
+            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0"
+              style={{ background: "linear-gradient(135deg, #f0d060, #c8960c)", color: "#000" }}>K</span>
+            <span className="text-xs font-bold text-white tabular-nums">{creditState.isAdmin ? "∞" : creditState.credits}</span>
+          </button>
           <button onClick={onClose} className="p-2.5 rounded-xl text-white/60 hover:text-white transition-colors"
             style={{ background: GLASS, border: `1px solid ${BORDER}` }}>
             <X className="w-4 h-4" />
@@ -240,15 +281,13 @@ export default function KaspaAIChat({ onClose }) {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center px-6 text-center">
-              <div style={{ filter: "drop-shadow(0 0 40px rgba(77,107,254,0.35))" }}>
-                <Logo size={110} />
-              </div>
+              <Logo size={110} />
               <h1 className="text-3xl font-extrabold text-white mt-7 tracking-tight">Hi, I'm AGENT.</h1>
               <p className="text-[15px] text-white/40 mt-2 mb-8">Chat, build & launch — anything.</p>
               <button onClick={() => send("Launch my own product — ask me what I want to build, then build it for me as a complete working app.")}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold active:scale-[0.97] transition-transform mb-10"
                 style={{ background: "#fff", color: "#0a0a0c", boxShadow: "0 8px 32px rgba(255,255,255,0.12)" }}>
-                🚀 Launch Your Own Product
+                <Rocket className="w-4 h-4" /> Launch Your Own Product
               </button>
               <div className="flex flex-wrap gap-2 justify-center max-w-2xl">
                 {SUGGESTIONS.map(q => (
@@ -299,16 +338,11 @@ export default function KaspaAIChat({ onClose }) {
                       <div className="mt-1"><Logo size={28} /></div>
                       <div className="text-[14px] min-w-0 flex-1">
                         {m.pending && loading ? (
-                          <div className="space-y-1.5 py-1">
+                          <div className="space-y-2 py-1">
                             {thoughts.map((t, ti) => (
                               <motion.div key={ti} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                                className="items-center gap-2 px-3.5 py-2 rounded-2xl rounded-tl-md text-[12.5px]"
-                                style={{
-                                  background: ti === thoughts.length - 1 ? "rgba(77,107,254,0.1)" : GLASS,
-                                  border: `1px solid ${ti === thoughts.length - 1 ? "rgba(77,107,254,0.35)" : BORDER}`,
-                                  color: ti === thoughts.length - 1 ? "#8fa3ff" : "rgba(255,255,255,0.35)",
-                                  display: "flex",
-                                }}>
+                                className="flex items-center gap-2 text-[12.5px]"
+                                style={{ color: ti === thoughts.length - 1 ? "#8fa3ff" : "rgba(255,255,255,0.35)" }}>
                                 {ti === thoughts.length - 1
                                   ? <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" />
                                   : <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "rgba(255,255,255,0.25)" }} />}
@@ -376,7 +410,7 @@ export default function KaspaAIChat({ onClose }) {
               <button onClick={() => setInput("Build and launch my own product: ")}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors text-white/55 hover:text-white"
                 style={{ background: GLASS, border: `1px solid ${BORDER}` }}>
-                🚀 Launch
+                <Rocket className="w-3.5 h-3.5" /> Launch
               </button>
               <div className="flex-1" />
               <button onClick={() => send()} disabled={loading || (!input.trim() && !attachedFiles.some(f => f.url)) || attachedFiles.some(f => f.uploading)}

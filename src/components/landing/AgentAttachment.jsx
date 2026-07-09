@@ -29,6 +29,20 @@ export default function AgentAttachment({ a }) {
     </div>
   );
 
+  if (a.type === "task") return (
+    <div className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl"
+      style={a.approved
+        ? { background: "rgba(48,209,88,0.1)", border: "1px solid rgba(48,209,88,0.35)" }
+        : { background: "rgba(255,69,58,0.1)", border: "1px solid rgba(255,69,58,0.35)" }}>
+      {a.approved ? <Check className="w-4 h-4" style={{ color: "#30D158" }} /> : <X className="w-4 h-4" style={{ color: "#FF453A" }} />}
+      <span className="text-sm font-semibold" style={{ color: a.approved ? "#30D158" : "#FF453A" }}>
+        {a.approved
+          ? (a.alreadyClaimed ? "Task already claimed — no credits added" : `Proof verified · +${a.reward} K-CREDITS`)
+          : "Proof denied — send clearer proof"}
+      </span>
+    </div>
+  );
+
   if (a.type === "app") return (
     <>
       <div className="mt-3 rounded-2xl overflow-hidden" style={{ border: `1px solid ${BORDER}`, boxShadow: "0 12px 40px rgba(0,0,0,0.5)" }}>
