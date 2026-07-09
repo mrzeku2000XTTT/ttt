@@ -3,8 +3,12 @@ import { motion } from "framer-motion";
 import { Loader2, RefreshCw, Copy, Check, ArrowUpRight, ArrowDownLeft, Activity, TrendingUp, TrendingDown, Coins, Globe, ExternalLink } from "lucide-react";
 import { IOS_FONT, KASPA_LOGO, KRC_LABELS, truncateAddress, timeAgo, normalizeAddress } from "./shared";
 
-export default function OverviewPanel({ balance, balanceLoading, transactions, txLoading, price, priceChange, address, activeWallet, preferences, onRefreshBalance, onRefreshTx, onCopy, copied, onTabChange }) {
+export default function OverviewPanel({ balance, balanceLoading, transactions, txLoading, price, priceChange, address, activeWallet, preferences, onRefreshBalance, onRefreshTx, onCopy, copied, onTabChange, lastUpdated, autoRefreshing, newTxDetected, networkActivity }) {
   const usdValue = balance != null && price != null ? balance * price : null;
+  const totalSent = transactions.filter(t => t.type === "send").reduce((s, t) => s + (t.amount || 0), 0);
+  const totalReceived = transactions.filter(t => t.type === "receive").reduce((s, t) => s + (t.amount || 0), 0);
+  const netFlow = totalReceived - totalSent;
+  const lastUpdatedText = lastUpdated ? new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null;
   const krcLabel = KRC_LABELS[preferences?.krcType] || null;
   const siteUrl = preferences?.site || null;
   const siteDisplay = siteUrl ? siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : null;
@@ -107,13 +111,60 @@ export default function OverviewPanel({ balance, balanceLoading, transactions, t
         </div>
       )}
 
+      {/* Portfolio Summary */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-2xl p-3" style={{ background: "rgba(28,28,30,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-[9px] uppercase tracking-wide text-white/40 mb-1">Received</div>
+          <div className="text-sm font-bold text-[#30D158] tabular-nums">+{totalReceived.toFixed(2)}</div>
+        </div>
+        <div className="rounded-2xl p-3" style={{ background: "rgba(28,28,30,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-[9px] uppercase tracking-wide text-white/40 mb-1">Sent</div>
+          <div className="text-sm font-bold text-[#FF453A] tabular-nums">−{totalSent.toFixed(2)}</div>
+        </div>
+        <div className="rounded-2xl p-3" style={{ background: "rgba(28,28,30,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-[9px] uppercase tracking-wide text-white/40 mb-1">Net Flow</div>
+          <div className="text-sm font-bold tabular-nums" style={{ color: netFlow >= 0 ? "#30D158" : "#FF453A" }}>
+            {netFlow >= 0 ? "+" : ""}{netFlow.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      {/* Network Pulse */}
+      <div className="rounded-2xl p-3.5 flex items-center justify-between" style={{ background: "rgba(28,28,30,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(10,132,255,0.12)" }}>
+            <Activity className="w-3.5 h-3.5" style={{ color: "#0A84FF" }} />
+            {autoRefreshing && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#30D158] animate-ping" />}
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-white">Kaspa Network</div>
+            <div className="text-[10px] text-white/40">{networkActivity} recent transactions detected</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#30D158] animate-pulse" />
+          <span className="text-[10px] font-medium text-[#30D158]">LIVE</span>
+        </div>
+      </div>
+
       {/* Recent Activity */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-white/70">Recent Activity</span>
-          <button onClick={onRefreshTx} className="text-white/30 hover:text-white/60 transition-colors">
-            <RefreshCw className={`w-3 h-3 ${txLoading ? "animate-spin" : ""}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-white/70">Recent Activity</span>
+            {newTxDetected && (
+              <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#30D158]/20 text-[#30D158] font-medium">
+                New
+              </motion.span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {lastUpdatedText && <span className="text-[9px] text-white/25">Updated {lastUpdatedText}</span>}
+            <button onClick={() => onRefreshTx()} className="text-white/30 hover:text-white/60 transition-colors">
+              <RefreshCw className={`w-3 h-3 ${txLoading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
         <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(28,28,30,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
           {txLoading ? (
@@ -143,9 +194,13 @@ export default function OverviewPanel({ balance, balanceLoading, transactions, t
               );
             })
           ) : (
-            <div className="flex flex-col items-center justify-center py-6">
-              <Activity className="w-5 h-5 text-white/15 mb-1.5" />
-              <p className="text-[10px] text-white/30">No transactions yet</p>
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="relative mb-2">
+                <Activity className="w-5 h-5 text-white/15" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#30D158] animate-pulse" />
+              </div>
+              <p className="text-[10px] text-white/30 mb-0.5">No transactions yet</p>
+              <p className="text-[9px] text-white/20">Watching for incoming KAS…</p>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { ArrowRight, Copy, Check } from "lucide-react";
@@ -22,6 +22,11 @@ export default function KaspaDashboard({ address: initialAddress, source, price,
   const [txLoading, setTxLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [localPrefs, setLocalPrefs] = useState(initialPrefs || { krcType: null, site: "" });
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [autoRefreshing, setAutoRefreshing] = useState(false);
+  const [newTxDetected, setNewTxDetected] = useState(false);
+  const [networkActivity, setNetworkActivity] = useState(0);
+  const prevTxRef = useRef([]);
   const desktop = isDesktop();
 
   // Detect both wallets on mount
@@ -78,25 +83,54 @@ export default function KaspaDashboard({ address: initialAddress, source, price,
     fetchTransactions();
   }, [cleanAddress]);
 
-  const fetchBalance = async () => {
-    setBalanceLoading(true);
+  const fetchBalance = async (silent = false) => {
+    if (!silent) setBalanceLoading(true);
     try {
       const res = await base44.functions.invoke("getKaspaBalance", { address: cleanAddress });
       const data = res?.data || res;
       setBalance(typeof data?.balanceKAS === "number" ? data.balanceKAS : 0);
-    } catch { setBalance(0); }
-    setBalanceLoading(false);
+    } catch { if (!silent) setBalance(0); }
+    if (!silent) setBalanceLoading(false);
+    setLastUpdated(Date.now());
   };
 
-  const fetchTransactions = async () => {
-    setTxLoading(true);
+  const fetchTransactions = async (silent = false) => {
+    if (!silent) setTxLoading(true);
     try {
       const res = await base44.functions.invoke("getKaspaTransactionHistory", { address: cleanAddress });
       const data = res?.data || res;
-      setTransactions(Array.isArray(data?.transactions) ? data.transactions.slice(0, 6) : []);
-    } catch { setTransactions([]); }
-    setTxLoading(false);
+      const newTxs = Array.isArray(data?.transactions) ? data.transactions.slice(0, 6) : [];
+      if (silent && prevTxRef.current.length > 0 && newTxs.length > 0 && newTxs[0]?.id !== prevTxRef.current[0]?.id) {
+        setNewTxDetected(true);
+        setTimeout(() => setNewTxDetected(false), 3000);
+      }
+      prevTxRef.current = newTxs;
+      setTransactions(newTxs);
+    } catch { if (!silent) setTransactions([]); }
+    if (!silent) setTxLoading(false);
+    setLastUpdated(Date.now());
   };
+
+  const fetchNetworkActivity = async () => {
+    try {
+      const res = await base44.functions.invoke("getLiveKaspaTransactions", {});
+      const data = res?.data || res;
+      setNetworkActivity(Array.isArray(data?.transactions) ? data.transactions.length : 0);
+    } catch {}
+  };
+
+  // Auto-poll for live transaction + balance updates every 15s
+  useEffect(() => {
+    if (!cleanAddress) return;
+    fetchNetworkActivity();
+    const interval = setInterval(() => {
+      setAutoRefreshing(true);
+      Promise.all([fetchBalance(true), fetchTransactions(true), fetchNetworkActivity()]).finally(() => {
+        setTimeout(() => setAutoRefreshing(false), 500);
+      });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [cleanAddress]);
 
   const copyAddress = () => {
     if (!cleanAddress) return;
@@ -115,7 +149,8 @@ export default function KaspaDashboard({ address: initialAddress, source, price,
         return <OverviewPanel balance={balance} balanceLoading={balanceLoading} transactions={transactions} txLoading={txLoading}
           price={price} priceChange={priceChange} address={cleanAddress} activeWallet={activeWallet}
           preferences={localPrefs} onRefreshBalance={fetchBalance} onRefreshTx={fetchTransactions}
-          onCopy={copyAddress} copied={copied} onTabChange={setActiveTab} />;
+          onCopy={copyAddress} copied={copied} onTabChange={setActiveTab}
+          lastUpdated={lastUpdated} autoRefreshing={autoRefreshing} newTxDetected={newTxDetected} networkActivity={networkActivity} />;
       case "send":
         return <SendPanel address={cleanAddress} activeWallet={activeWallet} balance={balance} price={price}
           onSwitchToReceive={() => setActiveTab("receive")} />;
