@@ -247,7 +247,14 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       } else if (errMsg.includes('storage mass') || errMsg.includes('fee') || errMsg.includes('mass') || errMsg.includes('fee rate')) {
         setTipError('⚠️ Too many small UTXOs in your wallet causing high fees. Go to Terra → Wallet → "Compound" to consolidate them, then try again. Or try sending a larger amount (5+ KAS).');
       } else if (errMsg.includes('false stack') || errMsg.includes('signature') || errMsg.includes('script execution')) {
-        setTipError("⚠️ Wallet key mismatch — your stored key doesn't match this address. Go to Terra → reimport your seed phrase to fix this.");
+        // Source-aware: never let a TTT Wallet failure point the user at Terra.
+        if (sendMethod === 'terra') {
+          setTipError("⚠️ Terra wallet key mismatch — the stored seed phrase doesn't match this address. Re-import it in Terra → Manage → Import Another Wallet.");
+        } else if (sendMethod === 'ttt') {
+          setTipError("⚠️ TTT Wallet key mismatch — your stored key doesn't match this address. Re-create or re-import your TTT wallet (Settings → Wallet) to fix this.");
+        } else {
+          setTipError("⚠️ Kasware key mismatch — reconnect your Kasware extension and try again.");
+        }
       } else if (errMsg.includes('Insufficient balance') || errMsg.includes('insufficient')) {
         setTipError(`⚠️ ${errMsg}`);
       } else if (errMsg.includes('confirming') || errMsg.includes('already spent')) {
