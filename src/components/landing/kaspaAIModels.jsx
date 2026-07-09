@@ -37,7 +37,9 @@ Requirements:
 Return JSON: { "title": short product name, "description": one-line description, "html": the full HTML document starting with <!DOCTYPE html> }`;
 
 // One full agent turn with live thought streaming. Returns { reply, thought, attachment }
-export async function runSkillTurn({ model, webSearch, history, text, fileUrls = [], onThought }) {
+const TOOL_ACTIONS = ["generate_image", "build_app", "kaspa_price", "kaspa_balance", "speak"];
+
+export async function runSkillTurn({ model, webSearch, history, text, fileUrls = [], onThought, toolAccess = null }) {
   const think = (t) => { try { onThought?.(t); } catch {} };
   const convo = history.slice(-10).map(m => `${m.role === "user" ? "User" : "AGENT"}: ${m.content}`).join("\n");
 
@@ -65,6 +67,17 @@ export async function runSkillTurn({ model, webSearch, history, text, fileUrls =
   });
 
   if (decision?.thought) think(decision.thought);
+
+  // AGENT TOOLS gate — tools require a connected Kaspa wallet (admins unlimited)
+  if (toolAccess && !toolAccess.unlimited && TOOL_ACTIONS.includes(decision?.action)) {
+    if (!toolAccess.walletConnected) {
+      return { reply: "**AGENT TOOLS are locked.** Connect your Kaspa wallet in **Settings** (gear icon, top right) to unlock one-click tools — image generation, product builder, voice, live prices & more. No API keys needed — everything runs on TTT's own infrastructure.", thought: null, attachment: null };
+    }
+    if (toolAccess.enabled?.[decision.action] === false) {
+      return { reply: "That tool is switched off in your **Settings**. Turn it back on and try again.", thought: null, attachment: null };
+    }
+  }
+
   const reply = decision?.reply || "Hmm, try again?";
   let attachment = null;
 

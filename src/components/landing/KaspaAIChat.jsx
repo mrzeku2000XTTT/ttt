@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Loader2, Globe, PanelLeft, Trash2, Paperclip, FileText, Film, MessageCircle, Rocket } from "lucide-react";
+import { X, Send, ChevronDown, Loader2, Globe, PanelLeft, Trash2, Paperclip, FileText, Film, MessageCircle, Rocket, Settings } from "lucide-react";
+import AgentSettings from "./AgentSettings";
+import { loadToolSettings, saveToolSettings } from "./agentTools";
 import { KASPA_AI_MODELS, runSkillTurn, AGENT_LOGO } from "./kaspaAIModels";
 import { EARN_TASKS, loadCreditState, saveCredits, computeCost } from "./agentCredits";
 import ModelLogo from "./agentModelLogos";
@@ -52,12 +54,16 @@ export default function KaspaAIChat({ onClose }) {
   const [attachedFiles, setAttachedFiles] = useState([]); // {name, url, kind, uploading}
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [creditState, setCreditState] = useState({ loggedIn: false, isAdmin: false, credits: 0, completedTasks: [], loaded: false });
+  const [toolSettings, setToolSettings] = useState(() => loadToolSettings());
+  const [showSettings, setShowSettings] = useState(false);
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => { loadCreditState().then(s => setCreditState({ ...s, loaded: true })); }, []);
 
   const earnTasksText = EARN_TASKS.map(t => `- **${t.label}** — +${t.reward} K-CREDITS`).join("\n");
+
+  const updateToolSettings = (s) => { setToolSettings(s); saveToolSettings(s); };
 
   const showEarnTasks = () => {
     setMessages(prev => [...prev, { role: "assistant", content: `**AGENT K-CREDITS**\n\nEvery agent call costs K-CREDITS — the price depends on the model (shown in the model picker), plus **+1** per attached file and **+1** for web search. Admins run unlimited.\n\nEarn credits by completing a task, then send me a screenshot as proof right here — I'll analyze it and confirm or deny:\n\n${earnTasksText}\n\nAttach your proof and tell me which task you completed.` }]);
@@ -138,6 +144,17 @@ export default function KaspaAIChat({ onClose }) {
       return;
     }
 
+    // AGENT TOOLS gate for web search (tools need a connected Kaspa wallet)
+    const toolAccess = { unlimited: creditState.isAdmin, walletConnected: !!toolSettings.wallet, enabled: toolSettings.enabled };
+    if (!toolAccess.unlimited && webSearch && (!toolAccess.walletConnected || toolAccess.enabled?.web_search === false)) {
+      const denied = [...base, { role: "assistant", content: !toolAccess.walletConnected
+        ? "**Web Search is an AGENT TOOL** — connect your Kaspa wallet in **Settings** (gear icon, top right) to unlock it. No API keys needed."
+        : "Web Search is switched off in your **Settings**. Turn it back on to use it." }];
+      setMessages(denied); persist(id, denied);
+      setInput(""); setAttachedFiles([]);
+      return;
+    }
+
     setMessages([...base, { role: "assistant", content: "", pending: true }]);
     setInput("");
     setAttachedFiles([]);
@@ -148,6 +165,7 @@ export default function KaspaAIChat({ onClose }) {
         model, webSearch, history: messages, text,
         fileUrls: readyFiles.map(f => f.url),
         onThought: (t) => setThoughts(prev => [...prev, t]),
+        toolAccess,
       });
       // Charge the call + award verified task credits
       if (creditState.loaded && !creditState.isAdmin) {
@@ -264,6 +282,11 @@ export default function KaspaAIChat({ onClose }) {
           </div>
 
           <div className="flex-1" />
+          <button onClick={() => setShowSettings(true)} title="Settings — connect wallet & manage AGENT TOOLS"
+            className="p-2.5 rounded-xl text-white/60 hover:text-white transition-colors mr-2"
+            style={{ background: GLASS, border: `1px solid ${BORDER}` }}>
+            <Settings className="w-4 h-4" />
+          </button>
           <button onClick={showEarnTasks} title="AGENT K-CREDITS — tap to earn more"
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl mr-2 active:scale-95 transition-transform"
             style={{ background: GLASS, border: `1px solid ${BORDER}` }}>
@@ -423,6 +446,9 @@ export default function KaspaAIChat({ onClose }) {
           </div>
         </div>
       </div>
+
+      <AgentSettings open={showSettings} onClose={() => setShowSettings(false)}
+        settings={toolSettings} onChange={updateToolSettings} isAdmin={creditState.isAdmin} />
     </motion.div>
   );
 }
