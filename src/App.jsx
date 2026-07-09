@@ -111,6 +111,7 @@ import SuperZKPage from './pages/SuperZK';
 import KasBillboardPage from './pages/KasBillboard';
 import KasSwordPage from './pages/KasSword';
 import VisionPage from './pages/Vision';
+import TTT3ManifestoPDFPage from './pages/TTT3ManifestoPDF';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -255,6 +256,7 @@ const AuthenticatedApp = () => {
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
       <Route path="/KasSword" element={<KasSwordPage />} />
       <Route path="/Vision" element={<VisionPage />} />
+      <Route path="/TTT3Manifesto" element={<TTT3ManifestoPDFPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
