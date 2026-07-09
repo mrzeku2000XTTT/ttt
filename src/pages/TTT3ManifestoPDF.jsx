@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import { jsPDF } from "jspdf";
-import manifestoMarkdown from "@/docs/TTT3_Manifesto.md?raw";
 
 function cleanInline(text) {
   return text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/`(.*?)`/g, "$1");
@@ -37,121 +36,134 @@ export default function TTT3ManifestoPDF() {
   const docRef = useRef(null);
 
   useEffect(() => {
-    try {
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 56;
-      const maxWidth = pageWidth - margin * 2;
-      let y = margin;
-      let pageNum = 1;
+    let cancelled = false;
+    (async () => {
+      let manifestoMarkdown = "";
+      try {
+        const res = await fetch("/TTT3_Manifesto.md");
+        manifestoMarkdown = await res.text();
+      } catch (e) {
+        if (!cancelled) setStatus("error");
+        return;
+      }
+      if (cancelled) return;
+      try {
+        const doc = new jsPDF({ unit: "pt", format: "a4" });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 56;
+        const maxWidth = pageWidth - margin * 2;
+        let y = margin;
+        let pageNum = 1;
 
-      const addPageNumber = () => {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(String(pageNum), pageWidth / 2, pageHeight - 24, { align: "center" });
-        doc.setTextColor(0);
-      };
+        const addPageNumber = () => {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8);
+          doc.setTextColor(150);
+          doc.text(String(pageNum), pageWidth / 2, pageHeight - 24, { align: "center" });
+          doc.setTextColor(0);
+        };
 
-      const checkPageBreak = (needed) => {
-        if (y + needed > pageHeight - margin - 20) {
-          addPageNumber();
-          doc.addPage();
-          pageNum++;
-          y = margin;
-          return true;
-        }
-        return false;
-      };
-
-      const blocks = parseMarkdown(manifestoMarkdown);
-
-      for (const block of blocks) {
-        switch (block.type) {
-          case "pagebreak":
+        const checkPageBreak = (needed) => {
+          if (y + needed > pageHeight - margin - 20) {
             addPageNumber();
             doc.addPage();
             pageNum++;
             y = margin;
-            break;
-          case "h1":
-            checkPageBreak(50);
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(22);
-            doc.setTextColor(10, 60, 120);
-            {
-              const lines = doc.splitTextToSize(block.text, maxWidth);
-              doc.text(lines, margin, y + 8);
-              y += lines.length * 26 + 12;
-            }
-            doc.setTextColor(0);
-            break;
-          case "h2":
-            checkPageBreak(36);
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(15);
-            doc.setTextColor(20, 20, 20);
-            {
-              const lines = doc.splitTextToSize(block.text, maxWidth);
-              doc.text(lines, margin, y + 6);
-              y += lines.length * 18 + 10;
-            }
-            break;
-          case "h3":
-            checkPageBreak(30);
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(12);
-            doc.setTextColor(40, 40, 40);
-            {
-              const lines = doc.splitTextToSize(block.text, maxWidth);
-              doc.text(lines, margin, y + 5);
-              y += lines.length * 15 + 8;
-            }
-            break;
-          case "list":
-            checkPageBreak(16);
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10.5);
-            doc.setTextColor(50, 50, 50);
-            {
-              const prefix = block.text.match(/^\d+\./) ? "" : "  •  ";
-              const lines = doc.splitTextToSize(prefix + block.text, maxWidth - 16);
-              for (const ln of lines) {
-                checkPageBreak(14);
-                doc.text(ln, margin + 8, y + 4);
-                y += 14;
+            return true;
+          }
+          return false;
+        };
+
+        const blocks = parseMarkdown(manifestoMarkdown);
+
+        for (const block of blocks) {
+          switch (block.type) {
+            case "pagebreak":
+              addPageNumber();
+              doc.addPage();
+              pageNum++;
+              y = margin;
+              break;
+            case "h1":
+              checkPageBreak(50);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(22);
+              doc.setTextColor(10, 60, 120);
+              {
+                const lines = doc.splitTextToSize(block.text, maxWidth);
+                doc.text(lines, margin, y + 8);
+                y += lines.length * 26 + 12;
               }
+              doc.setTextColor(0);
+              break;
+            case "h2":
+              checkPageBreak(36);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(15);
+              doc.setTextColor(20, 20, 20);
+              {
+                const lines = doc.splitTextToSize(block.text, maxWidth);
+                doc.text(lines, margin, y + 6);
+                y += lines.length * 18 + 10;
+              }
+              break;
+            case "h3":
+              checkPageBreak(30);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(12);
+              doc.setTextColor(40, 40, 40);
+              {
+                const lines = doc.splitTextToSize(block.text, maxWidth);
+                doc.text(lines, margin, y + 5);
+                y += lines.length * 15 + 8;
+              }
+              break;
+            case "list":
+              checkPageBreak(16);
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(10.5);
+              doc.setTextColor(50, 50, 50);
+              {
+                const prefix = block.text.match(/^\d+\./) ? "" : "  •  ";
+                const lines = doc.splitTextToSize(prefix + block.text, maxWidth - 16);
+                for (const ln of lines) {
+                  checkPageBreak(14);
+                  doc.text(ln, margin + 8, y + 4);
+                  y += 14;
+                }
+                y += 4;
+              }
+              break;
+            case "body":
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(10.5);
+              doc.setTextColor(35, 35, 35);
+              {
+                const lines = doc.splitTextToSize(block.text, maxWidth);
+                for (const ln of lines) {
+                  checkPageBreak(14);
+                  doc.text(ln, margin, y + 4);
+                  y += 14;
+                }
+                y += 6;
+              }
+              break;
+            case "spacing":
               y += 4;
-            }
-            break;
-          case "body":
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10.5);
-            doc.setTextColor(35, 35, 35);
-            {
-              const lines = doc.splitTextToSize(block.text, maxWidth);
-              for (const ln of lines) {
-                checkPageBreak(14);
-                doc.text(ln, margin, y + 4);
-                y += 14;
-              }
-              y += 6;
-            }
-            break;
-          case "spacing":
-            y += 4;
-            break;
+              break;
+          }
         }
+        addPageNumber();
+        docRef.current = doc;
+        doc.save("TTT3_Manifesto.pdf");
+        setStatus("done");
+      } catch (err) {
+        console.error("PDF generation failed:", err);
+        setStatus("error");
       }
-      addPageNumber();
-      docRef.current = doc;
-      doc.save("TTT3_Manifesto.pdf");
-      setStatus("done");
-    } catch (err) {
-      console.error("PDF generation failed:", err);
-      setStatus("error");
-    }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const handleDownload = () => {
