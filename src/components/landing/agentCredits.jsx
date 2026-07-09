@@ -2,9 +2,8 @@ import { base44 } from "@/api/base44Client";
 
 // Tasks users can complete to earn AGENT K-CREDITS (verified by the agent via proof screenshots)
 export const EARN_TASKS = [
-  { id: "follow_x", label: "Follow @TTTPlatform on X", reward: 25 },
-  { id: "post_x", label: "Post about AGENT. on X and tag us", reward: 40 },
-  { id: "join_telegram", label: "Join the TTT Telegram community", reward: 20 },
+  { id: "follow_x", label: "Follow @Mrzeku2000x on X", reward: 25 },
+  { id: "post_x", label: "Post about AGENT. on X and tag @Mrzeku2000x", reward: 40 },
 ];
 
 const LOCAL_KEY = "agent_kcredits_guest";
