@@ -12,7 +12,7 @@ import AgentStepLog from "@/components/tttv3/AgentStepLog";
 import AgentReasoningBubble from "@/components/tttv3/AgentReasoningBubble";
 import AgentPlanChecklist from "@/components/tttv3/AgentPlanChecklist";
 import ReactMarkdown from "react-markdown";
-import CyberneticEyeSphere from "@/components/landing/CyberneticEyeSphere";
+const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
 import KaspaPanel from "@/components/landing/KaspaPanel";
 
@@ -1013,7 +1013,15 @@ export default function TTTLandingPage() {
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showKaspa, setShowKaspa] = useState(false);
+  const [bgReady, setBgReady] = useState(false);
   const sounds = useGameSounds();
+
+  // Defer the heavy WebGL background until after first paint so
+  // buttons are clickable immediately on initial load.
+  useEffect(() => {
+    const t = setTimeout(() => setBgReady(true), 150);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -1084,8 +1092,12 @@ export default function TTTLandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden text-white" style={{ background: "#000", fontFamily: "'Georgia', serif" }}>
 
-      {/* === 3D CYBERNETIC EYE SPHERE BACKGROUND === */}
-      <CyberneticEyeSphere />
+      {/* === 3D CYBERNETIC EYE SPHERE BACKGROUND === (deferred so UI is interactive instantly) */}
+      {bgReady && (
+        <React.Suspense fallback={null}>
+          <CyberneticEyeSphere />
+        </React.Suspense>
+      )}
 
       {/* === LAYERED ATMOSPHERIC OVERLAYS === */}
       {/* Deep black vignette edges */}
@@ -1164,7 +1176,7 @@ export default function TTTLandingPage() {
 
           {/* PRESS START — pulsing */}
           <motion.button type="button" onClick={handlePlayButton}
-            animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+            animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
             className="mb-6 text-[13px] sm:text-[14px] tracking-[0.5em] uppercase focus:outline-none"
             style={{ color: "#f5d050", fontFamily: "monospace", background: "transparent", border: "none",
               textShadow: "0 0 24px rgba(245,200,50,0.7), 0 0 50px rgba(200,130,0,0.4)" }}>
@@ -1192,7 +1204,7 @@ export default function TTTLandingPage() {
                   onClick={() => { sounds.playNavigate(); item.action ? item.action() : navigate(item.path); }}
                   onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.07 }}
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.05 }}
                   className="px-6 py-3 transition-all focus:outline-none flex items-center justify-center"
                   style={{
                     border: isHovered ? "2px solid rgba(240,200,60,0.8)" : "2px solid rgba(200,150,40,0.3)",
