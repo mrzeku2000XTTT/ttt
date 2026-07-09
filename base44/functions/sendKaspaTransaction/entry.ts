@@ -8,14 +8,14 @@ const MAX_UTXOS = 80;
 const MAX_TX_MASS = 500000n; // Kaspa consensus: max transaction mass
 const STORAGE_MASS_DIVISOR = 500n; // empirically observed: storage_mass = amount_sompi / 500
 
-// Dynamic fee: Kaspa requires fees to cover transaction "mass", which is
-// dominated by storage mass — each output costs ~100k mass and each input
-// adds compute/size mass. The node rejects anything under the required amount.
-// With many small UTXOs, storage mass grows fast; we apply a 2x safety buffer.
+// Kaspa fee = compute_mass × fee_rate (100 sompi/mass unit on mainnet).
+// Empirically derived from network rejections: ~1200 compute mass per P2PK
+// input, ~500 per output, ~200 overhead. This replaces the old formula that
+// confused storage mass with compute mass and underestimated fees by ~50%.
 function estimateFee(numInputs, numOutputs) {
-  // ~150k mass per output + ~3,000 per input + header, then 2x safety buffer.
-  const mass = (BigInt(numOutputs) * 150000n + BigInt(numInputs) * 3000n + 2000n) * 2n;
-  return mass > FEE_SOMPI ? mass : FEE_SOMPI;
+  const computeMass = BigInt(numInputs) * 1200n + BigInt(numOutputs) * 500n + 200n;
+  const fee = computeMass * 100n;
+  return fee > FEE_SOMPI ? fee : FEE_SOMPI;
 }
 const OP_DATA_32 = 0x20;
 const OP_CHECKSIG = 0xac;
@@ -240,44 +240,8 @@ Deno.serve(async (req) => {
 
     const fromScript = p2pkScriptFromAddress(normalizedFromAddress);
     const toScript = p2pkScriptFromAddress(normalizedToAddress);
-    let change = totalIn - amountSompi - feeSompi;
 
-    // Storage mass check: Kaspa rejects transactions whose total mass exceeds 500,000.
-    // Mass ≈ 38753 * N_outputs + 0.001845 * total_output_sompi (empirically derived).
-    // When a wallet has a single large UTXO, the change output pushes mass over the limit.
-    // Fix: drop the change output (remainder becomes fee) so the send succeeds.
-    const MASS_PER_OUTPUT = 38753n;
-    const MASS_PER_SOMPI_X_MILLION = 1845n; // 0.001845 * 1,000,000
-    const SAFE_MASS_LIMIT = 450000n;
-
-    function estimateMass(numOut, totalOutSompi) {
-      return MASS_PER_OUTPUT * BigInt(numOut) + (MASS_PER_SOMPI_X_MILLION * totalOutSompi) / 1000000n;
-    }
-
-    let outputs = [{ amount: amountSompi, scriptVersion: 0, scriptPubKey: toScript }];
-    if (change > 0n) outputs.push({ amount: change, scriptVersion: 0, scriptPubKey: fromScript });
-
-    let totalOutSompi = outputs.reduce((s, o) => s + o.amount, 0n);
-    let estMass = estimateMass(outputs.length, totalOutSompi);
-
-    if (estMass > SAFE_MASS_LIMIT && change > 0n) {
-      // Drop change output: send requested amount, rest becomes fee
-      outputs = [{ amount: amountSompi, scriptVersion: 0, scriptPubKey: toScript }];
-      totalOutSompi = amountSompi;
-      estMass = estimateMass(1, totalOutSompi);
-      feeSompi = estimateFee(selectedUtxos.length, 1);
-      change = totalIn - amountSompi - feeSompi;
-      // If even without change the mass is too high, cap the amount
-      if (estMass > SAFE_MASS_LIMIT) {
-        const maxOutSompi = (SAFE_MASS_LIMIT - MASS_PER_OUTPUT) * 1000000n / MASS_PER_SOMPI_X_MILLION;
-        if (maxOutSompi <= 0n) throw new Error('Balance too low to send');
-        amountSompi = maxOutSompi;
-        feeSompi = totalIn - amountSompi;
-        change = 0n;
-        outputs = [{ amount: amountSompi, scriptVersion: 0, scriptPubKey: toScript }];
-      }
-    }
-
+    // Inputs are fixed once selected — only outputs + fee change between retries.
     const inputs = selectedUtxos.map(u => ({
       prevTxId: u.outpoint.transactionId,
       prevIndex: u.outpoint.index,
@@ -288,30 +252,61 @@ Deno.serve(async (req) => {
       sigOpCount: 1,
     }));
 
-    const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
-    const signatureScripts = inputs.map((_, i) => {
-      const sig = schnorr.sign(computeSigHash(tx, i), hexToBytes(privateKey));
-      return bytesToHex(canonicalDataPush(concatBytes(new Uint8Array(sig), new Uint8Array([0x01]))));
-    });
+    // Storage-mass constants (only relevant when a change output exists).
+    const MASS_PER_OUTPUT = 38753n;
+    const MASS_PER_SOMPI_X_MILLION = 1845n;
+    const SAFE_MASS_LIMIT = 450000n;
 
-    const rawTx = {
-      version: 0,
-      inputs: inputs.map((inp, i) => ({
-        previousOutpoint: { transactionId: inp.prevTxId, index: inp.prevIndex },
-        signatureScript: signatureScripts[i],
-        sequence: '0',
-        sigOpCount: inp.sigOpCount,
-      })),
-      outputs: outputs.map(out => ({
-        amount: out.amount.toString(),
-        scriptPublicKey: { version: out.scriptVersion, scriptPublicKey: bytesToHex(out.scriptPubKey) },
-      })),
-      lockTime: '0',
-      subnetworkId: '0000000000000000000000000000000000000000',
-    };
-
+    let currentFee = feeSompi;
+    let finalAmount = amountSompi;
+    let finalChange = 0n;
     let submitRes, submitText;
-    for (let attempt = 0; attempt < 3; attempt++) {
+
+    // Build → sign → submit. If the network rejects our fee estimate, parse
+    // the required fee from the error and retry with the exact amount.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (sendAll) {
+        finalAmount = totalIn - currentFee;
+        if (finalAmount <= 0n) throw new Error('Balance too low to cover fee');
+      }
+      finalChange = totalIn - finalAmount - currentFee;
+
+      let outputs = [{ amount: finalAmount, scriptVersion: 0, scriptPubKey: toScript }];
+      if (finalChange > 0n) outputs.push({ amount: finalChange, scriptVersion: 0, scriptPubKey: fromScript });
+
+      // Drop change output if storage mass would exceed the consensus limit.
+      if (finalChange > 0n) {
+        const totalOutSompi = outputs.reduce((s, o) => s + o.amount, 0n);
+        const estMass = MASS_PER_OUTPUT * BigInt(outputs.length) + (MASS_PER_SOMPI_X_MILLION * totalOutSompi) / 1000000n;
+        if (estMass > SAFE_MASS_LIMIT) {
+          outputs = [{ amount: finalAmount, scriptVersion: 0, scriptPubKey: toScript }];
+          currentFee = estimateFee(selectedUtxos.length, 1);
+          finalChange = totalIn - finalAmount - currentFee;
+        }
+      }
+
+      const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
+      const signatureScripts = inputs.map((_, i) => {
+        const sig = schnorr.sign(computeSigHash(tx, i), hexToBytes(privateKey));
+        return bytesToHex(canonicalDataPush(concatBytes(new Uint8Array(sig), new Uint8Array([0x01]))));
+      });
+
+      const rawTx = {
+        version: 0,
+        inputs: inputs.map((inp, i) => ({
+          previousOutpoint: { transactionId: inp.prevTxId, index: inp.prevIndex },
+          signatureScript: signatureScripts[i],
+          sequence: '0',
+          sigOpCount: inp.sigOpCount,
+        })),
+        outputs: outputs.map(out => ({
+          amount: out.amount.toString(),
+          scriptPublicKey: { version: out.scriptVersion, scriptPublicKey: bytesToHex(out.scriptPubKey) },
+        })),
+        lockTime: '0',
+        subnetworkId: '0000000000000000000000000000000000000000',
+      };
+
       if (attempt > 0) await new Promise(r => setTimeout(r, 2500));
       submitRes = await fetch(`${KASPA_API}/transactions`, {
         method: 'POST',
@@ -321,28 +316,39 @@ Deno.serve(async (req) => {
       });
       submitText = await submitRes.text();
       if (submitRes.ok) break;
-      console.error(`[sendKaspaTransaction] submit attempt ${attempt + 1} full error:`, submitText);
-      // retry only on transient propagation errors; fail fast on signature/script rejections
+
+      console.error(`[sendKaspaTransaction] submit attempt ${attempt + 1} error:`, submitText.slice(0, 400));
+
+      // Network told us the exact required fee — parse it and retry.
+      const requiredMatch = submitText.match(/required amount of (\d+)/);
+      if (requiredMatch && attempt === 0) {
+        currentFee = BigInt(requiredMatch[1]) + BigInt(requiredMatch[1]) / 10n; // 10% buffer
+        continue;
+      }
+
+      // Retry on transient propagation errors; fail fast on signature rejections.
       if (!submitText.includes('orphan') && !submitText.includes('missing') && !submitText.includes('already')) break;
     }
+
     if (!submitRes.ok) {
       if (submitText.includes('already spent') || submitText.includes('orphan') || submitText.includes('missing') || submitText.includes('UTXO')) {
         throw new Error('Your previous transaction is still confirming. Please wait ~10 seconds and try again.');
       }
       throw new Error(`Submit failed (${submitRes.status}): ${submitText.slice(0, 300)}`);
     }
+
     let submitData;
     try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
 
-    const note = change === 0n && !sendAll
-      ? `High fee applied (${Number(feeSompi) / 1e8} KAS) due to UTXO mass limit. Send smaller amounts to this address from an external wallet to create smaller UTXOs and reduce fees.`
+    const note = finalChange === 0n && !sendAll
+      ? `High fee applied (${Number(currentFee) / 1e8} KAS) due to UTXO mass limit. Send smaller amounts to this address from an external wallet to create smaller UTXOs and reduce fees.`
       : undefined;
 
     return Response.json({
       success: true,
       txId: submitData.transactionId || submitData.txid || submitData,
-      amountKas: Number(amountSompi) / 1e8,
-      fee: Number(feeSompi) / 1e8,
+      amountKas: Number(finalAmount) / 1e8,
+      fee: Number(currentFee) / 1e8,
       inputsCompounded: selectedUtxos.length,
       note,
     });

@@ -181,7 +181,7 @@ export default function WalletPage() {
       setSendPin('');
       setTimeout(() => fetchBalance(address), 3000);
     } catch (e) {
-      showToast(e?.message || 'Send failed', 'error');
+      showToast(e?.response?.data?.error || e?.message || 'Send failed', 'error');
     } finally {
       setIsSending(false);
     }
@@ -227,7 +227,7 @@ export default function WalletPage() {
       showToast(`Compounded ${count} UTXOs into one! TX: ${String(res.data.txId).slice(0, 12)}...`, 'success');
       setTimeout(() => fetchBalance(address), 4000);
     } catch (e) {
-      showToast(e?.message || 'Compound failed', 'error');
+      showToast(e?.response?.data?.error || e?.message || 'Compound failed', 'error');
     } finally {
       setIsCompounding(false);
     }
