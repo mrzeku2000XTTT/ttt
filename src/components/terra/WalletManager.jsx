@@ -214,14 +214,44 @@ function DeleteConfirmSheet({ wallet, onClose, onDeleted }) {
 }
 
 // ── Wallet Menu Sheet ────────────────────────────────────────────────────────
-function WalletMenuSheet({ wallet, onClose, onBackup, onDelete, onImport }) {
+function WalletMenuSheet({ wallet, onClose, onBackup, onDelete, onImport, onCompoundComplete }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [rewardStatus, setRewardStatus] = useState(null); // null | 'loading' | 'active' | 'inactive'
   const [saving, setSaving] = useState(false);
+  const [compounding, setCompounding] = useState(false);
 
   useEffect(() => {
     checkAdmin();
   }, []);
+
+  // Compound: self-send all funds into a single UTXO. Fixes the "too many
+  // small UTXOs" error that blocks KRC-20 tips on the feed.
+  const handleCompound = async () => {
+    if (!wallet?.mnemonic) {
+      toast.error('Import this wallet with its seed phrase to compound UTXOs.');
+      return;
+    }
+    if (compounding) return;
+    setCompounding(true);
+    const tid = toast.loading('Compounding UTXOs...');
+    try {
+      const addr = wallet.address?.startsWith('kaspa:') ? wallet.address : `kaspa:${wallet.address}`;
+      const res = await base44.functions.invoke('sendKaspaTransaction', {
+        mnemonic: wallet.mnemonic,
+        fromAddress: addr,
+        toAddress: addr,
+        sendAll: true,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      const txShort = String(res.data.txId || '').slice(0, 12);
+      toast.success(`✅ UTXOs compounded into one! TX: ${txShort}...`, { id: tid });
+      if (onCompoundComplete) onCompoundComplete();
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || 'Compound failed', { id: tid });
+    } finally {
+      setCompounding(false);
+    }
+  };
 
   const checkAdmin = async () => {
     try {
@@ -275,6 +305,7 @@ function WalletMenuSheet({ wallet, onClose, onBackup, onDelete, onImport }) {
 
   const items = [
     { icon: <Download size={20} color="#34c759" />, label: "Backup Seed Phrase", sub: "View & copy your recovery words", action: onBackup, color: 'rgba(52,199,89,0.1)' },
+    { icon: <RefreshCw size={20} color="#ff9500" />, label: "Compound UTXOs", sub: "Merge small UTXOs into one to fix tip errors", action: handleCompound, color: 'rgba(255,149,0,0.1)', loading: compounding },
     { icon: <Upload size={20} color={ACCENT} />, label: "Import Another Wallet", sub: "Add a wallet using seed phrase", action: onImport, color: 'rgba(26,115,232,0.1)' },
     { icon: <Trash2 size={20} color="#ff3b30" />, label: "Delete Wallet", sub: "Remove this wallet from Terra", action: onDelete, color: 'rgba(255,59,48,0.1)' },
   ];
@@ -291,19 +322,22 @@ function WalletMenuSheet({ wallet, onClose, onBackup, onDelete, onImport }) {
         <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, paddingLeft: 4, marginBottom: 12, fontFamily: 'monospace' }}>
           {wallet?.address?.slice(0, 16)}...{wallet?.address?.slice(-8)}
         </div>
-        {items.map(item => (
-          <button key={item.label} onClick={() => { onClose(); item.action(); }}
-            style={{ width: '100%', background: '#1c1c1e', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', textAlign: 'left' }}>
+        {items.map(item => {
+          const isLoading = item.loading;
+          return (
+          <button key={item.label} onClick={() => { if (isLoading) return; onClose(); item.action(); }}
+            style={{ width: '100%', background: '#1c1c1e', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, cursor: isLoading ? 'default' : 'pointer', textAlign: 'left', opacity: isLoading ? 0.6 : 1 }}>
             <div style={{ width: 40, height: 40, borderRadius: 20, background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {item.icon}
+              {isLoading ? <Loader2 size={20} className="animate-spin" color="#ff9500" /> : item.icon}
             </div>
             <div>
-              <div style={{ color: 'white', fontSize: 15, fontWeight: 600 }}>{item.label}</div>
+              <div style={{ color: 'white', fontSize: 15, fontWeight: 600 }}>{isLoading ? 'Compounding...' : item.label}</div>
               <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 }}>{item.sub}</div>
             </div>
             <ChevronRight size={16} color="rgba(255,255,255,0.2)" style={{ marginLeft: 'auto' }} />
           </button>
-        ))}
+          );
+        })}
 
         {/* PACMAN Reward Wallet — admin only */}
         {isAdmin && wallet?.mnemonic && (

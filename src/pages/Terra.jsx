@@ -673,6 +673,7 @@ export default function TerraPage() {
             onBackup={() => setShowBackup(true)}
             onImport={() => setShowImport(true)}
             onDelete={() => setShowDelete(true)}
+            onCompoundComplete={() => setTimeout(() => loadData(), 4000)}
           />
         )}
         {showBackup && activeWallet?.mnemonic && (
