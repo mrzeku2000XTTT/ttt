@@ -222,7 +222,7 @@ export default function KaspaPanel({ onClose }) {
           className="flex items-center gap-1.5 px-3 py-1 rounded-full active:scale-95 transition-transform"
           style={{ background: "rgba(77,107,254,0.15)", border: "1px solid rgba(77,107,254,0.4)" }}>
           <Sparkles className="w-3 h-3" style={{ color: "#4d6bfe" }} />
-          <span className="text-xs font-semibold" style={{ color: "#4d6bfe", fontFamily: IOS_FONT }}>AI</span>
+          <span className="text-xs font-semibold" style={{ color: "#4d6bfe", fontFamily: IOS_FONT }}>AGENT.</span>
         </button>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "rgba(28,28,30,0.8)", border: "1px solid rgba(255,255,255,0.08)" }}>
           {priceLoading ? (
@@ -444,7 +444,7 @@ export default function KaspaPanel({ onClose }) {
         <button onClick={() => setShowAIChat(true)}
           className="w-full mt-3 py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
           style={{ background: "rgba(77,107,254,0.15)", border: "1px solid rgba(77,107,254,0.4)", color: "#4d6bfe", fontFamily: IOS_FONT }}>
-          <Sparkles className="w-4 h-4" /> TTT AI Chat
+          <Sparkles className="w-4 h-4" /> AGENT.
         </button>
         <p className="text-[10px] text-white/30 text-center mt-2" style={{ fontFamily: IOS_FONT }}>Base 1 · GPTSol · GPT Terra · Fable 5 · Opus 4.8</p>
       </motion.div>
