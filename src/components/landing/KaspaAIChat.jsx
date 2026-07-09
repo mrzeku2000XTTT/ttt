@@ -281,7 +281,8 @@ export default function KaspaAIChat({ onClose }) {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center px-6 text-center">
-              <Logo size={110} />
+              <img src={AGENT_LOGO} alt="AGENT." className="rounded-full object-cover flex-shrink-0"
+                style={{ width: "min(550px, 60vw)", height: "auto", aspectRatio: "1 / 1", mixBlendMode: "screen" }} />
               <h1 className="text-3xl font-extrabold text-white mt-7 tracking-tight">Hi, I'm AGENT.</h1>
               <p className="text-[15px] text-white/40 mt-2 mb-8">Chat, build & launch — anything.</p>
               <button onClick={() => send("Launch my own product — ask me what I want to build, then build it for me as a complete working app.")}
