@@ -244,8 +244,15 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         setTipError('⚠️ Tip service is temporarily offline. Please try again in a moment.');
       } else if (errMsg.includes('User reject') || errMsg.includes('user rejected')) {
         setTipError('Transaction cancelled by user.');
-      } else if (errMsg.includes('storage mass') || errMsg.includes('fee') || errMsg.includes('mass') || errMsg.includes('fee rate')) {
-        setTipError('⚠️ Too many small UTXOs in your wallet causing high fees. Go to Terra → Wallet → "Compound" to consolidate them, then try again. Or try sending a larger amount (5+ KAS).');
+      } else if (errMsg.includes('storage mass')) {
+        // Only show compound advice for actual storage-mass (UTXO fragmentation) errors.
+        // Fee-rejection errors from KRC-20 commit/reveal are NOT this — show the real error.
+        const fixPath = sendMethod === 'terra'
+          ? 'Terra → Manage → Compound UTXOs'
+          : sendMethod === 'ttt'
+          ? 'import your TTT seed phrase in Terra → Manage → Compound UTXOs'
+          : 'your Kasware wallet';
+        setTipError(`⚠️ Too many small UTXOs causing high fees. Go to ${fixPath}, then try again.`);
       } else if (errMsg.includes('false stack') || errMsg.includes('signature') || errMsg.includes('script execution')) {
         // Source-aware: never let a TTT Wallet failure point the user at Terra.
         if (sendMethod === 'terra') {

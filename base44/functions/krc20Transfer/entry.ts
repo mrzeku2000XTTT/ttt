@@ -281,8 +281,8 @@ async function buildAndSubmitCommitTx({
 
   // Select UTXOs (largest first, max 2 to keep mass low)
   allUtxos.sort((a, b) => Number(b.utxoEntry.amount) - Number(a.utxoEntry.amount));
-  const feeSompi = 10000n; // 0.0001 KAS
-  const needed = commitAmountSompi + feeSompi;
+  const initialFee = 100000n; // 0.001 KAS — generous to avoid first-attempt rejection
+  const needed = commitAmountSompi + initialFee;
   let totalIn = 0n;
   const selectedUtxos = [];
   for (const u of allUtxos) {
@@ -301,7 +301,7 @@ async function buildAndSubmitCommitTx({
   senderScriptPubKey.set(senderPubKeyHash, 1);
   senderScriptPubKey[33] = OP_CHECKSIG;
 
-  // Build inputs
+  // Build inputs (fixed once selected — only outputs + fee change between retries)
   const inputs = selectedUtxos.map(u => ({
     prevTxId: u.outpoint.transactionId,
     prevIndex: u.outpoint.index,
@@ -313,48 +313,51 @@ async function buildAndSubmitCommitTx({
     isP2SH: false,
   }));
 
-  // Build outputs: P2SH output + change
-  const changeAmount = totalIn - commitAmountSompi - feeSompi;
-  const outputs = [
-    { amount: commitAmountSompi, scriptVersion: 0, scriptPubKey: p2shScriptPubKey },
-  ];
-  if (changeAmount >= 10000000n) { // 0.1 KAS min
-    outputs.push({ amount: changeAmount, scriptVersion: 0, scriptPubKey: senderScriptPubKey });
-  }
-
-  const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
-
-  // Sign each input
-  const signatureScripts = [];
-  for (let i = 0; i < inputs.length; i++) {
-    const sigHash = computeSigHash(tx, i);
-    const sig = schnorrSign(sigHash, privateKeyHex);
-    const sigWithType = concatBytes(sig, new Uint8Array([0x01]));
-    signatureScripts.push(bytesToHex(canonicalDataPush(sigWithType)));
-  }
-
-  // Build raw TX
-  const rawTx = {
-    version: 0,
-    inputs: inputs.map((inp, i) => ({
-      previousOutpoint: { transactionId: inp.prevTxId, index: inp.prevIndex },
-      signatureScript: signatureScripts[i],
-      sequence: "0",
-      sigOpCount: inp.sigOpCount,
-    })),
-    outputs: outputs.map(out => ({
-      amount: out.amount.toString(),
-      scriptPublicKey: { version: out.scriptVersion, scriptPublicKey: bytesToHex(out.scriptPubKey) },
-    })),
-    lockTime: "0",
-    subnetworkId: "0000000000000000000000000000000000000000",
-  };
-
-  // Submit
-  console.log(`[commit] Submitting commit TX (${inputs.length} inputs, ${outputs.length} outputs)...`);
+  // Build → sign → submit with dynamic fee retry.
+  // If the network rejects our fee, parse the required amount and resubmit.
+  let currentFee = initialFee;
   let lastErr = '';
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 3000));
+
+    // Recompute outputs with current fee (change = totalIn - commit - fee)
+    const changeAmount = totalIn - commitAmountSompi - currentFee;
+    const outputs = [
+      { amount: commitAmountSompi, scriptVersion: 0, scriptPubKey: p2shScriptPubKey },
+    ];
+    if (changeAmount >= 10000000n) { // 0.1 KAS min
+      outputs.push({ amount: changeAmount, scriptVersion: 0, scriptPubKey: senderScriptPubKey });
+    }
+
+    const tx = { version: 0, inputs, outputs, locktime: 0n, gas: 0n };
+
+    // Sign each input (must re-sign because outputs changed)
+    const signatureScripts = [];
+    for (let i = 0; i < inputs.length; i++) {
+      const sigHash = computeSigHash(tx, i);
+      const sig = schnorrSign(sigHash, privateKeyHex);
+      const sigWithType = concatBytes(sig, new Uint8Array([0x01]));
+      signatureScripts.push(bytesToHex(canonicalDataPush(sigWithType)));
+    }
+
+    // Build raw TX
+    const rawTx = {
+      version: 0,
+      inputs: inputs.map((inp, i) => ({
+        previousOutpoint: { transactionId: inp.prevTxId, index: inp.prevIndex },
+        signatureScript: signatureScripts[i],
+        sequence: "0",
+        sigOpCount: inp.sigOpCount,
+      })),
+      outputs: outputs.map(out => ({
+        amount: out.amount.toString(),
+        scriptPublicKey: { version: out.scriptVersion, scriptPublicKey: bytesToHex(out.scriptPubKey) },
+      })),
+      lockTime: "0",
+      subnetworkId: "0000000000000000000000000000000000000000",
+    };
+
+    console.log(`[commit] Submitting commit TX attempt ${attempt + 1} (${inputs.length} inputs, ${outputs.length} outputs, fee: ${Number(currentFee)/1e8} KAS)...`);
     const submitRes = await fetch(`${KASPA_API}/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -369,7 +372,17 @@ async function buildAndSubmitCommitTx({
     }
     lastErr = (await submitRes.text()).slice(0, 500);
     console.warn(`[commit] Attempt ${attempt + 1} failed: ${lastErr}`);
-    if (!lastErr.includes('orphan')) break;
+
+    // Network told us the exact required fee — parse it and retry.
+    const requiredMatch = lastErr.match(/required amount of (\d+)/);
+    if (requiredMatch && attempt < 2) {
+      currentFee = BigInt(requiredMatch[1]) + BigInt(requiredMatch[1]) / 10n; // 10% buffer
+      console.log(`[commit] Retrying with required fee: ${Number(currentFee)/1e8} KAS`);
+      continue;
+    }
+
+    // Retry on transient propagation errors; fail fast on signature rejections.
+    if (!lastErr.includes('orphan') && !lastErr.includes('missing') && !lastErr.includes('already')) break;
   }
   throw new Error(`Commit TX failed: ${lastErr}`);
 }
