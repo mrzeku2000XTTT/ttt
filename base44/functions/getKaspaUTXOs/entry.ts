@@ -1,10 +1,17 @@
-// UPDATED: Now uses Replit iframe communication for UTXO history
-// This function is now a thin wrapper that communicates with the iframe
+// Now powered by the official public Kaspa REST API (api.kaspa.org) — the same
+// endpoint already used by getKaspaBalance — instead of the dead Replit
+// backend (tttxxx.live, which returned 404 "app not live").
+//
+// Uses the /addresses/{address}/full-transactions endpoint which returns full
+// transaction history with block_time timestamps — exactly what the Agent ZK
+// chat needs for balance, transaction list, and recent payment detection.
+
+const KASPA_API_BASE = 'https://api.kaspa.org';
 
 Deno.serve(async (req) => {
   try {
     let address;
-    
+
     if (req.method === 'POST') {
       const body = await req.json().catch(() => ({}));
       address = body.address;
@@ -14,67 +21,83 @@ Deno.serve(async (req) => {
     }
 
     if (!address || !address.trim()) {
-      return Response.json({ 
-        success: false, 
-        error: 'Address is required' 
+      return Response.json({
+        success: false,
+        error: 'Address is required'
       }, { status: 400 });
     }
 
-    console.log('💰 Fetching UTXOs via Replit backend for:', address);
+    const cleanAddress = address.startsWith('kaspa:') ? address : `kaspa:${address}`;
+    console.log('💰 Fetching transactions via api.kaspa.org for:', cleanAddress);
 
-    // Call Replit backend directly
+    // Fetch full transactions (incoming + outgoing) with block_time timestamps
     const response = await fetch(
-      'https://tttxxx.live/api/utxo-history',
+      `${KASPA_API_BASE}/addresses/${encodeURIComponent(cleanAddress)}/full-transactions?limit=50&offset=0&resolve_previous_outpoints=light`,
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ address }),
-        signal: AbortSignal.timeout(30000)
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(20000)
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Replit backend error: ${response.status}`);
+      const errText = await response.text();
+      throw new Error(`Kaspa API error: ${response.status} ${errText.slice(0, 120)}`);
     }
 
-    const data = await response.json();
-    
-    if (data.success) {
-      console.log(`✅ Received ${data.utxoCount} UTXOs, ${data.history?.length || 0} history items`);
-      
-      // Transform history into UTXO format for compatibility
-      const utxos = data.history ? data.history.map(tx => ({
-        transactionId: tx.txId,
-        amount: Number(tx.amount),
-        blockTime: tx.timestamp ? Math.floor(tx.timestamp / 1000) : null,
-        blockDaaScore: tx.blockDaaScore,
-        outputIndex: tx.index || 0,
-        isCoinbase: tx.isCoinbase || false,
-        isSpent: false
-      })) : [];
+    const transactions = await response.json();
+    const txs = Array.isArray(transactions) ? transactions : [];
 
-      return Response.json({
-        success: true,
-        address: address,
-        balance: data.balance,
-        balanceKAS: data.balance ? Number(data.balance.kas) : 0,
-        utxoCount: data.utxoCount || 0,
-        utxos: utxos,
-        history: data.history || []
-      });
-    } else {
-      return Response.json({
-        success: false,
-        error: data.error || 'Unknown error from Replit backend'
-      }, { status: 500 });
+    console.log(`✅ Received ${txs.length} transactions for ${cleanAddress}`);
+
+    // Transform into the history format the Agent ZK chat expects.
+    // Keep transactions where this address RECEIVED funds.
+    let totalReceived = 0;
+    const history = [];
+
+    for (const tx of txs) {
+      if (!tx.is_accepted) continue;
+
+      let receivedSompi = 0;
+      if (Array.isArray(tx.outputs)) {
+        for (const out of tx.outputs) {
+          if (out.script_public_key_address === cleanAddress) {
+            receivedSompi += Number(out.amount) || 0;
+          }
+        }
+      }
+
+      if (receivedSompi > 0) {
+        totalReceived += receivedSompi;
+        history.push({
+          txId: tx.transaction_id,
+          amount: receivedSompi,
+          timestamp: tx.block_time ? tx.block_time : null,
+          blockDaaScore: tx.block_daa_score || null,
+          index: 0,
+          isCoinbase: tx.is_coinbase || false
+        });
+      }
     }
+
+    // Sort by timestamp descending (most recent first)
+    history.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    const balanceKAS = totalReceived / 1e8;
+
+    return Response.json({
+      success: true,
+      address: cleanAddress,
+      balance: totalReceived,
+      balanceKAS: balanceKAS,
+      utxoCount: history.length,
+      utxos: history,
+      history: history
+    });
 
   } catch (error) {
     console.error('❌ UTXO fetch error:', error.message);
-    return Response.json({ 
+    return Response.json({
       success: false,
       error: error.message,
       utxos: [],

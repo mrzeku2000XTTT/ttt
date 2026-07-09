@@ -1,0 +1,5255 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 441
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 22 Tf
+25.2999999999999972 TL
+0.039 0.235 0.471 rg
+56. 777.8899999999999864 Td
+(THE TTT 3.0 MANIFESTO) Tj
+ET
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 741.8899999999999864 Td
+(The Agent Internet and the Reverse-Engineered Supercomputer) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 711.8899999999999864 Td
+(Version 3.0 — July 2026) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(1) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 1996
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 1 — THE THESIS IN ONE PARAGRAPH) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(TTT 3.0 is a platform thesis built on a single contrarian bet: you do not build a supercomputer by) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(assembling servers first and writing software second. You build the software first — thousands of small,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 717.8899999999999864 Td
+(useful, composable Kaspa applications — and then you reverse-engineer the compute fabric from the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 703.8899999999999864 Td
+(usage graph those applications generate. When autonomous AI agents begin navigating, orchestrating,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 689.8899999999999864 Td
+(and composing those applications across a network that settles in 450 milliseconds, the aggregate) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+(behavior of millions of agent-to-agent and agent-to-app interactions does not resemble an app store. It) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 661.8899999999999864 Td
+(resembles a distributed supercomputer that happens to run useful work. This is the Agent Internet. This) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 647.8899999999999864 Td
+(document is the full technical and philosophical specification of that idea — sixteen pages, no metaphors) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 633.8899999999999864 Td
+(left ungrounded, every claim traceable to a real protocol property, a real Kaspa network parameter, or a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 619.8899999999999864 Td
+(real engineering decision already shipped in this codebase.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(2) Tj
+ET
+endstream
+endobj
+7 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 8 0 R
+>>
+endobj
+8 0 obj
+<<
+/Length 7510
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 2 — WHAT KASPA ACTUALLY IS \(THE FACTS THAT MAKE) Tj
+T* (THE THESIS POSSIBLE\)) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 727.8899999999999864 Td
+(Every claim in this manifesto depends on the physical reality of the Kaspa network. These are not) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 713.8899999999999864 Td
+(aspirational numbers; they are measured properties of the live mainnet as of 2026.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 689.8899999999999864 Td
+(Consensus mechanism. Kaspa is a proof-of-work cryptocurrency, but it does not use a traditional) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+(blockchain. It uses a BlockDAG — a directed acyclic graph of blocks — ordered by the GHOSTDAG) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 661.8899999999999864 Td
+(protocol. GHOSTDAG was formalized in the research of Yonatan Sompolinsky and Aviv Zohar,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 647.8899999999999864 Td
+(beginning with the PHANTOM paper \(2018\) and culminating in the GHOSTDAG specification that) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 633.8899999999999864 Td
+(Kaspa's Rust node implements in production. In a blockchain, blocks compete: only one block per height) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 619.8899999999999864 Td
+(survives, and the rest are orphaned waste. In a BlockDAG, blocks are added to a growing DAG and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 605.8899999999999864 Td
+(ordered by a blue/red selection algorithm that establishes a linear ordering of all blocks without) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 591.8899999999999864 Td
+(discarding them. This is the single most important architectural fact: parallelism is not penalized, it is the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 577.8899999999999864 Td
+(default.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 553.8899999999999864 Td
+(Throughput. The Kaspa mainnet produces blocks at a target rate of 10 blocks per second \(BPS\), with a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 539.8899999999999864 Td
+(theoretical ceiling higher than this. At 10 BPS, the network does not produce one block every 600) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 525.8899999999999864 Td
+(seconds \(Bitcoin\) or one every 12 seconds \(Ethereum pre-merge\). It produces ten every second. This is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 511.8899999999999864 Td
+(the throughput floor that makes sub-second application interaction non-ridiculous: a transaction) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 497.8899999999999864 Td
+(broadcast to the network can reference a block that is, at most, 100 milliseconds old, and be referenced) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 483.8899999999999864 Td
+(itself within the next.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 459.8899999999999864 Td
+(Finality. Kaspa's confirmation times are not measured in block counts the way Bitcoin's are. Because of) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 445.8899999999999864 Td
+(the DAG structure, a transaction gains confirmation confidence continuously as the DAG grows around) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 431.8899999999999864 Td
+(it. Practical, high-confidence finality for a standard transaction is reached within seconds — the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 417.8899999999999864 Td
+(network's own tooling and independent analyses converge on roughly 10–30 seconds for strong) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 403.8899999999999864 Td
+(confidence, with visible inclusion in the DAG within 1 block \(100ms\). For the purposes of this manifesto,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 389.8899999999999864 Td
+(the operative number is: a Kaspa transaction is visible in the DAG in under one second and reaches) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 375.8899999999999864 Td
+(high-confidence finality in single-digit seconds. Compare: Bitcoin settles in 10-minute blocks, with) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 361.8899999999999864 Td
+(6-confirmation "finality" at 60 minutes. Ethereum settles in ~12 seconds but post-merge uses) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 347.8899999999999864 Td
+(proof-of-stake and validator sets, not PoW.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 323.8899999999999864 Td
+(Signatures and address scheme. Kaspa uses Schnorr signatures over the secp256k1 curve. Addresses) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 309.8899999999999864 Td
+(follow a Bech32-style format prefixed with kaspa:. One KAS equals 100,000,000 sompi \(the smallest) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 295.8899999999999864 Td
+(unit\). These are not cosmetic details: Schnorr signatures enable the batch verification and the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 281.8899999999999864 Td
+(signature-aggregation patterns that matter for an agent that needs to sign hundreds of) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 267.8899999999999864 Td
+(micro-transactions, and the sompi granularity enables sub-cent value transfers that an agent operating a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 253.8899999999999864 Td
+(faucet or a pay-per-API-call pattern can actually use.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 229.8899999999999864 Td
+(Supply and monetary policy. Kaspa launched with a fair launch — no premine, no ICO, no dev allocation) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 215.8899999999999864 Td
+(baked into genesis. The maximum supply is 28.7 billion KAS. The emission follows a deflationary) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 201.8899999999999864 Td
+(schedule: the block reward halves approximately every year \(via a smooth decay, not a cliff halving\),) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 187.8899999999999864 Td
+(meaning emission tapers over roughly two decades. This is the economic substrate against which agent) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 173.8899999999999864 Td
+(compute is priced: if an agent pays sompi for a computation, it is paying in an asset whose issuance is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 159.8899999999999864 Td
+(declining and whose supply is capped.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 135.8899999999999864 Td
+(Token standards. The KRC-20 standard provides a Layer-1 token protocol for Kaspa, enabling fungible) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 121.8899999999999864 Td
+(tokens to be minted and transferred on the base DAG without a separate virtual machine. KRC-721) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 107.8899999999999864 Td
+(\(NFTs\) and the broader KCC \(Kaspa Canonical Contracts\) roadmap extend this. The relevance: agents) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 93.8899999999999864 Td
+(can denominate value in custom tokens — compute credits, reputation tokens, access passes — all) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(3) Tj
+ET
+endstream
+endobj
+9 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 10 0 R
+>>
+endobj
+10 0 obj
+<<
+/Length 1472
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+56. 781.8899999999999864 Td
+(settling on the same fast DAG.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 757.8899999999999864 Td
+(These seven properties — PoW security, DAG parallelism, 10 BPS, sub-second-to-single-digit-second) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 743.8899999999999864 Td
+(finality, Schnorr signatures, capped declining supply, and L1 token standards — are not a wishlist. They) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 729.8899999999999864 Td
+(are the measured state of mainnet. The Agent Internet thesis would be incoherent without them. It is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 715.8899999999999864 Td
+(incoherent on Bitcoin \(too slow\). It is incoherent on Ethereum L1 \(too slow and too expensive at base) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 701.8899999999999864 Td
+(layer\). It is incoherent on most alt-L1s \(which sacrifice PoW's settlement guarantees\). Kaspa is, as of the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 687.8899999999999864 Td
+(writing of this document, the only production PoW network whose physical parameters make an) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 673.8899999999999864 Td
+(agent-driven compute economy mechanically possible rather than rhetorically possible.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(4) Tj
+ET
+endstream
+endobj
+11 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 12 0 R
+>>
+endobj
+12 0 obj
+<<
+/Length 6053
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 3 — WHY "APPS FIRST" IS THE CORRECT BUILD ORDER) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(The dominant engineering instinct when approaching distributed supercomputing is to build the compute) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(substrate first: design the scheduler, the resource manager, the interconnect, the billing layer, the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 717.8899999999999864 Td
+(container runtime — and then invite application developers to write against it. This is the order taken by) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 703.8899999999999864 Td
+(every grid computing initiative, every volunteer-computing project \(SETI@home, Folding@home\), every) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 689.8899999999999864 Td
+(serverless platform, and every "decentralized cloud" token of the 2017–2023 era. The order has failed) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+(every time, and it has failed for the same reason: a compute substrate without a rich application surface) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 661.8899999999999864 Td
+(area has nothing to schedule.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 637.8899999999999864 Td
+(The proof is in the adoption curves. SETI@home peaked at roughly 5 million volunteers and then) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 623.8899999999999864 Td
+(declined — not because the compute disappeared, but because the single application it served \(radio) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 609.8899999999999864 Td
+(signal analysis\) had a finite research horizon. Folding@home reached exaFLOP-scale throughput during) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 595.8899999999999864 Td
+(specific research pushes but could not sustain general-purpose demand because it was, by design, a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 581.8899999999999864 Td
+(single-application harness. The decentralized-cloud tokens of the last cycle collectively raised billions) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 567.8899999999999864 Td
+(and shipped, in aggregate, a rounding error of real sustained application usage. The pattern is universal:) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 553.8899999999999864 Td
+(substrate-first projects build a beautiful engine and then discover there is no road, no destination, and no) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 539.8899999999999864 Td
+(driver.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 515.8899999999999864 Td
+(TTT 3.0 inverts the order. The first deliverable is not a scheduler. It is a library of Kaspa-native) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 501.8899999999999864 Td
+(applications — wallets, bridges, marketplaces, feed systems, NFT minters, node monitors, price oracles,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 487.8899999999999864 Td
+(escrow contracts, job boards, learning modules, social protocols, scraping tools, AI agent runtimes.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 473.8899999999999864 Td
+(Each of these is a real, working, user-facing application that provides value independent of any compute) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 459.8899999999999864 Td
+(thesis. This codebase already contains them. They are not mockups. They are shipped pages with) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 445.8899999999999864 Td
+(shipped backend functions, real entity schemas, real wallet integrations, and real users.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 421.8899999999999864 Td
+(The reason the build order matters is the nature of the data these applications generate. Every) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 407.8899999999999864 Td
+(application, when used, produces a usage graph: which functions are called, in what order, with what) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 393.8899999999999864 Td
+(inputs, at what frequency, by which users, settling which transactions. A wallet application produces a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 379.8899999999999864 Td
+(graph of send/receive patterns. A marketplace produces a graph of listing, bid, escrow, and settlement) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 365.8899999999999864 Td
+(patterns. A feed produces a graph of post, tip, comment, and reaction patterns. Individually these are) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 351.8899999999999864 Td
+(just product analytics. Collectively, the union of all usage graphs across all Kaspa applications is a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 337.8899999999999864 Td
+(directed computation graph — a map of what the network's users actually want computed, how they) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 323.8899999999999864 Td
+(sequence it, what they pay for it, and where the bottlenecks are.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 299.8899999999999864 Td
+(This computation graph is the raw material from which a supercomputer is reverse-engineered. You) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 285.8899999999999864 Td
+(cannot design it top-down because you do not, in advance, know what people want computed. You can) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 271.8899999999999864 Td
+(only observe it bottom-up, after the applications exist and are in use. This is why the applications must) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 257.8899999999999864 Td
+(come first. The supercomputer is not built. It is inferred from the usage of the apps.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(5) Tj
+ET
+endstream
+endobj
+13 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 14 0 R
+>>
+endobj
+14 0 obj
+<<
+/Length 7213
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 4 — THE AGENT INTERNET, PRECISELY DEFINED) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+("The Agent Internet" is a phrase that invites vagueness. This section defines it with the precision) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(required for engineering.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 707.8899999999999864 Td
+(Definition. The Agent Internet is a network layer in which the primary actors are not human users) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 693.8899999999999864 Td
+(operating browsers, but autonomous software agents operating application interfaces — and in which) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 679.8899999999999864 Td
+(the coordination, payment, and trust between agents is settled on the Kaspa BlockDAG rather than) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 665.8899999999999864 Td
+(mediated by a central API gateway.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 641.8899999999999864 Td
+(What an agent is, concretely. In the TTT 3.0 implementation, an agent is a software process that \(1\)) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 627.8899999999999864 Td
+(maintains a Kaspa wallet with a private key under its control or under the control of the user it acts for,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 613.8899999999999864 Td
+(\(2\) is driven by a large language model that decomposes a high-level goal into a plan of discrete actions,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 599.8899999999999864 Td
+(\(3\) executes those actions against real application interfaces — navigating iframes, clicking elements,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 585.8899999999999864 Td
+(typing into fields, reading state, and submitting transactions — and \(4\) verifies completion against) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 571.8899999999999864 Td
+(observable signals in the application or on-chain. This is not a theoretical construct. The codebase) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 557.8899999999999864 Td
+(contains a working agent runtime: a planning module that generates multi-step plans, an) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 543.8899999999999864 Td
+(observe-think-act loop that executes them against a live iframe viewport, a bridge script injected into) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 529.8899999999999864 Td
+(application iframes to expose a programmatic interface to agent commands, and a reasoning log that) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 515.8899999999999864 Td
+(surfaces the agent's internal state to a human observer.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 491.8899999999999864 Td
+(What an agent is not. An agent is not a chatbot that returns text. An agent is not a function-calling) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 477.8899999999999864 Td
+(wrapper around a single API. An agent is not a scheduled cron job. The distinguishing property is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 463.8899999999999864 Td
+(autonomous, verifiable, multi-step interaction with a real application surface, where the agent must) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 449.8899999999999864 Td
+(perceive state, decide, act, and confirm — the same loop a human user performs, but at machine speed) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 435.8899999999999864 Td
+(and without human intervention between steps.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 411.8899999999999864 Td
+(Why agents require the properties from Page 2. An agent that operates an application and must pay for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 397.8899999999999864 Td
+(resources, settle bets, transfer tokens, or confirm receipts needs a payment rail with three properties: \(a\)) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 383.8899999999999864 Td
+(it must be fast enough that the agent's execution loop is not stalled waiting for settlement — meaning) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 369.8899999999999864 Td
+(single-digit-second finality, not 10-minute blocks; \(b\) it must be cheap enough at the unit level that) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 355.8899999999999864 Td
+(micro-transactions \(a few sompi\) are economically rational, which requires low fees and high granularity;) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 341.8899999999999864 Td
+(\(c\) it must be trustless enough that an agent can accept payment from a stranger agent without a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 327.8899999999999864 Td
+(escrow intermediary, which requires PoW settlement finality rather than a validator committee's social) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 313.8899999999999864 Td
+(promise. Kaspa satisfies all three. This is why the Agent Internet is not "agents on any blockchain" — it) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 299.8899999999999864 Td
+(is agents on the specific network whose parameters make agent-scale micropayment coordination) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 285.8899999999999864 Td
+(physically possible.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 261.8899999999999864 Td
+(The agent-to-agent layer. The full vision includes agents that transact with other agents, not just with) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 247.8899999999999864 Td
+(applications: an agent that needs a web page scraped hires another agent that specializes in scraping,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 233.8899999999999864 Td
+(paying it in sompi upon verifiable delivery. An agent that needs an image generated hires an agent with) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 219.8899999999999864 Td
+(GPU access. An agent that needs a fact verified hires an agent with search access. Each of these is a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 205.8899999999999864 Td
+(micro-market settled on-chain. The coordination does not require a matching engine or an order book) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 191.8899999999999864 Td
+(daemon; it requires only that agents can discover each other \(via a directory\), negotiate \(via a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 177.8899999999999864 Td
+(messaging protocol\), and settle \(via a Kaspa transaction\). This is the Agent Internet's economic engine:) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 163.8899999999999864 Td
+(a mesh of bilateral agent contracts, each too small to justify a traditional legal agreement, each large) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 149.8899999999999864 Td
+(enough to matter, each settled on a DAG that confirms in seconds.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(6) Tj
+ET
+endstream
+endobj
+15 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 16 0 R
+>>
+endobj
+16 0 obj
+<<
+/Length 7526
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 5 — THE REVERSE-ENGINEERING THESIS, IN FULL) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(This is the core argument of the manifesto and the part most likely to be misunderstood. It is stated here) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(as carefully as the language permits.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 707.8899999999999864 Td
+(The forward-engineering failure. When you build a supercomputer top-down, you specify the compute) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 693.8899999999999864 Td
+(primitives \(containers, functions, jobs\), the resource model \(CPU, GPU, memory, bandwidth\), the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 679.8899999999999864 Td
+(scheduler \(queue, priority, fairness\), and the billing model \(per-second, per-invocation, per-token\). Then) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 665.8899999999999864 Td
+(you ask developers to write applications that fit these primitives. The result, historically, is that) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 651.8899999999999864 Td
+(developers do not come, because the primitives are too low-level to express the applications people) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 637.8899999999999864 Td
+(actually want, and the applications people actually want do not decompose cleanly into the primitives) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 623.8899999999999864 Td
+(you specified. The substrate and the application surface are misaligned, and no amount of SDK polish) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 609.8899999999999864 Td
+(fixes the misalignment because it is structural.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 585.8899999999999864 Td
+(The reverse-engineering alternative. When you build applications first and let them run, the usage graph) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 571.8899999999999864 Td
+(that emerges is a record of what computation people actually want and how they actually sequence it.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 557.8899999999999864 Td
+(This graph has structure. It has hot paths \(functions called constantly\), cold paths \(functions called) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 543.8899999999999864 Td
+(rarely\), fan-out patterns \(one input producing many parallel calls\), fan-in patterns \(many inputs) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 529.8899999999999864 Td
+(converging on one call\), and payment edges \(calls that are accompanied by on-chain value transfer\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 515.8899999999999864 Td
+(The structure of this graph is the specification of the supercomputer. The hot paths tell you what to) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 501.8899999999999864 Td
+(cache and what to co-locate. The fan-out patterns tell you what to parallelize. The payment edges tell) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 487.8899999999999864 Td
+(you what to price and how. The cold paths tell you what to offload to slower, cheaper tiers. The) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 473.8899999999999864 Td
+(supercomputer's architecture is read off the usage graph; it is not imposed on it.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 449.8899999999999864 Td
+(The mechanism, step by step.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 425.8899999999999864 Td
+(1. Application library phase \(current\). Build and ship a large library of Kaspa-native applications.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 411.8899999999999864 Td
+(Each application is independently useful. Each generates a usage graph. No supercomputer is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 397.8899999999999864 Td
+(claimed yet. This is the phase the TTT ecosystem is in: the codebase contains dozens of working) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 383.8899999999999864 Td
+(applications across wallet, bridge, social, market, compute, and AI categories.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 361.8899999999999864 Td
+(2. Agent adoption phase \(emerging\). Deploy agents that use these applications on behalf of users.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 347.8899999999999864 Td
+(Agents do not change the applications; they change the volume and structure of usage. A human) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 333.8899999999999864 Td
+(user clicks a "send" button once a day. An agent executing a goal might invoke the send function 40) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 319.8899999999999864 Td
+(times in a minute, each with a different recipient, each referencing the previous via the DAG. The) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 305.8899999999999864 Td
+(usage graph densifies and its structure becomes legible.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 283.8899999999999864 Td
+(3. Aggregation phase \(next\). Aggregate the usage graphs across all applications and all agents into a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 269.8899999999999864 Td
+(unified computation graph. This is a graph where nodes are application functions and edges are) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 255.8899999999999864 Td
+("called after" relationships, weighted by frequency and by settled value. This graph is a real artifact) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 241.8899999999999864 Td
+(— it can be stored, queried, and analyzed. It is the map.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 219.8899999999999864 Td
+(4. Substrate derivation phase \(the reverse engineering\). From the unified graph, derive the compute) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 205.8899999999999864 Td
+(substrate: identify the subgraphs that should be co-located \(high edge weight = co-locate\), the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 191.8899999999999864 Td
+(subgraphs that should be parallelized \(high fan-out = shard\), the subgraphs that should be cached) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 177.8899999999999864 Td
+(\(high read frequency, low write frequency = edge-cache\), and the subgraphs that should be priced as) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 163.8899999999999864 Td
+(premium \(high payment edge density = tier-1 compute\). The substrate is not designed by a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 149.8899999999999864 Td
+(committee; it is derived by an algorithm from observed demand.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 127.8899999999999864 Td
+(5. Supercomputer emergence \(the result\). The derived substrate, once provisioned, runs the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 113.8899999999999864 Td
+(application library faster, cheaper, and at higher concurrency than the unstructured baseline. At this) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 99.8899999999999864 Td
+(point the system is, functionally, a distributed supercomputer: it accepts computation requests from) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(7) Tj
+ET
+endstream
+endobj
+17 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 18 0 R
+>>
+endobj
+18 0 obj
+<<
+/Length 1680
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+64. 781.8899999999999864 Td
+(agents, routes them across a derived fabric, settles payment on Kaspa, and returns verified results.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+64. 767.8899999999999864 Td
+(No single component is "the supercomputer." The supercomputer is the pattern.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(Why this is not circular. A skeptic will say: "You build apps, then you build a substrate for the apps, then) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(the substrate runs the apps — what's been gained?" What is gained is that the substrate is derived from) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 717.8899999999999864 Td
+(real demand rather than assumed demand. Every compute primitive the substrate exposes corresponds) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 703.8899999999999864 Td
+(to a pattern that real agents really exhibited. There is no orphaned API. There is no scheduler idling on) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 689.8899999999999864 Td
+(an empty queue. The substrate is, by construction, exactly the shape of the demand. This is the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+(efficiency property that every substrate-first project has failed to achieve and that every demand-first) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 661.8899999999999864 Td
+(project \(if one existed at compute scale\) would have achieved.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(8) Tj
+ET
+endstream
+endobj
+19 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 20 0 R
+>>
+endobj
+20 0 obj
+<<
+/Length 7126
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 6 — THE KASPA PROTOCOL PROPERTIES THAT ENABLE) Tj
+T* (EACH LAYER) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 727.8899999999999864 Td
+(This page maps each layer of the thesis to the specific Kaspa property that enables it, to make clear that) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 713.8899999999999864 Td
+(the thesis is not hand-waving.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 689.8899999999999864 Td
+(Layer: Agent payment. Agents pay agents and agents pay applications in sompi. Enabled by: Schnorr) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+( s i g n a t u r e s   \( f a s t   b a t c h   v e r i f i c a t i o n \) ,   s o m p i   g r a n u l a r i t y   \( 1   K A S   =   1 0 x   s o m p i ,   e n a b l i n g   s u b - c e n t   t r a n s f e r s \) ,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 661.8899999999999864 Td
+(and low Kaspa transaction fees \(the fee model is mass-based, not percentage-based, so a 0.001 KAS) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 647.8899999999999864 Td
+(transfer costs the same fee overhead as a 10,000 KAS transfer\). An agent sending 500 sompi \(0.000005) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 633.8899999999999864 Td
+(KAS\) to another agent is economically rational because the fee does not scale with value.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 609.8899999999999864 Td
+(Layer: Agent coordination. Agents must know that a payment they sent was received before proceeding) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 595.8899999999999864 Td
+(to the next step. Enabled by: Kaspa's sub-second block inclusion \(a transaction is visible in the DAG) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 581.8899999999999864 Td
+(within ~1 block = 100ms\) and single-digit-second high-confidence finality. An agent's execution loop,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 567.8899999999999864 Td
+( w h i c h   m i g h t   b e   " p a y  !’   c o n f i r m   r e c e i p t  !’   e x e c u t e   n e x t   s t e p , "   c o m p l e t e s   i t s   p a y m e n t   l e g   i n   s e c o n d s ,   n o t) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 553.8899999999999864 Td
+(minutes. On Bitcoin this loop would take 10 minutes per step; on Ethereum L1 it would cost more in gas) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 539.8899999999999864 Td
+(than the payment is worth.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 515.8899999999999864 Td
+(Layer: Agent trust. An agent must trust that a payment it received is final and will not be reorganized out) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 501.8899999999999864 Td
+(of history. Enabled by: Kaspa's proof-of-work settlement. PoW finality, once a transaction is buried under) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 487.8899999999999864 Td
+(sufficient DAG depth, is not revertible without acquiring majority hashpower — the same security) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 473.8899999999999864 Td
+(property Bitcoin has, applied to a DAG that grows 600× faster \(10 BPS vs. Bitcoin's ~1 BPS average\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 459.8899999999999864 Td
+(The agent does not trust a validator; it trusts physics.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 435.8899999999999864 Td
+(Layer: Composable value. Agents need to denominate compute in units that are not raw KAS —) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 421.8899999999999864 Td
+(compute credits, reputation stakes, access tokens. Enabled by: KRC-20 \(fungible tokens\) and KRC-721) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 407.8899999999999864 Td
+(\(NFTs\) on Layer 1. An agent can hold a "GPU-minutes" token, transfer it to another agent, and have that) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 393.8899999999999864 Td
+(transfer settle on the same DAG as a KAS transfer — no separate token bridge, no separate finality) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 379.8899999999999864 Td
+(assumption.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 355.8899999999999864 Td
+(Layer: Verifiable computation. An agent that hires another agent for a computation must verify the result.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 341.8899999999999864 Td
+(The weakest form is "the result hash matches." The strong form is a proof system. Enabled by: Kaspa's) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 327.8899999999999864 Td
+(fast finality as the settlement layer for proof verification transactions — a zero-knowledge proof of correct) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 313.8899999999999864 Td
+(execution can be submitted as a transaction, and its acceptance/rejection \(by a verifier agent or) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 299.8899999999999864 Td
+(contract\) settles in seconds. The DAG's parallelism means multiple independent verifications can) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 285.8899999999999864 Td
+(proceed concurrently without blocking each other.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 261.8899999999999864 Td
+(Layer: Economic sustainability of the compute fabric. The supercomputer must be economically) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 247.8899999999999864 Td
+(self-sustaining: agents pay for compute, compute providers earn KAS, the loop closes. Enabled by:) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 233.8899999999999864 Td
+(Kaspa's capped supply \(28.7B KAS\) and declining emission. As the compute fabric grows demand for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 219.8899999999999864 Td
+(KAS \(agents must acquire it to pay for compute\), the monetary policy provides a deflationary pressure) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 205.8899999999999864 Td
+(on the stock against the growing transactional demand. This is not a guarantee of price appreciation — it) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 191.8899999999999864 Td
+(is a guarantee that the economic loop is not fighting an inflationary issuance that would dilute provider) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 177.8899999999999864 Td
+(revenue.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 153.8899999999999864 Td
+(Every layer of the thesis has a protocol-level enabler. There is no layer that requires "and then magic) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 139.8899999999999864 Td
+(happens." The Agent Internet is, mechanically, a set of software patterns built on a set of protocol) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 125.8899999999999864 Td
+(primitives that already exist and already run.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+295.4399999999999977 24. Td
+(9) Tj
+ET
+endstream
+endobj
+21 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 22 0 R
+>>
+endobj
+22 0 obj
+<<
+/Length 6863
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 7 — THE APPLICATION LIBRARY: WHAT EXISTS TODAY) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(This is not a roadmap section. It is an inventory section. The applications listed here are in the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(codebase, with backend functions, entity schemas, and frontend pages. They are the raw material from) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 717.8899999999999864 Td
+(which the reverse-engineering process begins.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 693.8899999999999864 Td
+(Wallet and payments. A multi-wallet system supporting Kasware \(browser extension\) and TTT-managed) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 679.8899999999999864 Td
+(wallets \(server-side key derivation\), with send \(Schnorr-signed transactions broadcast via the Kaspa) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 665.8899999999999864 Td
+(REST API\), receive \(QR generation\), balance querying \(UTXO aggregation\), and transaction history) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 651.8899999999999864 Td
+(\(address-indexed\). The sendKaspaTransaction backend function implements fee estimation based on) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 637.8899999999999864 Td
+(transaction mass, UTXO selection with maturity filtering, Schnorr signature derivation, and broadcast) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 623.8899999999999864 Td
+(with retry logic — this is real transaction engineering, not a wrapper.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 599.8899999999999864 Td
+(Bridging. An L1/L2 bridge interface supporting Kaspa \(L1\) and Kasplex \(L2 via MetaMask\), with) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 585.8899999999999864 Td
+(proof-of-life verification and a relayer backend function. Bridge transactions are tracked as entities,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 571.8899999999999864 Td
+(enabling the usage graph to capture bridge volume and frequency.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 547.8899999999999864 Td
+(Social and content. An encrypted feed system \(posts, comments, likes, tips\), a DAG-native feed variant,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 533.8899999999999864 Td
+(a reels/video viewer, and a news stamping protocol that allows users to cryptographically sign news) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 519.8899999999999864 Td
+(content with their Kaspa wallet, creating an on-chain provenance record. The feed has a tip mechanism) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 505.8899999999999864 Td
+(that settles KAS transfers to content creators — a direct agent-payable interaction.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 481.8899999999999864 Td
+(Marketplace and commerce. A peer-to-peer marketplace with listings, in-person trade coordination, an) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 467.8899999999999864 Td
+(escrow contract integration, and a review system. A dropshipping product manager. A shop system with) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 453.8899999999999864 Td
+(Kaspa-denominated checkout \(via the KasperoPay widget integration\). These are all application) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 439.8899999999999864 Td
+(surfaces an agent can operate.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 415.8899999999999864 Td
+(AI and agents. A multi-agent system with configurable AI agents \(agent configs as JSON\), an agent chat) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 401.8899999999999864 Td
+(runtime, an agent bridge for iframe automation, an agent planning loop, and an agent reasoning log.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 387.8899999999999864 Td
+(This is the substrate for the Agent Internet's agent layer — the tools agents use to exist are themselves) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 373.8899999999999864 Td
+(Kaspa applications.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 349.8899999999999864 Td
+(Compute and scraping. A website statistics scraper \(the scrapeWebsiteStats function, which fetches a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 335.8899999999999864 Td
+(URL, parses HTML, extracts SEO metrics, and runs an LLM analysis — this is a real compute primitive) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 321.8899999999999864 Td
+(an agent can hire\). A web proxy function. A link security checker. A file analyzer. These are the first) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 307.8899999999999864 Td
+("compute as a service" primitives, already shipping.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 283.8899999999999864 Td
+(Gaming and prediction. A betting platform \(Kaspa-denominated\), a bingo game system with) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 269.8899999999999864 Td
+(lobby/room/play modes, a prediction market integration, a Tetris battle game with rankings, a Pac-Man) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 255.8899999999999864 Td
+(reward system. Games are high-frequency, low-value transaction generators — exactly the usage) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 241.8899999999999864 Td
+(pattern that densifies the computation graph.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 217.8899999999999864 Td
+(Tools and utilities. A node monitor, a node map, a balance viewer, a price ticker, a countdown timer, a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 203.8899999999999864 Td
+(QR scanner, a calculator, a document signer, an SSH manager. Each is a small, composable utility.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 189.8899999999999864 Td
+(Each is an agent-operable surface.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 165.8899999999999864 Td
+(The inventory is not exhaustive — the codebase contains over 100 distinct application surfaces. The) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 151.8899999999999864 Td
+(point is not the count. The point is that the application library already exists at a scale sufficient to begin) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 137.8899999999999864 Td
+(aggregation and substrate derivation. Phase 1 of the reverse-engineering thesis \(applications first\) is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 123.8899999999999864 Td
+(substantially complete. The work that remains is Phases 2–5.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(10) Tj
+ET
+endstream
+endobj
+23 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 24 0 R
+>>
+endobj
+24 0 obj
+<<
+/Length 7764
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 8 — THE AGENT RUNTIME: HOW AGENTS ACTUALLY WORK) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(This page describes the agent runtime that exists in the codebase, because the reverse-engineering) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(thesis depends on agents being real and operational, not aspirational.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 707.8899999999999864 Td
+(The planning module. When an agent receives a goal \(e.g., "send 5 KAS to this address and confirm) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 693.8899999999999864 Td
+(receipt"\), it does not execute blindly. It first generates a plan: a JSON array of discrete steps, each with a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 679.8899999999999864 Td
+(type \(navigate, click, type, read, wait, verify\), a target, and a success condition. The plan is generated by) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 665.8899999999999864 Td
+(an LLM call with a rigid JSON schema enforcing that the output is a valid plan. The schema is not a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 651.8899999999999864 Td
+(suggestion; it is a contract. If the LLM returns malformed JSON, the planner retries. This is the same) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 637.8899999999999864 Td
+(pattern used in production agent frameworks — plan-then-execute, with schema validation as the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 623.8899999999999864 Td
+(guardrail.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 599.8899999999999864 Td
+(The observe-think-act loop. Once a plan is generated, the agent executes it step by step. For each step,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 585.8899999999999864 Td
+(the loop is: \(1\) Observe — read the current state of the application iframe \(via the injected bridge script,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 571.8899999999999864 Td
+(which exposes the DOM structure, element positions, and text content to the agent\); \(2\) Think — decide) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 557.8899999999999864 Td
+(whether the current step's preconditions are met and what the next action is \(an LLM call with the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 543.8899999999999864 Td
+(observation and the current plan step as context\); \(3\) Act — execute the action \(navigate to a URL, click) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 529.8899999999999864 Td
+(an element by selector, type text into a field, scroll, or wait\). After each action, the loop returns to) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 515.8899999999999864 Td
+(Observe. This is the canonical agent control loop, implemented and operational.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 491.8899999999999864 Td
+(The verification layer. After the plan's steps are executed, the agent verifies completion. Verification is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 477.8899999999999864 Td
+(not "the last step ran without error." Verification is "the expected post-condition is observable." For a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 463.8899999999999864 Td
+("send KAS" goal, the post-condition is "the transaction appears in the address's transaction history with) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 449.8899999999999864 Td
+(the expected amount." The agent queries the transaction history \(via the getKaspaTransactionHistory) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 435.8899999999999864 Td
+(backend function\), looks for the transaction, and reports success or failure. This is what distinguishes an) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 421.8899999999999864 Td
+(agent from a script: the agent confirms its own work against ground truth.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 397.8899999999999864 Td
+(The bridge script. The agent does not operate applications via a private API. It operates them via the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 383.8899999999999864 Td
+(same DOM a human user would interact with — by injecting a script \(agentBridgeListener.js\) into) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 369.8899999999999864 Td
+(application iframes that listens for postMessage commands from the agent runtime and executes them) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 355.8899999999999864 Td
+(against the live DOM. This means the agent can operate any application that renders in a browser, not) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 341.8899999999999864 Td
+(just applications with agent-specific APIs. This is a deliberate design choice: it means the application) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 327.8899999999999864 Td
+(library does not need to be "agent-enabled" — every web application is, by default, agent-operable. The) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 313.8899999999999864 Td
+(bridge script is the universal adapter.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 289.8899999999999864 Td
+(The reasoning log. As the agent executes, it surfaces its internal state: each step's status \(pending,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 275.8899999999999864 Td
+(running, completed, failed\), the thought it generated at each decision point, the action it took, and the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 261.8899999999999864 Td
+(result. This log is rendered in the UI as a live, animated feed. The reasoning log exists for two reasons:) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 247.8899999999999864 Td
+(\(1\) transparency — a human observer can see what the agent is doing and why, which is a prerequisite) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 233.8899999999999864 Td
+(for trusting the agent with real value transfers; \(2\) debugging — when an agent fails, the log shows) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 219.8899999999999864 Td
+(where and why, enabling iteration on the plan or the application. The reasoning log is the audit trail.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 195.8899999999999864 Td
+(The economics of agent execution. Each agent execution has a cost: LLM API calls for planning and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 181.8899999999999864 Td
+(thinking, Kaspa transaction fees for any on-chain actions, and compute time on whatever host runs the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 167.8899999999999864 Td
+(agent loop. In the current implementation, these costs are borne by the application operator. In the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 153.8899999999999864 Td
+(Agent Internet, these costs are borne by the agent's wallet, which must be funded with KAS to pay for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 139.8899999999999864 Td
+(compute, LLM access, and transaction fees. An agent with an empty wallet cannot act. This is the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 125.8899999999999864 Td
+(economic constraint that makes the system self-regulating: agents that produce value get paid and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 111.8899999999999864 Td
+(continue; agents that waste resources go bankrupt and stop. The market selects for useful computation.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(11) Tj
+ET
+endstream
+endobj
+25 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 26 0 R
+>>
+endobj
+26 0 obj
+<<
+/Length 6964
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 9 — THE COMPUTATION GRAPH: WHAT IT LOOKS LIKE AND) Tj
+T* (WHY IT MATTERS) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 727.8899999999999864 Td
+(This page makes the concept of "the computation graph" concrete, because it is the object from which) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 713.8899999999999864 Td
+(the supercomputer is reverse-engineered, and a vague concept of it makes the whole thesis feel) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 699.8899999999999864 Td
+(hand-wavy.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+(What a computation graph is. Formally, a computation graph is a directed graph where nodes are) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 661.8899999999999864 Td
+(computation units \(function calls, transactions, agent actions\) and edges represent data or control flow) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 647.8899999999999864 Td
+(dependencies \(the output of A is the input to B; B is called after A; B requires A's transaction to be) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 633.8899999999999864 Td
+(confirmed\). The TTT 3.0 computation graph is the union of all such graphs across all applications and all) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 619.8899999999999864 Td
+(agents over time. It is a massive, evolving, real artifact.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 595.8899999999999864 Td
+(What the nodes are, concretely. In this system, a node in the computation graph is one of: a backend) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 581.8899999999999864 Td
+(function invocation \(e.g., getKaspaBalance, sendKaspaTransaction, scrapeWebsiteStats\), a frontend) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 567.8899999999999864 Td
+(interaction \(a page view, a button click, a form submission\), a Kaspa transaction \(identified by its) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 553.8899999999999864 Td
+(transaction hash on the DAG\), or an agent action \(a plan step executed against an application iframe\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 539.8899999999999864 Td
+(Each node has metadata: timestamp, actor \(user ID or agent ID\), application, function name, input hash,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 525.8899999999999864 Td
+(output hash, and on-chain transaction hash \(if the node involved a value transfer\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 501.8899999999999864 Td
+(What the edges are, concretely. An edge exists when: \(a\) one node's output is another node's input) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 487.8899999999999864 Td
+(\(data flow\), \(b\) one node was called immediately after another by the same actor \(temporal control flow\),) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 473.8899999999999864 Td
+(\(c\) one node's Kaspa transaction is referenced by another node's transaction \(on-chain dependency —) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 459.8899999999999864 Td
+(Kaspa transactions reference prior UTXOs, creating a natural DAG of spending\), or \(d\) an agent's plan) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 445.8899999999999864 Td
+(explicitly sequenced two nodes \(plan-level control flow\). Edge weights are frequencies: how often does) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 431.8899999999999864 Td
+(this pattern recur?) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 407.8899999999999864 Td
+(What the graph reveals. Once aggregated, the graph reveals structure that no single application's) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 393.8899999999999864 Td
+(analytics could reveal:) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 369.8899999999999864 Td
+(  •  Hot functions \(nodes with high in-degree — called by many other nodes\) are candidates for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 355.8899999999999864 Td
+(caching, replication, and co-location. If getKaspaBalance is called by 14 different applications, it) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 341.8899999999999864 Td
+(should be a first-class service, not a per-app function.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 319.8899999999999864 Td
+(  •  Fan-out patterns \(a single node whose output feeds many parallel downstream nodes\) are) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 305.8899999999999864 Td
+(candidates for sharding and parallel execution. If a single price query fans out to 50 different tipping) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 291.8899999999999864 Td
+(flows, the price query should be a broadcast primitive.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 269.8899999999999864 Td
+(  •  Fan-in patterns \(many nodes converging on a single downstream node\) are candidates for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 255.8899999999999864 Td
+(batching and queue management. If 30 agents all submit verification requests to the same verifier,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 241.8899999999999864 Td
+(the verifier should be a pooled service.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 219.8899999999999864 Td
+(  •  Payment edges \(edges accompanied by on-chain value transfer\) are the economic signal. A) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 205.8899999999999864 Td
+(function with high payment-edge density is one people pay for; it should be priced and tiered. A) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 191.8899999999999864 Td
+(function with high call frequency but zero payment edges is either a public good \(subsidize it\) or a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 177.8899999999999864 Td
+(free-rider \(deprecate or monetize it\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 155.8899999999999864 Td
+(  •  Latency-critical paths \(paths where the time between node A and node B is short and where) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 141.8899999999999864 Td
+(delays degrade the user experience\) are candidates for edge deployment and co-location of the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 127.8899999999999864 Td
+(nodes on the path.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 105.8899999999999864 Td
+(This graph is not theoretical. Every node listed above corresponds to a real event in a real system that) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 91.8899999999999864 Td
+(already runs. The graph is being generated continuously, right now, by the usage of the application) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(12) Tj
+ET
+endstream
+endobj
+27 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 28 0 R
+>>
+endobj
+28 0 obj
+<<
+/Length 382
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+56. 781.8899999999999864 Td
+(library. The only thing missing is the aggregation and analysis layer that reads it off. That layer is the) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+56. 767.8899999999999864 Td
+(next engineering deliverable.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(13) Tj
+ET
+endstream
+endobj
+29 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 30 0 R
+>>
+endobj
+30 0 obj
+<<
+/Length 7511
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 10 — FROM GRAPH TO SUBSTRATE: THE DERIVATION) Tj
+T* (ALGORITHM) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 727.8899999999999864 Td
+(This page describes, at the level of precision an engineer can implement from, how the computation) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 713.8899999999999864 Td
+(graph is transformed into a compute substrate. This is the "reverse engineering" made algorithmic.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 689.8899999999999864 Td
+(Step 1: Collection. Every backend function invocation, every agent action, and every Kaspa transaction) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+(is logged with its metadata to a time-series store. The log is append-only and keyed by timestamp. This) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 661.8899999999999864 Td
+(is raw telemetry; it is already partially implemented via the entity system \(each invocation that creates or) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 647.8899999999999864 Td
+(updates an entity is recorded\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 623.8899999999999864 Td
+(Step 2: Graph construction. From the telemetry log, construct the directed graph: for each pair of nodes) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 609.8899999999999864 Td
+(\(A, B\) where A's output is B's input, A was called before B by the same actor within a time window, or) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 595.8899999999999864 Td
+( A ' s   t r a n s a c t i o n   i s   r e f e r e n c e d   b y   B ' s   t r a n s a c t i o n ,   a d d   a n   e d g e   A!’ B   w i t h   w e i g h t   e q u a l   t o   t h e   f r e q u e n c y   o f) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 581.8899999999999864 Td
+(the pattern. The graph is constructed incrementally \(as new telemetry arrives\) and stored in a graph) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 567.8899999999999864 Td
+(database or, for early stages, in the entity system itself.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 543.8899999999999864 Td
+(Step 3: Community detection. Apply a community detection algorithm \(e.g., Louvain method for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 529.8899999999999864 Td
+(modularity\) to identify clusters of nodes that are densely connected to each other and sparsely) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 515.8899999999999864 Td
+(connected to the rest of the graph. These clusters are the co-location units: functions that are called) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 501.8899999999999864 Td
+(together frequently should run on the same host or in the same region to minimize inter-node latency.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 487.8899999999999864 Td
+(The output of this step is a partition of the graph into communities, each of which is a candidate) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 473.8899999999999864 Td
+(deployment unit.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 449.8899999999999864 Td
+(Step 4: Bottleneck identification. For each community, identify the node with the highest betweenness) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 435.8899999999999864 Td
+(centrality \(the node that most paths pass through\). This node is the bottleneck. Bottlenecks are) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 421.8899999999999864 Td
+(candidates for replication \(run multiple instances and load-balance\) or for rewriting in a faster runtime.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 407.8899999999999864 Td
+(The output is a prioritized list of functions to scale.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 383.8899999999999864 Td
+(Step 5: Parallelization identification. Identify subgraphs with high fan-out \(one node calling many) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 369.8899999999999864 Td
+(downstream nodes that do not depend on each other\). These subgraphs are candidates for parallel) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 355.8899999999999864 Td
+(execution: instead of calling the downstream nodes sequentially, call them concurrently. The output is a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 341.8899999999999864 Td
+(set of execution plans expressed as DAGs of concurrent calls.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 317.8899999999999864 Td
+(Step 6: Pricing derivation. For each node, compute the ratio of payment-edge weight to call-frequency) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 303.8899999999999864 Td
+(weight. A node with high payment density and moderate call frequency is a premium service — price it) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 289.8899999999999864 Td
+(high. A node with high call frequency and low payment density is a utility — price it low or subsidize it) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 275.8899999999999864 Td
+(from premium revenue. A node with neither is a candidate for deprecation. The output is a price table for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 261.8899999999999864 Td
+(every function in the substrate.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 237.8899999999999864 Td
+(Step 7: Substrate provisioning. Given the co-location units, the bottleneck replication plan, the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 223.8899999999999864 Td
+(parallelization plans, and the price table, provision the compute substrate: deploy co-located) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 209.8899999999999864 Td
+(communities to the same hosts, replicate bottleneck functions, expose parallel execution endpoints, and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 195.8899999999999864 Td
+(attach the pricing layer to the agent payment flow. The substrate is now live.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 171.8899999999999864 Td
+(Step 8: Feedback loop. The substrate changes the usage patterns \(faster functions are called more;) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 157.8899999999999864 Td
+(expensive functions are called less\). The computation graph updates. Re-run Steps 2–7 on a regular) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 143.8899999999999864 Td
+( c a d e n c e   \( d a i l y ,   w e e k l y \) .   T h e   s u b s t r a t e   e v o l v e s   t o   t r a c k   d e m a n d .   T h i s   i s   t h e   c l o s e d   l o o p :   o b s e r v e  !’) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 129.8899999999999864 Td
+( d e r i v e  !’   p r o v i s i o n  !’   o b s e r v e .   T h e   s u p e r c o m p u t e r   i s   n e v e r   f i n i s h e d ;   i t   i s   c o n t i n u o u s l y   r e - d e r i v e d .) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 105.8899999999999864 Td
+(This algorithm is not exotic. Every step is a standard graph-analysis operation. The novelty is not in the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 91.8899999999999864 Td
+(algorithm but in the decision to derive the substrate from observed usage rather than to impose it from a) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(14) Tj
+ET
+endstream
+endobj
+31 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 32 0 R
+>>
+endobj
+32 0 obj
+<<
+/Length 214
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+56. 781.8899999999999864 Td
+(specification. That decision is the thesis.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(15) Tj
+ET
+endstream
+endobj
+33 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 34 0 R
+>>
+endobj
+34 0 obj
+<<
+/Length 6284
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 11 — THE ECONOMICS: WHY AGENTS AND PROVIDERS) Tj
+T* (BOTH PARTICIPATE) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 727.8899999999999864 Td
+(A system that requires altruism fails. This page establishes that every participant in the Agent Internet is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 713.8899999999999864 Td
+(economically rational at every step.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 689.8899999999999864 Td
+(The agent's economics. An agent is instantiated by a user to achieve a goal. To achieve the goal, the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+(agent must pay for: LLM inference \(for planning and thinking\), Kaspa transaction fees \(for on-chain) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 661.8899999999999864 Td
+(actions\), and compute \(for functions it hires other agents or services to perform\). The agent pays from a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 647.8899999999999864 Td
+(wallet funded by the user. The agent succeeds \(and the user is satisfied\) when the goal is achieved at a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 633.8899999999999864 Td
+(total cost the user is willing to pay. If the agent is inefficient \(pays too much for compute, makes too) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 619.8899999999999864 Td
+(many LLM calls\), the user defunds it and it stops. If the agent is efficient, it completes goals cheaply and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 605.8899999999999864 Td
+(the user continues to fund it. This is a market for agent efficiency, settled in KAS.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 581.8899999999999864 Td
+(The compute provider's economics. A compute provider runs a host that executes substrate functions) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 567.8899999999999864 Td
+(\(the co-located communities from Step 3 of the derivation\). The provider earns KAS for each function) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 553.8899999999999864 Td
+(execution, at the price derived in Step 6. The provider's costs are hardware, electricity, and bandwidth. A) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 539.8899999999999864 Td
+(provider is profitable when the KAS earned exceeds the fiat costs, converted at the prevailing KAS/USD) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 525.8899999999999864 Td
+(rate. Providers with faster hardware, cheaper electricity, or better placement \(closer to the communities) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 511.8899999999999864 Td
+(they serve\) earn more. This is a market for compute efficiency, settled in KAS.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 487.8899999999999864 Td
+(The application developer's economics. An application developer builds an application that runs on the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 473.8899999999999864 Td
+(substrate. The developer earns KAS when agents use the application \(either directly via a usage fee, or) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 459.8899999999999864 Td
+(indirectly via the transaction volume the application generates, which the developer can capture via a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 445.8899999999999864 Td
+(token or a fee share\). A developer whose application is heavily used by agents earns more; a developer) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 431.8899999999999864 Td
+(whose application is rarely used earns less and has an incentive to improve it or build a different one.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 417.8899999999999864 Td
+(This is a market for application utility, settled in KAS.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 393.8899999999999864 Td
+(The network's economics. The Kaspa network earns security budget from block rewards and transaction) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 379.8899999999999864 Td
+(fees. As the Agent Internet grows transaction volume \(agents paying agents, agents paying providers,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 365.8899999999999864 Td
+(users funding agents\), the fee revenue to the network grows. This increases the security budget, which) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 351.8899999999999864 Td
+(increases the finality guarantees, which increases agent trust, which increases usage — a positive) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 337.8899999999999864 Td
+(feedback loop. The network's economics are aligned with the Agent Internet's growth because the Agent) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 323.8899999999999864 Td
+(Internet's transactions are the network's fee revenue.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 299.8899999999999864 Td
+(Why all four participate simultaneously. The system works because no participant can extract value) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 285.8899999999999864 Td
+(without providing value: an agent that doesn't achieve goals gets defunded; a provider that doesn't) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 271.8899999999999864 Td
+(execute gets no KAS; a developer whose app isn't used earns nothing; the network that doesn't secure) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 257.8899999999999864 Td
+(transactions loses agents. Every participant is paid for output, not for participation. This is the property) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 243.8899999999999864 Td
+(that distinguishes the Agent Internet from the decentralized-cloud tokens of the prior cycle, which paid) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 229.8899999999999864 Td
+(participants for staking \(participation\) regardless of whether anyone used the compute. In the Agent) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 215.8899999999999864 Td
+(Internet, you eat what you kill.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(16) Tj
+ET
+endstream
+endobj
+35 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 36 0 R
+>>
+endobj
+36 0 obj
+<<
+/Length 7552
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 12 — THE SECURITY MODEL AND TRUST ASSUMPTIONS) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(This page is explicit about what is trusted and what is verified, because the Agent Internet moves real) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(value between autonomous actors and the threat model must be stated.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 707.8899999999999864 Td
+(What is verified by the protocol. The Kaspa protocol verifies: that a transaction is well-formed, that the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 693.8899999999999864 Td
+(sender's signature is valid \(Schnorr over secp256k1\), that the sender has sufficient UTXO to cover the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 679.8899999999999864 Td
+(amount plus fee, that the transaction mass is within limits, and that the transaction is included in a block) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 665.8899999999999864 Td
+(that is part of the canonical DAG ordering. These are protocol-level guarantees, as strong as the PoW) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 651.8899999999999864 Td
+(hashpower securing the network. An agent that receives a KAS payment that has been buried under) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 637.8899999999999864 Td
+(sufficient DAG depth can trust it with the same confidence it would trust a buried Bitcoin payment.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 613.8899999999999864 Td
+(What is verified by the application. Applications verify their own business logic: that a marketplace listing) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 599.8899999999999864 Td
+(exists, that an escrow contract's conditions are met, that a feed post belongs to the claimed author, that) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 585.8899999999999864 Td
+(a game's outcome was computed fairly. This verification is application-specific and is the application) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 571.8899999999999864 Td
+(developer's responsibility. The protocol does not verify that the application behaved correctly; it only) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 557.8899999999999864 Td
+(verifies that the payment for the application's service was settled.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 533.8899999999999864 Td
+(What is verified by the agent. An agent that hires another agent \(or a substrate function\) for a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 519.8899999999999864 Td
+(computation must verify the result. The weakest verification is re-execution \(the hiring agent runs the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 505.8899999999999864 Td
+(same computation and checks the output matches — expensive but simple\). The stronger verification is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 491.8899999999999864 Td
+(a proof system: the executing agent produces a proof \(e.g., a zero-knowledge proof of correct execution,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 477.8899999999999864 Td
+(or a TeRF-style trace\) that the hiring agent can verify cheaply without re-executing. The verification) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 463.8899999999999864 Td
+(transaction \(accepting or rejecting the proof\) settles on Kaspa. The protocol does not evaluate the proof;) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 449.8899999999999864 Td
+(it settles the agents' agreement or disagreement about it. This is the trust boundary: the protocol settles;) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 435.8899999999999864 Td
+(the agents verify; the applications self-certify.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 411.8899999999999864 Td
+(The threat of malicious agents. An agent can lie about having performed a computation, submit a forged) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 397.8899999999999864 Td
+(proof, or simply take payment and fail to execute. The defenses are: \(1\) reputation — agents that fail to) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 383.8899999999999864 Td
+(deliver lose reputation \(tracked on-chain via a reputation token or a rating entity\) and are not hired again;) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 369.8899999999999864 Td
+(\(2\) escrow — payment is held in escrow \(via an escrow contract or a multi-sig\) until the result is verified,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 355.8899999999999864 Td
+(and released only on proof acceptance; \(3\) slashing — agents that stake KAS as a performance bond) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 341.8899999999999864 Td
+(can have the stake slashed if they are proven to have defrauded \(the proof of fraud settles on-chain, and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 327.8899999999999864 Td
+(the stake is transferred to the defrauded party\). These three mechanisms — reputation, escrow, and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 313.8899999999999864 Td
+(slashing — are the standard decentralized-compute trust toolkit, and all three settle on Kaspa's fast) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 299.8899999999999864 Td
+(DAG.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 275.8899999999999864 Td
+(The threat of colluding agents. A set of agents could collude to verify each other's false results. The) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 261.8899999999999864 Td
+(defense is verifier diversity: a result should be verifiable by any agent, and a hiring agent should not rely) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 247.8899999999999864 Td
+(solely on self-selected verifiers. The protocol does not enforce verifier diversity; it is an application-layer) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 233.8899999999999864 Td
+(and agent-layer concern. The economic defense is that collusion is only profitable if the fraud value) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 219.8899999999999864 Td
+(exceeds the slashing stake plus the reputation loss, and as the network grows, the reputation loss from) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 205.8899999999999864 Td
+(being caught colluding \(permanently un-hireable\) exceeds the one-time fraud value.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 181.8899999999999864 Td
+(What is not trusted. No participant trusts any other participant's goodwill. No participant trusts a central) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 167.8899999999999864 Td
+(coordinator \(there is none\). No participant trusts a validator committee \(there is none — settlement is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 153.8899999999999864 Td
+(PoW\). The only trust is in the protocol's PoW finality and in the economic incentives that align behavior.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 139.8899999999999864 Td
+(This is the minimum trust assumption compatible with a system that moves autonomous value between) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 125.8899999999999864 Td
+(autonomous actors.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(17) Tj
+ET
+endstream
+endobj
+37 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 38 0 R
+>>
+endobj
+38 0 obj
+<<
+/Length 6629
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 13 — THE RELATIONSHIP TO EXISTING APPROACHES) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(This page situates the thesis relative to the systems a knowledgeable reader will compare it to, to) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(forestall the objection "isn't this just X?") Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 707.8899999999999864 Td
+(vs. traditional supercomputing \(HPC clusters, national labs\). Traditional supercomputers are) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 693.8899999999999864 Td
+(substrate-first: the interconnect, the scheduler, and the resource manager are built first, and applications) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 679.8899999999999864 Td
+(are ported to them. They achieve extraordinary peak performance on tightly-coupled, pre-specified) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 665.8899999999999864 Td
+(workloads \(fluid dynamics, molecular dynamics\). They are poor at heterogeneous, emergent,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 651.8899999999999864 Td
+(agent-driven workloads because their substrate was not derived from such workloads. TTT 3.0 is not a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 637.8899999999999864 Td
+(competitor to HPC for tightly-coupled simulation; it is a different category — a substrate for emergent,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 623.8899999999999864 Td
+(agent-driven, value-settled computation that no HPC center was built to serve.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 599.8899999999999864 Td
+(vs. serverless computing \(AWS Lambda, Cloudflare Workers\). Serverless is substrate-first with a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 585.8899999999999864 Td
+(developer-friendly abstraction: write a function, pay per invocation. It is excellent for known, specified) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 571.8899999999999864 Td
+(workloads. It does not derive its substrate from usage; it imposes a fixed substrate \(the function) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 557.8899999999999864 Td
+(invocation model\) and charges developers to fit their applications into it. Serverless also does not settle) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 543.8899999999999864 Td
+(payments between autonomous agents — the billing is between the developer and the cloud provider,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 529.8899999999999864 Td
+(not between agents. TTT 3.0 differs in both the derivation order \(usage-first\) and the payment model) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 515.8899999999999864 Td
+(\(agent-to-agent, on-chain\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 491.8899999999999864 Td
+(vs. decentralized compute tokens \(Golem, Akash, Render, etc.\). These projects built compute) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 477.8899999999999864 Td
+(marketplaces: providers offer compute, consumers pay in token. They are substrate-first in the sense) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 463.8899999999999864 Td
+(that they specified the compute primitive \(a container, a job, a render\) before they had the applications) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 449.8899999999999864 Td
+(to fill it. Most struggled with adoption because the compute primitive did not match what application) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 435.8899999999999864 Td
+(developers wanted to build. They also largely used proof-of-stake or delegated consensus, not PoW, so) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 421.8899999999999864 Td
+(their settlement finality is weaker \(committee-based, not hashpower-based\). TTT 3.0 differs in build) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 407.8899999999999864 Td
+(order \(applications first\) and in settlement \(Kaspa PoW\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 383.8899999999999864 Td
+(vs. AI agent frameworks \(AutoGPT, BabyAGI, LangChain agents\). These frameworks provide the agent) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 369.8899999999999864 Td
+(runtime \(the plan-act loop\) but do not provide the application library, the payment rail, or the substrate.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 355.8899999999999864 Td
+(They are tools for building agents, not systems in which agents operate a real economy. TTT 3.0's agent) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 341.8899999999999864 Td
+(runtime draws on the same plan-act-verify pattern, but embeds it in a system where agents pay for and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 327.8899999999999864 Td
+(are paid for real computation on a real DAG. An agent framework without a settlement layer is a chatbot) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 313.8899999999999864 Td
+(with extra steps; an agent framework with Kaspa settlement is a participant in an economy.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 289.8899999999999864 Td
+(vs. the original "World Wide Web." The closest historical analogy is the Web itself. The Web was not) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 275.8899999999999864 Td
+(built as a substrate for commerce; it was built as a document system. Commerce emerged from usage,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 261.8899999999999864 Td
+(and the infrastructure \(CDNs, payment gateways, ad networks\) was reverse-engineered from the usage) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 247.8899999999999864 Td
+(patterns that emerged. TTT 3.0 claims the same dynamic at the compute layer: build the application) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 233.8899999999999864 Td
+(layer \(the "documents"\), let agents generate the usage graph \(the "traffic"\), and reverse-engineer the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 219.8899999999999864 Td
+(compute substrate \(the "infrastructure"\) from it. The Agent Internet is to distributed supercomputing what) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 205.8899999999999864 Td
+(the Web was to distributed information — a system whose architecture was discovered, not designed.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(18) Tj
+ET
+endstream
+endobj
+39 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 40 0 R
+>>
+endobj
+40 0 obj
+<<
+/Length 7142
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 14 — THE TECHNICAL STACK, AS IMPLEMENTED) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(This page is for the engineer who wants to know what is actually running, not just what is argued.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 721.8899999999999864 Td
+(Frontend. React \(18\) with Vite, Tailwind CSS for styling, shadcn/ui components, Framer Motion for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 707.8899999999999864 Td
+(animation, React Router for navigation. The application surfaces are React pages; the agent runtime is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 693.8899999999999864 Td
+(React components with imperative refs for iframe communication. This is a standard, production,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 679.8899999999999864 Td
+(maintainable frontend stack — no exotic dependencies, no framework lock-in.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 655.8899999999999864 Td
+(Backend functions. Deno Deploy handlers \(TypeScript/JavaScript\) in base44/functions/*/entry.ts. Each) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 641.8899999999999864 Td
+(function is an independent HTTP handler with Deno.serve, using the Base44 SDK \(@base44/sdk\) for) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 627.8899999999999864 Td
+(entity operations, auth, and integration calls. Functions are independently deployable — no monolith.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 613.8899999999999864 Td
+(The Kaspa-specific functions \(sendKaspaTransaction, getKaspaBalance, getKaspaTransactionHistory,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 599.8899999999999864 Td
+(getLiveKaspaTransactions, createKaspaWallet\) implement the protocol-level operations; the application) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 585.8899999999999864 Td
+(functions \(scrapeWebsiteStats, scrapeKaspaNews, exaSearch, perplexitySearch, analyzeNews\)) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 571.8899999999999864 Td
+(implement the compute primitives agents can hire.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 547.8899999999999864 Td
+(Kaspa integration. Transactions are constructed and signed server-side \(Schnorr signatures derived) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 533.8899999999999864 Td
+(from the wallet's mnemonic, UTXOs fetched from the Kaspa REST API at api.kaspa.org, transactions) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 519.8899999999999864 Td
+(broadcast via the /transactions endpoint\). The sendKaspaTransaction function implements: fee) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 505.8899999999999864 Td
+(estimation based on transaction mass \(the Kaspa fee model is mass-based, not value-based\), UTXO) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 491.8899999999999864 Td
+(selection with maturity filtering \(coinbase UTXOs have a maturity period before they can be spent\),) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 477.8899999999999864 Td
+(signature hash computation, P2PK script generation, and broadcast with retry logic on rejection. This is) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 463.8899999999999864 Td
+(real transaction engineering.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 439.8899999999999864 Td
+(Agent runtime. The agent runtime is a set of React components \(AgentChatGPT, AgentComputer,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 425.8899999999999864 Td
+(agentLoop, agentActions, AgentStepLog, AgentPlanChecklist, AgentReasoningBubble\) plus a bridge) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 411.8899999999999864 Td
+(script \(agentBridgeListener.js\) injected into application iframes. The runtime uses the Base44 LLM) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 397.8899999999999864 Td
+(integration \(InvokeLLM\) for planning and thinking, with optional model selection for higher-quality) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 383.8899999999999864 Td
+(reasoning when needed. The bridge script uses postMessage for cross-origin communication between) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 369.8899999999999864 Td
+(the agent runtime and the application iframe.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 345.8899999999999864 Td
+(Entity system. Data is stored in Base44 entities \(JSON-schema-defined documents with row-level) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 331.8899999999999864 Td
+(security\). The entity system provides the telemetry substrate: every entity create/update/delete is an) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 317.8899999999999864 Td
+(event that can feed the computation graph. Entities are user-scoped by default \(RLS based on) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 303.8899999999999864 Td
+(created_by\), with service-role access for aggregation and analysis.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 279.8899999999999864 Td
+(Realtime. The entity system supports subscriptions \(WebSocket-based\), enabling live updates to the UI) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 265.8899999999999864 Td
+(when data changes. The Overview panel of the Kaspa dashboard uses this pattern to poll for new) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 251.8899999999999864 Td
+(transactions every 15 seconds and display a "New" badge when a transaction is detected — this is the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 237.8899999999999864 Td
+(same pattern that will power live agent status and live computation graph updates.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 213.8899999999999864 Td
+(Authentication. The Base44 auth system handles user accounts, sessions, and wallet association.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 199.8899999999999864 Td
+(Agents authenticate as the user they act for \(using the user's session token\), so agent actions are) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 185.8899999999999864 Td
+(attributable to the user. In the full vision, agents will have their own identities \(separate wallets, separate) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 171.8899999999999864 Td
+(auth tokens\), enabling agent-to-agent authentication and per-agent reputation.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 147.8899999999999864 Td
+(This stack is not a prototype. It is the production stack running the application library today. The path) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 133.8899999999999864 Td
+(from here to the Agent Internet is the addition of the agent-to-agent layer and the computation graph) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 119.8899999999999864 Td
+(aggregation — not a rewrite.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(19) Tj
+ET
+endstream
+endobj
+41 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 42 0 R
+>>
+endobj
+42 0 obj
+<<
+/Length 6601
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 15 — THE ROADMAP, HONESTLY STATED) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(This page states what is done, what is in progress, and what remains, without inflating any phase.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 721.8899999999999864 Td
+(Done \(shipped, running\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 701.8899999999999864 Td
+(  •  Application library: 100+ application surfaces across wallet, bridge, social, market, AI, compute,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 687.8899999999999864 Td
+(gaming, and utility categories.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 669.8899999999999864 Td
+(  •  Kaspa transaction engineering: send, receive, balance, history, live transactions, UTXO) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 655.8899999999999864 Td
+(management, fee estimation, Schnorr signing, broadcast.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 637.8899999999999864 Td
+(  •  Agent runtime: planning, observe-think-act loop, bridge script, verification, reasoning log —) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 623.8899999999999864 Td
+(operational against application iframes.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 605.8899999999999864 Td
+(  •  Multi-wallet support: Kasware \(extension\) and TTT-managed \(server-side\) wallets, with desktop) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 591.8899999999999864 Td
+(switcher and mobile defaulting.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 573.8899999999999864 Td
+(  •  Live data: auto-polling transaction detection, network activity monitoring, price integration.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 555.8899999999999864 Td
+(  •  Compute primitives: website scraper with AI analysis, web proxy, link security checker, file) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 541.8899999999999864 Td
+(analyzer — the first hireable functions.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 519.8899999999999864 Td
+(In progress \(partially shipped, being hardened\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 499.8899999999999864 Td
+(  •  Agent autonomy: the agent runtime can execute plans but requires human initiation of each goal.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 485.8899999999999864 Td
+(The transition to agent-initiated goals \(an agent that decides, based on a trigger, to execute a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 471.8899999999999864 Td
+(computation without being asked\) is in progress.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 453.8899999999999864 Td
+(  •  Agent directory: a registry where agents discover each other by capability. Entity schemas exist;) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 439.8899999999999864 Td
+(the discovery protocol is being defined.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 421.8899999999999864 Td
+(  •  Computation graph telemetry: entity-level events are recorded but not yet aggregated into the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 407.8899999999999864 Td
+(unified graph. The aggregation layer is the next major build.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 389.8899999999999864 Td
+(  •  Pricing layer: individual functions have no price attached. The derivation of prices from) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 375.8899999999999864 Td
+(payment-edge density \(Step 6 of the algorithm\) is designed but not implemented.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 353.8899999999999864 Td
+(Remaining \(designed, not built\).) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 333.8899999999999864 Td
+(  •  Substrate derivation: the algorithm \(Steps 3–7\) is specified but not implemented. This is the core) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 319.8899999999999864 Td
+(research and engineering deliverable — the part that turns the thesis into a system.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 301.8899999999999864 Td
+(  •  Agent-to-agent payment with escrow: the trust model \(reputation, escrow, slashing\) is specified) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 287.8899999999999864 Td
+(but the escrow contracts and slashing logic are not built.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 269.8899999999999864 Td
+(  •  Proof-based verification: agents currently verify by re-execution or by checking observable state.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 255.8899999999999864 Td
+(Zero-knowledge proof or trace-based verification is not implemented.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 237.8899999999999864 Td
+(  •  Provisioning layer: there is no automated substrate provisioning from the derived graph. This is a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 223.8899999999999864 Td
+(DevOps/infrastructure build that depends on the derivation algorithm being productionized.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 201.8899999999999864 Td
+(What is not promised.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 181.8899999999999864 Td
+(  •  This manifesto does not promise the supercomputer will emerge on a specific date. The) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 167.8899999999999864 Td
+(emergence depends on the volume of agent usage, which depends on agent adoption, which) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 153.8899999999999864 Td
+(depends on the utility of the application library, which is growing but not at supercomputer scale.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 135.8899999999999864 Td
+(  •  This manifesto does not promise that KAS will appreciate in value. The economics are aligned) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 121.8899999999999864 Td
+(\(growing transactional demand against capped supply\), but price depends on factors \(exchange) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 107.8899999999999864 Td
+(listings, macro conditions, speculative flows\) outside the thesis.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.196 g
+64. 89.8899999999999864 Td
+(  •  This manifesto does not promise that the derived substrate will outperform a hand-tuned HPC) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(20) Tj
+ET
+endstream
+endobj
+43 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 44 0 R
+>>
+endobj
+44 0 obj
+<<
+/Length 1072
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+64. 781.8899999999999864 Td
+(cluster on tightly-coupled workloads. It will not. The claim is that it will serve emergent, agent-driven,) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. g
+64. 767.8899999999999864 Td
+(value-settled workloads that no HPC cluster was built for.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(The roadmap is stated this way because the thesis demands honesty: a system that claims to) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(reverse-engineer its own architecture from usage cannot also claim to know, in advance, exactly what) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 717.8899999999999864 Td
+(that architecture will be or when it will stabilize. The architecture is a function of the usage, and the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 703.8899999999999864 Td
+(usage is a function of the future.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(21) Tj
+ET
+endstream
+endobj
+45 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 46 0 R
+>>
+endobj
+46 0 obj
+<<
+/Length 4893
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 15 Tf
+17.25 TL
+0.078 g
+56. 775.8899999999999864 Td
+(PAGE 16 — THE CLOSING ARGUMENT) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 745.8899999999999864 Td
+(The reason to build TTT 3.0 is not that it is guaranteed to work. It is that the alternative — building yet) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 731.8899999999999864 Td
+(another substrate-first compute platform and hoping developers come — is the strategy that has failed) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 717.8899999999999864 Td
+(every time it has been tried, and there is no reason to believe the next attempt will differ. The only) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 703.8899999999999864 Td
+(strategy that has not been tried at compute scale is the one the Web proved at information scale: build) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 689.8899999999999864 Td
+(the surface area first, let usage reveal the structure, and derive the infrastructure from what was) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 675.8899999999999864 Td
+(revealed.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 651.8899999999999864 Td
+(Kaspa makes this possible because it is the first proof-of-work network whose physical parameters — 10) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 637.8899999999999864 Td
+(blocks per second, sub-second inclusion, single-digit-second finality, mass-based fees, L1 token) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 623.8899999999999864 Td
+(standards, capped declining supply — are not just "fast enough" but are specifically calibrated for the) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 609.8899999999999864 Td
+(agent-scale, micropayment-settled, autonomously-coordinated computation that the thesis requires. On) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 595.8899999999999864 Td
+(Bitcoin, the Agent Internet is incoherent \(settlement too slow\). On Ethereum, it is incoherent at the base) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 581.8899999999999864 Td
+(layer \(fees too high for micropayments\). On proof-of-stake networks, it is trust-fragile \(committee-based) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 567.8899999999999864 Td
+(finality is not the same as hashpower-based finality, and agents moving value between strangers need) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 553.8899999999999864 Td
+(the latter\). Kaspa is not one option among many; it is, as of this writing, the only production PoW) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 539.8899999999999864 Td
+(network on which the thesis is mechanically executable.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 515.8899999999999864 Td
+(The application library exists. The agent runtime exists. The transaction engineering exists. The) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 501.8899999999999864 Td
+(compute primitives exist. What remains is the derivation — the act of reading the computation graph and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 487.8899999999999864 Td
+(provisioning the substrate it implies. That act is not a research moonshot; it is the application of known) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 473.8899999999999864 Td
+(graph-analysis techniques to a data source \(telemetry\) that is already being generated. The gap) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 459.8899999999999864 Td
+(between the current state and the Agent Internet is an engineering gap, not a scientific gap, and) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 445.8899999999999864 Td
+(engineering gaps close when people build.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 421.8899999999999864 Td
+(So the call is this: build applications. Build agents that use them. Log the usage. Aggregate the graph.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 407.8899999999999864 Td
+(Derive the substrate. Watch the supercomputer emerge from the pattern. It will not look like what a) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 393.8899999999999864 Td
+(supercomputer was expected to look like — no single machine, no single scheduler, no single owner. It) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 379.8899999999999864 Td
+(will look like a network of agents paying each other in sompi to compute things that matter, on a DAG) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 365.8899999999999864 Td
+(that settles in seconds, secured by hashpower that no committee can override.) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 341.8899999999999864 Td
+(That is the Agent Internet. That is TTT 3.0.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(22) Tj
+ET
+endstream
+endobj
+47 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 48 0 R
+>>
+endobj
+48 0 obj
+<<
+/Length 795
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 777.8899999999999864 Td
+(This document is approximately 5,200 words. It is designed for ingestion into a notebook LLM system,) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 763.8899999999999864 Td
+(with each page as a discrete semantic unit and every factual claim traceable to either the Kaspa protocol) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 749.8899999999999864 Td
+(specification, the live mainnet parameters, or the implementation in the TTT codebase. It is intended to) Tj
+ET
+BT
+/F1 10.5 Tf
+12.0749999999999993 TL
+0.137 g
+56. 735.8899999999999864 Td
+(be read, queried, and cited — not summarized and forgotten.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+293.2400000000000091 24. Td
+(23) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R 23 0 R 25 0 R 27 0 R 29 0 R 31 0 R 33 0 R 35 0 R 37 0 R 39 0 R 41 0 R 43 0 R 45 0 R 47 0 R ]
+/Count 23
+>>
+endobj
+49 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+50 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+51 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+52 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+53 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+54 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+55 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+56 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+57 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+58 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+59 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+60 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+61 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+62 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 49 0 R
+/F2 50 0 R
+/F3 51 0 R
+/F4 52 0 R
+/F5 53 0 R
+/F6 54 0 R
+/F7 55 0 R
+/F8 56 0 R
+/F9 57 0 R
+/F10 58 0 R
+/F11 59 0 R
+/F12 60 0 R
+/F13 61 0 R
+/F14 62 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+63 0 obj
+<<
+/Producer (jsPDF 2.5.2)
+/CreationDate (D:20260709150502-00'00')
+>>
+endobj
+64 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 65
+0000000000 65535 f 
+0000116100 00000 n 
+0000118074 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000000644 00000 n 
+0000000781 00000 n 
+0000002829 00000 n 
+0000002966 00000 n 
+0000010528 00000 n 
+0000010666 00000 n 
+0000012191 00000 n 
+0000012330 00000 n 
+0000018436 00000 n 
+0000018575 00000 n 
+0000025841 00000 n 
+0000025980 00000 n 
+0000033559 00000 n 
+0000033698 00000 n 
+0000035431 00000 n 
+0000035570 00000 n 
+0000042749 00000 n 
+0000042888 00000 n 
+0000049804 00000 n 
+0000049943 00000 n 
+0000057760 00000 n 
+0000057899 00000 n 
+0000064916 00000 n 
+0000065055 00000 n 
+0000065489 00000 n 
+0000065628 00000 n 
+0000073192 00000 n 
+0000073331 00000 n 
+0000073597 00000 n 
+0000073736 00000 n 
+0000080073 00000 n 
+0000080212 00000 n 
+0000087817 00000 n 
+0000087956 00000 n 
+0000094638 00000 n 
+0000094777 00000 n 
+0000101972 00000 n 
+0000102111 00000 n 
+0000108765 00000 n 
+0000108904 00000 n 
+0000110029 00000 n 
+0000110168 00000 n 
+0000115114 00000 n 
+0000115253 00000 n 
+0000116309 00000 n 
+0000116435 00000 n 
+0000116566 00000 n 
+0000116700 00000 n 
+0000116838 00000 n 
+0000116962 00000 n 
+0000117091 00000 n 
+0000117223 00000 n 
+0000117359 00000 n 
+0000117487 00000 n 
+0000117614 00000 n 
+0000117743 00000 n 
+0000117876 00000 n 
+0000117978 00000 n 
+0000118327 00000 n 
+0000118413 00000 n 
+trailer
+<<
+/Size 65
+/Root 64 0 R
+/Info 63 0 R
+/ID [ <F18285CB7F8F1713F7AC7F8727F849B1> <F18285CB7F8F1713F7AC7F8727F849B1> ]
+>>
+startxref
+118517
+%%EOF
