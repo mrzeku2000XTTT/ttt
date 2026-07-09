@@ -6,6 +6,9 @@ export const AGENT_TOOLS = [
   { id: "speak", name: "Voice (TTS)", desc: "Turn text into spoken audio", cost: 2 },
   { id: "kaspa_price", name: "Live Kaspa Price", desc: "Real-time KAS market data", cost: 1 },
   { id: "kaspa_balance", name: "Balance Lookup", desc: "Query any Kaspa address on-chain", cost: 1 },
+  { id: "node_status", name: "Live Node Connect", desc: "Live REST Kaspa node status & BlockDAG", cost: 1 },
+  { id: "kaspa_txs", name: "Address Scanner", desc: "Scan any address — balance + latest transactions", cost: 1 },
+  { id: "explain_tx", name: "TX Explainer", desc: "Paste a TX ID — get a plain-English breakdown", cost: 1 },
   { id: "file_analysis", name: "File & Image Analysis", desc: "Understand attached files, PDFs & images", cost: 1 },
 ];
 

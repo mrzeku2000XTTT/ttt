@@ -19,7 +19,10 @@ You have real tools. Decide if the user's request needs one:
 - "generate_image": user wants an image/picture/logo/art created. action_input = a detailed image prompt.
 - "build_app": user wants to BUILD, CREATE or LAUNCH an app, website, landing page, tool, game or product. action_input = a detailed product spec (name, purpose, features, style).
 - "kaspa_price": user asks about the KAS/Kaspa price or market.
-- "kaspa_balance": user asks the balance of a kaspa address. action_input = the kaspa address.
+- "kaspa_balance": user asks ONLY the balance of a kaspa address. action_input = the kaspa address.
+- "node_status": user wants to connect to / check the live Kaspa node, network or BlockDAG status.
+- "kaspa_txs": user asks for transactions / activity / history of a kaspa address, or asks to SCAN an address (e.g. "wallet #1 latest transactions"). action_input = the kaspa address.
+- "explain_tx": user pastes a Kaspa transaction ID (64-char hex string) or asks to explain a transaction. action_input = the tx id only.
 - "speak": user wants text read aloud / audio / voice. action_input = the text to speak (max 500 chars).
 - "verify_task": the user submits PROOF (usually a screenshot) that they completed a K-CREDITS earn task. Valid task ids: "follow_x" (they follow @TTTPlatform on X), "post_x" (they posted about AGENT. on X), "join_telegram" (they joined the TTT Telegram). Analyze the attached proof image STRICTLY — set "task_approved" true ONLY if the image clearly shows the task completed; false otherwise (no image attached = false). action_input = the task id.
 - "none": everything else — answer directly.
@@ -37,7 +40,7 @@ Requirements:
 Return JSON: { "title": short product name, "description": one-line description, "html": the full HTML document starting with <!DOCTYPE html> }`;
 
 // One full agent turn with live thought streaming. Returns { reply, thought, attachment }
-const TOOL_ACTIONS = ["generate_image", "build_app", "kaspa_price", "kaspa_balance", "speak"];
+const TOOL_ACTIONS = ["generate_image", "build_app", "kaspa_price", "kaspa_balance", "speak", "node_status", "kaspa_txs", "explain_tx"];
 
 export async function runSkillTurn({ model, webSearch, history, text, fileUrls = [], onThought, toolAccess = null }) {
   const think = (t) => { try { onThought?.(t); } catch {} };
@@ -58,7 +61,7 @@ export async function runSkillTurn({ model, webSearch, history, text, fileUrls =
       properties: {
         thought: { type: "string" },
         reply: { type: "string" },
-        action: { type: "string", enum: ["none", "generate_image", "build_app", "kaspa_price", "kaspa_balance", "speak", "verify_task"] },
+        action: { type: "string", enum: ["none", "generate_image", "build_app", "kaspa_price", "kaspa_balance", "speak", "verify_task", "node_status", "kaspa_txs", "explain_tx"] },
         action_input: { type: "string" },
         task_approved: { type: "boolean" },
       },
@@ -78,7 +81,7 @@ export async function runSkillTurn({ model, webSearch, history, text, fileUrls =
     }
   }
 
-  const reply = decision?.reply || "Hmm, try again?";
+  let reply = decision?.reply || "Hmm, try again?";
   let attachment = null;
 
   try {
@@ -119,6 +122,30 @@ export async function runSkillTurn({ model, webSearch, history, text, fileUrls =
       const d = res?.data || res;
       if (d?.balance != null || d?.balanceKAS != null) {
         attachment = { type: "balance", balance: d.balanceKAS ?? d.balance, address: decision.action_input.trim() };
+      }
+    } else if (decision.action === "node_status") {
+      think("Connecting to live Kaspa REST node…");
+      const res = await base44.functions.invoke("agentNodeQuery", { action: "status" });
+      const d = res?.data || res;
+      if (d?.success) attachment = { type: "node", ...d };
+    } else if (decision.action === "kaspa_txs" && decision.action_input) {
+      think("Scanning address on the live Kaspa node…");
+      const res = await base44.functions.invoke("agentNodeQuery", { action: "scan", address: decision.action_input.trim() });
+      const d = res?.data || res;
+      if (d?.success) attachment = { type: "txlist", address: d.address, balanceKAS: d.balanceKAS, txs: d.txs || [] };
+    } else if (decision.action === "explain_tx" && decision.action_input) {
+      think("Fetching transaction from the live node…");
+      const res = await base44.functions.invoke("agentNodeQuery", { action: "tx", txId: decision.action_input.trim() });
+      const d = res?.data || res;
+      if (d?.success) {
+        attachment = { type: "txdetail", ...d };
+        think("Analyzing the transaction — writing a plain-English breakdown…");
+        try {
+          const explained = await base44.integrations.Core.InvokeLLM({
+            prompt: `Explain this Kaspa transaction in clear, friendly plain English so anyone can understand it. Cover: what happened, who sent to who (shorten addresses like kaspa:qq12…ab34), amounts in KAS, the fee, when it happened (block time is unix ms), and whether it was accepted by the network. Keep it concise with Markdown.\n\n${JSON.stringify(d)}`,
+          });
+          if (explained) reply = explained;
+        } catch {}
       }
     } else if (decision.action === "verify_task" && decision.action_input) {
       think("Analyzing your proof…");

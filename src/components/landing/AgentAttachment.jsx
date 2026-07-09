@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { TrendingUp, TrendingDown, Rocket, Maximize2, X, Check } from "lucide-react";
+import AgentNodeAttachment from "./AgentNodeAttachment";
 
 const BLUE = "#4d6bfe";
 const BORDER = "rgba(255,255,255,0.1)";
@@ -28,6 +29,8 @@ export default function AgentAttachment({ a }) {
       <div className="text-[10px] text-white/40 font-mono truncate max-w-[240px]">{a.address}</div>
     </div>
   );
+
+  if (a.type === "node" || a.type === "txlist" || a.type === "txdetail") return <AgentNodeAttachment a={a} />;
 
   if (a.type === "task") return (
     <div className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl"
