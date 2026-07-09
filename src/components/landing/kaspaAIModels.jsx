@@ -4,11 +4,13 @@ export const AGENT_LOGO = "https://media.base44.com/images/public/6901295fa9bcfa
 
 // AGENT. branded models mapped to real backend LLMs
 export const KASPA_AI_MODELS = [
-  { id: "base_1", label: "Base 1", tag: "Flagship", backend: "gemini_3_1_pro", web: true, color: "#4d6bfe" },
-  { id: "gptsol", label: "GPTSol", tag: "Reasoning", backend: "gpt_5_5", web: false, color: "#10a37f" },
-  { id: "gpt_terra", label: "GPT Terra", tag: "Fast", backend: "gpt_5_4", web: false, color: "#0ea5e9" },
-  { id: "fable_5", label: "Fable 5", tag: "Creative", backend: "claude-sonnet-5", web: false, color: "#c084fc" },
-  { id: "opus_48", label: "Opus 4.8", tag: "Deep Think", backend: "claude_opus_4_8", web: false, color: "#f59e0b" },
+  { id: "base_1", label: "Base 1", badge: "New", tag: "Flagship", backend: "gemini_3_1_pro", web: true, logo: "orb", color: "#4d6bfe" },
+  { id: "sonnet_5", label: "Sonnet 5", tag: "Balanced", backend: "claude-sonnet-5", web: false, logo: "anthropic", color: "#D97757" },
+  { id: "opus_48", label: "Opus 4.8", tag: "Deep Think", backend: "claude_opus_4_8", web: false, logo: "anthropic", color: "#D97757" },
+  { id: "fable_5", label: "Fable 5", tag: "Creative", backend: "claude_sonnet_4_6", web: false, logo: "fable", color: "#c084fc" },
+  { id: "gpt_terra", label: "GPT-5.6 Terra", badge: "New", tag: "Reasoning", backend: "gpt_5_4", web: false, logo: "openai", color: "#ECECEC" },
+  { id: "gptsol", label: "GPT-5.6 Sol", badge: "New", tag: "Reasoning", backend: "gpt_5_5", web: false, logo: "sol", color: "#14F195" },
+  { id: "basic", label: "Basic", tag: "Fast", backend: "gpt_5_mini", web: false, logo: "basic", color: "#9ca3af" },
 ];
 
 const SYSTEM = `You are AGENT. — a powerful autonomous multi-model AI agent on the TTT platform (powered by Kaspa).
