@@ -313,7 +313,7 @@ export default function KaspaAIChat({ onClose }) {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center px-6 text-center">
               <img src={AGENT_LOGO} alt="AGENT." className="rounded-full object-cover flex-shrink-0"
@@ -338,7 +338,9 @@ export default function KaspaAIChat({ onClose }) {
           ) : (
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
               <style>{`
-                .ttt-md { color: rgba(255,255,255,0.88); }
+                .ttt-md { color: rgba(255,255,255,0.88); overflow-wrap: anywhere; word-break: break-word; max-width: 100%; min-width: 0; }
+                .ttt-md img { max-width: 100%; height: auto; }
+                .ttt-md table { display: block; max-width: 100%; overflow-x: auto; }
                 .ttt-md p { margin: 0.45em 0; line-height: 1.65; }
                 .ttt-md ul, .ttt-md ol { margin: 0.45em 0; padding-left: 1.4em; }
                 .ttt-md h1,.ttt-md h2,.ttt-md h3 { font-weight: 700; margin: 0.7em 0 0.3em; color: #fff; }
@@ -351,7 +353,7 @@ export default function KaspaAIChat({ onClose }) {
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                   {m.role === "user" ? (
-                    <div className="max-w-[80%]">
+                    <div className="max-w-[80%] min-w-0">
                       {m.files?.length > 0 && (
                         <div className="flex flex-wrap gap-2 justify-end mb-1.5">
                           {m.files.map((f, fi) => f.kind === "image"
@@ -364,13 +366,13 @@ export default function KaspaAIChat({ onClose }) {
                             ))}
                         </div>
                       )}
-                      <div className="px-4 py-2.5 rounded-2xl text-[14px] text-white whitespace-pre-wrap"
-                        style={{ background: BLUE, boxShadow: "0 4px 20px rgba(77,107,254,0.25)" }}>
+                      <div className="px-4 py-2.5 rounded-2xl text-[14px] text-white whitespace-pre-wrap break-words"
+                        style={{ overflowWrap: "anywhere", background: BLUE, boxShadow: "0 4px 20px rgba(77,107,254,0.25)" }}>
                         {m.content}
                       </div>
                     </div>
                   ) : (
-                    <div className="max-w-[92%] flex gap-3">
+                    <div className="max-w-[92%] min-w-0 flex gap-3">
                       <div className="mt-1 flex-shrink-0">
                         {m.pending && loading ? (
                           <motion.div animate={{ scale: [1, 1.18, 1], opacity: [0.7, 1, 0.7] }}
