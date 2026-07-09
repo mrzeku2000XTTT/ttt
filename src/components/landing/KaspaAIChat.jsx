@@ -61,6 +61,17 @@ export default function KaspaAIChat({ onClose }) {
 
   useEffect(() => { loadCreditState().then(s => setCreditState({ ...s, loaded: true })); }, []);
 
+  // Auto-detect the user's main local TTT wallet as the active connected wallet for this session
+  useEffect(() => {
+    if (!toolSettings.wallet) {
+      try {
+        const localAddr = localStorage.getItem("ttt_wallet_address");
+        if (localAddr) updateToolSettings({ ...toolSettings, wallet: localAddr });
+      } catch {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const earnTasksText = EARN_TASKS.map(t => `- **${t.label}** — +${t.reward} K-CREDITS`).join("\n");
 
   const updateToolSettings = (s) => { setToolSettings(s); saveToolSettings(s); };
@@ -290,8 +301,7 @@ export default function KaspaAIChat({ onClose }) {
           <button onClick={showEarnTasks} title="AGENT K-CREDITS — tap to earn more"
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl mr-2 active:scale-95 transition-transform"
             style={{ background: GLASS, border: `1px solid ${BORDER}` }}>
-            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, #f0d060, #c8960c)", color: "#000" }}>K</span>
+            <img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="KAS" className="w-4 h-4 object-contain flex-shrink-0" />
             <span className="text-xs font-bold text-white tabular-nums">{creditState.isAdmin ? "∞" : creditState.credits}</span>
           </button>
           <button onClick={onClose} className="p-2.5 rounded-xl text-white/60 hover:text-white transition-colors"

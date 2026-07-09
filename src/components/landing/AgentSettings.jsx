@@ -68,6 +68,19 @@ export default function AgentSettings({ open, onClose, settings, onChange, isAdm
                   </div>
                 ) : (
                   <div className="space-y-2.5">
+                    {(() => {
+                      let detected = null;
+                      try { detected = localStorage.getItem("ttt_wallet_address"); } catch {}
+                      if (!detected) return null;
+                      return (
+                        <button onClick={() => onChange({ ...settings, wallet: detected })}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold text-white active:scale-[0.98] transition-transform"
+                          style={{ background: "rgba(48,209,88,0.12)", border: "1px solid rgba(48,209,88,0.35)" }}>
+                          <Check className="w-4 h-4" style={{ color: "#30D158" }} />
+                          Use my TTT Wallet — {detected.slice(0, 14)}…{detected.slice(-4)}
+                        </button>
+                      );
+                    })()}
                     <button onClick={connectKasware}
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold text-white active:scale-[0.98] transition-transform"
                       style={{ background: BLUE, boxShadow: "0 4px 20px rgba(77,107,254,0.35)" }}>

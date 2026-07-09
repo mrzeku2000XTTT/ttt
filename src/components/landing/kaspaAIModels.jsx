@@ -26,6 +26,7 @@ You have real tools. Decide if the user's request needs one:
 - "speak": user wants text read aloud / audio / voice. action_input = the text to speak (max 500 chars).
 - "verify_task": the user submits PROOF (usually a screenshot) that they completed a K-CREDITS earn task. Valid task ids: "follow_x" (they follow @TTTPlatform on X), "post_x" (they posted about AGENT. on X), "join_telegram" (they joined the TTT Telegram). Analyze the attached proof image STRICTLY — set "task_approved" true ONLY if the image clearly shows the task completed; false otherwise (no image attached = false). action_input = the task id.
 - "none": everything else — answer directly.
+CRITICAL — USE DATA ALREADY FETCHED: the conversation may contain [TOOL DATA] blocks with live Kaspa data already retrieved. When the user asks a follow-up about that data (e.g. "explain its pattern", "what does this mean", "ok what", "is this an exchange?"), DO NOT re-run a tool — choose action "none" and write a complete analytical answer in "reply" using the [TOOL DATA]: cover transaction frequency, typical amounts, direction (+ = received, − = sent), timing patterns, and what kind of wallet it looks like (exchange, mining pool, personal, treasury). Only re-run "kaspa_txs"/"kaspa_balance" when the user asks for FRESH data or a NEW address.
 Also output "thought": one short sentence of your internal reasoning about the task (shown to the user as your thinking).
 Always write a helpful "reply" in Markdown. If using a tool, the reply should introduce the result naturally (the tool output is attached automatically after your reply).`;
 
@@ -42,9 +43,22 @@ Return JSON: { "title": short product name, "description": one-line description,
 // One full agent turn with live thought streaming. Returns { reply, thought, attachment }
 const TOOL_ACTIONS = ["generate_image", "build_app", "kaspa_price", "kaspa_balance", "speak", "node_status", "kaspa_txs", "explain_tx"];
 
+// Summarize a message's tool attachment so follow-up questions can be answered from context
+function summarizeAttachment(a) {
+  try {
+    if (!a) return "";
+    if (a.type === "txlist") return `\n[TOOL DATA — address scan] ${JSON.stringify({ address: a.address, balanceKAS: a.balanceKAS, txs: (a.txs || []).slice(0, 15) })}`;
+    if (a.type === "txdetail") return `\n[TOOL DATA — tx detail] ${JSON.stringify(a).slice(0, 2500)}`;
+    if (a.type === "balance") return `\n[TOOL DATA — balance] ${a.balance} KAS · ${a.address}`;
+    if (a.type === "node") return `\n[TOOL DATA — node status] ${JSON.stringify(a).slice(0, 1200)}`;
+    if (a.type === "price") return `\n[TOOL DATA — KAS price] $${a.price} (${a.change ?? "?"}% 24h)`;
+  } catch {}
+  return "";
+}
+
 export async function runSkillTurn({ model, webSearch, history, text, fileUrls = [], onThought, toolAccess = null }) {
   const think = (t) => { try { onThought?.(t); } catch {} };
-  const convo = history.slice(-10).map(m => `${m.role === "user" ? "User" : "AGENT"}: ${m.content}`).join("\n");
+  const convo = history.slice(-10).map(m => `${m.role === "user" ? "User" : "AGENT"}: ${m.content}${m.role === "assistant" ? summarizeAttachment(m.attachment) : ""}`).join("\n");
 
   const useWeb = webSearch;
   const backend = useWeb && !model.web ? "gemini_3_flash" : model.backend;
@@ -132,7 +146,16 @@ export async function runSkillTurn({ model, webSearch, history, text, fileUrls =
       think("Scanning address on the live Kaspa node…");
       const res = await base44.functions.invoke("agentNodeQuery", { action: "scan", address: decision.action_input.trim() });
       const d = res?.data || res;
-      if (d?.success) attachment = { type: "txlist", address: d.address, balanceKAS: d.balanceKAS, txs: d.txs || [] };
+      if (d?.success) {
+        attachment = { type: "txlist", address: d.address, balanceKAS: d.balanceKAS, txs: d.txs || [] };
+        think("Analyzing wallet activity — writing the breakdown…");
+        try {
+          const analyzed = await base44.integrations.Core.InvokeLLM({
+            prompt: `The user asked: "${text}". Here is LIVE Kaspa node data for ${d.address} — balance ${d.balanceKAS} KAS, recent transactions (amounts in KAS, + = received / − = sent, time is unix ms): ${JSON.stringify((d.txs || []).slice(0, 15))}.\n\nAnswer the user's question directly in concise Markdown using this data: frequency, typical amounts, direction, timing patterns, and what kind of wallet this looks like (exchange, mining pool, personal, treasury). Do NOT say you'll fetch data — it's already here; the raw list renders below your answer.`,
+          });
+          if (analyzed) reply = analyzed;
+        } catch {}
+      }
     } else if (decision.action === "explain_tx" && decision.action_input) {
       think("Fetching transaction from the live node…");
       const res = await base44.functions.invoke("agentNodeQuery", { action: "tx", txId: decision.action_input.trim() });
