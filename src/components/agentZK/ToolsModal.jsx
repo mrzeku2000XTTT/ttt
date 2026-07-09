@@ -12,7 +12,9 @@ import ShopWidget from "./ShopWidget";
 import TTTVWidget from "./TTTVWidget";
 import { createPageUrl } from "@/utils";
 
-const REPLIT_BASE_URL = 'https://tttxxx.live';
+// MIGRATED: All wallet operations now use server-side backend functions
+// (createKaspaWallet, deriveKaspaAddress, getKaspaBalance, getKaspaUTXOs)
+// powered by the official api.kaspa.org node — replacing the dead Replit iframes.
 
 export default function ToolsModal({ onClose, agentZKId }) {
   const [activeTab, setActiveTab] = useState('chat');
@@ -36,16 +38,11 @@ export default function ToolsModal({ onClose, agentZKId }) {
   const [isTesting, setIsTesting] = useState(false);
   const [copiedApiKey, setCopiedApiKey] = useState(false); // Renamed for clarity from copiedWalletAddress
 
-  // UPDATED: Three separate iframe refs (matching test page)
-  const zkCreateIframeRef = useRef(null);
-  const zkImportIframeRef = useRef(null);
-  const zkBalanceIframeRef = useRef(null);
   const messagesEndRef = useRef(null);
   
-  // UPDATED: Separate ready states
-  const [zkCreateReady, setZkCreateReady] = useState(false);
-  const [zkImportReady, setZkImportReady] = useState(false);
-  const [zkBalanceReady, setZkBalanceReady] = useState(false);
+  const [zkCreateReady] = useState(true);
+  const [zkImportReady] = useState(true);
+  const [zkBalanceReady] = useState(true);
   
   const [walletMode, setWalletMode] = useState('list');
   const [importMnemonic, setImportMnemonic] = useState('');
@@ -130,78 +127,8 @@ export default function ToolsModal({ onClose, agentZKId }) {
     loadAgentProfile(); // NEW
     loadUserLocation();
 
-    // UPDATED: Message handler matching test page pattern
-    const handleMessage = (event) => {
-      if (event.origin !== REPLIT_BASE_URL) return;
-      if (!event.data?.type) return;
-
-      console.log('[ToolsModal] 📨 Message:', event.data.type, 'Full payload:', event.data);
-
-      // === READY SIGNALS ===
-      if (event.data.type === 'ZK_CREATE_READY') {
-        console.log('[ToolsModal] ✅ ZK Create ready');
-        setZkCreateReady(true);
-        return;
-      }
-
-      if (event.data.type === 'ZK_IMPORT_READY') {
-        console.log('[ToolsModal] ✅ ZK Import ready');
-        setZkImportReady(true);
-        return;
-      }
-
-      if (event.data.type === 'ZK_BALANCE_READY') {
-        console.log('[ToolsModal] ✅ ZK Balance ready');
-        setZkBalanceReady(true);
-        return;
-      }
-
-      // === WALLET CREATED ===
-      if (event.data.type === 'ZK_WALLET_CREATED' && event.data.data) {
-        console.log('[ToolsModal] 🎉 Wallet created:', event.data.data);
-        handleZKWalletCreated(event.data.data);
-        return;
-      }
-
-      // === WALLET IMPORTED (CLIENT-SIDE SIGNING) ===
-      if (event.data.type === 'ZK_WALLET_IMPORTED' && event.data.data) {
-        console.log('[ToolsModal] 🎉 Wallet imported (client-side):', event.data.data);
-        console.log('[ToolsModal] 📊 Address:', event.data.data.address);
-        console.log('[ToolsModal] 💰 Balance:', event.data.data.balance);
-        console.log('[ToolsModal] ✅ Valid:', event.data.data.valid);
-        console.log('[ToolsModal] 🔐 Mode:', event.data.data.derivation_mode);
-        
-        handleZKWalletImported(event.data.data);
-        return;
-      }
-
-      // === BALANCE RESULT ===
-      if (event.data.type === 'ZK_BALANCE_RESULT' && event.data.data) {
-        console.log('[ToolsModal] 💰 Balance result:', JSON.stringify(event.data.data));
-        handleBalanceResult(event.data.data);
-        return;
-      }
-
-      // === UTXOS RESULT ===
-      if (event.data.type === 'ZK_UTXOS_RESULT' && event.data.data) {
-        console.log('[ToolsModal] 📊 UTXOs result:', event.data.data);
-        handleUTXOsResult(event.data.data);
-        return;
-      }
-
-      // === ERROR HANDLING ===
-      if (event.data.type === 'ZK_ERROR') {
-        console.error('[ToolsModal] ❌ Error:', event.data.error);
-        setIsProcessingWallet(false);
-        setIsLoadingWallet(false);
-        showStatus('error', 'Error: ' + event.data.error);
-        return;
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [importMnemonic, agentZKId]);
+    // No iframe message handler needed — all wallet operations are server-side
+  }, [agentZKId]);
 
   const showStatus = (type, text, duration = 3000) => {
     setStatusMessage({ type, text });
@@ -601,149 +528,17 @@ export default function ToolsModal({ onClose, agentZKId }) {
   }, [currentZKWallet, zkBalanceReady]);
 
   const loadZKWalletData = async (address) => {
-    if (!zkBalanceReady) {
-      console.warn('[ToolsModal] ⚠️ Balance iframe not ready yet');
-      return;
-    }
-
-    if (!address) {
-      console.error('[ToolsModal] ❌ No address provided to loadZKWalletData');
-      return;
-    }
-
-    console.log('[ToolsModal] 📊 Requesting balance for:', address);
+    if (!address) return;
     setIsLoadingWallet(true);
-    setZKBalance(null); // Clear old balance
-    
-    // Send balance request to iframe
-    setTimeout(() => {
-      if (zkBalanceIframeRef.current?.contentWindow) {
-        console.log('[ToolsModal] 📤 Sending ZK_GET_BALANCE to iframe');
-        zkBalanceIframeRef.current.contentWindow.postMessage({
-          type: 'ZK_GET_BALANCE',
-          address: address,
-          id: Date.now()
-        }, REPLIT_BASE_URL);
-      } else {
-        console.error('[ToolsModal] ❌ Balance iframe not available');
-        setIsLoadingWallet(false);
-      }
-    }, 100);
-
-    // Send UTXOs request
-    setTimeout(() => {
-      if (zkBalanceIframeRef.current?.contentWindow) {
-        console.log('[ToolsModal] 📤 Sending ZK_GET_UTXOS to iframe');
-        zkBalanceIframeRef.current.contentWindow.postMessage({
-          type: 'ZK_GET_UTXOS',
-          address: address,
-          id: Date.now()
-        }, REPLIT_BASE_URL);
-      }
-    }, 1500);
-  };
-
-  const handleBalanceResult = (data) => {
-    console.log('[ToolsModal] 💰 Processing balance result:', JSON.stringify(data));
-    
-    if (thinkingStatus?.includes('Analyzing') || thinkingStatus?.includes('Fetching')) {
-      // VP Import flow
-      const balance = parseFloat(data.balanceKAS) || 0;
-      
-      setVpBalance({
-        address: data.address,
-        balance: balance,
-        utxos: []
-      });
-
-      setThinkingStatus('✅ Balance fetched!');
-      
-      setTimeout(() => {
-        const truncated = getTruncatedAddress(data.address);
-        let response = `✅ **Wallet Analysis Complete** (${truncated})\n\n`;
-        response += `📊 **Balance:** ${balance.toFixed(8)} KAS\n\n`;
-        response += `📜 **Checking transaction history...**\n`;
-
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: response,
-          timestamp: new Date().toISOString()
-        }]);
-        
-        // Request UTXOs
-        zkBalanceIframeRef.current?.contentWindow?.postMessage({
-          type: 'ZK_GET_UTXOS',
-          address: data.address,
-          id: Date.now()
-        }, REPLIT_BASE_URL);
-      }, 500);
-    } else {
-      // Direct balance check for wallet tab
-      let balanceKAS = 0;
-      
-      // Try multiple ways to extract balance
-      if (data.balanceKAS !== undefined) {
-        balanceKAS = parseFloat(data.balanceKAS);
-      } else if (data.balance !== undefined) {
-        if (typeof data.balance === 'object' && data.balance.kas) {
-          balanceKAS = parseFloat(data.balance.kas);
-        } else if (typeof data.balance === 'number') {
-          balanceKAS = data.balance;
-        } else if (typeof data.balance === 'string') {
-          balanceKAS = parseFloat(data.balance);
-        }
-      }
-      
-      console.log('[ToolsModal] ✅ Setting balance:', balanceKAS, 'KAS');
-      
-      setZKBalance({ balanceKAS: balanceKAS });
-      setIsLoadingWallet(false);
-    }
-  };
-
-  const handleUTXOsResult = (data) => {
-    console.log('[ToolsModal] 📊 Processing UTXOs:', data);
-    
-    if (thinkingStatus && (thinkingStatus.includes('Checking transaction history...') || thinkingStatus.includes('✅ Balance fetched!'))) {
-      // VP Import flow
-      const utxos = data.history || [];
-      
-      setVpBalance(prev => ({
-        ...prev,
-        utxos: utxos
-      }));
-
-      setTimeout(() => {
-        let response = '';
-        
-        if (utxos.length > 0) {
-          const lastTx = utxos[0];
-          response += `\n📜 **Last Transaction:**\n`;
-          response += `- Amount: ${(lastTx.amount / 100000000).toFixed(8)} KAS\n`;
-          if (lastTx.txId) response += `- TX ID: ${lastTx.txId.substring(0, 20)}...\n`;
-          if (lastTx.timestamp) response += `- Date: ${new Date(lastTx.timestamp).toLocaleString()}\n`;
-          response += `\n📈 **Total Transactions:** ${utxos.length}\n`;
-        } else {
-          response += `\n📜 **Transaction History:** No transactions found\n`;
-        }
-
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: response,
-          timestamp: new Date().toISOString()
-        }]);
-        
-        setThinkingStatus(null);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-      }, 500);
-    } else {
-      // Direct UTXO check for wallet tab
-      const history = data.history || [];
-      console.log('[ToolsModal] 📊 Setting UTXOs:', history.length, 'transactions');
-      
-      setZKUtxos(history);
-      setIsLoadingWallet(false);
-    }
+    setZKBalance(null);
+    try {
+      const balRes = await base44.functions.invoke('getKaspaBalance', { address });
+      setZKBalance({ balanceKAS: balRes.data?.success ? (balRes.data.balanceKAS || 0) : 0 });
+    } catch { setZKBalance({ balanceKAS: 0 }); } finally { setIsLoadingWallet(false); }
+    try {
+      const utxRes = await base44.functions.invoke('getKaspaUTXOs', { address });
+      setZKUtxos(utxRes.data?.success ? (utxRes.data.history || []) : []);
+    } catch { setZKUtxos([]); }
   };
 
   const handleZKWalletCreated = async (walletData) => {
@@ -888,185 +683,55 @@ export default function ToolsModal({ onClose, agentZKId }) {
     }
   };
 
-  const handleCreateZKWallet = () => {
-    if (!zkCreateReady) {
-      showStatus('info', '⏳ ZK Create system loading...');
-      return;
-    }
-
-    console.log('[ToolsModal] 🚀 Creating ZK wallet (client-side)');
+  const handleCreateZKWallet = async () => {
     setIsProcessingWallet(true);
-
-    setTimeout(() => {
-      if (zkCreateIframeRef.current?.contentWindow) {
-        zkCreateIframeRef.current.contentWindow.postMessage({
-          type: 'ZK_CREATE_WALLET',
-          id: Date.now()
-        }, REPLIT_BASE_URL);
-        console.log('[ToolsModal] 📤 Create wallet message sent (client-side signing)');
-      } else {
-        console.error('[ToolsModal] ❌ Create iframe not ready');
-        setIsProcessingWallet(false);
-        showStatus('error', '❌ System not ready. Please refresh the page.');
-      }
-    }, 100);
+    try {
+      const r = await base44.functions.invoke('createKaspaWallet', { wordCount: 24 });
+      if (r.data?.error) throw new Error(r.data.error);
+      await handleZKWalletCreated({ address: r.data.address, mnemonic: r.data.mnemonic, wordCount: 24, derivation_mode: 'server-side' });
+    } catch (err) { showStatus('error', 'Failed to create wallet: ' + err.message); setIsProcessingWallet(false); }
   };
 
-  const handleImportZKWallet = () => {
-    if (!importMnemonic.trim()) {
-      showStatus('error', 'Please enter a seed phrase');
-      return;
-    }
-
-    if (!zkImportReady) {
-      showStatus('info', '⏳ ZK Import system loading...');
-      return;
-    }
-
+  const handleImportZKWallet = async () => {
+    if (!importMnemonic.trim()) { showStatus('error', 'Please enter a seed phrase'); return; }
     const words = importMnemonic.trim().toLowerCase().split(/\s+/).filter(w => w);
-    if (words.length !== 12 && words.length !== 24) {
-      showStatus('error', 'Seed phrase must be 12 or 24 words');
-      return;
-    }
-
-    console.log('[ToolsModal] 🚀 Importing ZK wallet (client-side signing)');
-    console.log('[ToolsModal] 🔢 Word count:', words.length);
+    if (words.length !== 12 && words.length !== 24) { showStatus('error', 'Seed phrase must be 12 or 24 words'); return; }
     setIsProcessingWallet(true);
-
-    setTimeout(() => {
-      if (zkImportIframeRef.current?.contentWindow) {
-        zkImportIframeRef.current.contentWindow.postMessage({
-          type: 'ZK_IMPORT_WALLET',
-          seedPhrase: words.join(' '),
-          id: Date.now()
-        }, REPLIT_BASE_URL);
-        console.log('[ToolsModal] 📤 Import wallet message sent (client-side signing & derivation)');
-      } else {
-        console.error('[ToolsModal] ❌ Import iframe not ready');
-        setIsProcessingWallet(false);
-        showStatus('error', '❌ System not ready. Please refresh the page.');
-      }
-    }, 100);
+    try {
+      const r = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: words.join(' ') });
+      if (r.data?.error) throw new Error(r.data.error);
+      let balance = null;
+      try { const b = await base44.functions.invoke('getKaspaBalance', { address: r.data.address }); if (b.data?.success) balance = b.data.balanceKAS; } catch (e) {}
+      await handleZKWalletImported({ address: r.data.address, wordCount: words.length, balance, derivation_mode: 'server-side' });
+    } catch (err) { showStatus('error', 'Failed to import wallet: ' + err.message); setWalletMode('import'); setIsProcessingWallet(false); }
   };
 
   const handleLinkWalletForAgent = async () => {
-    if (!agentSeedPhrase.trim()) {
-      showStatus('error', 'Please enter a seed phrase');
-      return;
-    }
-
-    if (!zkImportReady) {
-      showStatus('info', '⏳ Wallet system loading, please wait...');
-      return;
-    }
-
+    if (!agentSeedPhrase.trim()) { showStatus('error', 'Please enter a seed phrase'); return; }
     const words = agentSeedPhrase.trim().toLowerCase().split(/\s+/).filter(w => w);
-    if (words.length !== 12 && words.length !== 24) {
-      showStatus('error', 'Seed phrase must be 12 or 24 words');
-      return;
-    }
-
-    console.log('[ToolsModal] 🔗 Linking wallet for Agent AI access');
+    if (words.length !== 12 && words.length !== 24) { showStatus('error', 'Seed phrase must be 12 or 24 words'); return; }
     setIsLinkingWallet(true);
     showStatus('info', '🔐 Deriving wallet address...', 0);
-
-    // Create a one-time message handler for this specific import
-    const linkHandler = async (event) => {
-      if (event.origin !== REPLIT_BASE_URL) return;
-      if (event.data?.type !== 'ZK_WALLET_IMPORTED') return;
-
-      window.removeEventListener('message', linkHandler);
-
-      const walletData = event.data.data;
-      console.log('[ToolsModal] 📍 Wallet derived for Agent:', walletData.address);
-
-      try {
-        const user = await base44.auth.me();
-        const existingWallets = user.agent_zk_wallets || [];
-
-        const agentWallet = {
-          address: walletData.address,
-          wordCount: words.length,
-          createdAt: new Date().toISOString(),
-          type: 'agent_linked',
-          encryptedSeed: btoa(agentSeedPhrase.trim().toLowerCase()),
-          derivation_mode: 'client-side',
-          linkedForAgent: true
-        };
-
-        // Check if wallet already exists
-        const walletExists = existingWallets.some(w => w.address === walletData.address);
-        
-        let updatedWallets;
-        if (walletExists) {
-          // Update existing wallet: mark as linked and update seed if needed
-          updatedWallets = existingWallets.map(w => 
-            w.address === walletData.address 
-              ? { ...w, linkedForAgent: true, encryptedSeed: btoa(agentSeedPhrase.trim().toLowerCase()) }
-              : w
-          );
-          showStatus('info', '⚠️ Wallet already exists - updating...', 0);
-        } else {
-          // Add new wallet
-          updatedWallets = [...existingWallets, agentWallet];
-        }
-
-        // Generate API key if none exists or if it needs to be refreshed (e.g. for this wallet)
-        console.log('[ToolsModal] 🔑 Generating API key for Agent access...');
-        showStatus('info', '🔑 Generating API key...', 0);
-        
-        const response = await base44.functions.invoke('generateZKApiKey', {
-          walletAddress: walletData.address // Link key to this newly linked wallet
-        });
-
-        if (response.data.success) {
-          const apiKey = response.data.api_key;
-
-          // Save updated wallet list and new API key/linked address
-          await base44.auth.updateMe({
-            agent_zk_wallets: updatedWallets,
-            agent_zk_api_key: apiKey,
-            agent_linked_wallet_address: walletData.address // Set this as primary linked wallet
-          });
-
-          setApiKey(apiKey);
-          setLinkedWalletAddress(walletData.address);
-          setAgentSeedPhrase('');
-          setIsLinkingWallet(false);
-          
-          await loadLinkedWallets(); // Reload the list of linked wallets for display
-          setShowAddWallet(false); // Hide the add wallet form after success
-
-          showStatus('success', `✅ Wallet linked! Agent ZK can now access ${walletData.address.substring(0, 15)}...`);
-        } else {
-          throw new Error(response.data.error || 'Failed to generate API key');
-        }
-
-      } catch (err) {
-        console.error('[ToolsModal] ❌ Link failed:', err);
-        showStatus('error', 'Failed to link wallet: ' + err.message);
-        setIsLinkingWallet(false);
-      }
-    };
-
-    window.addEventListener('message', linkHandler);
-
-    // Send to import iframe
-    setTimeout(() => {
-      if (zkImportIframeRef.current?.contentWindow) {
-        zkImportIframeRef.current.contentWindow.postMessage({
-          type: 'ZK_IMPORT_WALLET',
-          seedPhrase: words.join(' '),
-          id: Date.now()
-        }, REPLIT_BASE_URL);
-        console.log('[ToolsModal] 📤 Deriving wallet for Agent link...');
-      } else {
-        console.error('[ToolsModal] ❌ Import iframe not ready');
-        window.removeEventListener('message', linkHandler);
-        setIsLinkingWallet(false);
-        showStatus('error', '❌ System not ready. Please refresh the page.');
-      }
-    }, 100);
+    try {
+      const r = await base44.functions.invoke('deriveKaspaAddress', { mnemonic: words.join(' ') });
+      if (r.data?.error) throw new Error(r.data.error);
+      const walletAddress = r.data.address;
+      const user = await base44.auth.me();
+      const existingWallets = user.agent_zk_wallets || [];
+      const agentWallet = { address: walletAddress, wordCount: words.length, createdAt: new Date().toISOString(), type: 'agent_linked', encryptedSeed: btoa(agentSeedPhrase.trim().toLowerCase()), derivation_mode: 'server-side', linkedForAgent: true };
+      const walletExists = existingWallets.some(w => w.address === walletAddress);
+      let updatedWallets;
+      if (walletExists) { updatedWallets = existingWallets.map(w => w.address === walletAddress ? { ...w, linkedForAgent: true, encryptedSeed: btoa(agentSeedPhrase.trim().toLowerCase()) } : w); showStatus('info', '⚠️ Wallet already exists - updating...', 0); } else { updatedWallets = [...existingWallets, agentWallet]; }
+      showStatus('info', '🔑 Generating API key...', 0);
+      const apiKeyResponse = await base44.functions.invoke('generateZKApiKey', { walletAddress });
+      if (apiKeyResponse.data.success) {
+        const apiKey = apiKeyResponse.data.api_key;
+        await base44.auth.updateMe({ agent_zk_wallets: updatedWallets, agent_zk_api_key: apiKey, agent_linked_wallet_address: walletAddress });
+        setApiKey(apiKey); setLinkedWalletAddress(walletAddress); setAgentSeedPhrase(''); setIsLinkingWallet(false);
+        await loadLinkedWallets(); setShowAddWallet(false);
+        showStatus('success', `✅ Wallet linked! Agent ZK can now access ${walletAddress.substring(0, 15)}...`);
+      } else { throw new Error(apiKeyResponse.data.error || 'Failed to generate API key'); }
+    } catch (err) { showStatus('error', 'Failed to link wallet: ' + err.message); setIsLinkingWallet(false); }
   };
 
   const handleConnectToAgent = async () => {
@@ -1237,26 +902,22 @@ export default function ToolsModal({ onClose, agentZKId }) {
   };
 
   const handleImportToVPIframe = async (address) => {
-    if (!zkBalanceReady) {
-      setThinkingStatus('⚠️ Balance checker not ready');
+    setThinkingStatus('🔍 Analyzing wallet...');
+    try {
+      const balRes = await base44.functions.invoke('getKaspaBalance', { address });
+      const utxRes = await base44.functions.invoke('getKaspaUTXOs', { address });
+      const balance = balRes.data?.success ? (balRes.data.balanceKAS || 0) : 0;
+      const utxos = utxRes.data?.success ? (utxRes.data.history || []) : [];
+      setVpBalance({ address, balance, utxos });
+      setThinkingStatus('✅ Balance fetched!');
       setTimeout(() => {
+        let r = `✅ **Wallet Analysis Complete** (${getTruncatedAddress(address)})\n\n📊 **Balance:** ${balance.toFixed(8)} KAS\n\n`;
+        if (utxos.length > 0) { const t = utxos[0]; r += `📜 **Last Transaction:**\n- Amount: ${(t.amount/1e8).toFixed(8)} KAS\n`; if (t.txId) r += `- TX: ${t.txId.substring(0,20)}...\n`; if (t.timestamp) r += `- Date: ${new Date(t.timestamp).toLocaleString()}\n`; r += `\n📈 **Total Transactions:** ${utxos.length}\n`; } else { r += `📜 No transactions found\n`; }
+        setMessages(prev => [...prev, { role: 'assistant', content: r, timestamp: new Date().toISOString() }]);
         setThinkingStatus(null);
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-      }, 3000);
-      return;
-    }
-
-    setThinkingStatus('🔍 Analyzing wallet...');
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    setThinkingStatus('📊 Fetching balance...');
-    
-    zkBalanceIframeRef.current?.contentWindow?.postMessage({
-      type: 'ZK_GET_BALANCE',
-      address: address,
-      id: Date.now()
-    }, REPLIT_BASE_URL);
+      }, 500);
+    } catch (err) { setThinkingStatus(null); setMessages(prev => [...prev, { role: 'assistant', content: `❌ **Error:** ${err.message}`, timestamp: new Date().toISOString() }]); setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100); }
   };
 
   const handleAddSecret = async () => {
@@ -1350,160 +1011,42 @@ export default function ToolsModal({ onClose, agentZKId }) {
 
     setIsTesting(true);
     setTestResult(null);
-
     try {
-      const response = await fetch(`https://6901295fa9bcfaa0f5ba2c2a.base44.repl.co/functions/zkEndpointExecutor`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
-        },
-        body: JSON.stringify({
-          endpoint: 'balance',
-          address: testWalletAddress
-        })
-      });
-
-      const data = await response.json();
-      
-      setTestResult({
-        success: response.ok,
-        status: response.status,
-        data: data
-      });
+      const response = await base44.functions.invoke('zkEndpointExecutor', { endpoint: 'balance', address: testWalletAddress });
+      setTestResult({ success: true, status: 200, data: response.data });
     } catch (err) {
-      setTestResult({
-        success: false,
-        error: err.message
-      });
-    } finally {
-      setIsTesting(false);
-    }
+      setTestResult({ success: false, error: err.message });
+    } finally { setIsTesting(false); }
   };
 
   const fetchWalletsBalance = async () => {
     setThinkingStatus(`🔐 Accessing ${linkedWallets.length} wallet${linkedWallets.length > 1 ? 's' : ''}...`);
-
     try {
-      if (!zkImportReady) {
-        throw new Error('ZK Import system not ready');
-      }
-
       const walletResults = [];
-
-      const processWallet = (wallet, index) => {
-        return new Promise((resolve) => {
-          const seedPhrase = atob(wallet.encryptedSeed);
-          console.log(`[ToolsModal] 🔓 Processing wallet ${index + 1}/${linkedWallets.length}`);
-
-          const handler = (event) => {
-            if (event.origin !== REPLIT_BASE_URL) return;
-            if (event.data?.type !== 'ZK_WALLET_IMPORTED') return;
-
-            window.removeEventListener('message', handler);
-
-            const walletData = event.data.data;
-            console.log(`[ToolsModal] 💰 Balance fetched for wallet ${index + 1}:`, walletData);
-
-            let balanceKAS = 0;
-            if (walletData.balance) {
-              if (typeof walletData.balance === 'object' && walletData.balance.kas) {
-                balanceKAS = parseFloat(walletData.balance.kas);
-              } else if (typeof walletData.balance === 'number') {
-                balanceKAS = walletData.balance;
-              } else if (typeof walletData.balance === 'string') {
-                balanceKAS = parseFloat(walletData.balance);
-              }
-            }
-
-            walletResults.push({
-              address: wallet.address,
-              balance: balanceKAS,
-              wordCount: wallet.wordCount,
-              history: walletData.history || []
-            });
-
-            resolve();
-          };
-
-          window.addEventListener('message', handler);
-
-          setTimeout(() => {
-            if (zkImportIframeRef.current?.contentWindow) {
-              zkImportIframeRef.current.contentWindow.postMessage({
-                type: 'ZK_IMPORT_WALLET',
-                seedPhrase: seedPhrase,
-                id: Date.now() + index
-              }, REPLIT_BASE_URL);
-              console.log(`[ToolsModal] 📤 Sent seed for wallet ${index + 1} to iframe for balance fetch`);
-            } else {
-              console.error(`[ToolsModal] ❌ Import iframe not available for wallet ${index + 1}`);
-              window.removeEventListener('message', handler);
-              walletResults.push({ address: wallet.address, balance: 0, error: 'Import system unavailable' });
-              resolve();
-            }
-          }, index * 500);
-
-          setTimeout(() => {
-            window.removeEventListener('message', handler);
-            if (walletResults.length < index + 1) { // If not already processed by the success handler
-              walletResults.push({
-                address: wallet.address,
-                balance: 0,
-                error: 'Timeout'
-              });
-            }
-            resolve();
-          }, 15000); // 15 seconds timeout per wallet
-        });
-      };
-
       for (let i = 0; i < linkedWallets.length; i++) {
+        const wallet = linkedWallets[i];
         setThinkingStatus(`💰 Fetching balance for wallet ${i + 1}/${linkedWallets.length}...`);
-        await processWallet(linkedWallets[i], i);
+        try {
+          const r = await base44.functions.invoke('getKaspaBalance', { address: wallet.address });
+          walletResults.push({ address: wallet.address, balance: r.data?.success ? (r.data.balanceKAS || 0) : 0, wordCount: wallet.wordCount, error: r.data?.success ? null : (r.data?.error || 'Failed') });
+        } catch (err) { walletResults.push({ address: wallet.address, balance: 0, error: err.message }); }
       }
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const truncateAddr = (addr) => `${addr.substring(0, 10)}...${addr.substring(addr.length - 6)}`;
-      
       let responseText = `✅ **Portfolio Overview** (${linkedWallets.length} wallet${linkedWallets.length > 1 ? 's' : ''})\n\n`;
-      
       let totalBalance = 0;
       walletResults.forEach((result, idx) => {
         totalBalance += result.balance;
-        responseText += `**Wallet ${idx + 1}:**\n`;
-        responseText += `📍 ${truncateAddr(result.address)}\n`;
-        responseText += `💰 ${result.balance.toFixed(8)} KAS\n`;
-        if (result.error) {
-          responseText += `⚠️ ${result.error}\n`;
-        }
+        responseText += `**Wallet ${idx + 1}:**\n📍 ${truncateAddr(result.address)}\n💰 ${result.balance.toFixed(8)} KAS\n`;
+        if (result.error) responseText += `⚠️ ${result.error}\n`;
         responseText += `\n`;
       });
-
-      responseText += `━━━━━━━━━━━━━━━━━━━━\n`;
-      responseText += `💎 **Total Balance:** ${totalBalance.toFixed(8)} KAS\n`;
-      responseText += `📊 **USD Value:** $${(totalBalance * 0.051).toFixed(2)} (approx)\n`;
-
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: responseText,
-        timestamp: new Date().toISOString()
-      }]);
-
-      setThinkingStatus(null);
-      setIsSending(false);
+      responseText += `━━━━━━━━━━━━━━━━━━━━\n💎 **Total Balance:** ${totalBalance.toFixed(8)} KAS\n📊 **USD Value:** $${(totalBalance * 0.051).toFixed(2)} (approx)\n`;
+      setMessages(prev => [...prev, { role: 'assistant', content: responseText, timestamp: new Date().toISOString() }]);
+      setThinkingStatus(null); setIsSending(false);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-
     } catch (err) {
-      console.error('[ToolsModal] ❌ Balance fetch failed:', err);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `❌ **Error:** ${err.message}\n\nMake sure you've linked wallets in the API tab.`,
-        timestamp: new Date().toISOString()
-      }]);
-      setThinkingStatus(null);
-      setIsSending(false);
+      setMessages(prev => [...prev, { role: 'assistant', content: `❌ **Error:** ${err.message}\n\nMake sure you've linked wallets in the API tab.`, timestamp: new Date().toISOString() }]);
+      setThinkingStatus(null); setIsSending(false);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
   };
@@ -1687,61 +1230,11 @@ export default function ToolsModal({ onClose, agentZKId }) {
           if (linkedWallets.length > 0) {
             for (const wallet of linkedWallets) {
               try {
-                const seedPhrase = atob(wallet.encryptedSeed);
-                
-                const balancePromise = new Promise((resolve) => {
-                  const handler = (event) => {
-                    if (event.origin !== REPLIT_BASE_URL) return;
-                    if (event.data?.type !== 'ZK_WALLET_IMPORTED') return;
-                    
-                    window.removeEventListener('message', handler);
-                    const walletData = event.data.data;
-                    
-                    let balanceKAS = 0;
-                    if (walletData.balance) {
-                      if (typeof walletData.balance === 'object' && walletData.balance.kas) {
-                        balanceKAS = parseFloat(walletData.balance.kas);
-                      } else if (typeof walletData.balance === 'number') {
-                        balanceKAS = walletData.balance;
-                      } else if (typeof walletData.balance === 'string') {
-                        balanceKAS = parseFloat(walletData.balance);
-                      }
-                    }
-                    
-                    resolve(balanceKAS);
-                  };
-                  
-                  window.addEventListener('message', handler);
-                  
-                  setTimeout(() => {
-                    if (zkImportIframeRef.current?.contentWindow) {
-                      zkImportIframeRef.current.contentWindow.postMessage({
-                        type: 'ZK_IMPORT_WALLET',
-                        seedPhrase: seedPhrase,
-                        id: Date.now() + Math.random()
-                      }, REPLIT_BASE_URL);
-                    } else {
-                      window.removeEventListener('message', handler);
-                      resolve(0);
-                    }
-                  }, 100);
-                  
-                  setTimeout(() => {
-                    window.removeEventListener('message', handler);
-                    resolve(0);
-                  }, 5000);
-                });
-                
-                const balance = await balancePromise;
+                const balRes = await base44.functions.invoke('getKaspaBalance', { address: wallet.address });
+                const balance = balRes.data?.success ? (balRes.data.balanceKAS || 0) : 0;
                 totalBalance += balance;
-                walletBalances.push({
-                  address: wallet.address,
-                  balance: balance
-                });
-                
-              } catch (err) {
-                console.error('[ToolsModal] Error fetching balance:', err);
-              }
+                walletBalances.push({ address: wallet.address, balance });
+              } catch (err) { console.error('[ToolsModal] Error fetching balance:', err); }
             }
           }
           
@@ -2468,26 +1961,6 @@ Provide a clear, accurate answer based on current web information. If you find t
 
   return (
     <>
-      {/* UPDATED: Three hidden iframes matching test page */}
-      <iframe 
-        ref={zkCreateIframeRef} 
-        src={`${REPLIT_BASE_URL}/zk-create.html`}
-        style={{ display: 'none' }}
-        title="ZK Create"
-      />
-      <iframe 
-        ref={zkImportIframeRef} 
-        src={`${REPLIT_BASE_URL}/zk-import.html`}
-        style={{ display: 'none' }}
-        title="ZK Import"
-      />
-      <iframe 
-        ref={zkBalanceIframeRef} 
-        src={`${REPLIT_BASE_URL}/zk-balance.html`}
-        style={{ display: 'none' }}
-        title="ZK Balance"
-      />
-
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
