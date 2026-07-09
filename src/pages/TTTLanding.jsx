@@ -1201,14 +1201,16 @@ export default function TTTLandingPage() {
               const isKaspa = item.icon === "kaspa";
               return (
                 <motion.button key={item.label} type="button"
-                  onClick={() => { sounds.playNavigate(); item.action ? item.action() : navigate(item.path); }}
+                  onClick={() => { item.action ? item.action() : navigate(item.path); sounds.playNavigate(); }}
                   onMouseEnter={() => { setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.05 }}
-                  className="px-6 py-3 transition-all focus:outline-none flex items-center justify-center"
+                  className="px-6 py-3 transition-all focus:outline-none flex items-center justify-center touch-manipulation"
                   style={{
                     border: isHovered ? "2px solid rgba(240,200,60,0.8)" : "2px solid rgba(200,150,40,0.3)",
                     background: isHovered ? "rgba(200,150,40,0.12)" : "transparent",
+                    touchAction: "manipulation",
+                    WebkitTapHighlightColor: "transparent",
                   }}>
                   {item.iconOnly ? (
                     isKaspa ? (
@@ -1257,7 +1259,7 @@ export default function TTTLandingPage() {
       </AnimatePresence>
 
       {/* VISION BUTTON — bottom left */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); navigate("/Vision"); }}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { navigate("/Vision"); sounds.playSelect(); }} style={{ touchAction: "manipulation" }}
         className="absolute left-4 bottom-5 focus:outline-none z-20">
         <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
           style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ VISION ]</span>

@@ -92,9 +92,10 @@ export default function CyberneticEyeSphere() {
     const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
     camera.position.set(0, 0, 3.5);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    const isMobile = window.innerWidth < 768;
+    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: false, powerPreference: "low-power" });
     renderer.setSize(W, H);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1 : 2));
     mount.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.1));
@@ -115,7 +116,7 @@ export default function CyberneticEyeSphere() {
       },
     });
 
-    const geometry = new THREE.SphereGeometry(1, 128, 128);
+    const geometry = new THREE.SphereGeometry(1, isMobile ? 48 : 128, isMobile ? 48 : 128);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.scale.setScalar(1.5);
     group.add(mesh);
