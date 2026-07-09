@@ -1,6 +1,6 @@
 import { base44 } from "@/api/base44Client";
 
-export const AGENT_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b6968f743_generated_image.png";
+export const AGENT_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b053dc185_generated_image.png";
 
 // AGENT. branded models mapped to real backend LLMs
 export const KASPA_AI_MODELS = [

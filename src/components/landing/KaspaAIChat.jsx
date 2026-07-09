@@ -10,7 +10,7 @@ import AgentAttachment from "./AgentAttachment";
 const SESSIONS_KEY = "kaspa_ai_chat_sessions";
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 const BLUE = "#4d6bfe";
-const BG = "#0A0A0C";
+const BG = "#000000";
 const PANEL = "#121214";
 const GLASS = "rgba(255,255,255,0.05)";
 const BORDER = "rgba(255,255,255,0.08)";
@@ -24,7 +24,7 @@ function saveSessions(s) {
 
 const Logo = ({ size = 28 }) => (
   <img src={AGENT_LOGO} alt="AGENT." width={size} height={size}
-    className="rounded-full object-cover flex-shrink-0" style={{ width: size, height: size }} />
+    className="object-cover flex-shrink-0" style={{ width: size, height: size, mixBlendMode: "screen" }} />
 );
 
 const NewBadge = () => (
