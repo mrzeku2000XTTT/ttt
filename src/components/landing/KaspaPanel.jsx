@@ -154,16 +154,30 @@ export default function KaspaPanel({ onClose }) {
 
   const detectWallet = async () => {
     setChecking(true); setError(null);
+    // 1. Local TTT wallet on this device (main wallet — same priority as the Wallet page)
+    try {
+      const localAddr = localStorage.getItem("ttt_wallet_address");
+      const localPK = localStorage.getItem("ttt_wallet_pk");
+      if (localAddr && localPK) { persist(localAddr, "ttt"); setChecking(false); return; }
+    } catch {}
+    // 2. Kasware extension
     if (typeof window.kasware !== "undefined") {
       try {
         const accounts = await window.kasware.getAccounts();
         if (accounts?.length > 0) { persist(accounts[0], "kasware"); setChecking(false); return; }
       } catch {}
     }
+    // 3. Profile wallet, then any local address without a cached key, then Terra wallets
     try {
       const me = await base44.auth.me();
       const saved = me?.created_wallet_address || me?.kasware_address;
       if (saved) { persist(saved, "profile"); setChecking(false); return; }
+    } catch {}
+    try {
+      const localAddr = localStorage.getItem("ttt_wallet_address");
+      if (localAddr) { persist(localAddr, "ttt"); setChecking(false); return; }
+      const terra = JSON.parse(localStorage.getItem("terra_wallets") || "[]");
+      if (terra[0]?.address) { persist(terra[0].address, "terra"); setChecking(false); return; }
     } catch {}
     if (address) { setChecking(false); return; }
     setChecking(false);
@@ -275,7 +289,7 @@ export default function KaspaPanel({ onClose }) {
                   <img src={KASPA_LOGO} alt="Kaspa" className="w-7 h-7 object-contain" />
                   <div className="flex-1">
                     <div className="text-sm font-semibold text-white" style={{ fontFamily: IOS_FONT }}>Wallet Connected</div>
-                    <div className="text-[10px] text-white/40 uppercase tracking-wide" style={{ fontFamily: IOS_FONT }}>{source === "kasware" ? "Kasware Extension" : "Profile Wallet"}</div>
+                    <div className="text-[10px] text-white/40 uppercase tracking-wide" style={{ fontFamily: IOS_FONT }}>{source === "kasware" ? "Kasware Extension" : source === "ttt" ? "TTT Wallet (this device)" : source === "terra" ? "Terra Wallet" : "Profile Wallet"}</div>
                   </div>
                   <Check className="w-5 h-5 text-[#30D158]" />
                 </div>
