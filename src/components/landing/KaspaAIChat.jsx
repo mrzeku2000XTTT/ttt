@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Loader2, Globe, PanelLeft, Trash2, Paperclip, FileText, Film, MessageCircle, Rocket, Settings } from "lucide-react";
+import { X, Send, ChevronDown, Loader2, Globe, PanelLeft, Trash2, Paperclip, FileText, Film, MessageCircle, Rocket, Settings, FlaskConical } from "lucide-react";
 import AgentSettings from "./AgentSettings";
+import AgentSandbox from "./sandbox/AgentSandbox";
 import { loadToolSettings, saveToolSettings } from "./agentTools";
 import { KASPA_AI_MODELS, runSkillTurn, AGENT_LOGO } from "./kaspaAIModels";
 import { EARN_TASKS, loadCreditState, saveCredits, computeCost } from "./agentCredits";
@@ -56,6 +57,7 @@ export default function KaspaAIChat({ onClose }) {
   const [creditState, setCreditState] = useState({ loggedIn: false, isAdmin: false, credits: 0, completedTasks: [], loaded: false });
   const [toolSettings, setToolSettings] = useState(() => loadToolSettings());
   const [showSettings, setShowSettings] = useState(false);
+  const [showSandbox, setShowSandbox] = useState(false);
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -455,6 +457,11 @@ export default function KaspaAIChat({ onClose }) {
                 style={{ background: GLASS, border: `1px solid ${BORDER}` }}>
                 <Rocket className="w-3.5 h-3.5" /> Launch
               </button>
+              <button onClick={() => setShowSandbox(true)} title="Sandbox — benchmark agents head-to-head"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors text-white/55 hover:text-white"
+                style={{ background: GLASS, border: `1px solid ${BORDER}` }}>
+                <FlaskConical className="w-3.5 h-3.5" /> Sandbox
+              </button>
               <div className="flex-1" />
               <button onClick={() => send()} disabled={loading || (!input.trim() && !attachedFiles.some(f => f.url)) || attachedFiles.some(f => f.uploading)}
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30"
@@ -468,6 +475,9 @@ export default function KaspaAIChat({ onClose }) {
 
       <AgentSettings open={showSettings} onClose={() => setShowSettings(false)}
         settings={toolSettings} onChange={updateToolSettings} isAdmin={creditState.isAdmin} />
+      <AnimatePresence>
+        {showSandbox && <AgentSandbox onClose={() => setShowSandbox(false)} />}
+      </AnimatePresence>
     </motion.div>
   );
 }
