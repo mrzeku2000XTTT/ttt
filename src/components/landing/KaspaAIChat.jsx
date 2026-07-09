@@ -359,7 +359,16 @@ export default function KaspaAIChat({ onClose }) {
                     </div>
                   ) : (
                     <div className="max-w-[92%] flex gap-3">
-                      <div className="mt-1"><Logo size={28} /></div>
+                      <div className="mt-1 flex-shrink-0">
+                        {m.pending && loading ? (
+                          <motion.div animate={{ scale: [1, 1.18, 1], opacity: [0.7, 1, 0.7] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
+                            <Logo size={30} />
+                          </motion.div>
+                        ) : (
+                          <Logo size={30} />
+                        )}
+                      </div>
                       <div className="text-[14px] min-w-0 flex-1">
                         {m.pending && loading ? (
                           <div className="space-y-2 py-1">
