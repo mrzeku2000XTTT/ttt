@@ -990,11 +990,15 @@ function MusicPlayer({ isPlaying, onToggle, onClose, onEnter, elapsed, setElapse
 const GTA_SOUND_URL = "https://media.base44.com/files/public/6901295fa9bcfaa0f5ba2c2a/e5aa22c46_gta-menu.mp3";
 
 function useGameSounds() {
+  const audioRef = useRef(null);
   const play = () => {
     try {
-      const audio = new Audio(GTA_SOUND_URL);
-      audio.volume = 0.7;
-      audio.play().catch(() => {});
+      if (!audioRef.current) {
+        audioRef.current = new Audio(GTA_SOUND_URL);
+        audioRef.current.volume = 0.7;
+      }
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
     } catch {}
   };
 
@@ -1021,9 +1025,21 @@ export default function TTTLandingPage() {
   // On mobile, wait longer — the WebGL init blocks the main thread
   // exactly when the user is trying to tap the menu buttons.
   useEffect(() => {
+    // Wait for a truly idle main thread before mounting the WebGL sphere —
+    // its shader compile blocks the thread and makes buttons feel dead.
     const isMobile = window.innerWidth < 768 || "ontouchstart" in window;
-    const t = setTimeout(() => setBgReady(true), isMobile ? 1500 : 150);
-    return () => clearTimeout(t);
+    let idleId, timerId;
+    timerId = setTimeout(() => {
+      if ("requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(() => setBgReady(true), { timeout: 4000 });
+      } else {
+        setBgReady(true);
+      }
+    }, isMobile ? 2500 : 400);
+    return () => {
+      clearTimeout(timerId);
+      if (idleId && "cancelIdleCallback" in window) window.cancelIdleCallback(idleId);
+    };
   }, []);
 
   useEffect(() => {

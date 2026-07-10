@@ -116,7 +116,7 @@ export default function CyberneticEyeSphere() {
       },
     });
 
-    const geometry = new THREE.SphereGeometry(1, isMobile ? 48 : 128, isMobile ? 48 : 128);
+    const geometry = new THREE.SphereGeometry(1, isMobile ? 32 : 96, isMobile ? 32 : 96);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.scale.setScalar(1.5);
     group.add(mesh);
