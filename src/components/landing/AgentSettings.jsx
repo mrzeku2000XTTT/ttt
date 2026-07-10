@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Wallet, Check, Lock, Zap } from "lucide-react";
-import { AGENT_TOOLS, isKaspaAddress } from "./agentTools";
+import { AGENT_TOOLS, isKaspaAddress, WALLET_1 } from "./agentTools";
 
 const GLASS = "rgba(255,255,255,0.05)";
 const BORDER = "rgba(255,255,255,0.08)";
@@ -63,8 +63,13 @@ export default function AgentSettings({ open, onClose, settings, onChange, isAdm
                   <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl"
                     style={{ background: "rgba(48,209,88,0.08)", border: "1px solid rgba(48,209,88,0.3)" }}>
                     <Check className="w-4 h-4 flex-shrink-0" style={{ color: "#30D158" }} />
-                    <span className="text-xs text-white/80 truncate flex-1 font-mono">{settings.wallet.slice(0, 18)}…{settings.wallet.slice(-6)}</span>
-                    <button onClick={() => onChange({ ...settings, wallet: "" })} className="text-[11px] text-white/40 hover:text-red-400 font-semibold flex-shrink-0">Disconnect</button>
+                    <div className="flex-1 min-w-0">
+                      {settings.wallet === WALLET_1 && (
+                        <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#8fa3ff" }}>Wallet 1 · Default</div>
+                      )}
+                      <span className="text-xs text-white/80 truncate block font-mono">{settings.wallet.slice(0, 18)}…{settings.wallet.slice(-6)}</span>
+                    </div>
+                    <button onClick={() => onChange({ ...settings, wallet: WALLET_1 })} className="text-[11px] text-white/40 hover:text-red-400 font-semibold flex-shrink-0">Reset to Wallet 1</button>
                   </div>
                 ) : (
                   <div className="space-y-2.5">

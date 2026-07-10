@@ -14,12 +14,15 @@ export const AGENT_TOOLS = [
 
 const SETTINGS_KEY = "agent_tool_settings";
 
+// WALLET 1 — hardcoded default tracked wallet for the AGENT (users can track it out of the box)
+export const WALLET_1 = "kaspa:qpz2vgvlxhmyhmt22h538pjzmvvd52nuut80y5zulgpvyerlskvvwm7n4uk5a";
+
 export function loadToolSettings() {
   try {
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-    return { wallet: s.wallet || "", enabled: s.enabled || {} };
+    return { wallet: s.wallet || WALLET_1, enabled: s.enabled || {} };
   } catch {
-    return { wallet: "", enabled: {} };
+    return { wallet: WALLET_1, enabled: {} };
   }
 }
 
