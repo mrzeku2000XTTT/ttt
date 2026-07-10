@@ -412,7 +412,7 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
         {/* Split: Chat + Computer */}
         <div className={`grid gap-3 sm:gap-4 ${computerOpen && computerMode !== "minimized" ? (computerMode === "expanded" ? "lg:grid-cols-3" : "lg:grid-cols-2") : "grid-cols-1"}`}>
         {/* Chat shell */}
-        <div className="relative rounded-2xl sm:rounded-[28px] ring-1 ring-white/10 bg-zinc-950/60 backdrop-blur-2xl overflow-hidden flex flex-col h-[70vh] sm:h-[640px] min-h-[480px]">
+        <div className="relative rounded-2xl sm:rounded-[28px] ring-1 ring-white/10 bg-zinc-950/60 backdrop-blur-2xl overflow-hidden flex flex-col h-[72dvh] sm:h-[640px] min-h-[420px] sm:min-h-[480px] w-full max-w-full">
           {/* Header */}
           <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3 border-b border-white/5">
             <div className="flex items-center gap-2.5">
@@ -568,7 +568,7 @@ CRITICAL: NEVER say "I can't" or "you'll need to do it yourself". The computer c
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.4 }}
-              className={`h-[70vh] sm:h-[640px] min-h-[480px] ${computerMode === "expanded" ? "lg:col-span-2" : ""}`}
+              className={`h-[60dvh] sm:h-[640px] min-h-[360px] sm:min-h-[480px] w-full max-w-full ${computerMode === "expanded" ? "lg:col-span-2" : ""}`}
             >
               <div className="h-full flex flex-col gap-2">
                 <div className="flex-1 min-h-0">

@@ -8,10 +8,30 @@ import NodaLoadingOverlay from "./NodaLoadingOverlay";
  * AgentComputer — a fake desktop browser the agent operates inside the chat.
  * Exposes an imperative ref so the parent can grab the iframe element for postMessage.
  */
+const DESKTOP_WIDTH = 1024;
+
 const AgentComputer = forwardRef(function AgentComputer({ url, status, narrations, cursor, isActive }, ref) {
   const iframeRef = useRef(null);
+  const viewportRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [showNodaBoot, setShowNodaBoot] = useState(false);
+  const [viewport, setViewport] = useState({ scale: 1, height: 0 });
+
+  // Native mobile fit: render the iframe at desktop width, scale it down to the container
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      const scale = w < DESKTOP_WIDTH ? w / DESKTOP_WIDTH : 1;
+      setViewport({ scale, height: h / scale });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useImperativeHandle(ref, () => ({
     getIframe: () => iframeRef.current,
@@ -118,13 +138,19 @@ const AgentComputer = forwardRef(function AgentComputer({ url, status, narration
       </div>
 
       {/* Viewport */}
-      <div className="relative flex-1 bg-black overflow-hidden">
+      <div ref={viewportRef} className="relative flex-1 bg-black overflow-hidden">
         {fullUrl ? (
           <iframe
             ref={iframeRef}
             src={fullUrl}
             onLoad={() => setLoading(false)}
-            className="w-full h-full border-0 bg-white"
+            className="border-0 bg-white"
+            style={viewport.scale < 1 ? {
+              width: `${DESKTOP_WIDTH}px`,
+              height: `${viewport.height}px`,
+              transform: `scale(${viewport.scale})`,
+              transformOrigin: "top left",
+            } : { width: "100%", height: "100%" }}
             title="Agent Computer"
             sandbox="allow-same-origin allow-scripts allow-forms"
           />
