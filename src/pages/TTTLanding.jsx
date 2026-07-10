@@ -1221,7 +1221,6 @@ export default function TTTLandingPage() {
               return (
                 <motion.button key={item.label} type="button"
                   onClick={() => { item.action ? item.action() : navigate(item.path); sounds.playNavigate(); }}
-                  onTouchEnd={(e) => { e.preventDefault(); item.action ? item.action() : navigate(item.path); sounds.playNavigate(); }}
                   onMouseEnter={(e) => { if (e.nativeEvent.sourceCapabilities?.firesTouchEvents) return; setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.05 }}

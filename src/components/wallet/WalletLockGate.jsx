@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, ScanFace, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Lock, ScanFace, ShieldCheck, ArrowLeft, Wallet } from 'lucide-react';
 import PinPad from '@/components/wallet/PinPad';
 import {
   hashPin, getStoredPinHash, storePinHash, getBioCredId,
@@ -7,8 +8,9 @@ import {
 } from '@/components/wallet/walletLock';
 
 export default function WalletLockGate({ children }) {
+  const navigate = useNavigate();
   const [stage, setStage] = useState(() =>
-    isUnlocked() ? 'open' : getStoredPinHash() ? 'locked' : 'setup'
+    isUnlocked() ? 'open' : getStoredPinHash() ? 'locked' : 'intro'
   );
   const [firstPin, setFirstPin] = useState('');
   const [error, setError] = useState('');
@@ -73,23 +75,41 @@ export default function WalletLockGate({ children }) {
   };
 
   const titles = {
+    intro: 'Secure Your Wallet',
     locked: 'Wallet Locked',
     setup: 'Create Wallet PIN',
     confirm: 'Confirm Your PIN',
     bio: 'Enable Face ID',
   };
   const subtitles = {
+    intro: 'First time here — set up a PIN and Face ID to protect your wallet',
     locked: 'Enter your PIN to access your wallet',
     setup: 'Set a 6-digit PIN to protect your wallet',
     confirm: 'Re-enter the same 6-digit PIN',
     bio: 'Unlock your wallet instantly with Face ID or fingerprint',
   };
 
+  const goBack = () => {
+    if (stage === 'confirm') { setFirstPin(''); setError(''); setStage('setup'); return; }
+    if (stage === 'setup') { setError(''); setStage('intro'); return; }
+    navigate(-1);
+  };
+
   return (
     <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center px-6 overflow-y-auto py-10">
+      <button
+        onClick={goBack}
+        className="fixed top-4 left-4 z-10 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/15 text-white/80 text-sm font-semibold active:scale-95 transition-all touch-manipulation"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back
+      </button>
       <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-5">
         {stage === 'bio' ? (
           <ScanFace className="w-8 h-8 text-cyan-400" />
+        ) : stage === 'intro' ? (
+          <Wallet className="w-8 h-8 text-cyan-400" />
         ) : (
           <Lock className="w-8 h-8 text-cyan-400" />
         )}
@@ -98,7 +118,27 @@ export default function WalletLockGate({ children }) {
       <p className="text-white/50 text-sm mb-2 text-center">{subtitles[stage]}</p>
       <p className="text-red-400 text-sm h-5 mb-4 text-center">{error}</p>
 
-      {stage === 'bio' ? (
+      {stage === 'intro' ? (
+        <div className="w-full max-w-[280px] space-y-3">
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3 mb-2">
+            <div className="flex items-center gap-3 text-white/70 text-sm">
+              <Lock className="w-4 h-4 text-cyan-400 flex-shrink-0" /> 6-digit PIN protection
+            </div>
+            <div className="flex items-center gap-3 text-white/70 text-sm">
+              <ScanFace className="w-4 h-4 text-cyan-400 flex-shrink-0" /> Face ID / fingerprint unlock
+            </div>
+            <div className="flex items-center gap-3 text-white/70 text-sm">
+              <ShieldCheck className="w-4 h-4 text-cyan-400 flex-shrink-0" /> Stored only on this device
+            </div>
+          </div>
+          <button
+            onClick={() => setStage('setup')}
+            className="w-full h-14 rounded-2xl bg-cyan-500 text-black font-bold active:scale-95 transition-all touch-manipulation"
+          >
+            Set Up Wallet PIN
+          </button>
+        </div>
+      ) : stage === 'bio' ? (
         <div className="w-full max-w-[280px] space-y-3">
           <button
             onClick={enableBiometric}
