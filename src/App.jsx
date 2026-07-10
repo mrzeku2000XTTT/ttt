@@ -1,4 +1,6 @@
 import './App.css'
+import React from 'react';
+import WalletLockGate from '@/components/wallet/WalletLockGate';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -155,7 +157,16 @@ const AuthenticatedApp = () => {
           <MainPage />
         </LayoutWrapper>
       } />
-      {Object.entries(Pages).filter(([path]) => path !== 'Xunhua').map(([path, Page]) => (
+      {Pages['Wallet'] && (
+        <Route path="/Wallet" element={
+          <LayoutWrapper currentPageName="Wallet">
+            <WalletLockGate>
+              {React.createElement(Pages['Wallet'])}
+            </WalletLockGate>
+          </LayoutWrapper>
+        } />
+      )}
+      {Object.entries(Pages).filter(([path]) => path !== 'Xunhua' && path !== 'Wallet').map(([path, Page]) => (
         <Route
           key={path}
           path={`/${path}`}
@@ -225,7 +236,7 @@ const AuthenticatedApp = () => {
       <Route path="/StoryboardTheme" element={<StoryboardThemePage />} />
       <Route path="/MoodBoard" element={<MoodBoardPage />} />
       <Route path="/About" element={<AboutPage />} />
-      <Route path="/WalletHub" element={<WalletHubPage />} />
+      <Route path="/WalletHub" element={<WalletLockGate><WalletHubPage /></WalletLockGate>} />
       <Route path="/Kasthletics" element={<KasthleticsPage />} />
       <Route path="/MetaMimic" element={<MetaMimicPage />} />
       <Route path="/ARC" element={<ARCPage />} />
