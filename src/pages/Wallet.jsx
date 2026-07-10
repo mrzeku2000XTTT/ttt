@@ -166,11 +166,15 @@ export default function WalletPage() {
     try {
       const pinRes = await base44.functions.invoke('hashPin', { pin: sendPin });
       if (pinRes.data?.hash !== storedPinHash) throw new Error('Incorrect PIN');
+      // If sending (nearly) the entire balance, use sendAll so the network fee
+      // is deducted from the amount instead of failing with insufficient balance.
+      const amt = parseFloat(sendAmount);
+      const isMaxSend = kaspaBalance && amt >= kaspaBalance.balanceKAS - 0.005;
       const res = await base44.functions.invoke('sendKaspaTransaction', {
         privateKey: storedPK,
         fromAddress: address,
         toAddress: sendTo.trim(),
-        amountKas: parseFloat(sendAmount),
+        ...(isMaxSend ? { sendAll: true } : { amountKas: amt }),
       });
       if (res.data?.error) throw new Error(res.data.error);
       const feeNote = res.data?.note ? ` ⚠️ ${res.data.note}` : '';
@@ -597,7 +601,7 @@ export default function WalletPage() {
                   <p className="text-xs text-gray-500 mt-1">
                     Available: {kaspaBalance.balanceKAS.toFixed(4)} KAS
                     <button
-                      onClick={() => setSendAmount(String(Math.max(0, kaspaBalance.balanceKAS - 0.0001).toFixed(8)))}
+                      onClick={() => setSendAmount(String(kaspaBalance.balanceKAS.toFixed(8)))}
                       className="ml-2 text-cyan-400 hover:text-cyan-300 font-semibold"
                     >Max</button>
                   </p>
