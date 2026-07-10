@@ -23,7 +23,7 @@ const Toast = ({ message, type, onClose }) => (
     initial={{ opacity: 0, x: 100, scale: 0.8 }}
     animate={{ opacity: 1, x: 0, scale: 1 }}
     exit={{ opacity: 0, x: 100, scale: 0.8 }}
-    className="fixed bottom-6 right-6 z-[9999] max-w-xs"
+    className="fixed bottom-6 right-6 z-[10050] max-w-xs"
   >
     <div className={`bg-black/95 backdrop-blur-xl border ${type === 'success' ? 'border-green-500/30' : 'border-red-500/30'} rounded-lg p-3 shadow-2xl`}>
       <div className="flex items-start gap-2">
@@ -622,7 +622,7 @@ export default function WalletPage() {
               </div>
               <Button
                 onClick={handleSend}
-                disabled={isSending || !sendTo.trim() || !sendAmount || sendPin.length !== 6}
+                disabled={isSending}
                 className="w-full bg-white text-black hover:bg-gray-200 h-12"
               >
                 {isSending ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Sending...</> : <><Send className="w-4 h-4 mr-2" />Send KAS</>}
