@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem } from "lucide-react";
 import GrokChat from "@/components/landing/GrokChat";
 import ChestModal from "@/components/landing/ChestModal";
+import AdventCalendar from "@/components/landing/AdventCalendar";
 import { createPageUrl } from "@/utils";
 import AgentComputer from "@/components/tttv3/AgentComputer";
 import { runAutonomousAgent } from "@/components/tttv3/agentLoop";
@@ -1011,6 +1012,7 @@ export default function TTTLandingPage() {
   const [hasStartedMusic, setHasStartedMusic] = React.useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
   const [showChest, setShowChest] = useState(false);
+  const [showAdvent, setShowAdvent] = useState(false);
   const [showZKChat, setShowZKChat] = useState(false);
   const [zkMinimized, setZkMinimized] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -1136,10 +1138,10 @@ export default function TTTLandingPage() {
         style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", backgroundSize: "128px 128px" }} />
 
       {/* === CORNER HUD BUTTONS (top) === */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowChest(true); }}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowAdvent(true); }}
         className="absolute left-4 top-5 focus:outline-none z-20">
         <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ CHEST ]</span>
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ ADVENT ]</span>
       </motion.button>
       {isAdmin && (
         <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowZKChat(true); setZkMinimized(false); }}
@@ -1290,6 +1292,13 @@ export default function TTTLandingPage() {
         <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
           style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ KASPA ]</span>
       </motion.button>
+
+      {/* Advent Calendar */}
+      <AnimatePresence>
+        {showAdvent && (
+          <AdventCalendar onClose={() => setShowAdvent(false)} onOpenChest={() => setShowChest(true)} sounds={sounds} />
+        )}
+      </AnimatePresence>
 
       {/* Chest Modal */}
       {showChest && <ChestModal onClose={() => setShowChest(false)} sounds={sounds} />}
