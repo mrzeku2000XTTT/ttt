@@ -1,0 +1,77 @@
+{
+  "name": "AdventSponsorTask",
+  "type": "object",
+  "properties": {
+    "sponsor_wallet": {
+      "type": "string",
+      "description": "Sponsor's Kaspa wallet address"
+    },
+    "sponsor_message": {
+      "type": "string",
+      "description": "What the sponsor wants to advertise (raw message to the Advent Agent)"
+    },
+    "task_title": {
+      "type": "string",
+      "description": "Short title of the advertising task"
+    },
+    "task_description": {
+      "type": "string",
+      "description": "AI-digested verifiable mini-task for the community member"
+    },
+    "amount_kas": {
+      "type": "number",
+      "default": 1,
+      "description": "KAS locked in the chest for whoever completes the task"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_payment",
+        "active",
+        "assigned",
+        "paid",
+        "cancelled"
+      ],
+      "default": "pending_payment"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Wallet that found this chest door"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Sponsor's donation transaction hash (verified on-chain)"
+    },
+    "proof_url": {
+      "type": "string",
+      "description": "Winning proof upload"
+    },
+    "payout_tx": {
+      "type": "string",
+      "description": "Transaction hash of the payout to the prover"
+    }
+  },
+  "required": [
+    "sponsor_wallet",
+    "task_title",
+    "task_description"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

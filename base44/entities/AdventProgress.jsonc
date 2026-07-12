@@ -1,0 +1,44 @@
+{
+  "name": "AdventProgress",
+  "type": "object",
+  "properties": {
+    "wallet_address": {
+      "type": "string",
+      "description": "User's Kaspa wallet address \u2014 the identity for advent keys and payouts"
+    },
+    "keys": {
+      "type": "number",
+      "default": 0,
+      "description": "Advent key balance (reputation points, NOT private keys)"
+    },
+    "doors": {
+      "type": "object",
+      "description": "Map of door number to opened door result"
+    },
+    "last_opened_date": {
+      "type": "string",
+      "description": "UTC date (YYYY-MM-DD) of last door opened \u2014 enforces one door per day"
+    }
+  },
+  "required": [
+    "wallet_address"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

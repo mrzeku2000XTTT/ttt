@@ -1,0 +1,61 @@
+{
+  "name": "AdventProof",
+  "type": "object",
+  "properties": {
+    "wallet_address": {
+      "type": "string",
+      "description": "Wallet that submitted the proof"
+    },
+    "door_number": {
+      "type": "number"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Sponsor task id if this proof is for a chest door"
+    },
+    "proof_url": {
+      "type": "string",
+      "description": "Uploaded proof image/file URL"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "rejected",
+        "pending_review"
+      ],
+      "description": "AI verification outcome"
+    },
+    "reason": {
+      "type": "string",
+      "description": "AI's reasoning"
+    },
+    "keys_awarded": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "wallet_address",
+    "door_number",
+    "proof_url"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "AdventDoor",
+  "type": "object",
+  "properties": {
+    "door_number": {
+      "type": "number",
+      "description": "Which door (1-24) this content is for"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "fact",
+        "task"
+      ],
+      "default": "fact",
+      "description": "fact = read-only content, task = requires proof upload for keys"
+    },
+    "content": {
+      "type": "string",
+      "description": "Fact/tip text shown when door opens"
+    },
+    "task_description": {
+      "type": "string",
+      "description": "What the user must do and prove (task doors)"
+    },
+    "keys_reward": {
+      "type": "number",
+      "default": 3,
+      "description": "Advent keys awarded for completing the task"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "door_number"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

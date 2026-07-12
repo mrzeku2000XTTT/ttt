@@ -1,60 +1,85 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Gift, Sparkles, Star, Snowflake } from "lucide-react";
+import { X, Gift, Sparkles, Star, Snowflake, Megaphone, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import AdventWalletBar from "@/components/landing/advent/AdventWalletBar";
+import AdventRules from "@/components/landing/advent/AdventRules";
+import AdventRevealModal from "@/components/landing/advent/AdventRevealModal";
+import AdventSponsorModal from "@/components/landing/advent/AdventSponsorModal";
 
-const STORAGE_KEY = "ttt_advent_doors";
+const WALLET_KEY = "advent_wallet_address";
 const GOLD = "rgba(200,160,70,0.9)";
 const GOLD_DIM = "rgba(200,150,40,0.35)";
-
-// Outcomes — weighted. "chest" opens the Community Chest.
-const OUTCOMES = [
-  { type: "chest", weight: 5 },
-  { type: "msg", weight: 4, text: "◆ KASPA WISDOM ◆\nThe DAG remembers every block. Patience compounds." },
-  { type: "msg", weight: 4, text: "✦ LUCKY STAR ✦\nGood fortune follows you today. Tap on, tipper." },
-  { type: "msg", weight: 3, text: "❄ FROZEN BLOCK ❄\nEmpty this time… but the chain keeps building." },
-  { type: "msg", weight: 3, text: "⚡ SPEED BLESSING ⚡\n1 second blocks. 1 second dreams. Keep moving." },
-  { type: "msg", weight: 3, text: "🎵 KAS TUNES 🎵\nThe dollar is dying — but the music plays on." },
-  { type: "msg", weight: 2, text: "👻 GHOSTDAG SPIRIT 👻\nA phantom passed through this door. Nothing remains." },
-  { type: "msg", weight: 2, text: "🚀 地球到火星 🚀\nEarth to Mars. You're on the right rocket." },
-];
-
-function rollOutcome() {
-  const total = OUTCOMES.reduce((s, o) => s + o.weight, 0);
-  let r = Math.random() * total;
-  for (const o of OUTCOMES) { r -= o.weight; if (r <= 0) return o; }
-  return OUTCOMES[OUTCOMES.length - 1];
-}
-
-function loadDoors() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
-}
-function saveDoors(d) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {}
-}
-
 const DOOR_ICONS = [Gift, Star, Snowflake, Sparkles];
 
 export default function AdventCalendar({ onClose, onOpenChest, sounds }) {
-  const [doors, setDoors] = useState(() => loadDoors());
-  const [reveal, setReveal] = useState(null); // { num, outcome }
+  const [wallet, setWallet] = useState(() => localStorage.getItem(WALLET_KEY) || "");
+  const [keys, setKeys] = useState(0);
+  const [doors, setDoors] = useState({});
+  const [openedToday, setOpenedToday] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loadingDoor, setLoadingDoor] = useState(null);
+  const [reveal, setReveal] = useState(null);
+  const [showSponsor, setShowSponsor] = useState(false);
+  const [notice, setNotice] = useState("");
 
-  useEffect(() => { saveDoors(doors); }, [doors]);
+  // Best-effort autofill from TTT main wallet — never REQUIRES login
+  useEffect(() => {
+    if (wallet) return;
+    base44.auth.me().then((u) => {
+      const a = u?.created_wallet_address;
+      if (a) { setWallet(a); localStorage.setItem(WALLET_KEY, a); }
+    }).catch(() => {
+      const saved = localStorage.getItem("chest_wallet_address");
+      if (saved) { setWallet(saved); localStorage.setItem(WALLET_KEY, saved); }
+    });
+  }, [wallet]);
 
-  const openDoor = (num) => {
-    sounds?.playSelect?.();
-    const existing = doors[num];
-    const outcome = existing || (() => {
-      const o = rollOutcome();
-      return o.type === "chest" ? { type: "chest" } : { type: "msg", text: o.text };
-    })();
-    if (!existing) setDoors(prev => ({ ...prev, [num]: outcome }));
-    setReveal({ num, outcome });
+  const loadState = useCallback(async () => {
+    if (!wallet) return;
+    try {
+      const res = await base44.functions.invoke("adventState", { wallet_address: wallet });
+      setKeys(res.data.keys || 0);
+      setDoors(res.data.doors || {});
+      setOpenedToday(!!res.data.opened_today);
+      setIsAdmin(!!res.data.is_admin);
+    } catch {}
+  }, [wallet]);
+
+  useEffect(() => { loadState(); }, [loadState]);
+
+  const changeWallet = (a) => {
+    localStorage.setItem(WALLET_KEY, a);
+    setWallet(a);
+    setKeys(0);
+    setDoors({});
+    setOpenedToday(false);
   };
 
-  const closeReveal = () => {
-    const wasChest = reveal?.outcome?.type === "chest";
-    setReveal(null);
-    if (wasChest) { onClose(); onOpenChest(); }
+  const openDoor = async (num) => {
+    sounds?.playSelect?.();
+    setNotice("");
+    if (!wallet) { setNotice("SET YOUR KASPA ADDRESS FIRST — IT TRACKS YOUR KEYS & PAYOUTS"); return; }
+    if (doors[num]) { setReveal({ num, door: doors[num] }); return; }
+    if (openedToday && !isAdmin) { setNotice("ONE DOOR PER DAY — COME BACK TOMORROW FOR MORE KEYS!"); return; }
+    setLoadingDoor(num);
+    try {
+      const res = await base44.functions.invoke("adventOpenDoor", { wallet_address: wallet, door_number: num });
+      if (res.data?.door) {
+        setDoors((prev) => ({ ...prev, [num]: res.data.door }));
+        if (typeof res.data.keys === "number") setKeys(res.data.keys);
+        if (!isAdmin && !res.data.already_opened) setOpenedToday(true);
+        setReveal({ num, door: res.data.door });
+      }
+    } catch (err) {
+      setNotice(err?.response?.data?.message || "COULD NOT OPEN THIS DOOR RIGHT NOW");
+    }
+    setLoadingDoor(null);
+  };
+
+  const onProofProgress = (data, num) => {
+    if (typeof data.keys === "number") setKeys(data.keys);
+    setDoors((prev) => ({ ...prev, [num]: { ...prev[num], completed: true } }));
   };
 
   return (
@@ -68,15 +93,24 @@ export default function AdventCalendar({ onClose, onOpenChest, sounds }) {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
-        <div className="text-center mb-5 mt-2">
+        <div className="text-center mb-4 mt-2">
           <div className="text-[18px] font-black tracking-[0.3em] uppercase" style={{ color: GOLD, fontFamily: "monospace" }}>
             ADVENT CALENDAR
           </div>
-          <div className="text-[9px] tracking-[0.35em] uppercase mt-1" style={{ color: "rgba(200,150,40,0.45)", fontFamily: "monospace" }}>
-            OPEN A DOOR · SOME HIDE THE COMMUNITY CHEST
+          <div className="text-[9px] tracking-[0.3em] uppercase mt-1" style={{ color: "rgba(200,150,40,0.45)", fontFamily: "monospace" }}>
+            DAILY DOORS · EARN KEYS · FIND SPONSOR CHESTS
           </div>
         </div>
+
+        <AdventWalletBar wallet={wallet} onChange={changeWallet} keys={keys} />
+        <AdventRules />
+
+        {notice && (
+          <div className="mb-3 px-3 py-2 text-[9px] font-bold tracking-wider text-center"
+            style={{ border: "1px solid rgba(240,200,60,0.4)", color: "#f5d050", background: "rgba(200,150,40,0.08)", fontFamily: "monospace" }}>
+            {notice}
+          </div>
+        )}
 
         {/* Door grid */}
         <div className="grid grid-cols-4 gap-2.5">
@@ -86,6 +120,7 @@ export default function AdventCalendar({ onClose, onOpenChest, sounds }) {
             const Icon = DOOR_ICONS[num % DOOR_ICONS.length];
             return (
               <motion.button key={num} whileTap={{ scale: 0.9 }} onClick={() => openDoor(num)}
+                disabled={loadingDoor !== null}
                 className="aspect-square flex flex-col items-center justify-center gap-1 relative touch-manipulation"
                 style={{
                   border: opened ? `1px solid ${isChest ? "rgba(240,200,60,0.9)" : "rgba(200,150,40,0.25)"}` : `1.5px solid ${GOLD_DIM}`,
@@ -94,10 +129,12 @@ export default function AdventCalendar({ onClose, onOpenChest, sounds }) {
                     : "linear-gradient(145deg, rgba(200,150,40,0.12), rgba(0,0,0,0.6))",
                   boxShadow: isChest ? "0 0 16px rgba(240,200,60,0.3)" : "none",
                 }}>
-                {opened ? (
+                {loadingDoor === num ? (
+                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#f5d050" }} />
+                ) : opened ? (
                   isChest
                     ? <Gift className="w-5 h-5" style={{ color: "#f5d050" }} />
-                    : <span className="text-[16px] leading-none opacity-50">{opened.text.split("\n")[0].slice(0, 2)}</span>
+                    : <span className="text-[14px] leading-none opacity-60" style={{ color: GOLD }}>{opened.completed ? "✓" : opened.type === "task" ? "▲" : "◆"}</span>
                 ) : (
                   <Icon className="w-3.5 h-3.5" style={{ color: "rgba(200,150,40,0.35)" }} />
                 )}
@@ -109,61 +146,33 @@ export default function AdventCalendar({ onClose, onOpenChest, sounds }) {
           })}
         </div>
 
-        <div className="text-center mt-4 text-[8px] tracking-[0.3em] uppercase" style={{ color: "rgba(120,90,25,0.4)", fontFamily: "monospace" }}>
-          ◆ EACH DOOR IS RANDOM · CHEST DOORS GLOW GOLD ◆
+        {/* Sponsor CTA */}
+        <button onClick={() => { sounds?.playSelect?.(); setShowSponsor(true); }}
+          className="w-full mt-4 py-3 text-[10px] font-black tracking-[0.25em] uppercase flex items-center justify-center gap-2 touch-manipulation"
+          style={{ border: "1px solid rgba(240,200,60,0.5)", color: "#f5d050", background: "rgba(200,150,40,0.08)", fontFamily: "monospace" }}>
+          <Megaphone className="w-3.5 h-3.5" /> DONATE 1 KAS · ADVERTISE YOUR PRODUCT
+        </button>
+
+        {onOpenChest && (
+          <button onClick={() => { onClose(); onOpenChest(); }}
+            className="w-full mt-2 py-2 text-[8px] font-bold tracking-[0.3em] uppercase touch-manipulation"
+            style={{ color: "rgba(200,150,40,0.4)", fontFamily: "monospace" }}>
+            MAKE A WISH AT THE COMMUNITY CHEST →
+          </button>
+        )}
+
+        <div className="text-center mt-2 text-[8px] tracking-[0.3em] uppercase" style={{ color: "rgba(120,90,25,0.4)", fontFamily: "monospace" }}>
+          ◆ ADVENT KEYS = REPUTATION · NEVER PRIVATE KEYS ◆
         </div>
       </div>
 
-      {/* Reveal overlay */}
       <AnimatePresence>
         {reveal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-6"
-            style={{ background: "rgba(0,0,0,0.85)" }}
-            onClick={closeReveal}>
-            <motion.div initial={{ scale: 0.7, rotateY: 90 }} animate={{ scale: 1, rotateY: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 18 }}
-              className="w-full max-w-xs p-6 text-center"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: "#0d0a04",
-                border: reveal.outcome.type === "chest" ? "2px solid #f5d050" : "2px solid rgba(200,150,40,0.4)",
-                boxShadow: reveal.outcome.type === "chest" ? "0 0 60px rgba(240,200,60,0.4)" : "0 0 40px rgba(0,0,0,0.8)",
-              }}>
-              <div className="text-[10px] tracking-[0.4em] uppercase mb-3" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>
-                DOOR {reveal.num}
-              </div>
-              {reveal.outcome.type === "chest" ? (
-                <>
-                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 1.2, repeat: Infinity }}>
-                    <Gift className="w-14 h-14 mx-auto mb-3" style={{ color: "#f5d050" }} />
-                  </motion.div>
-                  <div className="text-[15px] font-black tracking-[0.2em] uppercase mb-2" style={{ color: "#f5d050", fontFamily: "monospace" }}>
-                    COMMUNITY CHEST!
-                  </div>
-                  <div className="text-[10px] tracking-wider mb-4" style={{ color: "rgba(200,160,70,0.6)", fontFamily: "monospace" }}>
-                    You found the chest — make a wish for free KAS
-                  </div>
-                  <button onClick={closeReveal}
-                    className="w-full py-3 text-[11px] font-black tracking-[0.3em] uppercase touch-manipulation"
-                    style={{ background: "#f5d050", color: "#000", fontFamily: "monospace" }}>
-                    ▶ OPEN THE CHEST
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="text-[13px] whitespace-pre-line leading-relaxed mb-4" style={{ color: GOLD, fontFamily: "monospace" }}>
-                    {reveal.outcome.text}
-                  </div>
-                  <button onClick={closeReveal}
-                    className="w-full py-2.5 text-[10px] font-bold tracking-[0.3em] uppercase touch-manipulation"
-                    style={{ border: "1px solid rgba(200,150,40,0.4)", color: GOLD, background: "transparent", fontFamily: "monospace" }}>
-                    CLOSE
-                  </button>
-                </>
-              )}
-            </motion.div>
-          </motion.div>
+          <AdventRevealModal wallet={wallet} doorNum={reveal.num} door={doors[reveal.num] || reveal.door}
+            onClose={() => setReveal(null)} onProgress={onProofProgress} />
+        )}
+        {showSponsor && (
+          <AdventSponsorModal wallet={wallet} onClose={() => { setShowSponsor(false); loadState(); }} />
         )}
       </AnimatePresence>
     </motion.div>
