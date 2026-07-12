@@ -12,8 +12,29 @@ const GOLD = "rgba(200,160,70,0.9)";
 const GOLD_DIM = "rgba(200,150,40,0.35)";
 const DOOR_ICONS = [Gift, Star, Snowflake, Sparkles];
 
+function normalize(a) {
+  return a?.startsWith("kaspa:") ? a : `kaspa:${a}`;
+}
+
+// Detect the user's TTT wallets from local storage (works without login)
+function detectLocalWallets() {
+  const list = [];
+  try {
+    const terra = JSON.parse(localStorage.getItem("terra_wallets") || "[]");
+    terra.forEach((w) => {
+      if (w.address) list.push({ address: normalize(w.address), label: w.label || "TTT Wallet" });
+    });
+  } catch {}
+  const chest = localStorage.getItem("chest_wallet_address");
+  if (chest && !list.find((w) => w.address === normalize(chest))) {
+    list.push({ address: normalize(chest), label: "Saved" });
+  }
+  return list;
+}
+
 export default function AdventCalendar({ onClose, onOpenChest, sounds }) {
   const [wallet, setWallet] = useState(() => localStorage.getItem(WALLET_KEY) || "");
+  const [detectedWallets, setDetectedWallets] = useState(() => detectLocalWallets());
   const [keys, setKeys] = useState(0);
   const [doors, setDoors] = useState({});
   const [openedToday, setOpenedToday] = useState(false);
@@ -23,17 +44,30 @@ export default function AdventCalendar({ onClose, onOpenChest, sounds }) {
   const [showSponsor, setShowSponsor] = useState(false);
   const [notice, setNotice] = useState("");
 
-  // Best-effort autofill from TTT main wallet — never REQUIRES login
+  // Detect the user's MAIN wallet — never REQUIRES login
   useEffect(() => {
-    if (wallet) return;
     base44.auth.me().then((u) => {
-      const a = u?.created_wallet_address;
-      if (a) { setWallet(a); localStorage.setItem(WALLET_KEY, a); }
-    }).catch(() => {
-      const saved = localStorage.getItem("chest_wallet_address");
-      if (saved) { setWallet(saved); localStorage.setItem(WALLET_KEY, saved); }
-    });
-  }, [wallet]);
+      const a = u?.created_wallet_address || u?.kaspa_address;
+      if (!a) return;
+      const main = normalize(a);
+      setDetectedWallets((prev) => {
+        if (prev.find((w) => w.address === main)) return prev;
+        return [{ address: main, label: "Main Wallet" }, ...prev];
+      });
+      if (!localStorage.getItem(WALLET_KEY)) {
+        setWallet(main);
+        localStorage.setItem(WALLET_KEY, main);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // If nothing selected yet, auto-pick the first detected wallet
+  useEffect(() => {
+    if (!wallet && detectedWallets.length > 0) {
+      setWallet(detectedWallets[0].address);
+      localStorage.setItem(WALLET_KEY, detectedWallets[0].address);
+    }
+  }, [wallet, detectedWallets]);
 
   const loadState = useCallback(async () => {
     if (!wallet) return;
@@ -102,7 +136,7 @@ export default function AdventCalendar({ onClose, onOpenChest, sounds }) {
           </div>
         </div>
 
-        <AdventWalletBar wallet={wallet} onChange={changeWallet} keys={keys} />
+        <AdventWalletBar wallet={wallet} detectedWallets={detectedWallets} onChange={changeWallet} keys={keys} />
         <AdventRules />
 
         {notice && (
