@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Sparkles, ShieldCheck, Copy, Check, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-const CLAIM_AMOUNT = 1;
+const CLAIM_AMOUNT = 0.2;
 const COOLDOWN_HOURS = 24;
 const CHEST_LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8497b000a_generated_image.png";
 const CHEST_WALLET_KEY = "chest_wallet_address";
