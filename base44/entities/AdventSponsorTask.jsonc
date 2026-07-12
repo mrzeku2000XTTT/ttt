@@ -25,7 +25,7 @@
     },
     "claim_link": {
       "type": "string",
-      "description": "Optional claimable kaspa link the sponsor attached (stored only after donation is confirmed)"
+      "description": "AES-GCM encrypted claimable kaspa link (ciphertext only \u2014 decrypted server-side after the task proof is approved)"
     },
     "status": {
       "type": "string",

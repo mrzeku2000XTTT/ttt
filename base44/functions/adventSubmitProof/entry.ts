@@ -1,5 +1,25 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
+// Decrypt an AES-GCM encrypted claim link ("enc:" + base64(iv|ciphertext)).
+// Only runs server-side, only after the task proof is approved and paid.
+async function decryptLink(stored, secret) {
+  if (!stored) return null;
+  if (!stored.startsWith('enc:')) return stored; // legacy plaintext
+  try {
+    const bin = atob(stored.slice(4));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const iv = bytes.slice(0, 12);
+    const ct = bytes.slice(12);
+    const keyMaterial = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret));
+    const key = await crypto.subtle.importKey('raw', keyMaterial, 'AES-GCM', false, ['decrypt']);
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+    return new TextDecoder().decode(pt);
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -104,7 +124,7 @@ Return JSON: { "approved": boolean, "confidence": number between 0 and 1, "reaso
         return Response.json({ status: 'payout_failed', reason: 'Proof approved but the payout transaction failed. Try again shortly.' }, { status: 500 });
       }
 
-      claimLink = task.claim_link || null;
+      claimLink = await decryptLink(task.claim_link, chest.seed_phrase);
       paidKas = payoutKas;
 
       await base44.asServiceRole.entities.AdventSponsorTask.update(task.id, {

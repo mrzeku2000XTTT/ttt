@@ -2,6 +2,21 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 const KASPA_API = 'https://api.kaspa.org';
 
+// AES-GCM encrypt the claim link with a key derived from the chest secret.
+// Ciphertext is what gets stored — never the plaintext link.
+async function encryptLink(link, secret) {
+  const keyMaterial = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret));
+  const key = await crypto.subtle.importKey('raw', keyMaterial, 'AES-GCM', false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(link)));
+  const combined = new Uint8Array(iv.length + ct.length);
+  combined.set(iv);
+  combined.set(ct, iv.length);
+  let bin = '';
+  for (const b of combined) bin += String.fromCharCode(b);
+  return 'enc:' + btoa(bin);
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -105,11 +120,14 @@ Return JSON: { "approved": boolean, "task_title": string, "task_description": st
         return Response.json({ error: `Transaction does not pay ${task.amount_kas || 1} KAS to the chest address` }, { status: 400 });
       }
 
-      // Donation confirmed — NOW we can store the optional claimable kaspa link
+      // Donation confirmed — NOW we can store the optional claimable kaspa link,
+      // encrypted so it can never be read from the frontend or database directly.
       const update = { tx_hash, status: 'active' };
       if (claim_link && typeof claim_link === 'string') {
         const link = claim_link.trim();
-        if (/^https?:\/\/\S+$/.test(link)) update.claim_link = link;
+        if (/^https?:\/\/\S+$/.test(link)) {
+          update.claim_link = await encryptLink(link, wallets[0].seed_phrase);
+        }
       }
       await base44.asServiceRole.entities.AdventSponsorTask.update(task.id, update);
 
