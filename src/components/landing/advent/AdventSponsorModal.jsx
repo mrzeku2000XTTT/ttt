@@ -11,6 +11,7 @@ export default function AdventSponsorModal({ wallet, onClose }) {
   const [busy, setBusy] = useState(false);
   const [digest, setDigest] = useState(null);
   const [txHash, setTxHash] = useState("");
+  const [claimLink, setClaimLink] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -31,7 +32,7 @@ export default function AdventSponsorModal({ wallet, onClose }) {
     if (!txHash.trim() || busy) return;
     setBusy(true); setError("");
     try {
-      const res = await base44.functions.invoke("adventSponsor", { action: "verify", task_id: digest.task_id, tx_hash: txHash.trim() });
+      const res = await base44.functions.invoke("adventSponsor", { action: "verify", task_id: digest.task_id, tx_hash: txHash.trim(), claim_link: claimLink.trim() || undefined });
       if (res.data?.status === "active") setStep("done");
       else setError(res.data?.error || "Verification failed.");
     } catch (err) {
@@ -91,8 +92,15 @@ export default function AdventSponsorModal({ wallet, onClose }) {
             </button>
             <input value={txHash} onChange={(e) => setTxHash(e.target.value)}
               placeholder="PASTE YOUR TRANSACTION HASH..."
-              className="w-full px-3 py-2.5 text-[10px] outline-none font-bold mb-3"
+              className="w-full px-3 py-2.5 text-[10px] outline-none font-bold mb-2"
               style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(200,150,40,0.3)", color: "rgba(255,255,255,0.85)", caretColor: GOLD, fontFamily: "monospace" }} />
+            <input value={claimLink} onChange={(e) => setClaimLink(e.target.value)}
+              placeholder="OPTIONAL: CLAIMABLE KASPA LINK FOR THE WINNER (https://...)"
+              className="w-full px-3 py-2.5 text-[10px] outline-none font-bold mb-1"
+              style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(200,150,40,0.2)", color: "rgba(255,255,255,0.85)", caretColor: GOLD, fontFamily: "monospace" }} />
+            <div className="text-[7px] tracking-wider mb-3" style={{ color: "rgba(200,150,40,0.35)", fontFamily: "monospace" }}>
+              SAVED ONLY AFTER YOUR DONATION IS CONFIRMED ON-CHAIN
+            </div>
             <button onClick={verify} disabled={!txHash.trim() || busy}
               className="w-full py-3 text-[11px] font-black tracking-[0.25em] uppercase flex items-center justify-center gap-2 disabled:opacity-40 touch-manipulation"
               style={{ background: "#f5d050", color: "#000", fontFamily: "monospace" }}>

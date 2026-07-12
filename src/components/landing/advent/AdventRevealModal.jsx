@@ -71,7 +71,7 @@ export default function AdventRevealModal({ wallet, doorNum, door, onClose, onPr
               {door.task_description || door.content}
             </div>
             <div className="text-[10px] font-black mb-4" style={{ color: "#f5d050", fontFamily: "monospace" }}>
-              {isChest ? `REWARD: ${door.reward_kas || 1} KAS + 5 KEYS` : `REWARD: +${door.keys_reward || 3} KEYS`}
+              {isChest ? `REWARD: ${Math.max(0.2, Math.round(((door.reward_kas || 1) - 0.1) * 100) / 100)} KAS + 5 KEYS` : `REWARD: +${door.keys_reward || 3} KEYS`}
             </div>
 
             {door.completed && !result && (
@@ -104,6 +104,13 @@ export default function AdventRevealModal({ wallet, doorNum, door, onClose, onPr
                     {result.tx_hash && (
                       <a href={`https://explorer.kaspa.org/txs/${result.tx_hash}`} target="_blank" rel="noopener noreferrer"
                         className="text-[8px] underline block mt-1" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>View Transaction ↗</a>
+                    )}
+                    {result.claim_link && (
+                      <a href={result.claim_link} target="_blank" rel="noopener noreferrer"
+                        className="block mt-2 py-2 text-[10px] font-black tracking-[0.2em] uppercase"
+                        style={{ background: "rgba(240,200,60,0.15)", border: "1px solid #f5d050", color: "#f5d050", fontFamily: "monospace" }}>
+                        🎁 BONUS: CLAIM YOUR KASPA LINK ↗
+                      </a>
                     )}
                   </div>
                 )}

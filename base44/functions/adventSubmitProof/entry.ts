@@ -66,6 +66,8 @@ Return JSON: { "approved": boolean, "confidence": number between 0 and 1, "reaso
 
     // APPROVED
     let txHash = null;
+    let claimLink = null;
+    let paidKas = 0;
     let keysDelta = door.keys_reward || 3;
 
     if (door.type === 'chest') {
@@ -81,13 +83,17 @@ Return JSON: { "approved": boolean, "confidence": number between 0 and 1, "reaso
       if (wallets.length === 0) return Response.json({ error: 'Chest wallet not initialized' }, { status: 503 });
       const chest = wallets[0];
 
+      // Keep a fee buffer so the chest never loses on network fees:
+      // sponsor donated 1 KAS → winner receives 0.9 KAS, 0.1 stays for fees
+      const payoutKas = Math.max(0.2, Math.round(((task.amount_kas || 1) - 0.1) * 100) / 100);
+
       let sendResult;
       try {
         sendResult = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
           mnemonic: chest.seed_phrase,
           fromAddress: chest.kaspa_address,
           toAddress: addr,
-          amountKas: task.amount_kas || 1,
+          amountKas: payoutKas,
         });
       } catch (sendErr) {
         const detail = sendErr?.response?.data?.error || sendErr?.message || String(sendErr);
@@ -97,6 +103,9 @@ Return JSON: { "approved": boolean, "confidence": number between 0 and 1, "reaso
       if (!txHash) {
         return Response.json({ status: 'payout_failed', reason: 'Proof approved but the payout transaction failed. Try again shortly.' }, { status: 500 });
       }
+
+      claimLink = task.claim_link || null;
+      paidKas = payoutKas;
 
       await base44.asServiceRole.entities.AdventSponsorTask.update(task.id, {
         status: 'paid', proof_url, payout_tx: txHash,
@@ -119,7 +128,8 @@ Return JSON: { "approved": boolean, "confidence": number between 0 and 1, "reaso
       keys_awarded: keysDelta,
       keys: newKeys,
       tx_hash: txHash,
-      amount_kas: door.type === 'chest' ? (door.reward_kas || 1) : 0,
+      amount_kas: paidKas,
+      claim_link: claimLink,
       reason,
     });
   } catch (error) {

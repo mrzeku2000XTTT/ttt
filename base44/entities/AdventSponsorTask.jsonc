@@ -23,6 +23,10 @@
       "default": 1,
       "description": "KAS locked in the chest for whoever completes the task"
     },
+    "claim_link": {
+      "type": "string",
+      "description": "Optional claimable kaspa link the sponsor attached (stored only after donation is confirmed)"
+    },
     "status": {
       "type": "string",
       "enum": [

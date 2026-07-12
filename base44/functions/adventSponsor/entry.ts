@@ -71,7 +71,7 @@ Return JSON: { "approved": boolean, "task_title": string, "task_description": st
 
     // ── Step 2: verify the sponsor's 1 KAS donation on-chain ──
     if (action === 'verify') {
-      const { task_id, tx_hash } = body;
+      const { task_id, tx_hash, claim_link } = body;
       if (!task_id || !tx_hash) {
         return Response.json({ error: 'task_id and tx_hash required' }, { status: 400 });
       }
@@ -105,11 +105,18 @@ Return JSON: { "approved": boolean, "task_title": string, "task_description": st
         return Response.json({ error: `Transaction does not pay ${task.amount_kas || 1} KAS to the chest address` }, { status: 400 });
       }
 
-      await base44.asServiceRole.entities.AdventSponsorTask.update(task.id, { tx_hash, status: 'active' });
+      // Donation confirmed — NOW we can store the optional claimable kaspa link
+      const update = { tx_hash, status: 'active' };
+      if (claim_link && typeof claim_link === 'string') {
+        const link = claim_link.trim();
+        if (/^https?:\/\/\S+$/.test(link)) update.claim_link = link;
+      }
+      await base44.asServiceRole.entities.AdventSponsorTask.update(task.id, update);
 
       return Response.json({
         status: 'active',
-        message: 'Donation verified! Your task is now hidden inside the advent calendar. A community member with enough keys will find it, complete it, and receive your 1 KAS.',
+        claim_link_saved: !!update.claim_link,
+        message: 'Donation verified! Your task is now hidden inside the advent calendar. A community member with enough keys will find it, complete it, and receive your 1 KAS' + (update.claim_link ? ' plus your claimable kaspa link.' : '.'),
       });
     }
 
