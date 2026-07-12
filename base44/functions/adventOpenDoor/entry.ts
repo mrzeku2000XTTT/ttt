@@ -78,7 +78,11 @@ Deno.serve(async (req) => {
           reward_kas: task.amount_kas || 1,
         };
       } else {
-        door = { type: 'fact', content: FACTS[Math.floor(Math.random() * FACTS.length)], keys_reward: 1 };
+        // Never repeat a fact for the same user — exclude everything they've already seen
+        const seen = new Set(Object.values(doors).map((d) => d?.content).filter(Boolean));
+        const unseen = FACTS.filter((f) => !seen.has(f));
+        const pool = unseen.length > 0 ? unseen : FACTS;
+        door = { type: 'fact', content: pool[Math.floor(Math.random() * pool.length)], keys_reward: 1 };
       }
     }
 
