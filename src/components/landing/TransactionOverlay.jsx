@@ -73,11 +73,12 @@ export default function TransactionOverlay() {
                 className="absolute left-1/2 top-1/2"
                 style={{ transform: `rotate(${slot.angle}deg)` }}
               >
+                {/* Fast line — 8.5x speed, independent of the tx label */}
                 <div
                   className="absolute"
                   style={{
-                    animation: `tttFlowToCenter ${slot.duration}s linear infinite`,
-                    animationDelay: `${slot.delay}s`,
+                    animation: `tttFlowToCenter ${slot.duration / 8.5}s linear infinite`,
+                    animationDelay: `${slot.delay / 8.5}s`,
                     willChange: "transform, opacity",
                   }}
                 >
@@ -92,6 +93,16 @@ export default function TransactionOverlay() {
                         "linear-gradient(to right, rgba(253,185,49,0) 0%, rgba(253,185,49,0.55) 100%)",
                     }}
                   />
+                </div>
+                {/* Tx ID label — original speed */}
+                <div
+                  className="absolute"
+                  style={{
+                    animation: `tttFlowToCenter ${slot.duration}s linear infinite`,
+                    animationDelay: `${slot.delay}s`,
+                    willChange: "transform, opacity",
+                  }}
+                >
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
