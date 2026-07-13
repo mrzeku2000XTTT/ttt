@@ -17,6 +17,14 @@ export function storePinHash(hash) {
   try { localStorage.setItem(PIN_KEY, hash); } catch {}
 }
 
+export function clearWalletLock() {
+  try {
+    localStorage.removeItem(PIN_KEY);
+    localStorage.removeItem(BIO_KEY);
+    sessionStorage.removeItem(UNLOCK_KEY);
+  } catch {}
+}
+
 export function getBioCredId() {
   try { return localStorage.getItem(BIO_KEY); } catch { return null; }
 }

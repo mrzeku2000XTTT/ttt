@@ -5,6 +5,7 @@ import PinPad from '@/components/wallet/PinPad';
 import {
   hashPin, getStoredPinHash, storePinHash, getBioCredId,
   isUnlocked, markUnlocked, biometricAvailable, registerBiometric, verifyBiometric,
+  clearWalletLock,
 } from '@/components/wallet/walletLock';
 
 export default function WalletLockGate({ children }) {
@@ -168,6 +169,20 @@ export default function WalletLockGate({ children }) {
             </button>
           )}
           <PinPad key={stage} onComplete={handlePin} disabled={busy} />
+          {stage === 'locked' && (
+            <button
+              onClick={() => {
+                if (window.confirm('Reset your wallet PIN? You will set a new PIN now. Your wallet funds and seed phrases are NOT affected.')) {
+                  clearWalletLock();
+                  setError('');
+                  setStage('setup');
+                }
+              }}
+              className="mt-6 text-cyan-400/70 text-sm underline underline-offset-4 active:scale-95 transition-all touch-manipulation"
+            >
+              Forgot PIN? Reset it
+            </button>
+          )}
         </>
       )}
 
