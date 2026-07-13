@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { createAgentRobots } from "@/components/agenticworld/createAgentRobots";
 
 // 3D animated cyber-city — teal wireframe grid, glowing towers, floating data particles
 export default function AgenticCityScene() {
@@ -75,12 +76,19 @@ export default function AgenticCityScene() {
     }));
     scene.add(particles);
 
+    // Agentic humanoid robots wandering the open world
+    const robots = createAgentRobots(scene, 12);
+
     // Slow camera drift
     let frame;
     const clock = new THREE.Clock();
+    let lastT = 0;
     const animate = () => {
       frame = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
+      const dt = Math.min(t - lastT, 0.05);
+      lastT = t;
+      robots.update(t, dt);
       camera.position.x = Math.sin(t * 0.05) * 10;
       camera.position.y = 14 + Math.sin(t * 0.08) * 2;
       camera.lookAt(0, 8, -10);
@@ -100,6 +108,7 @@ export default function AgenticCityScene() {
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
+      robots.dispose();
       renderer.dispose();
       pGeo.dispose();
       scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
