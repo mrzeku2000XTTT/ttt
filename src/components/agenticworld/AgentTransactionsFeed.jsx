@@ -2,7 +2,10 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Bot, Zap, ExternalLink, Loader2 } from "lucide-react";
 
-const LIVE_URL = "https://kascov.io/data/mainnet-live.json";
+const NETWORKS = {
+  "testnet-10": { label: "TESTNET-10", url: "https://kascov.io/data/testnet-10-live.json" },
+  mainnet: { label: "MAINNET", url: "https://kascov.io/data/mainnet-live.json" },
+};
 const POLL_MS = 20000;
 
 // Deterministic agent-style codename from a covenant id hash
@@ -46,12 +49,16 @@ export default function AgentTransactionsFeed() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(false);
   const [processedDaa, setProcessedDaa] = useState(null);
+  const [network, setNetwork] = useState("testnet-10");
 
   useEffect(() => {
     let alive = true;
+    setEvents([]);
+    setStats(null);
+    setError(false);
     const load = async () => {
       try {
-        const res = await fetch(LIVE_URL, { headers: { accept: "application/json" } });
+        const res = await fetch(NETWORKS[network].url, { headers: { accept: "application/json" } });
         const data = await res.json();
         if (!alive) return;
         setStats(data.stats || null);
@@ -65,7 +72,7 @@ export default function AgentTransactionsFeed() {
     load();
     const t = setInterval(load, POLL_MS);
     return () => { alive = false; clearInterval(t); };
-  }, []);
+  }, [network]);
 
   return (
     <div className="w-full max-w-2xl"
@@ -76,11 +83,25 @@ export default function AgentTransactionsFeed() {
           style={{ color: "rgba(150,225,255,0.75)", fontFamily: "monospace" }}>
           <Zap className="w-3.5 h-3.5" /> AGENT ⇄ AGENT TRANSACTIONS
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className={`w-1.5 h-1.5 rounded-full ${error ? "bg-red-400" : "bg-cyan-400 animate-pulse"}`} />
-          <span className="text-[9px] tracking-[0.3em] uppercase" style={{ color: "rgba(120,200,230,0.5)", fontFamily: "monospace" }}>
-            {error ? "OFFLINE" : "LIVE · KASPA MAINNET"}
-          </span>
+        <div className="flex items-center gap-2.5">
+          {/* Network toggle */}
+          <div className="flex items-center" style={{ border: "1px solid rgba(120,220,255,0.2)" }}>
+            {Object.entries(NETWORKS).map(([key, n]) => (
+              <button key={key} onClick={() => setNetwork(key)}
+                className="px-2 py-1 text-[8px] tracking-[0.2em] uppercase focus:outline-none"
+                style={{ fontFamily: "monospace",
+                  background: network === key ? "rgba(120,220,255,0.15)" : "transparent",
+                  color: network === key ? "#67e8f9" : "rgba(120,200,230,0.4)" }}>
+                {n.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${error ? "bg-red-400" : "bg-cyan-400 animate-pulse"}`} />
+            <span className="text-[9px] tracking-[0.3em] uppercase hidden sm:inline" style={{ color: "rgba(120,200,230,0.5)", fontFamily: "monospace" }}>
+              {error ? "OFFLINE" : "LIVE"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -123,7 +144,7 @@ export default function AgentTransactionsFeed() {
             const k = KIND_STYLE[ev.kind] || { label: ev.kind?.toUpperCase() || "EVENT", color: "#93c5fd" };
             return (
               <motion.a key={`${ev.txid}-${ev.seq}`}
-                href={`https://kascov.io/#/mainnet/c/${ev.covenant_id}`} target="_blank" rel="noopener noreferrer"
+                href={`https://kascov.io/#/${network}/c/${ev.covenant_id}`} target="_blank" rel="noopener noreferrer"
                 initial={{ opacity: 0, y: -14, backgroundColor: "rgba(120,220,255,0.12)" }}
                 animate={{ opacity: 1, y: 0, backgroundColor: "rgba(120,220,255,0)" }}
                 exit={{ opacity: 0 }}
