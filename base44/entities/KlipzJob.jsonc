@@ -2,13 +2,9 @@
   "name": "KlipzJob",
   "type": "object",
   "properties": {
-    "user_email": {
-      "type": "string",
-      "description": "User who hired the agent"
-    },
     "wallet_address": {
       "type": "string",
-      "description": "Payer's Kaspa wallet address"
+      "description": "Kaspa wallet address \u2014 the user's identity, no email/login needed"
     },
     "tx_hash": {
       "type": "string",
@@ -58,7 +54,7 @@
     }
   },
   "required": [
-    "user_email",
+    "wallet_address",
     "video_id",
     "tx_hash"
   ],
@@ -68,16 +64,16 @@
         "role": "admin"
       }
     },
-    "read": {
-      "data.user_email": "{{user.email}}"
-    },
+    "read": true,
     "update": {
       "user_condition": {
         "role": "admin"
       }
     },
     "delete": {
-      "data.user_email": "{{user.email}}"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
