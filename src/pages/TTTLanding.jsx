@@ -20,7 +20,6 @@ import ReactMarkdown from "react-markdown";
 const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
 import KaspaPanel from "@/components/landing/KaspaPanel";
-import WorldMotionLines from "@/components/landing/WorldMotionLines";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
@@ -1100,15 +1099,7 @@ export default function TTTLandingPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showKaspa, setShowKaspa] = useState(false);
   const [bgReady, setBgReady] = useState(false);
-  const [warpingOut, setWarpingOut] = useState(false);
   const sounds = useGameSounds();
-
-  // Zoom out of the world (like minimizing the app), then navigate
-  const zoomNavigate = (path) => {
-    if (warpingOut) return;
-    setWarpingOut(true);
-    setTimeout(() => navigate(path), 900);
-  };
 
   // Defer the heavy WebGL background until after first paint so
   // buttons are clickable immediately on initial load.
@@ -1201,15 +1192,6 @@ export default function TTTLandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden text-white" style={{ background: "#000", fontFamily: "'Georgia', serif" }}>
 
-      {/* === WORLD WRAPPER — zooms out like minimizing the app === */}
-      <motion.div className="relative min-h-screen"
-        animate={warpingOut ? { scale: 0.02, opacity: 0, rotate: 6 } : { scale: 1, opacity: 1, rotate: 0 }}
-        transition={{ duration: 0.9, ease: [0.65, 0, 0.35, 1] }}
-        style={{ transformOrigin: "50% 50%" }}>
-
-      {/* Animated radial lines + rings */}
-      <WorldMotionLines warping={warpingOut} />
-
       {/* === 3D CYBERNETIC EYE SPHERE BACKGROUND === (deferred so UI is interactive instantly) */}
       {bgReady && (
         <React.Suspense fallback={null}>
@@ -1267,7 +1249,7 @@ export default function TTTLandingPage() {
 
             {/* Giant Title — clickable */}
             <motion.button type="button" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-              onClick={() => { sounds.playSelect(); zoomNavigate("/TTTV3"); }}
+              onClick={() => { sounds.playSelect(); navigate("/TTTV3"); }}
               className="text-[72px] sm:text-[96px] md:text-[120px] font-black leading-none select-none focus:outline-none cursor-pointer"
               style={{ fontFamily: "'Georgia', 'Times New Roman', serif",
                 background: "linear-gradient(180deg, #fff5cc 0%, #f0d060 25%, #c8960c 60%, #6b4200 100%)",
@@ -1319,7 +1301,7 @@ export default function TTTLandingPage() {
               const isKaspa = item.icon === "kaspa";
               return (
                 <motion.button key={item.label} type="button"
-                  onClick={() => { item.action ? item.action() : zoomNavigate(item.path); sounds.playNavigate(); }}
+                  onClick={() => { item.action ? item.action() : navigate(item.path); sounds.playNavigate(); }}
                   onMouseEnter={(e) => { if (e.nativeEvent.sourceCapabilities?.firesTouchEvents) return; setHoveredItem(item.label); sounds.playHover(); }}
                   onMouseLeave={() => setHoveredItem(null)}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.05 }}
@@ -1357,22 +1339,6 @@ export default function TTTLandingPage() {
         </div>
       </section>
 
-      {/* VISION BUTTON — bottom left */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { zoomNavigate("/Vision"); sounds.playSelect(); }} style={{ touchAction: "manipulation" }}
-        className="absolute left-4 bottom-5 focus:outline-none z-20">
-        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ VISION ]</span>
-      </motion.button>
-
-      {/* KASPA BUTTON — bottom right */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowKaspa(true); }}
-        className="absolute right-4 bottom-5 focus:outline-none z-20">
-        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ KASPA ]</span>
-      </motion.button>
-
-      </motion.div>
-
       {/* Music Player popup */}
       <AnimatePresence>
         {showPlayer && (
@@ -1391,6 +1357,20 @@ export default function TTTLandingPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* VISION BUTTON — bottom left */}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { navigate("/Vision"); sounds.playSelect(); }} style={{ touchAction: "manipulation" }}
+        className="absolute left-4 bottom-5 focus:outline-none z-20">
+        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ VISION ]</span>
+      </motion.button>
+
+      {/* KASPA BUTTON — bottom right */}
+      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowKaspa(true); }}
+        className="absolute right-4 bottom-5 focus:outline-none z-20">
+        <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ KASPA ]</span>
+      </motion.button>
 
       {/* Advent Calendar */}
       <AnimatePresence>
