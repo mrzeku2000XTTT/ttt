@@ -1,15 +1,15 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Palette, Lock, ArrowUpRight } from "lucide-react";
+import { Zap, Lock, ArrowUpRight } from "lucide-react";
 
 // Real apps built inside the Igra Horizon sector
 const APPS = [
   {
-    name: "MOOD BOARD",
-    desc: "AI images · notes · palettes · draggable canvas",
-    icon: Palette,
-    path: "/IgraMoodBoard",
+    name: "IGRA AGENT",
+    desc: "AI agents transacting iKAS agent-to-agent via Igra nodes",
+    icon: Zap,
+    path: "/IgraAgent",
     live: true,
   },
   { name: "FORGE SLOT 02", desc: "Next app being forged on Igra", icon: Lock },
