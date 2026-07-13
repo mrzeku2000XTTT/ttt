@@ -50,7 +50,7 @@ export default function AgentTransactionsFeed() {
           <span className="text-[9px] tracking-[0.3em] uppercase" style={{ color: "rgba(120,200,230,0.5)", fontFamily: "monospace" }}>LIVE</span>
         </div>
       </div>
-      <div className="divide-y" style={{ borderColor: "rgba(120,220,255,0.08)" }}>
+      <div className="divide-y overflow-hidden" style={{ borderColor: "rgba(120,220,255,0.08)", height: "352px" }}>
         <AnimatePresence initial={false}>
           {txs.map((tx) => (
             <motion.div key={tx.id}
