@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Kascov", path: "Kascov", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4f1bb97ec_generated_image.png", desc: "Covenant explorer · scan ZK smart coins" },
   { name: "Calculator", path: "Calculator", cat: "TTT", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bedec5aa6_generated_image.png", desc: "TTT AI calculator" },
   { name: "KAS SWORD", path: null, externalUrl: "https://kassword.com", cat: "Security", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/636eaa7be_generated_image.png", desc: "Post-quantum DAG vault" },
   { name: "SuperZK", path: "SuperZK", cat: "Security", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f56df5112_generated_image.png", desc: "ZK vault · secure identity" },
@@ -149,6 +150,7 @@ const APPS = [
 
 // Curated Kaspa apps in priority order (KaspaHub first, Ksocial second, etc.)
 const KASPA_APPS_ORDER = [
+  "Kascov",
   "KaspaHub",
   "Ksocial",
   "CineKas",

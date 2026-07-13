@@ -117,6 +117,7 @@ import TTT3ManifestoPDFPage from './pages/TTT3ManifestoPDF';
 import AgenticWorldPage from './pages/AgenticWorld';
 import KaspaNationsPage from './pages/KaspaNations';
 import KaspaNationPage from './pages/KaspaNation';
+import KascovPage from './pages/Kascov';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -274,6 +275,7 @@ const AuthenticatedApp = () => {
       <Route path="/AgenticWorld" element={<AgenticWorldPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
       <Route path="/KaspaNations/:slug" element={<KaspaNationPage />} />
+      <Route path="/Kascov" element={<KascovPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
