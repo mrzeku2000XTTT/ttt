@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, RefreshCw } from "lucide-react";
@@ -6,27 +6,69 @@ import { base44 } from "@/api/base44Client";
 import AgentWalletCard from "@/components/igra/agent/AgentWalletCard";
 import IgraAgentConsole from "@/components/igra/agent/IgraAgentConsole";
 import { listLocalAgents } from "@/components/igra/agent/localAgentWallet";
+import AutoTransactToggle, { AUTO_MODE_KEY } from "@/components/igra/agent/AutoTransactToggle";
 
 // IGRA AGENT — AI agents holding wallets on Igra mainnet, transacting iKAS agent-to-agent via Igra nodes
 export default function IgraAgent() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState([]);
+  const [autoMode, setAutoMode] = useState(() => {
+    try { return localStorage.getItem(AUTO_MODE_KEY) === "on"; } catch { return false; }
+  });
+  const prevRef = useRef(null);
+  const autoRef = useRef(autoMode);
+  const forwardingRef = useRef(false);
 
-  const loadStatus = async () => {
-    setLoading(true);
+  const pushEvent = (ev) => setEvents((prev) => [{ id: Date.now() + Math.random(), ...ev }, ...prev].slice(0, 5));
+
+  // Auto-transact: alpha autonomously forwards 10% of a detected deposit to beta (native signer, no Kasware)
+  const autoForward = async (diff) => {
+    if (forwardingRef.current) return;
+    forwardingRef.current = true;
+    const amount = Number(Math.max(diff * 0.1, 0.0001).toFixed(6));
+    try {
+      const res = await base44.functions.invoke("igraAgent", { action: "send", from: "alpha", to: "beta", amount });
+      pushEvent({ text: `⚡ AUTO-TX SIGNED · ALPHA → BETA · ${amount} iKAS`, url: res.data.explorer_url });
+    } catch (err) {
+      pushEvent({ text: `AUTO-TX FAILED · ${err?.response?.data?.error || err.message}`, error: true });
+    }
+    forwardingRef.current = false;
+  };
+
+  const loadStatus = async (manual = false) => {
+    if (manual) setLoading(true);
     try {
       const res = await base44.functions.invoke("igraAgent", {
         action: "status",
         extra: listLocalAgents().map((a) => ({ name: a.name, address: a.address })),
       });
+      // Detect incoming transactions by balance delta, then refresh
+      const agents = res.data.agents;
+      if (prevRef.current) {
+        for (const [name, a] of Object.entries(agents)) {
+          const prev = prevRef.current[name];
+          if (!prev) continue;
+          const diff = Number(a.balance_ikas) - Number(prev.balance_ikas);
+          if (diff > 0.0000001) {
+            pushEvent({ text: `TX DETECTED · +${diff.toFixed(6)} iKAS → AGENT ${name.toUpperCase()}` });
+            if (name === "alpha" && autoRef.current) autoForward(diff);
+          }
+        }
+      }
+      prevRef.current = agents;
       setStatus(res.data);
     } catch {
-      setStatus(null);
+      if (manual) setStatus(null);
     }
-    setLoading(false);
+    if (manual) setLoading(false);
   };
 
-  useEffect(() => { loadStatus(); }, []);
+  useEffect(() => {
+    loadStatus(true);
+    const interval = setInterval(() => loadStatus(false), 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen text-white relative"
@@ -40,7 +82,7 @@ export default function IgraAgent() {
               color: "rgba(255,200,160,0.85)", fontFamily: "monospace" }}>
             <ArrowLeft className="w-3.5 h-3.5" /> IGRA HORIZON
           </Link>
-          <button onClick={loadStatus} disabled={loading}
+          <button onClick={() => loadStatus(true)} disabled={loading}
             className="flex items-center gap-2 px-4 py-2 text-[9px] tracking-[0.3em] uppercase rounded-full focus:outline-none"
             style={{ border: "1px solid rgba(255,170,110,0.25)", color: "rgba(255,200,160,0.85)",
               fontFamily: "monospace", opacity: loading ? 0.5 : 1 }}>
@@ -64,6 +106,27 @@ export default function IgraAgent() {
           </p>
         </motion.div>
 
+        {/* Live transaction detections */}
+        {events.length > 0 && (
+          <div className="mb-4 space-y-1.5">
+            {events.map((ev) => (
+              <motion.div key={ev.id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                className="px-3 py-2 rounded-xl text-[9px] tracking-[0.15em] uppercase flex items-center gap-2"
+                style={{
+                  border: `1px solid ${ev.error ? "rgba(248,113,113,0.35)" : "rgba(74,222,128,0.3)"}`,
+                  background: ev.error ? "rgba(60,15,10,0.4)" : "rgba(20,60,30,0.35)",
+                  color: ev.error ? "#fca5a5" : "#86efac", fontFamily: "monospace",
+                }}>
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${ev.error ? "bg-red-400" : "bg-green-400"}`} />
+                <span className="flex-1 break-all">{ev.text}</span>
+                {ev.url && (
+                  <a href={ev.url} target="_blank" rel="noopener noreferrer" className="underline flex-shrink-0">VIEW</a>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        )}
+
         {/* Agent wallets — server agents + browser-local agents */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           {status?.agents
@@ -76,7 +139,10 @@ export default function IgraAgent() {
               ))}
         </div>
 
-        <IgraAgentConsole agents={status?.agents} onTxComplete={loadStatus} onForged={loadStatus} />
+        <AutoTransactToggle enabled={autoMode}
+          onChange={(v) => { setAutoMode(v); autoRef.current = v; }} />
+
+        <IgraAgentConsole agents={status?.agents} onTxComplete={() => loadStatus(false)} onForged={() => loadStatus(false)} />
 
         <p className="mt-4 text-center text-[8px] tracking-[0.2em] uppercase leading-relaxed"
           style={{ color: "rgba(255,190,150,0.35)", fontFamily: "monospace" }}>
