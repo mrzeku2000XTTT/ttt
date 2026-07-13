@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Bot, Zap, ExternalLink, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { IGRA_AGENT_LOGO } from "@/components/igra/agent/igraAgentLogo";
 
 const NETWORKS = {
-  "testnet-10": { label: "TESTNET-10", url: "https://kascov.io/data/testnet-10-live.json" },
-  mainnet: { label: "MAINNET", url: "https://kascov.io/data/mainnet-live.json" },
+  "testnet-10": { label: "TESTNET-10" },
+  mainnet: { label: "MAINNET" },
 };
+const IGRA_EXPLORER = "https://explorer.igralabs.com";
 const POLL_MS = 20000;
 
 // Deterministic agent-style codename from a covenant id hash
@@ -49,6 +52,7 @@ export default function AgentTransactionsFeed() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(false);
   const [processedDaa, setProcessedDaa] = useState(null);
+  const [igraTxs, setIgraTxs] = useState([]);
   const [network, setNetwork] = useState("testnet-10");
 
   useEffect(() => {
@@ -58,13 +62,25 @@ export default function AgentTransactionsFeed() {
     setError(false);
     const load = async () => {
       try {
-        const res = await fetch(NETWORKS[network].url, { headers: { accept: "application/json" } });
-        const data = await res.json();
+        // Kascov covenant feed via backend proxy (kascov.io blocks browser CORS)
+        // + live Igra agent-to-agent iKAS transfers, merged into one feed
+        const [kascovRes, igraRes] = await Promise.allSettled([
+          base44.functions.invoke("kascovLive", { network }),
+          base44.functions.invoke("igraExplorer", { network: "mainnet" }),
+        ]);
         if (!alive) return;
-        setStats(data.stats || null);
-        setProcessedDaa(data.processed_daa || null);
-        setEvents((data.recent_events || []).slice(0, 8));
-        setError(false);
+        if (kascovRes.status === "fulfilled") {
+          const data = kascovRes.value.data;
+          setStats(data.stats || null);
+          setProcessedDaa(data.processed_daa || null);
+          setEvents((data.recent_events || []).slice(0, 5));
+          setError(false);
+        } else {
+          setError(true);
+        }
+        if (igraRes.status === "fulfilled") {
+          setIgraTxs((igraRes.value.data.txs || []).slice(0, 3));
+        }
       } catch {
         if (alive) setError(true);
       }
@@ -141,6 +157,37 @@ export default function AgentTransactionsFeed() {
           </div>
         )}
         <AnimatePresence initial={false}>
+          {/* Igra agent-to-agent iKAS transactions — branded with the Igra Agent emblem */}
+          {events.length > 0 && igraTxs.map((tx) => (
+            <motion.a key={tx.hash}
+              href={`${IGRA_EXPLORER}/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer"
+              initial={{ opacity: 0, y: -14, backgroundColor: "rgba(201,162,75,0.12)" }}
+              animate={{ opacity: 1, y: 0, backgroundColor: "rgba(201,162,75,0)" }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              whileHover={{ backgroundColor: "rgba(201,162,75,0.07)" }}
+              className="flex items-center gap-3 px-4 py-2.5 cursor-pointer"
+              style={{ borderBottom: "1px solid rgba(201,162,75,0.12)" }}>
+              <img src={IGRA_AGENT_LOGO} alt="Igra Agent"
+                className="w-4 h-4 rounded-full object-cover flex-shrink-0"
+                style={{ border: "1px solid rgba(201,162,75,0.4)" }} />
+              <div className="flex items-center gap-2 text-[11px] font-bold flex-shrink-0" style={{ fontFamily: "monospace" }}>
+                <span style={{ color: "rgba(245,239,224,0.9)" }}>{short(tx.from)}</span>
+                <ArrowRight className="w-3 h-3" style={{ color: "rgba(201,162,75,0.6)" }} />
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ color: "#C9A24B", border: "1px solid rgba(201,162,75,0.35)", background: "rgba(201,162,75,0.1)" }}>
+                  IGRA A2A
+                </span>
+              </div>
+              <div className="flex-1 truncate text-[10px] tracking-wide" style={{ color: "rgba(201,162,75,0.55)", fontFamily: "monospace" }}>
+                {(Number(tx.value) / 1e18).toFixed(4)} iKAS → {short(tx.to)}
+              </div>
+              <div className="flex-shrink-0 flex items-center gap-1.5 text-right">
+                <span className="text-[9px]" style={{ color: "rgba(201,162,75,0.4)", fontFamily: "monospace" }}>BLK {tx.block}</span>
+                <ExternalLink className="w-3 h-3" style={{ color: "rgba(201,162,75,0.35)" }} />
+              </div>
+            </motion.a>
+          ))}
           {events.map((ev) => {
             const k = KIND_STYLE[ev.kind] || { label: ev.kind?.toUpperCase() || "EVENT", color: "#93c5fd" };
             return (
