@@ -142,7 +142,28 @@ Deno.serve(async (req) => {
       const unlockSompi = BigInt(Math.round(amount * 1e8));
       const cfg = await exitBridge.getConfig();
       if (unlockSompi < cfg.minExitSompi) {
-        return Response.json({ error: `Native bridge minimum is ${Number(cfg.minExitSompi) / 1e8} KAS per exit — you asked for ${amount}` }, { status: 400 });
+        // Below the native contract minimum (10,000 KAS on-chain) — pay small
+        // exits instantly from the desk's own KAS L1 liquidity instead
+        let payout;
+        try {
+          const res = await base44.functions.invoke("sendKaspaTransaction", {
+            privateKey: kasBridge.private_key, fromAddress: kasBridge.address,
+            toAddress: dest, amountKas: amount,
+          });
+          payout = res.data;
+        } catch (err) {
+          const msg = err?.response?.data?.error || err.message;
+          return Response.json({ error: `Small exits (under ${Number(cfg.minExitSompi) / 1e8} KAS) are paid from the desk's own KAS liquidity — but the payout failed: ${msg}. Fund the desk with KAS at ${kasBridge.address} to enable small swaps, or use katbridge.com (trusted-party route, min 10 KAS).` }, { status: 400 });
+        }
+        await base44.asServiceRole.entities.IgraBridgeSwap.create({
+          direction: "ikas_to_kas", tx_in: txIn, tx_out: String(payout.txId),
+          amount, recipient: dest, status: "completed",
+        });
+        return Response.json({
+          direction: "ikas_to_kas", amount, recipient: dest, via: "desk",
+          tx_out: payout.txId, explorer_url: `https://explorer.kaspa.org/txs/${payout.txId}`,
+          note: "PAID INSTANTLY FROM DESK KAS LIQUIDITY",
+        });
       }
       if (cfg.maxExitSompi > 0n && unlockSompi > cfg.maxExitSompi) {
         return Response.json({ error: `Native bridge maximum is ${Number(cfg.maxExitSompi) / 1e8} KAS per exit` }, { status: 400 });
