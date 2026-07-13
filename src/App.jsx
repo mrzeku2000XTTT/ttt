@@ -115,6 +115,7 @@ import KasSwordPage from './pages/KasSword';
 import VisionPage from './pages/Vision';
 import TTT3ManifestoPDFPage from './pages/TTT3ManifestoPDF';
 import AgenticWorldPage from './pages/AgenticWorld';
+import KaspaNationsPage from './pages/KaspaNations';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -270,6 +271,7 @@ const AuthenticatedApp = () => {
       <Route path="/Vision" element={<VisionPage />} />
       <Route path="/TTT3Manifesto" element={<TTT3ManifestoPDFPage />} />
       <Route path="/AgenticWorld" element={<AgenticWorldPage />} />
+      <Route path="/KaspaNations" element={<KaspaNationsPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
