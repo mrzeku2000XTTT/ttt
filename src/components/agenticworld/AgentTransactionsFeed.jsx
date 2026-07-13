@@ -116,7 +116,7 @@ export default function AgentTransactionsFeed() {
             const k = KIND_STYLE[ev.kind] || { label: ev.kind?.toUpperCase() || "EVENT", color: "#93c5fd" };
             return (
               <motion.a key={`${ev.txid}-${ev.seq}`}
-                href={`https://kascov.io/#/tx/${ev.txid}`} target="_blank" rel="noopener noreferrer"
+                href={`https://kascov.io/#/mainnet/c/${ev.covenant_id}`} target="_blank" rel="noopener noreferrer"
                 initial={{ opacity: 0, y: -14, backgroundColor: "rgba(120,220,255,0.12)" }}
                 animate={{ opacity: 1, y: 0, backgroundColor: "rgba(120,220,255,0)" }}
                 exit={{ opacity: 0 }}
