@@ -40,13 +40,13 @@ export default function AgenticWorld() {
         <div className="fixed inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${BG_URL})` }} />
         <div className="fixed inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,4,8,0.45) 45%, rgba(0,0,0,0.88) 100%)" }} />
 
-        {/* Return to TTT Prime */}
+        {/* Back to sector selector */}
         <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-          onClick={() => navigate("/")}
+          onClick={() => setWorldMode(true)}
           className="fixed top-5 left-5 z-20 flex items-center gap-2 px-3 py-2 text-[10px] tracking-[0.3em] uppercase focus:outline-none"
           style={{ border: "1px solid rgba(120,220,255,0.3)", background: "rgba(0,0,0,0.6)",
             color: "rgba(150,225,255,0.8)", fontFamily: "monospace" }}>
-          <ArrowLeft className="w-3.5 h-3.5" /> TTT PRIME
+          <ArrowLeft className="w-3.5 h-3.5" /> SECTORS
         </motion.button>
 
         <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-20">
