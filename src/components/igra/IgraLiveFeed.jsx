@@ -19,7 +19,7 @@ const fmtIkas = (wei) => {
   return v >= 1 ? v.toFixed(2) : v.toFixed(5);
 };
 
-export default function IgraLiveFeed() {
+export default function IgraLiveFeed({ ledgerHeight = "320px" }) {
   const [network, setNetwork] = useState("mainnet");
   const [stats, setStats] = useState(null);
   const [txs, setTxs] = useState([]);
@@ -100,7 +100,7 @@ export default function IgraLiveFeed() {
           <span className="flex-shrink-0">BLOCK</span>
         </div>
 
-        <div className="overflow-hidden" style={{ height: "320px" }}>
+        <div className="overflow-hidden" style={{ height: ledgerHeight }}>
           {txs.length === 0 && error && (
             <div className="h-full flex items-center justify-center text-[10px] tracking-[0.3em] uppercase"
               style={{ color: "rgba(201,162,75,0.5)", fontFamily: "monospace" }}>

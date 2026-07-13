@@ -56,10 +56,10 @@ export default function IgraHorizon() {
           <ArrowLeft className="w-3.5 h-3.5" /> SECTORS
         </motion.button>
 
-        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-20">
+        <div className="relative z-10 h-screen flex flex-col items-center px-4 sm:px-6 pt-16 pb-3 overflow-hidden">
           {/* Sector tag */}
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : -10 }}
-            className="text-[10px] tracking-[0.5em] uppercase mb-6 flex items-center gap-3"
+            className="text-[9px] tracking-[0.5em] uppercase mb-2 flex items-center gap-3 flex-shrink-0"
             style={{ color: GOLD, fontFamily: "monospace" }}>
             <span className="w-8 h-px" style={{ background: "rgba(201,162,75,0.5)" }} />
             SECTOR 04 | IGRA HORIZON
@@ -69,53 +69,50 @@ export default function IgraHorizon() {
           {/* Title */}
           <motion.h1 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: entered ? 1 : 0, scale: entered ? 1 : 0.9 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-center leading-none text-white"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-center leading-none text-white flex-shrink-0"
             style={{ fontFamily: "'Georgia', serif" }}>
             IGRA HORIZON
           </motion.h1>
 
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: entered ? 1 : 0 }} transition={{ delay: 0.5 }}
-            className="mt-5 text-[10px] sm:text-xs tracking-[0.3em] uppercase text-center max-w-xl leading-relaxed"
+            className="mt-2 text-[8px] sm:text-[10px] tracking-[0.3em] uppercase text-center max-w-xl leading-relaxed flex-shrink-0"
             style={{ color: "#D9C9A3", fontFamily: "monospace" }}>
             THE EVM FORGE ON KASPA · SUB-SECOND FINALITY · FUELED BY iKAS
           </motion.p>
 
-          {/* Live Igra L2 chain feed */}
+          {/* Feed + apps side by side to fit one screen */}
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 24 }}
-            transition={{ delay: 0.8 }} className="mt-10 w-full flex justify-center">
-            <IgraLiveFeed />
-          </motion.div>
-
-          {/* Apps forged on Igra */}
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 24 }}
-            transition={{ delay: 0.9 }} className="mt-12 w-full flex justify-center">
-            <IgraAppsGrid />
-          </motion.div>
-
-          {/* Explorer CTA */}
-          <motion.a initial={{ opacity: 0, y: 16 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 16 }}
-            transition={{ delay: 1 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            href="https://explorer.igralabs.com" target="_blank" rel="noopener noreferrer"
-            className="mt-10 w-full max-w-2xl rounded-2xl overflow-hidden focus:outline-none relative"
-            style={{ border: "1px solid rgba(201,162,75,0.45)", background: "rgba(8,7,4,0.75)",
-              backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
-            {/* thin line-art corners */}
-            <div className="absolute inset-0 pointer-events-none opacity-30"
-              style={{ backgroundImage: `url(${CONSTELLATION_BG})`, backgroundSize: "300%", backgroundPosition: "left center" }} />
-            <div className="relative py-5 text-center text-lg sm:text-xl font-bold tracking-[0.2em]"
-              style={{ color: "#E5C567", fontFamily: "'Georgia', serif" }}>
-              EXPLORE THE IGRA ECOSYSTEM
+            transition={{ delay: 0.8 }}
+            className="mt-4 w-full max-w-6xl flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-y-auto lg:overflow-visible">
+            <div className="flex justify-center min-h-0">
+              <IgraLiveFeed ledgerHeight="180px" />
             </div>
-            <div className="relative flex items-center justify-center gap-2.5 pb-4 text-[10px] sm:text-[11px] font-bold tracking-[0.25em] uppercase"
-              style={{ color: MINT, fontFamily: "monospace" }}>
-              <Flame className="w-3.5 h-3.5" />
-              IGRA EXPLORER · CHAIN 38833 · FREE PUBLIC RPC
+            <div className="flex flex-col items-center gap-3 min-h-0">
+              <IgraAppsGrid />
+              {/* Explorer CTA */}
+              <motion.a whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                href="https://explorer.igralabs.com" target="_blank" rel="noopener noreferrer"
+                className="w-full max-w-2xl rounded-2xl overflow-hidden focus:outline-none relative"
+                style={{ border: "1px solid rgba(201,162,75,0.45)", background: "rgba(8,7,4,0.75)",
+                  backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+                <div className="absolute inset-0 pointer-events-none opacity-30"
+                  style={{ backgroundImage: `url(${CONSTELLATION_BG})`, backgroundSize: "300%", backgroundPosition: "left center" }} />
+                <div className="relative pt-3 text-center text-sm sm:text-base font-bold tracking-[0.2em]"
+                  style={{ color: "#E5C567", fontFamily: "'Georgia', serif" }}>
+                  EXPLORE THE IGRA ECOSYSTEM
+                </div>
+                <div className="relative flex items-center justify-center gap-2 pb-3 pt-1 text-[9px] font-bold tracking-[0.25em] uppercase"
+                  style={{ color: MINT, fontFamily: "monospace" }}>
+                  <Flame className="w-3 h-3" />
+                  IGRA EXPLORER · CHAIN 38833 · FREE PUBLIC RPC
+                </div>
+              </motion.a>
             </div>
-          </motion.a>
+          </motion.div>
 
           {/* Footer with world trigger */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: entered ? 1 : 0 }} transition={{ delay: 1.2 }}
-            className="mt-12 flex items-center gap-2 text-[9px] tracking-[0.4em] uppercase"
+            className="mt-2 flex items-center gap-2 text-[8px] tracking-[0.4em] uppercase flex-shrink-0"
             style={{ color: GOLD, fontFamily: "monospace" }}>
             <Sparkles className="w-3 h-3" />
             <span>A FRAGMENT OF THE TTT UNIVERSE</span>
