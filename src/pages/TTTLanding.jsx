@@ -12,6 +12,7 @@ import { runAutonomousAgent } from "@/components/tttv3/agentLoop";
 import AgentStepLog from "@/components/tttv3/AgentStepLog";
 import AgentReasoningBubble from "@/components/tttv3/AgentReasoningBubble";
 import AgentPlanChecklist from "@/components/tttv3/AgentPlanChecklist";
+import ZKThoughtBubble from "@/components/tttv3/ZKThoughtBubble";
 import ReactMarkdown from "react-markdown";
 const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
@@ -243,7 +244,8 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
       sessionId = id;
     }
     const userMsg = { role: "user", content: text };
-    const nextMsgs = [...messages, userMsg, { role: "assistant", content: "" }];
+    const mid = `a${Date.now()}`;
+    const nextMsgs = [...messages, userMsg, { role: "assistant", content: "", id: mid }];
     setMessages(nextMsgs);
     setInput("");
     setLoading(true);
@@ -269,11 +271,12 @@ You can:
 3. **Launch your Agent Computer** to autonomously navigate/click/type inside any TTT app — for ANY actionable request, especially compound multi-step ones (research → build → post, generate → email, etc.). Hand it a rich, self-contained goal and let the autonomous runner plan, navigate, type, and verify.
 4. **Never say "I don't know" or "I can't"** — you have the full site map and a computer with eyes/hands.
 
-## WHEN TO ASK FOR INFO (RARE)
-Only set needs_info=true when the task is IMPOSSIBLE to even START. There are only TWO such cases:
+## WHEN TO ASK FOR INFO
+Set needs_info=true, launch=false, and ask ONE focused question in your reply when:
 - The ENTIRE ask is "email me X" and NO email address appears anywhere in the conversation.
 - The ENTIRE ask is "play this video/song" and NO URL or title is given.
-For everything else (research topics, post subjects, workflow descriptions, brainstorm angles, "post about toccata", "generate a brain") → DO NOT ask. YOU decide the angles. YOU write the content. YOU complete the mission. The user giving you a topic IS the instruction — your job is to research it and execute.
+- The request is VAGUE or EXPLORATORY with no concrete subject — e.g. "maybe we research a company?" (which company?), "let's post something" (about what?), "build a workflow" (doing what?). NEVER invent or randomly pick the subject yourself — the user must choose it.
+When the user DOES name a concrete topic ("research ConsenSys", "post about toccata", "generate a brain about X") → DO NOT ask. YOU decide the angles. YOU write the content. YOU complete the mission.
 
 ## COMPLETE TTT SITE MAP
 
@@ -397,9 +400,11 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
             reply: { type: "string" },
             launch: { type: "boolean" },
             needs_info: { type: "boolean" },
+            missing: { type: "string", description: "What info is missing from the user, if needs_info" },
             goal: { type: "string" },
+            thought: { type: "string", description: "One short sentence of internal reasoning: what you decided (reply / ask / launch) and WHY" },
           },
-          required: ["reply", "launch"],
+          required: ["reply", "launch", "thought"],
         },
         add_context_from_internet: model.id.includes("gemini"),
       });
@@ -407,21 +412,35 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
       const replyText = (decision?.reply && typeof decision.reply === "string") ? decision.reply : "Hmm, try again?";
       const needsInfo = decision?.needs_info === true;
       const shouldLaunch = !needsInfo && (decision?.launch === true || looksLikeTask(text));
+      const goal = shouldLaunch ? ((decision?.goal && decision.goal.trim()) || text) : null;
+
+      // Insert ZK's thought + action bubble right before the reply
+      setMessages(m => {
+        const idx = m.findIndex(x => x.id === mid);
+        const copy = [...m];
+        copy.splice(idx < 0 ? copy.length : idx, 0, {
+          role: "zk_thought",
+          thought: decision?.thought || "",
+          decidedAction: needsInfo ? "ask_for_info" : shouldLaunch ? "launch_computer" : "reply",
+          goal,
+          missing: needsInfo ? decision?.missing : null,
+        });
+        return copy;
+      });
 
       if (shouldLaunch) {
-        const goal = (decision?.goal && decision.goal.trim()) || text;
         if (!computerOpen) setComputerOpen(true);
         setTimeout(() => runAutonomousGoal(goal), computerOpen ? 0 : 600);
       }
 
-      // Stream the reply char by char
+      // Stream the reply char by char — always into the placeholder by id,
+      // so plan/reasoning messages appended by the launch can't steal it
       let i = 0;
       const total = replyText.length;
       const tick = () => {
         i = Math.min(i + Math.max(2, Math.floor(total / 60)), total);
         setMessages(m => {
-          const copy = [...m];
-          copy[copy.length - 1] = { role: "assistant", content: replyText.slice(0, i) };
+          const copy = m.map(x => (x.id === mid ? { ...x, content: replyText.slice(0, i) } : x));
           if (i >= total) persistMessages(sessionId, copy);
           return copy;
         });
@@ -429,7 +448,7 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
       };
       setTimeout(tick, 100);
     } catch {
-      setMessages(m => { const copy = [...m]; copy[copy.length - 1] = { role: "assistant", content: "Signal lost. Try again." }; return copy; });
+      setMessages(m => m.map(x => (x.id === mid ? { ...x, content: "Signal lost. Try again." } : x)));
       setLoading(false);
     }
   };
@@ -725,6 +744,7 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
                   {messages.map((m, i) => {
                     if (m.role === "plan") return <AgentPlanChecklist key={i} plan={m.plan} />;
                     if (m.role === "reasoning") return <AgentReasoningBubble key={i} msg={m} />;
+                    if (m.role === "zk_thought") return <ZKThoughtBubble key={i} msg={m} />;
                     const isUser = m.role === "user";
                     return (
                       <div key={i} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
@@ -741,7 +761,7 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
                           {isUser
                             ? <p className="whitespace-pre-wrap">{m.content}</p>
                             : <ReactMarkdown className="zk-md">{m.content}</ReactMarkdown>}
-                          {!m.content && i === messages.length - 1 && loading && (
+                          {!isUser && !m.content && loading && (
                             <div className="flex gap-1.5 py-1">{[0,1,2].map(j => <div key={j} className="w-2 h-2 rounded-full animate-bounce" style={{ background: "#f59e0b", animationDelay: `${j*0.15}s` }} />)}</div>
                           )}
                         </div>
