@@ -123,6 +123,7 @@ import KlipzPage from './pages/Klipz';
 import IgraHorizonPage from './pages/IgraHorizon';
 import IgraAgentPage from './pages/IgraAgent';
 import AporiaDEXPage from './pages/AporiaDEX';
+import KaspaCommandPage from './pages/KaspaCommand';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -278,6 +279,7 @@ const AuthenticatedApp = () => {
       <Route path="/Vision" element={<VisionPage />} />
       <Route path="/TTT3Manifesto" element={<TTT3ManifestoPDFPage />} />
       <Route path="/AgenticWorld" element={<AgenticWorldPage />} />
+      <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
       <Route path="/KaspaNations/:slug" element={<KaspaNationPage />} />
       <Route path="/Kascov" element={<KascovPage />} />

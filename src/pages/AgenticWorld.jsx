@@ -98,6 +98,19 @@ export default function AgenticWorld() {
             SUPERZK · DEPLOY COVENANT++ & ZK PROOFS
           </motion.button>
 
+          {/* Kaspa Command — global node intelligence map */}
+          <motion.button initial={{ opacity: 0, y: 16 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 16 }}
+            transition={{ delay: 1.1 }} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/KaspaCommand")}
+            className="mt-4 flex items-center gap-3 px-7 py-3.5 text-[10px] sm:text-[11px] font-black tracking-[0.3em] uppercase focus:outline-none rounded-full"
+            style={{ border: "1px solid rgba(45,212,191,0.4)", background: "rgba(0,25,22,0.5)",
+              backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+              color: "#5eead4", fontFamily: "monospace",
+              boxShadow: "0 0 35px rgba(45,212,191,0.15), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+            <Globe className="w-4 h-4" />
+            KASPA COMMAND · LIVE GLOBAL NODE MAP
+          </motion.button>
+
           {/* Footer with world trigger */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: entered ? 1 : 0 }} transition={{ delay: 1.2 }}
             className="mt-12 flex items-center gap-2 text-[9px] tracking-[0.45em] uppercase"
