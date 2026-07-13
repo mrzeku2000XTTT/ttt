@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Bot, Zap, ExternalLink } from "lucide-react";
+import { ArrowRight, Bot, Zap, ExternalLink, Loader2 } from "lucide-react";
 
 const LIVE_URL = "https://kascov.io/data/mainnet-live.json";
 const POLL_MS = 20000;
@@ -22,6 +22,24 @@ const KIND_STYLE = {
 };
 
 const short = (s) => `${s.slice(0, 6)}…${s.slice(-4)}`;
+
+// Animated placeholder row shown while the DAG is being scanned
+function SkeletonRow({ i }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0.25, 0.6, 0.25] }}
+      transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.15 }}
+      className="flex items-center gap-3 px-4 py-2.5"
+      style={{ borderBottom: "1px solid rgba(120,220,255,0.07)" }}>
+      <Bot className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "rgba(140,220,255,0.35)" }} />
+      <div className="h-3 w-16 flex-shrink-0" style={{ background: "rgba(120,220,255,0.15)" }} />
+      <div className="h-3 w-12 flex-shrink-0" style={{ background: "rgba(120,220,255,0.1)" }} />
+      <div className="h-3 flex-1" style={{ background: "rgba(120,220,255,0.06)" }} />
+      <div className="h-3 w-14 flex-shrink-0" style={{ background: "rgba(120,220,255,0.08)" }} />
+    </motion.div>
+  );
+}
 
 export default function AgentTransactionsFeed() {
   const [events, setEvents] = useState([]);
@@ -75,10 +93,22 @@ export default function AgentTransactionsFeed() {
       )}
 
       <div className="overflow-hidden" style={{ height: "352px" }}>
-        {events.length === 0 && (
+        {events.length === 0 && error && (
           <div className="h-full flex items-center justify-center text-[10px] tracking-[0.3em] uppercase"
             style={{ color: "rgba(140,200,230,0.4)", fontFamily: "monospace" }}>
-            {error ? "NETWORK UNREACHABLE" : "SCANNING THE DAG…"}
+            NETWORK UNREACHABLE
+          </div>
+        )}
+        {events.length === 0 && !error && (
+          <div className="relative h-full">
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} i={i} />)}
+            <div className="absolute inset-0 flex items-center justify-center gap-2 pointer-events-none">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: "rgba(140,220,255,0.7)" }} />
+              <span className="text-[10px] tracking-[0.3em] uppercase"
+                style={{ color: "rgba(160,225,255,0.7)", fontFamily: "monospace", textShadow: "0 0 12px rgba(0,0,0,0.9)" }}>
+                SCANNING THE DAG…
+              </span>
+            </div>
           </div>
         )}
         <AnimatePresence initial={false}>
