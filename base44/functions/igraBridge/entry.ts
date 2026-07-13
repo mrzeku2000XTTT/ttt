@@ -24,18 +24,14 @@ Deno.serve(async (req) => {
     // Auto-forge the desk's Kaspa L1 wallet on first call
     let kasBridge = wallets.find((w) => w.name === "kasbridge");
     if (!kasBridge) {
-      const bip39 = await import('npm:@scure/bip39@1.3.0');
-      const { wordlist } = await import('npm:@scure/bip39@1.3.0/wordlists/english');
-      const { KaspaWallet } = await import('npm:@okxweb3/coin-kaspa@1.0.6');
-      const mnemonic = bip39.generateMnemonic(wordlist, 128);
-      const kw = new KaspaWallet();
-      let pk = await kw.getDerivedPrivateKey({ mnemonic, hdPath: "m/44'/111111'/0'/0/0" });
-      if (typeof pk === 'object') pk = pk.toString();
-      const result = await kw.getNewAddress({ privateKey: pk });
-      const raw = result.address || result;
-      const address = raw.startsWith('kaspa:') ? raw : `kaspa:${raw}`;
+      // Delegate to the proven createKaspaWallet function — the previous inline
+      // derivation produced an invalid Kaspa address
+      const forged = await base44.functions.invoke("createKaspaWallet", { action: "generate" });
+      const w = forged.data;
+      const check = await fetch(`${KASPA_API}/addresses/${w.address}/balance`).then((r) => r.json()).catch(() => ({ detail: "unreachable" }));
+      if (check.detail) return Response.json({ error: `Forged bridge address failed validation: ${check.detail}` }, { status: 500 });
       kasBridge = await base44.asServiceRole.entities.IgraAgentWallet.create({
-        name: "kasbridge", address, private_key: pk,
+        name: "kasbridge", address: w.address, private_key: w.privateKey || w.private_key,
       });
     }
 
