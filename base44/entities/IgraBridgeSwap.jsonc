@@ -1,0 +1,62 @@
+{
+  "name": "IgraBridgeSwap",
+  "type": "object",
+  "properties": {
+    "direction": {
+      "type": "string",
+      "enum": [
+        "kas_to_ikas",
+        "ikas_to_kas"
+      ],
+      "description": "Swap direction"
+    },
+    "tx_in": {
+      "type": "string",
+      "description": "Deposit transaction hash (Kaspa L1 tx id or Igra L2 tx hash) \u2014 replay protection"
+    },
+    "tx_out": {
+      "type": "string",
+      "description": "Payout transaction hash"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Swap amount (KAS = iKAS, 1:1)"
+    },
+    "recipient": {
+      "type": "string",
+      "description": "Payout destination (0x address or kaspa: address)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "failed"
+      ],
+      "default": "completed"
+    }
+  },
+  "required": [
+    "direction",
+    "tx_in",
+    "amount",
+    "recipient"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

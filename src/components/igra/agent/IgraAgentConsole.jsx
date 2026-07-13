@@ -8,7 +8,7 @@ import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo
 export default function IgraAgentConsole({ agents, onTxComplete, onForged }) {
   const [messages, setMessages] = useState([{
     role: "agent",
-    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833) via Igra nodes. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to beta\", or \"check balances\". Local wallets keep their keys in THIS browser only.",
+    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833) and run an instant 1:1 KAS ↔ iKAS bridge desk. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to beta\", \"bridge info\", \"swap 1 iKAS from beta to kaspa:...\", or \"claim <kaspa tx id> to 0x...\". Local wallets keep their keys in THIS browser only.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,7 +35,10 @@ Parse the user's command into an action:
 - "forge": generate a NEW local agent wallet in the browser. name = the wallet/agent name the user wants (invent a short lowercase one like "agent-${locals.length + 1}" if not given).
 - "send": transfer iKAS. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, or a 0x address. amount = number in iKAS.
 - "status": check balances/addresses.
-- "chat": anything else — answer helpfully about the Igra agents (account abstraction, EIP-7702, ERC-4337 are live on Igra).
+- "bridge_info": user asks about the bridge/marketplace, swap rates, deposit addresses, or bridge liquidity.
+- "bridge_kas_to_ikas": user wants to swap KAS (Kaspa L1) into iKAS, OR claims a KAS deposit. l1_tx_id = the Kaspa L1 transaction id if the user provided one (64 hex chars, no 0x). to = destination agent name or 0x address for the iKAS.
+- "bridge_ikas_to_kas": user wants to swap iKAS into KAS on Kaspa L1. amount = iKAS amount. from = sending agent ("beta" or a local agent name — NEVER "alpha", it is the bridge pool). kaspa_address = the kaspa: payout address. l2_tx_hash = only if the user already sent iKAS to the pool and gives a 0x… tx hash.
+- "chat": anything else — answer helpfully about the Igra agents (account abstraction, EIP-7702, ERC-4337 are live on Igra). The bridge desk swaps 1 KAS = 1 iKAS instantly.
 
 reply = one short in-character agent sentence confirming what you're doing (or the answer for chat).
 
@@ -43,11 +46,14 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["forge", "send", "status", "chat"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas"] },
             name: { type: "string" },
             from: { type: "string" },
             to: { type: "string" },
             amount: { type: "number" },
+            l1_tx_id: { type: "string" },
+            l2_tx_hash: { type: "string" },
+            kaspa_address: { type: "string" },
             reply: { type: "string" },
           },
           required: ["action", "reply"],
@@ -89,6 +95,44 @@ User command: ${text}`,
           .map(([n, a]) => `${n.toUpperCase()} ${Number(a.balance_ikas).toFixed(4)} iKAS${a.local ? " (LOCAL)" : ""}`);
         push({ role: "system", text: `${lines.join(" · ")} · CHAIN ${res.data.chain_id}` });
         onTxComplete?.();
+      } else if (intent.action === "bridge_info") {
+        const res = await base44.functions.invoke("igraBridge", { action: "info" });
+        const d = res.data;
+        push({ role: "system", text: `⇄ IGRA BRIDGE DESK · 1 KAS = 1 iKAS · INSTANT\n\nKAS → iKAS: send KAS on Kaspa L1 to\n${d.kas_deposit_address}\nthen say "claim <kaspa tx id> to <0x address or agent name>"\n\niKAS → KAS: say "swap <amount> iKAS from <agent> to <kaspa: address>" — I handle both legs automatically.\n\nLIQUIDITY · ${Number(d.kas_liquidity).toFixed(4)} KAS · ${Number(d.ikas_liquidity).toFixed(4)} iKAS` });
+      } else if (intent.action === "bridge_kas_to_ikas") {
+        const localDest = getLocalAgent(intent.to);
+        const dest = localDest ? localDest.address
+          : (intent.to === "alpha" || intent.to === "beta") ? agents?.[intent.to]?.address
+          : intent.to;
+        if (!intent.l1_tx_id) {
+          const res = await base44.functions.invoke("igraBridge", { action: "info" });
+          push({ role: "system", text: `STEP 1 · SEND KAS ON KASPA L1 TO THE BRIDGE ADDRESS:\n${res.data.kas_deposit_address}\n\nSTEP 2 · SAY: "claim <kaspa tx id> to <0x address or agent name>" — I verify the deposit and pay out iKAS 1:1 instantly.` });
+        } else {
+          push({ role: "system", text: `VERIFYING KAS DEPOSIT ON KASPA L1 · ${intent.l1_tx_id.slice(0, 16)}…` });
+          const res = await base44.functions.invoke("igraBridge", { action: "kas_to_ikas", l1_tx_id: intent.l1_tx_id, evm_address: dest });
+          push({ role: "tx", tx: { amount_ikas: res.data.amount, from_agent: "bridge", to: res.data.recipient, block: null, tx_hash: res.data.tx_out, explorer_url: res.data.explorer_url } });
+          onTxComplete?.();
+        }
+      } else if (intent.action === "bridge_ikas_to_kas") {
+        if (!intent.kaspa_address) {
+          push({ role: "error", text: "I need the kaspa: payout address — e.g. \"swap 1 iKAS from beta to kaspa:qq...\"" });
+        } else {
+          let depositHash = intent.l2_tx_hash;
+          if (!depositHash) {
+            const fromAgent = intent.from && intent.from !== "alpha" ? intent.from : "beta";
+            const localSender = getLocalAgent(fromAgent);
+            push({ role: "system", text: `STEP 1/2 · MOVING ${intent.amount} iKAS · ${fromAgent.toUpperCase()} → BRIDGE POOL…` });
+            const dep = await base44.functions.invoke("igraAgent", {
+              action: "send", from: fromAgent, to: "alpha", amount: intent.amount,
+              ...(localSender ? { private_key: localSender.private_key } : {}),
+            });
+            depositHash = dep.data.tx_hash;
+          }
+          push({ role: "system", text: `STEP 2/2 · PAYING OUT KAS ON KASPA L1…` });
+          const res = await base44.functions.invoke("igraBridge", { action: "ikas_to_kas", l2_tx_hash: depositHash, kaspa_address: intent.kaspa_address });
+          push({ role: "system", text: `✓ BRIDGED · ${res.data.amount} KAS SENT TO ${res.data.recipient}\nL1 TX: ${res.data.tx_out}` });
+          onTxComplete?.();
+        }
       }
     } catch (err) {
       push({ role: "error", text: err?.response?.data?.error || err.message || "Transaction failed" });
