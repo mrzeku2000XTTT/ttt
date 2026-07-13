@@ -1,7 +1,7 @@
 import React from "react";
 
 // Bottom scrolling live ticker — OSIRIS-style
-export default function CommandTicker({ price, hashrate, aggs, blockdag }) {
+export default function CommandTicker({ price, hashrate, aggs, blockdag, intel }) {
   const total = Object.values(aggs?.countries || {}).reduce((a, b) => a + b, 0);
   const items = [
     `KAS $${price?.price ? Number(price.price).toFixed(4) : "—"}`,
@@ -11,6 +11,8 @@ export default function CommandTicker({ price, hashrate, aggs, blockdag }) {
     `BLOCK COUNT ${blockdag?.blockCount ? Number(blockdag.blockCount).toLocaleString() : "—"}`,
     `NET ${blockdag?.networkName?.toUpperCase() || "KASPA-MAINNET"}`,
   ];
+  (intel?.earthquakes || []).slice(0, 5).forEach((q) => items.push(`🌋 M${q.mag} ${q.place}`));
+  (intel?.news || []).slice(0, 4).forEach((n) => items.push(`📰 ${n.title}`));
   const line = items.join("   ·   ");
 
   return (
