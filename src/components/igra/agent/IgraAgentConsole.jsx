@@ -9,7 +9,7 @@ import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo
 export default function IgraAgentConsole({ agents, onTxComplete, onForged, fullHeight }) {
   const [messages, setMessages] = useState([{
     role: "agent",
-    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833) and run an instant 1:1 KAS ↔ iKAS bridge desk. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to beta\", \"show the desk\", \"bridge info\", \"swap 1 iKAS from beta to kaspa:...\", or \"claim <kaspa tx id> to 0x...\". Local wallets keep their keys in THIS browser only.",
+    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and speak INS — send straight to .igra names. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", or \"swap 1 iKAS from beta to kaspa:...\". Local wallets keep their keys in THIS browser only.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,7 +36,9 @@ User's saved Kaspa L1 payout address: ${savedKaspa || "none saved"}.
 
 Parse the user's command into an action:
 - "forge": generate a NEW local agent wallet in the browser. name = the wallet/agent name the user wants (invent a short lowercase one like "agent-${locals.length + 1}" if not given).
-- "send": transfer iKAS. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, or a 0x address. amount = number in iKAS.
+- "send": transfer iKAS. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, a 0x address, or an INS name ending in .igra/.ins/.ikas (pass the name as-is, e.g. "alice.igra" — I resolve it on-chain). amount = number in iKAS.
+- "resolve_name": user asks what address an INS name (.igra/.ins/.ikas) points to. name = the INS name.
+- "names": user asks to see registered INS/.igra names ("my names", "what names does alpha own", "names for 0x..."). to = the agent name or 0x address to look up (default alpha).
 - "status": check balances/addresses.
 - "desk": user asks about the desk, desk wallet, funding wallet, desk balance, or how to fund the desk.
 - "bridge_info": user asks about the bridge/marketplace, swap rates, deposit addresses, or bridge liquidity.
@@ -50,7 +52,7 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names"] },
             name: { type: "string" },
             from: { type: "string" },
             to: { type: "string" },
@@ -90,6 +92,22 @@ User command: ${text}`,
         const res = await base44.functions.invoke("igraAgent", payload);
         push({ role: "tx", tx: res.data });
         onTxComplete?.();
+      } else if (intent.action === "resolve_name") {
+        const res = await base44.functions.invoke("igraAgent", { action: "resolve_name", extra: { name: intent.name || intent.to } });
+        push({ role: "system", text: `🏷 INS RESOLVED\n${res.data.name}\n→ ${res.data.address}` });
+      } else if (intent.action === "names") {
+        const target = (intent.to || "alpha").toLowerCase();
+        const local = getLocalAgent(target);
+        const addr = local ? local.address
+          : (target === "alpha" || target === "beta") ? agents?.[target]?.address
+          : target;
+        if (!addr || !addr.startsWith("0x")) {
+          push({ role: "error", text: `I need an agent name or 0x address to look up names for — got "${target}".` });
+        } else {
+          const res = await base44.functions.invoke("igraAgent", { action: "names", extra: { address: addr } });
+          const d = res.data;
+          push({ role: "system", text: `📋 INS NAMES · ${addr.slice(0, 12)}…\nPRIMARY: ${d.primary || "none set"}\nOWNED: ${d.names?.length ? d.names.join(" · ") : "none registered"}\n\nREGISTER AT insdomains.org — SEND iKAS TO ANY .igra NAME VIA "send <amount> iKAS to <name>.igra".` });
+        }
       } else if (intent.action === "status") {
         const res = await base44.functions.invoke("igraAgent", {
           action: "status",
@@ -195,7 +213,7 @@ User command: ${text}`,
             <div key={i} className="rounded-xl p-3 text-[10px] space-y-1"
               style={{ border: "1px solid rgba(110,231,183,0.35)", background: "rgba(6,24,17,0.45)", fontFamily: "monospace" }}>
               <div className="font-black tracking-[0.2em]" style={{ color: "#6EE7B7" }}>✓ TRANSACTION CONFIRMED ON IGRA</div>
-              <div style={{ color: "rgba(180,240,215,0.7)" }}>{m.tx.amount_ikas} iKAS · agent {m.tx.from_agent} → {m.tx.to.slice(0, 10)}… · block {m.tx.block ?? "pending"}</div>
+              <div style={{ color: "rgba(180,240,215,0.7)" }}>{m.tx.amount_ikas} iKAS · agent {m.tx.from_agent} → {m.tx.to_name ? `🏷 ${m.tx.to_name} (${m.tx.to.slice(0, 10)}…)` : `${m.tx.to.slice(0, 10)}…`} · block {m.tx.block ?? "pending"}</div>
               <a href={m.tx.explorer_url} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1 underline" style={{ color: "#6EE7B7" }}>
                 {m.tx.tx_hash.slice(0, 22)}… <ExternalLink className="w-3 h-3" />
