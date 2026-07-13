@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { IGRA_AGENT_LOGO } from "@/components/igra/agent/igraAgentLogo";
+import AgentSendPanel from "@/components/igra/agent/AgentSendPanel";
 
-// One Igra agent wallet card — address + live iKAS balance
-export default function AgentWalletCard({ name, address, balance, local }) {
+// One Igra agent wallet card — address + live iKAS balance + manual send
+export default function AgentWalletCard({ name, address, balance, local, onTxComplete }) {
   const [copied, setCopied] = useState(false);
+  const [showSend, setShowSend] = useState(false);
   const copy = () => {
     navigator.clipboard.writeText(address);
     setCopied(true);
@@ -41,6 +43,17 @@ export default function AgentWalletCard({ name, address, balance, local }) {
           {address}
           {copied ? <Check className="w-3 h-3 flex-shrink-0" style={{ color: "#6EE7B7" }} /> : <Copy className="w-3 h-3 flex-shrink-0" />}
         </button>
+      )}
+      {address && (
+        <button onClick={() => setShowSend((v) => !v)}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[8px] font-black tracking-[0.25em] uppercase focus:outline-none"
+          style={{ border: "1px solid rgba(201,162,75,0.3)", color: "rgba(201,162,75,0.85)", fontFamily: "monospace" }}>
+          {showSend ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          {showSend ? "CLOSE" : "SEND iKAS"}
+        </button>
+      )}
+      {showSend && address && (
+        <AgentSendPanel name={name} local={local} onTxComplete={onTxComplete} />
       )}
     </div>
   );

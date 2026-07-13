@@ -137,7 +137,7 @@ export default function IgraAgent() {
           {status?.agents
             ? Object.entries(status.agents).map(([name, a]) => (
                 <AgentWalletCard key={name} name={name} address={a.address}
-                  balance={a.balance_ikas} local={a.local} />
+                  balance={a.balance_ikas} local={a.local} onTxComplete={() => loadStatus(false)} />
               ))
             : ["alpha", "beta"].map((n) => (
                 <AgentWalletCard key={n} name={n} address={null} balance={null} />
