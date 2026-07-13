@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Zap, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { IGRA_AGENT_LOGO } from "@/components/igra/agent/igraAgentLogo";
 
 // Native auto-transact arm switch — our own PIN signer, no Kasware.
 // PIN is hashed (SHA-256) and stored only in this browser.
@@ -47,7 +48,10 @@ export default function AutoTransactToggle({ enabled, onChange }) {
       style={{ border: `1px solid ${enabled ? "rgba(110,231,183,0.4)" : "rgba(201,162,75,0.25)"}`,
         background: "rgba(10,9,6,0.65)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
       <div className="flex items-center gap-3">
-        <Zap className="w-4 h-4 flex-shrink-0" style={{ color: enabled ? "#6EE7B7" : "#C9A24B" }} />
+        <img src={IGRA_AGENT_LOGO} alt=""
+          className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+          style={{ border: `1px solid ${enabled ? "rgba(110,231,183,0.5)" : "rgba(201,162,75,0.35)"}`,
+            boxShadow: enabled ? "0 0 12px rgba(110,231,183,0.35)" : "none" }} />
         <div className="flex-1 min-w-0">
           <div className="text-[10px] font-black tracking-[0.25em] uppercase"
             style={{ color: enabled ? "#6EE7B7" : "#C9A24B", fontFamily: "monospace" }}>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Bot, Copy, Check } from "lucide-react";
+import { Copy, Check } from "lucide-react";
+import { IGRA_AGENT_LOGO } from "@/components/igra/agent/igraAgentLogo";
 
 // One Igra agent wallet card — address + live iKAS balance
 export default function AgentWalletCard({ name, address, balance, local }) {
@@ -15,10 +16,9 @@ export default function AgentWalletCard({ name, address, balance, local }) {
       style={{ border: "1px solid rgba(201,162,75,0.3)", background: "rgba(12,10,6,0.65)",
         backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-          style={{ background: "rgba(201,162,75,0.12)", border: "1px solid rgba(201,162,75,0.35)" }}>
-          <Bot className="w-4 h-4" style={{ color: "#C9A24B" }} />
-        </div>
+        <img src={IGRA_AGENT_LOGO} alt=""
+          className="w-8 h-8 rounded-full object-cover"
+          style={{ border: "1px solid rgba(201,162,75,0.35)" }} />
         <span className="text-[10px] font-black tracking-[0.25em] uppercase"
           style={{ color: "#C9A24B", fontFamily: "monospace" }}>
           AGENT {name.toUpperCase()}

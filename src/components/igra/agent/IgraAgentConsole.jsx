@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Send, Loader2, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getLocalAgent, saveLocalAgent, listLocalAgents } from "@/components/igra/agent/localAgentWallet";
+import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo";
 
 // Natural-language console — the agent parses your command, forges local wallets, and transacts iKAS on Igra
 export default function IgraAgentConsole({ agents, onTxComplete, onForged }) {
@@ -118,16 +119,28 @@ User command: ${text}`,
             system: { color: "rgba(201,162,75,0.65)", border: "rgba(201,162,75,0.18)", bg: "transparent" },
             error: { color: "#fca5a5", border: "rgba(248,113,113,0.35)", bg: "rgba(60,15,10,0.4)" },
           }[m.role];
+          const chatFont = m.role === "user" || m.role === "agent" ? IOS_FONT : "monospace";
           return (
-            <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className="max-w-[85%] px-3 py-2 rounded-xl text-[11px] leading-relaxed whitespace-pre-wrap break-all"
-                style={{ color: colors.color, border: `1px solid ${colors.border}`, background: colors.bg, fontFamily: "monospace" }}>
+            <div key={i} className={`flex items-end gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              {m.role === "agent" && (
+                <img src={IGRA_AGENT_LOGO} alt="Igra Agent"
+                  className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                  style={{ border: "1px solid rgba(201,162,75,0.35)" }} />
+              )}
+              <div className="max-w-[85%] px-3 py-2 rounded-xl text-[12px] leading-relaxed whitespace-pre-wrap break-words"
+                style={{ color: colors.color, border: `1px solid ${colors.border}`, background: colors.bg, fontFamily: chatFont }}>
                 {m.text}
               </div>
             </div>
           );
         })}
-        {busy && <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#C9A24B" }} />}
+        {busy && (
+          <div className="flex items-center gap-2">
+            <img src={IGRA_AGENT_LOGO} alt="" className="w-7 h-7 rounded-full object-cover"
+              style={{ border: "1px solid rgba(201,162,75,0.35)" }} />
+            <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#C9A24B" }} />
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
       <form className="flex gap-2 p-3" style={{ borderTop: "1px solid rgba(201,162,75,0.18)" }}
@@ -135,7 +148,7 @@ User command: ${text}`,
         <input value={input} onChange={(e) => setInput(e.target.value)}
           placeholder='e.g. "forge a wallet called scout" or "alpha send 0.01 iKAS to beta"'
           className="flex-1 bg-transparent px-3 py-2 rounded-xl text-xs focus:outline-none"
-          style={{ border: "1px solid rgba(201,162,75,0.25)", color: "#f5efe0", fontFamily: "monospace" }} />
+          style={{ border: "1px solid rgba(201,162,75,0.25)", color: "#f5efe0", fontFamily: IOS_FONT }} />
         <button type="submit" disabled={busy || !input.trim()}
           className="px-4 rounded-xl focus:outline-none"
           style={{ border: "1px solid rgba(201,162,75,0.45)", background: "rgba(201,162,75,0.12)",

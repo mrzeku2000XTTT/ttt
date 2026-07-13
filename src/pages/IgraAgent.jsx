@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Zap, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AgentWalletCard from "@/components/igra/agent/AgentWalletCard";
 import IgraAgentConsole from "@/components/igra/agent/IgraAgentConsole";
 import { listLocalAgents } from "@/components/igra/agent/localAgentWallet";
 import AutoTransactToggle, { AUTO_MODE_KEY } from "@/components/igra/agent/AutoTransactToggle";
+import { IGRA_AGENT_LOGO } from "@/components/igra/agent/igraAgentLogo";
 
 // IGRA AGENT — AI agents holding wallets on Igra mainnet, transacting iKAS agent-to-agent via Igra nodes
 export default function IgraAgent() {
@@ -72,7 +73,7 @@ export default function IgraAgent() {
 
   return (
     <div className="min-h-screen text-white relative"
-      style={{ background: "radial-gradient(ellipse at 50% 0%, #14100a 0%, #000000 60%, #000000 100%)" }}>
+      style={{ background: "#000000" }}>
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <Link to="/IgraHorizon"
@@ -91,8 +92,10 @@ export default function IgraAgent() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6 text-center">
+          <img src={IGRA_AGENT_LOGO} alt="Igra Agent"
+            className="w-20 h-20 mx-auto mb-3 rounded-full object-cover"
+            style={{ boxShadow: "0 0 40px rgba(201,162,75,0.25)", border: "1px solid rgba(201,162,75,0.3)" }} />
           <div className="flex items-center justify-center gap-3">
-            <Zap className="w-6 h-6" style={{ color: "#C9A24B" }} />
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight"
               style={{ fontFamily: "'Georgia', serif",
                 background: "linear-gradient(180deg, #ffffff 0%, #f0e6cf 55%, #C9A24B 100%)",
