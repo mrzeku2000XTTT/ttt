@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Sparkles, Globe } from "lucide-react";
+import { ArrowLeft, Sparkles, Globe, Shield } from "lucide-react";
 import AgentTransactionsFeed from "@/components/agenticworld/AgentTransactionsFeed";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
 import WorldCarouselOrbs from "@/components/landing/WorldCarouselOrbs";
@@ -81,6 +81,18 @@ export default function AgenticWorld() {
             transition={{ delay: 0.8 }} className="mt-10 w-full flex justify-center">
             <AgentTransactionsFeed />
           </motion.div>
+
+          {/* SuperZK — deploy covenant++ & ZK proofs */}
+          <motion.button initial={{ opacity: 0, y: 16 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 16 }}
+            transition={{ delay: 1 }} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/SuperZK?from=agenticworld")}
+            className="mt-8 flex items-center gap-3 px-6 py-3 text-[10px] sm:text-[11px] font-black tracking-[0.3em] uppercase focus:outline-none"
+            style={{ border: "1px solid rgba(245,158,11,0.5)", background: "rgba(20,12,0,0.7)",
+              color: "#fbbf24", fontFamily: "monospace",
+              boxShadow: "0 0 35px rgba(245,158,11,0.18)" }}>
+            <Shield className="w-4 h-4" />
+            SUPERZK · DEPLOY COVENANT++ & ZK PROOFS
+          </motion.button>
 
           {/* Footer with world trigger */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: entered ? 1 : 0 }} transition={{ delay: 1.2 }}

@@ -11,6 +11,8 @@ export default function SuperZKPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [authState, setAuthState] = useState({ loading: true, isAdmin: false });
+  const fromAgenticWorld = new URLSearchParams(window.location.search).get("from") === "agenticworld";
+  const goBack = () => { if (fromAgenticWorld) navigate("/AgenticWorld"); else navigate(-1); };
 
   useEffect(() => {
     base44.auth.me()
@@ -33,7 +35,7 @@ export default function SuperZKPage() {
         <h1 className="text-xl font-black uppercase tracking-widest mb-2" style={{ color: "#f59e0b", fontFamily: "'Impact', 'Arial Black', sans-serif" }}>Access Denied</h1>
         <p className="text-sm mb-6" style={{ color: "rgba(217,119,6,0.5)" }}>SuperZK is restricted to administrators only.</p>
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all"
           style={{ color: "#f59e0b", fontFamily: "'Impact', 'Arial Black', sans-serif", border: "2px solid rgba(217,119,6,0.4)" }}
         >
@@ -57,7 +59,7 @@ export default function SuperZKPage() {
         }}
       >
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all flex-shrink-0"
           style={{
             color: "#f59e0b",
