@@ -8,11 +8,8 @@ function parseISODuration(iso) {
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
     const { url } = await req.json();
+    const base44 = createClientFromRequest(req);
     const idMatch = (url || '').match(/(?:v=|youtu\.be\/|\/live\/|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/);
     if (!idMatch) return Response.json({ error: 'Paste a valid YouTube video or live stream link' }, { status: 400 });
     const videoId = idMatch[1];
@@ -76,7 +73,7 @@ ${transcript ? `\nTRANSCRIPT (with second markers):\n${transcript}` : '\nNo tran
 
 Find 4 to 6 highlight clips. Each clip must be a complete standalone moment, 20-90 seconds long${durationKnown ? `, with start_s and end_s strictly between 0 and ${effectiveDuration}` : ', with start_s and end_s within the video\'s real length'}. Spread them across the video. Give each a punchy short title, a one-line reason it's clippable, and a virality score 1-100.`;
 
-    const analysis = await base44.integrations.Core.InvokeLLM({
+    const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
       add_context_from_internet: !durationKnown && !transcript,
       response_json_schema: {

@@ -9,9 +9,11 @@ Deno.serve(async (req) => {
     const { txHash, wallet, video, clips } = body;
 
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // Identity = Kaspa wallet address. The verified on-chain payment from it is the proof — no login needed.
+    if (!wallet || !wallet.startsWith('kaspa:')) {
+      return Response.json({ error: 'A Kaspa wallet address is required — it is your identity' }, { status: 400 });
+    }
     if (!txHash || !video?.id || !Array.isArray(clips) || clips.length === 0) {
       return Response.json({ error: 'Missing txHash, video or clips' }, { status: 400 });
     }
@@ -40,8 +42,7 @@ Deno.serve(async (req) => {
 
     // Deliver: save every clip to the user's library
     const records = clips.slice(0, 12).map((c) => ({
-      user_email: user.email,
-      wallet_address: wallet || '',
+      wallet_address: wallet,
       tx_hash: txHash,
       video_id: video.id,
       video_title: video.title || '',

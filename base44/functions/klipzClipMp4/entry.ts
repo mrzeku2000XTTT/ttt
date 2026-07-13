@@ -6,8 +6,6 @@ Deno.serve(async (req) => {
     const { videoId } = body;
 
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (!videoId) return Response.json({ error: 'videoId required' }, { status: 400 });
 
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');

@@ -1,18 +1,40 @@
 import React, { useEffect, useState } from "react";
-import { Loader2, Download, Library } from "lucide-react";
+import { Loader2, Download, Library, Wallet } from "lucide-react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import KlipzClipCard from "@/components/klipz/KlipzClipCard";
 
+function loadWalletAddresses() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("terra_wallets") || "[]");
+    return raw
+      .map((w) => (w.address?.startsWith("kaspa:") ? w.address : `kaspa:${w.address}`))
+      .filter(Boolean);
+  } catch (_e) {
+    return [];
+  }
+}
+
 export default function KlipzLibrary() {
   const [jobs, setJobs] = useState(null);
+  const [noWallet, setNoWallet] = useState(false);
   const [downloading, setDownloading] = useState(null);
   const [dlError, setDlError] = useState(null);
 
   useEffect(() => {
     (async () => {
+      const addresses = loadWalletAddresses();
+      if (addresses.length === 0) {
+        setNoWallet(true);
+        setJobs([]);
+        return;
+      }
       try {
-        const user = await base44.auth.me();
-        const list = await base44.entities.KlipzJob.filter({ user_email: user.email }, "-created_date", 100);
+        const list = await base44.entities.KlipzJob.filter(
+          { wallet_address: { $in: addresses } },
+          "-created_date",
+          100
+        );
         setJobs(list);
       } catch (_e) {
         setJobs([]);
@@ -36,6 +58,19 @@ export default function KlipzLibrary() {
     return (
       <div className="text-center py-16" style={{ fontFamily: "monospace" }}>
         <Loader2 className="w-5 h-5 text-cyan-400 animate-spin mx-auto" />
+      </div>
+    );
+  }
+
+  if (noWallet) {
+    return (
+      <div className="text-center py-16 px-4" style={{ fontFamily: "monospace" }}>
+        <Wallet className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+        <p className="text-zinc-500 text-xs tracking-widest">NO KASPA IDENTITY FOUND</p>
+        <p className="text-zinc-600 text-[10px] mt-2">
+          Your wallet address is your identity.{" "}
+          <Link to="/Terra" className="underline text-cyan-400">Open TTT Wallet</Link> to create or import one.
+        </p>
       </div>
     );
   }
