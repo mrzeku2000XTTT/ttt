@@ -48,15 +48,15 @@ const fragmentShader = `
     float radialLines = smoothstep(lineThick, 0.0, lineFract);
     float radialMask = smoothstep(0.06, 0.18, r) * smoothstep(0.85, 0.5, r);
     radialLines *= radialMask;
-    float breakN = noise(vec2(theta * 6.0, r * 16.0 + uTime * 0.4));
+    float breakN = noise(vec2(theta * 6.0, r * 16.0 + uTime * 3.4));
     radialLines *= step(0.3, breakN);
 
     float ringFract = abs(fract(r * 9.0) - 0.5);
     float rings = smoothstep(0.02, 0.0, ringFract);
     rings *= smoothstep(0.1, 0.22, r) * smoothstep(0.85, 0.5, r);
-    rings *= step(0.42, noise(vec2(r * 11.0, theta * 2.0 - uTime * 0.2)));
+    rings *= step(0.42, noise(vec2(r * 11.0, theta * 2.0 - uTime * 1.7)));
 
-    float pulse = 0.5 + 0.5 * sin(r * 22.0 - uTime * 2.5);
+    float pulse = 0.5 + 0.5 * sin(r * 22.0 - uTime * 21.25);
     float pupil = smoothstep(0.2, 0.0, r);
     float pupilPulse = 0.75 + 0.25 * sin(uTime * 1.3);
     float irisRing = smoothstep(0.006, 0.0, abs(r - 0.16)) * 0.5;
