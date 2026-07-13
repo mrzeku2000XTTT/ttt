@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, ArrowRight, ExternalLink, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 // Live data from Igra's free Blockscout explorer API — no key needed
 const NETWORKS = {
@@ -24,18 +25,12 @@ export default function IgraLiveFeed() {
   useEffect(() => {
     let alive = true;
     setStats(null); setTxs([]); setError(false);
-    const base = NETWORKS[network].base;
     const load = async () => {
       try {
-        const [sRes, tRes] = await Promise.all([
-          fetch(`${base}/api/v2/stats`),
-          fetch(`${base}/api/v2/main-page/transactions`),
-        ]);
-        const s = await sRes.json();
-        const t = await tRes.json();
+        const res = await base44.functions.invoke("igraExplorer", { network });
         if (!alive) return;
-        setStats(s);
-        setTxs((Array.isArray(t) ? t : t.items || []).slice(0, 8));
+        setStats(res.data.stats);
+        setTxs(res.data.txs || []);
         setError(false);
       } catch {
         if (alive) setError(true);
@@ -113,16 +108,16 @@ export default function IgraLiveFeed() {
               className="flex items-center gap-3 px-4 py-2.5 cursor-pointer"
               style={{ borderBottom: "1px solid rgba(255,140,90,0.07)" }}>
               <div className="flex items-center gap-2 text-[11px] font-bold flex-shrink-0" style={{ fontFamily: "monospace" }}>
-                <span style={{ color: "rgba(255,230,210,0.9)" }}>{short(tx.from?.hash)}</span>
+                <span style={{ color: "rgba(255,230,210,0.9)" }}>{short(tx.from)}</span>
                 <ArrowRight className="w-3 h-3" style={{ color: "rgba(255,160,110,0.5)" }} />
-                <span style={{ color: "rgba(255,210,180,0.7)" }}>{short(tx.to?.hash)}</span>
+                <span style={{ color: "rgba(255,210,180,0.7)" }}>{short(tx.to)}</span>
               </div>
               <div className="flex-1 truncate text-[10px]" style={{ color: "rgba(235,180,140,0.45)", fontFamily: "monospace" }}>
                 {tx.method ? `${tx.method} · ` : ""}{fmtIkas(tx.value)} iKAS
               </div>
               <div className="flex-shrink-0 flex items-center gap-1.5">
                 <span className="text-[9px]" style={{ color: "rgba(230,160,120,0.4)", fontFamily: "monospace" }}>
-                  BLK {tx.block_number ?? tx.block ?? "—"}
+                  BLK {tx.block ?? "—"}
                 </span>
                 <ExternalLink className="w-3 h-3" style={{ color: "rgba(230,170,130,0.35)" }} />
               </div>
