@@ -7,6 +7,7 @@ import AgentWalletCard from "@/components/igra/agent/AgentWalletCard";
 import IgraAgentConsole from "@/components/igra/agent/IgraAgentConsole";
 import { listLocalAgents } from "@/components/igra/agent/localAgentWallet";
 import AutoTransactToggle, { AUTO_MODE_KEY } from "@/components/igra/agent/AutoTransactToggle";
+import KaspaAddressCard from "@/components/igra/agent/KaspaAddressCard";
 import { IGRA_AGENT_LOGO } from "@/components/igra/agent/igraAgentLogo";
 
 // IGRA AGENT — AI agents holding wallets on Igra mainnet, transacting iKAS agent-to-agent via Igra nodes
@@ -144,6 +145,8 @@ export default function IgraAgent() {
 
         <AutoTransactToggle enabled={autoMode}
           onChange={(v) => { setAutoMode(v); autoRef.current = v; }} />
+
+        <KaspaAddressCard />
 
         <IgraAgentConsole agents={status?.agents} onTxComplete={() => loadStatus(false)} onForged={() => loadStatus(false)} />
 

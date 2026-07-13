@@ -14,7 +14,7 @@ const KASPA_API = "https://api.kaspa.org";
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { action, l1_tx_id, l2_tx_hash, kaspa_address, evm_address } = await req.json();
+    const { action, l1_tx_id, l2_tx_hash, kaspa_address, evm_address, from_pool, amount: reqAmount } = await req.json();
     const provider = new ethers.JsonRpcProvider(RPC, CHAIN_ID);
 
     const wallets = await base44.asServiceRole.entities.IgraAgentWallet.list();
@@ -96,20 +96,34 @@ Deno.serve(async (req) => {
     }
 
     if (action === "ikas_to_kas") {
-      if (!l2_tx_hash) return Response.json({ error: "Missing Igra L2 transaction hash" }, { status: 400 });
       const dest = (kaspa_address || "").startsWith("kaspa:") ? kaspa_address : `kaspa:${kaspa_address || ""}`;
       if (!/^kaspa:[a-z0-9]{61,63}$/.test(dest)) return Response.json({ error: "Invalid kaspa: destination address" }, { status: 400 });
 
-      const used = await base44.asServiceRole.entities.IgraBridgeSwap.filter({ tx_in: l2_tx_hash });
-      if (used.length > 0) return Response.json({ error: "This deposit was already claimed" }, { status: 400 });
+      let amount;
+      let txIn;
+      if (from_pool) {
+        // Swap directly from agent alpha's iKAS pool — no deposit leg needed
+        amount = Number(reqAmount);
+        if (!amount || amount <= 0) return Response.json({ error: "Invalid amount" }, { status: 400 });
+        const poolBal = await provider.getBalance(alpha.address);
+        if (poolBal < ethers.parseEther(String(amount))) {
+          return Response.json({ error: `Agent alpha only holds ${ethers.formatEther(poolBal)} iKAS` }, { status: 400 });
+        }
+        txIn = `pool-${crypto.randomUUID()}`;
+      } else {
+        if (!l2_tx_hash) return Response.json({ error: "Missing Igra L2 transaction hash" }, { status: 400 });
+        const used = await base44.asServiceRole.entities.IgraBridgeSwap.filter({ tx_in: l2_tx_hash });
+        if (used.length > 0) return Response.json({ error: "This deposit was already claimed" }, { status: 400 });
 
-      const tx = await provider.getTransaction(l2_tx_hash);
-      if (!tx || tx.blockNumber == null) return Response.json({ error: "Igra deposit not confirmed yet — retry shortly" }, { status: 400 });
-      if ((tx.to || "").toLowerCase() !== alpha.address.toLowerCase()) {
-        return Response.json({ error: `Deposit must be sent to the bridge pool ${alpha.address}` }, { status: 400 });
+        const tx = await provider.getTransaction(l2_tx_hash);
+        if (!tx || tx.blockNumber == null) return Response.json({ error: "Igra deposit not confirmed yet — retry shortly" }, { status: 400 });
+        if ((tx.to || "").toLowerCase() !== alpha.address.toLowerCase()) {
+          return Response.json({ error: `Deposit must be sent to the bridge pool ${alpha.address}` }, { status: 400 });
+        }
+        amount = Number(ethers.formatEther(tx.value));
+        if (amount <= 0) return Response.json({ error: "Deposit has zero value" }, { status: 400 });
+        txIn = l2_tx_hash;
       }
-      const amount = Number(ethers.formatEther(tx.value));
-      if (amount <= 0) return Response.json({ error: "Deposit has zero value" }, { status: 400 });
 
       let payout;
       try {
@@ -124,7 +138,7 @@ Deno.serve(async (req) => {
       }
 
       await base44.asServiceRole.entities.IgraBridgeSwap.create({
-        direction: "ikas_to_kas", tx_in: l2_tx_hash, tx_out: String(payout.txId),
+        direction: "ikas_to_kas", tx_in: txIn, tx_out: String(payout.txId),
         amount, recipient: dest, status: "completed",
       });
       return Response.json({
