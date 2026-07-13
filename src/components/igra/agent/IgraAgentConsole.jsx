@@ -39,7 +39,7 @@ Parse the user's command into an action:
 - "send": transfer iKAS. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, or a 0x address. amount = number in iKAS.
 - "status": check balances/addresses.
 - "bridge_info": user asks about the bridge/marketplace, swap rates, deposit addresses, or bridge liquidity.
-- "bridge_kas_to_ikas": user wants to swap KAS (Kaspa L1) into iKAS, OR claims a KAS deposit. l1_tx_id = the Kaspa L1 transaction id if the user provided one (64 hex chars, no 0x). to = destination agent name or 0x address for the iKAS.
+- "bridge_kas_to_ikas": user wants to swap KAS (Kaspa L1) into iKAS, OR claims a KAS deposit. l1_tx_id = the Kaspa L1 transaction id if the user provided one (64 hex chars, no 0x). to = destination agent name or 0x address for the iKAS. amount = KAS amount if the user states one (e.g. "swap 10 KAS to beta").
 - "bridge_ikas_to_kas": user wants to swap iKAS into KAS on Kaspa L1. amount = iKAS amount (omit if not stated). from = EXACTLY the wallet the user names ("alpha", "beta", or a local agent name) — OMIT "from" entirely if the user does not name a wallet, do NOT guess. kaspa_address = the kaspa: payout address; if not given, use the user's saved Kaspa L1 address. l2_tx_hash = only if the user already sent iKAS to the pool and gives a 0x… tx hash.
 - "chat": anything else — answer helpfully about the Igra agents (account abstraction, EIP-7702, ERC-4337 are live on Igra). The bridge desk swaps 1 KAS = 1 iKAS instantly.
 
@@ -107,9 +107,15 @@ User command: ${text}`,
         const dest = localDest ? localDest.address
           : (intent.to === "alpha" || intent.to === "beta") ? agents?.[intent.to]?.address
           : intent.to;
-        if (!intent.l1_tx_id) {
+        if (!intent.l1_tx_id && intent.amount >= 10 && dest) {
+          // Desk KAS wallet is funded — mint iKAS NATIVELY via the Igra Entry bridge
+          push({ role: "system", text: `⛏ NATIVE IGRA ENTRY · MINING 97b1 TX ID · ${intent.amount} KAS → ${dest.slice(0, 12)}…` });
+          const res = await base44.functions.invoke("igraNativeEntry", { action: "entry", amount_kas: intent.amount, l2_address: dest });
+          push({ role: "system", text: `✓ NATIVE ENTRY SUBMITTED ON KASPA L1\n${res.data.amount_kas} KAS → iKAS MINTS TO ${res.data.l2_address}\nMINED NONCE ${res.data.nonce} (${res.data.iterations} ITERATIONS)\nTX: ${res.data.tx_id}\nIGRA'S VIADUCT MINTS THE iKAS ON L2 — REAL NATIVE BRIDGE, NO DESK LIQUIDITY USED.` });
+          onTxComplete?.();
+        } else if (!intent.l1_tx_id) {
           const res = await base44.functions.invoke("igraBridge", { action: "info" });
-          push({ role: "system", text: `STEP 1 · SEND KAS ON KASPA L1 TO THE BRIDGE ADDRESS:\n${res.data.kas_deposit_address}\n\nSTEP 2 · SAY: "claim <kaspa tx id> to <0x address or agent name>" — I verify the deposit and pay out iKAS 1:1 instantly.` });
+          push({ role: "system", text: `STEP 1 · SEND KAS ON KASPA L1 TO THE BRIDGE ADDRESS:\n${res.data.kas_deposit_address}\n\nSTEP 2 · SAY: "claim <kaspa tx id> to <0x address or agent name>" — I verify the deposit and pay out iKAS 1:1 instantly.\n\nOR: "swap 10 KAS to <0x/agent>" mints iKAS NATIVELY from the desk wallet (min 10 KAS).` });
         } else {
           push({ role: "system", text: `VERIFYING KAS DEPOSIT ON KASPA L1 · ${intent.l1_tx_id.slice(0, 16)}…` });
           const res = await base44.functions.invoke("igraBridge", { action: "kas_to_ikas", l1_tx_id: intent.l1_tx_id, evm_address: dest });
