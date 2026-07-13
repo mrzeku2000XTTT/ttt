@@ -13,6 +13,9 @@ import AgentStepLog from "@/components/tttv3/AgentStepLog";
 import AgentReasoningBubble from "@/components/tttv3/AgentReasoningBubble";
 import AgentPlanChecklist from "@/components/tttv3/AgentPlanChecklist";
 import ZKThoughtBubble from "@/components/tttv3/ZKThoughtBubble";
+import ZKSendKasCard from "@/components/tttv3/ZKSendKasCard";
+import ZKWalletHistoryCard from "@/components/tttv3/ZKWalletHistoryCard";
+import ZKTxToast from "@/components/tttv3/ZKTxToast";
 import ReactMarkdown from "react-markdown";
 const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
@@ -99,6 +102,7 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   const [computerCursor, setComputerCursor] = useState({ x: 50, y: 50, clicking: false });
   const [agentRunning, setAgentRunning] = useState(false);
   const [agentSteps, setAgentSteps] = useState([]);
+  const [txToast, setTxToast] = useState(null); // { txId, amount, to } — sent-KAS notification
   const computerRef = useRef(null);
   const abortRef = useRef(null);
   const sendingRef = useRef(false); // sync double-send guard (loading state updates async)
@@ -246,6 +250,43 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
       sessionId = id;
     }
     const userMsg = { role: "user", content: text };
+
+    // ── Native ZK wallet abilities — handled in-chat, never via NODA/computer ──
+    const lower = text.toLowerCase();
+    const wantsSend = /\bsend\b/.test(lower) && /\bkas(pa)?\b/.test(lower);
+    const wantsWalletView = !wantsSend && /\b(balance|history|transactions|activity)\b/.test(lower) && /\b(wallet|kas(pa)?|my)\b/.test(lower);
+    if (wantsSend || wantsWalletView) {
+      const addrMatch = text.match(/kaspa:[a-z0-9]{61,63}/i);
+      const amtMatch = text.match(/(\d+(?:\.\d+)?)\s*kas\b/i);
+      setMessages(m => {
+        const copy = [...m, userMsg,
+          {
+            role: "zk_thought",
+            thought: wantsSend
+              ? "Sending KAS is a native ZK ability. I'll open the secure send card with the main wallet's live balance — the user signs locally with their 6-digit PIN; keys never leave the device."
+              : "Balance and history are safe view-only reads of the local wallets — no keys involved.",
+            decidedAction: "reply",
+            goal: null,
+          },
+          {
+            role: "assistant",
+            id: `a${Date.now()}`,
+            content: wantsSend
+              ? "On it — here's your **main wallet** with its live balance. Enter the recipient and amount, then sign with your **6-digit PIN**. I'll broadcast it and give you the TX id."
+              : "Here's a **view-only** look at your wallets — balances plus your main wallet's transaction history. I can see, but only *you* can sign.",
+          },
+          wantsSend
+            ? { role: "zk_send", prefillTo: addrMatch ? addrMatch[0] : "", prefillAmount: amtMatch ? amtMatch[1] : "" }
+            : { role: "zk_history" },
+        ];
+        persistMessages(sessionId, copy);
+        return copy;
+      });
+      setInput("");
+      sendingRef.current = false;
+      return;
+    }
+
     const mid = `a${Date.now()}`;
     // Functional append — never replace the array from a stale closure,
     // which could clobber an in-flight stream and leave a cut-off bubble.
@@ -273,6 +314,7 @@ You can:
 2. **Guide users** to the right page instantly with exact routes
 3. **Launch your Agent Computer** to autonomously navigate/click/type inside any TTT app — for ANY actionable request, especially compound multi-step ones (research → build → post, generate → email, etc.). Hand it a rich, self-contained goal and let the autonomous runner plan, navigate, type, and verify.
 4. **Never say "I don't know" or "I can't"** — you have the full site map and a computer with eyes/hands.
+5. **Wallet ops are NATIVE**: sending KAS, checking balances, and viewing transaction history happen directly inside this chat via secure ZK wallet cards (user signs with their 6-digit PIN, keys stay local). NEVER launch the computer or NODA for sending KAS or wallet lookups.
 
 ## WHEN TO ASK FOR INFO
 Set needs_info=true, launch=false, and ask ONE focused question in your reply when:
@@ -749,6 +791,14 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
                     if (m.role === "plan") return <AgentPlanChecklist key={i} plan={m.plan} />;
                     if (m.role === "reasoning") return <AgentReasoningBubble key={i} msg={m} />;
                     if (m.role === "zk_thought") return <ZKThoughtBubble key={i} msg={m} />;
+                    if (m.role === "zk_send") return (
+                      <div key={i} className="flex justify-start">
+                        <ZKSendKasCard prefillTo={m.prefillTo} prefillAmount={m.prefillAmount} onSent={(tx) => setTxToast(tx)} />
+                      </div>
+                    );
+                    if (m.role === "zk_history") return (
+                      <div key={i} className="flex justify-start"><ZKWalletHistoryCard /></div>
+                    );
                     const isUser = m.role === "user";
                     return (
                       <div key={i} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
@@ -844,6 +894,11 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
         )}
 
         {/* IMAGE TAB */}
+        {/* Sent-KAS notification toast */}
+        <AnimatePresence>
+          {txToast && <ZKTxToast tx={txToast} onClose={() => setTxToast(null)} />}
+        </AnimatePresence>
+
         {activeTab === "image" && (
           <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
             <div className="max-w-2xl mx-auto w-full px-6 pt-8 pb-4 flex flex-col gap-4 flex-1">
