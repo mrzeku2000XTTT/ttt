@@ -1,34 +1,18 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { ExternalLink, MapPin } from "lucide-react";
-import NationViewer from "@/components/kaspanations/NationViewer";
-
-// Country communities of the Kaspa Nations world — first nation: Kaspa PH
-const NATIONS = [
-  {
-    flag: "🇵🇭",
-    name: "KASPA PH",
-    country: "PHILIPPINES",
-    tagline: "THE FASTEST LAYER-1 IN THE PHILIPPINES · 7,641 ISLANDS",
-    url: "https://kaspaphilippines.base44.app",
-    live: true,
-  },
-  { flag: "🇺🇸", name: "KASPA US", country: "UNITED STATES" },
-  { flag: "🇩🇪", name: "KASPA DE", country: "GERMANY" },
-  { flag: "🇯🇵", name: "KASPA JP", country: "JAPAN" },
-  { flag: "🇧🇷", name: "KASPA BR", country: "BRAZIL" },
-  { flag: "🇳🇬", name: "KASPA NG", country: "NIGERIA" },
-];
+import { NATIONS } from "@/components/kaspanations/nations";
 
 export default function NationsGrid() {
-  const [viewing, setViewing] = useState(null);
+  const navigate = useNavigate();
 
   return (
     <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {NATIONS.map((n, i) => (
         <motion.div
           key={n.name}
-          onClick={() => { if (n.live) setViewing(n); }}
+          onClick={() => { if (n.live) navigate(`/KaspaNations/${n.slug}`); }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 + i * 0.1 }}
@@ -76,11 +60,6 @@ export default function NationsGrid() {
           )}
         </motion.div>
       ))}
-
-      {/* In-app site viewer */}
-      <AnimatePresence>
-        {viewing && <NationViewer nation={viewing} onClose={() => setViewing(null)} />}
-      </AnimatePresence>
     </div>
   );
 }
