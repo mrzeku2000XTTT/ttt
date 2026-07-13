@@ -122,6 +122,7 @@ import ClipWhileLivePage from './pages/ClipWhileLive';
 import KlipzPage from './pages/Klipz';
 import IgraHorizonPage from './pages/IgraHorizon';
 import IgraAgentPage from './pages/IgraAgent';
+import AporiaDEXPage from './pages/AporiaDEX';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -284,6 +285,8 @@ const AuthenticatedApp = () => {
       <Route path="/Klipz" element={<KlipzPage />} />
       <Route path="/IgraHorizon" element={<IgraHorizonPage />} />
       <Route path="/IgraAgent" element={<IgraAgentPage />} />
+      <Route path="/DEX" element={<AporiaDEXPage />} />
+      <Route path="/Aporia" element={<AporiaDEXPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
