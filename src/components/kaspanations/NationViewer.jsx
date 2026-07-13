@@ -1,14 +1,16 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { X, ExternalLink, Loader2 } from "lucide-react";
 
-// Fullscreen in-app viewer for a nation's site
+// Fullscreen in-app viewer for a nation's site — rendered in a portal so
+// transformed ancestors can't break its fixed positioning
 export default function NationViewer({ nation, onClose }) {
   const [loaded, setLoaded] = useState(false);
 
-  return (
+  return createPortal(
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col bg-black">
+      className="fixed inset-0 z-[100] flex flex-col bg-black">
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-2.5 flex-shrink-0"
         style={{ borderBottom: "1px solid rgba(80,255,180,0.3)", background: "rgba(0,12,8,0.95)" }}>
@@ -51,6 +53,7 @@ export default function NationViewer({ nation, onClose }) {
           style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.4s" }}
           allow="clipboard-write" />
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }
