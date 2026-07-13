@@ -10,6 +10,9 @@ const NETWORKS = {
 };
 const POLL_MS = 15000;
 
+const GOLD = "#C9A24B";
+const MINT = "#6EE7B7";
+
 const short = (s) => (s ? `${s.slice(0, 8)}…${s.slice(-6)}` : "—");
 const fmtIkas = (wei) => {
   const v = Number(wei || 0) / 1e18;
@@ -42,88 +45,109 @@ export default function IgraLiveFeed() {
   }, [network]);
 
   return (
-    <div className="w-full max-w-2xl rounded-3xl overflow-hidden"
-      style={{ border: "1px solid rgba(255,140,90,0.18)", background: "rgba(24,10,6,0.55)",
-        backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
-        boxShadow: "0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,140,90,0.14)" }}>
-        <div className="flex items-center gap-2 text-[10px] tracking-[0.35em] uppercase"
-          style={{ color: "rgba(255,190,150,0.8)", fontFamily: "monospace" }}>
-          <Flame className="w-3.5 h-3.5" /> IGRA L2 · LIVE EVM ON KASPA
-        </div>
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center rounded-full overflow-hidden p-0.5"
-            style={{ border: "1px solid rgba(255,140,90,0.18)", background: "rgba(255,255,255,0.04)" }}>
-            {Object.entries(NETWORKS).map(([key, n]) => (
-              <button key={key} onClick={() => setNetwork(key)}
-                className="px-2.5 py-1 text-[8px] tracking-[0.2em] uppercase focus:outline-none rounded-full"
-                style={{ fontFamily: "monospace",
-                  background: network === key ? "rgba(255,140,90,0.18)" : "transparent",
-                  color: network === key ? "#fdba74" : "rgba(230,170,130,0.4)" }}>
-                {n.label}
-              </button>
-            ))}
+    <div className="w-full max-w-2xl space-y-4">
+      {/* Header + stats panel */}
+      <div className="rounded-2xl overflow-hidden"
+        style={{ border: "1px solid rgba(201,162,75,0.4)", background: "rgba(8,7,4,0.8)",
+          backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)" }}>
+        <div className="flex items-center justify-between px-4 py-3 gap-2 flex-wrap"
+          style={{ borderBottom: "1px solid rgba(201,162,75,0.2)" }}>
+          <div className="flex items-center gap-2 text-[10px] tracking-[0.3em] uppercase"
+            style={{ color: GOLD, fontFamily: "monospace" }}>
+            <Flame className="w-3.5 h-3.5" /> IGRA L2 · LIVE EVM ON KASPA
           </div>
-          <span className={`w-1.5 h-1.5 rounded-full ${error ? "bg-red-400" : "bg-orange-400 animate-pulse"}`} />
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center rounded-lg overflow-hidden p-0.5"
+              style={{ border: "1px solid rgba(201,162,75,0.25)", background: "rgba(255,255,255,0.03)" }}>
+              {Object.entries(NETWORKS).map(([key, n]) => (
+                <button key={key} onClick={() => setNetwork(key)}
+                  className="px-2.5 py-1 text-[8px] tracking-[0.2em] uppercase focus:outline-none rounded-md"
+                  style={{ fontFamily: "monospace",
+                    background: network === key ? "rgba(110,231,183,0.1)" : "transparent",
+                    borderBottom: network === key ? `1px solid ${MINT}` : "1px solid transparent",
+                    color: network === key ? "#fff" : "rgba(201,162,75,0.55)" }}>
+                  {n.label}
+                </button>
+              ))}
+            </div>
+            <span className={`w-1.5 h-1.5 rounded-full ${error ? "bg-red-400" : "animate-pulse"}`}
+              style={!error ? { background: "#E5C567" } : {}} />
+          </div>
         </div>
+
+        {/* Chain stats */}
+        {stats && (
+          <div className="flex items-center gap-4 px-4 py-2.5 text-[9px] tracking-[0.2em] uppercase flex-wrap"
+            style={{ color: "rgba(201,162,75,0.7)", fontFamily: "monospace" }}>
+            <span>BLOCKS <b className="text-white">{Number(stats.total_blocks || 0).toLocaleString()}</b></span>
+            <span>TXS <b className="text-white">{Number(stats.total_transactions || 0).toLocaleString()}</b></span>
+            <span className="hidden sm:inline">ADDRESSES <b className="text-white">{Number(stats.total_addresses || 0).toLocaleString()}</b></span>
+            <span className="ml-auto hidden md:inline">CHAIN ID <b className="text-white">{NETWORKS[network].chainId}</b> · iKAS</span>
+          </div>
+        )}
       </div>
 
-      {/* Chain stats */}
-      {stats && (
-        <div className="flex items-center gap-4 px-4 py-2 text-[9px] tracking-[0.2em] uppercase flex-wrap"
-          style={{ borderBottom: "1px solid rgba(255,140,90,0.1)", color: "rgba(235,180,140,0.55)", fontFamily: "monospace" }}>
-          <span>BLOCKS <b style={{ color: "#fdba74" }}>{Number(stats.total_blocks || 0).toLocaleString()}</b></span>
-          <span>TXS <b style={{ color: "#fdba74" }}>{Number(stats.total_transactions || 0).toLocaleString()}</b></span>
-          <span className="hidden sm:inline">ADDRESSES <b style={{ color: "#fdba74" }}>{Number(stats.total_addresses || 0).toLocaleString()}</b></span>
-          <span className="ml-auto hidden md:inline">CHAIN ID <b style={{ color: "rgba(255,200,160,0.8)" }}>{NETWORKS[network].chainId}</b> · iKAS</span>
+      {/* Transactions ledger */}
+      <div className="rounded-2xl overflow-hidden"
+        style={{ border: "1px solid rgba(201,162,75,0.4)", background: "rgba(8,7,4,0.8)",
+          backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)" }}>
+        {/* Column headers */}
+        <div className="flex items-center gap-3 px-4 py-2.5 text-[8px] tracking-[0.25em] uppercase"
+          style={{ borderBottom: "1px solid rgba(201,162,75,0.2)", color: "rgba(201,162,75,0.6)", fontFamily: "monospace" }}>
+          <span className="w-[130px] flex-shrink-0 hidden sm:block">HASH</span>
+          <span className="flex-shrink-0">FROM → TO</span>
+          <span className="flex-1">ACTION</span>
+          <span className="flex-shrink-0">BLOCK</span>
         </div>
-      )}
 
-      {/* Recent transactions */}
-      <div className="overflow-hidden" style={{ height: "352px" }}>
-        {txs.length === 0 && error && (
-          <div className="h-full flex items-center justify-center text-[10px] tracking-[0.3em] uppercase"
-            style={{ color: "rgba(235,180,140,0.4)", fontFamily: "monospace" }}>
-            NETWORK UNREACHABLE
-          </div>
-        )}
-        {txs.length === 0 && !error && (
-          <div className="h-full flex items-center justify-center gap-2">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: "rgba(255,180,130,0.7)" }} />
-            <span className="text-[10px] tracking-[0.3em] uppercase"
-              style={{ color: "rgba(255,200,160,0.7)", fontFamily: "monospace" }}>
-              READING THE L2…
-            </span>
-          </div>
-        )}
-        <AnimatePresence initial={false}>
-          {txs.map((tx) => (
-            <motion.a key={tx.hash}
-              href={`${NETWORKS[network].base}/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer"
-              initial={{ opacity: 0, y: -14, backgroundColor: "rgba(255,140,90,0.12)" }}
-              animate={{ opacity: 1, y: 0, backgroundColor: "rgba(255,140,90,0)" }}
-              exit={{ opacity: 0 }} transition={{ duration: 0.6 }}
-              whileHover={{ backgroundColor: "rgba(255,140,90,0.06)" }}
-              className="flex items-center gap-3 px-4 py-2.5 cursor-pointer"
-              style={{ borderBottom: "1px solid rgba(255,140,90,0.07)" }}>
-              <div className="flex items-center gap-2 text-[11px] font-bold flex-shrink-0" style={{ fontFamily: "monospace" }}>
-                <span style={{ color: "rgba(255,230,210,0.9)" }}>{short(tx.from)}</span>
-                <ArrowRight className="w-3 h-3" style={{ color: "rgba(255,160,110,0.5)" }} />
-                <span style={{ color: "rgba(255,210,180,0.7)" }}>{short(tx.to)}</span>
-              </div>
-              <div className="flex-1 truncate text-[10px]" style={{ color: "rgba(235,180,140,0.45)", fontFamily: "monospace" }}>
-                {tx.method ? `${tx.method} · ` : ""}{fmtIkas(tx.value)} iKAS
-              </div>
-              <div className="flex-shrink-0 flex items-center gap-1.5">
-                <span className="text-[9px]" style={{ color: "rgba(230,160,120,0.4)", fontFamily: "monospace" }}>
-                  BLK {tx.block ?? "—"}
+        <div className="overflow-hidden" style={{ height: "320px" }}>
+          {txs.length === 0 && error && (
+            <div className="h-full flex items-center justify-center text-[10px] tracking-[0.3em] uppercase"
+              style={{ color: "rgba(201,162,75,0.5)", fontFamily: "monospace" }}>
+              NETWORK UNREACHABLE
+            </div>
+          )}
+          {txs.length === 0 && !error && (
+            <div className="h-full flex items-center justify-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: GOLD }} />
+              <span className="text-[10px] tracking-[0.3em] uppercase"
+                style={{ color: "rgba(201,162,75,0.7)", fontFamily: "monospace" }}>
+                READING THE L2…
+              </span>
+            </div>
+          )}
+          <AnimatePresence initial={false}>
+            {txs.map((tx) => (
+              <motion.a key={tx.hash}
+                href={`${NETWORKS[network].base}/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer"
+                initial={{ opacity: 0, y: -14, backgroundColor: "rgba(201,162,75,0.12)" }}
+                animate={{ opacity: 1, y: 0, backgroundColor: "rgba(201,162,75,0)" }}
+                exit={{ opacity: 0 }} transition={{ duration: 0.6 }}
+                whileHover={{ backgroundColor: "rgba(201,162,75,0.06)" }}
+                className="flex items-center gap-3 px-4 py-2.5 cursor-pointer"
+                style={{ borderBottom: "1px solid rgba(201,162,75,0.12)" }}>
+                <span className="w-[130px] flex-shrink-0 truncate text-[10px] text-white hidden sm:block"
+                  style={{ fontFamily: "monospace" }}>
+                  {short(tx.hash)}
                 </span>
-                <ExternalLink className="w-3 h-3" style={{ color: "rgba(230,170,130,0.35)" }} />
-              </div>
-            </motion.a>
-          ))}
-        </AnimatePresence>
+                <div className="flex items-center gap-1.5 text-[10px] flex-shrink-0" style={{ fontFamily: "monospace" }}>
+                  <span style={{ color: "rgba(255,255,255,0.85)" }}>{short(tx.from)}</span>
+                  <ArrowRight className="w-3 h-3" style={{ color: "rgba(201,162,75,0.6)" }} />
+                  <span className="hidden md:inline" style={{ color: "rgba(255,255,255,0.6)" }}>{short(tx.to)}</span>
+                </div>
+                <div className="flex-1 truncate text-[10px]" style={{ color: "#D9C9A3", fontFamily: "monospace" }}>
+                  {tx.method ? `${tx.method} · ` : ""}{fmtIkas(tx.value)} iKAS
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold" style={{ color: MINT, fontFamily: "monospace" }}>
+                    BLK {tx.block ?? "—"}
+                  </span>
+                  <ExternalLink className="w-3 h-3" style={{ color: MINT, opacity: 0.7 }} />
+                </div>
+              </motion.a>
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
