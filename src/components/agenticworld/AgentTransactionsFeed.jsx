@@ -45,6 +45,7 @@ export default function AgentTransactionsFeed() {
   const [events, setEvents] = useState([]);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(false);
+  const [processedDaa, setProcessedDaa] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -54,6 +55,7 @@ export default function AgentTransactionsFeed() {
         const data = await res.json();
         if (!alive) return;
         setStats(data.stats || null);
+        setProcessedDaa(data.processed_daa || null);
         setEvents((data.recent_events || []).slice(0, 8));
         setError(false);
       } catch {
@@ -89,6 +91,11 @@ export default function AgentTransactionsFeed() {
           <span>ACTIVE AGENTS <b style={{ color: "#67e8f9" }}>{stats.active}</b></span>
           <span>COVENANTS <b style={{ color: "#67e8f9" }}>{stats.covenants}</b></span>
           <span className="hidden sm:inline">LIVE VALUE <b style={{ color: "#67e8f9" }}>{(stats.live_value / 1e8).toFixed(2)} KAS</b></span>
+          {processedDaa && (
+            <span className="ml-auto hidden md:inline" style={{ color: "rgba(120,200,230,0.4)" }}>
+              SCANNED TO DAA <b style={{ color: "rgba(150,225,255,0.7)" }}>{processedDaa.toLocaleString()}</b>
+            </span>
+          )}
         </div>
       )}
 
