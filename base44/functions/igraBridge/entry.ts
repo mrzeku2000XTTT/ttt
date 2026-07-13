@@ -11,6 +11,16 @@ const CHAIN_ID = 38833;
 const EXPLORER = "https://explorer.igralabs.com";
 const KASPA_API = "https://api.kaspa.org";
 
+// Igra's NATIVE exit bridge (KasExitBridge proxy on Igra mainnet).
+// requestExit burns iKAS on L2; the Igra multi-sig committee releases KAS on
+// Kaspa L1 out-of-band — no desk-side KAS liquidity required.
+const EXIT_BRIDGE = "0x4bb88C213d3eD9dc4bae694f1bc1bF745903b2d0";
+const EXIT_ABI = [
+  "function getConfig() view returns (bytes32 kaspaBridgeEndpoint, address feePolicy, address feeClaimer, uint32 throttleWindowBlocks, uint32 throttleMaxExitsPerWindow, uint64 throttleMaxUnlockAmountPerWindowSompi, uint64 minExitSompi, uint64 maxExitSompi)",
+  "function quoteFee(address originBurner, uint64 unlockAmountSompi) view returns (uint64 feeAmountSompi)",
+  "function requestExit(string kasPayoutAddress, uint64 unlockAmountSompi) payable returns (uint32 requestId, bytes32 messageId)",
+];
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -36,9 +46,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === "info") {
-      const [balRes, alphaBal] = await Promise.all([
+      const exitBridge = new ethers.Contract(EXIT_BRIDGE, EXIT_ABI, provider);
+      const [balRes, alphaBal, exitCfg] = await Promise.all([
         fetch(`${KASPA_API}/addresses/${kasBridge.address}/balance`).then((r) => r.json()).catch(() => ({ balance: 0 })),
         provider.getBalance(alpha.address),
+        exitBridge.getConfig().catch(() => null),
       ]);
       return Response.json({
         rate: "1 KAS = 1 iKAS",
@@ -46,6 +58,8 @@ Deno.serve(async (req) => {
         ikas_deposit_address: alpha.address,
         kas_liquidity: Number(balRes.balance || 0) / 1e8,
         ikas_liquidity: ethers.formatEther(alphaBal),
+        native_exit_contract: EXIT_BRIDGE,
+        exit_min_kas: exitCfg ? Number(exitCfg.minExitSompi) / 1e8 : null,
       });
     }
 
@@ -121,25 +135,36 @@ Deno.serve(async (req) => {
         txIn = l2_tx_hash;
       }
 
-      let payout;
-      try {
-        const res = await base44.functions.invoke("sendKaspaTransaction", {
-          privateKey: kasBridge.private_key, fromAddress: kasBridge.address,
-          toAddress: dest, amountKas: amount,
-        });
-        payout = res.data;
-      } catch (err) {
-        const msg = err?.response?.data?.error || err.message;
-        return Response.json({ error: `KAS payout failed: ${msg}. The desk may need KAS liquidity at ${kasBridge.address}` }, { status: 400 });
+      // NATIVE Igra exit — burn iKAS via KasExitBridge; Igra's multi-sig
+      // committee releases the KAS on Kaspa L1. No desk KAS liquidity needed.
+      const wallet = new ethers.Wallet(alpha.private_key, provider);
+      const exitBridge = new ethers.Contract(EXIT_BRIDGE, EXIT_ABI, wallet);
+      const unlockSompi = BigInt(Math.round(amount * 1e8));
+      const cfg = await exitBridge.getConfig();
+      if (unlockSompi < cfg.minExitSompi) {
+        return Response.json({ error: `Native bridge minimum is ${Number(cfg.minExitSompi) / 1e8} KAS per exit — you asked for ${amount}` }, { status: 400 });
       }
+      if (cfg.maxExitSompi > 0n && unlockSompi > cfg.maxExitSompi) {
+        return Response.json({ error: `Native bridge maximum is ${Number(cfg.maxExitSompi) / 1e8} KAS per exit` }, { status: 400 });
+      }
+      const feeSompi = await exitBridge.quoteFee(wallet.address, unlockSompi);
+      const msgValue = (unlockSompi + feeSompi) * 10n ** 10n; // contract invariant: value = (unlock + fee) * 1e10
+      const alphaBal = await provider.getBalance(alpha.address);
+      if (alphaBal < msgValue) {
+        return Response.json({ error: `Agent alpha holds ${ethers.formatEther(alphaBal)} iKAS but the exit needs ${ethers.formatEther(msgValue)} iKAS (amount + ${Number(feeSompi) / 1e8} bridge fee)` }, { status: 400 });
+      }
+      const out = await exitBridge.requestExit(dest, unlockSompi, { value: msgValue, gasLimit: 300000n });
+      await out.wait(1, 90000);
 
       await base44.asServiceRole.entities.IgraBridgeSwap.create({
-        direction: "ikas_to_kas", tx_in: txIn, tx_out: String(payout.txId),
+        direction: "ikas_to_kas", tx_in: txIn, tx_out: out.hash,
         amount, recipient: dest, status: "completed",
       });
       return Response.json({
         direction: "ikas_to_kas", amount, recipient: dest,
-        tx_out: payout.txId, kaspa_explorer_url: `https://explorer.kaspa.org/txs/${payout.txId}`,
+        fee_kas: Number(feeSompi) / 1e8,
+        tx_out: out.hash, explorer_url: `${EXPLORER}/tx/${out.hash}`,
+        note: "iKAS burned via Igra's native KasExitBridge — KAS is released on Kaspa L1 by the Igra multi-sig committee (not instant).",
       });
     }
 

@@ -101,7 +101,7 @@ User command: ${text}`,
       } else if (intent.action === "bridge_info") {
         const res = await base44.functions.invoke("igraBridge", { action: "info" });
         const d = res.data;
-        push({ role: "system", text: `⇄ IGRA BRIDGE DESK · 1 KAS = 1 iKAS · INSTANT\n\nKAS → iKAS: send KAS on Kaspa L1 to\n${d.kas_deposit_address}\nthen say "claim <kaspa tx id> to <0x address or agent name>"\n\niKAS → KAS: say "swap <amount> iKAS from <agent> to <kaspa: address>" — I handle both legs automatically.\n\nLIQUIDITY · ${Number(d.kas_liquidity).toFixed(4)} KAS · ${Number(d.ikas_liquidity).toFixed(4)} iKAS` });
+        push({ role: "system", text: `⇄ IGRA BRIDGE DESK · 1 KAS = 1 iKAS\n\nKAS → iKAS: send KAS on Kaspa L1 to\n${d.kas_deposit_address}\nthen say "claim <kaspa tx id> to <0x address or agent name>" — instant iKAS payout.\n\niKAS → KAS: say "swap <amount> iKAS from <agent> to <kaspa: address>" — I burn via Igra's NATIVE KasExitBridge${d.exit_min_kas ? ` (min ${d.exit_min_kas} KAS)` : ""}; KAS is released on L1 by the Igra multi-sig committee.\n\niKAS POOL · ${Number(d.ikas_liquidity).toFixed(4)} iKAS` });
       } else if (intent.action === "bridge_kas_to_ikas") {
         const localDest = getLocalAgent(intent.to);
         const dest = localDest ? localDest.address
@@ -121,9 +121,9 @@ User command: ${text}`,
         if (!payoutAddr) {
           push({ role: "error", text: "I need a kaspa: payout address — say it in the command, or save yours in \"MY KASPA L1 ADDRESS\" above the chat." });
         } else if (intent.l2_tx_hash) {
-          push({ role: "system", text: `PAYING OUT KAS ON KASPA L1…` });
+          push({ role: "system", text: `BURNING iKAS VIA IGRA'S NATIVE KASEXITBRIDGE…` });
           const res = await base44.functions.invoke("igraBridge", { action: "ikas_to_kas", l2_tx_hash: intent.l2_tx_hash, kaspa_address: payoutAddr });
-          push({ role: "system", text: `✓ BRIDGED · ${res.data.amount} KAS SENT TO ${res.data.recipient}\nL1 TX: ${res.data.tx_out}` });
+          push({ role: "system", text: `✓ EXIT REQUESTED · ${res.data.amount} KAS → ${res.data.recipient}\nKAS IS RELEASED ON L1 BY THE IGRA MULTI-SIG COMMITTEE (NOT INSTANT)\nBURN TX: ${res.data.tx_out}` });
           onTxComplete?.();
         } else {
           // Resolve the sending wallet: exactly what the user named, or auto-pick the funded one
@@ -143,9 +143,9 @@ User command: ${text}`,
               push({ role: "error", text: `AGENT ${fromAgent.toUpperCase()} only holds ${bal(fromAgent).toFixed(4)} iKAS — not enough for ${amount}.` });
             } else if (fromAgent === "alpha") {
               // Alpha IS the bridge pool — pay out directly, no deposit leg
-              push({ role: "system", text: `SWAPPING ${amount} iKAS FROM ALPHA POOL → PAYING OUT KAS ON L1…` });
+              push({ role: "system", text: `SWAPPING ${amount} iKAS FROM ALPHA → NATIVE KASEXITBRIDGE…` });
               const res = await base44.functions.invoke("igraBridge", { action: "ikas_to_kas", from_pool: true, amount, kaspa_address: payoutAddr });
-              push({ role: "system", text: `✓ BRIDGED · ${res.data.amount} KAS SENT TO ${res.data.recipient}\nL1 TX: ${res.data.tx_out}` });
+              push({ role: "system", text: `✓ EXIT REQUESTED · ${res.data.amount} KAS → ${res.data.recipient}\nKAS IS RELEASED ON L1 BY THE IGRA MULTI-SIG COMMITTEE (NOT INSTANT)\nBURN TX: ${res.data.tx_out}` });
               onTxComplete?.();
             } else {
               const localSender = getLocalAgent(fromAgent);
@@ -154,9 +154,9 @@ User command: ${text}`,
                 action: "send", from: fromAgent, to: "alpha", amount,
                 ...(localSender ? { private_key: localSender.private_key } : {}),
               });
-              push({ role: "system", text: `STEP 2/2 · PAYING OUT KAS ON KASPA L1…` });
+              push({ role: "system", text: `STEP 2/2 · BURNING iKAS VIA NATIVE KASEXITBRIDGE…` });
               const res = await base44.functions.invoke("igraBridge", { action: "ikas_to_kas", l2_tx_hash: dep.data.tx_hash, kaspa_address: payoutAddr });
-              push({ role: "system", text: `✓ BRIDGED · ${res.data.amount} KAS SENT TO ${res.data.recipient}\nL1 TX: ${res.data.tx_out}` });
+              push({ role: "system", text: `✓ EXIT REQUESTED · ${res.data.amount} KAS → ${res.data.recipient}\nKAS IS RELEASED ON L1 BY THE IGRA MULTI-SIG COMMITTEE (NOT INSTANT)\nBURN TX: ${res.data.tx_out}` });
               onTxComplete?.();
             }
           }
