@@ -120,6 +120,7 @@ import KaspaNationPage from './pages/KaspaNation';
 import KascovPage from './pages/Kascov';
 import ClipWhileLivePage from './pages/ClipWhileLive';
 import KlipzPage from './pages/Klipz';
+import IgraHorizonPage from './pages/IgraHorizon';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -280,6 +281,7 @@ const AuthenticatedApp = () => {
       <Route path="/Kascov" element={<KascovPage />} />
       <Route path="/ClipWhileLive" element={<ClipWhileLivePage />} />
       <Route path="/Klipz" element={<KlipzPage />} />
+      <Route path="/IgraHorizon" element={<IgraHorizonPage />} />
       <Route path="/Node" element={
         <LayoutWrapper currentPageName="Node">
           <NodePage />
