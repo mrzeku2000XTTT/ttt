@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Sparkles, Globe, Shield } from "lucide-react";
 import AgentTransactionsFeed from "@/components/agenticworld/AgentTransactionsFeed";
+import AgenticCityScene from "@/components/agenticworld/AgenticCityScene";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
 import WorldCarouselOrbs from "@/components/landing/WorldCarouselOrbs";
 
@@ -36,16 +37,17 @@ export default function AgenticWorld() {
           height: worldMode ? "100vh" : "auto",
           boxShadow: worldMode ? "0 0 120px rgba(100,200,255,0.35), inset 0 0 80px rgba(0,0,0,0.8)" : "none" }}>
 
-        {/* Generated world background */}
-        <div className="fixed inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${BG_URL})` }} />
-        <div className="fixed inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,4,8,0.45) 45%, rgba(0,0,0,0.88) 100%)" }} />
+        {/* 3D animated cyber-city background */}
+        <AgenticCityScene />
+        <div className="fixed inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,4,8,0.25) 45%, rgba(0,0,0,0.8) 100%)" }} />
 
         {/* Back to sector selector */}
         <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
           onClick={() => setWorldMode(true)}
-          className="fixed top-5 left-5 z-20 flex items-center gap-2 px-3 py-2 text-[10px] tracking-[0.3em] uppercase focus:outline-none"
-          style={{ border: "1px solid rgba(120,220,255,0.3)", background: "rgba(0,0,0,0.6)",
-            color: "rgba(150,225,255,0.8)", fontFamily: "monospace" }}>
+          className="fixed top-5 left-5 z-20 flex items-center gap-2 px-4 py-2.5 text-[10px] tracking-[0.3em] uppercase focus:outline-none rounded-full"
+          style={{ border: "1px solid rgba(120,220,255,0.25)", background: "rgba(10,20,28,0.55)",
+            backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+            color: "rgba(150,225,255,0.85)", fontFamily: "monospace" }}>
           <ArrowLeft className="w-3.5 h-3.5" /> SECTORS
         </motion.button>
 
@@ -86,10 +88,11 @@ export default function AgenticWorld() {
           <motion.button initial={{ opacity: 0, y: 16 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 16 }}
             transition={{ delay: 1 }} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/SuperZK?from=agenticworld")}
-            className="mt-8 flex items-center gap-3 px-6 py-3 text-[10px] sm:text-[11px] font-black tracking-[0.3em] uppercase focus:outline-none"
-            style={{ border: "1px solid rgba(245,158,11,0.5)", background: "rgba(20,12,0,0.7)",
+            className="mt-8 flex items-center gap-3 px-7 py-3.5 text-[10px] sm:text-[11px] font-black tracking-[0.3em] uppercase focus:outline-none rounded-full"
+            style={{ border: "1px solid rgba(245,158,11,0.4)", background: "rgba(30,18,0,0.5)",
+              backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
               color: "#fbbf24", fontFamily: "monospace",
-              boxShadow: "0 0 35px rgba(245,158,11,0.18)" }}>
+              boxShadow: "0 0 35px rgba(245,158,11,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
             <Shield className="w-4 h-4" />
             SUPERZK · DEPLOY COVENANT++ & ZK PROOFS
           </motion.button>

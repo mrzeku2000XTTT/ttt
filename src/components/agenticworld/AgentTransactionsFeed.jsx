@@ -75,9 +75,10 @@ export default function AgentTransactionsFeed() {
   }, [network]);
 
   return (
-    <div className="w-full max-w-2xl"
-      style={{ border: "1px solid rgba(120,220,255,0.2)", background: "rgba(2,12,20,0.72)",
-        backdropFilter: "blur(12px)", boxShadow: "0 8px 40px rgba(0,0,0,0.7)" }}>
+    <div className="w-full max-w-2xl rounded-3xl overflow-hidden"
+      style={{ border: "1px solid rgba(120,220,255,0.18)", background: "rgba(6,16,24,0.55)",
+        backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(120,220,255,0.15)" }}>
         <div className="flex items-center gap-2 text-[10px] tracking-[0.35em] uppercase"
           style={{ color: "rgba(150,225,255,0.75)", fontFamily: "monospace" }}>
@@ -85,10 +86,10 @@ export default function AgentTransactionsFeed() {
         </div>
         <div className="flex items-center gap-2.5">
           {/* Network toggle */}
-          <div className="flex items-center" style={{ border: "1px solid rgba(120,220,255,0.2)" }}>
+          <div className="flex items-center rounded-full overflow-hidden p-0.5" style={{ border: "1px solid rgba(120,220,255,0.18)", background: "rgba(255,255,255,0.04)" }}>
             {Object.entries(NETWORKS).map(([key, n]) => (
               <button key={key} onClick={() => setNetwork(key)}
-                className="px-2 py-1 text-[8px] tracking-[0.2em] uppercase focus:outline-none"
+                className="px-2.5 py-1 text-[8px] tracking-[0.2em] uppercase focus:outline-none rounded-full"
                 style={{ fontFamily: "monospace",
                   background: network === key ? "rgba(120,220,255,0.15)" : "transparent",
                   color: network === key ? "#67e8f9" : "rgba(120,200,230,0.4)" }}>
@@ -156,7 +157,7 @@ export default function AgentTransactionsFeed() {
                 <div className="flex items-center gap-2 text-[11px] font-bold flex-shrink-0" style={{ fontFamily: "monospace" }}>
                   <span style={{ color: "rgba(210,240,255,0.9)" }}>{codename(ev.covenant_id)}</span>
                   <ArrowRight className="w-3 h-3" style={{ color: "rgba(120,220,255,0.5)" }} />
-                  <span className="text-[9px] font-bold px-1.5 py-0.5" style={{ color: k.color, border: `1px solid ${k.color}44` }}>{k.label}</span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ color: k.color, border: `1px solid ${k.color}44`, background: `${k.color}12` }}>{k.label}</span>
                 </div>
                 <div className="flex-1 truncate text-[10px] tracking-wide" style={{ color: "rgba(140,200,230,0.45)", fontFamily: "monospace" }}>
                   tx {short(ev.txid)} · seq {ev.seq}
