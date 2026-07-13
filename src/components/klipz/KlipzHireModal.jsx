@@ -1,24 +1,49 @@
-import React, { useState } from "react";
-import { X, Loader2, CheckCircle2, Bot } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { X, Loader2, CheckCircle2, Bot, Wallet, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
 const KLIPZ_ADDRESS = "kaspa:qq5yhvly6338dspa9mm24g8q6chvy6v0jww3k4dgqywh0lju5mmm5pj334ews";
 
+function loadTTTWallets() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("terra_wallets") || "[]");
+    return raw
+      .map((w) => ({ ...w, address: w.address?.startsWith("kaspa:") ? w.address : `kaspa:${w.address}` }))
+      .filter((w) => w.mnemonic);
+  } catch (_e) {
+    return [];
+  }
+}
+
 export default function KlipzHireModal({ video, clips, onClose, onDelivered }) {
   const [status, setStatus] = useState("idle"); // idle | paying | verifying | done
   const [error, setError] = useState(null);
+  const [wallets, setWallets] = useState([]);
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  useEffect(() => {
+    setWallets(loadTTTWallets());
+  }, []);
+
+  const wallet = wallets[selectedIdx];
 
   const payAndHire = async () => {
     setError(null);
     try {
-      if (!window.kasware) throw new Error("Kasware wallet not found — install the Kasware browser extension.");
+      if (!wallet) throw new Error("No TTT wallet with a seed phrase found.");
       setStatus("paying");
-      const accounts = await window.kasware.requestAccounts();
-      const raw = await window.kasware.sendKaspa(KLIPZ_ADDRESS, 100000000); // 1 KAS in sompi
-      let txHash = raw;
-      try { const p = JSON.parse(raw); txHash = p.id || p.txid || raw; } catch (_e) { /* raw is the txid */ }
+      const res = await base44.functions.invoke("sendKaspaTransaction", {
+        mnemonic: wallet.mnemonic,
+        fromAddress: wallet.address,
+        toAddress: KLIPZ_ADDRESS,
+        amountKas: 1,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      const txHash = res.data.txId;
+      if (!txHash) throw new Error("Payment did not return a transaction id");
       setStatus("verifying");
-      await base44.functions.invoke("klipzHireAgent", { txHash, wallet: accounts[0], video, clips });
+      await base44.functions.invoke("klipzHireAgent", { txHash, wallet: wallet.address, video, clips });
       setStatus("done");
     } catch (err) {
       setError(err.response?.data?.error || err.message || "Payment failed");
@@ -52,8 +77,40 @@ export default function KlipzHireModal({ video, clips, onClose, onDelivered }) {
               <p className="text-zinc-400 truncate">{video?.title}</p>
               <p className="text-cyan-400 mt-1">{clips.length} CLIP DRAFTS · DELIVERED TO YOUR LIBRARY</p>
             </div>
+
+            {/* TTT Wallet picker */}
+            <p className="text-[9px] text-zinc-500 tracking-[0.25em] mb-2">PAY FROM TTT WALLET</p>
+            {wallets.length === 0 ? (
+              <div className="border border-amber-500/40 p-3 mb-4 text-[11px] text-amber-400 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  No TTT wallet with a seed phrase found.{" "}
+                  <Link to="/Terra" className="underline text-cyan-400">Open TTT Wallet</Link> to create or import one, then come back.
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-2 mb-4">
+                {wallets.map((w, i) => (
+                  <button
+                    key={w.address}
+                    onClick={() => setSelectedIdx(i)}
+                    className={`w-full flex items-center gap-3 p-3 border text-left transition-colors ${
+                      i === selectedIdx ? "border-cyan-400 bg-cyan-500/10" : "border-zinc-800 hover:border-zinc-600"
+                    }`}
+                  >
+                    <Wallet className={`w-4 h-4 flex-shrink-0 ${i === selectedIdx ? "text-cyan-400" : "text-zinc-500"}`} />
+                    <div className="min-w-0">
+                      <p className="text-white text-[11px] font-bold">{w.label || `Wallet ${i + 1}`}</p>
+                      <p className="text-zinc-500 text-[9px] truncate">{w.address.slice(0, 20)}…{w.address.slice(-6)}</p>
+                    </div>
+                    {i === selectedIdx && <span className="ml-auto text-cyan-400 text-[9px] tracking-widest">SELECTED</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="text-[10px] text-zinc-500 space-y-1.5 mb-4">
-              <p>1. You pay <span className="text-cyan-400 font-bold">1 KAS</span> via Kasware</p>
+              <p>1. <span className="text-cyan-400 font-bold">1 KAS</span> is sent natively from your TTT wallet</p>
               <p>2. Agent verifies the payment on the Kaspa network</p>
               <p>3. Your clips land in your library — playable, shareable, downloadable</p>
             </div>
@@ -61,11 +118,11 @@ export default function KlipzHireModal({ video, clips, onClose, onDelivered }) {
             {error && <p className="text-red-400 text-[11px] border border-red-500/40 p-3 mb-4">{error}</p>}
             <button
               onClick={payAndHire}
-              disabled={status !== "idle"}
+              disabled={status !== "idle" || !wallet}
               className="w-full py-3.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-black text-[11px] font-bold tracking-[0.2em] flex items-center justify-center gap-2"
             >
               {status === "idle" && "PAY 1 KAS & HIRE →"}
-              {status === "paying" && (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> WAITING FOR KASWARE…</>)}
+              {status === "paying" && (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> SENDING FROM TTT WALLET…</>)}
               {status === "verifying" && (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> VERIFYING ON-CHAIN…</>)}
             </button>
           </>
