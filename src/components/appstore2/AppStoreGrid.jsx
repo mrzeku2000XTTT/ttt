@@ -7,7 +7,7 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
-  { name: "ClipWhileLive", path: "ClipWhileLive", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9a9dc118e_generated_image.png", desc: "Clip live streams before the VOD" },
+  { name: "KLIPZ", path: "Klipz", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3ddaedfc7_generated_image.png", desc: "AI clip engine — clip live streams & videos natively" },
   { name: "Kascov", path: "Kascov", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4f1bb97ec_generated_image.png", desc: "Covenant explorer · scan ZK smart coins" },
   { name: "Calculator", path: "Calculator", cat: "TTT", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bedec5aa6_generated_image.png", desc: "TTT AI calculator" },
   { name: "KAS SWORD", path: null, externalUrl: "https://kassword.com", cat: "Security", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/636eaa7be_generated_image.png", desc: "Post-quantum DAG vault" },
