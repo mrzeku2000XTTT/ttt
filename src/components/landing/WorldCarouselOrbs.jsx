@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 
 // Neighboring "worlds" that slide in/out horizontally as you turn left/right
 // in world mode. Index 0 is the live landing page itself (rendered elsewhere).
-export default function WorldCarouselOrbs({ worlds, index, onEnter }) {
+export default function WorldCarouselOrbs({ worlds, index, onEnter, selfIndex = 0 }) {
   const vw = typeof window !== "undefined" ? window.innerWidth : 1000;
   return (
     <>
       {worlds.map((w, i) => {
-        if (i === 0) return null;
+        if (i === selfIndex) return null;
         return (
           <motion.div key={w.name}
             className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none"
