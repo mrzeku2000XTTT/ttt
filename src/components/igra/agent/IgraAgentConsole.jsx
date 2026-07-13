@@ -6,7 +6,7 @@ import { getSavedKaspaAddress } from "@/components/igra/agent/KaspaAddressCard";
 import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo";
 
 // Natural-language console — the agent parses your command, forges local wallets, and transacts iKAS on Igra
-export default function IgraAgentConsole({ agents, onTxComplete, onForged }) {
+export default function IgraAgentConsole({ agents, onTxComplete, onForged, fullHeight }) {
   const [messages, setMessages] = useState([{
     role: "agent",
     text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833) and run an instant 1:1 KAS ↔ iKAS bridge desk. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to beta\", \"show the desk\", \"bridge info\", \"swap 1 iKAS from beta to kaspa:...\", or \"claim <kaspa tx id> to 0x...\". Local wallets keep their keys in THIS browser only.",
@@ -187,7 +187,8 @@ User command: ${text}`,
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col"
       style={{ border: "1px solid rgba(201,162,75,0.25)", background: "rgba(8,7,4,0.75)",
-        backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", height: "50vh", minHeight: "380px" }}>
+        backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        height: fullHeight ? "100%" : "50vh", minHeight: fullHeight ? 0 : "380px" }}>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((m, i) => {
           if (m.role === "tx") return (

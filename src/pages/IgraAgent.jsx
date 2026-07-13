@@ -16,6 +16,7 @@ export default function IgraAgent() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
+  const [view, setView] = useState("chat");
   const [autoMode, setAutoMode] = useState(() => {
     try { return localStorage.getItem(AUTO_MODE_KEY) === "on"; } catch { return false; }
   });
@@ -74,10 +75,10 @@ export default function IgraAgent() {
   }, []);
 
   return (
-    <div className="min-h-screen text-white relative"
+    <div className="h-screen overflow-hidden text-white relative"
       style={{ background: "#000000" }}>
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-3xl mx-auto px-4 py-4 h-full flex flex-col">
+        <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <Link to="/IgraHorizon"
             className="flex items-center gap-2 px-4 py-2 text-[9px] tracking-[0.3em] uppercase rounded-full"
             style={{ border: "1px solid rgba(201,162,75,0.3)", background: "rgba(12,10,6,0.6)",
@@ -93,27 +94,43 @@ export default function IgraAgent() {
           </button>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6 text-center">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-3 flex items-center justify-center gap-3 flex-shrink-0">
           <img src={IGRA_AGENT_LOGO} alt="Igra Agent"
-            className="w-20 h-20 mx-auto mb-3 rounded-full object-cover"
-            style={{ boxShadow: "0 0 40px rgba(201,162,75,0.25)", border: "1px solid rgba(201,162,75,0.3)" }} />
-          <div className="flex items-center justify-center gap-3">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight"
+            className="w-10 h-10 rounded-full object-cover"
+            style={{ boxShadow: "0 0 30px rgba(201,162,75,0.25)", border: "1px solid rgba(201,162,75,0.3)" }} />
+          <div className="text-left">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-none"
               style={{ fontFamily: "'Georgia', serif",
                 background: "linear-gradient(180deg, #ffffff 0%, #f0e6cf 55%, #C9A24B 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
               IGRA AGENT
             </h1>
+            <p className="mt-1 text-[7px] tracking-[0.25em] uppercase"
+              style={{ color: "rgba(201,162,75,0.65)", fontFamily: "monospace" }}>
+              iKAS TRANSACTIONS · IGRA MAINNET · CHAIN 38833
+            </p>
           </div>
-          <p className="mt-2 text-[9px] tracking-[0.3em] uppercase"
-            style={{ color: "rgba(201,162,75,0.65)", fontFamily: "monospace" }}>
-            AGENT-TO-AGENT iKAS TRANSACTIONS · IGRA MAINNET · CHAIN 38833
-          </p>
         </motion.div>
+
+        {/* Split-screen toggle: CHAT | WALLETS */}
+        <div className="flex gap-1.5 mb-3 p-1 rounded-full flex-shrink-0"
+          style={{ border: "1px solid rgba(201,162,75,0.25)", background: "rgba(12,10,6,0.6)" }}>
+          {[["chat", "AGENT CHAT"], ["wallets", "WALLETS & DESK"]].map(([key, label]) => (
+            <button key={key} onClick={() => setView(key)}
+              className="flex-1 py-2 rounded-full text-[9px] font-black tracking-[0.25em] uppercase focus:outline-none transition-colors"
+              style={{ fontFamily: "monospace",
+                background: view === key ? "rgba(201,162,75,0.18)" : "transparent",
+                border: `1px solid ${view === key ? "rgba(201,162,75,0.5)" : "transparent"}`,
+                color: view === key ? "#C9A24B" : "rgba(201,162,75,0.45)" }}>
+              {label}
+            </button>
+          ))}
+        </div>
 
         {/* Live transaction detections */}
         {events.length > 0 && (
-          <div className="mb-4 space-y-1.5">
+          <div className="mb-2 space-y-1.5 flex-shrink-0 max-h-24 overflow-y-auto">
             {events.map((ev) => (
               <motion.div key={ev.id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                 className="px-3 py-2 rounded-xl text-[9px] tracking-[0.15em] uppercase flex items-center gap-2"
@@ -132,31 +149,41 @@ export default function IgraAgent() {
           </div>
         )}
 
-        {/* Agent wallets — server agents + browser-local agents */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          {status?.agents
-            ? Object.entries(status.agents).map(([name, a]) => (
-                <AgentWalletCard key={name} name={name} address={a.address}
-                  balance={a.balance_ikas} local={a.local} onTxComplete={() => loadStatus(false)} />
-              ))
-            : ["alpha", "beta"].map((n) => (
-                <AgentWalletCard key={n} name={n} address={null} balance={null} />
-              ))}
+        {/* Split-screen content — fills the rest of the viewport, no page scroll */}
+        <div className="flex-1 min-h-0">
+          {view === "chat" ? (
+            <div className="h-full">
+              <IgraAgentConsole agents={status?.agents} fullHeight
+                onTxComplete={() => loadStatus(false)} onForged={() => loadStatus(false)} />
+            </div>
+          ) : (
+            <div className="h-full overflow-y-auto pb-4">
+              {/* Agent wallets — server agents + browser-local agents */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                {status?.agents
+                  ? Object.entries(status.agents).map(([name, a]) => (
+                      <AgentWalletCard key={name} name={name} address={a.address}
+                        balance={a.balance_ikas} local={a.local} onTxComplete={() => loadStatus(false)} />
+                    ))
+                  : ["alpha", "beta"].map((n) => (
+                      <AgentWalletCard key={n} name={n} address={null} balance={null} />
+                    ))}
+              </div>
+
+              <AutoTransactToggle enabled={autoMode}
+                onChange={(v) => { setAutoMode(v); autoRef.current = v; }} />
+
+              <KaspaAddressCard />
+
+              <DeskFundingCard />
+
+              <p className="mt-4 text-center text-[8px] tracking-[0.2em] uppercase leading-relaxed"
+                style={{ color: "rgba(201,162,75,0.4)", fontFamily: "monospace" }}>
+                FUND AGENT ALPHA WITH iKAS TO ACTIVATE TRANSACTIONS · SIGNED SERVER-SIDE · BROADCAST THROUGH IGRA RPC NODES
+              </p>
+            </div>
+          )}
         </div>
-
-        <AutoTransactToggle enabled={autoMode}
-          onChange={(v) => { setAutoMode(v); autoRef.current = v; }} />
-
-        <KaspaAddressCard />
-
-        <DeskFundingCard />
-
-        <IgraAgentConsole agents={status?.agents} onTxComplete={() => loadStatus(false)} onForged={() => loadStatus(false)} />
-
-        <p className="mt-4 text-center text-[8px] tracking-[0.2em] uppercase leading-relaxed"
-          style={{ color: "rgba(201,162,75,0.4)", fontFamily: "monospace" }}>
-          FUND AGENT ALPHA WITH iKAS TO ACTIVATE TRANSACTIONS · SIGNED SERVER-SIDE · BROADCAST THROUGH IGRA RPC NODES
-        </p>
       </div>
     </div>
   );
