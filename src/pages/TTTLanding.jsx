@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem } from "lucide-react";
+import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem, Globe } from "lucide-react";
 import GrokChat from "@/components/landing/GrokChat";
 import ChestModal from "@/components/landing/ChestModal";
 import AdventCalendar from "@/components/landing/AdventCalendar";
@@ -1356,14 +1356,13 @@ export default function TTTLandingPage() {
           {/* Bottom stamp */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}
             className="mt-6 flex items-center justify-center gap-2 text-[9px] tracking-[0.45em] uppercase"
-            style={{ color: "rgba(120,90,25,0.3)", fontFamily: "monospace" }}>
+            style={{ color: "rgba(200,160,70,0.65)", fontFamily: "monospace" }}>
             <span>© TTT PLATFORM · V3.0</span>
             <motion.button type="button" whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.9 }}
               onClick={() => { sounds.playSelect(); setWorldMode(true); }}
               className="focus:outline-none" title="See the greater world"
               style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
-              <img src={WORLD_ICON} alt="World" className="w-4 h-4 object-contain"
-                style={{ filter: "drop-shadow(0 0 6px rgba(220,160,40,0.7))" }} />
+              <Globe className="w-3.5 h-3.5" style={{ color: "rgba(220,175,70,0.8)" }} strokeWidth={1.5} />
             </motion.button>
           </motion.div>
         </div>
