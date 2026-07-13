@@ -9,7 +9,7 @@ import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo
 export default function IgraAgentConsole({ agents, onTxComplete, onForged }) {
   const [messages, setMessages] = useState([{
     role: "agent",
-    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833) and run an instant 1:1 KAS ↔ iKAS bridge desk. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to beta\", \"bridge info\", \"swap 1 iKAS from beta to kaspa:...\", or \"claim <kaspa tx id> to 0x...\". Local wallets keep their keys in THIS browser only.",
+    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833) and run an instant 1:1 KAS ↔ iKAS bridge desk. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to beta\", \"show the desk\", \"bridge info\", \"swap 1 iKAS from beta to kaspa:...\", or \"claim <kaspa tx id> to 0x...\". Local wallets keep their keys in THIS browser only.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,6 +38,7 @@ Parse the user's command into an action:
 - "forge": generate a NEW local agent wallet in the browser. name = the wallet/agent name the user wants (invent a short lowercase one like "agent-${locals.length + 1}" if not given).
 - "send": transfer iKAS. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, or a 0x address. amount = number in iKAS.
 - "status": check balances/addresses.
+- "desk": user asks about the desk, desk wallet, funding wallet, desk balance, or how to fund the desk.
 - "bridge_info": user asks about the bridge/marketplace, swap rates, deposit addresses, or bridge liquidity.
 - "bridge_kas_to_ikas": user wants to swap KAS (Kaspa L1) into iKAS, OR claims a KAS deposit. l1_tx_id = the Kaspa L1 transaction id if the user provided one (64 hex chars, no 0x). to = destination agent name or 0x address for the iKAS. amount = KAS amount if the user states one (e.g. "swap 10 KAS to beta").
 - "bridge_ikas_to_kas": user wants to swap iKAS into KAS on Kaspa L1. amount = iKAS amount (omit if not stated). from = EXACTLY the wallet the user names ("alpha", "beta", or a local agent name) — OMIT "from" entirely if the user does not name a wallet, do NOT guess. kaspa_address = the kaspa: payout address; if not given, use the user's saved Kaspa L1 address. l2_tx_hash = only if the user already sent iKAS to the pool and gives a 0x… tx hash.
@@ -49,7 +50,7 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["forge", "send", "status", "chat", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas"] },
             name: { type: "string" },
             from: { type: "string" },
             to: { type: "string" },
@@ -98,6 +99,15 @@ User command: ${text}`,
           .map(([n, a]) => `${n.toUpperCase()} ${Number(a.balance_ikas).toFixed(4)} iKAS${a.local ? " (LOCAL)" : ""}`);
         push({ role: "system", text: `${lines.join(" · ")} · CHAIN ${res.data.chain_id}` });
         onTxComplete?.();
+      } else if (intent.action === "desk") {
+        const res = await base44.functions.invoke("igraBridge", { action: "info" });
+        const addr = res.data.kas_deposit_address;
+        let kasBal = null;
+        try {
+          const b = await fetch(`https://api.kaspa.org/addresses/${encodeURIComponent(addr)}/balance`).then((r) => r.json());
+          kasBal = (b.balance || 0) / 1e8;
+        } catch { /* show address without balance */ }
+        push({ role: "system", text: `🏛 DESK KAS FUNDING WALLET\n${addr}\n\nKAS BALANCE · ${kasBal !== null ? kasBal.toFixed(4) : "?"} KAS\niKAS POOL · ${Number(res.data.ikas_liquidity).toFixed(4)} iKAS\n\nADMIN FUNDS THIS WALLET — POWERS NATIVE KAS → iKAS SWAPS (MIN 10 KAS) AND INSTANT iKAS → KAS PAYOUTS.` });
       } else if (intent.action === "bridge_info") {
         const res = await base44.functions.invoke("igraBridge", { action: "info" });
         const d = res.data;
