@@ -69,7 +69,7 @@ export default function DeskFundingCard() {
       )}
       <p className="mt-2 text-[8px] tracking-[0.15em] uppercase leading-relaxed"
         style={{ color: "rgba(201,162,75,0.45)", fontFamily: "monospace" }}>
-        ADMIN FUNDS THIS WALLET · POWERS NATIVE KAS → iKAS SWAPS (MIN 10 KAS) AND INSTANT iKAS → KAS PAYOUTS · TAP ADDRESS TO COPY
+        ADMIN FUNDS THIS WALLET · POWERS NATIVE KAS → iKAS SWAPS (MIN 10 KAS) AND INSTANT iKAS → KAS PAYOUTS · EVERY DESK SWAP RETAINS A 0.5% FEE THAT REFILLS THE POOLS · TAP ADDRESS TO COPY
       </p>
     </div>
   );

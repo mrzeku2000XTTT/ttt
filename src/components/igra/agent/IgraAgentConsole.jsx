@@ -107,11 +107,11 @@ User command: ${text}`,
           const b = await fetch(`https://api.kaspa.org/addresses/${encodeURIComponent(addr)}/balance`).then((r) => r.json());
           kasBal = (b.balance || 0) / 1e8;
         } catch { /* show address without balance */ }
-        push({ role: "system", text: `🏛 DESK KAS FUNDING WALLET\n${addr}\n\nKAS BALANCE · ${kasBal !== null ? kasBal.toFixed(4) : "?"} KAS\niKAS POOL · ${Number(res.data.ikas_liquidity).toFixed(4)} iKAS\n\nADMIN FUNDS THIS WALLET — POWERS NATIVE KAS → iKAS SWAPS (MIN 10 KAS) AND INSTANT iKAS → KAS PAYOUTS.` });
+        push({ role: "system", text: `🏛 DESK KAS FUNDING WALLET\n${addr}\n\nKAS BALANCE · ${kasBal !== null ? kasBal.toFixed(4) : "?"} KAS\niKAS POOL · ${Number(res.data.ikas_liquidity).toFixed(4)} iKAS\n\nADMIN FUNDS THIS WALLET — POWERS NATIVE KAS → iKAS SWAPS (MIN 10 KAS) AND INSTANT iKAS → KAS PAYOUTS.\nEVERY DESK SWAP RETAINS A 0.5% FEE IN THE POOLS — THE DESK REFILLS ITSELF AS PEOPLE TRADE.` });
       } else if (intent.action === "bridge_info") {
         const res = await base44.functions.invoke("igraBridge", { action: "info" });
         const d = res.data;
-        push({ role: "system", text: `⇄ IGRA BRIDGE DESK · 1 KAS = 1 iKAS\n\nKAS → iKAS: send KAS on Kaspa L1 to\n${d.kas_deposit_address}\nthen say "claim <kaspa tx id> to <0x address or agent name>" — instant iKAS payout.\n\niKAS → KAS: say "swap <amount> iKAS from <agent> to <kaspa: address>" — I burn via Igra's NATIVE KasExitBridge${d.exit_min_kas ? ` (min ${d.exit_min_kas} KAS)` : ""}; KAS is released on L1 by the Igra multi-sig committee.\n\niKAS POOL · ${Number(d.ikas_liquidity).toFixed(4)} iKAS` });
+        push({ role: "system", text: `⇄ IGRA BRIDGE DESK · 1 KAS = 1 iKAS\n\nKAS → iKAS: send KAS on Kaspa L1 to\n${d.kas_deposit_address}\nthen say "claim <kaspa tx id> to <0x address or agent name>" — instant iKAS payout.\n\niKAS → KAS: say "swap <amount> iKAS from <agent> to <kaspa: address>" — I burn via Igra's NATIVE KasExitBridge${d.exit_min_kas ? ` (min ${d.exit_min_kas} KAS)` : ""}; KAS is released on L1 by the Igra multi-sig committee.\n\niKAS POOL · ${Number(d.ikas_liquidity).toFixed(4)} iKAS · DESK FEE ${d.desk_fee_pct ?? 0.5}% (RETAINED IN POOLS)` });
       } else if (intent.action === "bridge_kas_to_ikas") {
         const localDest = getLocalAgent(intent.to);
         const dest = localDest ? localDest.address

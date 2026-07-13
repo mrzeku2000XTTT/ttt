@@ -11,6 +11,11 @@ const CHAIN_ID = 38833;
 const EXPLORER = "https://explorer.igralabs.com";
 const KASPA_API = "https://api.kaspa.org";
 
+// Desk sustainability fee: 0.5% spread retained by the pools on every swap
+// that uses desk liquidity. This is what keeps refilling the KAS L1 wallet
+// and alpha's iKAS pool over time.
+const DESK_FEE = 0.005;
+
 // Igra's NATIVE exit bridge (KasExitBridge proxy on Igra mainnet).
 // requestExit burns iKAS on L2; the Igra multi-sig committee releases KAS on
 // Kaspa L1 out-of-band — no desk-side KAS liquidity required.
@@ -60,6 +65,7 @@ Deno.serve(async (req) => {
         ikas_liquidity: ethers.formatEther(alphaBal),
         native_exit_contract: EXIT_BRIDGE,
         exit_min_kas: exitCfg ? Number(exitCfg.minExitSompi) / 1e8 : null,
+        desk_fee_pct: DESK_FEE * 100,
       });
     }
 
@@ -82,8 +88,10 @@ Deno.serve(async (req) => {
         .reduce((s: number, o: any) => s + Number(o.amount), 0);
       if (paidSompi <= 0) return Response.json({ error: `This transaction sends no KAS to the bridge address ${kasBridge.address}` }, { status: 400 });
       const amount = paidSompi / 1e8;
+      // Retain the desk fee in alpha's pool — payout is amount minus 0.5%
+      const payoutIkas = Math.floor(amount * (1 - DESK_FEE) * 1e8) / 1e8;
 
-      const amt = ethers.parseEther(String(amount));
+      const amt = ethers.parseEther(String(payoutIkas));
       const poolBal = await provider.getBalance(alpha.address);
       if (poolBal < amt) return Response.json({ error: `Insufficient iKAS liquidity in the desk (${ethers.formatEther(poolBal)} iKAS available)` }, { status: 400 });
 
@@ -97,10 +105,11 @@ Deno.serve(async (req) => {
 
       await base44.asServiceRole.entities.IgraBridgeSwap.create({
         direction: "kas_to_ikas", tx_in: l1_tx_id, tx_out: out.hash,
-        amount, recipient: evm_address, status: "completed",
+        amount: payoutIkas, recipient: evm_address, status: "completed",
       });
       return Response.json({
-        direction: "kas_to_ikas", amount, recipient: evm_address,
+        direction: "kas_to_ikas", amount: payoutIkas, desk_fee_kas: amount - payoutIkas,
+        recipient: evm_address,
         tx_out: out.hash, explorer_url: `${EXPLORER}/tx/${out.hash}`,
       });
     }
@@ -144,11 +153,13 @@ Deno.serve(async (req) => {
       if (unlockSompi < cfg.minExitSompi) {
         // Below the native contract minimum (10,000 KAS on-chain) — pay small
         // exits instantly from the desk's own KAS L1 liquidity instead
+        // Retain the desk fee in the KAS L1 wallet — payout is amount minus 0.5%
+        const payoutKas = Math.floor(amount * (1 - DESK_FEE) * 1e8) / 1e8;
         let payout;
         try {
           const res = await base44.functions.invoke("sendKaspaTransaction", {
             privateKey: kasBridge.private_key, fromAddress: kasBridge.address,
-            toAddress: dest, amountKas: amount,
+            toAddress: dest, amountKas: payoutKas,
           });
           payout = res.data;
         } catch (err) {
@@ -157,12 +168,13 @@ Deno.serve(async (req) => {
         }
         await base44.asServiceRole.entities.IgraBridgeSwap.create({
           direction: "ikas_to_kas", tx_in: txIn, tx_out: String(payout.txId),
-          amount, recipient: dest, status: "completed",
+          amount: payoutKas, recipient: dest, status: "completed",
         });
         return Response.json({
-          direction: "ikas_to_kas", amount, recipient: dest, via: "desk",
+          direction: "ikas_to_kas", amount: payoutKas, desk_fee_kas: amount - payoutKas,
+          recipient: dest, via: "desk",
           tx_out: payout.txId, explorer_url: `https://explorer.kaspa.org/txs/${payout.txId}`,
-          note: "PAID INSTANTLY FROM DESK KAS LIQUIDITY",
+          note: "PAID INSTANTLY FROM DESK KAS LIQUIDITY · 0.5% DESK FEE RETAINED IN POOL",
         });
       }
       if (cfg.maxExitSompi > 0n && unlockSompi > cfg.maxExitSompi) {
