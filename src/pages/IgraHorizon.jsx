@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Sparkles, Globe, Flame } from "lucide-react";
 import IgraLiveFeed from "@/components/igra/IgraLiveFeed";
+import IgraAppsGrid from "@/components/igra/IgraAppsGrid";
 import IgraHorizonScene from "@/components/igra/IgraHorizonScene";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
 import WorldCarouselOrbs from "@/components/landing/WorldCarouselOrbs";
@@ -80,6 +81,12 @@ export default function IgraHorizon() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 24 }}
             transition={{ delay: 0.8 }} className="mt-10 w-full flex justify-center">
             <IgraLiveFeed />
+          </motion.div>
+
+          {/* Apps forged on Igra */}
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 24 }}
+            transition={{ delay: 0.9 }} className="mt-10 w-full flex justify-center">
+            <IgraAppsGrid />
           </motion.div>
 
           {/* Explorer CTA */}
