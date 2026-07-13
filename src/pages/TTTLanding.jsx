@@ -28,6 +28,7 @@ const WORLDS = [
   { name: "TTT PRIME", desc: "THE MOTHER WORLD" },
   { name: "AGENTIC WORLD", desc: "SECTOR 02", path: "/AgenticWorld" },
   { name: "KASPA NATIONS", desc: "SECTOR 03", path: "/KaspaNations" },
+  { name: "IGRA HORIZON", desc: "SECTOR 04", path: "/IgraHorizon" },
 ];
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";

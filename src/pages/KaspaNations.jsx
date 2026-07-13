@@ -13,6 +13,7 @@ const WORLDS = [
   { name: "TTT PRIME", desc: "THE MOTHER WORLD", path: "/" },
   { name: "AGENTIC WORLD", desc: "SECTOR 02", path: "/AgenticWorld" },
   { name: "KASPA NATIONS", desc: "SECTOR 03" },
+  { name: "IGRA HORIZON", desc: "SECTOR 04", path: "/IgraHorizon" },
 ];
 const SELF = 2;
 
