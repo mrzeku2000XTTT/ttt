@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Play, Copy, Check } from "lucide-react";
+import { Play, Copy, Check, Bot } from "lucide-react";
 
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-export default function KlipzClipCard({ clip, videoId, index }) {
+export default function KlipzClipCard({ clip, videoId, index, onCanvas }) {
   const [start, setStart] = useState(clip.start_s);
   const [end, setEnd] = useState(clip.end_s);
   const [playing, setPlaying] = useState(false);
@@ -59,6 +59,14 @@ export default function KlipzClipCard({ clip, videoId, index }) {
             {copied ? "COPIED" : "SHARE"}
           </button>
         </div>
+        {onCanvas && (
+          <button
+            onClick={() => onCanvas({ ...clip, start_s: start, end_s: end })}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-cyan-500 text-black font-bold text-[10px] tracking-[0.2em] hover:bg-cyan-400 transition-colors"
+          >
+            <Bot className="w-3.5 h-3.5" /> AGENT CANVAS · RENDER MP4
+          </button>
+        )}
       </div>
     </div>
   );

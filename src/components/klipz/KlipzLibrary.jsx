@@ -15,7 +15,7 @@ function loadWalletAddresses() {
   }
 }
 
-export default function KlipzLibrary() {
+export default function KlipzLibrary({ onCanvas }) {
   const [jobs, setJobs] = useState(null);
   const [noWallet, setNoWallet] = useState(false);
   const [downloading, setDownloading] = useState(null);
@@ -95,6 +95,7 @@ export default function KlipzLibrary() {
               clip={{ title: job.clip_title, reason: job.reason, start_s: job.start_s, end_s: job.end_s, score: job.score }}
               videoId={job.video_id}
               index={i}
+              onCanvas={onCanvas ? (c) => onCanvas(c, job.video_id) : undefined}
             />
             <div className="border border-t-0 border-zinc-800 bg-zinc-950 px-4 py-2.5 flex items-center justify-between text-[10px]">
               <span className="text-emerald-400 tracking-widest">✓ DELIVERED · TX {job.tx_hash?.slice(0, 8)}…</span>

@@ -7,6 +7,7 @@ import KlipzClipCard from "@/components/klipz/KlipzClipCard";
 import KlipzAgent from "@/components/klipz/KlipzAgent";
 import KlipzHireModal from "@/components/klipz/KlipzHireModal";
 import KlipzLibrary from "@/components/klipz/KlipzLibrary";
+import KlipzAgentCanvas from "@/components/klipz/KlipzAgentCanvas";
 
 export default function Klipz() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Klipz() {
   const [tab, setTab] = useState("studio");
   const [hiring, setHiring] = useState(false);
   const [agentHint, setAgentHint] = useState(false);
+  const [canvas, setCanvas] = useState(null); // { clip, videoId }
 
   const analyze = async (url) => {
     setLoading(true);
@@ -64,7 +66,7 @@ export default function Klipz() {
           <h2 className="text-center text-white font-black text-2xl tracking-tight" style={{ fontFamily: "monospace" }}>
             MY CLIP <span className="text-cyan-400">LIBRARY</span>
           </h2>
-          <KlipzLibrary />
+          <KlipzLibrary onCanvas={(clip, vid) => setCanvas({ clip, videoId: vid })} />
         </div>
       )}
 
@@ -117,7 +119,8 @@ export default function Klipz() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {result.clips.map((clip, i) => (
-              <KlipzClipCard key={i} clip={clip} videoId={result.video.id} index={i} />
+              <KlipzClipCard key={i} clip={clip} videoId={result.video.id} index={i}
+                onCanvas={(c) => setCanvas({ clip: c, videoId: result.video.id })} />
             ))}
           </div>
         </div>
@@ -144,6 +147,10 @@ export default function Klipz() {
         </div>
       )}
       </>)}
+
+      {canvas && (
+        <KlipzAgentCanvas clip={canvas.clip} videoId={canvas.videoId} onClose={() => setCanvas(null)} />
+      )}
 
       {hiring && result && (
         <KlipzHireModal
