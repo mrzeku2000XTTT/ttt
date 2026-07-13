@@ -21,6 +21,14 @@ const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/Cybern
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
 import KaspaPanel from "@/components/landing/KaspaPanel";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
+import WorldCarouselOrbs from "@/components/landing/WorldCarouselOrbs";
+
+// Worlds in the greater universe — index 0 is this live landing page
+const WORLDS = [
+  { name: "TTT PRIME", desc: "THE MOTHER WORLD" },
+  { name: "WORLD OF KASPA", desc: "SECTOR 02", path: "/WorldOfKaspa" },
+  { name: "WORLD OF AI", desc: "SECTOR 03", path: "/WorldOfAI" },
+];
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
@@ -1102,6 +1110,7 @@ export default function TTTLandingPage() {
   const [showKaspa, setShowKaspa] = useState(false);
   const [bgReady, setBgReady] = useState(false);
   const [worldMode, setWorldMode] = useState(false);
+  const [worldIndex, setWorldIndex] = useState(0);
   const sounds = useGameSounds();
 
   // Defer the heavy WebGL background until after first paint so
@@ -1198,8 +1207,10 @@ export default function TTTLandingPage() {
       {/* === WORLD WRAPPER — everything inside shrinks into a small world in world mode === */}
       <motion.div
         className="relative overflow-hidden"
-        animate={worldMode ? { scale: 0.2, borderRadius: "50%" } : { scale: 1, borderRadius: "0%" }}
-        transition={{ duration: 3.2, ease: [0.22, 1, 0.36, 1] }}
+        animate={worldMode
+          ? { scale: 0.2, borderRadius: "50%", x: -worldIndex * (typeof window !== "undefined" ? window.innerWidth : 0) }
+          : { scale: 1, borderRadius: "0%", x: 0 }}
+        transition={{ duration: 3.2, ease: [0.22, 1, 0.36, 1], x: { type: "spring", stiffness: 55, damping: 17 } }}
         style={{ transformOrigin: "50% 50%",
           boxShadow: worldMode ? "0 0 120px rgba(220,160,40,0.4), 0 0 45px rgba(240,200,80,0.3)" : "none",
           transition: "box-shadow 2.5s ease" }}>
@@ -1408,9 +1419,19 @@ export default function TTTLandingPage() {
         {showKaspa && <KaspaPanel onClose={() => setShowKaspa(false)} />}
       </AnimatePresence>
 
+      {/* Neighboring worlds — slide in/out when turning left/right */}
+      {worldMode && (
+        <WorldCarouselOrbs worlds={WORLDS} index={worldIndex}
+          onEnter={(w) => { if (w.path) { sounds.playSelect(); navigate(w.path); } }} />
+      )}
+
       {/* World zoom-out overlay — fast gold speed lines while the page becomes a small world */}
       <AnimatePresence>
-        {worldMode && <WorldZoomOut onClose={() => { sounds.playSelect(); setWorldMode(false); }} />}
+        {worldMode && (
+          <WorldZoomOut worlds={WORLDS} index={worldIndex}
+            onNavigate={(dir) => { sounds.playNavigate(); setWorldIndex(i => Math.min(Math.max(i + dir, 0), WORLDS.length - 1)); }}
+            onClose={() => { sounds.playSelect(); setWorldMode(false); setWorldIndex(0); }} />
+        )}
       </AnimatePresence>
     </main>
   );
