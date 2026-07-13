@@ -10,18 +10,26 @@ export default function DeskFundingCard() {
 
   useEffect(() => {
     let alive = true;
-    (async () => {
+    let addr = null;
+    const refreshBalance = async () => {
+      if (!addr) return;
       try {
-        const res = await base44.functions.invoke("igraBridge", { action: "info" });
-        const addr = res.data.kas_deposit_address;
-        if (!alive || !addr) return;
-        setAddress(addr);
         const bal = await fetch(`https://api.kaspa.org/addresses/${encodeURIComponent(addr)}/balance`);
         const data = await bal.json();
         if (alive) setBalance((data.balance || 0) / 1e8);
+      } catch { /* keep last known balance */ }
+    };
+    (async () => {
+      try {
+        const res = await base44.functions.invoke("igraBridge", { action: "info" });
+        addr = res.data.kas_deposit_address;
+        if (!alive || !addr) return;
+        setAddress(addr);
+        refreshBalance();
       } catch { /* card stays in loading state */ }
     })();
-    return () => { alive = false; };
+    const iv = setInterval(refreshBalance, 15000);
+    return () => { alive = false; clearInterval(iv); };
   }, []);
 
   const copy = () => {
