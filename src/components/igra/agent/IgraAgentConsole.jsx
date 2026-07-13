@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Send, Loader2, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { getLocalAgent, saveLocalAgent, listLocalAgents } from "@/components/igra/agent/localAgentWallet";
 
-// Natural-language console — the agent parses your command and transacts iKAS on Igra
-export default function IgraAgentConsole({ agents, onTxComplete }) {
+// Natural-language console — the agent parses your command, forges local wallets, and transacts iKAS on Igra
+export default function IgraAgentConsole({ agents, onTxComplete, onForged }) {
   const [messages, setMessages] = useState([{
     role: "agent",
-    text: "IGRA AGENT ONLINE. I hold two wallets on Igra mainnet (chain 38833) and transact iKAS through Igra nodes. Try: \"alpha send 0.01 iKAS to beta\" or \"check balances\".",
+    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833) via Igra nodes. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to beta\", or \"check balances\". Local wallets keep their keys in THIS browser only.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -23,13 +24,15 @@ export default function IgraAgentConsole({ agents, onTxComplete }) {
     push({ role: "user", text });
     setBusy(true);
     try {
+      const locals = listLocalAgents();
       const intent = await base44.integrations.Core.InvokeLLM({
-        prompt: `You control two AI agent wallets ("alpha" and "beta") on the Igra EVM L2 (Kaspa). Native token: iKAS.
-Agent addresses: alpha=${agents?.alpha?.address || "?"}, beta=${agents?.beta?.address || "?"}.
-Balances: alpha=${agents?.alpha?.balance_ikas || "?"} iKAS, beta=${agents?.beta?.balance_ikas || "?"} iKAS.
+        prompt: `You control AI agent wallets on the Igra EVM L2 (Kaspa). Native token: iKAS.
+Server agents: alpha=${agents?.alpha?.address || "?"} (${agents?.alpha?.balance_ikas || "?"} iKAS), beta=${agents?.beta?.address || "?"} (${agents?.beta?.balance_ikas || "?"} iKAS).
+Local agents (keys stored in the user's browser): ${locals.length ? locals.map((a) => `${a.name}=${a.address}`).join(", ") : "none yet"}.
 
 Parse the user's command into an action:
-- "send": transfer iKAS. from = "alpha" or "beta" (default alpha). to = "alpha", "beta", or a 0x address. amount = number in iKAS.
+- "forge": generate a NEW local agent wallet in the browser. name = the wallet/agent name the user wants (invent a short lowercase one like "agent-${locals.length + 1}" if not given).
+- "send": transfer iKAS. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, or a 0x address. amount = number in iKAS.
 - "status": check balances/addresses.
 - "chat": anything else — answer helpfully about the Igra agents (account abstraction, EIP-7702, ERC-4337 are live on Igra).
 
@@ -39,7 +42,8 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["send", "status", "chat"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat"] },
+            name: { type: "string" },
             from: { type: "string" },
             to: { type: "string" },
             amount: { type: "number" },
@@ -51,17 +55,38 @@ User command: ${text}`,
 
       push({ role: "agent", text: intent.reply });
 
-      if (intent.action === "send") {
-        push({ role: "system", text: `BROADCASTING VIA IGRA NODE · ${intent.from || "alpha"} → ${intent.to} · ${intent.amount} iKAS…` });
-        const res = await base44.functions.invoke("igraAgent", {
-          action: "send", from: intent.from || "alpha", to: intent.to, amount: intent.amount,
-        });
+      if (intent.action === "forge") {
+        const wname = (intent.name || `agent-${locals.length + 1}`).toLowerCase();
+        if (getLocalAgent(wname)) {
+          push({ role: "error", text: `A local agent named "${wname}" already exists at ${getLocalAgent(wname).address}` });
+        } else {
+          const res = await base44.functions.invoke("igraAgent", { action: "forge" });
+          saveLocalAgent({ name: wname, address: res.data.address, private_key: res.data.private_key });
+          push({ role: "system", text: `⚒ WALLET FORGED · AGENT ${wname.toUpperCase()}\n${res.data.address}\nPRIVATE KEY SAVED IN THIS BROWSER ONLY · SURVIVES REFRESH · FUND IT WITH iKAS TO ACTIVATE` });
+          onForged?.();
+        }
+      } else if (intent.action === "send") {
+        const localSender = getLocalAgent(intent.from);
+        const localDest = getLocalAgent(intent.to);
+        const payload = {
+          action: "send",
+          from: intent.from || "alpha",
+          to: localDest ? localDest.address : intent.to,
+          amount: intent.amount,
+          ...(localSender ? { private_key: localSender.private_key } : {}),
+        };
+        push({ role: "system", text: `BROADCASTING VIA IGRA NODE · ${payload.from} → ${intent.to} · ${intent.amount} iKAS…` });
+        const res = await base44.functions.invoke("igraAgent", payload);
         push({ role: "tx", tx: res.data });
         onTxComplete?.();
       } else if (intent.action === "status") {
-        const res = await base44.functions.invoke("igraAgent", { action: "status" });
-        const a = res.data.agents;
-        push({ role: "system", text: `ALPHA ${Number(a.alpha.balance_ikas).toFixed(4)} iKAS · BETA ${Number(a.beta.balance_ikas).toFixed(4)} iKAS · CHAIN ${res.data.chain_id}` });
+        const res = await base44.functions.invoke("igraAgent", {
+          action: "status",
+          extra: locals.map((a) => ({ name: a.name, address: a.address })),
+        });
+        const lines = Object.entries(res.data.agents)
+          .map(([n, a]) => `${n.toUpperCase()} ${Number(a.balance_ikas).toFixed(4)} iKAS${a.local ? " (LOCAL)" : ""}`);
+        push({ role: "system", text: `${lines.join(" · ")} · CHAIN ${res.data.chain_id}` });
         onTxComplete?.();
       }
     } catch (err) {
@@ -95,7 +120,7 @@ User command: ${text}`,
           }[m.role];
           return (
             <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className="max-w-[85%] px-3 py-2 rounded-xl text-[11px] leading-relaxed whitespace-pre-wrap"
+              <div className="max-w-[85%] px-3 py-2 rounded-xl text-[11px] leading-relaxed whitespace-pre-wrap break-all"
                 style={{ color: colors.color, border: `1px solid ${colors.border}`, background: colors.bg, fontFamily: "monospace" }}>
                 {m.text}
               </div>
@@ -108,7 +133,7 @@ User command: ${text}`,
       <form className="flex gap-2 p-3" style={{ borderTop: "1px solid rgba(255,140,90,0.15)" }}
         onSubmit={(e) => { e.preventDefault(); run(); }}>
         <input value={input} onChange={(e) => setInput(e.target.value)}
-          placeholder='e.g. "alpha send 0.01 iKAS to beta"'
+          placeholder='e.g. "forge a wallet called scout" or "alpha send 0.01 iKAS to beta"'
           className="flex-1 bg-transparent px-3 py-2 rounded-xl text-xs focus:outline-none"
           style={{ border: "1px solid rgba(255,140,90,0.2)", color: "#ffedd5", fontFamily: "monospace" }} />
         <button type="submit" disabled={busy || !input.trim()}

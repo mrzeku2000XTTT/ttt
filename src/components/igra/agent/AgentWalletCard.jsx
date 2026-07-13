@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Bot, Copy, Check } from "lucide-react";
 
 // One Igra agent wallet card — address + live iKAS balance
-export default function AgentWalletCard({ name, address, balance }) {
+export default function AgentWalletCard({ name, address, balance, local }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard.writeText(address);
@@ -23,6 +23,12 @@ export default function AgentWalletCard({ name, address, balance }) {
           style={{ color: "#fdba74", fontFamily: "monospace" }}>
           AGENT {name.toUpperCase()}
         </span>
+        {local && (
+          <span className="ml-auto text-[7px] tracking-[0.25em] uppercase px-2 py-0.5 rounded-full"
+            style={{ border: "1px solid rgba(74,222,128,0.35)", color: "#86efac", fontFamily: "monospace" }}>
+            LOCAL
+          </span>
+        )}
       </div>
       <div className="text-2xl font-black" style={{ color: "#fff7ed", fontFamily: "monospace" }}>
         {balance !== null ? Number(balance).toFixed(4) : "—"}

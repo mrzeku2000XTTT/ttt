@@ -5,6 +5,7 @@ import { ArrowLeft, Zap, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AgentWalletCard from "@/components/igra/agent/AgentWalletCard";
 import IgraAgentConsole from "@/components/igra/agent/IgraAgentConsole";
+import { listLocalAgents } from "@/components/igra/agent/localAgentWallet";
 
 // IGRA AGENT — AI agents holding wallets on Igra mainnet, transacting iKAS agent-to-agent via Igra nodes
 export default function IgraAgent() {
@@ -14,7 +15,10 @@ export default function IgraAgent() {
   const loadStatus = async () => {
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("igraAgent", { action: "status" });
+      const res = await base44.functions.invoke("igraAgent", {
+        action: "status",
+        extra: listLocalAgents().map((a) => ({ name: a.name, address: a.address })),
+      });
       setStatus(res.data);
     } catch {
       setStatus(null);
@@ -60,17 +64,19 @@ export default function IgraAgent() {
           </p>
         </motion.div>
 
-        {/* Agent wallets */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <AgentWalletCard name="alpha"
-            address={status?.agents?.alpha?.address}
-            balance={status?.agents?.alpha?.balance_ikas ?? null} />
-          <AgentWalletCard name="beta"
-            address={status?.agents?.beta?.address}
-            balance={status?.agents?.beta?.balance_ikas ?? null} />
+        {/* Agent wallets — server agents + browser-local agents */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          {status?.agents
+            ? Object.entries(status.agents).map(([name, a]) => (
+                <AgentWalletCard key={name} name={name} address={a.address}
+                  balance={a.balance_ikas} local={a.local} />
+              ))
+            : ["alpha", "beta"].map((n) => (
+                <AgentWalletCard key={n} name={n} address={null} balance={null} />
+              ))}
         </div>
 
-        <IgraAgentConsole agents={status?.agents} onTxComplete={loadStatus} />
+        <IgraAgentConsole agents={status?.agents} onTxComplete={loadStatus} onForged={loadStatus} />
 
         <p className="mt-4 text-center text-[8px] tracking-[0.2em] uppercase leading-relaxed"
           style={{ color: "rgba(255,190,150,0.35)", fontFamily: "monospace" }}>
