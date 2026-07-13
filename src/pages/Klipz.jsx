@@ -15,6 +15,7 @@ export default function Klipz() {
   const [result, setResult] = useState(null);
   const [tab, setTab] = useState("studio");
   const [hiring, setHiring] = useState(false);
+  const [agentHint, setAgentHint] = useState(false);
 
   const analyze = async (url) => {
     setLoading(true);
@@ -124,8 +125,24 @@ export default function Klipz() {
 
       <KlipzAgent
         hasClips={!!result?.clips?.length}
-        onHire={() => (result?.clips?.length ? setHiring(true) : setTab("studio"))}
+        onHire={() => {
+          if (result?.clips?.length) {
+            setAgentHint(false);
+            setHiring(true);
+          } else {
+            setAgentHint(true);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }}
       />
+      {agentHint && !result?.clips?.length && (
+        <div className="max-w-4xl mx-auto px-4 mt-3">
+          <p className="border border-amber-500/40 text-amber-400 text-[11px] p-3 flex items-center gap-2" style={{ fontFamily: "monospace" }}>
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            AGENT KLIP NEEDS CLIPS TO WORK ON — paste a YouTube/stream link above and run a scan first.
+          </p>
+        </div>
+      )}
       </>)}
 
       {hiring && result && (
