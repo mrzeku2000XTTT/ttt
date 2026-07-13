@@ -1,0 +1,76 @@
+import React, { useState } from "react";
+import { X, Loader2, CheckCircle2, Bot } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+
+const KLIPZ_ADDRESS = "kaspa:qq5yhvly6338dspa9mm24g8q6chvy6v0jww3k4dgqywh0lju5mmm5pj334ews";
+
+export default function KlipzHireModal({ video, clips, onClose, onDelivered }) {
+  const [status, setStatus] = useState("idle"); // idle | paying | verifying | done
+  const [error, setError] = useState(null);
+
+  const payAndHire = async () => {
+    setError(null);
+    try {
+      if (!window.kasware) throw new Error("Kasware wallet not found — install the Kasware browser extension.");
+      setStatus("paying");
+      const accounts = await window.kasware.requestAccounts();
+      const raw = await window.kasware.sendKaspa(KLIPZ_ADDRESS, 100000000); // 1 KAS in sompi
+      let txHash = raw;
+      try { const p = JSON.parse(raw); txHash = p.id || p.txid || raw; } catch (_e) { /* raw is the txid */ }
+      setStatus("verifying");
+      await base44.functions.invoke("klipzHireAgent", { txHash, wallet: accounts[0], video, clips });
+      setStatus("done");
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || "Payment failed");
+      setStatus("idle");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="w-full max-w-md border border-cyan-500/40 bg-zinc-950 p-6" style={{ fontFamily: "monospace" }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Bot className="w-5 h-5 text-cyan-400" />
+            <span className="text-white font-black tracking-[0.2em] text-sm">HIRE AGENT KLIP</span>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X className="w-4 h-4" /></button>
+        </div>
+
+        {status === "done" ? (
+          <div className="text-center py-6">
+            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+            <p className="text-white font-bold text-sm">JOB COMPLETE — CLIPS DELIVERED</p>
+            <p className="text-zinc-500 text-[11px] mt-2">{clips.length} clips are now in your library.</p>
+            <button onClick={onDelivered} className="mt-5 w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-black text-[11px] font-bold tracking-[0.2em]">
+              OPEN MY LIBRARY →
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="border border-zinc-800 p-3 mb-4 text-[11px]">
+              <p className="text-zinc-400 truncate">{video?.title}</p>
+              <p className="text-cyan-400 mt-1">{clips.length} CLIP DRAFTS · DELIVERED TO YOUR LIBRARY</p>
+            </div>
+            <div className="text-[10px] text-zinc-500 space-y-1.5 mb-4">
+              <p>1. You pay <span className="text-cyan-400 font-bold">1 KAS</span> via Kasware</p>
+              <p>2. Agent verifies the payment on the Kaspa network</p>
+              <p>3. Your clips land in your library — playable, shareable, downloadable</p>
+            </div>
+            <p className="text-[9px] text-zinc-600 break-all mb-4">PAY TO: {KLIPZ_ADDRESS}</p>
+            {error && <p className="text-red-400 text-[11px] border border-red-500/40 p-3 mb-4">{error}</p>}
+            <button
+              onClick={payAndHire}
+              disabled={status !== "idle"}
+              className="w-full py-3.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-black text-[11px] font-bold tracking-[0.2em] flex items-center justify-center gap-2"
+            >
+              {status === "idle" && "PAY 1 KAS & HIRE →"}
+              {status === "paying" && (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> WAITING FOR KASWARE…</>)}
+              {status === "verifying" && (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> VERIFYING ON-CHAIN…</>)}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

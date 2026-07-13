@@ -4,12 +4,17 @@ import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import KlipzInput from "@/components/klipz/KlipzInput";
 import KlipzClipCard from "@/components/klipz/KlipzClipCard";
+import KlipzAgent from "@/components/klipz/KlipzAgent";
+import KlipzHireModal from "@/components/klipz/KlipzHireModal";
+import KlipzLibrary from "@/components/klipz/KlipzLibrary";
 
 export default function Klipz() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [tab, setTab] = useState("studio");
+  const [hiring, setHiring] = useState(false);
 
   const analyze = async (url) => {
     setLoading(true);
@@ -38,11 +43,31 @@ export default function Klipz() {
         <span className="text-white font-black text-sm tracking-[0.3em]" style={{ fontFamily: "monospace" }}>
           KLIP<span className="text-cyan-400">Z</span>
         </span>
-        <span className="ml-auto text-[9px] text-zinc-600 tracking-[0.25em] uppercase" style={{ fontFamily: "monospace" }}>
-          TTT Native Clip Engine
-        </span>
+        <div className="ml-auto flex items-center gap-1" style={{ fontFamily: "monospace" }}>
+          {["studio", "library"].map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-3 py-1.5 text-[10px] font-bold tracking-[0.2em] uppercase transition-colors ${
+                tab === t ? "bg-cyan-500 text-black" : "text-zinc-500 hover:text-white border border-zinc-800"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {tab === "library" && (
+        <div className="pt-8">
+          <h2 className="text-center text-white font-black text-2xl tracking-tight" style={{ fontFamily: "monospace" }}>
+            MY CLIP <span className="text-cyan-400">LIBRARY</span>
+          </h2>
+          <KlipzLibrary />
+        </div>
+      )}
+
+      {tab === "studio" && (<>
       {/* Hero */}
       <div className="pt-14 pb-8 text-center px-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 border border-cyan-500/40 text-[10px] tracking-[0.3em] text-cyan-400 mb-6" style={{ fontFamily: "monospace" }}>
@@ -95,6 +120,21 @@ export default function Klipz() {
             ))}
           </div>
         </div>
+      )}
+
+      <KlipzAgent
+        hasClips={!!result?.clips?.length}
+        onHire={() => (result?.clips?.length ? setHiring(true) : setTab("studio"))}
+      />
+      </>)}
+
+      {hiring && result && (
+        <KlipzHireModal
+          video={result.video}
+          clips={result.clips}
+          onClose={() => setHiring(false)}
+          onDelivered={() => { setHiring(false); setTab("library"); }}
+        />
       )}
     </div>
   );

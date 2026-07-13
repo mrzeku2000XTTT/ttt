@@ -1,0 +1,83 @@
+{
+  "name": "KlipzJob",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User who hired the agent"
+    },
+    "wallet_address": {
+      "type": "string",
+      "description": "Payer's Kaspa wallet address"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "1 KAS payment transaction hash (verified on-chain)"
+    },
+    "video_id": {
+      "type": "string",
+      "description": "YouTube video id"
+    },
+    "video_title": {
+      "type": "string"
+    },
+    "video_thumbnail": {
+      "type": "string"
+    },
+    "clip_title": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "start_s": {
+      "type": "number"
+    },
+    "end_s": {
+      "type": "number"
+    },
+    "score": {
+      "type": "number"
+    },
+    "amount_kas": {
+      "type": "number",
+      "default": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "delivered",
+        "failed"
+      ],
+      "default": "delivered"
+    },
+    "mp4_url": {
+      "type": "string",
+      "description": "Direct MP4 source URL if fetched"
+    }
+  },
+  "required": [
+    "user_email",
+    "video_id",
+    "tx_hash"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
