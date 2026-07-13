@@ -121,9 +121,9 @@ User command: ${text}`,
         if (!payoutAddr) {
           push({ role: "error", text: "I need a kaspa: payout address — say it in the command, or save yours in \"MY KASPA L1 ADDRESS\" above the chat." });
         } else if (intent.l2_tx_hash) {
-          push({ role: "system", text: `BURNING iKAS VIA IGRA'S NATIVE KASEXITBRIDGE…` });
+          push({ role: "system", text: `SWAPPING TO KAS ON L1…` });
           const res = await base44.functions.invoke("igraBridge", { action: "ikas_to_kas", l2_tx_hash: intent.l2_tx_hash, kaspa_address: payoutAddr });
-          push({ role: "system", text: `✓ EXIT REQUESTED · ${res.data.amount} KAS → ${res.data.recipient}\nKAS IS RELEASED ON L1 BY THE IGRA MULTI-SIG COMMITTEE (NOT INSTANT)\nBURN TX: ${res.data.tx_out}` });
+          push({ role: "system", text: `✓ SWAP EXECUTED · ${res.data.amount} KAS → ${res.data.recipient}\n${res.data.note || ""}\nTX: ${res.data.tx_out}` });
           onTxComplete?.();
         } else {
           // Resolve the sending wallet: exactly what the user named, or auto-pick the funded one
