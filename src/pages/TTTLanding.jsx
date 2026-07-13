@@ -101,6 +101,7 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   const [agentSteps, setAgentSteps] = useState([]);
   const computerRef = useRef(null);
   const abortRef = useRef(null);
+  const sendingRef = useRef(false); // sync double-send guard (loading state updates async)
 
   const bottomRef = useRef(null);
   const scrollRef = useRef(null);
@@ -234,7 +235,8 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
 
   const send = async (overrideText) => {
     const text = (overrideText ?? input).trim();
-    if (!text || loading) return;
+    if (!text || loading || sendingRef.current) return;
+    sendingRef.current = true;
     let sessionId = activeSessionId;
     if (!sessionId) {
       const id = Date.now().toString();
@@ -245,8 +247,9 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
     }
     const userMsg = { role: "user", content: text };
     const mid = `a${Date.now()}`;
-    const nextMsgs = [...messages, userMsg, { role: "assistant", content: "", id: mid }];
-    setMessages(nextMsgs);
+    // Functional append — never replace the array from a stale closure,
+    // which could clobber an in-flight stream and leave a cut-off bubble.
+    setMessages(m => [...m, userMsg, { role: "assistant", content: "", id: mid }]);
     setInput("");
     setLoading(true);
 
@@ -444,12 +447,13 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
           if (i >= total) persistMessages(sessionId, copy);
           return copy;
         });
-        if (i < total) setTimeout(tick, 20); else setLoading(false);
+        if (i < total) setTimeout(tick, 20); else { setLoading(false); sendingRef.current = false; }
       };
       setTimeout(tick, 100);
     } catch {
       setMessages(m => m.map(x => (x.id === mid ? { ...x, content: "Signal lost. Try again." } : x)));
       setLoading(false);
+      sendingRef.current = false;
     }
   };
 

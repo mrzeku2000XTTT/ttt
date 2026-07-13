@@ -36,6 +36,7 @@ Node config schemas:
    // CRITICAL EMAIL RULE: If the user mentions ANY of: "email", "send", "mail", "deliver", "to me", "to my inbox" — you MUST set email_to. Use the email address they provided in the request. If they say "to me" or "my email", use: ${currentEmail || "user@example.com"}. NEVER leave email_to empty when emailing is implied. This is the ONLY way the MP4 gets emailed — if email_to is missing, the user gets nothing.
 - deep_research: { topic: string, depth: "shallow"|"deep" }   // ACTUALLY scrapes the live web, multi-pass — returns a full markdown research report. Use this whenever the user wants real, current info.
    // CRITICAL: topic MUST be the exact subject the USER asked to research, copied from their request (e.g. "ConsenSys blockchain contributions and key projects"). NEVER leave topic empty and NEVER substitute a different subject.
+   // depth: set "shallow" when the user says quick / shallow / brief / fast / short / light; set "deep" when they say deep / thorough / detailed / comprehensive (or don't specify).
 - read_ttt_feed: { limit: number, keyword?: string }   // pulls real recent posts from the TTT social feed inside this app. Use whenever user mentions "TTT feed", "the feed", "TTT posts", "what people are saying on TTT".
 - post_to_ttt: { author_name?: string, content_override?: string }   // Auto-posts to the TTT social feed. Empty config = uses previous text step + auto-attaches previous ai_image. Use when user says "post to TTT", "publish to feed", "share on TTT", "auto-post".
 - send_email: { to: string, subject: string, body: string, from_name?: string }
@@ -209,6 +210,12 @@ USER REQUEST:
             const topic = (mergedConfig.topic || "").trim();
             if (!topic || topic === (tpl.defaultConfig?.topic || "").trim()) {
               mergedConfig.topic = input.trim();
+            }
+            // Honor speed keywords the LLM often ignores: "quick shallow research" → shallow.
+            if (/\b(quick|shallow|brief|fast|short|light)\b/i.test(input)) {
+              mergedConfig.depth = "shallow";
+            } else if (/\b(deep|thorough|detailed|comprehensive)\b/i.test(input)) {
+              mergedConfig.depth = "deep";
             }
           }
           return {
