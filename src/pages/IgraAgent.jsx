@@ -152,9 +152,26 @@ export default function IgraAgent() {
         {/* Split-screen content — fills the rest of the viewport, no page scroll */}
         <div className="flex-1 min-h-0">
           {view === "chat" ? (
-            <div className="h-full">
-              <IgraAgentConsole agents={status?.agents} fullHeight
-                onTxComplete={() => loadStatus(false)} onForged={() => loadStatus(false)} />
+            <div className="h-full flex flex-col">
+              {status?.agents && (
+                <div className="flex flex-wrap gap-1.5 mb-2 flex-shrink-0">
+                  {Object.entries(status.agents).map(([name, a]) => (
+                    <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px]"
+                      style={{ border: "1px solid rgba(201,162,75,0.3)", background: "rgba(12,10,6,0.7)", fontFamily: "monospace" }}>
+                      <span className="font-black tracking-[0.15em] uppercase" style={{ color: "rgba(201,162,75,0.7)" }}>{name}</span>
+                      <span className="font-black" style={{ color: "#f5efe0" }}>
+                        {a.balance_ikas != null ? Number(a.balance_ikas).toFixed(4) : "—"}
+                      </span>
+                      <span style={{ color: "#C9A24B" }}>iKAS</span>
+                      {a.local && <span className="tracking-widest" style={{ color: "#6EE7B7" }}>LOCAL</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex-1 min-h-0">
+                <IgraAgentConsole agents={status?.agents} fullHeight
+                  onTxComplete={() => loadStatus(false)} onForged={() => loadStatus(false)} />
+              </div>
             </div>
           ) : (
             <div className="h-full overflow-y-auto pb-4">
