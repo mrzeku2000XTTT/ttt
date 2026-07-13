@@ -20,10 +20,12 @@ import ReactMarkdown from "react-markdown";
 const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
 import KaspaPanel from "@/components/landing/KaspaPanel";
+import WorldZoomOut from "@/components/landing/WorldZoomOut";
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
 const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8b62e8d8d_generated_image.png";
 const KASPA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3bab8f8ae_generated_image.png";
+const WORLD_ICON = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/39f382722_generated_image.png";
 const YOUTUBE_VIDEO_ID = "aUSD-WFhKwY";
 
 const AI_MODELS = [
@@ -1099,6 +1101,7 @@ export default function TTTLandingPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showKaspa, setShowKaspa] = useState(false);
   const [bgReady, setBgReady] = useState(false);
+  const [worldMode, setWorldMode] = useState(false);
   const sounds = useGameSounds();
 
   // Defer the heavy WebGL background until after first paint so
@@ -1192,6 +1195,15 @@ export default function TTTLandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden text-white" style={{ background: "#000", fontFamily: "'Georgia', serif" }}>
 
+      {/* === WORLD WRAPPER — everything inside shrinks into a small world in world mode === */}
+      <motion.div
+        className="relative overflow-hidden"
+        animate={worldMode ? { scale: 0.2, borderRadius: "50%" } : { scale: 1, borderRadius: "0%" }}
+        transition={{ duration: 3.2, ease: [0.22, 1, 0.36, 1] }}
+        style={{ transformOrigin: "50% 50%",
+          boxShadow: worldMode ? "0 0 120px rgba(220,160,40,0.4), 0 0 45px rgba(240,200,80,0.3)" : "none",
+          transition: "box-shadow 2.5s ease" }}>
+
       {/* === 3D CYBERNETIC EYE SPHERE BACKGROUND === (deferred so UI is interactive instantly) */}
       {bgReady && (
         <React.Suspense fallback={null}>
@@ -1217,16 +1229,16 @@ export default function TTTLandingPage() {
         style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", backgroundSize: "128px 128px" }} />
 
       {/* === CORNER HUD BUTTONS (top) === */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowAdvent(true); }}
+      <motion.button whileTap={{ scale: 0.95, y: 4 }} onClick={() => { sounds.playSelect(); setShowAdvent(true); }}
         className="absolute left-4 top-5 focus:outline-none z-20">
         <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ ADVENT ]</span>
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "linear-gradient(180deg, rgba(30,22,8,0.75) 0%, rgba(0,0,0,0.6) 100%)", fontFamily: "monospace", boxShadow: "0 4px 0 rgba(140,100,30,0.55), 0 7px 16px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,200,80,0.15)" }}>[ ADVENT ]</span>
       </motion.button>
       {isAdmin && (
-        <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowZKChat(true); setZkMinimized(false); }}
+        <motion.button whileTap={{ scale: 0.95, y: 4 }} onClick={() => { sounds.playSelect(); setShowZKChat(true); setZkMinimized(false); }}
           className="absolute right-4 top-5 focus:outline-none z-20">
           <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-            style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ SCAN ]</span>
+            style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "linear-gradient(180deg, rgba(30,22,8,0.75) 0%, rgba(0,0,0,0.6) 100%)", fontFamily: "monospace", boxShadow: "0 4px 0 rgba(140,100,30,0.55), 0 7px 16px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,200,80,0.15)" }}>[ SCAN ]</span>
         </motion.button>
       )}
 
@@ -1332,12 +1344,20 @@ export default function TTTLandingPage() {
 
           {/* Bottom stamp */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}
-            className="mt-6 text-[9px] tracking-[0.45em] uppercase"
+            className="mt-6 flex items-center justify-center gap-2 text-[9px] tracking-[0.45em] uppercase"
             style={{ color: "rgba(120,90,25,0.3)", fontFamily: "monospace" }}>
-            © TTT PLATFORM · V3.0
+            <span>© TTT PLATFORM · V3.0</span>
+            <motion.button type="button" whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.9 }}
+              onClick={() => { sounds.playSelect(); setWorldMode(true); }}
+              className="focus:outline-none" title="See the greater world"
+              style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
+              <img src={WORLD_ICON} alt="World" className="w-4 h-4 object-contain"
+                style={{ filter: "drop-shadow(0 0 6px rgba(220,160,40,0.7))" }} />
+            </motion.button>
           </motion.div>
         </div>
       </section>
+      </motion.div>
 
       {/* Music Player popup */}
       <AnimatePresence>
@@ -1359,17 +1379,18 @@ export default function TTTLandingPage() {
       </AnimatePresence>
 
       {/* VISION BUTTON — bottom left */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { navigate("/Vision"); sounds.playSelect(); }} style={{ touchAction: "manipulation" }}
+      <motion.button whileTap={{ scale: 0.95, y: 4 }} animate={{ opacity: worldMode ? 0 : 1 }} onClick={() => { navigate("/Vision"); sounds.playSelect(); }} style={{ touchAction: "manipulation", pointerEvents: worldMode ? "none" : "auto" }}
         className="absolute left-4 bottom-5 focus:outline-none z-20">
         <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ VISION ]</span>
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "linear-gradient(180deg, rgba(30,22,8,0.75) 0%, rgba(0,0,0,0.6) 100%)", fontFamily: "monospace", boxShadow: "0 4px 0 rgba(140,100,30,0.55), 0 7px 16px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,200,80,0.15)" }}>[ VISION ]</span>
       </motion.button>
 
       {/* KASPA BUTTON — bottom right */}
-      <motion.button whileTap={{ scale: 0.92 }} onClick={() => { sounds.playSelect(); setShowKaspa(true); }}
+      <motion.button whileTap={{ scale: 0.95, y: 4 }} animate={{ opacity: worldMode ? 0 : 1 }} onClick={() => { sounds.playSelect(); setShowKaspa(true); }}
+        style={{ pointerEvents: worldMode ? "none" : "auto" }}
         className="absolute right-4 bottom-5 focus:outline-none z-20">
         <span className="text-[10px] tracking-[0.25em] uppercase px-3 py-1.5 block"
-          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "rgba(0,0,0,0.5)", fontFamily: "monospace" }}>[ KASPA ]</span>
+          style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "linear-gradient(180deg, rgba(30,22,8,0.75) 0%, rgba(0,0,0,0.6) 100%)", fontFamily: "monospace", boxShadow: "0 4px 0 rgba(140,100,30,0.55), 0 7px 16px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,200,80,0.15)" }}>[ KASPA ]</span>
       </motion.button>
 
       {/* Advent Calendar */}
@@ -1385,6 +1406,11 @@ export default function TTTLandingPage() {
       {/* Kaspa Panel — full screen */}
       <AnimatePresence>
         {showKaspa && <KaspaPanel onClose={() => setShowKaspa(false)} />}
+      </AnimatePresence>
+
+      {/* World zoom-out overlay — fast gold speed lines while the page becomes a small world */}
+      <AnimatePresence>
+        {worldMode && <WorldZoomOut onClose={() => { sounds.playSelect(); setWorldMode(false); }} />}
       </AnimatePresence>
     </main>
   );
