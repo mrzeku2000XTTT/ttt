@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Plus, Mic, Globe, Zap, Loader2, ChevronDown, Minimize2, Maximize2 } from "lucide-react";
+import { X, Send, Plus, Mic, Globe, Zap, Loader2, ChevronDown, Minimize2, Maximize2, Copy, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import ReactMarkdown from "react-markdown";
 
@@ -63,21 +63,48 @@ const ThoughtProcess = ({ text }) => {
   );
 };
 
+const ImageLinkCard = ({ url }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* noop */ }
+  };
+  return (
+    <div className="max-w-[75%]">
+      <img src={url} alt="Uploaded" className="rounded-xl max-h-56 w-auto mb-2"
+        style={{ border: "1px solid rgba(255,255,255,0.12)" }} />
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
+        <a href={url} target="_blank" rel="noopener noreferrer"
+          className="flex-1 text-[11px] text-emerald-400 hover:text-emerald-300 truncate underline">
+          {url}
+        </a>
+        <button onClick={copy} className="flex-shrink-0 text-white/40 hover:text-white/80 transition-colors" title="Copy link">
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const MessageBubble = ({ msg }) => {
   if (msg.role === "user") {
     return (
       <div className="flex justify-end mb-4">
-        <div
-          className="max-w-[75%] px-4 py-3 text-sm leading-relaxed text-white"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "16px 16px 4px 16px",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-          }}
-        >
-          {msg.content}
-        </div>
+        {msg.image ? (
+          <ImageLinkCard url={msg.image} />
+        ) : (
+          <div
+            className="max-w-[75%] px-4 py-3 text-sm leading-relaxed text-white"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "16px 16px 4px 16px",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+            }}
+          >
+            {msg.content}
+          </div>
+        )}
       </div>
     );
   }
@@ -107,8 +134,34 @@ export default function GrokChat({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState("expert");
   const [fullscreen, setFullscreen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [attachedImage, setAttachedImage] = useState(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const fileRef = useRef(null);
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || uploading) return;
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: "", image: file_url, id: Date.now() },
+        { role: "assistant", content: `Image saved! Here's your permanent link — copy it or open it anytime:\n\n\`${file_url}\``, id: Date.now() + 1 },
+      ]);
+      setAttachedImage(file_url);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Couldn't upload that image. Please try again.", id: Date.now() },
+      ]);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -138,7 +191,9 @@ export default function GrokChat({ onClose }) {
         prompt: `${systemPrompt}\n\nUser: ${q}`,
         model: useThinking ? "claude_sonnet_4_6" : "automatic",
         add_context_from_internet: false,
+        ...(attachedImage ? { file_urls: [attachedImage] } : {}),
       });
+      setAttachedImage(null);
 
       const thought = useThinking
         ? `Analyzing the question about "${q.slice(0, 60)}${q.length > 60 ? "…" : ""}" — considering context, accuracy, and best framing…`
@@ -315,8 +370,14 @@ export default function GrokChat({ onClose }) {
               boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
             }}
           >
-            <button className="flex-shrink-0 text-white/30 hover:text-white/60 mb-0.5 transition-colors">
-              <Plus className="w-5 h-5" />
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="flex-shrink-0 text-white/30 hover:text-white/60 mb-0.5 transition-colors disabled:opacity-40"
+              title="Upload an image from your computer"
+            >
+              {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
             </button>
             <textarea
               ref={inputRef}
