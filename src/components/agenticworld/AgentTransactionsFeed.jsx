@@ -1,39 +1,50 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Bot, Zap } from "lucide-react";
+import { ArrowRight, Bot, Zap, ExternalLink } from "lucide-react";
 
-const AGENTS = ["ORION-7", "VEX", "KIRA-X", "NOMAD", "ATLAS-9", "ECHO", "SABLE", "QUARK-3", "LUMEN", "RAVEN-2"];
-const PURPOSES = [
-  "data retrieval contract", "compute lease · 4.2s", "memory shard purchase",
-  "task delegation fee", "oracle price feed", "model inference batch",
-  "storage pledge", "reputation stake", "workflow execution", "signal subscription",
-];
+const LIVE_URL = "https://kascov.io/data/mainnet-live.json";
+const POLL_MS = 20000;
 
-const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
-function makeTx() {
-  let from = rand(AGENTS), to = rand(AGENTS);
-  while (to === from) to = rand(AGENTS);
-  return {
-    id: Date.now() + Math.random(),
-    from, to,
-    amount: (Math.random() * 4.9 + 0.1).toFixed(3),
-    purpose: rand(PURPOSES),
-    time: new Date().toLocaleTimeString([], { hour12: false }),
-  };
+// Deterministic agent-style codename from a covenant id hash
+const SYL_A = ["OR", "VE", "KI", "NO", "AT", "EC", "SA", "QU", "LU", "RA", "ZE", "XA", "MY", "TH", "OB", "CY"];
+const SYL_B = ["ION", "X", "RA", "MAD", "LAS", "HO", "BLE", "ARK", "MEN", "VEN", "KU", "RIS", "DON", "ORN", "IX", "REN"];
+function codename(id) {
+  const a = parseInt(id.slice(0, 2), 16) % SYL_A.length;
+  const b = parseInt(id.slice(2, 4), 16) % SYL_B.length;
+  const n = parseInt(id.slice(4, 6), 16) % 10;
+  return `${SYL_A[a]}${SYL_B[b]}-${n}`;
 }
 
+const KIND_STYLE = {
+  genesis: { label: "GENESIS", color: "#4ade80" },
+  transition: { label: "TRANSITION", color: "#67e8f9" },
+  burn: { label: "BURN", color: "#f87171" },
+};
+
+const short = (s) => `${s.slice(0, 6)}…${s.slice(-4)}`;
+
 export default function AgentTransactionsFeed() {
-  const [txs, setTxs] = useState(() => Array.from({ length: 5 }, makeTx));
-  const timer = useRef(null);
+  const [events, setEvents] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    const tick = () => {
-      setTxs((prev) => [makeTx(), ...prev].slice(0, 8));
-      timer.current = setTimeout(tick, 1200 + Math.random() * 2600);
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await fetch(LIVE_URL, { headers: { accept: "application/json" } });
+        const data = await res.json();
+        if (!alive) return;
+        setStats(data.stats || null);
+        setEvents((data.recent_events || []).slice(0, 8));
+        setError(false);
+      } catch {
+        if (alive) setError(true);
+      }
     };
-    timer.current = setTimeout(tick, 1500);
-    return () => clearTimeout(timer.current);
+    load();
+    const t = setInterval(load, POLL_MS);
+    return () => { alive = false; clearInterval(t); };
   }, []);
 
   return (
@@ -46,35 +57,59 @@ export default function AgentTransactionsFeed() {
           <Zap className="w-3.5 h-3.5" /> AGENT ⇄ AGENT TRANSACTIONS
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-[9px] tracking-[0.3em] uppercase" style={{ color: "rgba(120,200,230,0.5)", fontFamily: "monospace" }}>LIVE</span>
+          <span className={`w-1.5 h-1.5 rounded-full ${error ? "bg-red-400" : "bg-cyan-400 animate-pulse"}`} />
+          <span className="text-[9px] tracking-[0.3em] uppercase" style={{ color: "rgba(120,200,230,0.5)", fontFamily: "monospace" }}>
+            {error ? "OFFLINE" : "LIVE · KASPA MAINNET"}
+          </span>
         </div>
       </div>
-      <div className="divide-y overflow-hidden" style={{ borderColor: "rgba(120,220,255,0.08)", height: "352px" }}>
+
+      {/* Real network stats */}
+      {stats && (
+        <div className="flex items-center gap-4 px-4 py-2 text-[9px] tracking-[0.2em] uppercase"
+          style={{ borderBottom: "1px solid rgba(120,220,255,0.1)", color: "rgba(140,200,230,0.55)", fontFamily: "monospace" }}>
+          <span>ACTIVE AGENTS <b style={{ color: "#67e8f9" }}>{stats.active}</b></span>
+          <span>COVENANTS <b style={{ color: "#67e8f9" }}>{stats.covenants}</b></span>
+          <span className="hidden sm:inline">LIVE VALUE <b style={{ color: "#67e8f9" }}>{(stats.live_value / 1e8).toFixed(2)} KAS</b></span>
+        </div>
+      )}
+
+      <div className="overflow-hidden" style={{ height: "352px" }}>
+        {events.length === 0 && (
+          <div className="h-full flex items-center justify-center text-[10px] tracking-[0.3em] uppercase"
+            style={{ color: "rgba(140,200,230,0.4)", fontFamily: "monospace" }}>
+            {error ? "NETWORK UNREACHABLE" : "SCANNING THE DAG…"}
+          </div>
+        )}
         <AnimatePresence initial={false}>
-          {txs.map((tx) => (
-            <motion.div key={tx.id}
-              initial={{ opacity: 0, y: -14, backgroundColor: "rgba(120,220,255,0.12)" }}
-              animate={{ opacity: 1, y: 0, backgroundColor: "rgba(120,220,255,0)" }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-              className="flex items-center gap-3 px-4 py-2.5"
-              style={{ borderBottom: "1px solid rgba(120,220,255,0.07)" }}>
-              <Bot className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "rgba(140,220,255,0.6)" }} />
-              <div className="flex items-center gap-2 text-[11px] font-bold flex-shrink-0" style={{ fontFamily: "monospace" }}>
-                <span style={{ color: "rgba(210,240,255,0.9)" }}>{tx.from}</span>
-                <ArrowRight className="w-3 h-3" style={{ color: "rgba(120,220,255,0.5)" }} />
-                <span style={{ color: "rgba(210,240,255,0.9)" }}>{tx.to}</span>
-              </div>
-              <div className="flex-1 truncate text-[10px] tracking-wide" style={{ color: "rgba(140,200,230,0.45)", fontFamily: "monospace" }}>
-                {tx.purpose}
-              </div>
-              <div className="flex-shrink-0 text-right">
-                <div className="text-[11px] font-bold" style={{ color: "#67e8f9", fontFamily: "monospace" }}>{tx.amount} KAS</div>
-                <div className="text-[8px]" style={{ color: "rgba(120,190,220,0.35)", fontFamily: "monospace" }}>{tx.time}</div>
-              </div>
-            </motion.div>
-          ))}
+          {events.map((ev) => {
+            const k = KIND_STYLE[ev.kind] || { label: ev.kind?.toUpperCase() || "EVENT", color: "#93c5fd" };
+            return (
+              <motion.a key={`${ev.txid}-${ev.seq}`}
+                href={`https://kascov.io/#/tx/${ev.txid}`} target="_blank" rel="noopener noreferrer"
+                initial={{ opacity: 0, y: -14, backgroundColor: "rgba(120,220,255,0.12)" }}
+                animate={{ opacity: 1, y: 0, backgroundColor: "rgba(120,220,255,0)" }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                whileHover={{ backgroundColor: "rgba(120,220,255,0.06)" }}
+                className="flex items-center gap-3 px-4 py-2.5 cursor-pointer"
+                style={{ borderBottom: "1px solid rgba(120,220,255,0.07)" }}>
+                <Bot className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "rgba(140,220,255,0.6)" }} />
+                <div className="flex items-center gap-2 text-[11px] font-bold flex-shrink-0" style={{ fontFamily: "monospace" }}>
+                  <span style={{ color: "rgba(210,240,255,0.9)" }}>{codename(ev.covenant_id)}</span>
+                  <ArrowRight className="w-3 h-3" style={{ color: "rgba(120,220,255,0.5)" }} />
+                  <span className="text-[9px] font-bold px-1.5 py-0.5" style={{ color: k.color, border: `1px solid ${k.color}44` }}>{k.label}</span>
+                </div>
+                <div className="flex-1 truncate text-[10px] tracking-wide" style={{ color: "rgba(140,200,230,0.45)", fontFamily: "monospace" }}>
+                  tx {short(ev.txid)} · seq {ev.seq}
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-1.5 text-right">
+                  <span className="text-[9px]" style={{ color: "rgba(120,190,220,0.4)", fontFamily: "monospace" }}>DAA {ev.accepting_daa}</span>
+                  <ExternalLink className="w-3 h-3" style={{ color: "rgba(120,200,230,0.35)" }} />
+                </div>
+              </motion.a>
+            );
+          })}
         </AnimatePresence>
       </div>
     </div>
