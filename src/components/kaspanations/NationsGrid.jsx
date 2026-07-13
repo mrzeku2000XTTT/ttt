@@ -1,6 +1,7 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, MapPin } from "lucide-react";
+import NationViewer from "@/components/kaspanations/NationViewer";
 
 // Country communities of the Kaspa Nations world — first nation: Kaspa PH
 const NATIONS = [
@@ -20,14 +21,14 @@ const NATIONS = [
 ];
 
 export default function NationsGrid() {
+  const [viewing, setViewing] = useState(null);
+
   return (
     <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {NATIONS.map((n, i) => (
-        <motion.a
+        <motion.div
           key={n.name}
-          href={n.live ? n.url : undefined}
-          target={n.live ? "_blank" : undefined}
-          rel="noopener noreferrer"
+          onClick={() => { if (n.live) setViewing(n); }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 + i * 0.1 }}
@@ -73,8 +74,13 @@ export default function NationsGrid() {
               {n.tagline}
             </div>
           )}
-        </motion.a>
+        </motion.div>
       ))}
+
+      {/* In-app site viewer */}
+      <AnimatePresence>
+        {viewing && <NationViewer nation={viewing} onClose={() => setViewing(null)} />}
+      </AnimatePresence>
     </div>
   );
 }
