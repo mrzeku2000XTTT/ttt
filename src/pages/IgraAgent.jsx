@@ -72,19 +72,19 @@ export default function IgraAgent() {
 
   return (
     <div className="min-h-screen text-white relative"
-      style={{ background: "radial-gradient(ellipse at 50% 0%, #2a0f03 0%, #0a0302 55%, #050100 100%)" }}>
+      style={{ background: "radial-gradient(ellipse at 50% 0%, #14100a 0%, #000000 60%, #000000 100%)" }}>
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <Link to="/IgraHorizon"
             className="flex items-center gap-2 px-4 py-2 text-[9px] tracking-[0.3em] uppercase rounded-full"
-            style={{ border: "1px solid rgba(255,170,110,0.25)", background: "rgba(28,14,6,0.55)",
+            style={{ border: "1px solid rgba(201,162,75,0.3)", background: "rgba(12,10,6,0.6)",
               backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-              color: "rgba(255,200,160,0.85)", fontFamily: "monospace" }}>
+              color: "rgba(201,162,75,0.9)", fontFamily: "monospace" }}>
             <ArrowLeft className="w-3.5 h-3.5" /> IGRA HORIZON
           </Link>
           <button onClick={() => loadStatus(true)} disabled={loading}
             className="flex items-center gap-2 px-4 py-2 text-[9px] tracking-[0.3em] uppercase rounded-full focus:outline-none"
-            style={{ border: "1px solid rgba(255,170,110,0.25)", color: "rgba(255,200,160,0.85)",
+            style={{ border: "1px solid rgba(201,162,75,0.3)", color: "rgba(201,162,75,0.9)",
               fontFamily: "monospace", opacity: loading ? 0.5 : 1 }}>
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> SYNC
           </button>
@@ -92,16 +92,16 @@ export default function IgraAgent() {
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6 text-center">
           <div className="flex items-center justify-center gap-3">
-            <Zap className="w-6 h-6" style={{ color: "#fb923c" }} />
+            <Zap className="w-6 h-6" style={{ color: "#C9A24B" }} />
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight"
               style={{ fontFamily: "'Georgia', serif",
-                background: "linear-gradient(180deg, #fff7ed 0%, #fdba74 50%, #9a3412 100%)",
+                background: "linear-gradient(180deg, #ffffff 0%, #f0e6cf 55%, #C9A24B 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
               IGRA AGENT
             </h1>
           </div>
           <p className="mt-2 text-[9px] tracking-[0.3em] uppercase"
-            style={{ color: "rgba(255,215,180,0.55)", fontFamily: "monospace" }}>
+            style={{ color: "rgba(201,162,75,0.65)", fontFamily: "monospace" }}>
             AGENT-TO-AGENT iKAS TRANSACTIONS · IGRA MAINNET · CHAIN 38833
           </p>
         </motion.div>
@@ -113,11 +113,11 @@ export default function IgraAgent() {
               <motion.div key={ev.id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                 className="px-3 py-2 rounded-xl text-[9px] tracking-[0.15em] uppercase flex items-center gap-2"
                 style={{
-                  border: `1px solid ${ev.error ? "rgba(248,113,113,0.35)" : "rgba(74,222,128,0.3)"}`,
-                  background: ev.error ? "rgba(60,15,10,0.4)" : "rgba(20,60,30,0.35)",
-                  color: ev.error ? "#fca5a5" : "#86efac", fontFamily: "monospace",
+                  border: `1px solid ${ev.error ? "rgba(248,113,113,0.35)" : "rgba(110,231,183,0.3)"}`,
+                  background: ev.error ? "rgba(60,15,10,0.4)" : "rgba(6,24,17,0.5)",
+                  color: ev.error ? "#fca5a5" : "#6EE7B7", fontFamily: "monospace",
                 }}>
-                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${ev.error ? "bg-red-400" : "bg-green-400"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${ev.error ? "bg-red-400" : "bg-emerald-300"}`} />
                 <span className="flex-1 break-all">{ev.text}</span>
                 {ev.url && (
                   <a href={ev.url} target="_blank" rel="noopener noreferrer" className="underline flex-shrink-0">VIEW</a>
@@ -145,7 +145,7 @@ export default function IgraAgent() {
         <IgraAgentConsole agents={status?.agents} onTxComplete={() => loadStatus(false)} onForged={() => loadStatus(false)} />
 
         <p className="mt-4 text-center text-[8px] tracking-[0.2em] uppercase leading-relaxed"
-          style={{ color: "rgba(255,190,150,0.35)", fontFamily: "monospace" }}>
+          style={{ color: "rgba(201,162,75,0.4)", fontFamily: "monospace" }}>
           FUND AGENT ALPHA WITH iKAS TO ACTIVATE TRANSACTIONS · SIGNED SERVER-SIDE · BROADCAST THROUGH IGRA RPC NODES
         </p>
       </div>
