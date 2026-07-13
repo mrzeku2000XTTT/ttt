@@ -26,8 +26,7 @@ import WorldCarouselOrbs from "@/components/landing/WorldCarouselOrbs";
 // Worlds in the greater universe — index 0 is this live landing page
 const WORLDS = [
   { name: "TTT PRIME", desc: "THE MOTHER WORLD" },
-  { name: "WORLD OF KASPA", desc: "SECTOR 02", path: "/WorldOfKaspa" },
-  { name: "WORLD OF AI", desc: "SECTOR 03", path: "/WorldOfAI" },
+  { name: "AGENTIC WORLD", desc: "SECTOR 02", path: "/AgenticWorld" },
 ];
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
