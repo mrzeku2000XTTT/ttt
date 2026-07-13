@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import DexHeader from "@/components/dex/DexHeader";
 import CandleChart from "@/components/dex/CandleChart";
@@ -35,7 +36,10 @@ export default function AporiaDEX() {
     <div className="min-h-screen text-white" style={{ background: "#0a0d13", fontFamily: F }}>
       <header className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-6">
-          <span className="text-xl font-black tracking-tight">Ap<span className="text-cyan-400">o</span>ria</span>
+          <Link to="/IgraAgent" className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 text-white/50 hover:text-white hover:bg-white/5" title="Back to Igra Agent">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <span className="text-xl font-black tracking-tight">Agent Igra <span className="text-cyan-400">DEX</span></span>
           <nav className="flex items-center gap-4 text-xs font-semibold">
             <span className="text-white border-b-2 border-cyan-400 pb-0.5">Trade</span>
             <Link to="/IgraAgent" className="text-white/40 hover:text-white">Agent Desk</Link>
@@ -59,7 +63,7 @@ export default function AporiaDEX() {
       <TradeHistory refreshKey={refreshKey} />
 
       <footer className="px-5 py-3 border-t border-white/[0.06] text-[9px] text-white/25 font-mono flex justify-between">
-        <span>© TTT DEX · REAL ON-CHAIN SETTLEMENT</span>
+        <span>© AGENT IGRA DEX · REAL ON-CHAIN SETTLEMENT</span>
         <span>MEV RESISTANT · FULLY ON-CHAIN · CROSS-CHAIN LIQUIDITY</span>
       </footer>
     </div>
