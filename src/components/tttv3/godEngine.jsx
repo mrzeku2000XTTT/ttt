@@ -38,24 +38,30 @@ const GOD_SCHEMA = {
   required: ["reply", "launch", "thought", "execution_mode"],
 };
 
+// Never let one stuck LLM call freeze the whole chat — every stage races a hard timeout.
+const withTimeout = (promise, ms, label) =>
+  Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error(`${label} timed out`)), ms))]);
+
 export async function runGodPipeline({ text, history, appsContext, modelId, onPhase, onToolDone }) {
   // ── STAGE 0: LIVE BROWSING — GOD ZK views tttz.xyz for REAL, right now ──
   onPhase?.("⚡ GOD ZK · live-browsing tttz.xyz…");
   let liveView = "";
   try {
-    const eyes = await base44.integrations.Core.InvokeLLM({
+    const eyes = await withTimeout(base44.integrations.Core.InvokeLLM({
       model: "gemini_3_flash",
       add_context_from_internet: true,
       prompt: `Browse https://tttz.xyz LIVE right now. The user is about to run this command on the platform: """${text}"""
 Report ONLY what you actually see on the live site that is relevant to this command: which apps/pages exist for it, their current state, and anything live worth knowing. 2-4 sentences max.`,
       response_json_schema: { type: "object", properties: { live_context: { type: "string" } }, required: ["live_context"] },
-    });
+    }), 25000, "live view");
     liveView = eyes?.live_context || "";
   } catch { /* live view failed — core still runs */ }
 
   onPhase?.("⚡ GOD ZK · omniscient core engaged…");
 
-  const decision = await base44.integrations.Core.InvokeLLM({
+  let decision;
+  try {
+    decision = await withTimeout(base44.integrations.Core.InvokeLLM({
     model: modelId && !modelId.includes("gemini") ? modelId : "claude_sonnet_4_6",
     prompt: `You are GOD ZK — the supercomputer sovereign of tttz.xyz. You have TOTAL access: the complete address space of every app and subapp on the platform, REAL system calls that execute live against Kaspa and the web, and an autonomous Agent Computer that can navigate, click, and type inside ANY app. Nothing on this platform is outside your reach.
 
@@ -87,8 +93,30 @@ ${text}
 7. thought: one sentence — what you decided and why.
 
 Return ONLY the JSON.`,
-    response_json_schema: GOD_SCHEMA,
-  });
+      response_json_schema: GOD_SCHEMA,
+    }), 90000, "GOD core");
+  } catch (e) {
+    return {
+      decision: {
+        reply: `⚡ **GOD core stalled** (${e?.message || "unknown error"}).\n\nTry again — or give me a concrete command like *"check the kaspa price"* or *"open /Feed and post about Kaspa"*.`,
+        launch: false,
+        thought: "Core call failed or timed out — returned a safe reply instead of hanging.",
+        execution_mode: "reply",
+      },
+      toolResults: [],
+    };
+  }
+
+  // Guard against an empty/malformed decision — the chat must ALWAYS get a reply
+  if (!decision || typeof decision.reply !== "string" || !decision.reply.trim()) {
+    decision = {
+      ...(decision || {}),
+      reply: "⚡ GOD core returned an empty response. Say it again — I'm listening.",
+      launch: decision?.launch === true,
+      thought: decision?.thought || "Empty decision — recovered with a fallback reply.",
+      execution_mode: decision?.execution_mode || "reply",
+    };
+  }
 
   let toolResults = [];
   if (decision?.tools?.length) {
@@ -97,7 +125,7 @@ Return ONLY the JSON.`,
 
     onPhase?.("⚡ GOD ZK · synthesizing with live results…");
     try {
-      const synth = await base44.integrations.Core.InvokeLLM({
+      const synth = await withTimeout(base44.integrations.Core.InvokeLLM({
         model: "gemini_3_flash",
         prompt: `You are GOD ZK. You just executed REAL system calls. Rewrite your draft reply into the FINAL reply using the actual results — concrete numbers, links, image URLs (embed images as Markdown ![image](url)). Markdown, confident, no placeholders.
 
@@ -112,7 +140,7 @@ ${toolResults.map(r => `## ${r.name} (${r.ok ? "OK" : "FAILED"}, ${r.ms}ms)\n${r
 
 Return ONLY the JSON.`,
         response_json_schema: { type: "object", properties: { reply: { type: "string" } }, required: ["reply"] },
-      });
+      }), 45000, "synthesis");
       if (synth?.reply) decision.reply = synth.reply;
     } catch { /* keep draft reply */ }
   }

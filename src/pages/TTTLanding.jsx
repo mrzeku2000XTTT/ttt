@@ -352,7 +352,11 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
         // ── GOD ZK: full tttz.xyz address space + REAL system calls + multi-app missions ──
         const god = await runGodPipeline({
           text, history, appsContext, modelId: model.id,
-          onPhase: (p) => setComputerStatus(p),
+          onPhase: (p) => {
+            setComputerStatus(p);
+            // Show live pipeline phase inside the pending chat bubble
+            setMessages(mm => mm.map(x => (x.id === mid ? { ...x, phase: p } : x)));
+          },
         });
         if (god.toolResults.length > 0) {
           setMessages(m => {
@@ -367,7 +371,10 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
         // ── ZK ULTRA pipeline: deep keyword analysis + live tttz.xyz viewing + full intent→flow translation ──
         const ultra = await runUltraPipeline({
           text, history, appsContext, modelId: model.id,
-          onPhase: (p) => setComputerStatus(p),
+          onPhase: (p) => {
+            setComputerStatus(p);
+            setMessages(mm => mm.map(x => (x.id === mid ? { ...x, phase: p } : x)));
+          },
         });
         if (ultra.analysis) {
           setMessages(m => {
@@ -924,7 +931,12 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
                             ? <p className="whitespace-pre-wrap">{m.content}</p>
                             : <ReactMarkdown className="zk-md">{m.content}</ReactMarkdown>}
                           {!isUser && !m.content && loading && (
-                            <div className="flex gap-1.5 py-1">{[0,1,2].map(j => <div key={j} className="w-2 h-2 rounded-full animate-bounce" style={{ background: "#f59e0b", animationDelay: `${j*0.15}s` }} />)}</div>
+                            <div className="flex items-center gap-2.5 py-1">
+                              <div className="flex gap-1.5">{[0,1,2].map(j => <div key={j} className="w-2 h-2 rounded-full animate-bounce" style={{ background: "#f59e0b", animationDelay: `${j*0.15}s` }} />)}</div>
+                              {m.phase && (
+                                <span className="text-[10px] font-black uppercase tracking-widest animate-pulse" style={{ color: "rgba(250,204,21,0.75)" }}>{m.phase}</span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
