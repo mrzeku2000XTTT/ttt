@@ -125,6 +125,7 @@ import IgraAgentPage from './pages/IgraAgent';
 import AporiaDEXPage from './pages/AporiaDEX';
 import KaspaCommandPage from './pages/KaspaCommand';
 import KCCPage from './pages/KCC';
+import AWAPage from './pages/AWA';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -281,6 +282,7 @@ const AuthenticatedApp = () => {
       <Route path="/Vision" element={<VisionPage />} />
       <Route path="/TTT3Manifesto" element={<TTT3ManifestoPDFPage />} />
       <Route path="/AgenticWorld" element={<AgenticWorldPage />} />
+      <Route path="/AWA" element={<AWAPage />} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
       <Route path="/KaspaNations/:slug" element={<KaspaNationPage />} />

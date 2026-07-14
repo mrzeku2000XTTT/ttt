@@ -1,0 +1,79 @@
+{
+  "name": "AWAInvoice",
+  "type": "object",
+  "properties": {
+    "service_id": {
+      "type": "string",
+      "description": "AWA service catalog id"
+    },
+    "service_name": {
+      "type": "string",
+      "description": "Human-readable service name"
+    },
+    "input": {
+      "type": "string",
+      "description": "Buyer's request payload for the AI service"
+    },
+    "amount_kas": {
+      "type": "number",
+      "description": "Price in KAS (x402 quote)"
+    },
+    "pay_to": {
+      "type": "string",
+      "description": "Kaspa L1 address the invoice must be paid to"
+    },
+    "buyer_email": {
+      "type": "string",
+      "description": "App user who requested the service"
+    },
+    "tx_id": {
+      "type": "string",
+      "description": "Kaspa L1 payment transaction id (replay-protected)"
+    },
+    "result": {
+      "type": "string",
+      "description": "Delivered AI service output (markdown or image URL)"
+    },
+    "result_type": {
+      "type": "string",
+      "enum": [
+        "markdown",
+        "image_url"
+      ],
+      "default": "markdown"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "payment_required",
+        "fulfilled",
+        "failed"
+      ],
+      "default": "payment_required"
+    }
+  },
+  "required": [
+    "service_id",
+    "service_name",
+    "amount_kas",
+    "pay_to"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
