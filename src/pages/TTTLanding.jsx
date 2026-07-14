@@ -133,6 +133,14 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
     if (next) {
       setUltraMode(false);
       try { localStorage.setItem("zk_ultra_mode", "0"); } catch {}
+      // GOD COMPUTER — not the basic supercomputer: opens the REAL live site at the landing page
+      setComputerOpen(true);
+      setComputerUrl(window.location.origin + "/");
+      setComputerStatus("⚡ GOD COMPUTER · LIVE");
+    } else {
+      setComputerOpen(false);
+      setComputerUrl(null);
+      setComputerStatus("Idle");
     }
     return next;
   });
