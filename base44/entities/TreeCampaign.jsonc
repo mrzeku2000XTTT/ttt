@@ -1,0 +1,82 @@
+{
+  "name": "TreeCampaign",
+  "type": "object",
+  "properties": {
+    "product": {
+      "type": "string",
+      "description": "Product or brand being advertised"
+    },
+    "goal": {
+      "type": "string",
+      "description": "Campaign goal (awareness, conversions, launch...)"
+    },
+    "audience": {
+      "type": "string",
+      "description": "Target audience"
+    },
+    "tone": {
+      "type": "string",
+      "description": "Voice/tone of the campaign"
+    },
+    "strategy": {
+      "type": "string",
+      "description": "Tree's campaign strategy summary"
+    },
+    "ads": {
+      "type": "array",
+      "description": "Generated ads, one per template",
+      "items": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string"
+          },
+          "hook": {
+            "type": "string"
+          },
+          "script": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "cta": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "narration_url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "generating",
+        "complete",
+        "failed"
+      ],
+      "default": "generating"
+    }
+  },
+  "required": [
+    "product"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
