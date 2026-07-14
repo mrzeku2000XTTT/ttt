@@ -9,7 +9,7 @@ import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo
 export default function IgraAgentConsole({ agents, onTxComplete, onForged, fullHeight }) {
   const [messages, setMessages] = useState([{
     role: "agent",
-    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and run TTT IGRA INS natively — send to .igra names, and inscribe new names on-chain from my own backend. YOUR alpha & beta wallets are personal — every user gets their own; fund YOUR alpha with iKAS and inscriptions are paid through it. Try: \"is scout.igra available\", \"register scout.igra from alpha\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", \"swap 1 iKAS from beta to kaspa:...\", or \"deploy a zktimelock locking 5 KAS for 30 days\" — I file REAL covenant++ deploy jobs with SuperZK. Local wallets keep their keys in THIS browser only.",
+    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and run TTT IGRA INS natively — send to .igra names, and inscribe new names on-chain from my own backend. YOUR alpha & beta wallets are personal — every user gets their own; fund YOUR alpha with iKAS and inscriptions are paid through it. Try: \"is scout.igra available\", \"register scout.igra from alpha\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", \"swap 1 iKAS from beta to kaspa:...\", \"deploy a zktimelock locking 5 KAS for 30 days\" — I file REAL covenant++ deploy jobs with SuperZK — or \"mint a soulbound KCC NFT called Dragon binding 2 KAS\": KCC NFTs are covenant++ P2SH UTXOs, rules enforced by Kaspa consensus itself. Local wallets keep their keys in THIS browser only.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,6 +49,10 @@ Parse the user's command into an action:
 - "bridge_ikas_to_kas": user wants to swap iKAS into KAS on Kaspa L1. amount = iKAS amount (omit if not stated). from = EXACTLY the wallet the user names ("alpha", "beta", or a local agent name) — OMIT "from" entirely if the user does not name a wallet, do NOT guess. kaspa_address = the kaspa: payout address; if not given, use the user's saved Kaspa L1 address. l2_tx_hash = only if the user already sent iKAS to the pool and gives a 0x… tx hash.
 - "superzk_deploy": user wants to deploy a covenant / covenant++ / ruled covenant / timelock / escrow / vault / zkgate / xmss lock / sentinel via SuperZK ("deploy a zktimelock locking 5 KAS for 30 days", "make a superzk job", "deploy a covenant"). covenant_type = one of zktimelock, zkescrow, zkvault, zkgate, xmsslock, sentinel (default zktimelock). amount = the KAS deposit to lock (default 1). timeout_days = lock/timeout duration in days if stated. kaspa_address = the owner/reclaim kaspa: address if the user gives one.
 - "superzk_check": user asks for the status of a superzk job/covenant deploy ("check superzk job <id>"). job_id = the job/conversation id.
+- "kcc_mint": user wants to mint/create a KCC NFT / covenant collectible / covenant NFT ("mint a soulbound KCC called Dragon binding 2 KAS", "make a gated covenant nft"). name = the NFT name. covenant_type = the rule: zktimelock (soulbound), zkgate (gated), zkescrow (escrow sale), zkvault (vaulted), xmsslock (quantum-safe), sentinel (default zktimelock). amount = KAS value to bind inside the NFT's UTXO (default 1).
+- "kcc_check": user asks for the status of a KCC NFT mint ("check my kcc", "check kcc Dragon"). name = the NFT name if given.
+- "kcc_list": user asks to see KCC NFTs / covenant collectibles ("my kcc nfts", "show kcc collection").
+- "kcc_redeem": user wants to redeem/transfer/unwrap a KCC NFT ("redeem kcc Dragon to kaspa:..."). name = the NFT name. kaspa_address = the payout kaspa: address if given.
 - "superzk_redeem": user wants to redeem, sweep, unlock, release, claim back or withdraw covenant funds ("redeem all", "sweep all", "redeem my covenants", "redeem covenant <id>", "sweep job 6a44..."). job_id = the superzk job/conversation id if given. name = the covenant_id if the user gives a specific covenant id. kaspa_address = the payout kaspa: address if given.
 - "chat": anything else — answer helpfully about the Igra agents (account abstraction, EIP-7702, ERC-4337 are live on Igra). The bridge desk swaps 1 KAS = 1 iKAS instantly.
 
@@ -58,7 +62,7 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name", "ins_explorer", "superzk_deploy", "superzk_check", "superzk_redeem"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name", "ins_explorer", "superzk_deploy", "superzk_check", "superzk_redeem", "kcc_mint", "kcc_check", "kcc_list", "kcc_redeem"] },
             covenant_type: { type: "string" },
             timeout_days: { type: "number" },
             job_id: { type: "string" },
@@ -229,6 +233,50 @@ User command: ${text}`,
         } else {
           const res = await base44.functions.invoke("superzkDeployJob", { action: "check", conversation_id: intent.job_id });
           push({ role: "system", text: `⚖ SUPERZK JOB ${intent.job_id}\n\n${res.data.latest_update}` });
+        }
+      } else if (intent.action === "kcc_mint") {
+        const ctype = intent.covenant_type || "zktimelock";
+        const nftName = intent.name || `KCC-${Date.now().toString(36).toUpperCase()}`;
+        push({ role: "system", text: `⛓ MINTING KCC NFT · "${nftName}" · RULE ${ctype.toUpperCase()} · BINDING ${intent.amount || 1} KAS…` });
+        const res = await base44.functions.invoke("kccNft", {
+          action: "mint", name: nftName, covenant_type: ctype, deposit_kas: intent.amount || 1,
+          rule_params: savedKaspa ? { owner_address: savedKaspa } : {},
+        });
+        const d = res.data;
+        push({ role: "system", text: `✓ KCC DEPLOY JOB FILED · "${d.nft.name}"\nRULE: ${ctype.toUpperCase()} — ENFORCED BY KASPA CONSENSUS, NOT AN INDEXER\n\nSTEP · SEND ${d.nft.deposit_kas} KAS ON KASPA L1 TO\n${d.nft.payment_address}\n\nWHEN THE PAYMENT LANDS, SUPERZK DEPLOYS THE COVENANT — ITS P2SH ADDRESS BECOMES THE NFT'S PERMANENT ON-CHAIN IDENTITY.\nSAY "check kcc ${d.nft.name}" FOR STATUS · VIEW THE COLLECTION AT /KCC.` });
+      } else if (intent.action === "kcc_check") {
+        const mine = await base44.entities.KCCNft.list("-created_date", 20);
+        const nft = intent.name
+          ? mine.find((n) => n.name.toLowerCase() === intent.name.toLowerCase()) || mine.find((n) => n.name.toLowerCase().includes(intent.name.toLowerCase()))
+          : mine.find((n) => n.status === "pending_payment") || mine[0];
+        if (!nft) {
+          push({ role: "error", text: "No KCC NFTs found — say \"mint a soulbound KCC called <name> binding <amount> KAS\" to create one." });
+        } else {
+          const res = await base44.functions.invoke("kccNft", { action: "check", nft_id: nft.id });
+          const d = res.data;
+          push({ role: "system", text: `⛓ KCC "${nft.name}" · ${(d.status || nft.status).toUpperCase().replace("_", " ")}${d.covenant_address ? `\nCOVENANT ADDRESS (NFT IDENTITY): ${d.covenant_address}` : ""}${d.tx_id ? `\nDEPLOY TX: ${d.tx_id}` : ""}\n\n${d.latest_update || "No agent update yet."}` });
+        }
+      } else if (intent.action === "kcc_list") {
+        const mine = await base44.entities.KCCNft.list("-created_date", 20);
+        push({ role: "system", text: mine.length
+          ? `⛓ KCC COVENANT COLLECTIBLES\n\n${mine.map((n) => `"${n.name}" · ${n.covenant_type.toUpperCase()} · ${n.deposit_kas} KAS · ${n.status.toUpperCase().replace("_", " ")}${n.covenant_address ? `\n  ${n.covenant_address}` : ""}`).join("\n")}\n\nFULL GALLERY AT /KCC.`
+          : "No KCC NFTs minted yet — say \"mint a soulbound KCC called <name> binding <amount> KAS\"." });
+      } else if (intent.action === "kcc_redeem") {
+        const payout = intent.kaspa_address || savedKaspa;
+        if (!payout) {
+          push({ role: "error", text: "Where should the bound KAS go? Say a kaspa: address, or save yours in \"MY KASPA L1 ADDRESS\" above the chat." });
+        } else {
+          const mine = await base44.entities.KCCNft.list("-created_date", 50);
+          const nft = intent.name
+            ? mine.find((n) => n.name.toLowerCase() === intent.name.toLowerCase()) || mine.find((n) => n.name.toLowerCase().includes(intent.name.toLowerCase()))
+            : null;
+          if (!nft) {
+            push({ role: "error", text: `Which KCC? Say "redeem kcc <name> to kaspa:..." — ${mine.length ? `you have: ${mine.map((n) => n.name).join(", ")}` : "none minted yet"}.` });
+          } else {
+            push({ role: "system", text: `⛓ REDEEMING KCC "${nft.name}" · SWEEPING COVENANT → ${payout.slice(0, 24)}…` });
+            await base44.functions.invoke("kccNft", { action: "redeem", nft_id: nft.id, payout_address: payout });
+            push({ role: "system", text: `✓ REDEEM JOB FILED · "${nft.name}"\nSUPERZK BUILDS & BROADCASTS THE COVENANT SWEEP TO ${payout}\nTHE RULE STILL GOVERNS: SOULBOUND TIMELOCKS ONLY SPEND ONCE MATURED.\nSAY "check kcc ${nft.name}" FOR THE SWEEP TX.` });
+          }
         }
       } else if (intent.action === "bridge_ikas_to_kas") {
         const payoutAddr = intent.kaspa_address || getSavedKaspaAddress();
