@@ -6,7 +6,7 @@ export default function AWAHero() {
     <div className="text-center pt-16 pb-10 px-4">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-bold tracking-[0.3em] mb-5">
-          SECTOR 03 · HTTP 402 · KASPA L1
+          SECTOR 05 · HTTP 402 · KASPA L1
         </div>
         <h1 className="text-5xl sm:text-7xl font-black text-white tracking-tight">
           AWA

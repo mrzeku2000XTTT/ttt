@@ -13,6 +13,7 @@ const WORLDS = [
   { name: "AGENTIC WORLD", desc: "SECTOR 02", path: "/AgenticWorld" },
   { name: "KASPA NATIONS", desc: "SECTOR 03", path: "/KaspaNations" },
   { name: "IGRA HORIZON", desc: "SECTOR 04" },
+  { name: "AWA", desc: "SECTOR 05", path: "/AWA" },
 ];
 const SELF = 3;
 
