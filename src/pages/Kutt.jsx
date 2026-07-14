@@ -58,10 +58,10 @@ export default function KuttPage() {
     setExportProgress(0);
     setPlaying(false);
     try {
-      const { url } = await exportTimeline({ clips, assets, onProgress: setExportProgress });
+      const { url, ext } = await exportTimeline({ clips, assets, onProgress: setExportProgress });
       const a = document.createElement("a");
       a.href = url;
-      a.download = "kutt-export.webm";
+      a.download = `kutt-export.${ext || "mp4"}`;
       a.click();
     } catch (err) {
       alert(`Export failed: ${err.message}`);

@@ -25,7 +25,7 @@ export default function KuttTimeline({ assets, clips, setClips, playhead, setPla
     e.stopPropagation();
     e.preventDefault();
     setSelectedId(clip.id);
-    dragRef.current = { clipId: clip.id, mode, startX: e.clientX, orig: { ...clip } };
+    dragRef.current = { clipId: clip.id, mode, startX: e.clientX, startY: e.clientY, orig: { ...clip } };
     window.addEventListener("pointermove", onDragMove);
     window.addEventListener("pointerup", onDragEnd);
   };
@@ -36,7 +36,15 @@ export default function KuttTimeline({ assets, clips, setClips, playhead, setPla
     const dx = (e.clientX - d.startX) / pps;
     setClips((prev) => prev.map((c) => {
       if (c.id !== d.clipId) return c;
-      if (d.mode === "move") return { ...c, start: Math.max(0, d.orig.start + dx) };
+      if (d.mode === "move") {
+        // Multi-layer: drag vertically to move a clip between V1/V2 tracks
+        const asset = assetById(d.orig.assetId);
+        let track = d.orig.track;
+        if (asset?.type !== "audio") {
+          track = Math.max(0, Math.min(1, d.orig.track + Math.round((e.clientY - d.startY) / 56)));
+        }
+        return { ...c, start: Math.max(0, d.orig.start + dx), track };
+      }
       if (d.mode === "resize") return { ...c, duration: Math.max(0.5, d.orig.duration + dx) };
       if (d.mode === "trim") {
         const shift = Math.max(-(d.orig.trimIn || 0), Math.min(dx, d.orig.duration - 0.5));

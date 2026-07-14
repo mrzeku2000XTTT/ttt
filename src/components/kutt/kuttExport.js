@@ -53,7 +53,17 @@ export async function exportTimeline({ clips, assets, width = 1280, height = 720
   const stream = canvas.captureStream(fps);
   dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
 
-  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
+  // Prefer real MP4 (H.264+AAC) when the browser supports recording it; fall back to webm
+  const MIME_CANDIDATES = [
+    "video/mp4;codecs=avc1.64003E,mp4a.40.2",
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4;codecs=avc1",
+    "video/mp4",
+    "video/webm;codecs=vp9",
+    "video/webm",
+  ];
+  const mime = MIME_CANDIDATES.find((m) => { try { return MediaRecorder.isTypeSupported(m); } catch { return false; } }) || "video/webm";
+  const isMp4 = mime.startsWith("video/mp4");
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
   const chunks = [];
   recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
@@ -69,8 +79,8 @@ export async function exportTimeline({ clips, assets, width = 1280, height = 720
   return new Promise((resolve, reject) => {
     recorder.onstop = () => {
       audioCtx.close().catch(() => {});
-      const blob = new Blob(chunks, { type: "video/webm" });
-      resolve({ blob, url: URL.createObjectURL(blob), duration: total });
+      const blob = new Blob(chunks, { type: isMp4 ? "video/mp4" : "video/webm" });
+      resolve({ blob, url: URL.createObjectURL(blob), ext: isMp4 ? "mp4" : "webm", duration: total });
     };
     recorder.onerror = (e) => reject(e.error || new Error("Recorder failed"));
 
