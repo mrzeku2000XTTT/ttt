@@ -124,6 +124,7 @@ import IgraHorizonPage from './pages/IgraHorizon';
 import IgraAgentPage from './pages/IgraAgent';
 import AporiaDEXPage from './pages/AporiaDEX';
 import KaspaCommandPage from './pages/KaspaCommand';
+import KCCPage from './pages/KCC';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -274,6 +275,7 @@ const AuthenticatedApp = () => {
       <Route path="/TTTZWallet" element={<TTTZWalletPage />} />
       <Route path="/ScenarioBot" element={<ScenarioBotPage />} />
       <Route path="/SuperZK" element={<SuperZKPage />} />
+      <Route path="/KCC" element={<KCCPage />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
       <Route path="/KasSword" element={<KasSwordPage />} />
       <Route path="/Vision" element={<VisionPage />} />

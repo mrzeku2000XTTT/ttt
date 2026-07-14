@@ -1,0 +1,100 @@
+{
+  "name": "KCCNft",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "NFT name"
+    },
+    "description": {
+      "type": "string",
+      "description": "NFT description"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Artwork URL"
+    },
+    "covenant_type": {
+      "type": "string",
+      "enum": [
+        "zktimelock",
+        "zkescrow",
+        "zkvault",
+        "zkgate",
+        "xmsslock",
+        "sentinel"
+      ],
+      "description": "Covenant++ rule baked into the NFT's on-chain UTXO"
+    },
+    "rule_params": {
+      "type": "object",
+      "description": "Covenant parameters (e.g. lock duration, gate secret hash)"
+    },
+    "deposit_kas": {
+      "type": "number",
+      "description": "KAS value bound inside the covenant UTXO"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Current owner (app user)"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "SuperZK deploy job conversation"
+    },
+    "payment_address": {
+      "type": "string",
+      "description": "Kaspa address to pay the deposit to"
+    },
+    "covenant_address": {
+      "type": "string",
+      "description": "Deployed covenant P2SH address \u2014 the NFT's on-chain identity"
+    },
+    "redeem_script_hex": {
+      "type": "string",
+      "description": "Covenant redeem script"
+    },
+    "unlock_daa": {
+      "type": "string",
+      "description": "DAA score at which a timelock rule matures"
+    },
+    "tx_id": {
+      "type": "string",
+      "description": "Deploy transaction id on Kaspa L1"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_payment",
+        "minted",
+        "redeem_filed",
+        "redeemed"
+      ],
+      "default": "pending_payment"
+    }
+  },
+  "required": [
+    "name",
+    "covenant_type",
+    "deposit_kas",
+    "owner_email"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
