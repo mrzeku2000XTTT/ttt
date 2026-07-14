@@ -54,6 +54,7 @@ const ACTION_SCHEMA = {
 };
 
 const AVAILABLE_ROUTES = [
+  { path: "/", desc: "TTT landing page — main menu with buttons: PRESS START, TAP, TO, TIP, GATE, WALLET, ZK, ADVENT, VISION, KASPA" },
   { path: "/Feed", desc: "Social feed — post, comment, tip KAS" },
   { path: "/Bridge", desc: "Send KAS cross-layer" },
   { path: "/Browser", desc: "TTTV — video browser" },
@@ -68,10 +69,23 @@ const AVAILABLE_ROUTES = [
 export async function runAutonomousAgent({ goal, callbacks, signal }) {
   const { setStatus, addNarration, onPlan, onPlanItemUpdate, onStep } = callbacks;
 
+  // ── PHASE 0: SCAN THE CURRENT FRAME ────────────────────────────────────
+  // Look at what's ALREADY on screen so the plan can act on the current page
+  // instead of blindly navigating away (e.g. "click the ZK button" on the landing page).
+  let currentPage = null;
+  try {
+    const iframe = callbacks.getIframe?.();
+    if (iframe) {
+      setStatus("👀 Scanning the current page…");
+      const obs = await sendCommand(iframe, { action: "read_page" }, 3000);
+      if (obs?.ok) currentPage = obs;
+    }
+  } catch {}
+
   // ── PHASE 1: BUILD THE PLAN ────────────────────────────────────────────
   setStatus("🧭 Reading your prompt and building a plan…");
   addNarration("Reading the goal and breaking it into steps…");
-  const plan = await buildPlan(goal);
+  const plan = await buildPlan(goal, currentPage);
   if (!plan || plan.length === 0) {
     addNarration("Couldn't build a plan. Stopping.");
     setStatus("Idle");
@@ -126,11 +140,20 @@ export async function runAutonomousAgent({ goal, callbacks, signal }) {
 // ─────────────────────────────────────────────────────────────────────────
 // PLAN BUILDER
 // ─────────────────────────────────────────────────────────────────────────
-async function buildPlan(goal) {
+async function buildPlan(goal, currentPage) {
   try {
     const routes = AVAILABLE_ROUTES.map((r) => `  ${r.path} — ${r.desc}`).join("\n");
+    const currentPageSummary = currentPage
+      ? `URL: ${currentPage.url}
+Headings: ${(currentPage.headings || []).slice(0, 6).join(" | ") || "(none)"}
+Visible buttons/links: ${(currentPage.buttons || []).slice(0, 30).join(" | ") || "(none)"}
+Input fields: ${(currentPage.inputs || []).slice(0, 10).join(" | ") || "(none)"}`
+      : "(no page open yet)";
     const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are the Vision Agent's planner. Read the user's goal and break it into a SHORT numbered plan of 2-${MAX_PLAN_ITEMS} concrete sub-tasks. Each sub-task should be one observable action that an autonomous agent can verify is done.
+      prompt: `You are the Vision Agent's planner. Read the user's goal and break it into a SHORT numbered plan of 1-${MAX_PLAN_ITEMS} concrete sub-tasks. Each sub-task should be one observable action that an autonomous agent can verify is done.
+
+# CURRENT PAGE (already open in the computer — what's on screen RIGHT NOW)
+${currentPageSummary}
 
 # AVAILABLE ROUTES
 ${routes}
@@ -141,7 +164,8 @@ ${goal}
 # RULES
 - Each plan item = ONE visible milestone.
 - Be specific. Don't say "set up email" — say "Type the email recipient into the email node's recipient field".
-- ALWAYS make the FIRST item the navigation step using the EXACT route path from AVAILABLE ROUTES (e.g. "Open /NODAStudio" — NOT "/NODA", that doesn't exist as a route here).
+- CHECK THE CURRENT PAGE FIRST: if the goal's target (a button, link, or input) is ALREADY VISIBLE in the CURRENT PAGE section above, DO NOT plan a navigation step — the first item acts DIRECTLY on the current page (e.g. goal "click the ZK button" while a "ZK" button is visible → plan is just: 1) Click the "ZK" button  2) Verify the new page loaded). Match the user's keyword against the EXACT visible button/link labels and use the exact label in the plan.
+- Only start with a navigation step when the target is NOT on the current page — then use the EXACT route path from AVAILABLE ROUTES (e.g. "Open /NODAStudio" — NOT "/NODA", that doesn't exist as a route here).
 - The LAST item should be the final visible result.
 - ANY task involving email, posting, research, AI workflow, automation, "send", "create", "build" → ALWAYS use /NODAStudio + Brain. Never invent custom steps like "Click Email" or "Click Send" — those buttons don't exist standalone. The Brain modal handles ALL of it: you describe the goal in plain English, click Build, and it generates the right nodes (Send Email, Post to TTT, Deep Research, AI Prompt, etc.) AND runs them.
 - For a NODA workflow build, the plan MUST be exactly: 1) Open /NODAStudio  2) Click Brain  3) Type the full description into the Brain textarea  4) Click Build  5) Wait & verify nodes appear.
