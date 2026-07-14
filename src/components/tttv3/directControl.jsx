@@ -12,6 +12,33 @@ import { sendCommand } from "./agentBridge";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * observeLiveScreen — read what's ACTUALLY displayed in the Agent Computer
+ * right now. Returns a compact text summary for injecting into ZK's prompts,
+ * so "what page are we on?" is answered from ground truth, never from memory.
+ */
+export async function observeLiveScreen(getIframe) {
+  try {
+    const iframe = getIframe?.();
+    if (!iframe) return "";
+    let obs = await sendCommand(iframe, { action: "read_page" }, 3000);
+    if (!obs?.ok) {
+      await sleep(1200);
+      obs = await sendCommand(getIframe?.(), { action: "read_page" }, 3000);
+    }
+    if (!obs?.ok) return "";
+    const parts = [`Current URL: ${obs.url || "(unknown)"}`];
+    if (obs.title) parts.push(`Page title: ${obs.title}`);
+    if (obs.headings?.length) parts.push(`Headings: ${obs.headings.slice(0, 8).join(" | ")}`);
+    if (obs.buttons?.length) parts.push(`Visible buttons/links: ${obs.buttons.slice(0, 30).join(" | ")}`);
+    if (obs.inputs?.length) parts.push(`Input fields: ${obs.inputs.slice(0, 10).join(" | ")}`);
+    if (obs.text) parts.push(`Visible text: ${String(obs.text).slice(0, 500)}`);
+    return parts.join("\n");
+  } catch {
+    return "";
+  }
+}
+
 export function looksLikeDirectControl(text) {
   return /\b(click|press|tap|type|enter|fill|scroll|select|toggle)\b/i.test(text);
 }

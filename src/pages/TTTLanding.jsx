@@ -22,7 +22,7 @@ import ZKGodConsole from "@/components/tttv3/ZKGodConsole";
 import { runGodPipeline } from "@/components/tttv3/godEngine";
 import ZKAvatar3D from "@/components/tttv3/ZKAvatar3D";
 import { runUltraPipeline } from "@/components/tttv3/ultraEngine";
-import { runDirectControl, looksLikeDirectControl } from "@/components/tttv3/directControl";
+import { runDirectControl, looksLikeDirectControl, observeLiveScreen } from "@/components/tttv3/directControl";
 import ReactMarkdown from "react-markdown";
 const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
@@ -354,7 +354,16 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
         appsContext = apps.map(a => `- ${a.app_name} (${a.category}): ${a.description || ""} [capabilities: ${(a.agent_capabilities || []).join(", ")}]`).join("\n");
       } catch {}
 
-      const history = [...messages, userMsg].slice(-10).map(m => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`).join("\n\n");
+      let history = [...messages, userMsg].slice(-10).map(m => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`).join("\n\n");
+
+      // ── LIVE MODE — if the computer is open, ZK reads what's ACTUALLY on screen RIGHT NOW ──
+      if (computerOpen) {
+        setMessages(mm => mm.map(x => (x.id === mid ? { ...x, phase: "👀 ZK · reading the live screen…" } : x)));
+        const liveScreen = await observeLiveScreen(() => computerRef.current?.getIframe());
+        if (liveScreen) {
+          history += `\n\n# 🔴 LIVE AGENT COMPUTER SCREEN — GROUND TRUTH\nThis is EXACTLY what is displayed on the computer at this very moment. For ANY question about the current page/app/state ("what page are we on", "what do you see"), answer ONLY from this — NEVER from memory or previous navigation claims:\n${liveScreen}`;
+        }
+      }
 
       let decision;
       let handledDirect = false;
