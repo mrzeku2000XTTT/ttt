@@ -4,15 +4,24 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import KlipzClipCard from "@/components/klipz/KlipzClipCard";
 
-function loadWalletAddresses() {
+async function loadWalletAddresses() {
+  let addresses = [];
   try {
     const raw = JSON.parse(localStorage.getItem("terra_wallets") || "[]");
-    return raw
-      .map((w) => (w.address?.startsWith("kaspa:") ? w.address : `kaspa:${w.address}`))
-      .filter(Boolean);
-  } catch (_e) {
-    return [];
-  }
+    addresses = raw
+      .filter((w) => w.address)
+      .map((w) => (w.address.startsWith("kaspa:") ? w.address : `kaspa:${w.address}`));
+  } catch (_e) { /* ignore */ }
+  // Also detect the main TTT wallet from the user profile (skips silently if logged out)
+  try {
+    const user = await base44.auth.me();
+    const raw = user?.created_wallet_address || user?.kaspa_address;
+    if (raw) {
+      const main = raw.startsWith("kaspa:") ? raw : `kaspa:${raw}`;
+      if (!addresses.includes(main)) addresses.unshift(main);
+    }
+  } catch (_e) { /* not logged in — wallet-only mode */ }
+  return addresses;
 }
 
 export default function KlipzLibrary({ onCanvas }) {
@@ -23,7 +32,7 @@ export default function KlipzLibrary({ onCanvas }) {
 
   useEffect(() => {
     (async () => {
-      const addresses = loadWalletAddresses();
+      const addresses = await loadWalletAddresses();
       if (addresses.length === 0) {
         setNoWallet(true);
         setJobs([]);

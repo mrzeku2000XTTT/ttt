@@ -9,11 +9,34 @@ function loadTTTWallets() {
   try {
     const raw = JSON.parse(localStorage.getItem("terra_wallets") || "[]");
     return raw
-      .map((w) => ({ ...w, address: w.address?.startsWith("kaspa:") ? w.address : `kaspa:${w.address}` }))
-      .filter((w) => w.mnemonic);
+      .filter((w) => w.address)
+      .map((w) => ({ ...w, address: w.address.startsWith("kaspa:") ? w.address : `kaspa:${w.address}` }));
   } catch (_e) {
     return [];
   }
+}
+
+// Merge in the main TTT wallet from the user profile (works logged-out too — just skips)
+async function loadAllWallets() {
+  const local = loadTTTWallets();
+  let mainAddr = null;
+  try {
+    const user = await base44.auth.me();
+    const raw = user?.created_wallet_address || user?.kaspa_address;
+    if (raw) mainAddr = raw.startsWith("kaspa:") ? raw : `kaspa:${raw}`;
+  } catch (_e) { /* not logged in — wallet-only mode */ }
+
+  let wallets = [...local];
+  if (mainAddr && !wallets.find((w) => w.address === mainAddr)) {
+    wallets.push({ address: mainAddr, mnemonic: "", label: "Main TTT Wallet" });
+  }
+  // Main wallet first, then wallets that can actually sign (have a seed phrase)
+  wallets.sort((a, b) => {
+    if (a.address === mainAddr) return -1;
+    if (b.address === mainAddr) return 1;
+    return (b.mnemonic ? 1 : 0) - (a.mnemonic ? 1 : 0);
+  });
+  return wallets.map((w) => ({ ...w, isMain: w.address === mainAddr }));
 }
 
 export default function KlipzHireModal({ video, clips, onClose, onDelivered }) {
@@ -23,7 +46,13 @@ export default function KlipzHireModal({ video, clips, onClose, onDelivered }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   useEffect(() => {
-    setWallets(loadTTTWallets());
+    (async () => {
+      const all = await loadAllWallets();
+      setWallets(all);
+      // Preselect the first wallet that can sign (prefer the main wallet if it has a seed)
+      const firstSignable = all.findIndex((w) => w.mnemonic);
+      if (firstSignable >= 0) setSelectedIdx(firstSignable);
+    })();
   }, []);
 
   const wallet = wallets[selectedIdx];
@@ -31,7 +60,8 @@ export default function KlipzHireModal({ video, clips, onClose, onDelivered }) {
   const payAndHire = async () => {
     setError(null);
     try {
-      if (!wallet) throw new Error("No TTT wallet with a seed phrase found.");
+      if (!wallet) throw new Error("No TTT wallet found.");
+      if (!wallet.mnemonic) throw new Error("This wallet has no seed phrase stored here. Open TTT Wallet and import it with its seed phrase to pay from it.");
       setStatus("paying");
       const res = await base44.functions.invoke("sendKaspaTransaction", {
         mnemonic: wallet.mnemonic,
@@ -93,15 +123,20 @@ export default function KlipzHireModal({ video, clips, onClose, onDelivered }) {
                 {wallets.map((w, i) => (
                   <button
                     key={w.address}
-                    onClick={() => setSelectedIdx(i)}
+                    onClick={() => w.mnemonic && setSelectedIdx(i)}
+                    disabled={!w.mnemonic}
                     className={`w-full flex items-center gap-3 p-3 border text-left transition-colors ${
                       i === selectedIdx ? "border-cyan-400 bg-cyan-500/10" : "border-zinc-800 hover:border-zinc-600"
-                    }`}
+                    } ${!w.mnemonic ? "opacity-60 cursor-not-allowed" : ""}`}
                   >
                     <Wallet className={`w-4 h-4 flex-shrink-0 ${i === selectedIdx ? "text-cyan-400" : "text-zinc-500"}`} />
                     <div className="min-w-0">
-                      <p className="text-white text-[11px] font-bold">{w.label || `Wallet ${i + 1}`}</p>
+                      <p className="text-white text-[11px] font-bold">
+                        {w.isMain ? "Main TTT Wallet" : w.label || `Wallet ${i + 1}`}
+                        {w.isMain && <span className="ml-2 text-emerald-400 text-[8px] tracking-widest">● MAIN</span>}
+                      </p>
                       <p className="text-zinc-500 text-[9px] truncate">{w.address.slice(0, 20)}…{w.address.slice(-6)}</p>
+                      {!w.mnemonic && <p className="text-amber-500 text-[8px] tracking-widest mt-0.5">NO SEED HERE — IMPORT IN TTT WALLET TO PAY</p>}
                     </div>
                     {i === selectedIdx && <span className="ml-auto text-cyan-400 text-[9px] tracking-widest">SELECTED</span>}
                   </button>
