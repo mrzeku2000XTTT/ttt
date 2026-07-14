@@ -72,6 +72,24 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Login required for bridge swaps" }, { status: 401 });
 
+    if (action === "admin_send_kas") {
+      // Secure manual KAS send from the desk funding wallet — admin only,
+      // key never leaves the server
+      if (user.role !== "admin") return Response.json({ error: "Admin only — the desk wallet can only be operated by an app admin" }, { status: 403 });
+      const dest = (kaspa_address || "").startsWith("kaspa:") ? kaspa_address : `kaspa:${kaspa_address || ""}`;
+      if (!/^kaspa:[a-z0-9]{61,63}$/.test(dest)) return Response.json({ error: "Invalid kaspa: destination address" }, { status: 400 });
+      const amount = Number(reqAmount);
+      if (!amount || amount <= 0) return Response.json({ error: "Invalid amount" }, { status: 400 });
+      const res = await base44.functions.invoke("sendKaspaTransaction", {
+        privateKey: kasBridge.private_key, fromAddress: kasBridge.address,
+        toAddress: dest, amountKas: amount,
+      });
+      return Response.json({
+        tx_id: res.data.txId, amount, recipient: dest,
+        explorer_url: `https://explorer.kaspa.org/txs/${res.data.txId}`,
+      });
+    }
+
     if (action === "kas_to_ikas") {
       if (!l1_tx_id) return Response.json({ error: "Missing Kaspa L1 transaction id" }, { status: 400 });
       if (!ethers.isAddress(evm_address || "")) return Response.json({ error: "Invalid 0x destination address" }, { status: 400 });

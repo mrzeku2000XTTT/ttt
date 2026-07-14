@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Copy, Check, Landmark } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import DeskAdminSend from "@/components/igra/agent/DeskAdminSend";
 
 // Desk KAS funding wallet — full copyable address so the admin can fund native swaps for users
 export default function DeskFundingCard() {
@@ -71,6 +72,7 @@ export default function DeskFundingCard() {
         style={{ color: "rgba(201,162,75,0.45)", fontFamily: "monospace" }}>
         ADMIN FUNDS THIS WALLET · POWERS NATIVE KAS → iKAS SWAPS (MIN 10 KAS) AND INSTANT iKAS → KAS PAYOUTS · EVERY DESK SWAP RETAINS A 0.5% FEE THAT REFILLS THE POOLS · TAP ADDRESS TO COPY
       </p>
+      <DeskAdminSend />
     </div>
   );
 }

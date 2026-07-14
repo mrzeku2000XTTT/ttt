@@ -9,7 +9,7 @@ import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo
 export default function IgraAgentConsole({ agents, onTxComplete, onForged, fullHeight }) {
   const [messages, setMessages] = useState([{
     role: "agent",
-    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and speak INS — send straight to .igra names. Try: \"forge a wallet called scout\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", or \"swap 1 iKAS from beta to kaspa:...\". Local wallets keep their keys in THIS browser only.",
+    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and run TTT IGRA INS natively — send to .igra names, and inscribe new names on-chain from my own backend. Try: \"is scout.igra available\", \"register scout.igra from alpha\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", or \"swap 1 iKAS from beta to kaspa:...\". Local wallets keep their keys in THIS browser only.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,6 +38,8 @@ Parse the user's command into an action:
 - "forge": generate a NEW local agent wallet in the browser. name = the wallet/agent name the user wants (invent a short lowercase one like "agent-${locals.length + 1}" if not given).
 - "send": transfer iKAS. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, a 0x address, or an INS name ending in .igra/.ins/.ikas (pass the name as-is, e.g. "alice.igra" — I resolve it on-chain). amount = number in iKAS.
 - "resolve_name": user asks what address an INS name (.igra/.ins/.ikas) points to. name = the INS name.
+- "name_price": user asks if an INS name is available or what it costs ("is scout.igra available", "price of xyz.igra"). name = the full INS name (append ".igra" if the user gives no TLD).
+- "register_name": user wants to register / mint / inscribe / generate / buy an INS name ("register scout.igra", "mint alice.igra from beta", "generate an ikas domain"). name = the full INS name including TLD (default ".igra" if not stated). from = the wallet that pays and owns it: "alpha", "beta" or a local agent name (default alpha).
 - "names": user asks to see registered INS/.igra names ("my names", "what names does alpha own", "names for 0x..."). to = the agent name or 0x address to look up (default alpha).
 - "status": check balances/addresses.
 - "desk": user asks about the desk, desk wallet, funding wallet, desk balance, or how to fund the desk.
@@ -52,7 +54,7 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name"] },
             name: { type: "string" },
             from: { type: "string" },
             to: { type: "string" },
@@ -95,6 +97,26 @@ User command: ${text}`,
       } else if (intent.action === "resolve_name") {
         const res = await base44.functions.invoke("igraAgent", { action: "resolve_name", extra: { name: intent.name || intent.to } });
         push({ role: "system", text: `🏷 INS RESOLVED\n${res.data.name}\n→ ${res.data.address}` });
+      } else if (intent.action === "name_price") {
+        const res = await base44.functions.invoke("igraAgent", { action: "name_price", extra: { name: intent.name || intent.to } });
+        const d = res.data;
+        push({ role: "system", text: d.available
+          ? `🏷 ${d.name} IS AVAILABLE · ${Number(d.price_ikas)} iKAS (PAY ONCE, OWN FOREVER)\nSAY "register ${d.name} from alpha" — I INSCRIBE IT NATIVELY ON-CHAIN VIA TTT IGRA INS.`
+          : d.owner
+            ? `🏷 ${d.name} IS TAKEN · OWNED BY ${d.owner}`
+            : `🏷 ${d.name} IS RESERVED — NOT PUBLICLY MINTABLE` });
+      } else if (intent.action === "register_name") {
+        const fromAgent = (intent.from || "alpha").toLowerCase();
+        const localSender = getLocalAgent(fromAgent);
+        push({ role: "system", text: `⛏ TTT IGRA INS · INSCRIBING ${intent.name} ON THE REGISTRY · PAYING FROM ${fromAgent.toUpperCase()}…` });
+        const res = await base44.functions.invoke("igraAgent", {
+          action: "register_name", from: fromAgent,
+          ...(localSender ? { private_key: localSender.private_key } : {}),
+          extra: { name: intent.name },
+        });
+        const d = res.data;
+        push({ role: "system", text: `✓ NAME INSCRIBED NATIVELY — TTT IGRA INS\n🏷 ${d.name} → ${d.owner}\nPAID ${Number(d.price_ikas)} iKAS FROM AGENT ${d.from_agent.toUpperCase()} · BLOCK ${d.block ?? "pending"}\nCROSS-COMPATIBLE WITH IGRA INS — RESOLVES EVERYWHERE, SELLABLE AS AN ERC-721\nTX: ${d.tx_hash}` });
+        onTxComplete?.();
       } else if (intent.action === "names") {
         const target = (intent.to || "alpha").toLowerCase();
         const local = getLocalAgent(target);

@@ -9,12 +9,33 @@ const EXPLORER = "https://explorer.igralabs.com";
 const INS_API = "https://insdomains.org/api";
 // INS registries (.igra + legacy .ins/.ikas) — ERC-721 name NFTs on Igra
 const INS_REGISTRIES = {
-  "0x42c2f5aa0c4aacfd07e5fbe65b898212c1c2879c": "igra",
+  "0x7e7018959bf44045f01d176d8db1594894cbf4e9": "igra", // V2 — active registry
+  "0x42c2f5aa0c4aacfd07e5fbe65b898212c1c2879c": "igra", // V1 legacy
   "0x535ff4a6710c2b0d087c5aff01b16fe10bc34d46": "ins",
   "0xe705e38def4970e23617d30d9774062feeeba610": "ikas",
 };
 
+// New registrations go to the ACTIVE registries (V2 for .igra)
+const REGISTRY_BY_TLD = {
+  igra: "0x7e7018959bf44045f01d176d8db1594894cbf4e9",
+  ins: "0x535ff4a6710c2b0d087c5aff01b16fe10bc34d46",
+  ikas: "0xe705e38def4970e23617d30d9774062feeeba610",
+};
+// Public registry interface — pay once in native iKAS, own forever (ERC-721)
+const REGISTRY_ABI = [
+  "function available(string label) view returns (bool)",
+  "function priceFor(string label) view returns (uint256)",
+  "function ownerOfName(string label) view returns (address)",
+  "function register(string label, address target) payable returns (uint256)",
+];
+
 const isInsName = (v) => typeof v === "string" && /\.(igra|ins|ikas)$/i.test(v.trim());
+
+const parseInsName = (v) => {
+  const m = (v || "").trim().toLowerCase().match(/^([a-z0-9-]{1,32})\.(igra|ins|ikas)$/);
+  if (!m) throw new Error(`Invalid INS name "${v}" — use letters/numbers/hyphens plus .igra, .ins or .ikas`);
+  return { label: m[1], tld: m[2], full: `${m[1]}.${m[2]}` };
+};
 
 async function resolveInsName(name) {
   const res = await fetch(`${INS_API}/resolve?name=${encodeURIComponent(name.trim().toLowerCase())}`);
@@ -94,6 +115,81 @@ Deno.serve(async (req) => {
       return Response.json({ address: addr, primary, names });
     }
 
+    if (action === "name_price") {
+      const { label, tld, full } = parseInsName(extra?.name || to);
+      const registry = new ethers.Contract(REGISTRY_BY_TLD[tld], REGISTRY_ABI, provider);
+      const [avail, price, ownerAddr] = await Promise.all([
+        registry.available(label), registry.priceFor(label), registry.ownerOfName(label),
+      ]);
+      return Response.json({
+        name: full,
+        available: avail,
+        price_ikas: price === ethers.MaxUint256 ? null : ethers.formatEther(price),
+        owner: ownerAddr === ethers.ZeroAddress ? null : ownerAddr,
+      });
+    }
+
+    if (action === "register_name") {
+      // Native TTT IGRA INS inscription — register straight on the on-chain
+      // registry from OUR backend, paying iKAS from an agent wallet.
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: "Login required to register names" }, { status: 401 });
+      const { label, tld, full } = parseInsName(extra?.name);
+
+      let sender;
+      let fromLabel;
+      if (private_key) {
+        const localWallet = new ethers.Wallet(private_key);
+        sender = { address: localWallet.address, private_key };
+        fromLabel = from || "local";
+      } else {
+        fromLabel = from === "beta" ? "beta" : "alpha";
+        sender = byName[fromLabel];
+      }
+
+      const wallet = new ethers.Wallet(sender.private_key, provider);
+      const registry = new ethers.Contract(REGISTRY_BY_TLD[tld], REGISTRY_ABI, wallet);
+      const [avail, price] = await Promise.all([registry.available(label), registry.priceFor(label)]);
+      if (!avail) {
+        const ownerAddr = await registry.ownerOfName(label);
+        return Response.json({ error: ownerAddr !== ethers.ZeroAddress
+          ? `"${full}" is already owned by ${ownerAddr}`
+          : `"${full}" is reserved — not publicly mintable` }, { status: 400 });
+      }
+
+      // Ownership target: another agent/0x address, or the paying wallet itself
+      let target = wallet.address;
+      if (extra?.target) {
+        target = (extra.target === "alpha" || extra.target === "beta") ? byName[extra.target].address : extra.target;
+        if (!ethers.isAddress(target)) return Response.json({ error: "Invalid target address" }, { status: 400 });
+      }
+
+      const balance = await provider.getBalance(wallet.address);
+      if (balance < price + ethers.parseEther("0.01")) {
+        return Response.json({
+          error: `"${full}" costs ${ethers.formatEther(price)} iKAS but agent ${fromLabel} holds ${ethers.formatEther(balance)} iKAS — fund ${wallet.address} first.`,
+        }, { status: 400 });
+      }
+
+      const fee = await provider.getFeeData();
+      const tx = await registry.register(label, target, {
+        value: price, gasLimit: 300000n,
+        gasPrice: fee.gasPrice ?? ethers.parseUnits("2000", "gwei"),
+      });
+      const receipt = await tx.wait(1, 90000);
+
+      return Response.json({
+        name: full,
+        owner: wallet.address,
+        target,
+        from_agent: fromLabel,
+        price_ikas: ethers.formatEther(price),
+        tx_hash: tx.hash,
+        block: receipt ? Number(receipt.blockNumber) : null,
+        explorer_url: `${EXPLORER}/tx/${tx.hash}`,
+      });
+    }
+
     if (action === "send") {
       const user = await base44.auth.me();
       if (!user) return Response.json({ error: "Login required to authorize agent transactions" }, { status: 401 });
@@ -146,7 +242,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ error: "Unknown action — use status, send, resolve_name or names" }, { status: 400 });
+    return Response.json({ error: "Unknown action — use status, send, resolve_name, names, name_price or register_name" }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
