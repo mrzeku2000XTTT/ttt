@@ -14,6 +14,7 @@ import RMXBrainBox from "@/components/rmx/RMXBrainBox";
 import NodaSaveModal from "@/components/rmx/NodaSaveModal";
 import NodaWorkflowTabs from "@/components/rmx/NodaWorkflowTabs";
 import SplitDivider from "@/components/rmx/SplitDivider";
+import { inspectWorkflowRun } from "@/components/rmx/nodaInspector";
 
 // Tab factory — each tab carries its own run state so multiple tabs can run concurrently.
 const makeTab = (name = "Untitled NODA Workflow") => ({
@@ -146,7 +147,10 @@ export default function NODAPage() {
     base44.auth.me().then((u) => setCurrentUserEmail(u?.email || "")).catch(() => {});
   }, []);
 
-  const handleBrainBuild = (newNodes, name) => {
+  // Original Brain request per tab — lets the Inspector verify the run did what was asked.
+  const brainIntentRef = useRef({}); // { [tabId]: string }
+
+  const handleBrainBuild = (newNodes, name, intentText) => {
     // Brain always builds + runs into the CURRENTLY ACTIVE tab. Capture id NOW
     // so concurrent Brain calls from different tabs each target their own tab.
     const targetTabId = activeTab?.id;
@@ -157,6 +161,7 @@ export default function NODAPage() {
       clearTimeout(autoRunTimersRef.current[targetTabId]);
     }
     skipNextAutoRunRef.current[targetTabId] = true;
+    brainIntentRef.current[targetTabId] = intentText || "";
 
     // Apply build to the target tab (use updateTabById — works even if user switches tabs)
     updateTabById(targetTabId, () => ({
@@ -335,6 +340,50 @@ export default function NODAPage() {
         break;
       }
     }
+    // ── INSPECTOR: a second AI agent checks the work ──────────────────────
+    // Runs after every Brain-built run (we know the user's original intent).
+    // Failed checks get ONE automatic retry, then a re-check verdict is logged.
+    const intentText = brainIntentRef.current[tabId];
+    if (intentText) {
+      log(`🔍 Inspector: checking the work against your request…`);
+      try {
+        const verdict = await inspectWorkflowRun({ intent: intentText, nodes: activeNodes, context });
+        (verdict.checks || []).forEach((c) => {
+          const n = activeNodes[c.step - 1];
+          log(`${c.pass ? "✓" : "✗"} Inspector · ${n?.label || `step ${c.step}`}: ${c.reason}`, c.pass ? "success" : "error");
+        });
+        (verdict.missing || []).forEach((m) => log(`✗ Inspector · missing: ${m}`, "error"));
+
+        const retryIdx = (verdict.retry_steps || []).filter((i) => i >= 1 && i <= activeNodes.length);
+        if (verdict.overall_pass) {
+          log(`🔍 Inspector verdict: PASS — ${verdict.summary}`, "success");
+        } else if (retryIdx.length) {
+          log(`🔍 Inspector: retrying ${retryIdx.length} failed step${retryIdx.length === 1 ? "" : "s"}…`);
+          for (const i of retryIdx) {
+            const node = activeNodes[i - 1];
+            log(`↻ Retrying ${node.label}...`);
+            try {
+              const result = await executeNode(node, context, activeNodes, tabId);
+              context[node.id] = result;
+              updateNodeInTab(node.id, { output: result });
+              log(`✓ ${node.label} retry complete`, "success");
+              allSucceeded = true;
+            } catch (err) {
+              log(`✗ ${node.label} retry failed: ${err.message}`, "error");
+            }
+          }
+          // Final re-check after retries
+          const recheck = await inspectWorkflowRun({ intent: intentText, nodes: activeNodes, context });
+          log(`🔍 Inspector final verdict: ${recheck.overall_pass ? "PASS" : "FAIL"} — ${recheck.summary}`, recheck.overall_pass ? "success" : "error");
+          allSucceeded = allSucceeded && recheck.overall_pass;
+        } else {
+          log(`🔍 Inspector verdict: FAIL — ${verdict.summary}`, "error");
+        }
+      } catch (e) {
+        log(`🔍 Inspector unavailable: ${e.message}`, "error");
+      }
+    }
+
     log(`■ Finished`, "success");
 
     // APEX zero-knowledge proof — seal only on full success.

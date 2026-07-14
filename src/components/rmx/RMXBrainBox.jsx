@@ -263,7 +263,7 @@ USER REQUEST:
         }
       }
 
-      onBuild(nodes, result.workflow_name);
+      onBuild(nodes, result.workflow_name, input.trim());
       setInput("");
       setThinking(false);
       onClose();
