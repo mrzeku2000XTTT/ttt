@@ -9,7 +9,7 @@ import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo
 export default function IgraAgentConsole({ agents, onTxComplete, onForged, fullHeight }) {
   const [messages, setMessages] = useState([{
     role: "agent",
-    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and run TTT IGRA INS natively — send to .igra names, and inscribe new names on-chain from my own backend. YOUR alpha & beta wallets are personal — every user gets their own; fund YOUR alpha with iKAS and inscriptions are paid through it. Try: \"is scout.igra available\", \"register scout.igra from alpha\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", or \"swap 1 iKAS from beta to kaspa:...\". Local wallets keep their keys in THIS browser only.",
+    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and run TTT IGRA INS natively — send to .igra names, and inscribe new names on-chain from my own backend. YOUR alpha & beta wallets are personal — every user gets their own; fund YOUR alpha with iKAS and inscriptions are paid through it. Try: \"is scout.igra available\", \"register scout.igra from alpha\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", \"swap 1 iKAS from beta to kaspa:...\", or \"deploy a zktimelock locking 5 KAS for 30 days\" — I file REAL covenant++ deploy jobs with SuperZK. Local wallets keep their keys in THIS browser only.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,6 +47,8 @@ Parse the user's command into an action:
 - "bridge_info": user asks about the bridge/marketplace, swap rates, deposit addresses, or bridge liquidity.
 - "bridge_kas_to_ikas": user wants to swap KAS (Kaspa L1) into iKAS, OR claims a KAS deposit. l1_tx_id = the Kaspa L1 transaction id if the user provided one (64 hex chars, no 0x). to = destination agent name or 0x address for the iKAS. amount = KAS amount if the user states one (e.g. "swap 10 KAS to beta").
 - "bridge_ikas_to_kas": user wants to swap iKAS into KAS on Kaspa L1. amount = iKAS amount (omit if not stated). from = EXACTLY the wallet the user names ("alpha", "beta", or a local agent name) — OMIT "from" entirely if the user does not name a wallet, do NOT guess. kaspa_address = the kaspa: payout address; if not given, use the user's saved Kaspa L1 address. l2_tx_hash = only if the user already sent iKAS to the pool and gives a 0x… tx hash.
+- "superzk_deploy": user wants to deploy a covenant / covenant++ / ruled covenant / timelock / escrow / vault / zkgate / xmss lock / sentinel via SuperZK ("deploy a zktimelock locking 5 KAS for 30 days", "make a superzk job", "deploy a covenant"). covenant_type = one of zktimelock, zkescrow, zkvault, zkgate, xmsslock, sentinel (default zktimelock). amount = the KAS deposit to lock (default 1). timeout_days = lock/timeout duration in days if stated. kaspa_address = the owner/reclaim kaspa: address if the user gives one.
+- "superzk_check": user asks for the status of a superzk job/covenant deploy ("check superzk job <id>"). job_id = the job/conversation id.
 - "chat": anything else — answer helpfully about the Igra agents (account abstraction, EIP-7702, ERC-4337 are live on Igra). The bridge desk swaps 1 KAS = 1 iKAS instantly.
 
 reply = one short in-character agent sentence confirming what you're doing (or the answer for chat).
@@ -55,7 +57,10 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name", "ins_explorer"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name", "ins_explorer", "superzk_deploy", "superzk_check"] },
+            covenant_type: { type: "string" },
+            timeout_days: { type: "number" },
+            job_id: { type: "string" },
             name: { type: "string" },
             from: { type: "string" },
             to: { type: "string" },
@@ -182,6 +187,27 @@ User command: ${text}`,
           const res = await base44.functions.invoke("igraBridge", { action: "kas_to_ikas", l1_tx_id: intent.l1_tx_id, evm_address: dest });
           push({ role: "tx", tx: { amount_ikas: res.data.amount, from_agent: "bridge", to: res.data.recipient, block: null, tx_hash: res.data.tx_out, explorer_url: res.data.explorer_url } });
           onTxComplete?.();
+        }
+      } else if (intent.action === "superzk_deploy") {
+        const ctype = intent.covenant_type || "zktimelock";
+        const owner = intent.kaspa_address || savedKaspa;
+        if (!owner) {
+          push({ role: "error", text: "I need the covenant's owner kaspa: address — say it in the command, or save yours in \"MY KASPA L1 ADDRESS\" above the chat." });
+        } else {
+          push({ role: "system", text: `⚖ FILING REAL COVENANT DEPLOY JOB WITH SUPERZK · ${ctype.toUpperCase()}…` });
+          const res = await base44.functions.invoke("superzkDeployJob", {
+            action: "deploy", covenant_type: ctype, deposit_kas: intent.amount || 1,
+            params: { owner_address: owner, ...(intent.timeout_days ? { timeout_days: intent.timeout_days } : {}) },
+          });
+          const d = res.data;
+          push({ role: "system", text: `✓ SUPERZK JOB FILED · ${ctype.toUpperCase()} COVENANT++\nJOB ID: ${d.conversation_id}\nOWNER: ${owner}\n\nSTEP · SEND ${d.deposit_kas} KAS ON KASPA L1 TO\n${d.payment_address}\n\nSUPERZK'S DEPLOY AGENT WATCHES FOR THE PAYMENT AND DEPLOYS THE REAL RULED COVENANT (P2SH) ON KASPA WITHIN SECONDS OF CONFIRMATION.\nSAY "check superzk job ${d.conversation_id}" FOR STATUS + COVENANT ADDRESS & REDEEM SCRIPT.` });
+        }
+      } else if (intent.action === "superzk_check") {
+        if (!intent.job_id) {
+          push({ role: "error", text: "Which job? Say \"check superzk job <job id>\"." });
+        } else {
+          const res = await base44.functions.invoke("superzkDeployJob", { action: "check", conversation_id: intent.job_id });
+          push({ role: "system", text: `⚖ SUPERZK JOB ${intent.job_id}\n\n${res.data.latest_update}` });
         }
       } else if (intent.action === "bridge_ikas_to_kas") {
         const payoutAddr = intent.kaspa_address || getSavedKaspaAddress();
