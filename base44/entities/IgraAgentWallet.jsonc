@@ -17,6 +17,11 @@
     "owner_email": {
       "type": "string",
       "description": "Email of the app user this agent wallet belongs to. Empty/missing = global desk wallet (bridge pool)."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

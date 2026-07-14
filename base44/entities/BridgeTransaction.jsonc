@@ -69,6 +69,11 @@
     "fee": {
       "type": "number",
       "description": "Transfer fee"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

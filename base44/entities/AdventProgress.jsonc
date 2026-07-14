@@ -18,6 +18,11 @@
     "last_opened_date": {
       "type": "string",
       "description": "UTC date (YYYY-MM-DD) of last door opened \u2014 enforces one door per day"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

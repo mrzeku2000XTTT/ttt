@@ -53,6 +53,11 @@
     "payout_tx": {
       "type": "string",
       "description": "Transaction hash of the payout to the prover"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

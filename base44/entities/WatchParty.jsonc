@@ -55,6 +55,11 @@
       "type": "number",
       "default": 50,
       "description": "Max number of participants"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

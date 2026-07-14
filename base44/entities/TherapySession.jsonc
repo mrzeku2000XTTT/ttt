@@ -51,6 +51,11 @@
       "minimum": 0,
       "maximum": 10,
       "description": "Mental wellness progress score"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

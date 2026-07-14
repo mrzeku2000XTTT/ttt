@@ -50,6 +50,11 @@
     "learned_from": {
       "type": "string",
       "description": "User email who contributed this pattern"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

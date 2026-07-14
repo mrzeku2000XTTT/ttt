@@ -141,6 +141,11 @@
       ],
       "default": "pending",
       "description": "Current status of NFT generation/minting"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

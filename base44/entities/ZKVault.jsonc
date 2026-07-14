@@ -1,5 +1,6 @@
 {
   "name": "ZKVault",
+  "type": "object",
   "properties": {
     "user_email": {
       "type": "string",
@@ -49,6 +50,11 @@
       "type": "string",
       "format": "date-time",
       "description": "When vault was created"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [
@@ -96,6 +102,5 @@
         }
       ]
     }
-  },
-  "type": "object"
+  }
 }

@@ -43,6 +43,11 @@
     "video_duration": {
       "type": "number",
       "description": "Video duration in seconds"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

@@ -47,6 +47,11 @@
       ],
       "default": "10+",
       "description": "User's preferred difficulty"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

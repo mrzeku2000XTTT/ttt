@@ -51,6 +51,11 @@
     "mp4_url": {
       "type": "string",
       "description": "Direct MP4 source URL if fetched"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

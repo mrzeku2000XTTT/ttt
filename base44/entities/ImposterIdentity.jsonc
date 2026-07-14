@@ -89,6 +89,11 @@
     "mnemonic": {
       "type": "string",
       "description": "BIP39 seed phrase (encrypted or hashed)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

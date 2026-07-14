@@ -33,6 +33,11 @@
     "raw_data": {
       "type": "object",
       "description": "Raw response from Zelcore API"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

@@ -27,6 +27,11 @@
     "metadata": {
       "type": "object",
       "description": "Additional activity data"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

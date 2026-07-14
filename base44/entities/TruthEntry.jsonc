@@ -14,6 +14,11 @@
     "tx_hash": {
       "type": "string",
       "description": "Transaction hash of the proof"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

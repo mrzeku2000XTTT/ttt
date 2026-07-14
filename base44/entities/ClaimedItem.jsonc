@@ -22,6 +22,11 @@
       "type": "boolean",
       "default": false,
       "description": "Whether claimer purchased it"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

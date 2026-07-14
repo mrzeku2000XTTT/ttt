@@ -81,6 +81,11 @@
     "certificate_hash": {
       "type": "string",
       "description": "SHA-256 hash of certificate data"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [

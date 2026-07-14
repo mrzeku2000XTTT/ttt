@@ -26,6 +26,11 @@
     "generation_prompt": {
       "type": "string",
       "description": "AI prompt used if ai_generated"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
     }
   },
   "required": [
