@@ -49,6 +49,7 @@ Parse the user's command into an action:
 - "bridge_ikas_to_kas": user wants to swap iKAS into KAS on Kaspa L1. amount = iKAS amount (omit if not stated). from = EXACTLY the wallet the user names ("alpha", "beta", or a local agent name) — OMIT "from" entirely if the user does not name a wallet, do NOT guess. kaspa_address = the kaspa: payout address; if not given, use the user's saved Kaspa L1 address. l2_tx_hash = only if the user already sent iKAS to the pool and gives a 0x… tx hash.
 - "superzk_deploy": user wants to deploy a covenant / covenant++ / ruled covenant / timelock / escrow / vault / zkgate / xmss lock / sentinel via SuperZK ("deploy a zktimelock locking 5 KAS for 30 days", "make a superzk job", "deploy a covenant"). covenant_type = one of zktimelock, zkescrow, zkvault, zkgate, xmsslock, sentinel (default zktimelock). amount = the KAS deposit to lock (default 1). timeout_days = lock/timeout duration in days if stated. kaspa_address = the owner/reclaim kaspa: address if the user gives one.
 - "superzk_check": user asks for the status of a superzk job/covenant deploy ("check superzk job <id>"). job_id = the job/conversation id.
+- "superzk_redeem": user wants to redeem, sweep, unlock, release, claim back or withdraw covenant funds ("redeem all", "sweep all", "redeem my covenants", "redeem covenant <id>", "sweep job 6a44..."). job_id = the superzk job/conversation id if given. name = the covenant_id if the user gives a specific covenant id. kaspa_address = the payout kaspa: address if given.
 - "chat": anything else — answer helpfully about the Igra agents (account abstraction, EIP-7702, ERC-4337 are live on Igra). The bridge desk swaps 1 KAS = 1 iKAS instantly.
 
 reply = one short in-character agent sentence confirming what you're doing (or the answer for chat).
@@ -57,7 +58,7 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name", "ins_explorer", "superzk_deploy", "superzk_check"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name", "ins_explorer", "superzk_deploy", "superzk_check", "superzk_redeem"] },
             covenant_type: { type: "string" },
             timeout_days: { type: "number" },
             job_id: { type: "string" },
@@ -207,6 +208,20 @@ User command: ${text}`,
           });
           const d = res.data;
           push({ role: "system", text: `✓ SUPERZK JOB FILED · ${ctype.toUpperCase()} COVENANT++\nJOB ID: ${d.conversation_id}\nOWNER: ${owner}\n\nSTEP · SEND ${d.deposit_kas} KAS ON KASPA L1 TO\n${d.payment_address}\n\nSUPERZK'S DEPLOY AGENT WATCHES FOR THE PAYMENT AND DEPLOYS THE REAL RULED COVENANT (P2SH) ON KASPA WITHIN SECONDS OF CONFIRMATION.\nSAY "check superzk job ${d.conversation_id}" FOR STATUS + COVENANT ADDRESS & REDEEM SCRIPT.` });
+        }
+      } else if (intent.action === "superzk_redeem") {
+        const payout = intent.kaspa_address || savedKaspa;
+        if (!payout) {
+          push({ role: "error", text: "Where should the swept KAS go? Say a kaspa: address, or save yours in \"MY KASPA L1 ADDRESS\" above the chat." });
+        } else {
+          push({ role: "system", text: `⚖ SUPERZK REDEEM · ${intent.name ? `COVENANT ${intent.name}` : "SWEEPING ALL REDEEMABLE COVENANTS"} → ${payout.slice(0, 24)}…` });
+          const res = await base44.functions.invoke("superzkDeployJob", {
+            action: "redeem", payout_address: payout,
+            ...(intent.job_id ? { conversation_id: intent.job_id } : {}),
+            ...(intent.name ? { covenant_id: intent.name } : {}),
+          });
+          const d = res.data;
+          push({ role: "system", text: `✓ REDEEM JOB FILED WITH SUPERZK${d.sweep_all ? " · SWEEP ALL" : ""}\nJOB ID: ${d.conversation_id}\nPAYOUT → ${d.payout_address}\n\nSUPERZK'S AGENT BUILDS & BROADCASTS THE REDEEM TX(S) NOW — MATURED TIMELOCKS ARE SPENT, ARBITERED ESCROWS RELEASED.\nSAY "check superzk job ${d.conversation_id}" FOR THE REDEEM TX IDS.` });
         }
       } else if (intent.action === "superzk_check") {
         if (!intent.job_id) {

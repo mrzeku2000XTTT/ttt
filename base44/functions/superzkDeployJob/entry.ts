@@ -16,8 +16,51 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("SUPERZK_API_KEY");
     if (!apiKey) return Response.json({ error: "SUPERZK_API_KEY secret is not set" }, { status: 500 });
 
-    const { action = "deploy", covenant_type, params = {}, deposit_kas, conversation_id } = await req.json();
+    const { action = "deploy", covenant_type, params = {}, deposit_kas, conversation_id, payout_address, covenant_id } = await req.json();
     const headers = { "api_key": apiKey, "Content-Type": "application/json" };
+
+    if (action === "redeem") {
+      if (!payout_address || !payout_address.startsWith("kaspa:")) {
+        return Response.json({ error: "payout_address must be a kaspa: address" }, { status: 400 });
+      }
+      // Reuse the job conversation when given, else open a fresh one
+      let convoId = conversation_id;
+      if (!convoId) {
+        const convoResp = await fetch(`https://app.base44.com/api/agents/${SUPERZK_AGENT_ID}/conversations`, {
+          method: "POST", headers, body: "{}",
+        });
+        if (!convoResp.ok) return Response.json({ error: `SuperZK agent unreachable (${convoResp.status}): ${await convoResp.text()}` }, { status: 502 });
+        const convo = await convoResp.json().catch(() => ({}));
+        convoId = convo.conversation_id || convo.id || convo._id;
+        if (!convoId) return Response.json({ error: "SuperZK agent did not return a conversation id" }, { status: 502 });
+      }
+      const content =
+        `EXTERNAL REDEEM/SWEEP JOB filed by the Igra Agent (TTT app) for requester_email=${user.email}. ` +
+        (covenant_id
+          ? `Please redeem covenant_id=${covenant_id} now: `
+          : `Please REDEEM ALL / SWEEP ALL redeemable covenants belonging to this requester (arbiter-release any agent-arbitered escrows, spend any matured timelocks): `) +
+        `build and broadcast the redeem transaction(s) sweeping all locked KAS to ${payout_address}. ` +
+        `Report each redeem tx_id, the amount swept, and the covenant address(es) in this conversation.`;
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 10000);
+      try {
+        const msgResp = await fetch(`https://app.base44.com/api/agents/${SUPERZK_AGENT_ID}/conversations/${convoId}/messages`, {
+          method: "POST", headers, body: JSON.stringify({ content }), signal: ctl.signal,
+        });
+        if (!msgResp.ok) return Response.json({ error: `SuperZK redeem message failed (${msgResp.status}): ${await msgResp.text()}` }, { status: 502 });
+      } catch (e) {
+        if (e.name !== "AbortError") throw e;
+      } finally {
+        clearTimeout(timer);
+      }
+      return Response.json({
+        redeem_filed: true,
+        conversation_id: convoId,
+        payout_address,
+        covenant_id: covenant_id || null,
+        sweep_all: !covenant_id,
+      });
+    }
 
     if (action === "check") {
       if (!conversation_id) return Response.json({ error: "Missing conversation_id" }, { status: 400 });
@@ -87,7 +130,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ error: "Unknown action — use deploy or check" }, { status: 400 });
+    return Response.json({ error: "Unknown action — use deploy, redeem or check" }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
