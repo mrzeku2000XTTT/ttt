@@ -51,17 +51,24 @@ Deno.serve(async (req) => {
     const { action, from, to, amount, private_key, extra } = await req.json();
     const provider = new ethers.JsonRpcProvider(RPC, CHAIN_ID);
 
-    // Auto-forge the two agent wallets on first call
-    let wallets = await base44.asServiceRole.entities.IgraAgentWallet.list();
+    // Agent wallets are PER USER — each logged-in user gets their own alpha/beta
+    // and pays inscriptions/transfers through them. Wallets without owner_email
+    // are the desk's global pool (used by the bridge, shown to guests).
+    let owner = null;
+    try { const u = await base44.auth.me(); owner = u?.email || null; } catch { /* guest */ }
+    const loadWallets = () => base44.asServiceRole.entities.IgraAgentWallet.filter(
+      owner ? { owner_email: owner } : { owner_email: null });
+    let wallets = await loadWallets();
     for (const name of ["alpha", "beta"]) {
       if (!wallets.some((w) => w.name === name)) {
         const w = ethers.Wallet.createRandom();
         await base44.asServiceRole.entities.IgraAgentWallet.create({
           name, address: w.address, private_key: w.privateKey,
+          ...(owner ? { owner_email: owner } : {}),
         });
       }
     }
-    wallets = await base44.asServiceRole.entities.IgraAgentWallet.list();
+    wallets = await loadWallets();
     const byName = Object.fromEntries(wallets.map((w) => [w.name, w]));
 
     if (action === "status") {

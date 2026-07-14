@@ -32,7 +32,9 @@ Deno.serve(async (req) => {
     const { action, l1_tx_id, l2_tx_hash, kaspa_address, evm_address, from_pool, amount: reqAmount } = await req.json();
     const provider = new ethers.JsonRpcProvider(RPC, CHAIN_ID);
 
-    const wallets = await base44.asServiceRole.entities.IgraAgentWallet.list();
+    // The desk pool wallets are the GLOBAL ones (no owner_email) — per-user
+    // alpha/beta agent wallets are separate and never used as bridge liquidity
+    const wallets = await base44.asServiceRole.entities.IgraAgentWallet.filter({ owner_email: null });
     const alpha = wallets.find((w) => w.name === "alpha");
     if (!alpha) return Response.json({ error: "Agent alpha not initialized — open the Igra Agent page first" }, { status: 400 });
 

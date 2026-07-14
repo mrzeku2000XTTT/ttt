@@ -9,7 +9,7 @@ import { IGRA_AGENT_LOGO, IOS_FONT } from "@/components/igra/agent/igraAgentLogo
 export default function IgraAgentConsole({ agents, onTxComplete, onForged, fullHeight }) {
   const [messages, setMessages] = useState([{
     role: "agent",
-    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and run TTT IGRA INS natively — send to .igra names, and inscribe new names on-chain from my own backend. Try: \"is scout.igra available\", \"register scout.igra from alpha\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", or \"swap 1 iKAS from beta to kaspa:...\". Local wallets keep their keys in THIS browser only.",
+    text: "IGRA AGENT ONLINE. I transact iKAS on Igra mainnet (chain 38833), run an instant 1:1 KAS ↔ iKAS bridge desk, and run TTT IGRA INS natively — send to .igra names, and inscribe new names on-chain from my own backend. YOUR alpha & beta wallets are personal — every user gets their own; fund YOUR alpha with iKAS and inscriptions are paid through it. Try: \"is scout.igra available\", \"register scout.igra from alpha\", \"alpha send 0.01 iKAS to insdomains.igra\", \"resolve alice.igra\", \"my names\", \"show the desk\", \"bridge info\", or \"swap 1 iKAS from beta to kaspa:...\". Local wallets keep their keys in THIS browser only.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -208,17 +208,13 @@ User command: ${text}`,
               push({ role: "error", text: `No agent wallet holds ${amount} iKAS. Balances: ${Object.entries(agents || {}).map(([n, a]) => `${n} ${Number(a.balance_ikas).toFixed(4)}`).join(" · ")}` });
             } else if (bal(fromAgent) < amount) {
               push({ role: "error", text: `AGENT ${fromAgent.toUpperCase()} only holds ${bal(fromAgent).toFixed(4)} iKAS — not enough for ${amount}.` });
-            } else if (fromAgent === "alpha") {
-              // Alpha IS the bridge pool — pay out directly, no deposit leg
-              push({ role: "system", text: `SWAPPING ${amount} iKAS FROM ALPHA → NATIVE KASEXITBRIDGE…` });
-              const res = await base44.functions.invoke("igraBridge", { action: "ikas_to_kas", from_pool: true, amount, kaspa_address: payoutAddr });
-              push({ role: "system", text: `✓ EXIT REQUESTED · ${res.data.amount} KAS → ${res.data.recipient}\nKAS IS RELEASED ON L1 BY THE IGRA MULTI-SIG COMMITTEE (NOT INSTANT)\nBURN TX: ${res.data.tx_out}` });
-              onTxComplete?.();
             } else {
+              // Your agent wallets are personal — deposit into the desk's global pool first
               const localSender = getLocalAgent(fromAgent);
+              const info = await base44.functions.invoke("igraBridge", { action: "info" });
               push({ role: "system", text: `STEP 1/2 · MOVING ${amount} iKAS · ${fromAgent.toUpperCase()} → BRIDGE POOL…` });
               const dep = await base44.functions.invoke("igraAgent", {
-                action: "send", from: fromAgent, to: "alpha", amount,
+                action: "send", from: fromAgent, to: info.data.ikas_deposit_address, amount,
                 ...(localSender ? { private_key: localSender.private_key } : {}),
               });
               push({ role: "system", text: `STEP 2/2 · BURNING iKAS VIA NATIVE KASEXITBRIDGE…` });

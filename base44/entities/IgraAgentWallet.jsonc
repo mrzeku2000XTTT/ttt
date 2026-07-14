@@ -4,15 +4,19 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Agent identifier: alpha or beta"
+      "description": "Agent identifier: alpha, beta or kasbridge"
     },
     "address": {
       "type": "string",
-      "description": "EVM address on Igra mainnet (chain 38833)"
+      "description": "EVM address on Igra mainnet (chain 38833), or kaspa: address for kasbridge"
     },
     "private_key": {
       "type": "string",
       "description": "Agent wallet private key (admin-only, used server-side to sign iKAS transactions)"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the app user this agent wallet belongs to. Empty/missing = global desk wallet (bridge pool)."
     }
   },
   "required": [
