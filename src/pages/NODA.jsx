@@ -322,6 +322,10 @@ export default function NODAPage() {
         updateNodeInTab(node.id, { output: result });
         if (node.type === "send_email" && result?.sent) {
           log(`✓ Email sent to ${result.to}`, "success");
+        } else if (node.type === "post_to_ttt" && result?.posted) {
+          log(`✓ Posted to TTT feed as "${result.author}" (post ${result.post_id}) — check /Feed`, "success");
+        } else if (node.type === "post_to_ttt") {
+          log(`⚠ post_to_ttt returned no post id — the post may NOT be on the feed`, "error");
         } else {
           log(`✓ ${node.label} complete`, "success");
         }

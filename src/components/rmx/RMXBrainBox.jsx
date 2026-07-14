@@ -244,6 +244,25 @@ USER REQUEST:
         console.warn("[Brain] Dropped unknown steps:", droppedSteps);
       }
 
+      // GUARANTEE: if the user asked to post/publish/share to the feed but the LLM
+      // omitted the post_to_ttt step (the #1 cause of "didn't post on feed!"), append it.
+      const wantsFeedPost = /\b(post|publish|share|push)\b/i.test(input) && /\b(feed|ttt)\b/i.test(input);
+      if (wantsFeedPost && !nodes.some((n) => n.type === "post_to_ttt")) {
+        const tpl = NODE_TEMPLATES.find((t) => t.type === "post_to_ttt");
+        if (tpl) {
+          console.warn("[Brain] Rescued missing post_to_ttt step — user asked to post to feed");
+          nodes.push({
+            id: `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            type: tpl.type,
+            label: tpl.label,
+            icon: tpl.icon,
+            color: tpl.color,
+            config: { ...(tpl.defaultConfig || {}) },
+            output: null,
+          });
+        }
+      }
+
       onBuild(nodes, result.workflow_name);
       setInput("");
       setThinking(false);
