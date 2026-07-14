@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 
 const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "KUTT", path: "Kutt", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8d4bef7cb_generated_image.png", desc: "AI video editor — URL to viral video, real export" },
   { name: "Tree", path: "Tree", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b404d810b_generated_image.png", desc: "Campaign agent — full ad campaigns from one brief" },
   { name: "KLIPZ", path: "Klipz", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3ddaedfc7_generated_image.png", desc: "AI clip engine — clip live streams & videos natively" },
   { name: "Kascov", path: "Kascov", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4f1bb97ec_generated_image.png", desc: "Covenant explorer · scan ZK smart coins" },

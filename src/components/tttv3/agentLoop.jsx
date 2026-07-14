@@ -61,6 +61,7 @@ const AVAILABLE_ROUTES = [
   { path: "/Wallet", desc: "User wallet" },
   { path: "/Profile", desc: "User profile" },
   { path: "/AppStoreV2", desc: "Browse all 80+ apps" },
+  { path: "/Kutt", desc: "KUTT — AI video editor with a Director agent. To make a video from a URL/topic: type it into the 'director' textarea (data-agent-id=kutt-brain) and click Send (kutt-send) — the agent writes the script, generates scenes, and builds the timeline itself. Export via kutt-export." },
   { path: "/NODAStudio", desc: "NODA — AI workflow editor. THIS IS THE ONLY PLACE you can build/run workflows, send emails, post to TTT, do research, etc. Always navigate here for any NODA task. Click 'Brain' to describe a workflow in plain English — it auto-builds nodes (AI Prompt, Send Email, Post to TTT, Deep Research, etc.) and runs them." },
 ];
 
