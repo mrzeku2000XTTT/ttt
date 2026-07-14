@@ -1405,17 +1405,16 @@ Use emojis sparingly (💰 🛍️ ✨). Keep it concise and helpful.`;
         }
       }
 
+      if (lowerInput === 'tree' || lowerInput === '/tree' || lowerInput.includes('ad campaign') || lowerInput.includes('campaign agent')) {
+        setMessages(prev => [...prev, { role: 'assistant', content: `🌳 **TREE — Campaign Agent**\n\nTree runs a full ad campaign from one brief: strategy, scripts, ad texts, AI narration and UGC-styled visuals across multiple templates.\n\n👉 [Open Tree](/Tree)`, timestamp: new Date().toISOString() }]);
+        setThinkingStatus(null); setIsSending(false); setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        return;
+      }
       // NEW: Check for "connect" command
       if (lowerInput === 'connect' || lowerInput === '/connect' || lowerInput === 'connect agent') {
         setShowConnectModal(true);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: `🤝 **Connect to Another Agent ZK**\n\nEnter the Kaspa address of the Agent ZK user you want to connect with.\n\nYou can message them once connected!`,
-          timestamp: new Date().toISOString()
-        }]);
-        setThinkingStatus(null);
-        setIsSending(false);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        setMessages(prev => [...prev, { role: 'assistant', content: `🤝 **Connect to Another Agent ZK**\n\nEnter the Kaspa address of the Agent ZK user you want to connect with.\n\nYou can message them once connected!`, timestamp: new Date().toISOString() }]);
+        setThinkingStatus(null); setIsSending(false); setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
         return;
       }
 
