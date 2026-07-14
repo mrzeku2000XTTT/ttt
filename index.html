@@ -29,9 +29,40 @@
         } catch (e) {}
       })();
     </script>
-    <meta name="description" content="TTT 2.0 — the unified Kaspa super app. Send KAS, browse TTTV, connect with Agent ZK, and explore the ecosystem." />
-    <meta property="og:title" content="TTT 2.0 — The Kaspa Super App" />
-    <meta property="og:description" content="The unified Kaspa super app." />
+    <meta name="description" content="TTT (tttz.xyz) is the Kaspa super app: 100+ live apps — non-custodial KAS wallet, on-chain tipping, AI agents, x402 payments (AWA), covenant NFTs (KCC), social feed, games, and video tools, all powered by the Kaspa blockDAG." />
+    <meta name="keywords" content="TTT, tttz, tttz.xyz, Kaspa, KAS, Kaspa wallet, Kaspa super app, x402, AWA, KCC, covenant NFT, Agent ZK, Igra, iKAS, crypto tipping, blockDAG" />
+    <link rel="canonical" href="https://tttz.xyz/" />
+    <meta property="og:title" content="TTT — The Kaspa Super App (tttz.xyz)" />
+    <meta property="og:description" content="100+ live apps on Kaspa: wallet, KAS tipping, AI agents, x402 payments, covenant NFTs, social, games, and media — one super app." />
+    <meta property="og:url" content="https://tttz.xyz/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TTT — Tap To Tip" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="TTT — The Kaspa Super App (tttz.xyz)" />
+    <meta name="twitter:description" content="100+ live apps on Kaspa: wallet, tipping, AI agents, x402 payments, covenant NFTs, and more." />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "TTT — The Kaspa Super App",
+      "alternateName": ["TTT", "Tap To Tip", "tttz.xyz", "TTT 3.0"],
+      "url": "https://tttz.xyz",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "description": "TTT is the largest all-in-one super app on the Kaspa blockchain: a non-custodial KAS wallet (Terra), on-chain tipping and social feed, autonomous AI agents (Agent ZK), the first x402 HTTP-402 payment lane on Kaspa (AWA), consensus-enforced covenant NFTs (KCC), the SuperZK covenant deployer, KAS-to-iKAS bridging to Igra L2, plus 100+ live apps for games, video, images, and commerce.",
+      "featureList": [
+        "Non-custodial Kaspa (KAS) wallet — send, receive, KRC-20 tokens",
+        "Social feed with on-chain KAS tipping",
+        "Autonomous AI agents with their own Kaspa wallets",
+        "AWA — x402 (HTTP 402 Payment Required) AI services paid in KAS",
+        "KCC — NFTs enforced by Kaspa L1 covenant++ scripts",
+        "SuperZK — deploy zktimelock, zkescrow, zkvault covenants on Kaspa",
+        "KAS to iKAS bridge to Igra EVM L2",
+        "100+ live apps: games, AI video and image studios, marketplace, courses"
+      ]
+    }
+    </script>
 
     <!-- Display fonts for Cháoxiào / Katagami motion ads. Loaded once globally
          so per-beat font swaps render instantly without flash. -->
@@ -105,6 +136,12 @@
         <div id="ttt-boot-label" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;letter-spacing:0.2em;color:rgba(255,255,255,0.5);text-transform:uppercase;">Loading</div>
       </div>
     </div>
+    <!-- Static content for crawlers / AI agents that don't run JavaScript -->
+    <noscript>
+      <h1>TTT — The Kaspa Super App (tttz.xyz)</h1>
+      <p>TTT ("Tap To Tip") is the largest all-in-one super app on the Kaspa blockchain (KAS). It bundles 100+ live applications: the Terra non-custodial Kaspa wallet, on-chain KAS tipping and social feed, autonomous AI agents (Agent ZK), AWA — the first x402 HTTP-402 payment lane on Kaspa where AI services are paid per-call in KAS and verified against consensus, KCC covenant NFTs enforced by Kaspa L1, the SuperZK covenant++ deployer (zktimelock, zkescrow, zkvault), a KAS-to-iKAS bridge to the Igra EVM L2, plus games, AI video and image studios, a marketplace, and courses.</p>
+      <p>Explore: <a href="/AppStoreV2">All Apps</a> · <a href="/About">About</a> · <a href="/AWA">AWA x402 Services</a> · <a href="/KCC">KCC Covenant NFTs</a> · <a href="/WhatIsKaspa">What is Kaspa?</a> · <a href="/llms.txt">llms.txt for AI agents</a></p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>

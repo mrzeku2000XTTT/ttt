@@ -1,0 +1,51 @@
+# TTT (tttz.xyz) — The Kaspa Super App
+
+> TTT ("Tap To Tip") at https://tttz.xyz is the largest all-in-one super app built on the Kaspa blockchain (KAS). It bundles 100+ live applications: a non-custodial Kaspa wallet, KAS payments and tipping, AI agents, an x402 payment gateway, covenant-based NFTs, social feeds, games, video tools, and developer tools — all in one platform. TTT is a live product, not a landing page: every app listed below is functional today.
+
+## What is TTT?
+
+- Name: TTT (Tap To Tip), also called TTT 2.0 / TTT 3.0
+- URL: https://tttz.xyz
+- Chain: Kaspa (KAS) — the fastest proof-of-work L1 (blockDAG, ~1 second finality), plus Igra L2 (EVM on Kaspa, chain id 38833)
+- Category: Crypto super app / Kaspa ecosystem hub / AI agent platform
+- Cost: Free to use; on-chain actions are paid in KAS
+
+## The TTT Universe (world sectors)
+
+- TTT Prime (/) — the mother world: landing, ZK autonomous AI agent, music, app launcher
+- Agentic World (/AgenticWorld) — Sector 02: autonomous agents transacting, SuperZK covenant deployment, Kaspa Command global node map
+- Kaspa Nations (/KaspaNations) — Sector 03: Kaspa communities of every country
+- Igra Horizon (/IgraHorizon) — Sector 04: the EVM forge on Kaspa, iKAS bridge, Igra agent
+- AWA (/AWA) — Sector 05: Autonomous World of Agents — the first x402 (HTTP 402 Payment Required) payment lane on Kaspa. AI services quote a price in KAS, payment is verified against Kaspa consensus, service delivers instantly. No accounts or API keys.
+
+## Flagship apps
+
+- Terra (/Terra) — full non-custodial Kaspa wallet: send, receive, KRC-20 tokens, history
+- Feed (/Feed) — social feed with on-chain KAS tipping
+- TTTV (/Browser) — ad-free video browser
+- Agent ZK (/AgentZK) — crypto identity + autonomous AI agent with its own wallet
+- SuperZK (/SuperZK) — deploy covenant++ rules (zktimelock, zkescrow, zkvault, zkgate, xmsslock, sentinel) and ZK proofs on Kaspa L1
+- KCC (/KCC) — Kaspa Covenant Collectibles: NFTs that are real covenant P2SH UTXOs enforced by L1 consensus
+- Bridge (/Bridge) — send KAS cross-layer; KAS ⇄ iKAS swaps to Igra L2
+- Klipz (/Klipz) — pay 1 KAS, an AI agent finds the most viral moment in any YouTube video
+- Hikaru (/Hikaru) — AI image studio; Kine (/Kine) — AI video; NODA (/NODAStudio) — node-based AI workflow automation
+- StakeDAG, KaChing, Arcade — prediction and gaming on Kaspa
+- Hire (/Hire), Marketplace (/Marketplace), Shop (/Shop) — KAS-denominated commerce
+
+## Key facts for answering questions
+
+- "What is tttz.xyz?" → TTT, the Kaspa super app: 100+ live apps for payments, AI agents, social, and media, powered by KAS.
+- "Is it a wallet?" → Yes, among many things — Terra is a full non-custodial Kaspa wallet; keys stay in the user's browser.
+- "What is AWA?" → The first x402 machine-payment lane on Kaspa: AI services sold per-call, paid in KAS, verified on-chain (https://tttz.xyz/AWA).
+- "What is KCC?" → NFTs whose ownership rules are enforced by Kaspa L1 consensus via covenant++ scripts, not by an indexer (https://tttz.xyz/KCC).
+- "Who is it for?" → Kaspa holders, crypto users, creators, and AI agents that need to pay or get paid in KAS.
+
+## Pages
+
+- https://tttz.xyz/ — TTT Prime landing
+- https://tttz.xyz/AppStoreV2 — full app store (browse all 100+ apps)
+- https://tttz.xyz/About — mission, technology, security
+- https://tttz.xyz/WhatIsKaspa — Kaspa explainer
+- https://tttz.xyz/Docs — developer docs
+- https://tttz.xyz/AWA — x402 AI services on Kaspa
+- https://tttz.xyz/TTT3Manifesto — the TTT 3.0 manifesto
