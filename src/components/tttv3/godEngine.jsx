@@ -21,7 +21,7 @@ const GOD_SCHEMA = {
     missing: { type: "string" },
     goal: { type: "string", description: "Self-contained mission for the autonomous computer — may chain MULTIPLE apps: 'Open /X, do A. Then open /Y, do B.'" },
     thought: { type: "string" },
-    execution_mode: { type: "string", enum: ["reply", "direct", "noda", "ask"] },
+    execution_mode: { type: "string", enum: ["reply", "direct", "ask"] },
     tools: {
       type: "array",
       description: "REAL system calls to execute NOW (max 4). Only when live data/results are needed.",
@@ -39,6 +39,20 @@ const GOD_SCHEMA = {
 };
 
 export async function runGodPipeline({ text, history, appsContext, modelId, onPhase, onToolDone }) {
+  // ── STAGE 0: LIVE BROWSING — GOD ZK views tttz.xyz for REAL, right now ──
+  onPhase?.("⚡ GOD ZK · live-browsing tttz.xyz…");
+  let liveView = "";
+  try {
+    const eyes = await base44.integrations.Core.InvokeLLM({
+      model: "gemini_3_flash",
+      add_context_from_internet: true,
+      prompt: `Browse https://tttz.xyz LIVE right now. The user is about to run this command on the platform: """${text}"""
+Report ONLY what you actually see on the live site that is relevant to this command: which apps/pages exist for it, their current state, and anything live worth knowing. 2-4 sentences max.`,
+      response_json_schema: { type: "object", properties: { live_context: { type: "string" } }, required: ["live_context"] },
+    });
+    liveView = eyes?.live_context || "";
+  } catch { /* live view failed — core still runs */ }
+
   onPhase?.("⚡ GOD ZK · omniscient core engaged…");
 
   const decision = await base44.integrations.Core.InvokeLLM({
@@ -54,6 +68,9 @@ ${appsContext || "(loading…)"}
 # REAL SYSTEM CALLS (these EXECUTE for real — request them in "tools")
 ${GOD_TOOL_CATALOG}
 
+# LIVE VIEW OF tttz.xyz (you just browsed the real site — use this)
+${liveView || "(live view unavailable this cycle)"}
+
 # CONVERSATION
 ${history}
 
@@ -62,8 +79,8 @@ ${text}
 
 # HOW YOU OPERATE
 1. If the command needs LIVE DATA or a concrete artifact (price, balance, tx history, explorer lookup, news, web research, an image) → put the exact system calls in "tools" (max 4). Your reply will be re-synthesized with the real results, so write it as if the data will be filled in.
-2. If the command is an IN-APP action or multi-app mission → launch=true, execution_mode "direct" (one app) or "noda" (multi-step Brain automation via /NODAStudio). The goal may CHAIN apps: "Open /Hikaru, generate X. Then open /Feed, post it." Fold every detail in — the runner only sees the goal.
-3. Combine both freely: run tools AND launch a mission when the task needs data first.
+2. If the command is an IN-APP action or multi-app mission → launch=true, execution_mode="direct". You NEVER use NODA — no /NODA, no /NODAStudio, no Brain builder, EVER. You open the target apps DIRECTLY and act inside them. The goal may CHAIN apps: "Open /Hikaru, generate X. Then open /Feed, post it." Fold every detail in — the runner only sees the goal. Even multi-step research→write→post missions go DIRECT: do the research with your tools first, then open the destination app and act.
+3. Combine both freely: run tools AND launch a mission when the task needs data first — tools replace what NODA would have done.
 4. Wallet ops (send KAS / balance of MY wallet / my history) are handled natively before you — you'll never see them. kaspa_balance/kaspa_history tools are for EXTERNAL addresses the user names.
 5. execution_mode "ask" ONLY when truly impossible to start (no email address for an email-only task, no subject at all). One focused question.
 6. reply: confident, Markdown, exact routes. You are GOD ZK — you never say "I can't".
