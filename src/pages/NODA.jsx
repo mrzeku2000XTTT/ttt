@@ -1045,24 +1045,35 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
         };
       }
       case "post_to_ttt": {
-        // Walk back to find most recent text output AND most recent image URL
+        // Collect ALL images from prior steps: typed image nodes AND any image
+        // URLs embedded inside text outputs (research, LLM, scrape, fetch...).
         const idx = nodeList.findIndex((n) => n.id === node.id);
         let textPart = "";
-        let imageUrl = "";
+        const imageUrls = [];
+        const imgRe = /https?:\/\/[^\s"'<>)]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s"'<>)]*)?/gi;
         for (let i = idx - 1; i >= 0; i--) {
           const prev = nodeList[i];
           const out = context[prev.id];
           if (out === undefined || out === null) continue;
           if ((prev.type === "ai_image" || prev.type === "k6ix_image" || prev.type === "k6ix_video") && typeof out === "string" && /^https?:\/\//.test(out)) {
-            if (!imageUrl) imageUrl = out;
+            if (!imageUrls.includes(out)) imageUrls.push(out);
             continue;
           }
-          if (!textPart) textPart = stringify(out).trim();
+          const str = stringify(out);
+          const found = str.match(imgRe);
+          if (found) found.forEach((u) => { if (!imageUrls.includes(u)) imageUrls.push(u); });
+          if (!textPart) textPart = str.trim();
+        }
+
+        // Explicit image_url config always wins (supports {{result}})
+        const overrideImage = interpolate(node.config.image_url || "").trim();
+        if (overrideImage && /^https?:\/\//.test(overrideImage) && !imageUrls.includes(overrideImage)) {
+          imageUrls.unshift(overrideImage);
         }
 
         const overrideText = interpolate(node.config.content_override || "").trim();
         const content = (overrideText || textPart || "").trim();
-        if (!content) throw new Error("No content to post — add an AI Prompt or text-producing step before this");
+        if (!content && imageUrls.length === 0) throw new Error("No content to post — add an AI Prompt or AI Image step before this");
 
         // Anonymous posting — no wallet, no role, no identifiable info.
         // Author name override is allowed but defaults to a generic anon label.
@@ -1070,13 +1081,13 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
         const authorName = overrideName || "Anonymous";
 
         const payload = {
-          content,
+          content: content || "📸",
           author_name: authorName,
           author_role: "user",
         };
-        if (imageUrl) {
-          payload.image_url = imageUrl;
-          payload.media_files = [{ url: imageUrl, type: "image/png", name: "noda-generated.png", size: 0 }];
+        if (imageUrls.length) {
+          payload.image_url = imageUrls[0];
+          payload.media_files = imageUrls.slice(0, 4).map((u, i2) => ({ url: u, type: "image/png", name: `noda-image-${i2 + 1}.png`, size: 0 }));
         }
 
         const created = await base44.entities.Post.create(payload);
@@ -1085,7 +1096,8 @@ Be specific. Cite numbers, dates, names, quotes. No filler. No "as an AI". Use r
           post_id: created?.id,
           author: authorName,
           anonymous: true,
-          has_image: !!imageUrl,
+          has_image: imageUrls.length > 0,
+          images_attached: imageUrls.length,
           chars: content.length,
         };
       }

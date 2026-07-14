@@ -255,10 +255,10 @@ export const NODE_TEMPLATES = [
     label: "Post to TTT Feed",
     icon: "MessageSquarePlus",
     color: "from-fuchsia-500 to-pink-500",
-    desc: "Auto-post previous output (with image if attached) to the TTT feed",
+    desc: "Auto-post anything to the TTT feed — text, images, or both (attaches all prior images)",
     category: "Action",
-    tags: ["ttt", "feed", "post", "publish", "auto"],
-    defaultConfig: { author_name: "", content_override: "" },
+    tags: ["ttt", "feed", "post", "publish", "auto", "image"],
+    defaultConfig: { author_name: "", content_override: "", image_url: "" },
   },
   {
     type: "webhook",

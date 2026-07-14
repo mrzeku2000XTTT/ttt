@@ -114,17 +114,26 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   const [ultraMode, setUltraMode] = useState(() => {
     try { return localStorage.getItem("zk_ultra_mode") === "1"; } catch { return false; }
   });
+  const [godMode, setGodMode] = useState(() => {
+    try { return localStorage.getItem("zk_god_mode") === "1"; } catch { return false; }
+  });
+  // ULTRA and GOD are SEPARATE supercomputers — never both active at once.
   const toggleUltra = () => setUltraMode(v => {
     const next = !v;
     try { localStorage.setItem("zk_ultra_mode", next ? "1" : "0"); } catch {}
+    if (next) {
+      setGodMode(false);
+      try { localStorage.setItem("zk_god_mode", "0"); } catch {}
+    }
     return next;
-  });
-  const [godMode, setGodMode] = useState(() => {
-    try { return localStorage.getItem("zk_god_mode") === "1"; } catch { return false; }
   });
   const toggleGod = () => setGodMode(v => {
     const next = !v;
     try { localStorage.setItem("zk_god_mode", next ? "1" : "0"); } catch {}
+    if (next) {
+      setUltraMode(false);
+      try { localStorage.setItem("zk_ultra_mode", "0"); } catch {}
+    }
     return next;
   });
 

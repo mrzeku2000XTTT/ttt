@@ -38,7 +38,7 @@ Node config schemas:
    // CRITICAL: topic MUST be the exact subject the USER asked to research, copied from their request (e.g. "ConsenSys blockchain contributions and key projects"). NEVER leave topic empty and NEVER substitute a different subject.
    // depth: set "shallow" when the user says quick / shallow / brief / fast / short / light; set "deep" when they say deep / thorough / detailed / comprehensive (or don't specify).
 - read_ttt_feed: { limit: number, keyword?: string }   // pulls real recent posts from the TTT social feed inside this app. Use whenever user mentions "TTT feed", "the feed", "TTT posts", "what people are saying on TTT".
-- post_to_ttt: { author_name?: string, content_override?: string }   // Auto-posts to the TTT social feed. Empty config = uses previous text step + auto-attaches previous ai_image. Use when user says "post to TTT", "publish to feed", "share on TTT", "auto-post".
+- post_to_ttt: { author_name?: string, content_override?: string, image_url?: string }   // Auto-posts ANYTHING to the TTT social feed — text, images, or both. Empty config = uses previous text step + auto-attaches ALL previous images (ai_image / k6ix_image / any image URL in prior outputs). image_url force-attaches a specific image. Use for ANY "post to TTT/feed/publish/share/auto-post" request.
 - send_email: { to: string, subject: string, body: string, from_name?: string }
    - body supports {{result}} which inserts the previous step's output (text OR image — images auto-embed)
    - CRITICAL EMAIL RULE: The "to" field MUST be the EXACT email address the user wrote in their request. Copy it VERBATIM — do not paraphrase, abbreviate, or substitute your own address. If the user wrote "email it to jane@example.com", then to = "jane@example.com". Only default to ${currentEmail || "user@example.com"} if the user said "me"/"my email" and wrote NO explicit address anywhere in the request.
@@ -60,7 +60,8 @@ Rules:
 - CRITICAL: If the user asks for N images (e.g. "10 images", "5 frames", "a slide deck of 8"), output EXACTLY N separate ai_image steps — one per image — each with its own unique, story-progressing prompt. DO NOT collapse them into fewer steps. The send_email step (if any) must come AFTER all ai_image steps so the email auto-embeds every generated image.
 - RESEARCH: If the user wants real current information ("research X", "find me", "what's happening with", "latest", "news on", "investigate"), use deep_research — NOT ai_prompt — because deep_research actually scrapes the live web. After deep_research you can chain an ai_prompt to summarize or transform its output via {{result}}.
 - TTT FEED: If the user references the TTT feed / posts / community / "what people are saying", use read_ttt_feed to pull real posts FIRST, then chain an ai_prompt or deep_research that processes {{result}}.
-- POSTING TO TTT: If user wants to post / publish / share TO the TTT feed, end the workflow with post_to_ttt (config can stay {}). For "post a thought + image to TTT" use: ai_prompt (write the post) → ai_image (the visual) → post_to_ttt {}. The image attaches automatically.
+- POSTING TO TTT: If user wants to post / publish / share TO the TTT feed, end the workflow with post_to_ttt (config can stay {}). For "post a thought + image to TTT" use: ai_prompt (write the post) → ai_image (the visual) → post_to_ttt {}. Images attach automatically — post_to_ttt picks up EVERY prior image.
+- POSTING AN IMAGE TO TTT: If the user asks to post an IMAGE / picture / meme / art to the feed, you MUST include an ai_image step BEFORE post_to_ttt (image-only posts are fine — no ai_prompt needed unless they also want a caption).
 - When generating a sequence of story frames, make each ai_image prompt advance the narrative (frame 1, frame 2, ... frame N) with consistent characters, setting, and style across frames.
 - Default recipient email if user mentions "me" or "my email": ${currentEmail || "user@example.com"}
 - Keep prompts concrete and detailed.
@@ -258,6 +259,26 @@ USER REQUEST:
             icon: tpl.icon,
             color: tpl.color,
             config: { ...(tpl.defaultConfig || {}) },
+            output: null,
+          });
+        }
+      }
+
+      // GUARANTEE: if the user asked to post an IMAGE to the feed but the LLM
+      // built no image step, insert an ai_image right before post_to_ttt.
+      const wantsImagePost = wantsFeedPost && /\b(image|picture|photo|art|visual|drawing|illustration|meme)\b/i.test(input);
+      if (wantsImagePost && !nodes.some((n) => ["ai_image", "k6ix_image", "k6ix_video"].includes(n.type))) {
+        const tpl = NODE_TEMPLATES.find((t) => t.type === "ai_image");
+        const postIdx = nodes.findIndex((n) => n.type === "post_to_ttt");
+        if (tpl && postIdx >= 0) {
+          console.warn("[Brain] Rescued missing ai_image step — user asked to post an image");
+          nodes.splice(postIdx, 0, {
+            id: `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            type: tpl.type,
+            label: tpl.label,
+            icon: tpl.icon,
+            color: tpl.color,
+            config: { prompt: input.trim() },
             output: null,
           });
         }
