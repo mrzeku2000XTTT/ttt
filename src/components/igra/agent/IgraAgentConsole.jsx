@@ -36,7 +36,7 @@ User's saved Kaspa L1 payout address: ${savedKaspa || "none saved"}.
 
 Parse the user's command into an action:
 - "forge": generate a NEW local agent wallet in the browser. name = the wallet/agent name the user wants (invent a short lowercase one like "agent-${locals.length + 1}" if not given).
-- "send": transfer iKAS. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, a 0x address, or an INS name ending in .igra/.ins/.ikas (pass the name as-is, e.g. "alice.igra" — I resolve it on-chain). amount = number in iKAS.
+- "send": transfer iKAS on Igra L2. from = "alpha", "beta", or a local agent name (default alpha). to = "alpha", "beta", a local agent name, a 0x address, or an INS name ending in .igra/.ins/.ikas (pass the name as-is, e.g. "alice.igra" — I resolve it on-chain). amount = number in iKAS. IMPORTANT: if the destination is a kaspa: address (Kaspa L1), this is NOT a send — it is "bridge_ikas_to_kas".
 - "resolve_name": user asks what address an INS name (.igra/.ins/.ikas) points to. name = the INS name.
 - "name_price": user asks if an INS name is available or what it costs ("is scout.igra available", "price of xyz.igra"). name = the full INS name (append ".igra" if the user gives no TLD).
 - "register_name": user wants to register / mint / inscribe / generate / buy an INS name ("register scout.igra", "mint alice.igra from beta", "generate an ikas domain"). name = the full INS name including TLD (default ".igra" if not stated). from = the wallet that pays and owns it: "alpha", "beta" or a local agent name (default alpha).
@@ -73,6 +73,12 @@ User command: ${text}`,
           required: ["action", "reply"],
         },
       });
+
+      // Safety net: sending iKAS to a kaspa: L1 address is always a bridge exit, never an L2 send
+      if (intent.action === "send" && typeof intent.to === "string" && intent.to.toLowerCase().startsWith("kaspa:")) {
+        intent.kaspa_address = intent.to;
+        intent.action = "bridge_ikas_to_kas";
+      }
 
       push({ role: "agent", text: intent.reply });
 
