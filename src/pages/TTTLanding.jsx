@@ -22,6 +22,7 @@ import ZKGodConsole from "@/components/tttv3/ZKGodConsole";
 import { runGodPipeline } from "@/components/tttv3/godEngine";
 import ZKAvatar3D from "@/components/tttv3/ZKAvatar3D";
 import { runUltraPipeline } from "@/components/tttv3/ultraEngine";
+import { runDirectControl, looksLikeDirectControl } from "@/components/tttv3/directControl";
 import ReactMarkdown from "react-markdown";
 const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
@@ -356,6 +357,24 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
       const history = [...messages, userMsg].slice(-10).map(m => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`).join("\n\n");
 
       let decision;
+      let handledDirect = false;
+
+      // ── DIRECT PAGE CONTROL — ZK reads the LIVE preview and clicks/types on it directly ──
+      if (computerOpen && looksLikeDirectControl(text)) {
+        const direct = await runDirectControl({
+          text,
+          getIframe: () => computerRef.current?.getIframe(),
+          setCursor: setComputerCursor,
+          setStatus: setComputerStatus,
+          onPhase: (p) => setMessages(mm => mm.map(x => (x.id === mid ? { ...x, phase: p } : x))),
+        });
+        if (direct?.handled) {
+          decision = { reply: direct.reply, launch: false, thought: direct.thought };
+          handledDirect = true;
+        }
+      }
+
+      if (!handledDirect) {
       if (godMode) {
         // ── GOD ZK: full tttz.xyz address space + REAL system calls + multi-app missions ──
         const god = await runGodPipeline({
@@ -544,6 +563,7 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
         add_context_from_internet: model.id.includes("gemini"),
       });
       }
+      } // end !handledDirect
 
       const replyText = (decision?.reply && typeof decision.reply === "string") ? decision.reply : "Hmm, try again?";
       const needsInfo = decision?.needs_info === true;
