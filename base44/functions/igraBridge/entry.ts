@@ -99,6 +99,39 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "admin_refund_ikas") {
+      // Refund a stuck/failed iKAS deposit from the desk pool — admin only
+      if (user.role !== "admin") return Response.json({ error: "Admin only" }, { status: 403 });
+      if (!ethers.isAddress(evm_address || "")) return Response.json({ error: "Invalid 0x refund address" }, { status: 400 });
+      if (!l2_tx_hash) return Response.json({ error: "Missing the original deposit tx hash" }, { status: 400 });
+      const used = await base44.asServiceRole.entities.IgraBridgeSwap.filter({ tx_in: l2_tx_hash });
+      if (used.length > 0) return Response.json({ error: "This deposit was already settled/refunded" }, { status: 400 });
+      const dep = await provider.getTransaction(l2_tx_hash);
+      if (!dep || dep.blockNumber == null) return Response.json({ error: "Deposit tx not found on Igra" }, { status: 400 });
+      if ((dep.to || "").toLowerCase() !== alpha.address.toLowerCase()) {
+        return Response.json({ error: "That tx is not a deposit to the desk pool" }, { status: 400 });
+      }
+      const refundAmt = dep.value; // full deposit back, wei
+      const poolBal = await provider.getBalance(alpha.address);
+      if (poolBal < refundAmt) return Response.json({ error: `Pool holds only ${ethers.formatEther(poolBal)} iKAS` }, { status: 400 });
+      const wallet = new ethers.Wallet(alpha.private_key, provider);
+      const fee = await provider.getFeeData();
+      const out = await wallet.sendTransaction({
+        to: evm_address, value: refundAmt,
+        gasPrice: fee.gasPrice ?? ethers.parseUnits("2000", "gwei"), gasLimit: 21000n,
+      });
+      await out.wait(1, 90000);
+      await base44.asServiceRole.entities.IgraBridgeSwap.create({
+        direction: "ikas_to_kas", tx_in: l2_tx_hash, tx_out: out.hash,
+        amount: Number(ethers.formatEther(refundAmt)), recipient: evm_address,
+        status: "failed", desk_fee: 0, fee_address: DESK_FEE_ADDRESS,
+      });
+      return Response.json({
+        refunded: true, amount: Number(ethers.formatEther(refundAmt)), recipient: evm_address,
+        tx_out: out.hash, explorer_url: `${EXPLORER}/tx/${out.hash}`,
+      });
+    }
+
     if (action === "kas_to_ikas") {
       if (!l1_tx_id) return Response.json({ error: "Missing Kaspa L1 transaction id" }, { status: 400 });
       if (!ethers.isAddress(evm_address || "")) return Response.json({ error: "Invalid 0x destination address" }, { status: 400 });
