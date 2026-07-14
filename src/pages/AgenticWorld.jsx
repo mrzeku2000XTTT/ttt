@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Sparkles, Globe, Shield } from "lucide-react";
+import { ArrowLeft, Sparkles, Globe, Shield, Eye } from "lucide-react";
 import AgentTransactionsFeed from "@/components/agenticworld/AgentTransactionsFeed";
 import AgenticCityScene from "@/components/agenticworld/AgenticCityScene";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
@@ -109,6 +109,19 @@ export default function AgenticWorld() {
               boxShadow: "0 0 35px rgba(45,212,191,0.15), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
             <Globe className="w-4 h-4" />
             KASPA COMMAND · LIVE GLOBAL NODE MAP
+          </motion.button>
+
+          {/* OSIRIS — external global intelligence command */}
+          <motion.button initial={{ opacity: 0, y: 16 }} animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 16 }}
+            transition={{ delay: 1.2 }} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+            onClick={() => window.open("https://osirisai.live", "_blank", "noopener,noreferrer")}
+            className="mt-4 flex items-center gap-3 px-7 py-3.5 text-[10px] sm:text-[11px] font-black tracking-[0.3em] uppercase focus:outline-none rounded-full"
+            style={{ border: "1px solid rgba(167,139,250,0.4)", background: "rgba(20,10,35,0.5)",
+              backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+              color: "#c4b5fd", fontFamily: "monospace",
+              boxShadow: "0 0 35px rgba(167,139,250,0.15), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+            <Eye className="w-4 h-4" />
+            OSIRIS · GLOBAL INTELLIGENCE COMMAND
           </motion.button>
 
           {/* Footer with world trigger */}
