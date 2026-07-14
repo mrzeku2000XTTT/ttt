@@ -40,6 +40,7 @@ Parse the user's command into an action:
 - "resolve_name": user asks what address an INS name (.igra/.ins/.ikas) points to. name = the INS name.
 - "name_price": user asks if an INS name is available or what it costs ("is scout.igra available", "price of xyz.igra"). name = the full INS name (append ".igra" if the user gives no TLD).
 - "register_name": user wants to register / mint / inscribe / generate / buy an INS name ("register scout.igra", "mint alice.igra from beta", "generate an ikas domain"). name = the full INS name including TLD (default ".igra" if not stated). from = the wallet that pays and owns it: "alpha", "beta" or a local agent name (default alpha).
+- "ins_explorer": user asks to browse/see the INS explorer, registry stats, latest/recent name registrations or inscriptions, how many names exist, or name prices in general ("ins explorer", "show recent .igra names", "how much does a name cost").
 - "names": user asks to see registered INS/.igra names ("my names", "what names does alpha own", "names for 0x..."). to = the agent name or 0x address to look up (default alpha).
 - "status": check balances/addresses.
 - "desk": user asks about the desk, desk wallet, funding wallet, desk balance, or how to fund the desk.
@@ -54,7 +55,7 @@ User command: ${text}`,
         response_json_schema: {
           type: "object",
           properties: {
-            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name"] },
+            action: { type: "string", enum: ["forge", "send", "status", "chat", "desk", "bridge_info", "bridge_kas_to_ikas", "bridge_ikas_to_kas", "resolve_name", "names", "name_price", "register_name", "ins_explorer"] },
             name: { type: "string" },
             from: { type: "string" },
             to: { type: "string" },
@@ -97,6 +98,16 @@ User command: ${text}`,
       } else if (intent.action === "resolve_name") {
         const res = await base44.functions.invoke("igraAgent", { action: "resolve_name", extra: { name: intent.name || intent.to } });
         push({ role: "system", text: `🏷 INS RESOLVED\n${res.data.name}\n→ ${res.data.address}` });
+      } else if (intent.action === "ins_explorer") {
+        const res = await base44.functions.invoke("igraAgent", { action: "ins_explorer" });
+        const d = res.data;
+        const blocks = d.registries.map((r) =>
+          `${r.tld.toUpperCase()} REGISTRY · ${r.total_names ?? "?"} NAMES · ${r.holders ?? "?"} HOLDERS\n` +
+          (r.recent.length
+            ? r.recent.map((n) => `  🏷 ${n.name}${n.owner ? ` — ${n.owner.slice(0, 10)}…` : ""}`).join("\n")
+            : "  no inscriptions yet"));
+        const prices = Object.entries(d.prices_ikas).map(([k, v]) => `${k} = ${v} iKAS`).join(" · ");
+        push({ role: "system", text: `🔭 TTT IGRA INS EXPLORER — LIVE ON-CHAIN\n\n${blocks.join("\n\n")}\n\nINSCRIPTION PRICES (PAY ONCE, OWN FOREVER): ${prices}\nSAY "is <name>.igra available" TO CHECK ONE · "register <name>.igra from alpha" TO INSCRIBE NATIVELY.` });
       } else if (intent.action === "name_price") {
         const res = await base44.functions.invoke("igraAgent", { action: "name_price", extra: { name: intent.name || intent.to } });
         const d = res.data;

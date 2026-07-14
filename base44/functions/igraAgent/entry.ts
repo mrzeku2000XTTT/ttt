@@ -115,6 +115,30 @@ Deno.serve(async (req) => {
       return Response.json({ address: addr, primary, names });
     }
 
+    if (action === "ins_explorer") {
+      // Native INS explorer — live registry stats + latest inscriptions per TLD
+      const registries = await Promise.all(Object.entries(REGISTRY_BY_TLD).map(async ([tld, addr]) => {
+        try {
+          const data = await fetch(`${EXPLORER}/api/v2/tokens/${addr}/instances`).then((r) => r.json());
+          const items = data.items || [];
+          const token = items[0]?.token;
+          return {
+            tld: `.${tld}`,
+            contract: addr,
+            total_names: Number(token?.total_supply ?? items.length),
+            holders: Number(token?.holders_count ?? 0),
+            recent: items.slice(0, 5).map((i) => ({
+              name: i.metadata?.name || `#${i.id}`,
+              owner: i.owner?.hash || null,
+            })),
+          };
+        } catch {
+          return { tld: `.${tld}`, contract: addr, total_names: null, holders: null, recent: [] };
+        }
+      }));
+      return Response.json({ registries, prices_ikas: { "5+ chars": 500, "4 chars": 800, "3 chars": 1200 } });
+    }
+
     if (action === "name_price") {
       const { label, tld, full } = parseInsName(extra?.name || to);
       const registry = new ethers.Contract(REGISTRY_BY_TLD[tld], REGISTRY_ABI, provider);
