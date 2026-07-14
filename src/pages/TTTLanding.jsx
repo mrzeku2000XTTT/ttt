@@ -16,6 +16,8 @@ import ZKThoughtBubble from "@/components/tttv3/ZKThoughtBubble";
 import ZKSendKasCard from "@/components/tttv3/ZKSendKasCard";
 import ZKWalletHistoryCard from "@/components/tttv3/ZKWalletHistoryCard";
 import ZKTxToast from "@/components/tttv3/ZKTxToast";
+import ZKUltraAnalysis from "@/components/tttv3/ZKUltraAnalysis";
+import { runUltraPipeline } from "@/components/tttv3/ultraEngine";
 import ReactMarkdown from "react-markdown";
 const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
 import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker";
@@ -105,6 +107,14 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   const [appSearch, setAppSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileView, setMobileView] = useState("chat"); // "chat" | "computer"
+  const [ultraMode, setUltraMode] = useState(() => {
+    try { return localStorage.getItem("zk_ultra_mode") === "1"; } catch { return false; }
+  });
+  const toggleUltra = () => setUltraMode(v => {
+    const next = !v;
+    try { localStorage.setItem("zk_ultra_mode", next ? "1" : "0"); } catch {}
+    return next;
+  });
 
   // Agent Computer state
   const [computerOpen, setComputerOpen] = useState(false);
@@ -316,7 +326,24 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
 
       const history = [...messages, userMsg].slice(-10).map(m => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`).join("\n\n");
 
-      const decision = await base44.integrations.Core.InvokeLLM({
+      let decision;
+      if (ultraMode) {
+        // ── ZK ULTRA pipeline: deep keyword analysis + live tttz.xyz viewing + full intent→flow translation ──
+        const ultra = await runUltraPipeline({
+          text, history, appsContext, modelId: model.id,
+          onPhase: (p) => setComputerStatus(p),
+        });
+        if (ultra.analysis) {
+          setMessages(m => {
+            const idx = m.findIndex(x => x.id === mid);
+            const copy = [...m];
+            copy.splice(idx < 0 ? copy.length : idx, 0, { role: "zk_ultra", analysis: ultra.analysis });
+            return copy;
+          });
+        }
+        decision = ultra.decision;
+      } else {
+      decision = await base44.integrations.Core.InvokeLLM({
         model: model.id,
         prompt: `You are ZK — TTT's PRIMARY autonomous AI agent and site expert. You have complete knowledge of every page, subpage, feature, and workflow across the entire TTT platform. You are an ACTOR, not an assistant — when given an actionable multi-step goal, you EXECUTE it end-to-end (research, decide angles, generate, build, post) rather than bouncing it back with clarifying questions.
 
@@ -465,6 +492,7 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
         },
         add_context_from_internet: model.id.includes("gemini"),
       });
+      }
 
       const replyText = (decision?.reply && typeof decision.reply === "string") ? decision.reply : "Hmm, try again?";
       const needsInfo = decision?.needs_info === true;
@@ -704,6 +732,17 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
             </AnimatePresence>
           </div>
 
+          {/* ULTRA mode toggle */}
+          <button onClick={toggleUltra}
+            title="ZK ULTRA Supercomputer — deep intent analysis + live tttz.xyz viewing"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all"
+            style={ultraMode
+              ? { border: "2px solid #8b5cf6", color: "#000", background: "#8b5cf6", boxShadow: "2px 2px 0px #4c1d95, 0 0 12px rgba(139,92,246,0.5)", fontFamily: FONT }
+              : { border: "2px solid rgba(139,92,246,0.35)", color: "rgba(167,139,250,0.6)", background: "transparent", fontFamily: FONT }}>
+            <Zap className="w-3.5 h-3.5" />
+            ULTRA
+          </button>
+
           {/* Computer toggle */}
           <button onClick={() => setComputerOpen(v => !v)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all"
@@ -803,6 +842,9 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
                     if (m.role === "plan") return <AgentPlanChecklist key={i} plan={m.plan} />;
                     if (m.role === "reasoning") return <AgentReasoningBubble key={i} msg={m} />;
                     if (m.role === "zk_thought") return <ZKThoughtBubble key={i} msg={m} />;
+                    if (m.role === "zk_ultra") return (
+                      <div key={i} className="flex justify-start"><ZKUltraAnalysis analysis={m.analysis} /></div>
+                    );
                     if (m.role === "zk_send") return (
                       <div key={i} className="flex justify-start">
                         <ZKSendKasCard prefillTo={m.prefillTo} prefillAmount={m.prefillAmount} onSent={(tx) => setTxToast(tx)} />
