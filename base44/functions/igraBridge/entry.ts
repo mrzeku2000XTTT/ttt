@@ -16,6 +16,9 @@ const KASPA_API = "https://api.kaspa.org";
 // and alpha's iKAS pool over time.
 const DESK_FEE = 0.005;
 
+// ALL desk fees are credited to this wallet — the desk KAS funding wallet.
+const DESK_FEE_ADDRESS = "kaspa:qpng00dhlu9mf8n7wdzqc2s5z8mrw5kqd3xql5kyw697flh92m9fwxrw058je";
+
 // Igra's NATIVE exit bridge (KasExitBridge proxy on Igra mainnet).
 // requestExit burns iKAS on L2; the Igra multi-sig committee releases KAS on
 // Kaspa L1 out-of-band — no desk-side KAS liquidity required.
@@ -50,6 +53,10 @@ Deno.serve(async (req) => {
       kasBridge = await base44.asServiceRole.entities.IgraAgentWallet.create({
         name: "kasbridge", address: w.address, private_key: w.privateKey || w.private_key,
       });
+    }
+    // Guarantee fee routing: all desk fees must land in the official funding wallet
+    if (kasBridge.address !== DESK_FEE_ADDRESS) {
+      return Response.json({ error: `Desk misconfigured — the KAS funding wallet on record (${kasBridge.address}) does not match the official desk fee wallet ${DESK_FEE_ADDRESS}` }, { status: 500 });
     }
 
     if (action === "info") {
@@ -123,12 +130,16 @@ Deno.serve(async (req) => {
       });
       await out.wait(1, 90000);
 
+      // Fee is physically collected: the FULL KAS deposit (incl. the 0.5% fee)
+      // already sits in the desk funding wallet — only 99.5% leaves as iKAS.
       await base44.asServiceRole.entities.IgraBridgeSwap.create({
         direction: "kas_to_ikas", tx_in: l1_tx_id, tx_out: out.hash,
         amount: payoutIkas, recipient: evm_address, status: "completed",
+        desk_fee: amount - payoutIkas, fee_address: DESK_FEE_ADDRESS,
       });
       return Response.json({
         direction: "kas_to_ikas", amount: payoutIkas, desk_fee_kas: amount - payoutIkas,
+        fee_paid_to: DESK_FEE_ADDRESS,
         recipient: evm_address,
         tx_out: out.hash, explorer_url: `${EXPLORER}/tx/${out.hash}`,
       });
@@ -186,38 +197,56 @@ Deno.serve(async (req) => {
           const msg = err?.response?.data?.error || err.message;
           return Response.json({ error: `Small exits (under ${Number(cfg.minExitSompi) / 1e8} KAS) are paid from the desk's own KAS liquidity — but the payout failed: ${msg}. Fund the desk with KAS at ${kasBridge.address} to enable small swaps, or use katbridge.com (trusted-party route, min 10 KAS).` }, { status: 400 });
         }
+        // Fee is physically collected: payout leaves the funding wallet minus
+        // 0.5% — that 0.5% KAS stays in the desk funding wallet.
         await base44.asServiceRole.entities.IgraBridgeSwap.create({
           direction: "ikas_to_kas", tx_in: txIn, tx_out: String(payout.txId),
           amount: payoutKas, recipient: dest, status: "completed",
+          desk_fee: amount - payoutKas, fee_address: DESK_FEE_ADDRESS,
         });
         return Response.json({
           direction: "ikas_to_kas", amount: payoutKas, desk_fee_kas: amount - payoutKas,
+          fee_paid_to: DESK_FEE_ADDRESS,
           recipient: dest, via: "desk",
           tx_out: payout.txId, explorer_url: `https://explorer.kaspa.org/txs/${payout.txId}`,
-          note: "PAID INSTANTLY FROM DESK KAS LIQUIDITY · 0.5% DESK FEE RETAINED IN POOL",
+          note: `PAID INSTANTLY FROM DESK KAS LIQUIDITY · 0.5% DESK FEE RETAINED IN ${DESK_FEE_ADDRESS}`,
         });
       }
       if (cfg.maxExitSompi > 0n && unlockSompi > cfg.maxExitSompi) {
         return Response.json({ error: `Native bridge maximum is ${Number(cfg.maxExitSompi) / 1e8} KAS per exit` }, { status: 400 });
       }
-      const feeSompi = await exitBridge.quoteFee(wallet.address, unlockSompi);
-      const msgValue = (unlockSompi + feeSompi) * 10n ** 10n; // contract invariant: value = (unlock + fee) * 1e10
+      // Both fees are ACTUALLY charged to the swap (not subsidized by the desk):
+      // the Igra bridge fee + the 0.5% desk fee come out of the swapped amount,
+      // so the desk fee is retained by the desk pools on every exit.
+      const deskFeeSompi = BigInt(Math.round(amount * DESK_FEE * 1e8));
+      let netUnlockSompi = unlockSompi - deskFeeSompi;
+      const quoted = await exitBridge.quoteFee(wallet.address, netUnlockSompi);
+      netUnlockSompi -= quoted;
+      const feeSompi = await exitBridge.quoteFee(wallet.address, netUnlockSompi);
+      if (netUnlockSompi + feeSompi + deskFeeSompi > unlockSompi) netUnlockSompi = unlockSompi - deskFeeSompi - feeSompi;
+      if (netUnlockSompi < cfg.minExitSompi) {
+        return Response.json({ error: `After fees (${Number(feeSompi) / 1e8} KAS bridge fee + 0.5% desk fee) the exit falls below the native minimum of ${Number(cfg.minExitSompi) / 1e8} KAS — send a larger amount` }, { status: 400 });
+      }
+      const msgValue = (netUnlockSompi + feeSompi) * 10n ** 10n; // contract invariant: value = (unlock + fee) * 1e10
       const alphaBal = await provider.getBalance(alpha.address);
       if (alphaBal < msgValue) {
         return Response.json({ error: `Agent alpha holds ${ethers.formatEther(alphaBal)} iKAS but the exit needs ${ethers.formatEther(msgValue)} iKAS (amount + ${Number(feeSompi) / 1e8} bridge fee)` }, { status: 400 });
       }
-      const out = await exitBridge.requestExit(dest, unlockSompi, { value: msgValue, gasLimit: 300000n });
+      const out = await exitBridge.requestExit(dest, netUnlockSompi, { value: msgValue, gasLimit: 300000n });
       await out.wait(1, 90000);
 
+      const payoutKas = Number(netUnlockSompi) / 1e8;
       await base44.asServiceRole.entities.IgraBridgeSwap.create({
         direction: "ikas_to_kas", tx_in: txIn, tx_out: out.hash,
-        amount, recipient: dest, status: "completed",
+        amount: payoutKas, recipient: dest, status: "completed",
+        desk_fee: Number(deskFeeSompi) / 1e8, fee_address: DESK_FEE_ADDRESS,
       });
       return Response.json({
-        direction: "ikas_to_kas", amount, recipient: dest,
-        fee_kas: Number(feeSompi) / 1e8,
+        direction: "ikas_to_kas", amount: payoutKas, recipient: dest,
+        fee_kas: Number(feeSompi) / 1e8, desk_fee_kas: Number(deskFeeSompi) / 1e8,
+        fee_paid_to: DESK_FEE_ADDRESS,
         tx_out: out.hash, explorer_url: `${EXPLORER}/tx/${out.hash}`,
-        note: "iKAS burned via Igra's native KasExitBridge — KAS is released on Kaspa L1 by the Igra multi-sig committee (not instant).",
+        note: "iKAS burned via Igra's native KasExitBridge — KAS is released on Kaspa L1 by the Igra multi-sig committee (not instant). Bridge fee + 0.5% desk fee deducted from the swap.",
       });
     }
 

@@ -26,6 +26,14 @@
       "type": "string",
       "description": "Payout destination (0x address or kaspa: address)"
     },
+    "desk_fee": {
+      "type": "number",
+      "description": "Desk fee collected on this swap (KAS)"
+    },
+    "fee_address": {
+      "type": "string",
+      "description": "Wallet the desk fee was credited to"
+    },
     "status": {
       "type": "string",
       "enum": [
