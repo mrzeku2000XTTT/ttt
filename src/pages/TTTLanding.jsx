@@ -18,6 +18,8 @@ import ZKWalletHistoryCard from "@/components/tttv3/ZKWalletHistoryCard";
 import ZKTxToast from "@/components/tttv3/ZKTxToast";
 import ZKUltraAnalysis from "@/components/tttv3/ZKUltraAnalysis";
 import ZKGlassThought from "@/components/tttv3/ZKGlassThought";
+import ZKGodConsole from "@/components/tttv3/ZKGodConsole";
+import { runGodPipeline } from "@/components/tttv3/godEngine";
 import ZKAvatar3D from "@/components/tttv3/ZKAvatar3D";
 import { runUltraPipeline } from "@/components/tttv3/ultraEngine";
 import ReactMarkdown from "react-markdown";
@@ -115,6 +117,14 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
   const toggleUltra = () => setUltraMode(v => {
     const next = !v;
     try { localStorage.setItem("zk_ultra_mode", next ? "1" : "0"); } catch {}
+    return next;
+  });
+  const [godMode, setGodMode] = useState(() => {
+    try { return localStorage.getItem("zk_god_mode") === "1"; } catch { return false; }
+  });
+  const toggleGod = () => setGodMode(v => {
+    const next = !v;
+    try { localStorage.setItem("zk_god_mode", next ? "1" : "0"); } catch {}
     return next;
   });
 
@@ -329,7 +339,22 @@ function ZKChatPanel({ onClose, minimized, onToggleMinimize }) {
       const history = [...messages, userMsg].slice(-10).map(m => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`).join("\n\n");
 
       let decision;
-      if (ultraMode) {
+      if (godMode) {
+        // ── GOD ZK: full tttz.xyz address space + REAL system calls + multi-app missions ──
+        const god = await runGodPipeline({
+          text, history, appsContext, modelId: model.id,
+          onPhase: (p) => setComputerStatus(p),
+        });
+        if (god.toolResults.length > 0) {
+          setMessages(m => {
+            const idx = m.findIndex(x => x.id === mid);
+            const copy = [...m];
+            copy.splice(idx < 0 ? copy.length : idx, 0, { role: "zk_god", tools: god.toolResults });
+            return copy;
+          });
+        }
+        decision = god.decision;
+      } else if (ultraMode) {
         // ── ZK ULTRA pipeline: deep keyword analysis + live tttz.xyz viewing + full intent→flow translation ──
         const ultra = await runUltraPipeline({
           text, history, appsContext, modelId: model.id,
@@ -740,6 +765,16 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
             </AnimatePresence>
           </div>
 
+          {/* GOD mode toggle */}
+          <button onClick={toggleGod}
+            title="GOD ZK — full tttz.xyz access, real system calls, multi-app missions"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all"
+            style={godMode
+              ? { border: "2px solid #facc15", color: "#000", background: "linear-gradient(135deg, #fde047, #eab308)", boxShadow: "2px 2px 0px #713f12, 0 0 16px rgba(250,204,21,0.6)", fontFamily: FONT }
+              : { border: "2px solid rgba(250,204,21,0.35)", color: "rgba(250,204,21,0.55)", background: "transparent", fontFamily: FONT }}>
+            ⚡ GOD
+          </button>
+
           {/* ULTRA mode toggle */}
           <button onClick={toggleUltra}
             title="ZK ULTRA Supercomputer — deep intent analysis + live tttz.xyz viewing"
@@ -854,6 +889,9 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
                     );
                     if (m.role === "zk_ultra") return (
                       <div key={i} className="flex justify-start"><ZKUltraAnalysis analysis={m.analysis} /></div>
+                    );
+                    if (m.role === "zk_god") return (
+                      <div key={i} className="flex justify-start"><ZKGodConsole tools={m.tools} /></div>
                     );
                     if (m.role === "zk_send") return (
                       <div key={i} className="flex justify-start">
