@@ -54,8 +54,13 @@ Deno.serve(async (req) => {
     // Agent wallets are PER USER — each logged-in user gets their own alpha/beta
     // and pays inscriptions/transfers through them. Wallets without owner_email
     // are the desk's global pool (used by the bridge, shown to guests).
+    // Admins use the ORIGINAL global desk wallets (their alpha/beta from day one);
+    // regular users each get their own personal alpha/beta.
     let owner = null;
-    try { const u = await base44.auth.me(); owner = u?.email || null; } catch { /* guest */ }
+    try {
+      const u = await base44.auth.me();
+      owner = (u && u.role !== "admin") ? u.email : null;
+    } catch { /* guest */ }
     const loadWallets = () => base44.asServiceRole.entities.IgraAgentWallet.filter(
       owner ? { owner_email: owner } : { owner_email: null });
     let wallets = await loadWallets();
