@@ -17,6 +17,8 @@ import ZKSendKasCard from "@/components/tttv3/ZKSendKasCard";
 import ZKWalletHistoryCard from "@/components/tttv3/ZKWalletHistoryCard";
 import ZKTxToast from "@/components/tttv3/ZKTxToast";
 import ZKUltraAnalysis from "@/components/tttv3/ZKUltraAnalysis";
+import ZKGlassThought from "@/components/tttv3/ZKGlassThought";
+import ZKAvatar3D from "@/components/tttv3/ZKAvatar3D";
 import { runUltraPipeline } from "@/components/tttv3/ultraEngine";
 import ReactMarkdown from "react-markdown";
 const CyberneticEyeSphere = React.lazy(() => import("@/components/landing/CyberneticEyeSphere"));
@@ -591,6 +593,12 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
   };
   const grouped = groupSessions();
 
+  // Only the newest assistant message gets the live 3D orb avatar
+  let lastAssistantIdx = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === "assistant") { lastAssistantIdx = i; break; }
+  }
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex"
@@ -841,7 +849,9 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
                   {messages.map((m, i) => {
                     if (m.role === "plan") return <AgentPlanChecklist key={i} plan={m.plan} />;
                     if (m.role === "reasoning") return <AgentReasoningBubble key={i} msg={m} />;
-                    if (m.role === "zk_thought") return <ZKThoughtBubble key={i} msg={m} />;
+                    if (m.role === "zk_thought") return (
+                      <div key={i} className="flex justify-start"><ZKGlassThought msg={m} /></div>
+                    );
                     if (m.role === "zk_ultra") return (
                       <div key={i} className="flex justify-start"><ZKUltraAnalysis analysis={m.analysis} /></div>
                     );
@@ -856,10 +866,7 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
                     const isUser = m.role === "user";
                     return (
                       <div key={i} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
-                        {!isUser && (
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[11px] font-bold"
-                            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>ZK</div>
-                        )}
+                        {!isUser && <ZKAvatar3D live={i === lastAssistantIdx} size={32} />}
                         <div className={`max-w-[78%] px-4 py-3 rounded-2xl text-[13.5px] leading-relaxed`}
                           style={{
                             background: isUser ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.04)",
