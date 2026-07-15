@@ -125,6 +125,7 @@ import IgraAgentPage from './pages/IgraAgent';
 import AporiaDEXPage from './pages/AporiaDEX';
 import KaspaCommandPage from './pages/KaspaCommand';
 import KCCPage from './pages/KCC';
+import KCCNftPage from './pages/KCCNft';
 import AWAPage from './pages/AWA';
 import TreePage from './pages/Tree';
 import KuttPage from './pages/Kutt';
@@ -279,6 +280,7 @@ const AuthenticatedApp = () => {
       <Route path="/ScenarioBot" element={<ScenarioBotPage />} />
       <Route path="/SuperZK" element={<SuperZKPage />} />
       <Route path="/KCC" element={<KCCPage />} />
+      <Route path="/KCCNft" element={<KCCNftPage />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
       <Route path="/KasSword" element={<KasSwordPage />} />
       <Route path="/Vision" element={<VisionPage />} />
