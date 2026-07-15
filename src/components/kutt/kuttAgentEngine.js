@@ -96,7 +96,12 @@ function applyEdits(clips, edits, ripple) {
  * timeline auto-build → viral analysis. Also: analyze / autocut / chat.
  */
 export async function runKuttSoul({ input, assets, clips, onStep, addAssets, setClips }) {
-  const url = (input.match(/https?:\/\/[^\s]+/) || [])[0];
+  // Detect full URLs AND bare domains like "tttz.xyz"
+  let url = (input.match(/https?:\/\/[^\s]+/) || [])[0];
+  if (!url) {
+    const bare = (input.match(/\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:com|org|net|io|xyz|ai|app|dev|co|tv|gg|finance|network)\b(?:\/[^\s]*)?/i) || [])[0];
+    if (bare) url = `https://${bare}`;
+  }
 
   // ── DIRECTOR DECISION (no URL → figure out what the user wants) ──
   let mode = url ? "script" : null;
@@ -115,8 +120,10 @@ USER SAID: """${input}"""
 
 CURRENT TIMELINE (${clips.length} clips): ${timelineJson || "(empty)"}
 
+You HAVE live web research power (a later pipeline step browses the internet for you) — NEVER say you cannot browse or access websites. If the user mentions a website, product, or topic, that is a "script" request.
+
 Pick ONE mode:
-- "script": user wants a video/script made from a topic → set topic to the exact subject.
+- "script": user wants a video/script made from a topic, website or product → set topic to the exact subject.
 - "analyze": user wants feedback/analysis of the current timeline for viral growth → write the full professional analysis in reply (pacing, hook, retention, platform fit, concrete fixes).
 - "autocut": user wants you to cut / trim / tighten / split / re-layer / auto-edit the timeline. You are CapCut's AutoCut on steroids — you edit AUTONOMOUSLY, multi-layer, with real splits:
    · SCENE DETECTION & PACING: viral pacing = 2-4s per clip. SPLIT clips longer than ~5s at their key beats (op "split" with split_at = timeline second inside the clip), then TRIM or DELETE the weak halves (dead air, slow intros, filler).
