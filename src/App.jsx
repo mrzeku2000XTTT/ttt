@@ -129,6 +129,7 @@ import KCCNftPage from './pages/KCCNft';
 import AWAPage from './pages/AWA';
 import TreePage from './pages/Tree';
 import KuttPage from './pages/Kutt';
+import SectorVIPage from './pages/SectorVI';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -289,6 +290,7 @@ const AuthenticatedApp = () => {
       <Route path="/AWA" element={<AWAPage />} />
       <Route path="/Tree" element={<TreePage />} />
       <Route path="/Kutt" element={<KuttPage />} />
+      <Route path="/SectorVI" element={<SectorVIPage />} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
       <Route path="/KaspaNations/:slug" element={<KaspaNationPage />} />
