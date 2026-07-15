@@ -1,10 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Copy, QrCode } from "lucide-react";
+import { Copy } from "lucide-react";
+import QRCode from "qrcode";
 import { AGENT_WALLET } from "./kccNftTiers";
 
 export default function KCCNftPaymentModal({ open, onOpenChange, kasAmount }) {
   const copyAddress = () => navigator.clipboard.writeText(AGENT_WALLET);
+  const [qrUrl, setQrUrl] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    QRCode.toDataURL(`${AGENT_WALLET}?amount=${kasAmount}`, {
+      width: 320,
+      margin: 1,
+      color: { dark: "#000000", light: "#ffffff" },
+    }).then(setQrUrl);
+  }, [open, kasAmount]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -27,9 +38,12 @@ export default function KCCNftPaymentModal({ open, onOpenChange, kasAmount }) {
             Include your Kaspa address in the memo/label so your NFT can be issued to you.
           </p>
 
-          <div className="mx-auto w-40 h-40 rounded-2xl bg-zinc-900 border border-white/10 flex flex-col items-center justify-center gap-2 text-white/30">
-            <QrCode className="w-16 h-16" />
-            <span className="text-[10px]">QR Code</span>
+          <div className="mx-auto w-44 h-44 rounded-2xl bg-white border border-white/10 flex items-center justify-center overflow-hidden p-2">
+            {qrUrl ? (
+              <img src={qrUrl} alt="Kaspa payment QR code" className="w-full h-full" />
+            ) : (
+              <span className="text-[10px] text-black/40">Loading QR...</span>
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-2 py-2">
