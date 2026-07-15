@@ -127,6 +127,8 @@ import KaspaCommandPage from './pages/KaspaCommand';
 import KCCPage from './pages/KCC';
 import KCCNftPage from './pages/KCCNft';
 import AWAPage from './pages/AWA';
+import AWASignerPage from './pages/AWASigner';
+import KASDollarPage from './pages/KASDollar';
 import TreePage from './pages/Tree';
 import KuttPage from './pages/Kutt';
 import SectorVIPage from './pages/SectorVI';
@@ -289,6 +291,8 @@ const AuthenticatedApp = () => {
       <Route path="/TTT3Manifesto" element={<TTT3ManifestoPDFPage />} />
       <Route path="/AgenticWorld" element={<AgenticWorldPage />} />
       <Route path="/AWA" element={<AWAPage />} />
+      <Route path="/AWASigner" element={<AWASignerPage />} />
+      <Route path="/KASDollar" element={<KASDollarPage />} />
       <Route path="/Tree" element={<TreePage />} />
       <Route path="/Kutt" element={<KuttPage />} />
       <Route path="/SectorVI" element={<SectorVIPage />} />

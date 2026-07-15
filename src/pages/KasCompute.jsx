@@ -3,10 +3,13 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
+import KasComputePayBar from '@/components/kascompute/KasComputePayBar';
 
 export default function KasComputePage() {
   return (
     <div className="fixed inset-0 bg-black z-50">
+      {/* Payment option toggle */}
+      <KasComputePayBar />
       {/* Header with Back Button and Direct Link */}
       <div className="absolute top-4 left-4 right-4 z-50 flex items-center justify-between">
         <Link 
