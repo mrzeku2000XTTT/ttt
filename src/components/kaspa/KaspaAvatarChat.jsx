@@ -33,6 +33,10 @@ import ImposterImageLoader from "./ImposterImageLoader";
 export default function KaspaAvatarChat() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(() => {
+    const saved = localStorage.getItem('kai_enabled');
+    return saved === null ? true : saved === 'true';
+  });
   const [videoUrl, setVideoUrl] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_VIDEO_URL);
   const [messages, setMessages] = useState(() => {
     // Restore persisted messages so remounts (route changes) don't wipe the chat
@@ -102,6 +106,20 @@ export default function KaspaAvatarChat() {
 
   // Shared handler context object
   const ctx = { setMessages, addAssistantMessage, setIsLoading, isFast, speedInstruction, kaiMode };
+
+  // Instantly hide/show when the Kai toggle changes (Profile page switch)
+  useEffect(() => {
+    const handleToggle = () => {
+      const saved = localStorage.getItem('kai_enabled');
+      setIsEnabled(saved === null ? true : saved === 'true');
+    };
+    window.addEventListener('kai_toggle', handleToggle);
+    window.addEventListener('storage', handleToggle);
+    return () => {
+      window.removeEventListener('kai_toggle', handleToggle);
+      window.removeEventListener('storage', handleToggle);
+    };
+  }, []);
 
   // Fetch global KAI video URL
   useEffect(() => {
@@ -474,6 +492,8 @@ Original prompt: ${input.trim()}`,
     };
     setMessages([{ role: "assistant", content: welcomes[kaiMode] || welcomes.kai }]);
   };
+
+  if (!isEnabled) return null;
 
   return (
     <>

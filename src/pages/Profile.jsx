@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import DAGKnightBadge from "@/components/profile/DAGKnightBadge";
 import JobSelector from "@/components/profile/JobSelector";
 import StampPostDetailsModal from "@/components/profile/StampPostDetailsModal";
+import ClaimTTTID from "@/components/profile/ClaimTTTID";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -1160,6 +1161,14 @@ Return ONLY the post text, no quotes or extra formatting.`,
                         </div>
                       )}
                     </div>
+
+                    {/* One-click TTT ID Claim */}
+                    <ClaimTTTID
+                      walletAddress={walletAddress || localStorage.getItem('manual_kaspa_address')}
+                      username={editData.username || user?.username}
+                      seals={seals}
+                      onClaimed={loadData}
+                    />
 
                     {/* Kai Toggle */}
                     <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
