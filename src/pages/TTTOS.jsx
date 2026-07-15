@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import GodZK from "@/components/tttos/GodZK";
 
 // Custom TTT-branded SVG logos for each app
 const TTTLogos = {
@@ -140,6 +141,7 @@ export default function TTTOS() {
   const [windowPositions, setWindowPositions] = useState({});
   const [iframeWindows, setIframeWindows] = useState([]);
   const [activeIframeWindow, setActiveIframeWindow] = useState(null);
+  const zCounterRef = useRef(200);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -183,12 +185,16 @@ export default function TTTOS() {
     // Use absolute URL — relative URLs break on published domains
     const appUrl = window.location.origin + createPageUrl(app.path);
     
+    zCounterRef.current += 1;
     setIframeWindows(prev => [...prev, { 
       ...app, 
       windowId,
       url: appUrl,
       isLoading: true,
-      loadFailed: false
+      loadFailed: false,
+      z: zCounterRef.current,
+      minimized: false,
+      maximized: false
     }]);
     setWindowPositions(prev => ({
       ...prev,
@@ -221,6 +227,45 @@ export default function TTTOS() {
     if (activeIframeWindow === windowId) {
       const remaining = iframeWindows.filter(w => w.windowId !== windowId);
       setActiveIframeWindow(remaining.length > 0 ? remaining[remaining.length - 1].windowId : null);
+    }
+  };
+
+  // Windows 11 behavior: clicking a window brings it to front (fresh z-index) and un-minimizes
+  const focusIframeWindow = (windowId) => {
+    zCounterRef.current += 1;
+    setIframeWindows(prev => prev.map(w =>
+      w.windowId === windowId ? { ...w, z: zCounterRef.current, minimized: false } : w
+    ));
+    setActiveIframeWindow(windowId);
+  };
+
+  const minimizeIframeWindow = (windowId, e) => {
+    e?.stopPropagation();
+    setIframeWindows(prev => prev.map(w =>
+      w.windowId === windowId ? { ...w, minimized: true } : w
+    ));
+    if (activeIframeWindow === windowId) {
+      const others = iframeWindows.filter(w => w.windowId !== windowId && !w.minimized);
+      const top = [...others].sort((a, b) => (b.z || 0) - (a.z || 0))[0];
+      setActiveIframeWindow(top ? top.windowId : null);
+    }
+  };
+
+  const toggleMaximizeIframeWindow = (windowId, e) => {
+    e?.stopPropagation();
+    zCounterRef.current += 1;
+    setIframeWindows(prev => prev.map(w =>
+      w.windowId === windowId ? { ...w, maximized: !w.maximized, minimized: false, z: zCounterRef.current } : w
+    ));
+    setActiveIframeWindow(windowId);
+  };
+
+  // Taskbar: click active window → minimize; click inactive/minimized → restore & focus
+  const handleTaskbarClick = (win) => {
+    if (activeIframeWindow === win.windowId && !win.minimized) {
+      minimizeIframeWindow(win.windowId);
+    } else {
+      focusIframeWindow(win.windowId);
     }
   };
 
@@ -325,8 +370,8 @@ export default function TTTOS() {
           {iframeWindows.map((win, index) => {
             const Logo = win.logo;
             const isActive = activeIframeWindow === win.windowId;
-            const zIndex = 100 + index;
-            const pos = windowPositions[win.windowId] || { x: 50 + index * 30, y: 50 + index * 30 };
+            const zIndex = win.z || 100 + index;
+            const pos = win.maximized ? { x: 0, y: 0 } : (windowPositions[win.windowId] || { x: 50 + index * 30, y: 50 + index * 30 });
             
             return (
               <motion.div
@@ -334,22 +379,27 @@ export default function TTTOS() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1, x: pos.x, y: pos.y }}
                 exit={{ scale: 0.8, opacity: 0, transition: { duration: 0.2 } }}
-                drag
+                drag={!win.maximized}
                 dragMomentum={false}
                 onDragEnd={(e, info) => handleIframeDragEnd(win.windowId, info)}
-                onClick={() => setActiveIframeWindow(win.windowId)}
-                className={`absolute w-[90vw] max-w-[1200px] h-[75vh] max-h-[700px] rounded-lg overflow-hidden shadow-2xl ${
+                onMouseDown={() => { if (!isActive) focusIframeWindow(win.windowId); }}
+                className={`absolute overflow-hidden ${
+                  win.maximized
+                    ? "left-0 top-0 w-[calc(100vw-2rem)] h-[calc(100vh-8rem)] rounded-none"
+                    : "w-[90vw] max-w-[1200px] h-[75vh] max-h-[700px] rounded-lg"
+                } ${isActive ? "shadow-2xl ring-1 ring-cyan-400/30" : "shadow-lg"} ${
                   isWindows 
                     ? "bg-gray-900/95 backdrop-blur-xl border border-white/10" 
                     : "bg-white/90 backdrop-blur-xl border border-white/20"
                 }`}
-                style={{ zIndex }}
+                style={{ zIndex, display: win.minimized ? "none" : undefined }}
               >
                 {/* Browser Title Bar */}
                 <div 
                   className={`h-10 flex items-center justify-between px-4 cursor-move ${
                     isWindows ? "bg-gray-800/50" : "bg-gray-100/50"
                   }`}
+                  onDoubleClick={() => toggleMaximizeIframeWindow(win.windowId)}
                 >
                   {/* macOS-style traffic light controls on left */}
                   {!isWindows && (
@@ -361,10 +411,14 @@ export default function TTTOS() {
                       >
                         <X className="w-2 h-2 text-red-900 opacity-0 group-hover:opacity-100" />
                       </button>
-                      <button className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 flex items-center justify-center group" title="Minimize">
+                      <button 
+                        onClick={(e) => minimizeIframeWindow(win.windowId, e)}
+                        className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 flex items-center justify-center group" title="Minimize">
                         <Minus className="w-2 h-2 text-yellow-900 opacity-0 group-hover:opacity-100" />
                       </button>
-                      <button className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center group" title="Maximize">
+                      <button 
+                        onClick={(e) => toggleMaximizeIframeWindow(win.windowId, e)}
+                        className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center group" title="Maximize">
                         <Square className="w-1.5 h-1.5 text-green-900 opacity-0 group-hover:opacity-100" />
                       </button>
                     </div>
@@ -383,10 +437,18 @@ export default function TTTOS() {
                   {/* Windows-style controls on right */}
                   {isWindows && (
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <button className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
+                      <button 
+                        onClick={(e) => minimizeIframeWindow(win.windowId, e)}
+                        className={`w-7 h-7 flex items-center justify-center rounded text-white ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}
+                        title="Minimize"
+                      >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
-                      <button className={`w-7 h-7 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}>
+                      <button 
+                        onClick={(e) => toggleMaximizeIframeWindow(win.windowId, e)}
+                        className={`w-7 h-7 flex items-center justify-center rounded text-white ${isWindows ? "hover:bg-white/10" : "hover:bg-gray-200"}`}
+                        title={win.maximized ? "Restore Down" : "Maximize"}
+                      >
                         <Square className="w-3 h-3" />
                       </button>
                       <button 
@@ -451,6 +513,13 @@ export default function TTTOS() {
                     title={win.name}
                     sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
                   />
+                  {/* Click-catcher: clicking anywhere on an inactive window brings it to front (iframe clicks don't bubble) */}
+                  {!isActive && (
+                    <div
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      onMouseDown={() => focusIframeWindow(win.windowId)}
+                    />
+                  )}
                 </div>
               </motion.div>
             );
@@ -576,15 +645,17 @@ export default function TTTOS() {
           <div className="flex items-center gap-2">
             {iframeWindows.map((win) => {
               const Logo = win.logo;
-              const isActive = activeIframeWindow === win.windowId;
+              const isActive = activeIframeWindow === win.windowId && !win.minimized;
               return (
                 <button
                   key={win.windowId}
-                  onClick={() => setActiveIframeWindow(win.windowId)}
+                  onClick={() => handleTaskbarClick(win)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded transition-all ${
                     isActive 
                       ? "bg-white/20 border-b-2 border-cyan-400" 
-                      : "hover:bg-white/10 border-b-2 border-transparent"
+                      : win.minimized
+                        ? "opacity-60 hover:opacity-100 hover:bg-white/10 border-b-2 border-white/30"
+                        : "hover:bg-white/10 border-b-2 border-transparent"
                   }`}
                 >
                   <div className="w-5 h-5 rounded overflow-hidden">
@@ -681,6 +752,9 @@ export default function TTTOS() {
           </div>
         </>
       )}
+
+      {/* GodZK — OS navigator assistant */}
+      <GodZK apps={OS_APPS} onOpenApp={openAppInWindow} />
     </div>
   );
 }
