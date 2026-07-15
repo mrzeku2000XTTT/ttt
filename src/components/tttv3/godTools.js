@@ -29,7 +29,7 @@ export async function executeGodTool({ name, args = {} }, ctx = {}) {
     let data;
     switch (name) {
       case "post_to_feed": {
-        const content = (args.content || "").trim();
+        const content = (args.content || args.text || args.message || args.body || args.post || ctx.fallbackPostText || "").trim();
         if (!content) return { name, args, ok: false, result: "post_to_feed requires content", ms: Date.now() - t0 };
         let imageUrl = args.image_url && args.image_url !== "LAST_IMAGE" ? args.image_url : (ctx.lastImageUrl || "");
         let authorName = "GOD ZK";

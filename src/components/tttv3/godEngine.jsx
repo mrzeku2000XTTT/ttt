@@ -29,9 +29,18 @@ const GOD_SCHEMA = {
         type: "object",
         properties: {
           name: { type: "string" },
-          args: { type: "object", additionalProperties: true },
+          args: {
+            type: "object",
+            properties: {
+              content: { type: "string", description: "post_to_feed ONLY: the FULL final post text to publish, hashtags included. REQUIRED for post_to_feed." },
+              image_url: { type: "string", description: "post_to_feed optional: image URL or 'LAST_IMAGE'" },
+              prompt: { type: "string", description: "generate_image ONLY: detailed image prompt" },
+              address: { type: "string", description: "kaspa_balance / kaspa_history: the address" },
+              query: { type: "string", description: "explorer_search / web_search: the query" },
+            },
+          },
         },
-        required: ["name"],
+        required: ["name", "args"],
       },
     },
   },
@@ -121,6 +130,22 @@ Return ONLY the JSON.`,
 
   let toolResults = [];
   if (decision?.tools?.length) {
+    // Safety net: a post_to_feed call MUST carry content — if the core omitted it, write it now.
+    const bareFeedPost = decision.tools.find(t => t?.name === "post_to_feed" && !(t.args?.content || "").trim());
+    if (bareFeedPost) {
+      onPhase?.("⚡ GOD ZK · composing the post…");
+      try {
+        const composed = await withTimeout(base44.integrations.Core.InvokeLLM({
+          model: "gemini_3_flash",
+          prompt: `Write the FINAL social post text for the TTT Feed based on this user command: """${text}"""
+If the command already contains the message itself, use it (near-)verbatim. Otherwise write a short punchy post about the topic. Under 280 chars, add 1-3 fitting hashtags.`,
+          response_json_schema: { type: "object", properties: { post_text: { type: "string" } }, required: ["post_text"] },
+        }), 20000, "post compose");
+        bareFeedPost.args = { ...(bareFeedPost.args || {}), content: composed?.post_text || text };
+      } catch {
+        bareFeedPost.args = { ...(bareFeedPost.args || {}), content: text };
+      }
+    }
     onPhase?.("⚡ GOD ZK · executing real system calls…");
     toolResults = await executeGodTools(decision.tools, onToolDone);
 
