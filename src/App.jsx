@@ -130,6 +130,7 @@ import AWAPage from './pages/AWA';
 import TreePage from './pages/Tree';
 import KuttPage from './pages/Kutt';
 import SectorVIPage from './pages/SectorVI';
+import Sector6Page from './pages/Sector6';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -291,6 +292,7 @@ const AuthenticatedApp = () => {
       <Route path="/Tree" element={<TreePage />} />
       <Route path="/Kutt" element={<KuttPage />} />
       <Route path="/SectorVI" element={<SectorVIPage />} />
+      <Route path="/Sector6" element={<Sector6Page />} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
       <Route path="/KaspaNations/:slug" element={<KaspaNationPage />} />
