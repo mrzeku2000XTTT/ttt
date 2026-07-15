@@ -5,6 +5,7 @@ import KuttAssets from "@/components/kutt/KuttAssets";
 import KuttPreview from "@/components/kutt/KuttPreview";
 import KuttTimeline from "@/components/kutt/KuttTimeline";
 import KuttAgent from "@/components/kutt/KuttAgent";
+import KuttRemotionPreview from "@/components/kutt/KuttRemotionPreview";
 import { exportTimeline } from "@/components/kutt/kuttExport";
 
 const uid = () => `k_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -17,6 +18,7 @@ export default function KuttPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [previewEngine, setPreviewEngine] = useState("canvas"); // "canvas" | "remotion"
 
   // Adjustable split-view sizes
   const [agentW, setAgentW] = useState(340);
@@ -84,6 +86,20 @@ export default function KuttPage() {
           <span className="hidden sm:inline px-2 py-0.5 bg-fuchsia-500/20 border border-fuchsia-500/40 rounded-full text-fuchsia-300 text-[9px] font-bold tracking-widest uppercase">AI Video Editor</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-white/10 overflow-hidden text-[10px] font-bold">
+            <button
+              onClick={() => setPreviewEngine("canvas")}
+              className={`px-2.5 py-1.5 ${previewEngine === "canvas" ? "bg-white/15 text-white" : "text-white/40 hover:text-white/70"}`}
+            >
+              Canvas
+            </button>
+            <button
+              onClick={() => setPreviewEngine("remotion")}
+              className={`px-2.5 py-1.5 ${previewEngine === "remotion" ? "bg-fuchsia-500/30 text-fuchsia-200" : "text-white/40 hover:text-white/70"}`}
+            >
+              Remotion
+            </button>
+          </div>
           {exporting && (
             <div className="flex items-center gap-2 text-white/60 text-[10px] font-bold">
               <div className="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -115,12 +131,16 @@ export default function KuttPage() {
         {/* Center: preview + timeline stacked */}
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 min-h-0">
-            <KuttPreview
-              assets={assets} clips={clips}
-              playhead={playhead} setPlayhead={setPlayhead}
-              playing={playing} setPlaying={setPlaying}
-              duration={duration}
-            />
+            {previewEngine === "remotion" ? (
+              <KuttRemotionPreview assets={assets} clips={clips} duration={duration} />
+            ) : (
+              <KuttPreview
+                assets={assets} clips={clips}
+                playhead={playhead} setPlayhead={setPlayhead}
+                playing={playing} setPlaying={setPlaying}
+                duration={duration}
+              />
+            )}
           </div>
           {/* Horizontal divider */}
           <div onPointerDown={(e) => startDrag(e, "h")}

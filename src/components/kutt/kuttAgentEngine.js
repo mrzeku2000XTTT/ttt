@@ -174,18 +174,28 @@ MEDIA CHOICE: set media="video" for the 1-2 scenes that NEED real motion (the ho
   onStep({ label: genLabel, status: "running" });
   const generated = await Promise.all(
     scenes.map(async (s) => {
-      try {
-        if (s.media === "video") {
+      // Video first; if the video model fails, fall back to a still image instead of dropping the scene
+      if (s.media === "video") {
+        try {
           const dur = s.duration >= 7 ? 8 : s.duration >= 5 ? 6 : 4;
           const r = await base44.integrations.Core.GenerateVideo({ prompt: s.visual_prompt, duration: dur, aspect_ratio: "16:9" });
           if (r?.url) return { url: r.url, type: "video", duration: dur };
-        }
+        } catch { /* fall through to image */ }
+      }
+      try {
         const r = await base44.integrations.Core.GenerateImage({ prompt: s.visual_prompt });
-        return r?.url ? { url: r.url, type: "image", duration: s.duration || 4 } : null;
-      } catch { return null; }
+        return r?.url ? { url: r.url, type: "image", duration: s.duration || 4 } : { error: "empty image result" };
+      } catch (e) {
+        return { error: e?.response?.data?.error || e?.message || "generation failed" };
+      }
     })
   );
   onStep({ label: genLabel, status: "done" });
+
+  const failures = generated.filter((g) => g?.error);
+  if (failures.length === scenes.length) {
+    throw new Error(`Media generation failed for every scene — ${failures[0].error}`);
+  }
 
   // ── STEP 4: BUILD THE TIMELINE ──
   onStep({ label: "🎬 Building the timeline…", status: "running" });
@@ -194,7 +204,7 @@ MEDIA CHOICE: set media="video" for the 1-2 scenes that NEED real motion (the ho
   let cursor = 0;
   scenes.forEach((s, i) => {
     const g = generated[i];
-    if (!g) return;
+    if (!g || g.error) return;
     const asset = { id: uid(), type: g.type, url: g.url, name: `Scene ${i + 1} — ${s.caption || script.title}`.slice(0, 48), duration: g.duration };
     newAssets.push(asset);
     newClips.push({ id: uid(), assetId: asset.id, track: 0, start: cursor, duration: Math.max(2, Math.min(8, g.duration)), trimIn: 0 });
@@ -207,7 +217,7 @@ MEDIA CHOICE: set media="video" for the 1-2 scenes that NEED real motion (the ho
   // ── STEP 5: DIRECTOR'S VERDICT ──
   const sceneList = scenes.map((s, i) => `**Scene ${i + 1}** (${s.duration}s): ${s.voiceover}${s.caption ? ` · 📺 "${s.caption}"` : ""}`).join("\n");
   return {
-    message: `## 🎬 ${script.title}\n\n**HOOK:** ${script.hook}\n\n${sceneList}\n\n---\n### 📜 Full Script\n${script.script}\n\n---\n### 📈 Viral Analysis\n${script.viral_notes}\n\n✅ ${newClips.length} scenes are on your timeline — press play, then Export when ready.`,
+    message: `## 🎬 ${script.title}\n\n**HOOK:** ${script.hook}\n\n${sceneList}\n\n---\n### 📜 Full Script\n${script.script}\n\n---\n### 📈 Viral Analysis\n${script.viral_notes}\n\n✅ ${newClips.length} scenes are on your timeline${failures.length ? ` (⚠️ ${failures.length} scene${failures.length === 1 ? "" : "s"} failed: ${failures[0].error})` : ""} — press play, then Export when ready.`,
     script,
   };
 }
