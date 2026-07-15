@@ -9,8 +9,12 @@ export default function KCCNftPreviewCard({ address, name, collection, tierId })
 
   return (
     <div className="rounded-3xl bg-zinc-900/80 border border-emerald-500/30 shadow-[0_0_40px_rgba(16,185,129,0.15)] p-6 backdrop-blur-xl">
-      <div className="aspect-square rounded-2xl bg-gradient-to-br from-zinc-800 to-black border border-white/10 flex items-center justify-center mb-5">
-        <span className="text-8xl">🦂</span>
+      <div className="aspect-square rounded-2xl bg-black border border-white/10 overflow-hidden mb-5">
+        <img
+          src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/37ba9556a_generated_image.png"
+          alt="KCC NFT artwork"
+          className="w-full h-full object-cover"
+        />
       </div>
 
       <div className="flex items-center justify-between mb-3">
