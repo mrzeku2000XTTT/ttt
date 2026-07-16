@@ -4,6 +4,8 @@ import { Text } from "@react-three/drei";
 import { ROOM_SIZE } from "./sectorAgents";
 
 const BOUND = ROOM_SIZE / 2 - 2;
+const AGENT_RADIUS = 1.1;       // collision radius — agents push apart when closer than this
+const SEPARATION_FORCE = 4.0;   // how strongly agents shove each other apart
 const rand = () => (Math.random() * 2 - 1) * BOUND;
 
 export default function RobloxAgent({ agent, positionsRef, selected, onClick }) {
@@ -42,6 +44,36 @@ export default function RobloxAgent({ agent, positionsRef, selected, onClick }) 
         walking = true;
       }
     }
+
+    // ── Agent-to-agent collision separation ──
+    // Read every other agent's position from the shared ref and push apart
+    // when we're within the collision radius. This prevents overlapping/clip-through.
+    const others = positionsRef.current;
+    let pushX = 0, pushZ = 0;
+    for (const id in others) {
+      if (id === agent.id) continue;
+      const o = others[id];
+      if (!o) continue;
+      const odx = g.position.x - o.x;
+      const odz = g.position.z - o.z;
+      const od = Math.hypot(odx, odz);
+      if (od < AGENT_RADIUS && od > 0.001) {
+        const overlap = (AGENT_RADIUS - od) / AGENT_RADIUS;
+        pushX += (odx / od) * overlap * SEPARATION_FORCE * delta;
+        pushZ += (odz / od) * overlap * SEPARATION_FORCE * delta;
+      } else if (od <= 0.001) {
+        // Exactly overlapping — nudge in a random direction to break the tie
+        const ang = Math.random() * Math.PI * 2;
+        pushX += Math.cos(ang) * SEPARATION_FORCE * delta;
+        pushZ += Math.sin(ang) * SEPARATION_FORCE * delta;
+      }
+    }
+    g.position.x += pushX;
+    g.position.z += pushZ;
+
+    // Keep inside the room bounds
+    g.position.x = Math.max(-BOUND, Math.min(BOUND, g.position.x));
+    g.position.z = Math.max(-BOUND, Math.min(BOUND, g.position.z));
 
     // limb swing
     const swing = walking ? Math.sin(t * 8) * 0.7 : 0;
