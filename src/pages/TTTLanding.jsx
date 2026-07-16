@@ -1303,6 +1303,18 @@ export default function TTTLandingPage() {
     })();
   }, []);
 
+  // Auto-enter world mode at a specific sector index when arriving via ?world=N
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const w = parseInt(params.get("world"), 10);
+      if (!isNaN(w) && w >= 0 && w < WORLDS.length) {
+        setWorldMode(true);
+        setWorldIndex(w);
+      }
+    } catch {}
+  }, []);
+
   const playerRef = React.useRef(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const musicSrc = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&autoplay=1&playsinline=1&controls=0&rel=0&origin=${origin}`;
