@@ -104,7 +104,7 @@ export default function WorldZoomOut({ onClose, worlds = [], index = 0, onNaviga
               style={{ color: "rgba(220,175,70,0.7)", fontFamily: "monospace", textShadow: "0 0 20px rgba(200,140,0,0.5)" }}>
               {current.name || "TTT"} · {current.desc || "SECTOR 01"}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-[80vw]">
               {worlds.map((_, i) => (
                 <div key={i} className="rounded-full transition-all"
                   style={{ width: i === index ? 14 : 5, height: 5,

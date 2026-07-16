@@ -37,6 +37,16 @@ const WORLDS = [
   { name: "KASPA NATIONS", desc: "SECTOR 03", path: "/KaspaNations" },
   { name: "IGRA HORIZON", desc: "SECTOR 04", path: "/IgraHorizon" },
   { name: "AWA", desc: "SECTOR 05", path: "/AWA" },
+  { name: "SECTOR 6", desc: "SECTOR 06", path: "/Sector6" },
+  { name: "SECTOR VI", desc: "SECTOR 07", path: "/SectorVI" },
+  { name: "IGRA AGENT", desc: "SECTOR 08", path: "/IgraAgent" },
+  { name: "APORIA DEX", desc: "SECTOR 09", path: "/Aporia" },
+  { name: "KLIPZ", desc: "SECTOR 10", path: "/Klipz" },
+  { name: "KCC NFT", desc: "SECTOR 11", path: "/KCCNft" },
+  { name: "KAS COMMAND", desc: "SECTOR 12", path: "/KaspaCommand" },
+  { name: "KASCOV", desc: "SECTOR 13", path: "/Kascov" },
+  { name: "AWA SIGNER", desc: "SECTOR 14", path: "/AWASigner" },
+  { name: "KAS SIGNER", desc: "SECTOR 15", path: "/KasSigner" },
 ];
 
 const ORB_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4af893ff9_generated_image.png";
