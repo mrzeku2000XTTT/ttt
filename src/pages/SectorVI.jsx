@@ -10,6 +10,7 @@ import { NPC_AGENTS } from "@/components/sectorvi/sectorAgents";
 export default function SectorVI() {
   const navigate = useNavigate();
   const positionsRef = useRef({});
+  const overlayRef = useRef(null);
   const [mode, setMode] = useState("free"); // free | agent
   const [userName, setUserName] = useState("Guest");
   const [selectedId, setSelectedId] = useState("you");
@@ -43,8 +44,12 @@ export default function SectorVI() {
           followId={selectedId}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          overlayRef={overlayRef}
         />
       </Canvas>
+
+      {/* DOM overlay for agent name tags (populated by NameTagLayer inside Canvas) */}
+      <div ref={overlayRef} className="absolute inset-0 z-[5] pointer-events-none" />
 
       {/* Top bar */}
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">

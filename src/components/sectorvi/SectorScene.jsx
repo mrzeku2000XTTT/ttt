@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import RobloxAgent from "./RobloxAgent";
+import NameTagLayer from "./NameTagLayer";
 import { ROOM_SIZE } from "./sectorAgents";
 
 function FollowCamera({ positionsRef, followId }) {
@@ -46,7 +47,7 @@ function WhiteRoom() {
   );
 }
 
-export default function SectorScene({ agents, positionsRef, mode, followId, selectedId, onSelect }) {
+export default function SectorScene({ agents, positionsRef, mode, followId, selectedId, onSelect, overlayRef }) {
   const controls = useRef();
   return (
     <>
@@ -56,6 +57,13 @@ export default function SectorScene({ agents, positionsRef, mode, followId, sele
       {agents.map((a) => (
         <RobloxAgent key={a.id} agent={a} positionsRef={positionsRef} selected={a.id === selectedId} onClick={onSelect} />
       ))}
+      <NameTagLayer
+        agents={agents}
+        positionsRef={positionsRef}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        overlayRef={overlayRef}
+      />
       {mode === "free" ? (
         <OrbitControls ref={controls} maxPolarAngle={Math.PI / 2 - 0.05} minDistance={2} maxDistance={40} target={[0, 1.5, 0]} />
       ) : (
