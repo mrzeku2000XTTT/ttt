@@ -94,16 +94,20 @@ export default function Sector6Page() {
         </div>
       </nav>
 
-      {/* Merged-sector chips — show on native hero */}
+      {/* Sector 1-7 navigation — show on native hero */}
       {isNative && (
-        <div className="relative z-10 px-8 md:px-16 pb-2 flex flex-wrap gap-2">
-          {visibleSectors.map((s, i) => (
+        <div className="relative z-10 px-8 md:px-16 pb-2 flex items-center gap-2">
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
             <button
-              key={s.name}
-              onClick={() => setActiveIdx(i)}
-              className="px-3 py-1.5 rounded-full border border-gray-200 text-[10px] tracking-[0.25em] font-bold text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors"
+              key={n}
+              onClick={() => navigate(`/?world=${n - 1}`)}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold tracking-tight transition-colors ${
+                n === 6
+                  ? "bg-gray-800 text-white"
+                  : "border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900"
+              }`}
             >
-              {s.name}
+              {n}
             </button>
           ))}
         </div>
