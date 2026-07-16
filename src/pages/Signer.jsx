@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Signer() {
   const [tab, setTab] = useState("sign");
@@ -14,6 +15,7 @@ export default function Signer() {
   const streamRef = useRef(null);
   const rafRef = useRef(null);
   const jsQRRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -100,6 +102,7 @@ export default function Signer() {
   return (
     <div style={s.page}>
       <div style={s.header}>
+        <button onClick={() => navigate(-1)} style={{ background: "#1e1e28", border: "1px solid #2a2a3a", color: "#e4e4e7", width: 34, height: 34, borderRadius: 8, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>←</button>
         <span style={{ fontSize: 20 }}>🦂</span>
         <span style={{ fontSize: 18, fontWeight: 700 }}>KasSigner</span>
         <span style={{ marginLeft: "auto", fontSize: 11, color: "#71717a", background: "#1e1e28", padding: "4px 8px", borderRadius: 8, border: "1px solid #2a2a3a" }}>Air-Gapped</span>
