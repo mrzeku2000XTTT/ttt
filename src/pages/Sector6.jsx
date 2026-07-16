@@ -163,6 +163,18 @@ export default function Sector6Page() {
         </div>
       )}
 
+      {/* Floating Back button — always visible above any merged sector's own fixed UI */}
+      {!isNative && (
+        <button
+          onClick={() => setActiveIdx(-1)}
+          className="fixed top-4 left-4 z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/90 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold tracking-[0.2em] shadow-2xl hover:bg-black transition-colors"
+          style={{ touchAction: "manipulation" }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          BACK TO SECTOR 6
+        </button>
+      )}
+
       {/* Fullscreen 3D Room */}
       <AnimatePresence>
         {showRoom && (
