@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Loader2, Clapperboard, Check, Link2 } from "lucide-react";
-import { runKuttSoul } from "./kuttAgentEngine";
+import { runKuttOrchestrator } from "./kuttOrchestrator";
 
 export default function KuttAgent({ assets, clips, setClips, addAssets }) {
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "🎬 I'm your **Media Director** — editor, director & viral analyst.\n\nDrop a **URL** and I'll turn it into a detailed script, generate the scenes, and build your timeline. Or tell me to **analyze** / **cut** the current edit." },
+    { role: "assistant", content: "🎬 I'm your **Director** — I orchestrate a team of AI sub-agents:\n\n- 🔎 **Researcher** scans the web\n- 📝 **Scriptwriter** drafts scenes\n- 🎨 **Media Agents** generate video/images\n- ✂️ **Editor Agents** (up to 10) cut, split & layer in parallel\n- 📊 **Analyst** reviews viral potential\n- 🎯 **Hyperframes** add text overlays & animations\n\nDrop a **URL** or tell me what to make. I'll absorb your intent, plan the production, and dispatch my agents." },
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -22,7 +22,7 @@ export default function KuttAgent({ assets, clips, setClips, addAssets }) {
     setBusy(true);
     setSteps([]);
     try {
-      const result = await runKuttSoul({
+      const result = await runKuttOrchestrator({
         input: text,
         assets,
         clips,
@@ -49,7 +49,7 @@ export default function KuttAgent({ assets, clips, setClips, addAssets }) {
         </div>
         <div>
           <span className="text-white font-black text-xs">DIRECTOR</span>
-          <span className="text-white/30 text-[9px] ml-1.5 font-bold">editor · analyzer · viral growth</span>
+          <span className="text-white/30 text-[9px] ml-1.5 font-bold">orchestrator · sub-agents · hyperframes</span>
         </div>
       </div>
 
@@ -72,8 +72,9 @@ export default function KuttAgent({ assets, clips, setClips, addAssets }) {
             {steps.map((s, i) => (
               <div key={i} className="flex items-center gap-2 text-[11px]">
                 {s.status === "done"
-                  ? <Check className="w-3 h-3 text-emerald-400" />
-                  : <Loader2 className="w-3 h-3 text-fuchsia-400 animate-spin" />}
+                  ? <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                  : <Loader2 className="w-3 h-3 text-fuchsia-400 animate-spin flex-shrink-0" />}
+                {s.agent && <span className="px-1 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 text-[8px] font-bold uppercase flex-shrink-0">{s.agent}</span>}
                 <span className={s.status === "done" ? "text-white/50" : "text-white font-bold"}>{s.label}</span>
               </div>
             ))}

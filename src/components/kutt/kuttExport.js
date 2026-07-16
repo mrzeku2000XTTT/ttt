@@ -1,9 +1,10 @@
 import { base44 } from "@/api/base44Client";
+import { renderHyperframeCanvas } from "./kuttHyperframes";
 
 // Real video export: renders the timeline to a canvas in real time and records
 // it (video + audio) with MediaRecorder. Returns a downloadable webm Blob URL.
 export async function exportTimeline({ clips, assets, width = 1280, height = 720, fps = 30, onProgress }) {
-  const videoClips = clips.filter((c) => c.track <= 1).sort((a, b) => a.start - b.start);
+  const videoClips = clips.filter((c) => c.track <= 1 && c.assetId).sort((a, b) => a.start - b.start);
   const audioClips = clips.filter((c) => c.track === 2);
   const total = Math.max(...clips.map((c) => c.start + c.duration), 1);
 
@@ -119,6 +120,10 @@ export async function exportTimeline({ clips, assets, width = 1280, height = 720
           }
         }
       }
+
+      // Render hyperframe text/animation overlays
+      clips.filter((c) => c.clip_type === "hyperframe" && t >= c.start && t < c.start + c.duration)
+        .forEach((clip) => renderHyperframeCanvas(ctx, clip, t, width, height));
 
       // Pause videos that are no longer active
       videoClips.forEach((c) => {

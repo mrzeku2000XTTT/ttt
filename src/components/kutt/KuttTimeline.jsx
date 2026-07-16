@@ -120,18 +120,26 @@ export default function KuttTimeline({ assets, clips, setClips, playhead, setPla
                 </div>
                 <div className="relative flex-1">
                   {clips.filter((c) => c.track === track.id).map((clip) => {
-                    const asset = assetById(clip.assetId);
+                    const isHF = clip.clip_type === "hyperframe";
+                    const asset = isHF ? null : assetById(clip.assetId);
                     const selected = clip.id === selectedId;
                     return (
                       <div
                         key={clip.id}
                         onPointerDown={(e) => onClipPointerDown(e, clip, "move")}
-                        className={`absolute top-1 bottom-1 rounded-md bg-gradient-to-r ${track.color} border ${selected ? `${track.border} ring-1 ring-white/50` : "border-white/15"} cursor-grab active:cursor-grabbing overflow-hidden`}
+                        className={`absolute top-1 bottom-1 rounded-md border ${selected ? `${isHF ? "border-cyan-400" : track.border} ring-1 ring-white/50` : "border-white/15"} ${isHF ? "bg-gradient-to-r from-cyan-900/80 to-fuchsia-900/80" : `bg-gradient-to-r ${track.color}`} cursor-grab active:cursor-grabbing overflow-hidden`}
                         style={{ left: clip.start * pps, width: Math.max(8, clip.duration * pps) }}
-                        title={asset?.name}
+                        title={isHF ? `${clip.animation}: "${clip.text}"` : asset?.name}
                       >
-                        {asset?.type === "image" && <img src={asset.url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" draggable={false} />}
-                        <span className="absolute left-1.5 top-1 text-white text-[8px] font-bold drop-shadow truncate max-w-[90%]">{asset?.name || "clip"}</span>
+                        {!isHF && asset?.type === "image" && <img src={asset.url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" draggable={false} />}
+                        {isHF ? (
+                          <>
+                            <span className="absolute left-1.5 top-1 text-cyan-300 text-[8px] font-bold drop-shadow truncate max-w-[70%]">"{(clip.text || "").slice(0, 20) || clip.animation}"</span>
+                            <span className="absolute right-1.5 top-1 text-fuchsia-400 text-[7px] font-bold uppercase">{clip.animation}</span>
+                          </>
+                        ) : (
+                          <span className="absolute left-1.5 top-1 text-white text-[8px] font-bold drop-shadow truncate max-w-[90%]">{asset?.name || "clip"}</span>
+                        )}
                         <span className="absolute left-1.5 bottom-0.5 text-white/60 text-[7px] font-mono">{clip.duration.toFixed(1)}s</span>
                         {/* Trim-in handle */}
                         <div onPointerDown={(e) => onClipPointerDown(e, clip, "trim")}

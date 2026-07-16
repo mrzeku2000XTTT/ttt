@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Play, Pause, SkipBack } from "lucide-react";
+import { HyperframeOverlay } from "./kuttHyperframes";
 
 const fmt = (s) => {
   const m = Math.floor(s / 60);
@@ -16,8 +17,8 @@ export default function KuttPreview({ assets, clips, playhead, setPlayhead, play
 
   const assetById = (id) => assets.find((a) => a.id === id);
   const activeVisual =
-    clips.find((c) => c.track === 0 && playhead >= c.start && playhead < c.start + c.duration) ||
-    clips.find((c) => c.track === 1 && playhead >= c.start && playhead < c.start + c.duration);
+    clips.find((c) => c.track === 0 && c.assetId && playhead >= c.start && playhead < c.start + c.duration) ||
+    clips.find((c) => c.track === 1 && c.assetId && playhead >= c.start && playhead < c.start + c.duration);
   const activeAudio = clips.find((c) => c.track === 2 && playhead >= c.start && playhead < c.start + c.duration);
   const visualAsset = activeVisual ? assetById(activeVisual.assetId) : null;
   const audioAsset = activeAudio ? assetById(activeAudio.assetId) : null;
@@ -79,6 +80,9 @@ export default function KuttPreview({ assets, clips, playhead, setPlayhead, play
           <div className="text-white/20 text-xs font-bold tracking-widest">NO CLIP AT PLAYHEAD</div>
         )}
         {audioAsset && <audio key={audioAsset.id} ref={audioRef} src={audioAsset.url} />}
+        {/* Hyperframe text/animation overlays */}
+        {clips.filter((c) => c.clip_type === "hyperframe" && playhead >= c.start && playhead < c.start + c.duration)
+          .map((clip) => <HyperframeOverlay key={clip.id} clip={clip} t={playhead} />)}
       </div>
 
       <div className="px-3 py-2 border-t border-white/10 flex items-center justify-center gap-2">
