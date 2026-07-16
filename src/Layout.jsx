@@ -263,7 +263,7 @@ export default function Layout({ children, currentPageName }) {
   const morePages = [
     { name: "App Store", icon: LayoutGrid, path: "AppStore" },
     { name: "KCC NFT", icon: Key, path: "KCCNft" },
-    { name: "AWA Signer", icon: Shield, path: "AWASigner" },
+    ...(isAdmin ? [{ name: "AWA Signer", icon: Shield, path: "AWASigner" }] : []),
     { name: "KAS Dollar", icon: Wallet, path: "KASDollar" },
     { name: "K-University", icon: BookOpen, path: "KUniversity" },
     { name: "Area 51", icon: AlertTriangle, path: "Area51" },

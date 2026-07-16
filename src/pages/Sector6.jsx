@@ -1,10 +1,13 @@
-import React, { useState, Suspense, lazy } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import WhiteWaves from "@/components/sector6/WhiteWaves";
 import Sector6Room from "@/components/sector6/Sector6Room";
+import { base44 } from "@/api/base44Client";
+
+const ADMIN_ONLY_SECTORS = ["AWA SIGNER", "KAS SIGNER"];
 
 // All sectors merged inside Sector 6 — lazy-loaded so we don't pull every
 // heavy page component up front.
@@ -38,9 +41,17 @@ export default function Sector6Page() {
   const [showRoom, setShowRoom] = useState(false);
   // -1 = native Sector 6 hero. 0..N-1 = which merged sector is shown inline.
   const [activeIdx, setActiveIdx] = useState(-1);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  const ActiveSector = activeIdx >= 0 ? SECTORS[activeIdx] : null;
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => setUser(null));
+  }, []);
+
+  const isAdmin = user?.role === "admin";
+  const visibleSectors = isAdmin ? SECTORS : SECTORS.filter(s => !ADMIN_ONLY_SECTORS.includes(s.name));
+
+  const ActiveSector = activeIdx >= 0 ? visibleSectors[activeIdx] : null;
   const isNative = activeIdx < 0;
 
   return (
@@ -87,7 +98,7 @@ export default function Sector6Page() {
       {/* Merged-sector chips — show on native hero */}
       {isNative && (
         <div className="relative z-10 px-8 md:px-16 pb-2 flex flex-wrap gap-2">
-          {SECTORS.map((s, i) => (
+          {visibleSectors.map((s, i) => (
             <button
               key={s.name}
               onClick={() => setActiveIdx(i)}
