@@ -28,7 +28,7 @@ export default function KasSigner() {
       scannerRef.current = html5Qr;
       await html5Qr.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1 },
+        { fps: 10, qrbox: 220, videoStyle: { width: "100%", height: "100%", objectFit: "cover", borderRadius: "0" } },
         (decodedText) => {
           stopCamera();
           parseKSPT(decodedText);
@@ -114,7 +114,7 @@ export default function KasSigner() {
     container: { maxWidth: 420, margin: "0 auto", padding: "0 16px" },
     card: { background: "#16161d", borderRadius: 14, border: "1px solid #2a2a3a", padding: 16, marginBottom: 14 },
     label: { fontSize: 13, color: "#71717a", marginBottom: 6 },
-    viewfinder: { width: "100%", aspectRatio: "1", background: "#000", borderRadius: 12, overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" },
+    viewfinder: { width: "100%", height: 280, background: "#000", borderRadius: 12, overflow: "hidden", position: "relative" },
     video: { width: "100%", height: "100%", objectFit: "cover" },
     btn: (color) => ({ width: "100%", padding: "14px", borderRadius: 12, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 16, background: color || "#6366f1", color: "#fff", marginTop: 10 }),
     input: { width: "100%", padding: "12px", borderRadius: 10, border: "1px solid #2a2a3a", background: "#1e1e28", color: "#e4e4e7", fontSize: 13, fontFamily: "monospace", resize: "vertical" },
@@ -141,11 +141,24 @@ export default function KasSigner() {
       <div style={s.container}>
         {tab === "sign" && (
           <>
+            <div style={{ ...s.card, background: "#1a1a24", borderColor: "#312e81" }}>
+              <div style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 600, marginBottom: 6 }}>🦂 What is KasSigner?</div>
+              <p style={{ fontSize: 12, color: "#a1a1aa", lineHeight: 1.5, margin: 0 }}>
+                It's an <b>air-gapped Kaspa signer</b>. Your private key never leaves this device.
+                Another app (e.g. Kaspium) builds an unsigned transaction and exports it as a <b>KSPT QR code</b>.
+                You scan it here → review → sign offline → KasSigner shows a <b>signed QR</b> → you scan that back
+                on the broadcasting device to submit. No internet, no key exposure.
+              </p>
+            </div>
             <div style={s.card}>
               <div style={s.label}>Scan Payment Request</div>
               <div style={s.viewfinder}>
-                <div id="kspt-scanner" style={{ position: "absolute", inset: 0 }} />
-                {!cameraActive && <span style={{ position: "absolute", color: "#71717a", fontSize: 14, pointerEvents: "none" }}>Tap button below to start</span>}
+                <div id="kspt-scanner" style={{ width: "100%", height: "100%" }} />
+                {!cameraActive && (
+                  <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", color: "#71717a", fontSize: 13, textAlign: "center", pointerEvents: "none", padding: "0 16px" }}>
+                    Tap "Start Camera" below to scan a KSPT payment-request QR
+                  </span>
+                )}
               </div>
               {camError && <div style={s.error}>{camError}</div>}
               {!cameraActive
