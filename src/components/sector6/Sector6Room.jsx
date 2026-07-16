@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Grid } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 
 const SIZE = 20;
 const WALL_H = 6;
@@ -13,15 +13,7 @@ function WhiteRoom() {
         <planeGeometry args={[SIZE, SIZE]} />
         <meshStandardMaterial color="#ffffff" />
       </mesh>
-      <Grid
-        position={[0, 0.01, 0]}
-        args={[SIZE, SIZE]}
-        cellColor="#d1d5db"
-        sectionColor="#9ca3af"
-        cellSize={1}
-        sectionSize={5}
-        fadeDistance={40}
-      />
+      <gridHelper args={[SIZE, SIZE, "#9ca3af", "#d1d5db"]} position={[0, 0.01, 0]} />
 
       {/* 4 walls = 4 corners */}
       <mesh position={[0, WALL_H / 2, -SIZE / 2]}>

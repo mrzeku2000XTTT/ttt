@@ -5,6 +5,7 @@ import { ArrowLeft, Ghost, Video, ChevronLeft, ChevronRight } from "lucide-react
 import { base44 } from "@/api/base44Client";
 import SectorScene from "@/components/sectorvi/SectorScene";
 import AgentDetailsPanel from "@/components/sectorvi/AgentDetailsPanel";
+import CanvasErrorBoundary from "@/components/sectorvi/CanvasErrorBoundary";
 import { NPC_AGENTS } from "@/components/sectorvi/sectorAgents";
 
 export default function SectorVI() {
@@ -36,17 +37,19 @@ export default function SectorVI() {
 
   return (
     <div className="fixed inset-0 bg-white">
-      <Canvas shadows camera={{ position: [14, 12, 14], fov: 50 }}>
-        <SectorScene
-          agents={agents}
-          positionsRef={positionsRef}
-          mode={mode}
-          followId={selectedId}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          overlayRef={overlayRef}
-        />
-      </Canvas>
+      <CanvasErrorBoundary onReset={() => setSelectedId("you")}>
+        <Canvas shadows camera={{ position: [14, 12, 14], fov: 50 }}>
+          <SectorScene
+            agents={agents}
+            positionsRef={positionsRef}
+            mode={mode}
+            followId={selectedId}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            overlayRef={overlayRef}
+          />
+        </Canvas>
+      </CanvasErrorBoundary>
 
       {/* DOM overlay for agent name tags (populated by NameTagLayer inside Canvas) */}
       <div ref={overlayRef} className="absolute inset-0 z-[5] pointer-events-none" />
