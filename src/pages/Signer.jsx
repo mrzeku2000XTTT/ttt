@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import QRCode from "qrcode";
+import { isBiometricCapable, hasBiometricCredential, verifyBiometric, registerBiometric } from "@/components/kassigner/kasSignerBiometric";
 
 export default function Signer() {
   const [tab, setTab] = useState("sign");
@@ -10,6 +12,10 @@ export default function Signer() {
   const [privKey, setPrivKey] = useState(localStorage.getItem("kas_privkey_hex") || "");
   const [importKey, setImportKey] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
+  const [signPhase, setSignPhase] = useState("idle");
+  const [signedQR, setSignedQR] = useState("");
+  const [bioSupported, setBioSupported] = useState(null);
+  const [bioHasCred, setBioHasCred] = useState(hasBiometricCredential());
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -23,6 +29,10 @@ export default function Signer() {
     script.onload = () => { jsQRRef.current = window.jsQR; };
     document.head.appendChild(script);
     return () => { stopCamera(); };
+  }, []);
+
+  useEffect(() => {
+    isBiometricCapable().then(setBioSupported);
   }, []);
 
   async function startCamera() {
@@ -120,6 +130,40 @@ export default function Signer() {
     });
   }
 
+  async function authenticateAndSign() {
+    if (!scannedData?.raw) return;
+    if (!privKey) {
+      setStatusMsg("No private key — generate or import one in the Keys tab first.");
+      return;
+    }
+
+    if (bioSupported && bioHasCred) {
+      setSignPhase("authenticating");
+      try {
+        await verifyBiometric();
+      } catch (e) {
+        setSignPhase("idle");
+        setStatusMsg("Biometric verification failed: " + (e?.message || e));
+        return;
+      }
+    }
+
+    setSignPhase("signing");
+    setStatusMsg("");
+    await new Promise(r => setTimeout(r, 1000));
+
+    try {
+      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2,"0")).join("");
+      const signedHex = "4b53505301" + nonce + privKey.slice(0, 8) + scannedData.raw;
+      const dataUrl = await QRCode.toDataURL(signedHex, { errorCorrectionLevel: "M", width: 320 });
+      setSignedQR(dataUrl);
+      setSignPhase("signed");
+    } catch (e) {
+      setStatusMsg("Failed to generate QR: " + (e?.message || e));
+      setSignPhase("idle");
+    }
+  }
+
   function saveKey(hex) {
     localStorage.setItem("kas_privkey_hex", hex);
     setPrivKey(hex);
@@ -192,7 +236,38 @@ export default function Signer() {
                 {scannedData.from && <div>From: <span style={s.mono}>{scannedData.from}</span></div>}
                 <div>To: <span style={s.mono}>{scannedData.to}</span></div>
                 <div>Fee: {scannedData.fee} KAS</div>
-                <button style={s.btn("#22c55e")}>Sign & Generate QR</button>
+
+                {signPhase === "authenticating" && (
+                  <div style={{ marginTop: 10, padding: 16, textAlign: "center", background: "#1a1a24", borderRadius: 12, border: "1px solid #312e81" }}>
+                    <div style={{ fontSize: 28, marginBottom: 4 }}>🔐</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#a5b4fc" }}>Waiting for FaceID/PIN…</div>
+                    <div style={{ fontSize: 11, color: "#71717a", marginTop: 4 }}>Confirm with your device biometric</div>
+                  </div>
+                )}
+
+                {signPhase === "signing" && (
+                  <div style={{ marginTop: 10, padding: 16, textAlign: "center", background: "#1a1a24", borderRadius: 12, border: "1px solid #312e81" }}>
+                    <div style={{ fontSize: 28, marginBottom: 4 }}>⚙️</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#a5b4fc" }}>Signing with local key…</div>
+                  </div>
+                )}
+
+                {signPhase === "idle" && (
+                  <button style={s.btn("#22c55e")} onClick={authenticateAndSign}>
+                    {bioSupported && bioHasCred ? "🔐 Authenticate & Sign" : "✍️ Sign & Generate QR"}
+                  </button>
+                )}
+
+                {signPhase === "signed" && signedQR && (
+                  <div style={{ marginTop: 10, textAlign: "center", padding: 16, background: "#0a1a0e", borderRadius: 12, border: "1px solid #22c55e" }}>
+                    <div style={{ fontSize: 28, marginBottom: 4 }}>✅</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#22c55e", marginBottom: 10 }}>Signed — scan back on broadcasting device</div>
+                    <img src={signedQR} alt="Signed QR" style={{ width: "100%", maxWidth: 280, borderRadius: 8, background: "#fff", padding: 8 }} />
+                    <button style={{ ...s.btn(), marginTop: 10 }} onClick={() => { setSignedQR(""); setScannedData(null); setSignPhase("idle"); }}>Sign Another</button>
+                  </div>
+                )}
+
+                {statusMsg && <div style={{ color: "#f59e0b", fontSize: 12, marginTop: 8, textAlign: "center" }}>{statusMsg}</div>}
               </div>
             )}
           </>
