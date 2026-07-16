@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import KCCNftPreviewCard from "@/components/kccnft/KCCNftPreviewCard";
 import KCCNftMintForm from "@/components/kccnft/KCCNftMintForm";
 import KCCNftPaymentModal from "@/components/kccnft/KCCNftPaymentModal";
@@ -15,9 +16,16 @@ export default function KCCNft() {
     tierId: "base",
   });
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(null);
 
   const tier = TIERS.find(t => t.id === form.tierId) || TIERS[0];
   const navigate = useNavigate();
+
+  useEffect(() => {
+    base44.auth.me()
+      .then(u => setIsAdmin(u?.role === "admin"))
+      .catch(() => setIsAdmin(false));
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -49,11 +57,20 @@ export default function KCCNft() {
             collection={form.collection}
             tierId={form.tierId}
           />
-          <KCCNftMintForm
-            form={form}
-            setForm={setForm}
-            onMint={() => setPaymentOpen(true)}
-          />
+          <div className="space-y-3">
+            {isAdmin === false && (
+              <div className="flex items-center gap-2.5 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 px-4 py-3">
+                <Lock className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                <p className="text-sm text-yellow-300">KCC NFT minting is admin-only for now. Public minting opens soon.</p>
+              </div>
+            )}
+            <KCCNftMintForm
+              form={form}
+              setForm={setForm}
+              onMint={() => { if (isAdmin) setPaymentOpen(true); }}
+              disabled={!isAdmin}
+            />
+          </div>
         </div>
 
         <KCCNftHowItWorks />
@@ -63,6 +80,7 @@ export default function KCCNft() {
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
         kasAmount={tier.kas}
+        buyerAddress={form.address?.trim() || ""}
       />
     </div>
   );

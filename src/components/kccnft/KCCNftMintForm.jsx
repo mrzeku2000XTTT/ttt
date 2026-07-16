@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { COLLECTIONS, TIERS } from "./kccNftTiers";
 
-export default function KCCNftMintForm({ form, setForm, onMint }) {
+export default function KCCNftMintForm({ form, setForm, onMint, disabled }) {
   const set = (key) => (val) => setForm(f => ({ ...f, [key]: val }));
 
   return (
@@ -55,9 +55,10 @@ export default function KCCNftMintForm({ form, setForm, onMint }) {
 
       <button
         onClick={onMint}
-        className="w-full h-14 rounded-2xl bg-emerald-500/15 border-2 border-emerald-400/60 text-emerald-300 font-bold text-base shadow-[0_0_25px_rgba(16,185,129,0.35)] hover:bg-emerald-500/25 hover:shadow-[0_0_40px_rgba(16,185,129,0.5)] transition-all"
+        disabled={disabled}
+        className="w-full h-14 rounded-2xl bg-emerald-500/15 border-2 border-emerald-400/60 text-emerald-300 font-bold text-base shadow-[0_0_25px_rgba(16,185,129,0.35)] hover:bg-emerald-500/25 hover:shadow-[0_0_40px_rgba(16,185,129,0.5)] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-500/15 disabled:hover:shadow-[0_0_25px_rgba(16,185,129,0.35)]"
       >
-        Mint KCC NFT Identity
+        {disabled ? "Admin Only" : "Mint KCC NFT Identity"}
       </button>
     </div>
   );
