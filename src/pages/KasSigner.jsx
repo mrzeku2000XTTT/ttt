@@ -61,6 +61,33 @@ export default function KasSigner() {
       }
     }
 
+    // Decode the payload hex → text → JSON to auto-fill transaction fields
+    let parsed = null;
+    try {
+      let text = clean;
+      if (isHex && hexPayload.length >= 2) {
+        text = new TextDecoder().decode(
+          new Uint8Array(hexPayload.match(/.{2}/g).map((b) => parseInt(b, 16)))
+        );
+      } else {
+        try { text = atob(clean); } catch {}
+      }
+      let data = null;
+      try { data = JSON.parse(text); } catch {}
+      if (!data) { try { data = JSON.parse(clean); } catch {}
+      }
+      if (data && typeof data === "object") {
+        parsed = {
+          amount: data.amount_kas ?? data.amount ?? data.value ?? null,
+          to: data.pay_to ?? data.to ?? data.address ?? data.destination ?? null,
+          from: data.source_address ?? data.from ?? data.pay_from ?? null,
+          fee: data.fee_kas ?? data.fee ?? 0,
+        };
+      }
+    } catch {
+      // Not JSON — still show raw hex
+    }
+
     setStatusMsg("");
     setScannedData({
       raw: clean,
@@ -68,6 +95,10 @@ export default function KasSigner() {
       version: 1,
       sizeBytes: Math.floor(hexPayload.length / 2),
       preview: hexPayload.slice(0, 64) + (hexPayload.length > 64 ? "…" : ""),
+      amount: parsed?.amount,
+      to: parsed?.to,
+      from: parsed?.from,
+      fee: parsed?.fee,
     });
   }
 
@@ -181,6 +212,30 @@ export default function KasSigner() {
             {scannedData && (
               <div style={s.card}>
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#a5b4fc" }}>📦 Unsigned Transaction Detected</div>
+                {scannedData.amount !== null && scannedData.amount !== undefined && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, paddingBottom: 8, borderBottom: "1px solid #2a2a3a" }}>
+                    <span style={{ color: "#71717a" }}>Amount</span>
+                    <b style={{ color: "#22c55e" }}>{scannedData.amount} KAS</b>
+                  </div>
+                )}
+                {scannedData.to && (
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ color: "#71717a", fontSize: 12 }}>Destination</span>
+                    <div style={{ ...s.mono, color: "#e4e4e7" }}>{scannedData.to}</div>
+                  </div>
+                )}
+                {scannedData.from && (
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ color: "#71717a", fontSize: 12 }}>Source</span>
+                    <div style={{ ...s.mono, color: "#e4e4e7" }}>{scannedData.from}</div>
+                  </div>
+                )}
+                {scannedData.fee !== undefined && scannedData.fee !== null && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
+                    <span style={{ color: "#71717a" }}>Fee</span>
+                    <b>{scannedData.fee} KAS</b>
+                  </div>
+                )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}>
                   <span style={{ color: "#71717a" }}>KSPT version</span>
                   <b>v{scannedData.version}</b>
