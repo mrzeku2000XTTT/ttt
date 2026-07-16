@@ -22,7 +22,6 @@ function FollowCamera({ positionsRef, followId }) {
 
 function WhiteRoom() {
   const S = ROOM_SIZE;
-  const wall = <meshStandardMaterial color="#f4f4f5" flatShading />;
   return (
     <group>
       {/* floor */}
@@ -33,9 +32,9 @@ function WhiteRoom() {
       {/* grid lines */}
       <gridHelper args={[S, S, "#d4d4d8", "#e4e4e7"]} position={[0, 0.01, 0]} />
       {/* walls */}
-      <mesh position={[0, 4, -S / 2]}><boxGeometry args={[S, 8, 0.3]} />{wall}</mesh>
-      <mesh position={[-S / 2, 4, 0]}><boxGeometry args={[0.3, 8, S]} />{wall}</mesh>
-      <mesh position={[S / 2, 4, 0]}><boxGeometry args={[0.3, 8, S]} />{wall}</mesh>
+      <mesh position={[0, 4, -S / 2]}><boxGeometry args={[S, 8, 0.3]} /><meshStandardMaterial color="#f4f4f5" flatShading /></mesh>
+      <mesh position={[-S / 2, 4, 0]}><boxGeometry args={[0.3, 8, S]} /><meshStandardMaterial color="#f4f4f5" flatShading /></mesh>
+      <mesh position={[S / 2, 4, 0]}><boxGeometry args={[0.3, 8, S]} /><meshStandardMaterial color="#f4f4f5" flatShading /></mesh>
       {/* low poly props */}
       <mesh position={[-7, 0.75, -7]} castShadow><boxGeometry args={[1.5, 1.5, 1.5]} /><meshStandardMaterial color="#e0f2fe" flatShading /></mesh>
       <mesh position={[7, 0.5, -8]} castShadow><boxGeometry args={[3, 1, 2]} /><meshStandardMaterial color="#f0fdf4" flatShading /></mesh>
