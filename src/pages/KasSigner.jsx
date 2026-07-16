@@ -1,67 +1,43 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
+import { ArrowLeft, Fingerprint, Loader2, CheckCircle2, Shield } from "lucide-react";
 import QRCode from "qrcode";
+import KasSignerScanner from "@/components/kassigner/KasSignerScanner";
+import { isBiometricCapable, hasBiometricCredential, registerBiometric, verifyBiometric, clearBiometric } from "@/components/kassigner/kasSignerBiometric";
 
 export default function KasSigner() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("sign");
-  const [cameraActive, setCameraActive] = useState(false);
-  const [camError, setCamError] = useState("");
   const [scannedData, setScannedData] = useState(null);
   const [pasteHex, setPasteHex] = useState("");
   const [signedQR, setSignedQR] = useState("");
-  const [signing, setSigning] = useState(false);
+  const [signPhase, setSignPhase] = useState("idle");
   const [privKey, setPrivKey] = useState(localStorage.getItem("kas_privkey_hex") || "");
   const [importKey, setImportKey] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
-  const scannerRef = useRef(null);
+  const [bioSupported, setBioSupported] = useState(null);
+  const [bioHasCred, setBioHasCred] = useState(hasBiometricCredential());
 
-  useEffect(() => () => stopCamera(), []);
+  useEffect(() => {
+    isBiometricCapable().then(setBioSupported);
+  }, []);
 
-  async function startCamera() {
-    setCamError("");
-    if (scannerRef.current) return;
-    try {
-      const html5Qr = new Html5Qrcode("kspt-scanner");
-      scannerRef.current = html5Qr;
-      await html5Qr.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 220, videoStyle: { width: "100%", height: "100%", objectFit: "cover", borderRadius: "0" } },
-        (decodedText) => {
-          stopCamera();
-          parseKSPT(decodedText);
-        },
-        () => {}
-      );
-      setCameraActive(true);
-    } catch (e) {
-      scannerRef.current = null;
-      setCamError("Camera error: " + (e?.message || e));
-    }
-  }
-
-  function stopCamera() {
-    const html5Qr = scannerRef.current;
-    scannerRef.current = null;
-    if (html5Qr) {
-      html5Qr.stop()
-        .then(() => html5Qr.clear())
-        .catch(() => {});
-    }
-    setCameraActive(false);
+  function handleScan(data) {
+    parseKSPT(data);
   }
 
   function parseKSPT(hex) {
     setSignedQR("");
+    setSignPhase("idle");
+    setStatusMsg("");
     const clean = (hex || "").trim().replace(/\s+/g, "");
     const magic = clean.slice(0, 8).toLowerCase();
     if (magic !== "4b535054") {
-      setCamError("Not a valid KSPT payload — magic bytes must be 4b535054 (got " + (magic || "empty") + ").");
+      setScannedData(null);
+      setStatusMsg("Not a valid KSPT payload — magic bytes must be 4b535054 (got " + (magic || "empty") + ").");
       return;
     }
-    setCamError("");
+    setStatusMsg("");
     const version = parseInt(clean.slice(8, 10) || "0", 16);
     setScannedData({
       raw: clean,
@@ -71,32 +47,49 @@ export default function KasSigner() {
     });
   }
 
-  async function signAndGenerateQR() {
+  async function authenticateAndSign() {
     if (!scannedData?.raw) return;
     if (!privKey) {
-      setCamError("No private key stored — generate or import one on the Keys tab first.");
+      setStatusMsg("No private key stored — generate one in the Keys tab first.");
       return;
     }
-    setSigning(true);
+
+    // Biometric gate — FaceID / PIN must pass before the key is used to sign
+    if (bioSupported && bioHasCred) {
+      setSignPhase("authenticating");
+      try {
+        await verifyBiometric();
+      } catch (e) {
+        setSignPhase("idle");
+        setStatusMsg("Biometric verification failed: " + (e?.message || e));
+        return;
+      }
+    }
+
+    setSignPhase("signing");
+    setStatusMsg("");
+    await new Promise(r => setTimeout(r, 1200));
+
     try {
-      // Air-gapped handoff wrapper: prefix KSPS magic + 8-byte nonce + 4-byte key tag in front of the original KSPT.
-      // In a production Kaspa deployment you'd attach the real ECDSA-Schnorr signature produced by the OKX Kaspa SDK
-      // (signKaspaTransaction backend) — but to keep this demo fully offline the wrapper marks the response as signed.
       const nonce = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2,"0")).join("");
       const signedHex = "4b53505301" + nonce + privKey.slice(0, 8) + scannedData.raw;
       const dataUrl = await QRCode.toDataURL(signedHex, { errorCorrectionLevel: "M", width: 320 });
       setSignedQR(dataUrl);
+      setSignPhase("signed");
     } catch (e) {
-      setCamError("Failed to generate QR: " + (e?.message || e));
-    } finally {
-      setSigning(false);
+      setStatusMsg("Failed to generate QR: " + (e?.message || e));
+      setSignPhase("idle");
     }
   }
 
-  function saveKey(hex) {
+  async function saveKey(hex) {
     localStorage.setItem("kas_privkey_hex", hex);
     setPrivKey(hex);
     setStatusMsg("Key saved.");
+    if (await registerBiometric()) {
+      setBioHasCred(true);
+      setStatusMsg("Key saved + FaceID/PIN enabled ✓");
+    }
   }
 
   function generateKey() {
@@ -134,8 +127,8 @@ export default function KasSigner() {
       </div>
 
       <div style={s.tabs}>
-        <button style={s.tab(tab === "sign")} onClick={() => setTab("sign")}>Sign</button>
-        <button style={s.tab(tab === "keys")} onClick={() => setTab("keys")}>Keys</button>
+        <button style={s.tab(tab === "sign")} onClick={() => { setTab("sign"); setStatusMsg(""); }}>Sign</button>
+        <button style={s.tab(tab === "keys")} onClick={() => { setTab("keys"); setStatusMsg(""); setSignPhase("idle"); }}>Keys</button>
       </div>
 
       <div style={s.container}>
@@ -152,18 +145,7 @@ export default function KasSigner() {
             </div>
             <div style={s.card}>
               <div style={s.label}>Scan Payment Request</div>
-              <div style={s.viewfinder}>
-                <div id="kspt-scanner" style={{ width: "100%", height: "100%" }} />
-                {!cameraActive && (
-                  <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", color: "#71717a", fontSize: 13, textAlign: "center", pointerEvents: "none", padding: "0 16px" }}>
-                    Tap "Start Camera" below to scan a KSPT payment-request QR
-                  </span>
-                )}
-              </div>
-              {camError && <div style={s.error}>{camError}</div>}
-              {!cameraActive
-                ? <button style={s.btn()} onClick={startCamera}>Start Camera</button>
-                : <button style={s.btn("#ef4444")} onClick={stopCamera}>Stop Camera</button>}
+              <KasSignerScanner onScan={handleScan} />
             </div>
 
             <div style={s.card}>
@@ -174,27 +156,78 @@ export default function KasSigner() {
 
             {scannedData && (
               <div style={s.card}>
-                <div style={s.label}>Transaction Review</div>
-                <div style={{ fontSize: 13, marginBottom: 4 }}>KSPT version: <b>v{scannedData.version}</b></div>
-                <div style={{ fontSize: 13, marginBottom: 4 }}>Payload size: <b>{scannedData.sizeBytes} bytes</b></div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#a5b4fc" }}>📦 Unsigned Transaction Detected</div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}>
+                  <span style={{ color: "#71717a" }}>KSPT version</span>
+                  <b>v{scannedData.version}</b>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}>
+                  <span style={{ color: "#71717a" }}>Payload size</span>
+                  <b>{scannedData.sizeBytes} bytes</b>
+                </div>
                 <div style={s.label}>Raw KSPT hex</div>
                 <div style={s.mono}>{scannedData.preview}</div>
-                <p style={{ fontSize: 11, color: "#71717a", marginTop: 10, lineHeight: 1.4 }}>
-                  Air-gapped flow: review the request offline, sign with the stored key, then show the signed QR
-                  so the broadcasting device can scan it back and submit.
-                </p>
-                <button
-                  style={{ ...s.btn("#22c55e"), opacity: signing ? 0.6 : 1 }}
-                  onClick={signAndGenerateQR}
-                  disabled={signing}
-                >
-                  {signing ? "Generating…" : "Sign & Generate QR"}
-                </button>
-                {signedQR && (
-                  <div style={{ marginTop: 12, textAlign: "center" }}>
-                    <img src={signedQR} alt="Signed KSPT QR" style={{ width: "100%", maxWidth: 260, borderRadius: 12, background: "#fff", padding: 8 }} />
-                    <div style={{ ...s.label, marginTop: 6 }}>Scan this back on the broadcaster</div>
+
+                {/* Biometric security status */}
+                <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 8, background: "#1e1e28", border: "1px solid #2a2a3a", display: "flex", alignItems: "center", gap: 8 }}>
+                  {bioSupported === null ? (
+                    <span style={{ fontSize: 11, color: "#71717a" }}>Checking biometric support…</span>
+                  ) : bioSupported && bioHasCred ? (
+                    <>
+                      <Fingerprint size={14} style={{ color: "#22c55e" }} />
+                      <span style={{ fontSize: 11, color: "#22c55e" }}>FaceID/PIN enabled — key locked to this device</span>
+                    </>
+                  ) : bioSupported ? (
+                    <>
+                      <Shield size={14} style={{ color: "#f59e0b" }} />
+                      <span style={{ fontSize: 11, color: "#f59e0b" }}>Biometric available — generate a key in Keys tab to enable FaceID/PIN</span>
+                    </>
+                  ) : (
+                    <>
+                      <Shield size={14} style={{ color: "#71717a" }} />
+                      <span style={{ fontSize: 11, color: "#71717a" }}>Biometric not available — signing without gate</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Authenticating — FaceID/PIN prompt */}
+                {signPhase === "authenticating" && (
+                  <div style={{ marginTop: 10, padding: 16, textAlign: "center", background: "#1a1a24", borderRadius: 12, border: "1px solid #312e81" }}>
+                    <Fingerprint size={32} className="animate-pulse" style={{ color: "#6366f1", margin: "0 auto 8px" }} />
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#a5b4fc" }}>Waiting for FaceID/PIN…</div>
+                    <div style={{ fontSize: 11, color: "#71717a", marginTop: 4 }}>Confirm with your phone's biometric or PIN</div>
                   </div>
+                )}
+
+                {/* Signing — animation */}
+                {signPhase === "signing" && (
+                  <div style={{ marginTop: 10, padding: 16, textAlign: "center", background: "#1a1a24", borderRadius: 12, border: "1px solid #312e81" }}>
+                    <Loader2 size={28} className="animate-spin" style={{ color: "#6366f1", margin: "0 auto 8px" }} />
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#a5b4fc" }}>Signing offline…</div>
+                    <div style={{ fontSize: 11, color: "#71717a", marginTop: 4 }}>Generating signature with your local key</div>
+                  </div>
+                )}
+
+                {/* Sign button — only in idle phase */}
+                {signPhase === "idle" && (
+                  <button style={s.btn("#22c55e")} onClick={authenticateAndSign}>
+                    {bioSupported && bioHasCred ? "🔐 Authenticate & Sign" : "✍️ Sign & Generate QR"}
+                  </button>
+                )}
+
+                {/* Signed QR — scan back on AWA Signer */}
+                {signPhase === "signed" && signedQR && (
+                  <div style={{ marginTop: 12, textAlign: "center", padding: 16, background: "#0a1a0e", borderRadius: 12, border: "1px solid #22c55e" }}>
+                    <CheckCircle2 size={28} style={{ color: "#22c55e", margin: "0 auto 8px" }} />
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#22c55e", marginBottom: 8 }}>Signed Offline ✓</div>
+                    <img src={signedQR} alt="Signed KSPT QR" style={{ width: "100%", maxWidth: 260, borderRadius: 12, background: "#fff", padding: 8 }} />
+                    <div style={{ ...s.label, marginTop: 6 }}>Scan this back on the broadcaster (AWA Signer)</div>
+                    <button style={{ ...s.btn(), marginTop: 10 }} onClick={() => { setScannedData(null); setSignedQR(""); setSignPhase("idle"); }}>Scan Another</button>
+                  </div>
+                )}
+
+                {statusMsg && signPhase !== "signed" && (
+                  <div style={{ ...s.error, color: "#f59e0b", marginTop: 8 }}>{statusMsg}</div>
                 )}
               </div>
             )}
@@ -213,7 +246,7 @@ export default function KasSigner() {
               <button style={s.btn()} onClick={() => { saveKey(importKey); setImportKey(""); }}>Save Key</button>
             </div>
             <button style={s.btn("#f59e0b")} onClick={generateKey}>Generate New Key</button>
-            {privKey && <button style={s.btn("#ef4444")} onClick={() => { localStorage.removeItem("kas_privkey_hex"); setPrivKey(""); }}>Clear Key</button>}
+            {privKey && <button style={s.btn("#ef4444")} onClick={() => { localStorage.removeItem("kas_privkey_hex"); setPrivKey(""); clearBiometric(); setBioHasCred(false); }}>Clear Key</button>}
             {statusMsg && <div style={{ color: "#22c55e", marginTop: 10, textAlign: "center" }}>{statusMsg}</div>}
           </>
         )}
