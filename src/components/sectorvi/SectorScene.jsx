@@ -21,6 +21,35 @@ function FollowCamera({ positionsRef, followId }) {
   return null;
 }
 
+/**
+ * When `active` is true, smoothly lerps the camera to a wide-angle position
+ * that frames the entire room. Calls `onComplete` once the camera is close
+ * enough to the target.
+ */
+function ZoomOutCamera({ active, onComplete }) {
+  const { camera } = useThree();
+  const target = useRef({ x: 22, y: 20, z: 22 });
+  const done = useRef(false);
+
+  useFrame(() => {
+    if (!active || done.current) return;
+    const t = target.current;
+    camera.position.x += (t.x - camera.position.x) * 0.06;
+    camera.position.y += (t.y - camera.position.y) * 0.06;
+    camera.position.z += (t.z - camera.position.z) * 0.06;
+    camera.lookAt(0, 1.5, 0);
+    const closeEnough =
+      Math.abs(camera.position.x - t.x) < 0.3 &&
+      Math.abs(camera.position.y - t.y) < 0.3 &&
+      Math.abs(camera.position.z - t.z) < 0.3;
+    if (closeEnough) {
+      done.current = true;
+      if (onComplete) onComplete();
+    }
+  });
+  return null;
+}
+
 function WhiteRoom() {
   const S = ROOM_SIZE;
   return (
@@ -47,7 +76,7 @@ function WhiteRoom() {
   );
 }
 
-export default function SectorScene({ agents, positionsRef, mode, followId, selectedId, onSelect, overlayRef }) {
+export default function SectorScene({ agents, positionsRef, mode, followId, selectedId, onSelect, overlayRef, zoomOut, onZoomOutComplete }) {
   const controls = useRef();
   return (
     <>
@@ -64,7 +93,9 @@ export default function SectorScene({ agents, positionsRef, mode, followId, sele
         onSelect={onSelect}
         overlayRef={overlayRef}
       />
-      {mode === "free" ? (
+      {zoomOut ? (
+        <ZoomOutCamera active={zoomOut} onComplete={onZoomOutComplete} />
+      ) : mode === "free" ? (
         <OrbitControls ref={controls} maxPolarAngle={Math.PI / 2 - 0.05} minDistance={2} maxDistance={40} target={[0, 1.5, 0]} />
       ) : (
         <FollowCamera positionsRef={positionsRef} followId={followId} />

@@ -15,6 +15,7 @@ export default function SectorVI() {
   const [mode, setMode] = useState("free"); // free | agent
   const [userName, setUserName] = useState("Guest");
   const [selectedId, setSelectedId] = useState("you");
+  const [zoomOut, setZoomOut] = useState(false);
 
   useEffect(() => {
     base44.auth.me()
@@ -35,6 +36,16 @@ export default function SectorVI() {
     setSelectedId(agents[next].id);
   };
 
+  const handleBack = () => {
+    if (zoomOut) return;
+    setMode("free");
+    setZoomOut(true);
+  };
+
+  const handleZoomComplete = () => {
+    window.history.length > 1 ? navigate(-1) : navigate("/");
+  };
+
   return (
     <div className="fixed inset-0 bg-white">
       <CanvasErrorBoundary onReset={() => setSelectedId("you")}>
@@ -47,6 +58,8 @@ export default function SectorVI() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             overlayRef={overlayRef}
+            zoomOut={zoomOut}
+            onZoomOutComplete={handleZoomComplete}
           />
         </Canvas>
       </CanvasErrorBoundary>
@@ -58,7 +71,7 @@ export default function SectorVI() {
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+            onClick={handleBack}
             className="w-10 h-10 rounded-xl bg-black/80 backdrop-blur border border-white/10 flex items-center justify-center text-white hover:bg-black"
           >
             <ArrowLeft className="w-5 h-5" />
