@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 
 export default function KasSigner() {
   const navigate = useNavigate();
@@ -12,56 +13,41 @@ export default function KasSigner() {
   const [privKey, setPrivKey] = useState(localStorage.getItem("kas_privkey_hex") || "");
   const [importKey, setImportKey] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
-  const rafRef = useRef(null);
-  const jsQRRef = useRef(null);
+  const scannerRef = useRef(null);
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/jsqr@1.4.0/dist/jsQR.js";
-    script.onload = () => { jsQRRef.current = window.jsQR; };
-    document.head.appendChild(script);
-    return () => { stopCamera(); };
-  }, []);
+  useEffect(() => () => stopCamera(), []);
 
   async function startCamera() {
     setCamError("");
+    if (scannerRef.current) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      streamRef.current = stream;
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
+      const html5Qr = new Html5Qrcode("kspt-scanner");
+      scannerRef.current = html5Qr;
+      await html5Qr.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1 },
+        (decodedText) => {
+          stopCamera();
+          parseKSPT(decodedText);
+        },
+        () => {}
+      );
       setCameraActive(true);
-      scanLoop();
     } catch (e) {
-      setCamError("Camera error: " + e.message);
+      scannerRef.current = null;
+      setCamError("Camera error: " + (e?.message || e));
     }
   }
 
   function stopCamera() {
-    cancelAnimationFrame(rafRef.current);
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    setCameraActive(false);
-  }
-
-  function scanLoop() {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || !jsQRRef.current) { rafRef.current = requestAnimationFrame(scanLoop); return; }
-    const ctx = canvas.getContext("2d");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQRRef.current(imageData.data, imageData.width, imageData.height);
-    if (code && code.data) {
-      stopCamera();
-      parseKSPT(code.data);
-    } else {
-      rafRef.current = requestAnimationFrame(scanLoop);
+    const html5Qr = scannerRef.current;
+    scannerRef.current = null;
+    if (html5Qr) {
+      html5Qr.stop()
+        .then(() => html5Qr.clear())
+        .catch(() => {});
     }
+    setCameraActive(false);
   }
 
   function parseKSPT(hex) {
@@ -119,10 +105,9 @@ export default function KasSigner() {
             <div style={s.card}>
               <div style={s.label}>Scan Payment Request</div>
               <div style={s.viewfinder}>
-                <video ref={videoRef} autoPlay playsInline muted style={{ ...s.video, display: cameraActive ? "block" : "none" }} />
-                {!cameraActive && <span style={{ color: "#71717a", fontSize: 14 }}>Tap button below to start</span>}
+                <div id="kspt-scanner" style={{ width: "100%", height: "100%", display: cameraActive ? "block" : "none" }} />
+                {!cameraActive && <span style={{ position: "absolute", color: "#71717a", fontSize: 14 }}>Tap button below to start</span>}
               </div>
-              <canvas ref={canvasRef} style={{ display: "none" }} />
               {camError && <div style={s.error}>{camError}</div>}
               {!cameraActive
                 ? <button style={s.btn()} onClick={startCamera}>Start Camera</button>
