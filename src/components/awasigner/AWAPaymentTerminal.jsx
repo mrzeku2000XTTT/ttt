@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { QrCode, Radio, Loader2, CheckCircle2, Copy, ExternalLink } from "lucide-react";
 import { AWA_SERVICES, AWA_DESTINATION, AWA_BACKEND_URL } from "./awaServices";
+import { base44 } from "@/api/base44Client";
 
 export default function AWAPaymentTerminal({ onPayment }) {
+  const [services, setServices] = useState(AWA_SERVICES);
+  const [loadingServices, setLoadingServices] = useState(true);
   const [serviceId, setServiceId] = useState(AWA_SERVICES[0].id);
   const [address, setAddress] = useState("");
   const [kasPrice, setKasPrice] = useState(null);
@@ -19,7 +22,7 @@ export default function AWAPaymentTerminal({ onPayment }) {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const service = AWA_SERVICES.find(s => s.id === serviceId);
+  const service = services.find(s => s.id === serviceId) || services[0];
 
   // Live KAS price on load
   useEffect(() => {
@@ -37,6 +40,32 @@ export default function AWAPaymentTerminal({ onPayment }) {
       }
     };
     fetchPrice();
+  }, []);
+
+  // Fetch dynamic service catalog from the AWA x402 backend
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await base44.functions.invoke('awaX402', { action: 'services' });
+        const data = res.data || res;
+        if (data?.services?.length) {
+          const mapped = data.services.map(s => ({
+            id: s.id,
+            name: s.name,
+            kas: s.price_kas,
+            sompi: String(Math.round(s.price_kas * 1e8)),
+            result_type: s.result_type,
+          }));
+          setServices(mapped);
+          setServiceId(mapped[0].id);
+        }
+      } catch (e) {
+        console.error('Service catalog fetch failed, using fallback:', e);
+      } finally {
+        setLoadingServices(false);
+      }
+    };
+    fetchServices();
   }, []);
 
   const usdLabel = (kas) => kasPrice ? ` ($${(kas * kasPrice).toFixed(5)})` : "";
@@ -137,10 +166,12 @@ export default function AWAPaymentTerminal({ onPayment }) {
             <label className="text-xs text-zinc-400 font-semibold mb-2 block tracking-wide">SERVICE SELECTOR</label>
             <select
               value={serviceId}
+              disabled={loadingServices}
               onChange={(e) => { setServiceId(e.target.value); setQrDataUrl(null); setBuildResult(null); setBuildContext(null); setBroadcastResult(null); }}
-              className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500/50"
+              className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:border-cyan-500/50 disabled:opacity-50"
             >
-              {AWA_SERVICES.map(s => (
+              {loadingServices && <option value="">Loading services…</option>}
+              {services.map(s => (
                 <option key={s.id} value={s.id}>
                   {s.name} — {s.kas} KAS{usdLabel(s.kas)}
                 </option>
