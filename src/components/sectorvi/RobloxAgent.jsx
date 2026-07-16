@@ -1,6 +1,6 @@
 import React, { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import { ROOM_SIZE } from "./sectorAgents";
 
 const BOUND = ROOM_SIZE / 2 - 2;
@@ -98,9 +98,23 @@ export default function RobloxAgent({ agent, positionsRef, selected, onClick }) 
       onClick={(e) => { e.stopPropagation(); onClick(agent.id); }}
     >
       {/* name tag */}
-      <Text position={[0, 3.05, 0]} fontSize={0.32} color={selected ? "#06b6d4" : "#111111"} anchorX="center" anchorY="bottom" outlineWidth={0.012} outlineColor="#ffffff">
-        {agent.name}
-      </Text>
+      <Html position={[0, 3.05, 0]} center distanceFactor={10} zIndexRange={[10, 0]}>
+        <div style={{
+          background: selected ? "rgba(6,182,212,0.9)" : "rgba(0,0,0,0.75)",
+          color: selected ? "#000" : "#fff",
+          padding: "3px 10px",
+          borderRadius: "6px",
+          fontSize: "13px",
+          fontWeight: 800,
+          whiteSpace: "nowrap",
+          userSelect: "none",
+          pointerEvents: "none",
+          fontFamily: "monospace",
+          letterSpacing: "0.05em",
+        }}>
+          {agent.name}
+        </div>
+      </Html>
       {selected && (
         <mesh position={[0, 3.5, 0]} rotation={[Math.PI, 0, 0]}>
           <coneGeometry args={[0.18, 0.35, 4]} />
