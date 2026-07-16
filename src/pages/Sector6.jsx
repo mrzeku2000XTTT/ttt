@@ -1,11 +1,13 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
 import WhiteWaves from "@/components/sector6/WhiteWaves";
 import Sector6Room from "@/components/sector6/Sector6Room";
 
 export default function Sector6Page() {
   const [showRoom, setShowRoom] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-white text-gray-800 relative overflow-hidden" style={{ fontFamily: "'Rajdhani', system-ui, sans-serif" }}>
@@ -59,6 +61,16 @@ export default function Sector6Page() {
           className="mt-10 px-10 py-3 rounded-full bg-gray-600 hover:bg-gray-800 text-white text-[11px] font-bold tracking-[0.3em] transition-colors"
         >
           SHOW 3D ROOM
+        </motion.button>
+
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          onClick={() => navigate("/SectorVI")}
+          className="mt-4 flex items-center gap-2 px-8 py-3 rounded-full bg-black text-white text-[11px] font-bold tracking-[0.3em] transition-colors hover:bg-gray-900"
+        >
+          ENTER THE REAL SECTORS <ArrowRight className="w-4 h-4" />
         </motion.button>
       </div>
 
