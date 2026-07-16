@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 export default function KasSigner() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("sign");
   const [cameraActive, setCameraActive] = useState(false);
   const [camError, setCamError] = useState("");
@@ -97,6 +100,9 @@ export default function KasSigner() {
   return (
     <div style={s.page}>
       <div style={s.header}>
+        <button onClick={() => navigate("/Sector6")} style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid #2a2a3a", borderRadius: 8, padding: "4px 10px", color: "#a1a1aa", cursor: "pointer", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
+          <ArrowLeft size={14} /> BACK
+        </button>
         <span style={{ fontSize: 20 }}>🦂</span>
         <span style={{ fontSize: 18, fontWeight: 700 }}>KasSigner</span>
         <span style={{ marginLeft: "auto", fontSize: 11, color: "#71717a", background: "#1e1e28", padding: "4px 8px", borderRadius: 8, border: "1px solid #2a2a3a" }}>Air-Gapped</span>
