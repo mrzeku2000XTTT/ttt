@@ -1,5 +1,4 @@
 import React, { useState, useEffect, Suspense, lazy } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
@@ -77,7 +76,7 @@ export default function Sector6Page() {
             </button>
           ) : (
             <button
-              onClick={() => setActiveIdx(-1)}
+              onClick={() => { setActiveIdx(-1); window.scrollTo(0, 0); }}
               className="flex items-center gap-2 px-3 py-2 rounded-full border border-gray-300 text-gray-500 hover:text-gray-900 hover:border-gray-900 text-[10px] tracking-[0.25em] font-bold transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> BACK TO SECTOR 6
@@ -173,19 +172,6 @@ export default function Sector6Page() {
             <ActiveSector.Component />
           </Suspense>
         </div>
-      )}
-
-      {/* Floating Back button — portaled to body so it sits above every sector's own fixed/sticky UI */}
-      {!isNative && createPortal(
-        <button
-          onClick={() => { setActiveIdx(-1); window.scrollTo(0, 0); }}
-          className="fixed top-4 left-4 z-[2147483647] flex items-center gap-2 px-4 py-2.5 rounded-full bg-white text-gray-900 text-[11px] font-bold tracking-[0.2em] shadow-2xl border border-gray-300 hover:bg-gray-100 transition-colors"
-          style={{ touchAction: "manipulation" }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          BACK TO SECTOR 6
-        </button>,
-        document.body
       )}
 
       {/* Fullscreen 3D Room */}
