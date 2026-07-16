@@ -66,8 +66,58 @@ export default function Signer() {
     }
   }
 
-  function parseKSPT(hex) {
-    setScannedData({ raw: hex, amount: "2.00", to: "kaspa:qpkn4a...dlkq2cm8e58e", fee: "0.001" });
+  function parseKSPT(raw) {
+    const clean = (raw || "").trim().replace(/\s+/g, "");
+    if (!clean) { setScannedData(null); return; }
+
+    const isHex = /^[0-9a-fA-F]+$/.test(clean);
+    let hexPayload = clean;
+
+    if (isHex) {
+      hexPayload = clean.toLowerCase();
+      if (hexPayload.startsWith("4b535054")) {
+        hexPayload = hexPayload.slice(8);
+        if (hexPayload.length >= 2) hexPayload = hexPayload.slice(2);
+      }
+    } else {
+      try {
+        const bytes = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
+        hexPayload = Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+      } catch {
+        setScannedData({ raw: clean, amount: "?", to: "Unrecognized format", fee: "?" });
+        return;
+      }
+    }
+
+    // Decode hex → text → JSON to auto-fill transaction fields
+    let parsed = null;
+    try {
+      let text = clean;
+      if (isHex && hexPayload.length >= 2) {
+        text = new TextDecoder().decode(new Uint8Array(hexPayload.match(/.{2}/g).map(b => parseInt(b, 16))));
+      } else {
+        try { text = atob(clean); } catch {}
+      }
+      let data = null;
+      try { data = JSON.parse(text); } catch {}
+      if (!data) { try { data = JSON.parse(clean); } catch {} }
+      if (data && typeof data === "object") {
+        parsed = {
+          amount: data.amount_kas ?? data.amount ?? data.value ?? null,
+          to: data.pay_to ?? data.to ?? data.address ?? data.destination ?? null,
+          from: data.source_address ?? data.from ?? data.pay_from ?? null,
+          fee: data.fee_kas ?? data.fee ?? 0,
+        };
+      }
+    } catch {}
+
+    setScannedData({
+      raw: clean,
+      amount: parsed?.amount ?? "?",
+      to: parsed?.to ?? "Unable to decode payload",
+      from: parsed?.from ?? null,
+      fee: parsed?.fee ?? "?",
+    });
   }
 
   function saveKey(hex) {
@@ -139,6 +189,7 @@ export default function Signer() {
               <div style={s.card}>
                 <div style={s.label}>Transaction Review</div>
                 <div>Amount: <b>{scannedData.amount} KAS</b></div>
+                {scannedData.from && <div>From: <span style={s.mono}>{scannedData.from}</span></div>}
                 <div>To: <span style={s.mono}>{scannedData.to}</span></div>
                 <div>Fee: {scannedData.fee} KAS</div>
                 <button style={s.btn("#22c55e")}>Sign & Generate QR</button>
