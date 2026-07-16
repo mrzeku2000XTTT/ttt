@@ -26,24 +26,48 @@ export default function KasSigner() {
     parseKSPT(data);
   }
 
-  function parseKSPT(hex) {
+  function parseKSPT(data) {
     setSignedQR("");
     setSignPhase("idle");
     setStatusMsg("");
-    const clean = (hex || "").trim().replace(/\s+/g, "");
-    const magic = clean.slice(0, 8).toLowerCase();
-    if (magic !== "4b535054") {
+    const clean = (data || "").trim().replace(/\s+/g, "");
+    if (!clean) {
       setScannedData(null);
-      setStatusMsg("Not a valid KSPT payload — magic bytes must be 4b535054 (got " + (magic || "empty") + ").");
+      setStatusMsg("Empty payload — scan a KSPT QR or paste hex/base64.");
       return;
     }
+
+    // Accept three formats from AWA Signer:
+    // 1. Hex with KSPT magic prefix (4b535054...)
+    // 2. Raw hex (Kaspa tx bytes, e.g. 0049d299...)
+    // 3. Base64 (the kspt_b64 format encoded in the AWA QR)
+    const isHex = /^[0-9a-fA-F]+$/.test(clean);
+    let hexPayload = clean;
+
+    if (isHex) {
+      hexPayload = clean.toLowerCase();
+      if (hexPayload.startsWith("4b535054")) {
+        hexPayload = hexPayload.slice(8);
+        if (hexPayload.length >= 2) hexPayload = hexPayload.slice(2);
+      }
+    } else {
+      try {
+        const bytes = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
+        hexPayload = Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+      } catch {
+        setScannedData(null);
+        setStatusMsg("Unrecognized format — expected hex or base64 KSPT payload.");
+        return;
+      }
+    }
+
     setStatusMsg("");
-    const version = parseInt(clean.slice(8, 10) || "0", 16);
     setScannedData({
       raw: clean,
-      version,
-      sizeBytes: Math.floor(clean.length / 2),
-      preview: clean.slice(0, 64) + (clean.length > 64 ? "…" : ""),
+      hexPayload,
+      version: 1,
+      sizeBytes: Math.floor(hexPayload.length / 2),
+      preview: hexPayload.slice(0, 64) + (hexPayload.length > 64 ? "…" : ""),
     });
   }
 
@@ -150,7 +174,7 @@ export default function KasSigner() {
 
             <div style={s.card}>
               <div style={s.label}>Or Paste KSPT Hex</div>
-              <textarea style={s.input} rows={3} placeholder="4b535054010a..." value={pasteHex} onChange={e => setPasteHex(e.target.value)} />
+              <textarea style={s.input} rows={3} placeholder="Paste KSPT hex or base64 from AWA Signer..." value={pasteHex} onChange={e => setPasteHex(e.target.value)} />
               <button style={s.btn()} onClick={() => parseKSPT(pasteHex)}>Parse Transaction</button>
             </div>
 
