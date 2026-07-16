@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight } from "lucide-react";
+import { X, ArrowRight, ArrowLeft } from "lucide-react";
 import WhiteWaves from "@/components/sector6/WhiteWaves";
 import Sector6Room from "@/components/sector6/Sector6Room";
 
@@ -18,7 +18,15 @@ export default function Sector6Page() {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-8 md:px-16 py-8">
-        <div className="font-black tracking-[0.2em] text-gray-900 text-lg">SECTOR 6</div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+            className="flex items-center gap-2 px-3 py-2 rounded-full border border-gray-300 text-gray-500 hover:text-gray-900 hover:border-gray-900 text-[10px] tracking-[0.25em] font-bold transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> BACK
+          </button>
+          <div className="font-black tracking-[0.2em] text-gray-900 text-lg">SECTOR 6</div>
+        </div>
         <div className="hidden md:flex items-center gap-8 text-[11px] tracking-[0.25em] text-gray-500">
           <span className="cursor-default">HOME</span>
           <span className="px-4 py-1.5 rounded-full bg-gray-800 text-white cursor-default">ROOM</span>
@@ -26,6 +34,29 @@ export default function Sector6Page() {
           <span className="cursor-default">CONTACT</span>
         </div>
       </nav>
+
+      {/* Other Sectors quick-nav */}
+      <div className="relative z-10 px-8 md:px-16 pb-2 flex flex-wrap gap-2">
+        {[
+          { label: "SECTOR VI", path: "/SectorVI" },
+          { label: "AWA", path: "/AWA" },
+          { label: "AWA Signer", path: "/AWASigner" },
+          { label: "Igra Horizon", path: "/IgraHorizon" },
+          { label: "Igra Agent", path: "/IgraAgent" },
+          { label: "Aporia DEX", path: "/Aporia" },
+          { label: "Klipz", path: "/Klipz" },
+          { label: "KCC NFT", path: "/KCCNft" },
+          { label: "KasSigner", path: "/KasSigner" },
+        ].map((s) => (
+          <button
+            key={s.path}
+            onClick={() => navigate(s.path)}
+            className="px-3 py-1.5 rounded-full border border-gray-200 text-[10px] tracking-[0.25em] font-bold text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors"
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
 
       {/* Hero */}
       <div className="relative z-10 px-8 md:px-16 pt-16 md:pt-24 pb-24 max-w-3xl">
