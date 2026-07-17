@@ -134,6 +134,9 @@ import KASDollarPage from './pages/KASDollar';
 import TreePage from './pages/Tree';
 import KuttPage from './pages/Kutt';
 import SlobzPage from './pages/Slobz';
+import SlobzIntakePage from './pages/SlobzIntake';
+import SlobzGigsPage from './pages/SlobzGigs';
+import SlobzWellnessPage from './pages/SlobzWellness';
 import SectorVIPage from './pages/SectorVI';
 import Sector6Page from './pages/Sector6';
 import AdminRoute from '@/components/AdminRoute';
@@ -302,6 +305,9 @@ const AuthenticatedApp = () => {
       <Route path="/Tree" element={<TreePage />} />
       <Route path="/Kutt" element={<KuttPage />} />
       <Route path="/Slobz" element={<SlobzPage />} />
+      <Route path="/SlobzIntake" element={<SlobzIntakePage />} />
+      <Route path="/SlobzGigs" element={<SlobzGigsPage />} />
+      <Route path="/SlobzWellness" element={<SlobzWellnessPage />} />
       <Route path="/SectorVI" element={<AdminRoute><SectorVIPage /></AdminRoute>} />
       <Route path="/Sector6" element={<Sector6Page />} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
