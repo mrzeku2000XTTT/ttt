@@ -1,0 +1,73 @@
+{
+  "name": "SlobMicroTask",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Micro-gig title"
+    },
+    "description": {
+      "type": "string",
+      "description": "What the task involves"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "data_cleanup",
+        "image_tagging",
+        "basic_editing",
+        "content_moderation",
+        "transcription"
+      ],
+      "description": "Task category"
+    },
+    "payout_usd": {
+      "type": "number",
+      "default": 15,
+      "description": "Payout in USD ($15-30 range)"
+    },
+    "estimated_minutes": {
+      "type": "number",
+      "default": 60,
+      "description": "Estimated time to complete"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "claimed",
+        "completed"
+      ],
+      "default": "available"
+    },
+    "claimed_by": {
+      "type": "string",
+      "description": "User email who claimed this gig"
+    },
+    "description_field": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "category",
+    "payout_usd"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

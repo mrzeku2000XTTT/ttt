@@ -21,6 +21,7 @@ const KCCNftPage = lazy(() => import("@/pages/KCCNft"));
 const KaspaCommandPage = lazy(() => import("@/pages/KaspaCommand"));
 const KascovPage = lazy(() => import("@/pages/Kascov"));
 const KasSignerPage = lazy(() => import("@/pages/KasSigner"));
+const SlobzPage = lazy(() => import("@/pages/Slobz"));
 
 const SECTORS = [
   { name: "SECTOR VI", Component: SectorVIPage },
@@ -34,6 +35,7 @@ const SECTORS = [
   { name: "KAS COMMAND", Component: KaspaCommandPage },
   { name: "KASCOV", Component: KascovPage },
   { name: "KAS SIGNER", Component: KasSignerPage },
+  { name: "SLOBZ", Component: SlobzPage },
 ];
 
 export default function Sector6Page() {
@@ -91,6 +93,12 @@ export default function Sector6Page() {
           <span className="px-4 py-1.5 rounded-full bg-gray-800 text-white cursor-default">ROOM</span>
           <span className="cursor-default">ABOUT</span>
           <span className="cursor-default">CONTACT</span>
+          <button
+            onClick={() => { setActiveIdx(visibleSectors.findIndex(s => s.name === "SLOBZ")); window.scrollTo(0, 0); }}
+            className="px-4 py-1.5 rounded-full bg-green-500 text-white font-bold cursor-pointer hover:bg-green-600 transition-colors"
+          >
+            LAUNCH SLOB
+          </button>
         </div>
       </nav>
 
@@ -115,7 +123,8 @@ export default function Sector6Page() {
 
       {/* Native hero */}
       {isNative && (
-        <div className="relative z-10 px-8 md:px-16 pt-16 md:pt-24 pb-24 max-w-3xl">
+        <>
+        <div className="relative z-10 px-8 md:px-16 pt-16 md:pt-24 pb-12 max-w-3xl">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -139,28 +148,58 @@ export default function Sector6Page() {
           >
             A pure white space with four corners. Step inside the real 3D room —
             orbit, zoom, and explore Sector 6. All neighboring sectors are
-            merged inside this hub: pick one above to enter it.
+            merged inside this hub: pick one below to enter it.
           </motion.p>
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            onClick={() => setShowRoom(true)}
-            className="mt-10 px-10 py-3 rounded-full bg-gray-600 hover:bg-gray-800 text-white text-[11px] font-bold tracking-[0.3em] transition-colors"
-          >
-            SHOW 3D ROOM
-          </motion.button>
+          <div className="flex items-center gap-3 mt-8">
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              onClick={() => setShowRoom(true)}
+              className="px-10 py-3 rounded-full bg-gray-600 hover:bg-gray-800 text-white text-[11px] font-bold tracking-[0.3em] transition-colors"
+            >
+              SHOW 3D ROOM
+            </motion.button>
 
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            onClick={() => navigate("/SectorVI")}
-            className="mt-4 flex items-center gap-2 px-8 py-3 rounded-full bg-black text-white text-[11px] font-bold tracking-[0.3em] transition-colors hover:bg-gray-900"
-          >
-            ENTER THE REAL SECTORS <ArrowRight className="w-4 h-4" />
-          </motion.button>
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+              onClick={() => navigate("/SectorVI")}
+              className="flex items-center gap-2 px-8 py-3 rounded-full bg-black text-white text-[11px] font-bold tracking-[0.3em] transition-colors hover:bg-gray-900"
+            >
+              ENTER THE REAL SECTORS <ArrowRight className="w-4 h-4" />
+            </motion.button>
+          </div>
         </div>
+
+        {/* Numbered sector list */}
+        <div className="relative z-10 px-8 md:px-16 pb-16">
+          <div className="text-[10px] tracking-[0.3em] text-gray-400 font-bold mb-4">SECTORS</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {visibleSectors.map((sector, idx) => (
+              <button
+                key={sector.name}
+                onClick={() => { setActiveIdx(idx); window.scrollTo(0, 0); }}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors text-left group ${
+                  sector.name === "SLOBZ"
+                    ? "border-green-400 bg-green-50 hover:bg-green-100"
+                    : "border-gray-200 hover:border-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                <span className={`text-xs font-black transition-colors ${
+                  sector.name === "SLOBZ" ? "text-green-500" : "text-gray-300 group-hover:text-gray-900"
+                }`}>
+                  {String(idx + 1).padStart(2, '0')}
+                </span>
+                <span className="text-xs font-bold text-gray-600 group-hover:text-gray-900 tracking-wide">
+                  {sector.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+        </>
       )}
 
       {/* Inline merged sector */}

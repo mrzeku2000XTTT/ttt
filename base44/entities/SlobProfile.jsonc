@@ -1,0 +1,100 @@
+{
+  "name": "SlobProfile",
+  "type": "object",
+  "properties": {
+    "intake_text": {
+      "type": "string",
+      "description": "Raw chaotic user intake"
+    },
+    "slob_score": {
+      "type": "number",
+      "description": "0-100 slob score (100 = absolute slob)"
+    },
+    "roast": {
+      "type": "string",
+      "description": "AI brutal but caring roast"
+    },
+    "hard_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extracted hard skills mapped from informal activities"
+    },
+    "soft_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extracted soft skills from lifestyle"
+    },
+    "resume_markdown": {
+      "type": "string",
+      "description": "AI-generated professional resume in markdown"
+    },
+    "three_step_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "3-step redemption plan"
+    },
+    "micro_steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Executive function bypass micro-steps for ADHD brains"
+    },
+    "suggested_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Suggested job roles avoiding toxic environments"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User email if logged in"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "processing",
+        "complete",
+        "failed"
+      ],
+      "default": "processing"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "intake_text"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}
