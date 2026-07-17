@@ -33,6 +33,13 @@ const features = [
     cta: "ENTER THE MARKET",
   },
   {
+    title: "Animation Station",
+    desc: "Clay animations by the community. Post your own and earn KAS tips from fellow slobs who love your work.",
+    img: ICON_BOLT,
+    path: "/SlobzAnimations",
+    cta: "WATCH & TIP",
+  },
+  {
     title: "Financial Wellness",
     desc: "The Sloba Card: instant payouts, behavioral guardrails, and an auto-saving Get Out Bucket for your independence fund.",
     img: CARD_IMG,

@@ -138,6 +138,7 @@ import SlobzIntakePage from './pages/SlobzIntake';
 import SlobzGigsPage from './pages/SlobzGigs';
 import SlobzWellnessPage from './pages/SlobzWellness';
 import SlobzMarketPage from './pages/SlobzMarket';
+import SlobzAnimationsPage from './pages/SlobzAnimations';
 import SectorVIPage from './pages/SectorVI';
 import Sector6Page from './pages/Sector6';
 import AdminRoute from '@/components/AdminRoute';
@@ -310,6 +311,7 @@ const AuthenticatedApp = () => {
       <Route path="/SlobzGigs" element={<SlobzGigsPage />} />
       <Route path="/SlobzWellness" element={<SlobzWellnessPage />} />
       <Route path="/SlobzMarket" element={<SlobzMarketPage />} />
+      <Route path="/SlobzAnimations" element={<SlobzAnimationsPage />} />
       <Route path="/SectorVI" element={<AdminRoute><SectorVIPage /></AdminRoute>} />
       <Route path="/Sector6" element={<Sector6Page />} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
