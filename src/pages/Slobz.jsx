@@ -8,6 +8,7 @@ const HERO_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a
 const CLAY_FACE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff7c5a573_generated_image.png";
 const CARD_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2fdf8782e_generated_image.png";
 const ICON_BOLT = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/59b9b3958_generated_image.png";
+const ICON_LOCK = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff3973122_generated_image.png";
 
 const features = [
   {
@@ -23,6 +24,13 @@ const features = [
     img: CLAY_FACE,
     path: "/SlobzGigs",
     cta: "BROWSE GIGS",
+  },
+  {
+    title: "Escrow Market",
+    desc: "Real covenant escrow on Kaspa. Employers lock KAS on-chain per gig, an AI agent checks the work, funds release automatically.",
+    img: ICON_LOCK,
+    path: "/SlobzMarket",
+    cta: "ENTER THE MARKET",
   },
   {
     title: "Financial Wellness",
@@ -134,7 +142,7 @@ export default function Slobz() {
         </motion.div>
 
         {/* Feature cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
           {features.map((f, i) => (
             <motion.div
               key={f.path}
