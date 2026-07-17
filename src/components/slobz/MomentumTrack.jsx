@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Clock, DollarSign, Check, Loader2 } from "lucide-react";
 
+const CLAY_FACE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff7c5a573_generated_image.png";
+
 export default function MomentumTrack() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ export default function MomentumTrack() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-[#EDE9E1] p-8 flex items-center justify-center text-[#8A857C]">
+      <div className="bg-[#FDFBF7] rounded-[28px] shadow-[0_16px_40px_rgba(124,92,252,0.18)] p-8 flex items-center justify-center text-[#7C5CFC]">
         <Loader2 className="w-5 h-5 animate-spin" />
       </div>
     );
@@ -51,43 +53,62 @@ export default function MomentumTrack() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-[#EDE9E1] p-6 md:p-7"
+      className="bg-[#FDFBF7] rounded-[28px] shadow-[0_16px_40px_rgba(124,92,252,0.18)] p-6 md:p-7"
     >
       <div className="mb-4">
-        <h3 className="font-heading text-lg font-semibold text-[#1A1A1A]">Slobz Momentum Track</h3>
-        <p className="text-xs text-[#8A857C] mt-0.5">Low-stress micro-gigs. Instant payout. Zero friction.</p>
+        <h3 className="font-heading text-2xl font-semibold text-[#1F1B2E]">Slobz Momentum Track</h3>
+        <p className="text-xs text-[#7A7290] mt-1">Low-stress micro-gigs. Instant payout. Zero friction.</p>
       </div>
+
+      <div className="rounded-[20px] overflow-hidden mb-4 bg-[#7C5CFC]">
+        <img src={CLAY_FACE} alt="Slobz mascot" className="w-full h-36 md:h-44 object-cover object-center" />
+      </div>
+
       {tasks.length === 0 ? (
-        <p className="text-xs text-[#8A857C] text-center py-6">No micro-gigs available right now. Check back soon.</p>
+        <p className="text-xs text-[#7A7290] text-center py-6">No micro-gigs available right now. Check back soon.</p>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-2 gap-2.5">
-          {tasks.map((task) => (
-            <div key={task.id} className="bg-[#FBF7F0] rounded-xl p-3.5 border border-[#F0EDE5]">
-              <div className="text-xs font-bold text-[#1A1A1A] leading-snug mb-1">{task.title}</div>
-              <div className="text-[10px] text-[#8A857C] leading-snug mb-2.5 line-clamp-2">{task.description}</div>
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#0D5B3A]">
-                  <DollarSign className="w-3 h-3" />{task.payout_usd}
-                </span>
-                <span className="flex items-center gap-0.5 text-[10px] text-[#8A857C]">
-                  <Clock className="w-3 h-3" />{task.estimated_minutes}m
-                </span>
-              </div>
-              {task.status === "available" ? (
-                <button
-                  onClick={() => handleClaim(task.id)}
-                  disabled={claiming === task.id}
-                  className="w-full h-7 rounded-lg bg-[#0D5B3A] hover:bg-[#0A4A30] text-white text-[10px] font-bold flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
-                >
-                  {claiming === task.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "CLAIM GIG"}
-                </button>
-              ) : (
-                <div className="w-full h-7 rounded-lg bg-[#E8E4DD] text-[#8A857C] text-[10px] font-bold flex items-center justify-center gap-1">
-                  <Check className="w-3 h-3" /> {task.status === "claimed" ? "CLAIMED" : "DONE"}
+        <div className="grid grid-cols-2 gap-3">
+          {tasks.map((task) => {
+            const claimed = task.status !== "available";
+            return (
+              <div
+                key={task.id}
+                className={`rounded-[18px] p-3.5 ${
+                  claimed
+                    ? "bg-[#8B6FF5] shadow-[0_6px_16px_rgba(124,92,252,0.35)]"
+                    : "bg-white shadow-[0_4px_14px_rgba(90,70,160,0.1)]"
+                }`}
+              >
+                <div className={`text-xs font-bold leading-snug mb-1 font-display ${claimed ? "text-white" : "text-[#1F1B2E]"}`}>
+                  {task.title}
                 </div>
-              )}
-            </div>
-          ))}
+                <div className={`text-[10px] leading-snug mb-2.5 line-clamp-2 ${claimed ? "text-white/75" : "text-[#8B84A3]"}`}>
+                  {task.description}
+                </div>
+                <div className="flex items-center gap-2.5 mb-2.5">
+                  <span className={`flex items-center gap-0.5 text-[11px] font-bold ${claimed ? "text-white" : "text-[#7C5CFC]"}`}>
+                    <DollarSign className="w-3 h-3" />{task.payout_usd}
+                  </span>
+                  <span className={`flex items-center gap-0.5 text-[10px] ${claimed ? "text-white/70" : "text-[#8B84A3]"}`}>
+                    <Clock className="w-3 h-3" />{task.estimated_minutes}m
+                  </span>
+                </div>
+                {!claimed ? (
+                  <button
+                    onClick={() => handleClaim(task.id)}
+                    disabled={claiming === task.id}
+                    className="w-full h-8 rounded-full bg-gradient-to-b from-[#FF8A6B] to-[#F96B4C] hover:from-[#FF7A59] hover:to-[#F05A3B] text-white text-[10px] font-display font-extrabold flex items-center justify-center gap-1 disabled:opacity-50 shadow-[0_4px_10px_rgba(249,107,76,0.35)] transition-all"
+                  >
+                    {claiming === task.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "CLAIM GIG"}
+                  </button>
+                ) : (
+                  <div className="w-full h-8 rounded-full bg-white/20 border border-white/30 text-white text-[10px] font-display font-extrabold flex items-center justify-center gap-1">
+                    <Check className="w-3 h-3" /> {task.status === "claimed" ? "CLAIMED" : "DONE"}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </motion.div>

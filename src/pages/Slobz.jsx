@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Loader2, RotateCcw, AlertCircle, Cpu } from "lucide-react";
@@ -15,6 +15,8 @@ export default function Slobz() {
   const [result, setResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
+  const intakeRef = useRef(null);
+  const wellnessRef = useRef(null);
 
   const handleProcess = async (intakeText) => {
     setIsProcessing(true);
@@ -106,35 +108,46 @@ Be specific and personal — reference actual details from their intake. No gene
     setError("");
   };
 
+  const scrollTo = (ref) => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   return (
-    <div className="min-h-screen bg-[#FBF7F0] text-[#1A1A1A] pb-20 font-body">
-      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-8 md:pt-12">
+    <div className="min-h-screen bg-[#DED6F2] text-[#1F1B2E] pb-20 font-body">
+      <div className="max-w-6xl mx-auto px-4 md:px-6">
         <AnimatePresence mode="wait">
-          {/* Initial intake state — two-column hero */}
+          {/* Initial landing state */}
           {!result && !isProcessing && !error && (
-            <motion.div key="intake" exit={{ opacity: 0 }} className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div key="intake" exit={{ opacity: 0 }}>
+              <SlobzHero
+                onIntakeClick={() => scrollTo(intakeRef)}
+                onWellnessClick={() => scrollTo(wellnessRef)}
+              />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 items-start">
                 <MomentumTrack />
-                <SlobzHero />
+                <div className="space-y-6">
+                  <div ref={intakeRef} className="scroll-mt-6">
+                    <ChaosIntake onProcess={handleProcess} isProcessing={isProcessing} />
+                  </div>
+                  <div ref={wellnessRef} className="scroll-mt-6">
+                    <SlobaCard />
+                  </div>
+                </div>
               </div>
-              <ChaosIntake onProcess={handleProcess} isProcessing={isProcessing} />
-              <SlobaCard />
             </motion.div>
           )}
 
           {/* Processing state */}
           {isProcessing && (
-            <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-[#EDE9E1] p-12 md:p-16 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0D5B3A]/8 border border-[#0D5B3A]/20 mb-5">
-                  <Cpu className="w-8 h-8 text-[#0D5B3A] animate-pulse" />
+            <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-16">
+              <div className="bg-[#FDFBF7] rounded-[28px] shadow-[0_16px_40px_rgba(124,92,252,0.18)] p-12 md:p-16 text-center max-w-2xl mx-auto">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-[20px] bg-[#7C5CFC] shadow-[0_8px_20px_rgba(124,92,252,0.4)] mb-5">
+                  <Cpu className="w-8 h-8 text-white animate-pulse" />
                 </div>
-                <h2 className="font-heading text-2xl font-medium text-[#1A1A1A] mb-3">Slob Agentic Engine</h2>
-                <p className="text-sm text-[#8A857C] mb-8 max-w-md mx-auto leading-relaxed">
+                <h2 className="font-heading text-2xl font-semibold text-[#1F1B2E] mb-3">Slob Agentic Engine</h2>
+                <p className="text-sm text-[#8B84A3] mb-8 max-w-md mx-auto leading-relaxed">
                   Ingesting chaos · Stripping self-deprecation · Extracting skills ·
                   Synthesizing resume · Building redemption plan…
                 </p>
-                <div className="flex items-center justify-center gap-2 text-xs text-[#8A857C]">
+                <div className="flex items-center justify-center gap-2 text-xs text-[#8B84A3]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>This takes 10-20 seconds. Breathe.</span>
                 </div>
@@ -144,15 +157,15 @@ Be specific and personal — reference actual details from their intake. No gene
 
           {/* Error state */}
           {error && !isProcessing && (
-            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-red-200 p-10 text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 border border-red-200 mb-4">
-                  <AlertCircle className="w-7 h-7 text-red-500" />
+            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-16">
+              <div className="bg-[#FDFBF7] rounded-[28px] shadow-[0_16px_40px_rgba(124,92,252,0.18)] p-10 text-center max-w-xl mx-auto">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-[18px] bg-[#F96B4C]/10 mb-4">
+                  <AlertCircle className="w-7 h-7 text-[#F96B4C]" />
                 </div>
-                <p className="text-sm text-[#3A3A37] mb-6">{error}</p>
+                <p className="text-sm text-[#3A3450] mb-6">{error}</p>
                 <button
                   onClick={() => { setError(""); }}
-                  className="px-6 py-3 rounded-xl bg-[#1A1A1A] hover:bg-[#333] text-white text-xs font-bold tracking-wide transition-colors"
+                  className="px-8 py-3 rounded-full bg-[#7C5CFC] hover:bg-[#6B4BEB] text-white text-xs font-display font-extrabold tracking-wide shadow-[0_8px_20px_rgba(124,92,252,0.4)] transition-colors"
                 >
                   TRY AGAIN
                 </button>
@@ -162,11 +175,11 @@ Be specific and personal — reference actual details from their intake. No gene
 
           {/* Results state */}
           {result && !isProcessing && (
-            <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
+            <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5 pt-8">
               <div className="flex justify-end">
                 <button
                   onClick={handleReset}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-[#EDE9E1] hover:border-[#1A1A1A] text-[#3A3A37] hover:text-[#1A1A1A] text-xs font-bold tracking-wide transition-colors shadow-sm"
+                  className="flex items-center gap-2 px-6 py-3 rounded-full bg-[#FDFBF7] hover:bg-white text-[#7C5CFC] text-xs font-display font-extrabold tracking-wide shadow-[0_8px_20px_rgba(124,92,252,0.2)] transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> NEW INTAKE
                 </button>

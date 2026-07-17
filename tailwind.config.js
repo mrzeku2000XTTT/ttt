@@ -7,6 +7,7 @@ module.exports = {
   		fontFamily: {
   			heading: ['Fraunces', 'Georgia', 'serif'],
   			body: ['Inter', 'system-ui', 'sans-serif'],
+  			display: ['Nunito', 'system-ui', 'sans-serif'],
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
