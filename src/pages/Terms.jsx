@@ -36,6 +36,16 @@ export default function TermsPage() {
                 </div>
               </div>
 
+              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 mb-6 flex items-start gap-3">
+                <FileText className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-cyan-200 font-semibold mb-1">Legal Notice</p>
+                  <p className="text-xs text-cyan-300 leading-relaxed">
+                    The content of this website is strictly educational and informative. Nothing published here constitutes investment recommendations, financial analysis or advice on buying and selling assets. The cryptocurrency market is highly volatile and involves risks. Do your own research (DYOR) before making any financial decisions.
+                  </p>
+                </div>
+              </div>
+
               <h2 className="text-xl font-bold text-white mt-6 mb-3">1. Acceptance of Terms</h2>
               <p className="text-gray-300 mb-4 leading-relaxed">
                 By accessing and using TTTz.xyz (Trust Task Transact Zero entropy knowledge unified) application, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, you must not use this application.

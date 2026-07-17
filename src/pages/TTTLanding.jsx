@@ -1522,9 +1522,19 @@ export default function TTTLandingPage() {
             })}
           </div>
 
+          {/* Legal notice */}
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
+            className="mt-6 max-w-xl mx-auto text-center text-[8px] leading-relaxed"
+            style={{ color: "rgba(200,160,70,0.4)", fontFamily: "monospace" }}>
+            LEGAL NOTICE: The content of this website is strictly educational and informative. Nothing published here constitutes investment recommendations, financial analysis or advice on buying and selling assets. The cryptocurrency market is highly volatile and involves risks. Do your own research (DYOR) before making any financial decisions.{" "}
+            <button type="button" onClick={() => navigate("/Terms")} className="underline focus:outline-none" style={{ color: "rgba(220,175,70,0.6)" }}>Terms</button>
+            {" · "}
+            <button type="button" onClick={() => navigate("/Privacy")} className="underline focus:outline-none" style={{ color: "rgba(220,175,70,0.6)" }}>Privacy</button>
+          </motion.p>
+
           {/* Bottom stamp */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}
-            className="mt-6 flex items-center justify-center gap-2 text-[9px] tracking-[0.45em] uppercase"
+            className="mt-3 flex items-center justify-center gap-2 text-[9px] tracking-[0.45em] uppercase"
             style={{ color: "rgba(200,160,70,0.65)", fontFamily: "monospace" }}>
             <span>© TTT PLATFORM · V3.0</span>
             <motion.button type="button" whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.9 }}
