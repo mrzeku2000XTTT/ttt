@@ -40,6 +40,13 @@ const features = [
     cta: "WATCH & TIP",
   },
   {
+    title: "Entity X",
+    desc: "Live-track the biggest Kaspa holder — balance, movements, and instant 7/30-day fact-checked flow reports to keep you motivated.",
+    img: ICON_BOLT,
+    path: "/SlobzEntityX",
+    cta: "WATCH THE WHALE",
+  },
+  {
     title: "Financial Wellness",
     desc: "The Sloba Card: instant payouts, behavioral guardrails, and an auto-saving Get Out Bucket for your independence fund.",
     img: CARD_IMG,
