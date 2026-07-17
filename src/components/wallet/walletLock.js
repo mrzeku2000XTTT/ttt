@@ -9,6 +9,22 @@ export async function hashPin(pin) {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Legacy/unsalted hash — matches the backend hashPin function used by the
+// wallet create/import flow and tip modals. Both formats can end up in the
+// same PIN_KEY, so verification must accept either.
+export async function hashPinLegacy(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Verify a PIN against the stored hash, accepting BOTH hash formats.
+export async function verifyStoredPin(pin) {
+  const stored = getStoredPinHash();
+  if (!stored) return false;
+  if ((await hashPin(pin)) === stored) return true;
+  return (await hashPinLegacy(pin)) === stored;
+}
+
 export function getStoredPinHash() {
   try { return localStorage.getItem(PIN_KEY); } catch { return null; }
 }

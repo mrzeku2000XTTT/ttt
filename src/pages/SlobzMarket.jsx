@@ -6,12 +6,21 @@ import SlobzNav from "@/components/slobz/SlobzNav";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import PostGigForm from "@/components/slobzmarket/PostGigForm";
 import GigCard from "@/components/slobzmarket/GigCard";
+import SlobzMarketWaitlist from "@/components/slobzmarket/SlobzMarketWaitlist";
 
 export default function SlobzMarket() {
   const [gigs, setGigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPost, setShowPost] = useState(false);
   const [wallet, setWallet] = useState(() => localStorage.getItem("slobz_wallet") || "");
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  const hasAccess = user?.role === "admin" || user?.slobz_market_invited === true;
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {}).finally(() => setAuthChecked(true));
+  }, []);
 
   const loadGigs = useCallback(async () => {
     try {
@@ -23,8 +32,8 @@ export default function SlobzMarket() {
   }, []);
 
   useEffect(() => {
-    loadGigs();
-  }, [loadGigs]);
+    if (hasAccess) loadGigs();
+  }, [hasAccess, loadGigs]);
 
   const handleWallet = (e) => {
     setWallet(e.target.value);
@@ -46,6 +55,14 @@ export default function SlobzMarket() {
           </p>
         </div>
 
+        {!authChecked ? (
+          <div className="flex items-center justify-center py-16 text-[#7C5CFC]">
+            <Loader2 className="w-6 h-6 animate-spin" />
+          </div>
+        ) : !hasAccess ? (
+          <SlobzMarketWaitlist user={user} />
+        ) : (
+        <>
         {/* Wallet identity */}
         <div className="bg-[#FDFBF7] rounded-[28px] shadow-[0_16px_40px_rgba(124,92,252,0.14)] p-4 mb-6 flex items-center gap-3">
           <div className="w-10 h-10 rounded-[14px] bg-[#7C5CFC] flex items-center justify-center flex-shrink-0 shadow-[0_6px_14px_rgba(124,92,252,0.35)]">
@@ -107,6 +124,8 @@ export default function SlobzMarket() {
               <GigCard key={gig.id} gig={gig} wallet={normWallet} onChanged={loadGigs} />
             ))}
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

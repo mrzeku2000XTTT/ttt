@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Loader2, X, Coins, Smartphone, Globe, Copy, Check } from "lucide-react";
+import { verifyStoredPin } from "@/components/wallet/walletLock";
 
 const KASTLE_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d958c7898_image.png";
 
@@ -43,8 +44,8 @@ export default function SlobzTipModal({ anim, onClose, onSuccess }) {
 
   const verifyPin = async () => {
     if (pin.length !== 6) return setPinError("Enter 6-digit PIN");
-    const res = await base44.functions.invoke("hashPin", { pin });
-    if (res.data?.hash === pinHash) {
+    // Verify against BOTH hash formats (wallet-lock salted + legacy unsalted)
+    if (await verifyStoredPin(pin)) {
       setPinVerified(true);
       setPinError("");
     } else {

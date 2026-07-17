@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, ScanFace, ShieldCheck, ArrowLeft, Wallet } from 'lucide-react';
 import PinPad from '@/components/wallet/PinPad';
 import {
-  hashPin, getStoredPinHash, storePinHash, getBioCredId,
+  hashPin, getStoredPinHash, storePinHash, getBioCredId, verifyStoredPin,
   isUnlocked, markUnlocked, biometricAvailable, registerBiometric, verifyBiometric,
   clearWalletLock,
 } from '@/components/wallet/walletLock';
@@ -32,7 +32,9 @@ export default function WalletLockGate({ children }) {
   const handlePin = async (pin) => {
     setError('');
     if (stage === 'locked') {
-      const ok = (await hashPin(pin)) === getStoredPinHash();
+      // Accept both hash formats — the tip-wallet flow stores an unsalted hash
+      // in the same key, and clobbering it here was "forgetting" users' PINs.
+      const ok = await verifyStoredPin(pin);
       if (ok) unlock();
       else setError('Wrong PIN — try again');
     } else if (stage === 'setup') {

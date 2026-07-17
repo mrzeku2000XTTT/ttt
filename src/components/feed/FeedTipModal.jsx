@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone, Globe } from "lucide-react";
+import { verifyStoredPin } from "@/components/wallet/walletLock";
 
 const KASTLE_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d958c7898_image.png";
 
@@ -54,8 +55,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
 
   const verifyPin = async () => {
     if (tipPin.length !== 6) { setPinError('Enter 6-digit PIN'); return; }
-    const res = await base44.functions.invoke('hashPin', { pin: tipPin });
-    if (res.data?.hash === pinHash) {
+    // Verify locally against BOTH hash formats (wallet-lock salted + legacy
+    // unsalted) so the PIN works no matter which flow set it.
+    if (await verifyStoredPin(tipPin)) {
       setPinVerified(true);
       setPinError('');
     } else {

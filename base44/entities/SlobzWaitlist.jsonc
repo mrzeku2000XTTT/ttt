@@ -1,0 +1,57 @@
+{
+  "name": "SlobzWaitlist",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Applicant's display name"
+    },
+    "kaspa_address": {
+      "type": "string",
+      "description": "Applicant's Kaspa wallet address (their identity for the market)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email if logged in"
+    },
+    "message": {
+      "type": "string",
+      "description": "Why they want in / what they'd post"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "invited",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "kaspa_address"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
