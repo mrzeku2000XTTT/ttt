@@ -108,6 +108,31 @@ export default function Slobz() {
           </motion.div>
         </div>
 
+        {/* Campaign video */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-10 bg-[#FDFBF7] rounded-[32px] shadow-[0_16px_40px_rgba(124,92,252,0.18)] p-4 md:p-6"
+        >
+          <div className="flex items-center justify-between px-2 pb-4">
+            <div>
+              <div className="text-[10px] tracking-[0.3em] text-[#7C5CFC] font-bold">SEE IT IN ACTION</div>
+              <h2 className="font-heading text-xl md:text-2xl font-semibold text-[#1F1B2E] mt-1">Slobz — the anti-career platform</h2>
+            </div>
+          </div>
+          <video
+            src="https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/0949dafd6_Campaign_Ad.mp4"
+            className="w-full rounded-[24px] bg-[#E9E4F5]"
+            controls
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-label="Slobz campaign ad — clay 3D demo of the app with a cursor clicking through Chaos Intake and micro-gigs"
+          />
+        </motion.div>
+
         {/* Feature cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
           {features.map((f, i) => (
