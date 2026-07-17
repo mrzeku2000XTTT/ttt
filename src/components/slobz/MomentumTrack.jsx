@@ -41,7 +41,7 @@ export default function MomentumTrack() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-gray-400">
+      <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-[#EDE9E1] p-8 flex items-center justify-center text-[#8A857C]">
         <Loader2 className="w-5 h-5 animate-spin" />
       </div>
     );
@@ -51,43 +51,39 @@ export default function MomentumTrack() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-3xl p-6 shadow-xl shadow-gray-200/40"
+      className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-[#EDE9E1] p-6 md:p-7"
     >
       <div className="mb-4">
-        <h3 className="text-sm font-bold text-gray-900">SLOBZ MOMENTUM TRACK</h3>
-        <p className="text-xs text-gray-500 mt-0.5">Low-stress micro-gigs. Instant payout. Zero friction.</p>
+        <h3 className="font-heading text-lg font-semibold text-[#1A1A1A]">Slobz Momentum Track</h3>
+        <p className="text-xs text-[#8A857C] mt-0.5">Low-stress micro-gigs. Instant payout. Zero friction.</p>
       </div>
       {tasks.length === 0 ? (
-        <p className="text-xs text-gray-400 text-center py-6">No micro-gigs available right now. Check back soon.</p>
+        <p className="text-xs text-[#8A857C] text-center py-6">No micro-gigs available right now. Check back soon.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-2 gap-2.5">
           {tasks.map((task) => (
-            <div key={task.id} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="text-sm font-bold text-gray-800">{task.title}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{task.description}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="flex items-center gap-1 text-xs font-semibold text-green-600">
+            <div key={task.id} className="bg-[#FBF7F0] rounded-xl p-3.5 border border-[#F0EDE5]">
+              <div className="text-xs font-bold text-[#1A1A1A] leading-snug mb-1">{task.title}</div>
+              <div className="text-[10px] text-[#8A857C] leading-snug mb-2.5 line-clamp-2">{task.description}</div>
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#0D5B3A]">
                   <DollarSign className="w-3 h-3" />{task.payout_usd}
                 </span>
-                <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <Clock className="w-3 h-3" />~{task.estimated_minutes}min
+                <span className="flex items-center gap-0.5 text-[10px] text-[#8A857C]">
+                  <Clock className="w-3 h-3" />{task.estimated_minutes}m
                 </span>
               </div>
               {task.status === "available" ? (
                 <button
                   onClick={() => handleClaim(task.id)}
                   disabled={claiming === task.id}
-                  className="w-full h-9 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-50"
+                  className="w-full h-7 rounded-lg bg-[#0D5B3A] hover:bg-[#0A4A30] text-white text-[10px] font-bold flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
                 >
-                  {claiming === task.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "CLAIM GIG"}
+                  {claiming === task.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "CLAIM GIG"}
                 </button>
               ) : (
-                <div className="w-full h-9 rounded-xl bg-gray-200 text-gray-500 text-xs font-bold flex items-center justify-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> {task.status === "claimed" ? "CLAIMED" : "DONE"}
+                <div className="w-full h-7 rounded-lg bg-[#E8E4DD] text-[#8A857C] text-[10px] font-bold flex items-center justify-center gap-1">
+                  <Check className="w-3 h-3" /> {task.status === "claimed" ? "CLAIMED" : "DONE"}
                 </div>
               )}
             </div>

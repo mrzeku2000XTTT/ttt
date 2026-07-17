@@ -75,7 +75,6 @@ Be specific and personal — reference actual details from their intake. No gene
 
       setResult(res);
 
-      // Save profile (best-effort — don't fail the UX if this errors for guests)
       try {
         const user = await base44.auth.me().catch(() => null);
         await base44.entities.SlobProfile.create({
@@ -108,16 +107,17 @@ Be specific and personal — reference actual details from their intake. No gene
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 text-gray-800 pb-20">
-      <div className="max-w-3xl mx-auto px-4">
-        <SlobzHero />
-
+    <div className="min-h-screen bg-[#FBF7F0] text-[#1A1A1A] pb-20 font-body">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-8 md:pt-12">
         <AnimatePresence mode="wait">
-          {/* Initial intake state */}
+          {/* Initial intake state — two-column hero */}
           {!result && !isProcessing && !error && (
-            <motion.div key="intake" exit={{ opacity: 0 }} className="space-y-8">
+            <motion.div key="intake" exit={{ opacity: 0 }} className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <MomentumTrack />
+                <SlobzHero />
+              </div>
               <ChaosIntake onProcess={handleProcess} isProcessing={isProcessing} />
-              <MomentumTrack />
               <SlobaCard />
             </motion.div>
           )}
@@ -125,16 +125,16 @@ Be specific and personal — reference actual details from their intake. No gene
           {/* Processing state */}
           {isProcessing && (
             <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-3xl p-12 shadow-xl shadow-gray-200/40 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-50 border border-green-200 mb-4">
-                  <Cpu className="w-8 h-8 text-green-600 animate-pulse" />
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-[#EDE9E1] p-12 md:p-16 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0D5B3A]/8 border border-[#0D5B3A]/20 mb-5">
+                  <Cpu className="w-8 h-8 text-[#0D5B3A] animate-pulse" />
                 </div>
-                <h2 className="text-lg font-bold text-gray-900 mb-2">SLOB AGENTIC ENGINE</h2>
-                <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+                <h2 className="font-heading text-2xl font-medium text-[#1A1A1A] mb-3">Slob Agentic Engine</h2>
+                <p className="text-sm text-[#8A857C] mb-8 max-w-md mx-auto leading-relaxed">
                   Ingesting chaos · Stripping self-deprecation · Extracting skills ·
                   Synthesizing resume · Building redemption plan…
                 </p>
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center justify-center gap-2 text-xs text-[#8A857C]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>This takes 10-20 seconds. Breathe.</span>
                 </div>
@@ -145,14 +145,14 @@ Be specific and personal — reference actual details from their intake. No gene
           {/* Error state */}
           {error && !isProcessing && (
             <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="bg-white/60 backdrop-blur-xl border border-red-200 rounded-3xl p-8 shadow-xl shadow-gray-200/40 text-center">
+              <div className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-red-200 p-10 text-center">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 border border-red-200 mb-4">
                   <AlertCircle className="w-7 h-7 text-red-500" />
                 </div>
-                <p className="text-sm text-gray-700 mb-6">{error}</p>
+                <p className="text-sm text-[#3A3A37] mb-6">{error}</p>
                 <button
                   onClick={() => { setError(""); }}
-                  className="px-6 py-3 rounded-full bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold tracking-wide"
+                  className="px-6 py-3 rounded-xl bg-[#1A1A1A] hover:bg-[#333] text-white text-xs font-bold tracking-wide transition-colors"
                 >
                   TRY AGAIN
                 </button>
@@ -162,11 +162,11 @@ Be specific and personal — reference actual details from their intake. No gene
 
           {/* Results state */}
           {result && !isProcessing && (
-            <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+            <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
               <div className="flex justify-end">
                 <button
                   onClick={handleReset}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold tracking-wide transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-[#EDE9E1] hover:border-[#1A1A1A] text-[#3A3A37] hover:text-[#1A1A1A] text-xs font-bold tracking-wide transition-colors shadow-sm"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> NEW INTAKE
                 </button>
@@ -183,14 +183,14 @@ Be specific and personal — reference actual details from their intake. No gene
               {result.three_step_plan?.length > 0 && (
                 <MicroSteps
                   steps={result.three_step_plan}
-                  title="3-STEP REDEMPTION PLAN"
+                  title="3-Step Redemption Plan"
                   subtitle="Small, achievable wins. Start this week."
                 />
               )}
               {result.micro_steps?.length > 0 && (
                 <MicroSteps
                   steps={result.micro_steps}
-                  title="EXECUTIVE FUNCTION BYPASS"
+                  title="Executive Function Bypass"
                   subtitle="Absurdly micro-steps. Each takes under 2 minutes. Dopamine-sized chunks."
                 />
               )}

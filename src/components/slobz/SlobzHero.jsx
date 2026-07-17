@@ -4,38 +4,39 @@ import { Sparkles } from "lucide-react";
 
 export default function SlobzHero() {
   return (
-    <div className="text-center pt-6 pb-10">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 border border-green-200 mb-6"
-      >
-        <Sparkles className="w-3.5 h-3.5 text-green-600" />
-        <span className="text-xs font-semibold text-green-700 tracking-wide">SECTOR 6 · SLOBZ</span>
-      </motion.div>
+    <div className="flex flex-col justify-center h-full">
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="text-5xl md:text-7xl font-black text-gray-900 tracking-tight"
+        className="font-heading text-3xl md:text-4xl lg:text-5xl font-medium text-[#1A1A1A] leading-[1.15] tracking-tight"
       >
-        Slobz
+        Stop pretending you have it together. Admit you're a slob. Let's fix it.
       </motion.h1>
-      <motion.p
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0D5B3A]/8 border border-[#0D5B3A]/20 mt-8 self-start"
+      >
+        <Sparkles className="w-3 h-3 text-[#0D5B3A]" />
+        <span className="text-[10px] font-bold text-[#0D5B3A] tracking-[0.2em]">SECTOR 6 · SLOBZ</span>
+      </motion.div>
+
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mt-4 text-lg md:text-xl text-gray-400 font-light max-w-xl mx-auto leading-relaxed"
+        className="mt-4"
       >
-        Stop pretending you have it together.
-        <br />
-        Admit you're a slob. Let's fix it.
-      </motion.p>
+        <span className="font-heading text-5xl md:text-6xl font-black text-[#1A1A1A] tracking-tight">Slobz</span>
+      </motion.div>
+
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="mt-6 text-sm text-green-600 font-black tracking-[0.2em]"
+        className="mt-3 text-xs text-[#0D5B3A] font-black tracking-[0.25em]"
       >
         GET A JOB IF YOU'RE A SLOB.
       </motion.p>

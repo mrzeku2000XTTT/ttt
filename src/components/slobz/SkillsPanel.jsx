@@ -8,42 +8,42 @@ export default function SkillsPanel({ hardSkills, softSkills, suggestedRoles }) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-3xl p-6 shadow-xl shadow-gray-200/40"
+      className="bg-white rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.04)] border border-[#EDE9E1] p-8"
     >
-      <h3 className="text-sm font-bold text-gray-900 mb-4">SAE: SKILLS EXTRACTED FROM YOUR CHAOS</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <h3 className="font-heading text-lg font-semibold text-[#1A1A1A] mb-5">SAE: Skills Extracted From Your Chaos</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-3.5 h-3.5 text-green-600" />
-            <span className="text-xs font-semibold text-gray-700">HARD SKILLS</span>
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="w-3.5 h-3.5 text-[#0D5B3A]" />
+            <span className="text-[10px] font-bold text-[#8A857C] tracking-[0.2em]">HARD SKILLS</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {hardSkills?.map((s, i) => (
-              <span key={i} className="px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-xs text-green-700 font-medium">{s}</span>
+              <span key={i} className="px-3 py-1.5 rounded-full bg-[#0D5B3A]/8 border border-[#0D5B3A]/15 text-xs text-[#0D5B3A] font-medium">{s}</span>
             ))}
           </div>
         </div>
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Brain className="w-3.5 h-3.5 text-blue-600" />
-            <span className="text-xs font-semibold text-gray-700">SOFT SKILLS</span>
+          <div className="flex items-center gap-2 mb-3">
+            <Brain className="w-3.5 h-3.5 text-[#2D5F8A]" />
+            <span className="text-[10px] font-bold text-[#8A857C] tracking-[0.2em]">SOFT SKILLS</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {softSkills?.map((s, i) => (
-              <span key={i} className="px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs text-blue-700 font-medium">{s}</span>
+              <span key={i} className="px-3 py-1.5 rounded-full bg-[#2D5F8A]/8 border border-[#2D5F8A]/15 text-xs text-[#2D5F8A] font-medium">{s}</span>
             ))}
           </div>
         </div>
       </div>
       {suggestedRoles?.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="flex items-center gap-2 mb-2">
-            <Briefcase className="w-3.5 h-3.5 text-gray-600" />
-            <span className="text-xs font-semibold text-gray-700">SUGGESTED ROLES (NO TOXIC ENVIRONMENTS)</span>
+        <div className="mt-6 pt-5 border-t border-[#F0EDE5]">
+          <div className="flex items-center gap-2 mb-3">
+            <Briefcase className="w-3.5 h-3.5 text-[#8A857C]" />
+            <span className="text-[10px] font-bold text-[#8A857C] tracking-[0.2em]">SUGGESTED ROLES — NO TOXIC ENVIRONMENTS</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {suggestedRoles.map((r, i) => (
-              <span key={i} className="px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-xs text-gray-700 font-medium">{r}</span>
+              <span key={i} className="px-3 py-1.5 rounded-full bg-[#F5F2EB] border border-[#E8E4DD] text-xs text-[#3A3A37] font-medium">{r}</span>
             ))}
           </div>
         </div>
