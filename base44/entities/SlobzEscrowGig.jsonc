@@ -1,0 +1,103 @@
+{
+  "name": "SlobzEscrowGig",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Gig title"
+    },
+    "task_description": {
+      "type": "string",
+      "description": "What the worker must do"
+    },
+    "requirements": {
+      "type": "string",
+      "description": "Verifiable acceptance criteria the AI escrow agent checks proof against"
+    },
+    "amount_kas": {
+      "type": "number",
+      "description": "KAS locked in the covenant escrow wallet for this gig"
+    },
+    "poster_wallet": {
+      "type": "string",
+      "description": "Employer's Kaspa wallet address"
+    },
+    "escrow_address": {
+      "type": "string",
+      "description": "Per-gig covenant escrow wallet address holding the locked funds"
+    },
+    "escrow_mnemonic": {
+      "type": "string",
+      "description": "Escrow wallet seed phrase (server-side only, admin RLS)"
+    },
+    "funding_tx": {
+      "type": "string",
+      "description": "On-chain transaction that funded the escrow (replay-protected)"
+    },
+    "worker_wallet": {
+      "type": "string",
+      "description": "Kaspa wallet of the worker who claimed the gig"
+    },
+    "proof_url": {
+      "type": "string",
+      "description": "Uploaded proof of completed work"
+    },
+    "proof_notes": {
+      "type": "string",
+      "description": "Worker's notes accompanying the proof"
+    },
+    "review_reason": {
+      "type": "string",
+      "description": "AI escrow agent's verdict reasoning"
+    },
+    "payout_tx": {
+      "type": "string",
+      "description": "On-chain transaction releasing escrow funds to the worker"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "awaiting_funding",
+        "open",
+        "claimed",
+        "pending_review",
+        "paid",
+        "cancelled"
+      ],
+      "default": "awaiting_funding"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "title",
+    "task_description",
+    "amount_kas",
+    "poster_wallet"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
