@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone, Globe } from "lucide-react";
+import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone, Globe, Castle } from "lucide-react";
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
@@ -33,12 +33,13 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const tttWalletAddress = user?.created_wallet_address || localStorage.getItem('ttt_wallet_address');
   const tttPrivateKey = localStorage.getItem('ttt_wallet_pk');
   const hasKasware = typeof window !== 'undefined' && !!window.kasware;
+  const hasKastle = typeof window !== 'undefined' && !!window.kastle;
   const terraWallets = loadTerraWallets();
   const hasTerra = terraWallets.length > 0;
   const [selectedTerraIdx, setSelectedTerraIdx] = useState(0);
 
-  // Auto-default priority: Terra > TTT > Kasware
-  const defaultMethod = hasTerra ? 'terra' : (!hasKasware && tttWalletAddress) ? 'ttt' : hasKasware ? 'kasware' : 'ttt';
+  // Auto-default priority: Terra > TTT > Kasware > Kastle
+  const defaultMethod = hasTerra ? 'terra' : (!hasKasware && !hasKastle && tttWalletAddress) ? 'ttt' : hasKasware ? 'kasware' : hasKastle ? 'kastle' : 'ttt';
   const [sendMethod, setSendMethod] = useState(defaultMethod);
   const [tipPin, setTipPin] = useState('');
   const [pinVerified, setPinVerified] = useState(false);
@@ -152,6 +153,19 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
           if (!res.data?.success || res.data?.error) throw new Error(res.data?.error || 'Transaction failed');
           txId = res.data?.txId || 'ttt-tx';
         }
+      } else if (sendMethod === 'kastle') {
+        // Kastle wallet extension (KAS only — KRC-20 needs a backend commit/reveal flow)
+        if (tipTokenType === 'KRC20') {
+          throw new Error('Kastle does not support KRC-20 tipping yet. Use Kasware, Terra, or TTT Wallet for KRC-20.');
+        }
+        if (!window.kastle) throw new Error('Kastle wallet extension not detected');
+        try {
+          await window.kastle.request?.('kas:connect');
+        } catch { /* may already be connected */ }
+        txId = await window.kastle.sendKaspa(
+          tippingPost.author_wallet_address,
+          Math.floor(tipAmountValue * 1e8)
+        );
       } else {
         // Kasware
         if (tipTokenType === 'KRC20') {
@@ -172,7 +186,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         }
       }
 
-      const senderWallet = sendMethod === 'terra' ? terraWallets[selectedTerraIdx]?.address : sendMethod === 'ttt' ? tttWalletAddress : (kaswareWallet?.address || user?.created_wallet_address);
+      const senderWallet = sendMethod === 'terra' ? terraWallets[selectedTerraIdx]?.address : sendMethod === 'ttt' ? tttWalletAddress : sendMethod === 'kastle' ? (kaswareWallet?.address || user?.created_wallet_address || 'kastle') : (kaswareWallet?.address || user?.created_wallet_address);
       const senderName = user?.username || (senderWallet ? `${senderWallet.slice(0, 8)}...` : 'Anonymous');
       const ticker = tipTokenType === 'KRC20' ? tipKrc20Ticker.toUpperCase() : 'KAS';
 
@@ -309,7 +323,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
           </div>
 
           {/* Send Method — show wallet choices */}
-          {(tttWalletAddress || hasKasware || hasTerra) && (
+          {(tttWalletAddress || hasKasware || hasKastle || hasTerra) && (
             <div>
               <div className="text-xs text-white/50 mb-2">Send from</div>
               <div className="flex gap-2 flex-wrap">
@@ -342,6 +356,16 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                     Kasware
                   </Button>
                 )}
+                {hasKastle && (
+                  <Button
+                    onClick={() => setSendMethod('kastle')}
+                    size="sm"
+                    className={`flex-1 flex items-center gap-1 ${sendMethod === 'kastle' ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}
+                  >
+                    <Castle className="w-3 h-3" />
+                    Kastle
+                  </Button>
+                )}
               </div>
               {/* Terra wallet selector when multiple wallets exist */}
               {sendMethod === 'terra' && terraWallets.length > 1 && (
@@ -367,8 +391,8 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                   <div className="text-xs text-white/60 font-mono">{terraWallets[0].address?.slice(0, 14)}...{terraWallets[0].address?.slice(-6)}</div>
                 </div>
               )}
-              {!hasKasware && !tttWalletAddress && !hasTerra && (
-                <p className="text-xs text-amber-400 mt-2">No wallet detected. Set up a wallet in Terra or install Kasware extension.</p>
+              {!hasKasware && !hasKastle && !tttWalletAddress && !hasTerra && (
+                <p className="text-xs text-amber-400 mt-2">No wallet detected. Set up a wallet in Terra or install the Kasware/Kastle extension.</p>
               )}
             </div>
           )}
@@ -494,6 +518,8 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                   ? (tipTokenType === 'KRC20'
                     ? `Native KRC-20 transfer via TTT Wallet — no Kasware needed.`
                     : 'Sent natively via your TTT Wallet — no Kasware needed.')
+                  : sendMethod === 'kastle'
+                  ? 'Sent directly from your Kastle wallet extension instantly.'
                   : 'Tips are sent directly from your Kasware wallet instantly.'}
               </p>
             </div>
