@@ -5,8 +5,53 @@ Deno.serve(async (req) => {
     const { videoId } = body;
     if (!videoId) return Response.json({ error: 'videoId required' }, { status: 400 });
 
-    // Try multiple Innertube clients — some videos only serve progressive MP4 to certain clients
+    // Try multiple Innertube clients in priority order.
+    // TV clients are embedded-player contexts — they bypass the "Sign in to confirm
+    // you're not a bot" gate that blocks WEB/MWEB on server-side requests.
     const clients = [
+      {
+        name: 'TV',
+        payload: {
+          context: {
+            client: {
+              clientName: 'TV',
+              clientVersion: '2.0',
+              hl: 'en', gl: 'US'
+            }
+          },
+          videoId,
+          contentCheckOk: true,
+          racyCheckOk: true
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (PlayStation; PlayStation 4/9.00) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
+          'Origin': 'https://www.youtube.com',
+          'Referer': 'https://www.youtube.com/tv'
+        }
+      },
+      {
+        name: 'TVHTML5_SIMPLY_EMBEDDED_PLAYER',
+        payload: {
+          context: {
+            client: {
+              clientName: 'TVHTML5_SIMPLY_EMBEDDED_PLAYER',
+              clientVersion: '2.0',
+              hl: 'en', gl: 'US'
+            },
+            thirdParty: {
+              embedUrl: 'https://www.youtube.com'
+            }
+          },
+          videoId,
+          contentCheckOk: true,
+          racyCheckOk: true
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (PlayStation; PlayStation 4/9.00) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
+          'Origin': 'https://www.youtube.com',
+          'Referer': 'https://www.youtube.com/tv'
+        }
+      },
       {
         name: 'ANDROID_VR',
         payload: {
@@ -78,12 +123,29 @@ Deno.serve(async (req) => {
         }
 
         // Progressive formats = video+audio muxed MP4 (itag 18/22 etc.)
-        const formats = (data.streamingData?.formats || []).filter(
+        const progressive = (data.streamingData?.formats || []).filter(
           (f) => f.mimeType?.includes('video/mp4') && f.url
         );
-        if (formats.length === 0) { lastError = 'No progressive MP4 stream for this video'; continue; }
+        // Adaptive video-only MP4 streams — usable as fallback for preview
+        const adaptiveVideo = (data.streamingData?.adaptiveFormats || []).filter(
+          (f) => f.mimeType?.includes('video/mp4') && f.url && f.videoOnly !== false
+        );
+        // Adaptive muxed (video+audio in separate streams) — for direct preview
+        const adaptiveMuxed = (data.streamingData?.adaptiveFormats || []).filter(
+          (f) => f.mimeType?.includes('video/mp4') && f.url
+        );
 
-        const best = formats.reduce((a, b) => ((b.height || 0) > (a.height || 0) ? b : a));
+        const best = progressive.length > 0
+          ? progressive.reduce((a, b) => ((b.height || 0) > (a.height || 0) ? b : a))
+          : adaptiveMuxed.length > 0
+            ? adaptiveMuxed.reduce((a, b) => ((b.height || 0) > (a.height || 0) ? b : a))
+            : null;
+
+        if (!best) {
+          lastError = 'No playable MP4 stream for this video';
+          continue;
+        }
+
         const title = data.videoDetails?.title || '';
 
         return Response.json({
