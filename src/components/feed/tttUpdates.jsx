@@ -42,15 +42,7 @@ export const TTT_UPDATES = [
     date: "2026-07-14",
     link: "/KASDollar",
   },
-  {
-    id: "aporia-dex-igra",
-    title: "Aporia DEX — Igra Ecosystem Trading",
-    summary: "Trade on the Igra Agent ecosystem with real-time market data, candlestick charts, order book, and on-chain liquidity tools.",
-    tag: "DeFi",
-    date: "2026-07-13",
-    link: "/Aporia",
-  },
-  {
+{
     id: "kaspa-toccata-live-july",
     title: "Kaspa Toccata Hard Fork Goes Live on Mainnet",
     summary: "Toccata is now active on Kaspa mainnet — native tokens, covenants, ZK verification, and DeFi primitives all live on L1. Exchanges resuming deposits and withdrawals.",
