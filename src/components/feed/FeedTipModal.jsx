@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone, Globe, Castle } from "lucide-react";
+import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone, Globe } from "lucide-react";
+
+const KASTLE_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d958c7898_image.png";
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
@@ -362,7 +364,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                     size="sm"
                     className={`flex-1 flex items-center gap-1 ${sendMethod === 'kastle' ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}
                   >
-                    <Castle className="w-3 h-3" />
+                    <img src={KASTLE_LOGO} alt="Kastle" className="w-4 h-4 rounded" />
                     Kastle
                   </Button>
                 )}
