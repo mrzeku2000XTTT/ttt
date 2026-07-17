@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -8,6 +8,7 @@ import KlipzAgent from "@/components/klipz/KlipzAgent";
 import KlipzHireModal from "@/components/klipz/KlipzHireModal";
 import KlipzLibrary from "@/components/klipz/KlipzLibrary";
 import KlipzAgentCanvas from "@/components/klipz/KlipzAgentCanvas";
+import KlipzAdminReminder from "@/components/klipz/KlipzAdminReminder";
 
 export default function Klipz() {
   const navigate = useNavigate();
@@ -18,8 +19,20 @@ export default function Klipz() {
   const [hiring, setHiring] = useState(false);
   const [agentHint, setAgentHint] = useState(false);
   const [canvas, setCanvas] = useState(null); // { clip, videoId }
+  const [user, setUser] = useState(null);
+  const [showAdminReminder, setShowAdminReminder] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => setUser(null));
+  }, []);
+
+  const isAdmin = user?.role === "admin";
 
   const analyze = async (url) => {
+    if (!isAdmin) {
+      setShowAdminReminder(true);
+      return;
+    }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -159,6 +172,10 @@ export default function Klipz() {
           onClose={() => setHiring(false)}
           onDelivered={() => { setHiring(false); setTab("library"); }}
         />
+      )}
+
+      {showAdminReminder && (
+        <KlipzAdminReminder onClose={() => setShowAdminReminder(false)} />
       )}
     </div>
   );
