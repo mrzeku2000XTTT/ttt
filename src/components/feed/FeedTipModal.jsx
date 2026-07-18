@@ -33,8 +33,15 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const mobile = isMobileDevice();
 
   // Detect Kasware availability + TTT wallet + Terra wallets
-  const tttWalletAddress = user?.created_wallet_address || localStorage.getItem('ttt_wallet_address');
+  // IMPORTANT: the private key stored on this device belongs to the LOCAL wallet
+  // address — always prefer it, otherwise we'd try to send from a stale account
+  // address (wrong balance + key mismatch).
+  const localTTTAddress = localStorage.getItem('ttt_wallet_address');
   const tttPrivateKey = localStorage.getItem('ttt_wallet_pk');
+  const tttWalletAddress = (tttPrivateKey && localTTTAddress)
+    ? localTTTAddress
+    : (localTTTAddress || user?.created_wallet_address);
+  const [tttBalance, setTttBalance] = useState(null);
   const hasKasware = typeof window !== 'undefined' && !!window.kasware;
   const hasKastle = typeof window !== 'undefined' && !!window.kastle;
   const terraWallets = loadTerraWallets();
@@ -52,6 +59,16 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const pinHash = localStorage.getItem('ttt_wallet_pin_hash');
   const hasPinSet = !!pinHash;
   const tttPrivateKeyMissing = !tttPrivateKey && sendMethod === 'ttt';
+
+  // Live balance of the TTT wallet actually being used to send
+  useEffect(() => {
+    if (sendMethod !== 'ttt' || !tttWalletAddress) return;
+    let cancelled = false;
+    base44.functions.invoke('getKaspaBalance', { address: tttWalletAddress })
+      .then((res) => { if (!cancelled && res.data?.success) setTttBalance(res.data.balanceKAS); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [sendMethod, tttWalletAddress]);
 
   const verifyPin = async () => {
     if (tipPin.length !== 6) { setPinError('Enter 6-digit PIN'); return; }
@@ -387,6 +404,14 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                       {tw.label || `Wallet ${i + 1}`}: {tw.address?.slice(0, 12)}...{tw.address?.slice(-6)}
                     </button>
                   ))}
+                </div>
+              )}
+              {sendMethod === 'ttt' && tttWalletAddress && (
+                <div className="mt-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg px-3 py-2">
+                  <div className="text-[10px] text-cyan-400 mb-0.5">
+                    Sending from{tttBalance !== null ? ` — ${tttBalance.toFixed(2)} KAS available` : ''}
+                  </div>
+                  <div className="text-xs text-white/60 font-mono break-all">{tttWalletAddress}</div>
                 </div>
               )}
               {sendMethod === 'terra' && terraWallets.length === 1 && (
