@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { User, LogOut, Sparkles, ArrowRight } from "lucide-react";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
+import SlobzNetworkToggle from "@/components/slobz/SlobzNetworkToggle";
+import SlobzAskButton from "@/components/slobz/SlobzAskButton";
 
 const HERO_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d74177eb0_generated_image.png";
 const CLAY_FACE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff7c5a573_generated_image.png";
@@ -73,8 +75,9 @@ export default function Slobz() {
             <span>Sector 6 · SLOBZ</span>
           </div>
           <div className="flex items-center gap-3 text-[#5A4B8A]">
-            <User className="w-5 h-5" />
-            <LogOut className="w-5 h-5" />
+            <SlobzNetworkToggle />
+            <User className="w-5 h-5 hidden sm:block" />
+            <LogOut className="w-5 h-5 hidden sm:block" />
           </div>
         </div>
 
@@ -189,6 +192,7 @@ export default function Slobz() {
           <p className="text-xs text-[#7A7290] mt-1.5">Radical candor. Zero corporate jargon. Built for ADHD brains.</p>
         </div>
       </div>
+      <SlobzAskButton />
     </div>
   );
 }

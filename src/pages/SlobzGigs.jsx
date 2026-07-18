@@ -4,6 +4,7 @@ import { ShieldCheck, ArrowRight } from "lucide-react";
 import SlobzNav from "@/components/slobz/SlobzNav";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import MomentumTrack from "@/components/slobz/MomentumTrack";
+import SlobzAskButton from "@/components/slobz/SlobzAskButton";
 
 export default function SlobzGigs() {
   return (
@@ -30,6 +31,7 @@ export default function SlobzGigs() {
         </Link>
         <MomentumTrack />
       </div>
+      <SlobzAskButton />
     </div>
   );
 }

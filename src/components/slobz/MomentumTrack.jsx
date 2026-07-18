@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Clock, DollarSign, Check, Loader2 } from "lucide-react";
+import { Clock, DollarSign, Check, Loader2, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useSlobzNetwork } from "@/components/slobz/slobzNetwork";
 
 const CLAY_FACE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff7c5a573_generated_image.png";
 
 export default function MomentumTrack() {
+  const network = useSlobzNetwork();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(null);
@@ -58,13 +61,29 @@ export default function MomentumTrack() {
       <div className="mb-4">
         <h3 className="font-heading text-2xl font-semibold text-[#1F1B2E]">Slobz Momentum Track</h3>
         <p className="text-xs text-[#7A7290] mt-1">Low-stress micro-gigs. Instant payout. Zero friction.</p>
+        {network === "testnet" && (
+          <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EBE6F8] text-[9px] font-display font-extrabold text-[#7C5CFC] uppercase tracking-wide">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#5CE1A4] animate-pulse" /> Testnet demo gigs · payouts in TKAS
+          </div>
+        )}
       </div>
 
       <div className="rounded-[20px] overflow-hidden mb-4 bg-[#7C5CFC]">
         <img src={CLAY_FACE} alt="Slobz mascot" className="w-full h-36 md:h-44 object-cover object-center" />
       </div>
 
-      {tasks.length === 0 ? (
+      {network === "mainnet" ? (
+        <div className="text-center py-6">
+          <p className="text-xs text-[#5A4B8A] font-semibold mb-1">Real gigs live in the Covenant Escrow Market.</p>
+          <p className="text-[10px] text-[#8B84A3] mb-4">Demo micro-gigs only run on testnet — flip the toggle on the Slobz home page to try the full flow with free TKAS.</p>
+          <Link
+            to="/SlobzMarket"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#7C5CFC] hover:bg-[#6B4BEB] text-white text-[10px] font-display font-extrabold shadow-[0_6px_16px_rgba(124,92,252,0.35)] transition-colors"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" /> ENTER THE ESCROW MARKET
+          </Link>
+        </div>
+      ) : tasks.length === 0 ? (
         <p className="text-xs text-[#7A7290] text-center py-6">No micro-gigs available right now. Check back soon.</p>
       ) : (
         <div className="grid grid-cols-2 gap-3">
@@ -87,7 +106,7 @@ export default function MomentumTrack() {
                 </div>
                 <div className="flex items-center gap-2.5 mb-2.5">
                   <span className={`flex items-center gap-0.5 text-[11px] font-bold ${claimed ? "text-white" : "text-[#7C5CFC]"}`}>
-                    <DollarSign className="w-3 h-3" />{task.payout_usd}
+                    {network === "testnet" ? <>{task.payout_usd} TKAS</> : <><DollarSign className="w-3 h-3" />{task.payout_usd}</>}
                   </span>
                   <span className={`flex items-center gap-0.5 text-[10px] ${claimed ? "text-white/70" : "text-[#8B84A3]"}`}>
                     <Clock className="w-3 h-3" />{task.estimated_minutes}m

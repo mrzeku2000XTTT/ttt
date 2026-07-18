@@ -6,6 +6,7 @@ import SlobzNav from "@/components/slobz/SlobzNav";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import AnimationCard from "@/components/slobzanimations/AnimationCard";
 import PostAnimationForm from "@/components/slobzanimations/PostAnimationForm";
+import SlobzAskButton from "@/components/slobz/SlobzAskButton";
 
 // Official Slobz clay animations — how the app works, no words needed
 const OFFICIAL_ANIMATIONS = [
@@ -109,6 +110,7 @@ export default function SlobzAnimations() {
           ))}
         </div>
       </div>
+      <SlobzAskButton />
     </div>
   );
 }

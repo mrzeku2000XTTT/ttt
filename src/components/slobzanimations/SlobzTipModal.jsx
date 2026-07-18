@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Loader2, X, Coins, Smartphone, Globe, Copy, Check } from "lucide-react";
 import { verifyStoredPin } from "@/components/wallet/walletLock";
+import { getSlobzNetwork, TESTNET_FAUCET_URL } from "@/components/slobz/slobzNetwork";
 
 const KASTLE_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d958c7898_image.png";
 
@@ -40,6 +41,22 @@ export default function SlobzTipModal({ anim, onClose, onSuccess }) {
   const [pinError, setPinError] = useState("");
   const [mnemonic, setMnemonic] = useState("");
 
+  // Network: mainnet KAS or Kaspa testnet-10 TKAS
+  const [network, setNetwork] = useState(getSlobzNetwork());
+  const [tipArt, setTipArt] = useState(null);
+  const [artBusy, setArtBusy] = useState(false);
+
+  const generateTipArt = async () => {
+    setArtBusy(true);
+    try {
+      const res = await base44.integrations.Core.GenerateImage({
+        prompt: `Cute claymation 3D scene: a small purple clay slob character with googly eyes joyfully handing a shiny golden Kaspa coin to another happy clay character, celebrating the animation "${anim.title}". Soft lavender background, fluffy clay clouds, stop-motion style with fingerprint textures in the clay, warm playful lighting.`,
+      });
+      setTipArt(res.url);
+    } catch { /* art is a bonus, never block tipping */ }
+    setArtBusy(false);
+  };
+
   const noWalletAtAll = !hasTerra && !tttWalletAddress && !hasKasware && !hasKastle;
 
   const verifyPin = async () => {
@@ -70,7 +87,16 @@ export default function SlobzTipModal({ anim, onClose, onSuccess }) {
     setError("");
     try {
       let txId;
-      if (method === "terra") {
+      if (network === "testnet") {
+        // Real Kaspa testnet-10 transaction — recipient auto-converted to kaspatest:
+        if (!tttWalletAddress) throw new Error("Create your TTT Wallet first to tip on testnet.");
+        const payload = { action: "send", fromAddress: tttWalletAddress, toAddress: anim.wallet_address, amountKas: amt };
+        if (tttPrivateKey) payload.privateKey = tttPrivateKey;
+        else payload.mnemonic = mnemonic.trim();
+        const res = await base44.functions.invoke("slobzTestnetSend", payload);
+        if (!res.data?.success || res.data?.error) throw new Error(res.data?.error || "Testnet transaction failed");
+        txId = res.data?.txId;
+      } else if (method === "terra") {
         const tw = terraWallets[selectedTerraIdx];
         const res = await base44.functions.invoke("sendKaspaTransaction", {
           fromAddress: tw.address,
@@ -94,9 +120,11 @@ export default function SlobzTipModal({ anim, onClose, onSuccess }) {
         txId = await window.kasware.sendKaspa(anim.wallet_address, Math.floor(amt * 1e8));
       }
 
-      // Bookkeeping must never fail the tip
+      // Bookkeeping must never fail the tip (testnet TKAS never counts as real tips)
       try {
-        await base44.entities.SlobzAnimation.update(anim.id, { tips_received: (anim.tips_received || 0) + amt });
+        if (network !== "testnet") {
+          await base44.entities.SlobzAnimation.update(anim.id, { tips_received: (anim.tips_received || 0) + amt });
+        }
       } catch (e) {
         console.warn("Tip sent, stats update failed:", e);
       }
@@ -156,8 +184,35 @@ export default function SlobzTipModal({ anim, onClose, onSuccess }) {
           <div className="text-[11px] font-mono text-[#3D2E7C] break-all">{anim.wallet_address}</div>
         </button>
 
+        {/* Network tabs */}
+        <div className="mb-4">
+          <div className="text-[10px] font-display font-extrabold text-[#8B84A3] uppercase tracking-wide mb-2">Network</div>
+          <div className="flex gap-2">
+            <button onClick={() => setNetwork("mainnet")} className={methodBtn(network === "mainnet")}>KAS · MAINNET</button>
+            <button onClick={() => { setNetwork("testnet"); setMethod("ttt"); }} className={methodBtn(network === "testnet")}>TKAS · TESTNET</button>
+          </div>
+          {network === "testnet" && (
+            <div className="mt-2 bg-[#EBE6F8] rounded-[16px] px-4 py-3 text-[10px] text-[#5A4B8A] leading-relaxed">
+              <span className="font-display font-extrabold text-[#7C5CFC]">TESTNET-10 MODE</span> — sends real TKAS (free test coins) natively via your TTT Wallet. The recipient's address is auto-converted to its kaspatest: twin. Need TKAS?{" "}
+              <a href={TESTNET_FAUCET_URL} target="_blank" rel="noopener noreferrer" className="underline font-bold text-[#7C5CFC]">Grab free TKAS from the faucet</a>{" "}
+              using your wallet address with the kaspatest: prefix.
+            </div>
+          )}
+        </div>
+
         {/* Send from */}
-        {!noWalletAtAll ? (
+        {network === "testnet" ? (
+          tttWalletAddress ? (
+            <div className="mb-4 bg-[#EBE6F8] rounded-[12px] px-3 py-2">
+              <div className="text-[10px] text-[#7C5CFC] font-display font-extrabold mb-0.5">TTT Wallet (testnet twin)</div>
+              <div className="text-[10px] font-mono text-[#5A4B8A]">kaspatest:{tttWalletAddress?.replace("kaspa:", "").slice(0, 14)}…</div>
+            </div>
+          ) : (
+            <div className="mb-4 bg-[#FFF1E9] rounded-[16px] px-4 py-3 text-[11px] text-[#F96B4C]">
+              Testnet tipping uses your TTT Wallet. Create one first (Settings → Wallet).
+            </div>
+          )
+        ) : !noWalletAtAll ? (
           <div className="mb-4">
             <div className="text-[10px] font-display font-extrabold text-[#8B84A3] uppercase tracking-wide mb-2">Send from</div>
             <div className="flex gap-2 flex-wrap">
@@ -212,7 +267,7 @@ export default function SlobzTipModal({ anim, onClose, onSuccess }) {
 
         {/* Amount */}
         <div className="mb-4">
-          <div className="text-[10px] font-display font-extrabold text-[#8B84A3] uppercase tracking-wide mb-2">Amount (KAS)</div>
+          <div className="text-[10px] font-display font-extrabold text-[#8B84A3] uppercase tracking-wide mb-2">Amount ({network === "testnet" ? "TKAS" : "KAS"})</div>
           <input
             type="number"
             min="0.1"
@@ -232,6 +287,26 @@ export default function SlobzTipModal({ anim, onClose, onSuccess }) {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Themed tip art — generated right inside the modal */}
+        <div className="mb-4">
+          {tipArt && (
+            <motion.img
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              src={tipArt}
+              alt={`Slobz tip art for ${anim.title}`}
+              className="w-full rounded-[16px] mb-2 shadow-[0_8px_20px_rgba(124,92,252,0.25)]"
+            />
+          )}
+          <button
+            onClick={generateTipArt}
+            disabled={artBusy}
+            className="w-full py-2.5 rounded-full bg-[#F3F0FA] hover:bg-[#EBE6F8] text-[10px] font-display font-extrabold text-[#7C5CFC] flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+          >
+            {artBusy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> SCULPTING CLAY…</> : tipArt ? "✨ REGENERATE TIP ART" : "✨ GENERATE THEMED TIP ART"}
+          </button>
         </div>
 
         {/* TTT PIN / seed auth */}
@@ -282,7 +357,7 @@ export default function SlobzTipModal({ anim, onClose, onSuccess }) {
           disabled={busy || noWalletAtAll}
           className="w-full py-3.5 rounded-full bg-gradient-to-b from-[#FF8A6B] to-[#F96B4C] text-white text-xs font-display font-extrabold shadow-[0_8px_20px_rgba(249,107,76,0.4)] disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> SENDING…</> : `SEND ${amount || ""} KAS TIP`}
+          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> SENDING…</> : `SEND ${amount || ""} ${network === "testnet" ? "TKAS" : "KAS"} TIP`}
         </button>
         <p className="text-[10px] text-[#8B84A3] text-center mt-3">
           {method === "ttt" ? "Sent natively via your TTT Wallet — no extension needed, works on mobile." : method === "terra" ? "Sent natively via your Terra wallet — no extension needed." : "Sent directly from your wallet extension."}
