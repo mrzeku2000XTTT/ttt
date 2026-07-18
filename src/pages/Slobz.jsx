@@ -89,7 +89,13 @@ export default function Slobz() {
           <div className="flex items-center gap-3 text-[#5A4B8A]">
             <SlobzNetworkToggle />
             <User className="w-5 h-5 hidden sm:block" />
-            <LogOut className="w-5 h-5 hidden sm:block" />
+            <button
+              onClick={() => navigate("/Sector6")}
+              title="Back to Sector 6"
+              className="p-1.5 rounded-full hover:bg-[#EBE6F8] hover:text-[#7C5CFC] transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
