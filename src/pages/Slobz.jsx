@@ -12,46 +12,58 @@ const CARD_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2
 const ICON_BOLT = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/59b9b3958_generated_image.png";
 const ICON_LOCK = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff3973122_generated_image.png";
 
+// The purple slob squad
+const SLOB_WAVE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
+const SLOB_CHAOS = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bbe388724_generated_image.png";
+const SLOB_RESUME = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/a7b97311a_generated_image.png";
+const SLOB_BRIEFCASE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f0ddba039_generated_image.png";
+const SLOB_GUARD = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e5e4444a5_generated_image.png";
+const SLOB_DIRECTOR = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e19daf9e9_generated_image.png";
+const SLOB_WHALE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e67cfa80f_generated_image.png";
+const SLOB_ZEN = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/05bf553e1_generated_image.png";
+const SLOB_SCIENTIST = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/60bb0a620_generated_image.png";
+const SLOB_SLEEP = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/df8a323cb_generated_image.png";
+
 const features = [
   {
     title: "The Chaos Intake",
     desc: "Dump your raw, unfiltered thoughts. The SAE engine roasts you, extracts your skills, and ghost-writes your resume.",
-    img: ICON_BOLT,
+    img: SLOB_CHAOS,
     path: "/SlobzIntake",
     cta: "START THE INTAKE",
   },
   {
     title: "Momentum Track",
     desc: "Low-stress micro-gigs paying $15-30. Instant payout. Zero interviews. Zero friction. Build momentum one gig at a time.",
-    img: CLAY_FACE,
+    img: SLOB_BRIEFCASE,
     path: "/SlobzGigs",
     cta: "BROWSE GIGS",
   },
   {
     title: "Escrow Market",
     desc: "Real covenant escrow on Kaspa. Employers lock KAS on-chain per gig, an AI agent checks the work, funds release automatically.",
-    img: ICON_LOCK,
+    img: SLOB_GUARD,
     path: "/SlobzMarket",
     cta: "ENTER THE MARKET",
   },
   {
     title: "Animation Station",
     desc: "Clay animations by the community. Post your own and earn KAS tips from fellow slobs who love your work.",
-    img: ICON_BOLT,
+    img: SLOB_DIRECTOR,
     path: "/SlobzAnimations",
     cta: "WATCH & TIP",
   },
   {
     title: "Entity X",
     desc: "Live-track the biggest Kaspa holder — balance, movements, and instant 7/30-day fact-checked flow reports to keep you motivated.",
-    img: ICON_BOLT,
+    img: SLOB_WHALE,
     path: "/SlobzEntityX",
     cta: "WATCH THE WHALE",
   },
   {
     title: "Financial Wellness",
     desc: "The Sloba Card: instant payouts, behavioral guardrails, and an auto-saving Get Out Bucket for your independence fund.",
-    img: CARD_IMG,
+    img: SLOB_ZEN,
     path: "/SlobzWellness",
     cta: "SEE THE CARD",
   },
@@ -131,6 +143,16 @@ export default function Slobz() {
               BROWSE MICRO-GIGS
             </button>
           </motion.div>
+
+          {/* Waving slob mascot */}
+          <motion.img
+            src={SLOB_WAVE}
+            alt="Slobz mascot waving"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: [0, -8, 0] }}
+            transition={{ opacity: { delay: 0.5 }, y: { duration: 2.6, repeat: Infinity, ease: "easeInOut", delay: 0.5 } }}
+            className="hidden md:block absolute bottom-4 left-4 w-28 h-28 rounded-[24px] object-cover shadow-[0_12px_30px_rgba(61,46,124,0.35)] rotate-[-4deg]"
+          />
         </div>
 
         {/* Campaign video */}
@@ -145,6 +167,11 @@ export default function Slobz() {
               <div className="text-[10px] tracking-[0.3em] text-[#7C5CFC] font-bold">SEE IT IN ACTION</div>
               <h2 className="font-heading text-xl md:text-2xl font-semibold text-[#1F1B2E] mt-1">Slobz — the anti-career platform</h2>
             </div>
+            <img
+              src={SLOB_RESUME}
+              alt="Slob mascot with a resume"
+              className="w-16 h-16 rounded-[18px] object-cover shadow-[0_8px_20px_rgba(124,92,252,0.3)] rotate-[3deg]"
+            />
           </div>
           <video
             src="https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/0949dafd6_Campaign_Ad.mp4"
@@ -188,6 +215,20 @@ export default function Slobz() {
 
         {/* Bottom tagline */}
         <div className="text-center mt-14">
+          <div className="flex items-end justify-center gap-4 mb-5">
+            <motion.img
+              src={SLOB_SCIENTIST}
+              alt="Slob scientist — testnet lab"
+              whileHover={{ rotate: -6, scale: 1.05 }}
+              className="w-20 h-20 md:w-24 md:h-24 rounded-[20px] object-cover shadow-[0_10px_24px_rgba(124,92,252,0.28)] rotate-[-3deg]"
+            />
+            <motion.img
+              src={SLOB_SLEEP}
+              alt="Sleeping slob — rest is part of the plan"
+              whileHover={{ rotate: 6, scale: 1.05 }}
+              className="w-20 h-20 md:w-24 md:h-24 rounded-[20px] object-cover shadow-[0_10px_24px_rgba(124,92,252,0.28)] rotate-[3deg] mb-2"
+            />
+          </div>
           <p className="font-display text-lg font-extrabold text-[#4A2FA8]">GET A JOB IF YOU'RE A SLOB.</p>
           <p className="text-xs text-[#7A7290] mt-1.5">Radical candor. Zero corporate jargon. Built for ADHD brains.</p>
         </div>
