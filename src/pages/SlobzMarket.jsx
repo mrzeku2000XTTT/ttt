@@ -7,6 +7,7 @@ import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import PostGigForm from "@/components/slobzmarket/PostGigForm";
 import GigCard from "@/components/slobzmarket/GigCard";
 import SlobzMarketWaitlist from "@/components/slobzmarket/SlobzMarketWaitlist";
+import { useSlobzNetwork } from "@/components/slobz/slobzNetwork";
 
 export default function SlobzMarket() {
   const [gigs, setGigs] = useState([]);
@@ -16,20 +17,22 @@ export default function SlobzMarket() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
 
-  const hasAccess = user?.role === "admin" || user?.slobz_market_invited === true;
+  const network = useSlobzNetwork();
+  const hasAccess = user?.role === "admin";
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {}).finally(() => setAuthChecked(true));
   }, []);
 
   const loadGigs = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await base44.functions.invoke("slobzEscrow", { action: "list" });
+      const res = await base44.functions.invoke("slobzEscrow", { action: "list", network });
       setGigs(res.data?.gigs || []);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [network]);
 
   useEffect(() => {
     if (hasAccess) loadGigs();
@@ -51,8 +54,13 @@ export default function SlobzMarket() {
         <div className="text-center mb-6 pt-4">
           <h1 className="font-display text-3xl md:text-4xl font-black text-[#4A2FA8]">Covenant Escrow Market</h1>
           <p className="text-sm text-[#5A4B8A] mt-2">
-            KAS locks in a per-gig escrow wallet on-chain. Work gets checked. Funds release automatically.
+            {network === "testnet" ? "TKAS" : "KAS"} locks in a per-gig escrow wallet on-chain. Work gets checked. Funds release automatically.
           </p>
+          {network === "testnet" && (
+            <span className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full bg-[#E4F7EC] text-[#1E9E5A] text-[10px] font-display font-extrabold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1E9E5A] animate-pulse" /> TESTNET MODE — GIGS USE TKAS (TN10)
+            </span>
+          )}
         </div>
 
         {!authChecked ? (
@@ -99,6 +107,7 @@ export default function SlobzMarket() {
               </div>
               <PostGigForm
                 wallet={normWallet}
+                network={network}
                 onPosted={() => {
                   setShowPost(false);
                   loadGigs();

@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Copy, Check } from "lucide-react";
 
-export default function PostGigForm({ wallet, onPosted }) {
+export default function PostGigForm({ wallet, network = "mainnet", onPosted }) {
+  const unit = network === "testnet" ? "TKAS" : "KAS";
   const [form, setForm] = useState({ title: "", task: "", requirements: "", amount: "" });
   const [step, setStep] = useState("form"); // form | fund
   const [gig, setGig] = useState(null);
@@ -26,6 +27,7 @@ export default function PostGigForm({ wallet, onPosted }) {
         requirements: form.requirements || form.task,
         amount_kas: Number(form.amount),
         poster_wallet: wallet,
+        network,
       });
       setGig(res.data);
       setStep("fund");
@@ -67,7 +69,7 @@ export default function PostGigForm({ wallet, onPosted }) {
     return (
       <div className="space-y-4">
         <div className="text-sm text-[#3A3450]">
-          Escrow wallet created. Send <span className="font-bold text-[#7C5CFC]">{gig.amount_kas} KAS</span> to lock the funds:
+          Escrow wallet created. Send <span className="font-bold text-[#7C5CFC]">{gig.amount_kas} {unit}</span> to lock the funds:
         </div>
         <div className="flex items-center gap-2 bg-[#F3F0FA] rounded-[16px] p-3">
           <code className="text-[10px] text-[#3A3450] break-all flex-1">{gig.escrow_address}</code>
@@ -98,7 +100,7 @@ export default function PostGigForm({ wallet, onPosted }) {
         value={form.requirements}
         onChange={set("requirements")}
       />
-      <input className={inputCls} type="number" min="1" placeholder="Escrow amount in KAS (min 1)" value={form.amount} onChange={set("amount")} />
+      <input className={inputCls} type="number" min="1" placeholder={`Escrow amount in ${unit} (min 1)`} value={form.amount} onChange={set("amount")} />
       {error && <div className="text-xs text-[#F96B4C]">{error}</div>}
       <button
         onClick={handleCreate}

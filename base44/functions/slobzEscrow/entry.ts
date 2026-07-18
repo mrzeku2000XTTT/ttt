@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 const KASPA_API = 'https://api.kaspa.org';
+const TESTNET_API = 'https://api-tn10.kaspa.org';
 
 // Public projection — never leaks the escrow mnemonic
 function publicGig(g) {
@@ -18,14 +19,16 @@ function publicGig(g) {
     review_reason: g.review_reason,
     payout_tx: g.payout_tx,
     status: g.status,
+    network: g.network || 'mainnet',
     created_date: g.created_date,
   };
 }
 
 function normAddr(a) {
   if (!a || typeof a !== 'string') return null;
-  const addr = a.trim().startsWith('kaspa:') ? a.trim() : `kaspa:${a.trim()}`;
-  return /^kaspa:[a-z0-9]{61,63}$/.test(addr) ? addr : null;
+  const t = a.trim();
+  const addr = t.includes(':') ? t : `kaspa:${t}`;
+  return /^(kaspa|kaspatest):[a-z0-9]{61,66}$/.test(addr) ? addr : null;
 }
 
 Deno.serve(async (req) => {
@@ -33,12 +36,25 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
     const { action } = body;
+
+    // Escrow service is admin-only
+    const user = await base44.auth.me().catch(() => null);
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'The Covenant Escrow Market is admin-only right now.' }, { status: 403 });
+    }
+
+    const network = body.network === 'testnet' ? 'testnet' : 'mainnet';
     const Gigs = base44.asServiceRole.entities.SlobzEscrowGig;
 
     // ── List marketplace gigs (public fields only) ──
     if (action === 'list') {
       const gigs = await Gigs.list('-created_date', 100);
-      return Response.json({ gigs: gigs.filter((g) => g.status !== 'awaiting_funding' || body.include_unfunded).map(publicGig) });
+      return Response.json({
+        gigs: gigs
+          .filter((g) => (g.network || 'mainnet') === network)
+          .filter((g) => g.status !== 'awaiting_funding' || body.include_unfunded)
+          .map(publicGig),
+      });
     }
 
     // ── Employer posts a gig → a fresh covenant escrow wallet is created ──
@@ -59,22 +75,33 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Failed to create escrow wallet' }, { status: 500 });
       }
 
+      // Testnet gigs use the same keypair with a kaspatest: address
+      let escrowAddress = w.address;
+      if (network === 'testnet') {
+        const convRes = await base44.asServiceRole.functions.invoke('slobzTestnetSend', { action: 'convert', address: w.address });
+        escrowAddress = convRes?.data?.testnetAddress || convRes?.testnetAddress;
+        if (!escrowAddress) return Response.json({ error: 'Failed to derive the testnet escrow address' }, { status: 500 });
+      }
+
       const gig = await Gigs.create({
         title: String(title).slice(0, 120),
         task_description: String(task_description).slice(0, 2000),
         requirements: String(requirements || task_description).slice(0, 2000),
         amount_kas: amount,
+        network,
         poster_wallet: poster,
-        escrow_address: w.address,
+        escrow_address: escrowAddress,
         escrow_mnemonic: w.mnemonic,
         status: 'awaiting_funding',
       });
 
+      const unit = network === 'testnet' ? 'TKAS' : 'KAS';
       return Response.json({
         gig_id: gig.id,
-        escrow_address: w.address,
+        escrow_address: escrowAddress,
         amount_kas: amount,
-        message: `Send exactly ${amount} KAS to the escrow address, then verify with the transaction hash to open the gig.`,
+        network,
+        message: `Send exactly ${amount} ${unit} to the escrow address, then verify with the transaction hash to open the gig.`,
       });
     }
 
@@ -90,14 +117,15 @@ Deno.serve(async (req) => {
       const dupes = await Gigs.filter({ funding_tx: tx_hash });
       if (dupes.length > 0) return Response.json({ error: 'This transaction was already used to fund another gig' }, { status: 400 });
 
-      const txRes = await fetch(`${KASPA_API}/transactions/${tx_hash}`, { signal: AbortSignal.timeout(15000) });
+      const gigApi = (gig.network || 'mainnet') === 'testnet' ? TESTNET_API : KASPA_API;
+      const txRes = await fetch(`${gigApi}/transactions/${tx_hash}`, { signal: AbortSignal.timeout(15000) });
       if (!txRes.ok) return Response.json({ error: 'Transaction not found on the Kaspa network yet — wait a few seconds and try again' }, { status: 400 });
       const tx = await txRes.json();
       const requiredSompi = gig.amount_kas * 1e8;
       const paid = (tx.outputs || []).some((o) =>
         o.script_public_key_address === gig.escrow_address && Number(o.amount) >= requiredSompi
       );
-      if (!paid) return Response.json({ error: `Transaction does not pay ${gig.amount_kas} KAS to the escrow address` }, { status: 400 });
+      if (!paid) return Response.json({ error: `Transaction does not pay ${gig.amount_kas} ${(gig.network || 'mainnet') === 'testnet' ? 'TKAS' : 'KAS'} to the escrow address` }, { status: 400 });
 
       await Gigs.update(gig.id, { funding_tx: tx_hash, status: 'open' });
       return Response.json({ status: 'open', message: 'Escrow funded and verified on-chain. Your gig is live on the marketplace.' });
@@ -173,13 +201,18 @@ Return JSON: { "approved": boolean, "confidence": number between 0 and 1, "reaso
       // APPROVED — release escrow on-chain, keeping a small fee buffer
       const payoutKas = Math.max(0.2, Math.round((gig.amount_kas - 0.1) * 100) / 100);
       let sendResult;
+      const isTestnet = (gig.network || 'mainnet') === 'testnet';
       try {
-        sendResult = await base44.asServiceRole.functions.invoke('sendKaspaTransaction', {
-          mnemonic: gig.escrow_mnemonic,
-          fromAddress: gig.escrow_address,
-          toAddress: worker,
-          amountKas: payoutKas,
-        });
+        sendResult = await base44.asServiceRole.functions.invoke(
+          isTestnet ? 'slobzTestnetSend' : 'sendKaspaTransaction',
+          {
+            ...(isTestnet ? { action: 'send' } : {}),
+            mnemonic: gig.escrow_mnemonic,
+            fromAddress: gig.escrow_address,
+            toAddress: worker,
+            amountKas: payoutKas,
+          }
+        );
       } catch (sendErr) {
         const detail = sendErr?.response?.data?.error || sendErr?.message || String(sendErr);
         await Gigs.update(gig.id, { proof_url, proof_notes: (notes || '').slice(0, 500), review_reason: reason, status: 'pending_review' });

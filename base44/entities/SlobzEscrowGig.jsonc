@@ -18,6 +18,15 @@
       "type": "number",
       "description": "KAS locked in the covenant escrow wallet for this gig"
     },
+    "network": {
+      "type": "string",
+      "enum": [
+        "mainnet",
+        "testnet"
+      ],
+      "default": "mainnet",
+      "description": "Which Kaspa network this gig's escrow lives on"
+    },
     "poster_wallet": {
       "type": "string",
       "description": "Employer's Kaspa wallet address"

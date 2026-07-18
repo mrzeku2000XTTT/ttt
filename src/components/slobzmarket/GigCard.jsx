@@ -18,6 +18,9 @@ export default function GigCard({ gig, wallet, onChanged }) {
 
   const isWorker = wallet && gig.worker_wallet === wallet;
   const isPoster = wallet && gig.poster_wallet === wallet;
+  const isTestnet = gig.network === "testnet";
+  const unit = isTestnet ? "TKAS" : "KAS";
+  const explorer = isTestnet ? "https://explorer-tn10.kaspa.org" : "https://explorer.kaspa.org";
 
   const run = async (fn) => {
     setBusy(true);
@@ -74,11 +77,11 @@ export default function GigCard({ gig, wallet, onChanged }) {
       <div className="flex items-center gap-2 bg-[#F3F0FA] rounded-[14px] px-3 py-2 mb-4">
         <ShieldCheck className="w-4 h-4 text-[#7C5CFC] flex-shrink-0" />
         <span className="text-[11px] text-[#5A4B8A]">
-          <span className="font-bold text-[#7C5CFC]">{gig.amount_kas} KAS</span> locked in on-chain escrow
+          <span className="font-bold text-[#7C5CFC]">{gig.amount_kas} {unit}</span> locked in on-chain escrow{isTestnet ? " (testnet)" : ""}
         </span>
         {gig.funding_tx && (
           <a
-            href={`https://explorer.kaspa.org/txs/${gig.funding_tx}`}
+            href={`${explorer}/txs/${gig.funding_tx}`}
             target="_blank"
             rel="noreferrer"
             className="ml-auto text-[#7C5CFC]"
@@ -144,7 +147,7 @@ export default function GigCard({ gig, wallet, onChanged }) {
 
       {gig.status === "paid" && (
         <a
-          href={`https://explorer.kaspa.org/txs/${gig.payout_tx}`}
+          href={`${explorer}/txs/${gig.payout_tx}`}
           target="_blank"
           rel="noreferrer"
           className="w-full py-3 rounded-full bg-[#E9E4F5] text-[#4A2FA8] text-xs font-display font-extrabold flex items-center justify-center gap-2"
