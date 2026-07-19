@@ -1270,6 +1270,9 @@ export default function TTTLandingPage() {
   const [worldIndex, setWorldIndex] = useState(0);
   const sounds = useGameSounds();
 
+  // IGRA AGENT sector is admin-only — hide it from the world carousel for everyone else
+  const visibleWorlds = isAdmin ? WORLDS : WORLDS.filter(w => w.name !== "IGRA AGENT");
+
   // Defer the heavy WebGL background until after first paint so
   // buttons are clickable immediately on initial load.
   // On mobile, wait longer — the WebGL init blocks the main thread
@@ -1486,7 +1489,7 @@ export default function TTTLandingPage() {
               { label: "TIP", path: "/Tip" },
               { label: "GATE", path: "/TTTGate", iconOnly: true, icon: Gem },
               { label: "WALLET", path: "/WalletHub", iconOnly: true, icon: "kaspa" },
-              { label: "ZK", path: "/SuperZK" },
+              ...(isAdmin ? [{ label: "ZK", path: "/SuperZK" }] : []),
             ].map((item, i) => {
               const isHovered = hoveredItem === item.label;
               const Icon = typeof item.icon === 'string' ? null : item.icon;
@@ -1599,14 +1602,14 @@ export default function TTTLandingPage() {
 
       {/* Neighboring worlds — slide in/out when turning left/right */}
       {worldMode && (
-        <WorldCarouselOrbs worlds={WORLDS} index={worldIndex}
+        <WorldCarouselOrbs worlds={visibleWorlds} index={Math.min(worldIndex, visibleWorlds.length - 1)}
           onEnter={(w) => { if (w.path) { sounds.playSelect(); navigate(w.path); } }} />
       )}
 
       {/* World zoom-out overlay — fast gold speed lines while the page becomes a small world */}
       <AnimatePresence>
         {worldMode && (
-          <WorldZoomOut worlds={WORLDS} index={worldIndex}
+          <WorldZoomOut worlds={visibleWorlds} index={Math.min(worldIndex, visibleWorlds.length - 1)}
             onNavigate={(dir) => { sounds.playNavigate(); setWorldIndex(i => Math.min(Math.max(i + dir, 0), WORLDS.length - 1)); }}
             onClose={() => { sounds.playSelect(); setWorldMode(false); setWorldIndex(0); }} />
         )}

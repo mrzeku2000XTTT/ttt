@@ -293,7 +293,7 @@ const AuthenticatedApp = () => {
       <Route path="/CommunityHub" element={<CommunityHubPage />} />
       <Route path="/TTTZWallet" element={<TTTZWalletPage />} />
       <Route path="/ScenarioBot" element={<ScenarioBotPage />} />
-      <Route path="/SuperZK" element={<SuperZKPage />} />
+      <Route path="/SuperZK" element={<AdminRoute><SuperZKPage /></AdminRoute>} />
       <Route path="/KCC" element={<KCCPage />} />
       <Route path="/KCCNft" element={<KCCNftPage />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
@@ -325,7 +325,7 @@ const AuthenticatedApp = () => {
       <Route path="/ClipWhileLive" element={<ClipWhileLivePage />} />
       <Route path="/Klipz" element={<KlipzPage />} />
       <Route path="/IgraHorizon" element={<IgraHorizonPage />} />
-      <Route path="/IgraAgent" element={<IgraAgentPage />} />
+      <Route path="/IgraAgent" element={<AdminRoute><IgraAgentPage /></AdminRoute>} />
       <Route path="/DEX" element={<AporiaDEXPage />} />
       <Route path="/Aporia" element={<AporiaDEXPage />} />
       <Route path="/Node" element={
