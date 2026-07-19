@@ -61,6 +61,13 @@ const features = [
     cta: "WATCH THE WHALE",
   },
   {
+    title: "TX Tracker",
+    desc: "Paste any Kaspa transaction ID and get a plain-English story of what happened — who paid whom, how much, and when. No jargon.",
+    img: SLOB_SCIENTIST,
+    path: "/SlobzTxTracker",
+    cta: "TRACK A TRANSACTION",
+  },
+  {
     title: "Financial Wellness",
     desc: "The Sloba Card: instant payouts, behavioral guardrails, and an auto-saving Get Out Bucket for your independence fund.",
     img: SLOB_ZEN,
