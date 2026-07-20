@@ -61,6 +61,13 @@ const features = [
     cta: "WATCH THE WHALE",
   },
   {
+    title: "Site Radar",
+    desc: "Track any website URL like a mini SEMrush — SEO score, page health, estimated traffic, keywords and competitors. All in plain English.",
+    img: SLOB_SCIENTIST,
+    path: "/SlobzSiteTracker",
+    cta: "TRACK A WEBSITE",
+  },
+  {
     title: "TX Tracker",
     desc: "Paste any Kaspa transaction ID and get a plain-English story of what happened — who paid whom, how much, and when. No jargon.",
     img: SLOB_SCIENTIST,

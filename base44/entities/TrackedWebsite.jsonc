@@ -1,0 +1,60 @@
+{
+  "name": "TrackedWebsite",
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "description": "Full tracked website URL"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domain extracted from URL"
+    },
+    "title": {
+      "type": "string",
+      "description": "Page title from last scan"
+    },
+    "seo_score": {
+      "type": "number",
+      "description": "SEO score 0-100 from last scan"
+    },
+    "stats": {
+      "type": "object",
+      "description": "Raw on-page stats from last scan (word count, links, images, load time, etc.)"
+    },
+    "analysis": {
+      "type": "object",
+      "description": "AI SEO analysis (summary, strengths, improvements, priority actions)"
+    },
+    "intel": {
+      "type": "object",
+      "description": "Competitive intel (traffic estimate, keywords, competitors, opportunities)"
+    },
+    "last_scanned": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the site was last scanned"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "url",
+    "domain"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
