@@ -16,8 +16,8 @@ export default function SiteScoreCard({ site }) {
   ];
 
   return (
-    <div className="bg-[#FDFBF7] rounded-3xl p-6 shadow-[0_10px_30px_rgba(124,92,252,0.15)]">
-      <div className="flex items-center gap-6">
+    <div className="bg-[#FDFBF7] rounded-3xl p-4 sm:p-6 shadow-[0_10px_30px_rgba(124,92,252,0.15)]">
+      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
         <div className="relative w-24 h-24 flex-shrink-0">
           <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
             <circle cx="50" cy="50" r="42" fill="none" stroke="#EDE8F9" strokeWidth="10" />
@@ -29,7 +29,7 @@ export default function SiteScoreCard({ site }) {
             <span className="text-[8px] font-bold uppercase tracking-widest text-[#8B84A3]">SEO Score</span>
           </div>
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <div className="font-display font-extrabold text-lg text-[#1F1B2E] truncate">{site?.title || site?.domain}</div>
           <div className="text-xs text-[#7C5CFC] font-bold truncate">{site?.domain}</div>
           {site?.analysis?.summary && (

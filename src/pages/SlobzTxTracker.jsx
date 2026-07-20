@@ -6,7 +6,7 @@ import SlobzNav from "@/components/slobz/SlobzNav";
 import TxStoryCard from "@/components/slobz/TxStoryCard";
 import { explainKaspaTx } from "@/components/slobz/txPlainEnglish";
 
-const SLOB_DETECTIVE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/60bb0a620_generated_image.png";
+const SLOB_DETECTIVE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1466aec26_generated_image.png";
 
 export default function SlobzTxTracker() {
   const [txInput, setTxInput] = useState("");

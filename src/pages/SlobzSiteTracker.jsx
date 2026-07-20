@@ -123,10 +123,17 @@ export default function SlobzSiteTracker() {
         <SlobzNav backTo="/Slobz" />
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8 pt-4">
+          <motion.img
+            src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bbe1b996d_generated_image.png"
+            alt="Slob detective with magnifying glass and radar"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+            className="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[22px] object-cover shadow-[0_10px_24px_rgba(124,92,252,0.3)] rotate-[-3deg] mb-4"
+          />
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FDFBF7] shadow-[0_6px_16px_rgba(124,92,252,0.2)] text-[10px] font-display font-extrabold text-[#7C5CFC] uppercase tracking-widest mb-4">
             <Radar className="w-3 h-3" /> Site Radar
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-black text-[#4A2FA8]">TRACK ANY WEBSITE</h1>
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-[#4A2FA8]">TRACK ANY WEBSITE</h1>
           <p className="text-sm text-[#5A4B8A] mt-2 max-w-lg mx-auto">
             Paste any URL — get its SEO score, page health, estimated traffic, keywords and competitors. Our own analytics engine, no SEMrush needed.
           </p>

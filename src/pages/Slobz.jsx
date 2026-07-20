@@ -23,6 +23,8 @@ const SLOB_WHALE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2
 const SLOB_ZEN = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/05bf553e1_generated_image.png";
 const SLOB_SCIENTIST = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/60bb0a620_generated_image.png";
 const SLOB_SLEEP = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/df8a323cb_generated_image.png";
+const SLOB_RADAR = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bbe1b996d_generated_image.png";
+const SLOB_LEDGER = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1466aec26_generated_image.png";
 
 const features = [
   {
@@ -63,14 +65,14 @@ const features = [
   {
     title: "Site Radar",
     desc: "Track any website URL like a mini SEMrush — SEO score, page health, estimated traffic, keywords and competitors. All in plain English.",
-    img: SLOB_SCIENTIST,
+    img: SLOB_RADAR,
     path: "/SlobzSiteTracker",
     cta: "TRACK A WEBSITE",
   },
   {
     title: "TX Tracker",
     desc: "Paste any Kaspa transaction ID and get a plain-English story of what happened — who paid whom, how much, and when. No jargon.",
-    img: SLOB_SCIENTIST,
+    img: SLOB_LEDGER,
     path: "/SlobzTxTracker",
     cta: "TRACK A TRANSACTION",
   },
