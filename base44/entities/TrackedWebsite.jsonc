@@ -22,6 +22,18 @@
       "type": "object",
       "description": "Raw on-page stats from last scan (word count, links, images, load time, etc.)"
     },
+    "crawl": {
+      "type": "object",
+      "description": "Multi-page crawl report (pages crawled, per-page stats and issues, sitemap/robots info)"
+    },
+    "external": {
+      "type": "object",
+      "description": "External data sources (Google Lighthouse scores, Wayback domain age, DNS records, security headers)"
+    },
+    "sources": {
+      "type": "object",
+      "description": "List and count of real data sources checked during the scan"
+    },
     "analysis": {
       "type": "object",
       "description": "AI SEO analysis (summary, strengths, improvements, priority actions)"

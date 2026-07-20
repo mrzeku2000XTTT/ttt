@@ -7,6 +7,8 @@ import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import SiteScoreCard from "@/components/sitetracker/SiteScoreCard";
 import SiteIntelPanel from "@/components/sitetracker/SiteIntelPanel";
 import TrackedSiteList from "@/components/sitetracker/TrackedSiteList";
+import CrawlReport from "@/components/sitetracker/CrawlReport";
+import SiteHealthPanel from "@/components/sitetracker/SiteHealthPanel";
 
 const extractDomain = (url) => {
   try { return new URL(url.startsWith("http") ? url : `https://${url}`).hostname.replace(/^www\./, ""); }
@@ -40,9 +42,9 @@ export default function SlobzSiteTracker() {
     setError("");
     if (existingRecord) setScanningId(existingRecord.id); else setScanning(true);
     try {
-      setPhase("Scanning the page…");
+      setPhase("Crawling pages + Lighthouse…");
       const res = await base44.functions.invoke("scrapeWebsiteStats", { url: targetUrl });
-      const { stats, analysis } = res.data;
+      const { stats, analysis, crawl, external, sources } = res.data;
 
       setPhase("Gathering competitive intel…");
       let intel = null;
@@ -78,6 +80,9 @@ export default function SlobzSiteTracker() {
         title: stats.title || domain,
         seo_score: stats.seoScore,
         stats,
+        crawl,
+        external,
+        sources,
         analysis,
         intel,
         last_scanned: new Date().toISOString(),
@@ -135,7 +140,7 @@ export default function SlobzSiteTracker() {
           </div>
           <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-[#4A2FA8]">TRACK ANY WEBSITE</h1>
           <p className="text-sm text-[#5A4B8A] mt-2 max-w-lg mx-auto">
-            Paste any URL — get its SEO score, page health, estimated traffic, keywords and competitors. Our own analytics engine, no SEMrush needed.
+            Paste any URL — we really crawl up to 12 of its pages and pull live data from Google Lighthouse, the Wayback Machine, Cloudflare DNS, robots.txt, sitemap.xml and more.
           </p>
         </motion.div>
 
@@ -168,6 +173,8 @@ export default function SlobzSiteTracker() {
                 {active ? (
                   <>
                     <SiteScoreCard site={active} />
+                    <SiteHealthPanel external={active.external} sources={active.sources} />
+                    <CrawlReport crawl={active.crawl} />
                     <SiteIntelPanel intel={active.intel} analysis={active.analysis} />
                   </>
                 ) : (
