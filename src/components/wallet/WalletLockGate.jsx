@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, ScanFace, ShieldCheck, ArrowLeft, Wallet } from 'lucide-react';
 import PinPad from '@/components/wallet/PinPad';
 import WalletBgVideo from '@/components/wallet/WalletBgVideo';
+
+const KASPA_LOGO = 'https://cryptologos.cc/logos/kaspa-kas-logo.png';
 import {
   hashPin, getStoredPinHash, storePinHash, getBioCredId, verifyStoredPin,
   isUnlocked, markUnlocked, biometricAvailable, registerBiometric, verifyBiometric,
@@ -100,7 +102,7 @@ export default function WalletLockGate({ children }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center px-6 overflow-y-auto py-10">
+    <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center px-4 sm:px-6 overflow-y-auto py-6 sm:py-10">
       <WalletBgVideo />
       <button
         onClick={goBack}
@@ -111,14 +113,13 @@ export default function WalletLockGate({ children }) {
         Back
       </button>
       <div className="relative z-10 flex flex-col items-center w-full">
-      <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-5">
-        {stage === 'bio' ? (
-          <ScanFace className="w-8 h-8 text-cyan-400" />
-        ) : stage === 'intro' ? (
-          <Wallet className="w-8 h-8 text-cyan-400" />
-        ) : (
-          <Lock className="w-8 h-8 text-cyan-400" />
-        )}
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-4 sm:mb-5">
+        <img
+          src={KASPA_LOGO}
+          alt="Kaspa"
+          className="w-9 h-9 sm:w-12 sm:h-12 object-contain"
+          style={{ filter: 'drop-shadow(0 0 18px rgba(6,182,212,0.45))' }}
+        />
       </div>
       <h1 className="text-white text-xl font-bold mb-1">{titles[stage]}</h1>
       <p className="text-white/50 text-sm mb-2 text-center">{subtitles[stage]}</p>
