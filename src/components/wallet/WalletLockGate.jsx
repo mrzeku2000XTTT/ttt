@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, ScanFace, ShieldCheck, ArrowLeft, Wallet } from 'lucide-react';
 import PinPad from '@/components/wallet/PinPad';
+import WalletBgVideo from '@/components/wallet/WalletBgVideo';
 import {
   hashPin, getStoredPinHash, storePinHash, getBioCredId, verifyStoredPin,
   isUnlocked, markUnlocked, biometricAvailable, registerBiometric, verifyBiometric,
@@ -100,14 +101,16 @@ export default function WalletLockGate({ children }) {
 
   return (
     <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center px-6 overflow-y-auto py-10">
+      <WalletBgVideo />
       <button
         onClick={goBack}
-        className="fixed top-4 left-4 z-10 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/15 text-white/80 text-sm font-semibold active:scale-95 transition-all touch-manipulation"
+        className="fixed top-4 left-4 z-20 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/10 border border-white/20 text-white text-sm font-semibold active:scale-95 transition-all touch-manipulation"
         style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
       >
         <ArrowLeft className="w-4 h-4" />
         Back
       </button>
+      <div className="relative z-10 flex flex-col items-center w-full">
       <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-5">
         {stage === 'bio' ? (
           <ScanFace className="w-8 h-8 text-cyan-400" />
@@ -191,6 +194,7 @@ export default function WalletLockGate({ children }) {
       <div className="flex items-center gap-1.5 mt-8 text-white/30 text-xs">
         <ShieldCheck className="w-3.5 h-3.5" />
         Secured on this device
+      </div>
       </div>
     </div>
   );
