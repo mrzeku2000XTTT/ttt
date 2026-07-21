@@ -117,7 +117,6 @@ export default function WalletLockGate({ children }) {
         src={KASPA_LOGO}
         alt="Kaspa"
         className="w-14 h-14 sm:w-16 sm:h-16 object-contain mb-3 sm:mb-4"
-        style={{ filter: 'drop-shadow(0 0 18px rgba(6,182,212,0.45))' }}
       />
       <h1 className="text-white text-xl font-bold mb-1">{titles[stage]}</h1>
       <p className="text-white/50 text-sm mb-2 text-center">{subtitles[stage]}</p>

@@ -8,7 +8,7 @@ const VIDEO_SRC =
 export default function WalletBgVideo() {
   return (
     <video
-      className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+      className="fixed inset-0 w-full h-full object-contain bg-black z-0 pointer-events-none"
       autoPlay
       muted
       loop
