@@ -113,14 +113,12 @@ export default function WalletLockGate({ children }) {
         Back
       </button>
       <div className="relative z-10 flex flex-col items-center w-full">
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-4 sm:mb-5">
-        <img
-          src={KASPA_LOGO}
-          alt="Kaspa"
-          className="w-9 h-9 sm:w-12 sm:h-12 object-contain"
-          style={{ filter: 'drop-shadow(0 0 18px rgba(6,182,212,0.45))' }}
-        />
-      </div>
+      <img
+        src={KASPA_LOGO}
+        alt="Kaspa"
+        className="w-14 h-14 sm:w-16 sm:h-16 object-contain mb-3 sm:mb-4"
+        style={{ filter: 'drop-shadow(0 0 18px rgba(6,182,212,0.45))' }}
+      />
       <h1 className="text-white text-xl font-bold mb-1">{titles[stage]}</h1>
       <p className="text-white/50 text-sm mb-2 text-center">{subtitles[stage]}</p>
       <p className="text-red-400 text-sm h-5 mb-4 text-center">{error}</p>
