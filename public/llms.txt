@@ -1,52 +1,68 @@
-# TTT — The Kaspa Super App (tttz.xyz)
-> Compact map for AI agents / LLMs. Full detail: README.md
+# TTT · The Kaspa Super App (tttz.xyz)
+> Compact map for AI agents / LLMs. Full thesis: TTT3_Manifesto.md. Full README: README.md.
 
 ## What this is
-TTT ("Tap To Tip") is a Kaspa (KAS) super app: 100+ live apps in one React SPA — non-custodial wallet, on-chain tipping + social feed, autonomous AI agents, x402 payments (AWA), covenant NFTs (KCC), a KAS⇄iKAS L2 bridge (Igra), analytics hubs (Slobz), and a P2P marketplace. Built on the Base44 BaaS.
+TTT ("Tap To Tip") is the Kaspa super app. The landing page at tttz.xyz opens on a black void: three serif gold T's — three crosses — with the words "TAP · TO · TIP" and "地球到火星 · POWERED BY KASPA". It bundles 100+ live Kaspa-native products in one React SPA: non-custodial wallet, on-chain tipping + social feed, autonomous AI agents, x402 payments (AWA), covenant NFTs (KCC), a KAS⇄iKAS L2 bridge (Igra), analytics hubs (Slobz), and a P2P marketplace. Built on the Base44 BaaS.
+
+## The thesis (core)
+Build the software first — a library of small, composable Kaspa applications — then reverse-engineer a distributed supercomputer from the usage graph those applications generate. When autonomous agents navigate and compose those apps across a network that settles in under a second, the aggregate behavior resembles a supercomputer that happens to run useful work. This is the "Agent Internet." Full spec: TTT3_Manifesto.md (16 pages, every claim traceable).
+
+## Why Kaspa (how TTT sees it)
+1. Not a chain — a BlockDAG ordered by GHOSTDAG. Parallelism is the default.
+2. 10 blocks/sec mainnet. Tx visible in DAG within ~100ms.
+3. Sub-second inclusion, single-digit-second high-confidence finality.
+4. Fair launch — no premine, no ICO, no dev allocation.
+5. Schnorr/secp256k1, Bech32 kaspa: addresses, 1 KAS = 10^8 sompi, mass-based fees (micropayments rational).
+6. Capped supply 28.7B KAS, declining emission.
+7. L1 tokens: KRC-20, KRC-721, KCC covenant roadmap.
+On Bitcoin the Agent Internet is incoherent (too slow). On Ethereum base layer incoherent (fees too high). On PoS networks trust-fragile. Kaspa is the only production PoW network where the thesis is mechanically executable.
 
 ## Stack
 React 18 + Vite 6 + React Router 6 + Tailwind 3 + shadcn/ui (Radix) + Framer Motion + Recharts + Three.js + Leaflet + Remotion. Backend: Base44 SDK (auth, entities, Deno functions, integrations). Icons: lucide-react only.
 
 ## Critical conventions (do not break)
-- `src/App.jsx` is the ONLY router. `src/pages.config.js` is a legacy loop covering OLD pages only — every NEW page needs an explicit `<Route>` in App.jsx. Never delete the loop.
-- Never delete working pages or code. Prefer `find_replace`. Create new focused files over bloating existing ones.
-- Imports use `@/` alias (→ src/). Never relative src/ paths.
-- Styling: tokens in `src/index.css`, mapped in `tailwind.config.js`. Use token classes (`bg-primary`, `font-heading`), never hardcoded hex.
-- Auth pages (Login/Register/ForgotPassword/ResetPassword) already exist in src/pages/ — never recreate. Gate authed pages with `ProtectedRoute`.
-- Entities: `base44/entities/*.jsonc`, full JSON schema, no built-in fields (id, created_date, updated_date, created_by_id). RLS per operation.
-- Backend functions: `base44/functions/<name>/entry.ts` (Deno). Use `createClientFromRequest(req)` for the SDK.
+- src/App.jsx is the ONLY router. src/pages.config.js is a legacy loop covering OLD pages only — every NEW page needs an explicit <Route> in App.jsx. Never delete the loop.
+- Never delete working pages or code. Prefer find_replace. Create focused new files over bloating existing ones.
+- Imports use @/ alias (→ src/). Never relative src/ paths.
+- Styling: tokens in src/index.css, mapped in tailwind.config.js. Use token classes (bg-primary, font-heading), never hardcoded hex.
+- Auth pages (Login/Register/ForgotPassword/ResetPassword) already exist in src/pages/ — never recreate. Gate authed pages with ProtectedRoute.
+- Entities: base44/entities/*.jsonc, full JSON schema, no built-in fields (id, created_date, updated_date, created_by_id). RLS per operation.
+- Backend functions: base44/functions/<name>/entry.ts (Deno). Use createClientFromRequest(req) for the SDK.
 
 ## Directory map
-- `src/App.jsx` — router (source of truth for routes)
-- `src/pages/` — one file per route (Home.jsx, AWA.jsx, Slobz.jsx, ...)
-- `src/components/ui/` — shadcn primitives (one export per file)
-- `src/components/<feature>/` — feature-scoped components
-- `src/api/base44Client.js` — pre-initialized Base44 SDK
-- `src/lib/` — AuthContext, utils, query-client, TitleManager
-- `base44/entities/` — entity schemas (~120)
-- `base44/functions/` — backend functions (Deno handlers, ~130)
-- `base44/agents/` — in-app AI agent configs (.jsonc)
-- `public/llms.txt` — this file
-- `index.html` — SEO meta, OG tags, Agent Control Bridge (iframe postMessage API)
+- index.html — SEO meta, OG tags, boot overlay, Agent Control Bridge (iframe postMessage API for the agent runtime)
+- src/App.jsx — router (source of truth for routes)
+- src/pages/TTTLanding.jsx — the home page (three-cross TTT title, PRESS START, world sectors)
+- src/pages/ — one file per route
+- src/components/ui/ — shadcn primitives (one export per file)
+- src/components/landing/ — landing: KaspaPanel, CyberneticEyeSphere, AdventCalendar, KaspaDashboard
+- src/components/tttv3/ — agent runtime: agentLoop, AgentComputer, ZK* panels, godEngine, ultraEngine
+- src/components/<feature>/ — feature-scoped components
+- src/api/base44Client.js — pre-initialized Base44 SDK
+- src/lib/ — AuthContext, utils, query-client, TitleManager
+- src/docs/TTT3_Manifesto.md — the full platform thesis (read this for the real story)
+- base44/entities/ — entity schemas (~120)
+- base44/functions/ — backend functions (Deno handlers, ~130)
+- base44/agents/ — in-app AI agent configs (.jsonc)
+- public/llms.txt — this file
+
+## Home page decoded (/ → TTTLanding)
+Black void + deferred WebGL cybernetic eye sphere. Giant gold serif "TTT" (three crosses) → clicks to /TTTV3. "▶ PRESS START" opens music player ("The Dollar Is Dying", Kas Tunes); reading lyrics to end unlocks Enter → /TTTGate. Menu: TAP (AppStoreV2), TO (Feed), TIP (Tip), GATE (TTTGate), WALLET (WalletHub), ZK (SuperZK, admin). Corner HUD: [ ADVENT ], [ VISION ], [ KASPA ], admin [ SCAN ] (ZK Agent panel). Globe button zooms the page into a small world orbiting 15 sectors: TTT Prime, Agentic World, Kaspa Nations, Igra Horizon, AWA, Sector 6, Sector VI, Igra Agent, Aporia DEX, Klipz, KCC NFT, Kas Command, Kascov, AWA Signer, Kas Signer.
 
 ## Core pillars (routes)
-- Wallet: /Terra /Wallet /WalletHub — non-custodial KAS, KRC-20
+- Wallet: /Terra /Wallet /WalletHub /ZKWallet — non-custodial KAS, KRC-20, multi-wallet
 - Social+tipping: /Feed /Tip /SendTip /DAGFeed
-- AI agents: /AgentZK /ZekuAI /AIAgentHub
-- x402 payments: /AWA /AWASigner — HTTP-402 AI services paid in KAS
+- AI agents: /AgentZK /ZekuAI /AIAgentHub /Trinity — agents with own Kaspa wallets, plan-act-verify runtime
+- x402 payments: /AWA /AWASigner — HTTP-402 AI services paid per-call in KAS
 - Covenant NFTs: /KCC /KCCNft — L1-enforced
 - Covenant deployer: /SuperZK (admin) — zktimelock/zkescrow/zkvault
 - L2 bridge: /IgraHorizon /IgraAgent /DEX — KAS⇄iKAS
-- Analytics: /Slobz /SlobzTxTracker /SlobzSiteTracker
-- P2P market: /SlobzMarket /SlobzGigs — covenant escrow gigs
-
-## Key entities
-TrackedWebsite, SlobzEscrowGig, AWAInvoice, IgraAgentWallet, IgraBridgeSwap, AdventSponsorTask, SlobProfile, SlobMicroTask, SlobzWaitlist, ChestWallet, KlipzJob, TreeCampaign, User (built-in). ~120 total in base44/entities/.
-
-## Key backend functions
-slobzEscrow (Slobz gig lifecycle, admin-only), scrapeWebsiteStats (website crawl + Lighthouse + AI SEO), awaX402 (x402 verify+fulfill), kccNft/kccNftMintPayment (covenant NFT), igraBridge/igraAgent (L2 bridge + signing), sendKaspaTransaction/slobzTestnetSend (on-chain sends), createKaspaWallet/deriveKaspaAddress, getKaspaBalance/getKaspaTransactionDetails/getKaspaUTXOs (RPC reads), verifyKaspaSelfTransaction/verifyKaspaSignature (proof verification), superzkDeployJob (covenant deploy), agentZKKaspaNode/zkEndpointExecutor. ~130 total in base44/functions/.
+- Analytics: /Slobz /SlobzTxTracker /SlobzSiteTracker — TX narratives + website intelligence
+- P2P market: /SlobzMarket /SlobzGigs
+- Games & media: /Arcade /Motion /Hikaru /Kine /VideoStudio /BeatCut /Klippz — 100+ apps
 
 ## For LLMs editing this repo
+- Read src/docs/TTT3_Manifesto.md for the real thesis before making architectural changes.
 - New page → new file in src/pages/ + explicit <Route> in App.jsx + import at top.
 - New entity → base44/entities/Name.jsonc (full schema).
 - New function → base44/functions/name/entry.ts, then test_backend_function.
