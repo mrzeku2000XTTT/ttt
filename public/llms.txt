@@ -44,10 +44,7 @@ React 18 + Vite 6 + React Router 6 + Tailwind 3 + shadcn/ui (Radix) + Framer Mot
 TrackedWebsite, SlobzEscrowGig, AWAInvoice, IgraAgentWallet, IgraBridgeSwap, AdventSponsorTask, SlobProfile, SlobMicroTask, SlobzWaitlist, ChestWallet, KlipzJob, TreeCampaign, User (built-in). ~120 total in base44/entities/.
 
 ## Key backend functions
-slobzEscrow (covenant escrow lifecycle), scrapeWebsiteStats (website crawl + Lighthouse + AI SEO), awaX402 (x402 verify+fulfill), kccNft/kccNftMintPayment (covenant NFT), igraBridge/igraAgent (L2 bridge + signing), sendKaspaTransaction/slobzTestnetSend (on-chain sends), createKaspaWallet/deriveKaspaAddress, getKaspaBalance/getKaspaTransactionDetails/getKaspaUTXOs (RPC reads), verifyKaspaSelfTransaction/verifyKaspaSignature (proof verification), superzkDeployJob (covenant deploy), agentZKKaspaNode/zkEndpointExecutor. ~130 total in base44/functions/.
-
-## Escrow direction (important)
-`slobzEscrow` currently holds per-gig mnemonics server-side (custodial covenant, admin-only). Direction of travel: move to non-custodial (multisig / HTLC) so platform never touches private keys or seeds. Do not remove working escrow without a replacement.
+slobzEscrow (Slobz gig lifecycle, admin-only), scrapeWebsiteStats (website crawl + Lighthouse + AI SEO), awaX402 (x402 verify+fulfill), kccNft/kccNftMintPayment (covenant NFT), igraBridge/igraAgent (L2 bridge + signing), sendKaspaTransaction/slobzTestnetSend (on-chain sends), createKaspaWallet/deriveKaspaAddress, getKaspaBalance/getKaspaTransactionDetails/getKaspaUTXOs (RPC reads), verifyKaspaSelfTransaction/verifyKaspaSignature (proof verification), superzkDeployJob (covenant deploy), agentZKKaspaNode/zkEndpointExecutor. ~130 total in base44/functions/.
 
 ## For LLMs editing this repo
 - New page → new file in src/pages/ + explicit <Route> in App.jsx + import at top.

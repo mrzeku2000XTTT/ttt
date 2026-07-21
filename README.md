@@ -91,11 +91,7 @@ Core pillars:
 
 - **`SlobzTxTracker`** — narrative, plain-English explanations of Kaspa transactions.
 - **`SlobzSiteTracker`** — real website crawling (sitemap, Lighthouse, DNS, security headers) via `scrapeWebsiteStats` backend function; stored on `TrackedWebsite` entity.
-- **`SlobzMarket` / `SlobzGigs`** — non-custodial P2P offer board + covenant-escrow gigs (`slobzEscrow` function, `SlobzEscrowGig` entity).
-
-**Escrow design notes (for AI agents working here):**
-- Current `slobzEscrow` holds a per-gig mnemonic server-side (custodial covenant). It is admin-only.
-- Direction of travel: move toward **non-custodial** patterns (multisig / HTLC) so the platform never touches private keys or seed phrases. Do not remove the working escrow function without a replacement.
+- **`SlobzMarket` / `SlobzGigs`** — P2P offer board + gigs (admin-only).
 
 ---
 
@@ -105,7 +101,7 @@ Core pillars:
 
 - `User` — built-in, read-only (id, email, full_name, role). Invite via `base44.users.inviteUser`.
 - `TrackedWebsite` — URL analytics with multi-page crawl reports.
-- `SlobzEscrowGig` — covenant escrow gig (amount, escrow wallet, funding/payout tx, status).
+- `SlobzEscrowGig` — Slobz gig record (admin-only).
 - `AWAInvoice` — x402 invoice (service, amount_kas, pay_to, tx_id, result).
 - `KCCNft` (via `KCC`) — covenant-enforced NFT.
 - `IgraAgentWallet`, `IgraBridgeSwap` — L2 agent wallets + bridge swaps.
@@ -118,7 +114,7 @@ Core pillars:
 
 | Function | Purpose |
 |---|---|
-| `slobzEscrow` | Covenant escrow lifecycle (create/verify_funding/claim/submit_proof) |
+| `slobzEscrow` | Slobz gig lifecycle (admin-only) |
 | `scrapeWebsiteStats` | Multi-page website crawl + Lighthouse + AI SEO analysis |
 | `awaX402` | x402 HTTP-402 payment verification + service fulfillment |
 | `kccNft`, `kccNftMintPayment` | KCC covenant NFT mint + payment |
