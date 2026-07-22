@@ -42,7 +42,6 @@ export default function BullSendKasCard({ onSent }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [txId, setTxId] = useState("");
   const [copied, setCopied] = useState(false);
-  const [showKey, setShowKey] = useState(false);
   const [keyCopied, setKeyCopied] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [qrUrl, setQrUrl] = useState("");
@@ -127,7 +126,6 @@ export default function BullSendKasCard({ onSent }) {
       saveBullWallet(w);
       setWallet(w);
       setBalance(null);
-      setShowKey(false);
       setGenStep("idle");
       fetchBalance(w.address);
     } catch (err) {
@@ -466,45 +464,36 @@ export default function BullSendKasCard({ onSent }) {
         {/* Divider */}
         <div className="my-4" style={{ height: "1px", background: "rgba(255,255,255,0.06)" }} />
 
-        {/* Export Private Key (local only) */}
+        {/* Export Private Key (hidden, copy/download only) */}
         <div className="mb-3">
-          <button
-            onClick={() => setShowKey(!showKey)}
-            className="w-full flex items-center justify-between py-2 text-xs font-bold uppercase tracking-wider transition-colors"
-            style={{ color: showKey ? GOLD : "rgba(255,255,255,0.4)" }}
-          >
+          <div className="w-full flex items-center justify-between py-2 text-xs font-bold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>
             <span className="inline-flex items-center gap-2">
-              <Key className="w-3.5 h-3.5" /> Export Private Key
+              <Key className="w-3.5 h-3.5" /> Private Key (hidden)
             </span>
-            {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-          </button>
-          {showKey && (
-            <div className="mt-2 p-3 rounded-lg" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)" }}>
-              <p className="text-[10px] mb-2 flex items-center gap-1" style={{ color: "#fbbf24" }}>
-                <AlertTriangle className="w-3 h-3" /> Anyone with this key controls your funds. Never share it.
-              </p>
-              <div className="text-[10px] font-mono break-all mb-2 p-2 rounded" style={{ background: BLACK, color: GOLD, wordBreak: "break-all" }}>
-                {wallet.privateKey}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={copyKey}
-                  className="flex-1 py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-1.5"
-                  style={{ border: `1px solid ${GOLD}55`, color: keyCopied ? GREEN : GOLD, borderRadius: "0.5rem" }}
-                >
-                  {keyCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                  {keyCopied ? "Copied" : "Copy"}
-                </button>
-                <button
-                  onClick={downloadKey}
-                  className="flex-1 py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-1.5"
-                  style={{ border: `1px solid ${GOLD}55`, color: GOLD, borderRadius: "0.5rem" }}
-                >
-                  <Download className="w-3 h-3" /> Download
-                </button>
-              </div>
+            <ShieldCheck className="w-3.5 h-3.5" style={{ color: GREEN }} />
+          </div>
+          <div className="mt-1 p-3 rounded-lg" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <p className="text-[10px] mb-2 flex items-center gap-1" style={{ color: "#fbbf24" }}>
+              <AlertTriangle className="w-3 h-3" /> Anyone with this key controls your funds. It is never shown on screen — copy or download only.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={copyKey}
+                className="flex-1 py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-1.5"
+                style={{ border: `1px solid ${GOLD}55`, color: keyCopied ? GREEN : GOLD, borderRadius: "0.5rem" }}
+              >
+                {keyCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {keyCopied ? "Copied" : "Copy Key"}
+              </button>
+              <button
+                onClick={downloadKey}
+                className="flex-1 py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-1.5"
+                style={{ border: `1px solid ${GOLD}55`, color: GOLD, borderRadius: "0.5rem" }}
+              >
+                <Download className="w-3 h-3" /> Download
+              </button>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Generate New */}
