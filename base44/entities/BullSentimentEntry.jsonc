@@ -1,0 +1,46 @@
+{
+  "name": "BullSentimentEntry",
+  "type": "object",
+  "properties": {
+    "wallet_address": {
+      "type": "string",
+      "description": "Bull wallet Kaspa address that self-sent KAS"
+    },
+    "tx_id": {
+      "type": "string",
+      "description": "Self-send transaction hash"
+    },
+    "amount_kas": {
+      "type": "number",
+      "default": 0,
+      "description": "KAS amount self-sent"
+    },
+    "sentiment": {
+      "type": "string",
+      "enum": [
+        "bullish"
+      ],
+      "default": "bullish",
+      "description": "Sentiment direction"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "wallet_address",
+    "tx_id"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

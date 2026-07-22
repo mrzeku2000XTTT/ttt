@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, TrendingUp, TrendingDown, Loader2, User as UserIcon } from "lucide-react";
-import ZKSendKasCard from "@/components/tttv3/ZKSendKasCard";
+import BullSendKasCard from "@/components/sentiment/BullSendKasCard";
 
 const BULL_VIDEO = "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/549425148_Bull_Background.mp4";
 const BEAR_VIDEO = "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/1e3530ccb_Bear_Background.mp4";
@@ -270,11 +270,12 @@ export default function SentimentTradePage() {
               >
                 <TrendingUp className="w-4 h-4" /> BULLISH · SELF-SEND KAS
               </div>
-              <div className="w-full flex justify-start" style={{ opacity: 1 }}>
-                <ZKSendKasCard
-                  prefillTo={selfAddress}
-                  prefillAmount=""
-                  onSent={(tx) => setTxToast(tx)}
+              <div className="w-full flex justify-center" style={{ opacity: 1 }}>
+                <BullSendKasCard
+                  onSent={(tx) => {
+                    setTxToast(tx);
+                    setTimeout(() => navigate("/BullChart"), 1500);
+                  }}
                 />
               </div>
               <button
