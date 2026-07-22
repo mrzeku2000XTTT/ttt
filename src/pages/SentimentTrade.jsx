@@ -184,65 +184,67 @@ export default function SentimentTradePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
-              className="flex flex-col sm:flex-row gap-4 w-full max-w-3xl"
+              className="flex flex-row gap-2.5 sm:gap-3 w-full max-w-xl px-2"
             >
               <button
                 onClick={() => choose("bullish")}
-                className="group flex-1 rounded-2xl px-6 py-10 flex flex-col items-center gap-3 transition-all hover:scale-[1.02]"
+                className="group flex-1 rounded-2xl px-2 py-5 sm:px-4 sm:py-6 flex flex-col items-center gap-2 transition-all active:scale-95 hover:scale-[1.03]"
                 style={{
-                  border: `1px solid rgba(34,197,94,0.4)`,
+                  border: `1px solid rgba(34,197,94,0.35)`,
                   background:
-                    "linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,77,38,0.35))",
-                  backdropFilter: "blur(2px)",
+                    "linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,77,38,0.28))",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
                 }}
               >
                 <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center"
+                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center"
                   style={{
-                    background: "rgba(34,197,94,0.12)",
-                    border: `1px solid rgba(34,197,94,0.5)`,
+                    background: "rgba(34,197,94,0.14)",
+                    border: `1px solid rgba(34,197,94,0.45)`,
                   }}
                 >
-                  <TrendingUp className="w-7 h-7" style={{ color: "#ffffff" }} />
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: "#ffffff" }} />
                 </div>
                 <span
-                  className="text-xl font-black tracking-wide"
+                  className="text-sm sm:text-lg font-semibold tracking-tight"
                   style={{ color: BULL_GREEN }}
                 >
                   BULLISH
                 </span>
-                <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  Self-send KAS natively ↗
+                <span className="text-[9px] sm:text-[11px] leading-tight text-center" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  Self-send KAS ↗
                 </span>
               </button>
 
               <button
                 onClick={() => choose("bearish")}
-                className="group flex-1 rounded-2xl px-6 py-10 flex flex-col items-center gap-3 transition-all hover:scale-[1.02]"
+                className="group flex-1 rounded-2xl px-2 py-5 sm:px-4 sm:py-6 flex flex-col items-center gap-2 transition-all active:scale-95 hover:scale-[1.03]"
                 style={{
-                  border: `1px solid rgba(239,68,68,0.4)`,
+                  border: `1px solid rgba(239,68,68,0.35)`,
                   background:
-                    "linear-gradient(180deg, rgba(0,0,0,0.55), rgba(92,19,19,0.35))",
-                  backdropFilter: "blur(2px)",
+                    "linear-gradient(180deg, rgba(0,0,0,0.45), rgba(92,19,19,0.28))",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
                 }}
               >
                 <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center"
+                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center"
                   style={{
-                    background: "rgba(239,68,68,0.12)",
-                    border: `1px solid rgba(239,68,68,0.5)`,
+                    background: "rgba(239,68,68,0.14)",
+                    border: `1px solid rgba(239,68,68,0.45)`,
                   }}
                 >
-                  <TrendingDown className="w-7 h-7" style={{ color: "#ffffff" }} />
+                  <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: "#ffffff" }} />
                 </div>
                 <span
-                  className="text-xl font-black tracking-wide"
+                  className="text-sm sm:text-lg font-semibold tracking-tight"
                   style={{ color: BEAR_RED }}
                 >
                   BEARISH
                 </span>
-                <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  Bypass → land on Terra
+                <span className="text-[9px] sm:text-[11px] leading-tight text-center" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  Bypass → Terra
                 </span>
               </button>
             </motion.div>
