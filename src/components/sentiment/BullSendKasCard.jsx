@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+import QRCode from "qrcode";
 import { base44 } from "@/api/base44Client";
 import PinPad from "@/components/wallet/PinPad";
 import { verifyStoredPin, getStoredPinHash } from "@/components/wallet/walletLock";
 import {
   Loader2, ShieldCheck, Check, Wallet, Sparkles, AlertTriangle,
-  Copy, Download, Eye, EyeOff, Key, Plus, RefreshCw,
+  Copy, Download, Eye, EyeOff, Key, Plus, RefreshCw, QrCode as QrIcon,
 } from "lucide-react";
 
 const GOLD = "#D4AF37";
@@ -44,6 +45,8 @@ export default function BullSendKasCard({ onSent }) {
   const [showKey, setShowKey] = useState(false);
   const [keyCopied, setKeyCopied] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [qrUrl, setQrUrl] = useState("");
+  const [showQr, setShowQr] = useState(false);
 
   const fetchBalance = (addr) => {
     if (!addr) return;
@@ -62,6 +65,20 @@ export default function BullSendKasCard({ onSent }) {
 
   useEffect(() => {
     if (wallet?.address) fetchBalance(wallet.address);
+  }, [wallet?.address]);
+
+  useEffect(() => {
+    if (!wallet?.address) {
+      setQrUrl("");
+      return;
+    }
+    QRCode.toDataURL(wallet.address, {
+      width: 240,
+      margin: 1,
+      color: { dark: "#000000", light: "#FFFFFF" },
+    })
+      .then(setQrUrl)
+      .catch(() => setQrUrl(""));
   }, [wallet?.address]);
 
   const pinConfigured = !!getStoredPinHash();
@@ -281,7 +298,25 @@ export default function BullSendKasCard({ onSent }) {
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
+            <button
+              onClick={() => setShowQr(!showQr)}
+              className="px-3 py-2.5 text-xs font-bold uppercase whitespace-nowrap transition-all flex-shrink-0"
+              style={{
+                border: `1px solid ${GOLD}55`,
+                color: showQr ? GREEN : GOLD,
+                background: showQr ? "rgba(118,165,130,0.1)" : "rgba(212,175,55,0.05)",
+                borderRadius: "0.75rem",
+              }}
+            >
+              <QrIcon className="w-3.5 h-3.5" />
+            </button>
           </div>
+          {showQr && qrUrl && (
+            <div className="mt-3 flex flex-col items-center">
+              <img src={qrUrl} alt="Kaspa address QR" className="w-40 h-40 rounded-lg" style={{ background: "#fff", padding: "4px" }} />
+              <p className="text-[10px] mt-2" style={{ color: "rgba(255,255,255,0.4)" }}>Scan to fund this wallet</p>
+            </div>
+          )}
         </div>
 
         {/* Funding prompt for unfunded wallets */}
