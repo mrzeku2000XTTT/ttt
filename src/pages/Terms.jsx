@@ -48,7 +48,7 @@ export default function TermsPage() {
 
               <h2 className="text-xl font-bold text-white mt-6 mb-3">1. Acceptance of Terms</h2>
               <p className="text-gray-300 mb-4 leading-relaxed">
-                By accessing and using TTTz.xyz (Trust Task Transact Zero entropy knowledge unified) application, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, you must not use this application.
+                By accessing and using TTTz.xyz (taptotip/trustless task transact Zero entropy knowledge unified) application, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, you must not use this application.
               </p>
 
               <h2 className="text-xl font-bold text-white mt-6 mb-3">2. Alpha Software Disclaimer</h2>
