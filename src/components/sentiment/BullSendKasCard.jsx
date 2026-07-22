@@ -275,18 +275,20 @@ export default function BullSendKasCard({ onSent }) {
         </div>
 
         {/* Full address + copy */}
-        <div className="mb-4">
+        <div className="mb-6">
           <label style={labelStyle}>Kaspa Address</label>
-          <div className="flex items-center gap-2">
+          <div className="flex items-stretch gap-2">
             <div
-              className="flex-1 text-[11px] font-mono break-all px-3 py-2.5 leading-relaxed"
-              style={{ ...inputStyle, border: `1px solid ${GOLD}44`, wordBreak: "break-all" }}
+              className="flex-1 min-w-0 text-[11px] font-mono px-3 py-2.5 flex items-center overflow-hidden"
+              style={{ ...inputStyle, border: `1px solid ${GOLD}44` }}
             >
-              {wallet.address}
+              <span className="truncate" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {wallet.address}
+              </span>
             </div>
             <button
               onClick={copyAddress}
-              className="px-3 py-2.5 text-xs font-bold uppercase whitespace-nowrap transition-all flex-shrink-0"
+              className="px-3 flex items-center justify-center whitespace-nowrap transition-all flex-shrink-0"
               style={{
                 border: `1px solid ${GOLD}55`,
                 color: copied ? GREEN : GOLD,
@@ -298,7 +300,7 @@ export default function BullSendKasCard({ onSent }) {
             </button>
             <button
               onClick={() => setShowQr(!showQr)}
-              className="px-3 py-2.5 text-xs font-bold uppercase whitespace-nowrap transition-all flex-shrink-0"
+              className="px-3 flex items-center justify-center whitespace-nowrap transition-all flex-shrink-0"
               style={{
                 border: `1px solid ${GOLD}55`,
                 color: showQr ? GREEN : GOLD,
@@ -342,13 +344,15 @@ export default function BullSendKasCard({ onSent }) {
         {step === "form" && (
           <>
             {/* Recipient (self) */}
-            <div className="mb-4">
+            <div className="mb-5">
               <label style={labelStyle}>Recipient (self)</label>
               <div
-                className="w-full px-3 py-2.5 text-[11px] font-mono break-all"
-                style={{ ...inputStyle, wordBreak: "break-all" }}
+                className="w-full px-3 py-2.5 text-[11px] font-mono flex items-center overflow-hidden"
+                style={{ ...inputStyle }}
               >
-                {wallet.address}
+                <span className="truncate" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {wallet.address}
+                </span>
               </div>
             </div>
 
