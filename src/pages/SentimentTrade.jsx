@@ -48,8 +48,8 @@ export default function SentimentTradePage() {
     setSentiment(s);
     if (s === "bearish") {
       setRedirecting(true);
-      // "bypass and lands on Terra"
-      setTimeout(() => navigate("/Terra"), 650);
+      // "bypass — back to TTT landing"
+      setTimeout(() => navigate("/"), 650);
     }
   };
 
@@ -171,9 +171,9 @@ export default function SentimentTradePage() {
         >
           Pick a side.{" "}
           <span style={{ color: BULL_GREEN }}>Bullish</span> self-sends KAS
-          natively to your wallet — skin in the game.{" "}
-          <span style={{ color: BEAR_RED }}>Bearish</span> bypasses the trade and
-          lands you on Terra.
+          natively — skin in the game.{" "}
+          <span style={{ color: BEAR_RED }}>Bearish</span> bypasses and sends you
+          back to TTT.
         </motion.p>
 
         <AnimatePresence mode="wait">
@@ -244,7 +244,7 @@ export default function SentimentTradePage() {
                   BEARISH
                 </span>
                 <span className="text-[9px] sm:text-[11px] leading-tight text-center" style={{ color: "rgba(255,255,255,0.65)" }}>
-                  Bypass → Terra
+                  Bypass → TTT
                 </span>
               </button>
             </motion.div>
@@ -316,10 +316,10 @@ export default function SentimentTradePage() {
               >
                 {redirecting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Landing on Terra…
+                    <Loader2 className="w-4 h-4 animate-spin" /> Back to TTT…
                   </>
                 ) : (
-                  "Routing to Terra"
+                  "Routing to TTT"
                 )}
               </div>
             </motion.div>
