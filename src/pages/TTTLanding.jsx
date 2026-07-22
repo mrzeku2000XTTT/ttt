@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem, Globe } from "lucide-react";
+import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem, Globe, Rocket } from "lucide-react";
 import GrokChat from "@/components/landing/GrokChat";
 import ChestModal from "@/components/landing/ChestModal";
 import AdventCalendar from "@/components/landing/AdventCalendar";
@@ -1548,9 +1548,9 @@ export default function TTTLandingPage() {
             </motion.button>
             <motion.button type="button" whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.9 }}
               onClick={() => { sounds.playSelect(); navigate("/SentimentTrade"); }}
-              className="focus:outline-none text-[14px] leading-none" title="KASPA native trade"
+              className="focus:outline-none" title="KASPA native trade"
               style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
-              🚀
+              <Rocket className="w-3.5 h-3.5" style={{ color: "rgba(220,175,70,0.8)" }} strokeWidth={1.5} />
             </motion.button>
           </motion.div>
         </div>
