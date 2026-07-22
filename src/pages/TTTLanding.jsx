@@ -1546,6 +1546,12 @@ export default function TTTLandingPage() {
               style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
               <Globe className="w-3.5 h-3.5" style={{ color: "rgba(220,175,70,0.8)" }} strokeWidth={1.5} />
             </motion.button>
+            <motion.button type="button" whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.9 }}
+              onClick={() => { sounds.playSelect(); navigate("/SentimentTrade"); }}
+              className="focus:outline-none text-[14px] leading-none" title="KASPA native trade"
+              style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
+              🚀
+            </motion.button>
           </motion.div>
         </div>
       </section>
