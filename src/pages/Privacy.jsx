@@ -28,7 +28,7 @@ export default function PrivacyPage() {
             <div className="prose prose-invert max-w-none">
               <h2 className="text-xl font-bold text-white mt-6 mb-3">1. Introduction</h2>
               <p className="text-gray-300 mb-4 leading-relaxed">
-                TTTz.xyz (Trust Task Transact Zero entropy knowledge unified) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our application.
+                TTTz.xyz (taptotip/trustless task transact Zero entropy knowledge unified) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our application.
               </p>
 
               <h2 className="text-xl font-bold text-white mt-6 mb-3">2. Information We Collect</h2>
@@ -136,7 +136,7 @@ export default function PrivacyPage() {
 
               <div className="bg-white/5 border border-white/10 rounded-lg p-4 mt-8">
                 <p className="text-xs text-gray-400 text-center">
-                  By using TTTz.xyz (Trust Task Transact Zero entropy knowledge unified), you acknowledge that you have read and understood this Privacy Policy.
+                  By using TTTz.xyz (taptotip/trustless task transact Zero entropy knowledge unified), you acknowledge that you have read and understood this Privacy Policy.
                 </p>
               </div>
             </div>
