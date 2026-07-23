@@ -46,6 +46,7 @@ export default function BullSendKasCard({ onSent }) {
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [qrUrl, setQrUrl] = useState("");
   const [showQr, setShowQr] = useState(false);
+  const [keyHidden, setKeyHidden] = useState(true);
 
   const fetchBalance = (addr) => {
     if (!addr) return;
@@ -53,11 +54,14 @@ export default function BullSendKasCard({ onSent }) {
     base44.functions
       .invoke("getKaspaBalance", { address: addr })
       .then((res) => {
-        setBalance(res?.data?.balanceKAS ?? 0);
+        const data = res?.data || {};
+        setBalance(typeof data.balanceKAS === "number" ? data.balanceKAS : 0);
         setBalanceLoading(false);
       })
-      .catch(() => {
-        setBalance(0);
+      .catch((err) => {
+        // invoke() throws on non-2xx; actual body is at err.response.data
+        const data = err?.response?.data || {};
+        setBalance(typeof data.balanceKAS === "number" ? data.balanceKAS : 0);
         setBalanceLoading(false);
       });
   };
@@ -143,16 +147,20 @@ export default function BullSendKasCard({ onSent }) {
     }
     setStep("sending");
     try {
+      // Pass privateKey directly — skips fragile server-side mnemonic derivation
       const res = await base44.functions.invoke("sendKaspaTransaction", {
-        mnemonic: wallet.mnemonic,
+        privateKey: wallet.privateKey,
         fromAddress: wallet.address,
         toAddress: wallet.address,
         amountKas: amt,
       });
-      if (res.data?.error) throw new Error(res.data.error);
-      const id = String(res.data.txId || "");
+      const data = res?.data || {};
+      if (data.error) throw new Error(data.error);
+      const id = String(data.txId || "");
       setTxId(id);
       setStep("done");
+      // Refresh balance after successful self-send
+      fetchBalance(wallet.address);
       try {
         await base44.entities.BullSentimentEntry.create({
           wallet_address: wallet.address,
@@ -163,7 +171,9 @@ export default function BullSendKasCard({ onSent }) {
       } catch {}
       if (onSent) onSent({ txId: id, amount: amt, to: wallet.address });
     } catch (err) {
-      setErrorMsg(err.message || "Transaction failed");
+      // invoke() throws on non-2xx; real error message is at err.response.data.error
+      const serverMsg = err?.response?.data?.error || err?.message || "Transaction failed";
+      setErrorMsg(serverMsg);
       setStep("error");
     }
   };
@@ -468,36 +478,48 @@ export default function BullSendKasCard({ onSent }) {
         {/* Divider */}
         <div className="my-4" style={{ height: "1px", background: "rgba(255,255,255,0.06)" }} />
 
-        {/* Export Private Key (hidden, copy/download only) */}
+        {/* Export Private Key (collapsible, copy/download only) */}
         <div className="mb-3">
           <div className="w-full flex items-center justify-between py-2 text-xs font-bold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>
             <span className="inline-flex items-center gap-2">
-              <Key className="w-3.5 h-3.5" /> Private Key (hidden)
+              <Key className="w-3.5 h-3.5" /> Private Key
             </span>
-            <ShieldCheck className="w-3.5 h-3.5" style={{ color: GREEN }} />
-          </div>
-          <div className="mt-1 p-3 rounded-lg" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)" }}>
-            <p className="text-[10px] mb-2 flex items-center gap-1" style={{ color: "#fbbf24" }}>
-              <AlertTriangle className="w-3 h-3" /> Anyone with this key controls your funds. It is never shown on screen — copy or download only.
-            </p>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <button
-                onClick={copyKey}
-                className="flex-1 py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-1.5"
-                style={{ border: `1px solid ${GOLD}55`, color: keyCopied ? GREEN : GOLD, borderRadius: "0.5rem" }}
+                onClick={() => setKeyHidden(!keyHidden)}
+                className="inline-flex items-center gap-1 text-[10px] uppercase transition-colors hover:text-white"
+                style={{ color: keyHidden ? "rgba(255,255,255,0.4)" : GOLD }}
               >
-                {keyCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {keyCopied ? "Copied" : "Copy Key"}
+                {keyHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                {keyHidden ? "Show" : "Hide"}
               </button>
-              <button
-                onClick={downloadKey}
-                className="flex-1 py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-1.5"
-                style={{ border: `1px solid ${GOLD}55`, color: GOLD, borderRadius: "0.5rem" }}
-              >
-                <Download className="w-3 h-3" /> Download
-              </button>
+              <ShieldCheck className="w-3.5 h-3.5" style={{ color: GREEN }} />
             </div>
           </div>
+          {!keyHidden && (
+            <div className="mt-1 p-3 rounded-lg" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <p className="text-[10px] mb-2 flex items-center gap-1" style={{ color: "#fbbf24" }}>
+                <AlertTriangle className="w-3 h-3" /> Anyone with this key controls your funds. It is never shown on screen — copy or download only.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={copyKey}
+                  className="flex-1 py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-1.5"
+                  style={{ border: `1px solid ${GOLD}55`, color: keyCopied ? GREEN : GOLD, borderRadius: "0.5rem" }}
+                >
+                  {keyCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {keyCopied ? "Copied" : "Copy Key"}
+                </button>
+                <button
+                  onClick={downloadKey}
+                  className="flex-1 py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-1.5"
+                  style={{ border: `1px solid ${GOLD}55`, color: GOLD, borderRadius: "0.5rem" }}
+                >
+                  <Download className="w-3 h-3" /> Download
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Generate New */}
