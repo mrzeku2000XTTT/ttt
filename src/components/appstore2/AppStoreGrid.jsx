@@ -130,7 +130,7 @@ const APPS = [
   { name: "Ksocial", path: "Ksocial", cat: "Social", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/4f6c5539b_generated_image.png", desc: "Social network" },
 
   // ── Media ──
-  { name: "CineKas", path: "Cinekas", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8ef99a2a2_generated_image.png", desc: "Movie browser", admin: true },
+  { name: "CineKas", path: "Cinekas", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8ef99a2a2_generated_image.png", desc: "Movie browser" },
 
   // ── Communication ──
   { name: "RufzeitK", path: "RufzeitKHome", cat: "Communication", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/6643a9592_generated_image.png", desc: "Call system" },
@@ -277,6 +277,8 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
         if (app.admin && !isAdmin) return false;
         if (category === "Kaspa") {
           if (!isKaspaApp(app)) return false;
+        } else if (category === "TTT") {
+          // TTT Apps = all apps in the store (every app is a TTT-built app)
         } else if (category !== "All" && app.cat !== category) return false;
         if (search) {
           const q = search.toLowerCase();
