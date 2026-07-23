@@ -29,6 +29,7 @@ import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker
 import KaspaPanel from "@/components/landing/KaspaPanel";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
 import WorldCarouselOrbs from "@/components/landing/WorldCarouselOrbs";
+import LandingAboutSection from "@/components/landing/LandingAboutSection";
 
 // Worlds in the greater universe — index 0 is this live landing page
 const WORLDS = [
@@ -1556,6 +1557,9 @@ export default function TTTLandingPage() {
         </div>
       </section>
       </motion.div>
+
+      {/* About section — below the hero, always visible */}
+      <LandingAboutSection />
 
       {/* Music Player popup */}
       <AnimatePresence>
