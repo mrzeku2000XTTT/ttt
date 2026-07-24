@@ -772,8 +772,8 @@ NEVER say "I can't" or "I don't know" — you have the full site map and a compu
       <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
 
         {/* Top nav bar — industrial header plate */}
-        <div className="flex items-center gap-2 px-4 py-2.5 flex-shrink-0" style={{ background: "linear-gradient(180deg, #1c1c1c 0%, #111 100%)", borderBottom: `3px solid ${ACCENT}`, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
-          <button onClick={() => setSidebarOpen(v => !v)} className="p-1.5 transition-colors" style={{ color: ACCENT }}>
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 lg:px-4 lg:py-2.5 flex-shrink-0" style={{ background: "linear-gradient(180deg, #1c1c1c 0%, #111 100%)", borderBottom: `3px solid ${ACCENT}`, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
+          <button onClick={() => setSidebarOpen(v => !v)} className="p-1.5 transition-colors flex-shrink-0" style={{ color: ACCENT }}>
             <LayoutGrid className="w-4 h-4" />
           </button>
 
