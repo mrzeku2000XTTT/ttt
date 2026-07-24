@@ -316,7 +316,7 @@ export default function WalletPage() {
       setMnemonic(phrase);
       setPrivateKey(pk);
       setAddress(fullAddr);
-      setShowMnemonic(true);
+      setShowMnemonic(false);
       if (pk) localStorage.setItem('ttt_wallet_pk', pk);
       await saveWallet(fullAddr, wordCount);
       startBalancePolling(fullAddr);
@@ -868,11 +868,9 @@ export default function WalletPage() {
                     <div className="flex justify-between items-center">
                       <h3 className="text-white font-bold">Seed Phrase</h3>
                       <div className="flex gap-2">
-                        {showMnemonic && (
-                          <Button onClick={copyPhrase} size="sm" variant="ghost">
-                            {copiedPhrase ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                          </Button>
-                        )}
+                        <Button onClick={copyPhrase} size="sm" variant="ghost">
+                          {copiedPhrase ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                        </Button>
                         <Button onClick={() => setShowMnemonic(s => !s)} size="sm" variant="ghost">
                           {showMnemonic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
