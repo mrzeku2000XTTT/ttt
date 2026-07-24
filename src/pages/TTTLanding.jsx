@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem, Globe, Rocket } from "lucide-react";
+import { X, Send, ChevronDown, Lock, FlaskConical, Play, Pause, Music2, LayoutGrid, Users, Zap, MessageCircle, Search, Image as ImageIcon, Loader2, Sparkles, Monitor, MonitorOff, StopCircle, Bot, Wallet, Gem, Globe, Rocket, Info } from "lucide-react";
 import GrokChat from "@/components/landing/GrokChat";
 import ChestModal from "@/components/landing/ChestModal";
 import AdventCalendar from "@/components/landing/AdventCalendar";
@@ -29,7 +29,6 @@ import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker
 import KaspaPanel from "@/components/landing/KaspaPanel";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
 import WorldCarouselOrbs from "@/components/landing/WorldCarouselOrbs";
-import LandingAboutSection from "@/components/landing/LandingAboutSection";
 
 // Worlds in the greater universe — index 0 is this live landing page
 const WORLDS = [
@@ -1553,13 +1552,16 @@ export default function TTTLandingPage() {
               style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
               <Rocket className="w-3.5 h-3.5" style={{ color: "rgba(220,175,70,0.8)" }} strokeWidth={1.5} />
             </motion.button>
+            <motion.button type="button" whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.9 }}
+              onClick={() => { sounds.playSelect(); navigate("/About"); }}
+              className="focus:outline-none" title="About TTT"
+              style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
+              <Info className="w-3.5 h-3.5" style={{ color: "rgba(220,175,70,0.8)" }} strokeWidth={1.5} />
+            </motion.button>
           </motion.div>
         </div>
       </section>
       </motion.div>
-
-      {/* About section — below the hero, always visible */}
-      <LandingAboutSection />
 
       {/* Music Player popup */}
       <AnimatePresence>
