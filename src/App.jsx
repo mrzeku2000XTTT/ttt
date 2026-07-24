@@ -80,6 +80,7 @@ import StoryboardBRollPage from './pages/StoryboardBRoll';
 import StoryboardThemePage from './pages/StoryboardTheme';
 import MoodBoardPage from './pages/MoodBoard';
 import AboutPage from './pages/About';
+import TTTCodexPage from './pages/TTTCodex';
 import WalletHubPage from './pages/WalletHub';
 import KasthleticsPage from './pages/Kasthletics';
 import MetaMimicPage from './pages/MetaMimic';
@@ -269,6 +270,7 @@ const AuthenticatedApp = () => {
       <Route path="/StoryboardTheme" element={<StoryboardThemePage />} />
       <Route path="/MoodBoard" element={<MoodBoardPage />} />
       <Route path="/About" element={<AboutPage />} />
+      <Route path="/TTTCodex" element={<TTTCodexPage />} />
       <Route path="/WalletHub" element={<WalletLockGate><WalletHubPage /></WalletLockGate>} />
       <Route path="/Kasthletics" element={<KasthleticsPage />} />
       <Route path="/MetaMimic" element={<MetaMimicPage />} />

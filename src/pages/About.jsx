@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 
 import AboutSidebar from "@/components/about/AboutSidebar";
 import AboutOverview from "@/components/about/AboutOverview";
@@ -80,9 +80,15 @@ export default function AboutPage() {
           </main>
         </div>
 
-        <p className="text-center text-white/20 text-[11px] font-[300] tracking-wide mt-20 pt-8 border-t border-white/5">
-          TTT · Since November 7, 2025 · Built on Kaspa
-        </p>
+        <div className="mt-20 pt-8 border-t border-white/5 text-center space-y-4">
+          <p className="text-white/20 text-[11px] font-[300] tracking-wide">
+            TTT · Since November 7, 2025 · Built on Kaspa
+          </p>
+          <Link to="/TTTCodex" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full transition-all" style={{ border: "1px solid rgba(200,150,40,0.25)", background: "rgba(200,150,40,0.05)" }}>
+            <BookOpen className="w-4 h-4 text-emerald-300" />
+            <span className="text-[11px] tracking-[0.25em] uppercase text-emerald-300">Read the Full TTT Codex</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
