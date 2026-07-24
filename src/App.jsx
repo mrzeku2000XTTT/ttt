@@ -100,6 +100,7 @@ import TTTOSPage from './pages/TTTOS';
 import GhostFrameLandingPage from './pages/GhostFrameLanding';
 import GhostFrameStudioPage from './pages/GhostFrameStudio';
 import TipPageComponent from './pages/TipPage';
+import TwoTipPage from './pages/TwoTip';
 import HirePage from './pages/Hire';
 import NodePage from './pages/Node';
 import PortalPage from './pages/Portal';
@@ -290,6 +291,7 @@ const AuthenticatedApp = () => {
       <Route path="/GhostFrame" element={<GhostFrameLandingPage />} />
       <Route path="/GhostFrameStudio" element={<GhostFrameStudioPage />} />
       <Route path="/Tip" element={<TipPageComponent />} />
+      <Route path="/TwoTip" element={<TwoTipPage />} />
       <Route path="/Portal" element={<PortalPage />} />
       <Route path="/WorldOfAI" element={<WorldOfAIPage />} />
       <Route path="/WorldOfKaspa" element={<WorldOfKaspaPage />} />

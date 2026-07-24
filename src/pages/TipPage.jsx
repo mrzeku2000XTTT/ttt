@@ -1203,7 +1203,7 @@ Reply helpfully as ${agentN}. Keep it concise. If user wants to hire, encourage 
                       </label>
                       <div className="flex items-center gap-2">
                         <input value={editKnsMessaging} onChange={e => setEditKnsMessaging(e.target.value)} placeholder="yourname"
-                          className="flex-1 px-3 py-3 rounded-xl text-white outline-none text-sm font-mono"
+                          className="flex-1 px-4 py-3 rounded-xl text-white outline-none text-sm font-mono"
                           style={{ background: "rgba(40,30,10,0.3)", border: "1px solid rgba(200,150,40,0.2)", caretColor: "#fbbf24" }} />
                         <span className="text-amber-400/50 text-sm pr-1 flex-shrink-0">.kas</span>
                       </div>
