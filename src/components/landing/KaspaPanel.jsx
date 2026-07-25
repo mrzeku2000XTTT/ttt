@@ -6,6 +6,7 @@ import { Loader2, RefreshCw, Copy, Check, ArrowRight, Zap, Network, Shield, Spar
 import KaspaDashboard from "@/components/landing/KaspaDashboard";
 import KaspaAIChat from "@/components/landing/KaspaAIChat";
 import { AGENT_LOGO } from "@/components/landing/kaspaAIModels";
+import LuxMark from "@/components/landing/kaspa-dashboard/LuxMark";
 
 const SESSION_KEY = "kaspa_panel_wallet";
 const ONBOARDING_KEY = "kaspa_onboarding_v1";
@@ -221,7 +222,7 @@ export default function KaspaPanel({ onClose }) {
   const TopBar = () => (
     <div className="flex items-center justify-between px-5 pt-4 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}>
       <div className="flex items-center gap-2">
-        <img src={KASPA_LOGO} alt="Kaspa" width={28} height={28} className="w-7 h-7 object-contain" style={{ filter: "drop-shadow(0 0 8px rgba(70,130,255,0.3))" }} />
+        <LuxMark size={28} />
         <button onClick={onClose} className="focus:outline-none active:scale-95 transition-transform" title="Back to landing">
           <span className="text-2xl font-bold tracking-tight" style={{
             fontFamily: IOS_FONT,
@@ -235,9 +236,9 @@ export default function KaspaPanel({ onClose }) {
       <div className="flex items-center gap-3">
         <button onClick={() => setShowAIChat(true)}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full active:scale-95 transition-transform"
-          style={{ background: "rgba(77,107,254,0.15)", border: "1px solid rgba(77,107,254,0.4)" }}>
+          style={{ background: "rgba(212,175,55,0.10)", border: "1px solid rgba(212,175,55,0.35)" }}>
           <img src={AGENT_LOGO} alt="" className="w-4 h-4 object-cover" style={{ mixBlendMode: "screen" }} />
-          <span className="text-xs font-semibold" style={{ color: "#4d6bfe", fontFamily: IOS_FONT }}>AGENT.</span>
+          <span className="text-xs font-semibold tracking-wide" style={{ color: "#e8c87a", fontFamily: IOS_FONT }}>AGENT.</span>
         </button>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "rgba(28,28,30,0.8)", border: "1px solid rgba(255,255,255,0.08)" }}>
           {priceLoading ? (
@@ -468,7 +469,7 @@ export default function KaspaPanel({ onClose }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex flex-col" style={{ background: "#000000", fontFamily: IOS_FONT }}>
+      className="fixed inset-0 z-[100] flex flex-col overflow-hidden" style={{ background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.05), #000000 60%)", fontFamily: IOS_FONT }}>
       <TopBar />
       {showDashboard
         ? <KaspaDashboard address={cleanAddress} source={source} price={price} priceChange={priceChange} preferences={preferences} onClose={onClose} navigate={navigate} />

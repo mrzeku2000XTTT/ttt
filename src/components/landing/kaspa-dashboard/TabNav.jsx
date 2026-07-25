@@ -13,18 +13,21 @@ const TABS = [
 
 export default function TabNav({ activeTab, onChange }) {
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide px-5 pb-1" style={{ fontFamily: IOS_FONT }}>
+    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide px-5 pb-1.5" style={{ fontFamily: IOS_FONT }}>
       {TABS.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
         return (
           <button key={tab.id} onClick={() => onChange(tab.id)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all active:scale-95 ${
-              isActive ? "text-white" : "text-white/40 hover:text-white/70"
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold tracking-wide whitespace-nowrap transition-all active:scale-95 ${
+              isActive ? "text-black" : "text-white/45 hover:text-white/80"
             }`}
             style={{
-              background: isActive ? "#0A84FF" : "rgba(28,28,30,0.6)",
-              border: `1px solid ${isActive ? "rgba(10,132,255,0.4)" : "rgba(255,255,255,0.08)"}`,
+              background: isActive
+                ? "linear-gradient(135deg, #fbf3c4 0%, #e8c87a 45%, #d4af37 100%)"
+                : "rgba(255,255,255,0.025)",
+              border: `1px solid ${isActive ? "rgba(212,175,55,0.6)" : "rgba(212,175,55,0.12)"}`,
+              boxShadow: isActive ? "0 2px 14px rgba(212,175,55,0.28)" : "none",
             }}>
             <Icon className="w-3.5 h-3.5" />
             {tab.label}

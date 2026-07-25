@@ -170,6 +170,8 @@ export default function KaspaDashboard({ address: initialAddress, source, price,
 
   return (
     <div className="flex-1 flex flex-col" style={{ fontFamily: IOS_FONT }}>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-64"
+        style={{ background: "radial-gradient(ellipse 60% 100% at 50% 0%, rgba(212,175,55,0.06), transparent 70%)" }} />
       {/* Wallet Switcher (desktop only) */}
       {desktop && (wallets.kasware || wallets.ttt) && (
         <div className="flex justify-center px-5 pb-2">
@@ -180,13 +182,14 @@ export default function KaspaDashboard({ address: initialAddress, source, price,
 
       {/* Active wallet address display (mobile shows TTT wallet info) */}
       {cleanAddress && (
-        <div className="flex items-center justify-center gap-1.5 px-5 pb-1">
-          <span className="text-[10px] text-white/30">
-            {activeWallet === "kasware" ? "Kasware" : "TTT Wallet"}:
+        <div className="relative flex items-center justify-center gap-1.5 px-5 pb-1">
+          <span className="text-[10px] uppercase tracking-[0.18em]" style={{ color: "rgba(232,200,122,0.5)" }}>
+            {activeWallet === "kasware" ? "Kasware" : "TTT Wallet"}
           </span>
-          <button onClick={copyAddress} className="text-[10px] font-mono text-white/50 hover:text-white/80 transition-colors flex items-center gap-1">
+          <span className="text-white/15">·</span>
+          <button onClick={copyAddress} className="text-[10px] font-mono text-white/55 hover:text-white/85 transition-colors flex items-center gap-1">
             {truncateAddress(cleanAddress)}
-            {copied ? <Check className="w-2.5 h-2.5 text-[#30D158]" /> : <Copy className="w-2.5 h-2.5" />}
+            {copied ? <Check className="w-2.5 h-2.5 text-[#5fd0a0]" /> : <Copy className="w-2.5 h-2.5" style={{ color: "rgba(232,200,122,0.5)" }} />}
           </button>
         </div>
       )}
@@ -207,10 +210,15 @@ export default function KaspaDashboard({ address: initialAddress, source, price,
       </div>
 
       {/* Footer CTA */}
-      <div className="px-5 pb-4 pt-2">
+      <div className="px-5 pb-4 pt-2 relative">
         <button onClick={() => { onClose?.(); navigate("/Home"); }}
-          className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-          style={{ background: "#0A84FF", color: "#fff", boxShadow: "0 2px 12px rgba(10,132,255,0.2)" }}>
+          className="w-full py-3.5 rounded-2xl text-sm font-bold tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          style={{
+            background: "linear-gradient(135deg, #fbf3c4 0%, #e8c87a 45%, #d4af37 100%)",
+            color: "#1a1408",
+            boxShadow: "0 4px 22px rgba(212,175,55,0.32)",
+            border: "1px solid rgba(212,175,55,0.55)",
+          }}>
           Open TTT Platform <ArrowRight className="w-4 h-4" />
         </button>
       </div>
