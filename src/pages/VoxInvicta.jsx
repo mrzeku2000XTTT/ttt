@@ -1,18 +1,15 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Play, Pause, Download, Volume2, Search, Home, Mic, Wand2, Sparkles, AlertCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Pause, Download, Mic, Menu, ChevronRight, Info, Music, Plus, Key, SlidersHorizontal } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function VoxInvictaPage() {
   const [text, setText] = useState("");
-  const [selectedVoice, setSelectedVoice] = useState({ 
-    id: 1, 
-    name: "Default Voice", 
-    elevenLabsId: "21m00Tcm4TlvDq8ikWAM" 
+  const [selectedVoice, setSelectedVoice] = useState({
+    id: 1,
+    name: "Default Voice",
+    elevenLabsId: "21m00Tcm4TlvDq8ikWAM"
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchVoice, setSearchVoice] = useState("");
@@ -22,11 +19,12 @@ export default function VoxInvictaPage() {
   const [freeCount, setFreeCount] = useState(() => {
     try { return parseInt(localStorage.getItem('voxinvicta_free_count') || '0', 10); } catch { return 0; }
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeVoiceName, setActiveVoiceName] = useState("River");
   const FREE_LIMIT = 30;
   const audioRef = React.useRef(null);
 
   const voices = [];
-
   const filteredVoices = searchVoice
     ? voices.filter(v => v.name.toLowerCase().includes(searchVoice.toLowerCase()))
     : voices;
@@ -36,21 +34,19 @@ export default function VoxInvictaPage() {
       setError('Please enter some text to convert to speech');
       return;
     }
-
     if (!selectedVoice) {
       setError('Please select a voice');
       return;
     }
-
     if (text.length > 5000) {
       setError('Text is too long. Maximum 5000 characters allowed.');
       return;
     }
-    
+
     setIsGenerating(true);
     setError(null);
     setAudioUrl(null);
-    
+
     try {
       if (freeCount < FREE_LIMIT) {
         const result = await base44.integrations.Core.GenerateSpeech({
@@ -82,7 +78,6 @@ export default function VoxInvictaPage() {
       }
     } catch (err) {
       console.error('Generation failed:', err);
-      
       if (err.response?.status === 429) {
         setError('Rate limit exceeded. Please wait a moment and try again.');
       } else if (err.response?.data?.error) {
@@ -99,7 +94,6 @@ export default function VoxInvictaPage() {
 
   const handlePlayPause = () => {
     if (!audioRef.current) return;
-    
     if (isPlaying) {
       audioRef.current.pause();
     } else {
@@ -110,13 +104,10 @@ export default function VoxInvictaPage() {
 
   const handleDownload = async () => {
     if (!audioUrl) return;
-    
     try {
-      // Convert data URL to blob
       const response = await fetch(audioUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      
       const a = document.createElement('a');
       a.href = url;
       a.download = `vox_invicta_${Date.now()}.mp3`;
@@ -129,173 +120,148 @@ export default function VoxInvictaPage() {
     }
   };
 
+  const voiceAvatars = [
+    { name: "River", color: "from-emerald-400 to-teal-500" },
+    { name: "Honey", color: "from-amber-400 to-orange-500" },
+    { name: "Sunny", color: "from-yellow-400 to-amber-500" },
+    { name: "Storm", color: "from-slate-500 to-slate-700" },
+    { name: "Spark", color: "from-fuchsia-400 to-pink-500" },
+  ];
+
+  const projectList = ["Untitled Project", "Narration Draft", "Podcast Intro"];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-black to-zinc-900 flex">
-      {/* Left Sidebar */}
-      <div className="w-64 bg-zinc-950 border-r border-zinc-800 p-4 flex flex-col">
-        <div className="flex items-center gap-3 mb-8">
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6901295fa9bcfaa0f5ba2c2a/42e7376e4_image.png"
-            alt="Vox Invicta"
-            className="w-10 h-10 rounded-full"
-          />
-          <h1 className="text-xl font-bold text-white">Vox Invicta</h1>
-        </div>
-
-        <nav className="space-y-2 flex-1">
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-            <Home className="w-5 h-5" />
-            <span className="font-medium">Home</span>
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <Volume2 className="w-5 h-5" />
-            <span className="font-medium">Voices</span>
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <Wand2 className="w-5 h-5" />
-            <span className="font-medium">Voice Changer</span>
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <Sparkles className="w-5 h-5" />
-            <span className="font-medium">Sound Effects</span>
-          </button>
-        </nav>
-
-        <div className="pt-4 border-t border-zinc-800">
-          <div className="text-xs text-zinc-500 mb-2">Free Speech Remaining</div>
-          <div className="text-2xl font-bold text-white">{Math.max(0, FREE_LIMIT - freeCount)} / {FREE_LIMIT}</div>
-          <div className="text-xs text-zinc-500">generations · no API key</div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-8 overflow-y-auto">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+    <div className="min-h-screen bg-[#F0F2F5]">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-[#E5E7EB]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#10B981] flex items-center justify-center">
+              <span className="text-white font-black text-sm">V</span>
+            </div>
+            <span className="font-bold text-[#111827]">Vox Invicta</span>
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(v => !v)}
+            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F0F2F5] text-[#6B7280] transition-colors lg:hidden"
+            aria-label="Menu"
           >
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-white mb-2">Text to Speech</h2>
-              <p className="text-zinc-400">Transform your text into lifelike voice with Kaspa-powered AI</p>
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Text-to-Speech */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 shadow-sm">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-[#111827]">Text-to-Speech</h2>
+                <p className="text-sm text-[#6B7280]">General voice and big border radius</p>
+              </div>
+              <Textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Hi, welcome to Vox Invicta. The world is ending. What do we do to prepare?"
+                className="min-h-[180px] bg-[#F9FAFB] border-[#E5E7EB] text-[#111827] placeholder:text-[#9CA3AF] text-base rounded-2xl focus-visible:ring-[#10B981] focus-visible:border-[#10B981] resize-none"
+              />
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-[#6B7280]">{text.length} / 5000 characters</span>
+                <span className="text-xs text-[#6B7280]">Free: {Math.max(0, FREE_LIMIT - freeCount)}/{FREE_LIMIT}</span>
+              </div>
             </div>
 
-            <Card className="bg-zinc-900 border-zinc-800 mb-6">
-              <CardContent className="p-6">
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-zinc-300 mb-2 block">Enter your text</label>
-                  <Textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Hi, welcome to Vox Invicta. The world is ending. What do we do to prepare?"
-                    className="min-h-[200px] bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-600 text-lg"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-zinc-500">
-                    {text.length} / 5000 characters
-                  </div>
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={!text || !selectedVoice || isGenerating}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-white px-8"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        Generate Speech
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Error Message */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                <Card className="bg-red-500/10 border-red-500/30 mb-6">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                    <div className="flex-1 text-red-400 text-sm">{error}</div>
+            {/* Voice Selection */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 shadow-sm">
+              <h3 className="text-sm font-bold text-[#111827] mb-4">Voice Selection</h3>
+              <div className="flex items-center gap-4 overflow-x-auto pb-2">
+                {voiceAvatars.map((v) => {
+                  const selected = v.name === activeVoiceName;
+                  return (
                     <button
-                      onClick={() => setError(null)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
+                      key={v.name}
+                      onClick={() => setActiveVoiceName(v.name)}
+                      className="flex flex-col items-center gap-2 flex-shrink-0"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${v.color} flex items-center justify-center border-2 transition-all ${selected ? 'border-[#10B981] ring-2 ring-[#10B981]/30' : 'border-transparent opacity-80'}`}>
+                        <Mic className="w-6 h-6 text-white" />
+                      </div>
+                      <span className={`text-xs font-medium ${selected ? 'text-[#10B981]' : 'text-[#6B7280]'}`}>{v.name} Voice</span>
                     </button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
+                  );
+                })}
+              </div>
+            </div>
 
-            {/* Audio Player Preview */}
-            {isGenerating && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <Card className="bg-zinc-900 border-zinc-800 mb-6">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
-                        <Volume2 className="w-6 h-6 text-cyan-400 animate-pulse" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-white font-medium mb-2">Generating audio...</div>
-                        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-cyan-500 animate-pulse" style={{ width: '60%' }} />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
+            {/* Generate */}
+            <button
+              onClick={handleGenerate}
+              disabled={!text.trim() || isGenerating}
+              className="w-full h-12 rounded-full bg-[#10B981] hover:bg-[#059669] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-base transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5" />
+                  Generate Audio
+                </>
+              )}
+            </button>
+
+            {/* Error */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3"
+                >
+                  <Info className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span className="text-sm text-red-600 flex-1">{error}</span>
+                  <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Audio Player */}
-            {audioUrl && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <Card className="bg-zinc-900 border-zinc-800 mb-6">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <Button
-                        onClick={handlePlayPause}
-                        size="icon"
-                        className="w-12 h-12 bg-cyan-500 hover:bg-cyan-600 rounded-full"
-                      >
-                        {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                      </Button>
-                      <div className="flex-1">
-                        <div className="text-white font-medium mb-2">{selectedVoice?.name}</div>
-                        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-cyan-500" style={{ width: '100%' }} />
-                        </div>
+            <AnimatePresence>
+              {(audioUrl || isGenerating) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="bg-white rounded-2xl border border-[#E5E7EB] p-6 shadow-sm"
+                >
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={handlePlayPause}
+                      disabled={isGenerating || !audioUrl}
+                      className="w-12 h-12 rounded-full bg-[#111827] hover:bg-[#1F2937] disabled:opacity-40 flex items-center justify-center flex-shrink-0 transition-colors"
+                    >
+                      {isPlaying ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
+                    </button>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-[#111827] mb-2">{activeVoiceName} Voice</div>
+                      <div className="h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#10B981] rounded-full transition-all" style={{ width: isPlaying ? '100%' : '0%' }} />
                       </div>
-                      <Button
-                        onClick={handleDownload}
-                        variant="outline"
-                        size="icon"
-                        className="border-zinc-700 hover:bg-zinc-800"
-                      >
-                        <Download className="w-5 h-5" />
-                      </Button>
                     </div>
+                    <button
+                      onClick={handleDownload}
+                      disabled={!audioUrl}
+                      className="w-10 h-10 rounded-full hover:bg-[#F0F2F5] disabled:opacity-40 flex items-center justify-center text-[#6B7280] transition-colors"
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                  </div>
+                  {audioUrl && (
                     <audio
                       ref={audioRef}
                       src={audioUrl}
@@ -303,45 +269,149 @@ export default function VoxInvictaPage() {
                       onPause={() => setIsPlaying(false)}
                       onEnded={() => setIsPlaying(false)}
                       preload="auto"
+                      className="hidden"
                     />
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-          </motion.div>
-        </div>
-      </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-      {/* Right Sidebar - Voice Settings */}
-      <div className="w-96 bg-zinc-950 border-l border-zinc-800 p-6 overflow-y-auto">
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Voice Settings</h3>
-          <p className="text-sm text-zinc-400">Using ElevenLabs Turbo v2.5 model</p>
-        </div>
-
-        <div className="space-y-4">
-          <div className="p-4 bg-zinc-900 rounded-lg border border-zinc-800">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
-                <Mic className="w-6 h-6 text-white" />
+            {/* Advanced Settings */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-5">
+                <SlidersHorizontal className="w-4 h-4 text-[#6B7280]" />
+                <h3 className="text-sm font-bold text-[#111827]">Advanced Settings</h3>
               </div>
-              <div>
-                <div className="text-white font-medium">{selectedVoice.name}</div>
-                <div className="text-xs text-zinc-500">Professional Quality</div>
+              <div className="space-y-5">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-[#374151]">Stability</span>
+                    <span className="text-sm font-medium text-[#111827]">50%</span>
+                  </div>
+                  <div className="relative h-1.5 bg-[#E5E7EB] rounded-full">
+                    <div className="absolute left-0 top-0 h-full w-1/2 bg-[#10B981] rounded-full" />
+                    <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white border-2 border-[#E5E7EB] rounded-full shadow-sm" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-[#374151]">Clarity</span>
+                    <span className="text-sm font-medium text-[#111827]">75%</span>
+                  </div>
+                  <div className="relative h-1.5 bg-[#E5E7EB] rounded-full">
+                    <div className="absolute left-0 top-0 h-full w-3/4 bg-[#10B981] rounded-full" />
+                    <div className="absolute left-3/4 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white border-2 border-[#E5E7EB] rounded-full shadow-sm" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-sm text-[#374151]">Enable Hava</span>
+                  <div className="w-10 h-6 bg-[#10B981] rounded-full relative">
+                    <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[#374151]">Enable Sixens</span>
+                  <div className="w-10 h-6 bg-[#E5E7EB] rounded-full relative">
+                    <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm" />
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Legal footer */}
+            <button className="w-full bg-white rounded-2xl border border-[#E5E7EB] p-4 flex items-center justify-between shadow-sm hover:bg-[#F9FAFB] transition-colors">
+              <span className="text-sm text-[#6B7280]">Legal</span>
+              <ChevronRight className="w-4 h-4 text-[#9CA3AF]" />
+            </button>
           </div>
 
-          <div className="pt-6 border-t border-zinc-800">
-            <div className="text-sm text-zinc-400 space-y-2">
-              <div className="flex items-center justify-between">
-                <span>Model:</span>
-                <span className="text-cyan-400 font-mono text-xs">eleven_turbo_v2_5</span>
+          {/* Sidebar */}
+          <div className={`${mobileMenuOpen ? 'block' : 'hidden'} lg:block space-y-6`}>
+            {/* Projects */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-[#111827] mb-4">Projects</h3>
+              <div className="space-y-1">
+                {projectList.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#F9FAFB] transition-colors cursor-pointer">
+                    <div>
+                      <div className="text-sm font-semibold text-[#111827]">{p}</div>
+                      <div className="text-xs text-[#9CA3AF]">50 maters - 11:00 pm</div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#9CA3AF]" />
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between">
-                <span>Voice ID:</span>
-                <span className="text-white font-mono text-xs">{selectedVoice.elevenLabsId}</span>
+            </div>
+
+            {/* Subscription */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <Info className="w-4 h-4 text-[#6B7280]" />
+                <h3 className="text-sm font-bold text-[#111827]">Subscription Status</h3>
               </div>
+              <div className="text-sm text-[#6B7280] mb-1">Free Plan</div>
+              <div className="text-xs text-[#9CA3AF] mb-3">Unlimited free tier (no API key)</div>
+              <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-xl">
+                <span className="text-xs text-[#6B7280]">Free speech remaining</span>
+                <span className="text-sm font-bold text-[#10B981]">{Math.max(0, FREE_LIMIT - freeCount)}/{FREE_LIMIT}</span>
+              </div>
+            </div>
+
+            {/* API Keys */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Key className="w-4 h-4 text-[#6B7280]" />
+                  <h3 className="text-sm font-bold text-[#111827]">API Keys</h3>
+                </div>
+                <button className="text-xs font-medium text-[#10B981] hover:text-[#059669] flex items-center gap-1">
+                  <Plus className="w-3.5 h-3.5" /> Create
+                </button>
+              </div>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-xl">
+                  <span className="text-xs font-mono text-[#6B7280]">Model</span>
+                  <span className="text-xs font-mono text-[#111827]">eleven_turbo_v2_5</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-xl">
+                  <span className="text-xs font-mono text-[#6B7280]">Voice ID</span>
+                  <span className="text-xs font-mono text-[#111827]">{selectedVoice.elevenLabsId}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-xl">
+                  <span className="text-xs font-mono text-[#6B7280]">••••••••</span>
+                  <span className="text-xs text-[#9CA3AF]">masked</span>
+                </div>
+              </div>
+              <button className="w-full h-10 rounded-full bg-[#10B981] hover:bg-[#059669] text-white text-sm font-semibold transition-colors">
+                Create Now
+              </button>
+            </div>
+
+            {/* History */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-[#111827] mb-4">History</h3>
+              <div className="space-y-1">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F9FAFB] transition-colors cursor-pointer">
+                    <div className="w-9 h-9 rounded-lg bg-[#F0F2F5] flex items-center justify-center flex-shrink-0">
+                      <Music className="w-4 h-4 text-[#6B7280]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-[#111827] truncate">Generated Audio {i}</div>
+                      <div className="text-xs text-[#9CA3AF]">{i * 12} minutes ago</div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#9CA3AF]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer links */}
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-2 pb-4">
+              {["Legal", "Privacy", "Links", "Contact", "Terms and Conditions"].map(l => (
+                <span key={l} className="text-xs text-[#9CA3AF]">{l}</span>
+              ))}
+              <span className="text-xs text-[#9CA3AF] w-full text-center mt-2">© 2026 by - Vox Invicta</span>
             </div>
           </div>
         </div>
