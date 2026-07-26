@@ -3,12 +3,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
-    // ESPN scoreboard API — free, no key needed
+    // ESPN scoreboard API — free, no key needed (public, no auth required)
     // Use America/Chicago timezone to get the correct local date
     const now = new Date();
     const chicagoTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));

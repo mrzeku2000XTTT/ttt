@@ -201,7 +201,7 @@ const AuthenticatedApp = () => {
           </LayoutWrapper>
         } />
       )}
-      {Object.entries(Pages).filter(([path]) => path !== 'Xunhua' && path !== 'Wallet').map(([path, Page]) => (
+      {Object.entries(Pages).filter(([path]) => path !== 'Xunhua' && path !== 'Wallet' && path !== 'KGigZ' && path !== 'OuTKasTT').map(([path, Page]) => (
         <Route
           key={path}
           path={`/${path}`}
@@ -301,6 +301,8 @@ const AuthenticatedApp = () => {
       <Route path="/TTTZWallet" element={<TTTZWalletPage />} />
       <Route path="/ScenarioBot" element={<ScenarioBotPage />} />
       <Route path="/SuperZK" element={<AdminRoute><SuperZKPage /></AdminRoute>} />
+      <Route path="/KGigZ" element={<AdminRoute>{React.createElement(Pages['KGigZ'])}</AdminRoute>} />
+      <Route path="/OuTKasTT" element={<AdminRoute>{React.createElement(Pages['OuTKasTT'])}</AdminRoute>} />
       <Route path="/KCC" element={<KCCPage />} />
       <Route path="/KCCNft" element={<KCCNftPage />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />

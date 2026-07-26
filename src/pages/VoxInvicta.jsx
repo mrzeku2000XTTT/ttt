@@ -19,6 +19,10 @@ export default function VoxInvictaPage() {
   const [audioUrl, setAudioUrl] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState(null);
+  const [freeCount, setFreeCount] = useState(() => {
+    try { return parseInt(localStorage.getItem('voxinvicta_free_count') || '0', 10); } catch { return 0; }
+  });
+  const FREE_LIMIT = 30;
   const audioRef = React.useRef(null);
 
   const voices = [];
@@ -48,18 +52,33 @@ export default function VoxInvictaPage() {
     setAudioUrl(null);
     
     try {
-      const { data } = await base44.functions.invoke('generateVoice', {
-        text: text.trim(),
-        voice_id: selectedVoice.elevenLabsId
-      });
-      
-      if (data?.audio_url) {
-        setAudioUrl(data.audio_url);
-        setError(null);
-      } else if (data?.error) {
-        setError(data.error);
+      if (freeCount < FREE_LIMIT) {
+        const result = await base44.integrations.Core.GenerateSpeech({
+          text: text.trim(),
+          voice: 'river',
+        });
+        if (result?.url) {
+          setAudioUrl(result.url);
+          const newCount = freeCount + 1;
+          setFreeCount(newCount);
+          localStorage.setItem('voxinvicta_free_count', String(newCount));
+          setError(null);
+        } else {
+          setError('Failed to generate speech. Please try again.');
+        }
       } else {
-        setError('Failed to generate speech. Please try again.');
+        const { data } = await base44.functions.invoke('generateVoice', {
+          text: text.trim(),
+          voice_id: selectedVoice.elevenLabsId
+        });
+        if (data?.audio_url) {
+          setAudioUrl(data.audio_url);
+          setError(null);
+        } else if (data?.error) {
+          setError(data.error);
+        } else {
+          setError('Failed to generate speech. Please try again.');
+        }
       }
     } catch (err) {
       console.error('Generation failed:', err);
@@ -143,9 +162,9 @@ export default function VoxInvictaPage() {
         </nav>
 
         <div className="pt-4 border-t border-zinc-800">
-          <div className="text-xs text-zinc-500 mb-2">Credits Remaining</div>
-          <div className="text-2xl font-bold text-white">5,471</div>
-          <div className="text-xs text-zinc-500">characters</div>
+          <div className="text-xs text-zinc-500 mb-2">Free Speech Remaining</div>
+          <div className="text-2xl font-bold text-white">{Math.max(0, FREE_LIMIT - freeCount)} / {FREE_LIMIT}</div>
+          <div className="text-xs text-zinc-500">generations · no API key</div>
         </div>
       </div>
 
@@ -175,7 +194,7 @@ export default function VoxInvictaPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-zinc-500">
-                    {text.length} / 5,471 characters
+                    {text.length} / 5000 characters
                   </div>
                   <Button
                     onClick={handleGenerate}
