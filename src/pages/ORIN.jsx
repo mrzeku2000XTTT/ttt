@@ -225,9 +225,14 @@ function HotelCard({ hotel, index }) {
             <span className="text-[18px] font-[900] text-white">${hotel.price}</span>
             <span className="text-[11px] text-white/40"> /night</span>
           </div>
-          <button className="px-4 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black text-[12px] font-bold transition-colors">
+          <a
+            href={`https://www.google.com/search?q=${encodeURIComponent(`${hotel.name} ${hotel.location} hotel`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black text-[12px] font-bold transition-colors"
+          >
             View
-          </button>
+          </a>
         </div>
       </div>
     </motion.div>
@@ -291,7 +296,7 @@ export default function ORINApp() {
           <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
             <Hotel className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-[15px] font-[800] tracking-tight">ORIN</span>
+          <span className="text-[15px] font-[800] tracking-tight">Landed</span>
         </div>
         <button
           onClick={() => setShowFilters(s => !s)}

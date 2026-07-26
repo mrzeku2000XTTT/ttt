@@ -354,7 +354,16 @@ export default function NODAPage() {
         });
         (verdict.missing || []).forEach((m) => log(`✗ Inspector · missing: ${m}`, "error"));
 
-        const retryIdx = (verdict.retry_steps || []).filter((i) => i >= 1 && i <= activeNodes.length);
+        // Never retry side-effect steps (send_email / post_to_ttt / send_to_x) —
+        // they already fired (email sent, post published). Retrying them sends
+        // duplicates. Only re-run pure compute steps.
+        const SIDE_EFFECT_TYPES = ["send_email", "post_to_ttt", "send_to_x"];
+        const retryIdx = (verdict.retry_steps || []).filter((i) => {
+          if (i < 1 || i > activeNodes.length) return false;
+          const node = activeNodes[i - 1];
+          if (SIDE_EFFECT_TYPES.includes(node.type)) return false;
+          return true;
+        });
         if (verdict.overall_pass) {
           log(`🔍 Inspector verdict: PASS — ${verdict.summary}`, "success");
         } else if (retryIdx.length) {
@@ -372,10 +381,12 @@ export default function NODAPage() {
               log(`✗ ${node.label} retry failed: ${err.message}`, "error");
             }
           }
-          // Final re-check after retries
+          // Final re-check after retries — advisory only. The inspector is an LLM
+          // and can be wrong (e.g. it flagged a sent email as failed). We log its
+          // verdict for visibility but NEVER let a subjective FAIL override the
+          // objective fact that every step completed without throwing.
           const recheck = await inspectWorkflowRun({ intent: intentText, nodes: activeNodes, context });
           log(`🔍 Inspector final verdict: ${recheck.overall_pass ? "PASS" : "FAIL"} — ${recheck.summary}`, recheck.overall_pass ? "success" : "error");
-          allSucceeded = allSucceeded && recheck.overall_pass;
         } else {
           log(`🔍 Inspector verdict: FAIL — ${verdict.summary}`, "error");
         }

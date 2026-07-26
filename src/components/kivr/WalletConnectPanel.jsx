@@ -14,6 +14,14 @@ const GLASS = {
 };
 const ORANGE = "#ff5a14";
 
+// Guarantee exactly one "kaspa:" prefix regardless of what the backend returns.
+// Fixes the kaspa:kaspa:qqkx... double-prefix bug.
+const ensureKaspaPrefix = (addr) => {
+  if (!addr) return addr;
+  const stripped = String(addr).replace(/^kaspa:/i, "");
+  return `kaspa:${stripped}`;
+};
+
 const STORAGE_KEY = "kivr_wallets"; // [{address, name, source}]
 const ACTIVE_KEY  = "kivr_wallet";
 
@@ -70,7 +78,7 @@ function ImportModal({ onImported, onClose }) {
         importMode: true,
       });
       if (res.data?.error) throw new Error(res.data.error);
-      const addr = res.data.address.startsWith("kaspa:") ? res.data.address : `kaspa:${res.data.address}`;
+      const addr = ensureKaspaPrefix(res.data.address);
       // Pass private key for mobile signing
       onImported(addr, walletName.trim() || "Imported Wallet", "import", res.data.privateKey);
     } catch (e) {
@@ -153,7 +161,7 @@ function CreateModal({ onCreated, onClose }) {
   };
 
   const finish = () => {
-    const addr = newWallet.address.startsWith("kaspa:") ? newWallet.address : `kaspa:${newWallet.address}`;
+    const addr = ensureKaspaPrefix(newWallet.address);
     // Pass private key for mobile signing capability
     onCreated(addr, walletName.trim() || "My KivR Wallet", "create", newWallet.privateKey);
   };
@@ -236,7 +244,7 @@ function CreateModal({ onCreated, onClose }) {
           </button>
           <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
             <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Your Kaspa Address</p>
-            <p className="text-xs font-mono text-white break-all">kaspa:{newWallet.address}</p>
+            <p className="text-xs font-mono text-white break-all">{ensureKaspaPrefix(newWallet.address)}</p>
           </div>
           <label className="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)}

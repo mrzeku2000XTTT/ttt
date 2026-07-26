@@ -91,14 +91,14 @@ export default function ORINLanding() {
         borderBottom: "1px solid rgba(201,168,76,0.12)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", padding: "4px 6px 4px 0" }}
+          <Link
+            to="/AppStoreV2"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", padding: "4px 6px 4px 0", textDecoration: "none" }}
           >
             <ArrowLeft style={{ width: 18, height: 18 }} />
-          </button>
+          </Link>
           <CompassBadge size={30} />
-          <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 17, letterSpacing: "0.04em", color: "#fff" }}>ORIN</span>
+          <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 17, letterSpacing: "0.04em", color: "#fff" }}>Landed</span>
         </div>
         <Link
           to="/ORIN"
@@ -390,7 +390,7 @@ export default function ORINLanding() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
           <CompassRose size={16} />
           <span style={{ fontSize: 11, letterSpacing: "0.25em", color: "rgba(255,255,255,0.2)", fontFamily: "Georgia, serif", textTransform: "uppercase" }}>
-            ORIN · Travel Intelligence
+            Landed · Travel Intelligence
           </span>
         </div>
       </footer>
