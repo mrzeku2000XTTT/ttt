@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Copy, Eye, EyeOff, Loader2, CheckCircle2, Shield,
-  ArrowLeft, RefreshCw, X, AlertTriangle, Send, QrCode, Download
+  ArrowLeft, RefreshCw, X, AlertTriangle, Send, QrCode, Download, Globe, ArrowRight
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,9 @@ import QRScanner from "@/components/wallet/QRScanner";
 import KRC20Tokens from "@/components/terra/KRC20Tokens";
 import KRC20SendSheet from "@/components/terra/KRC20SendSheet";
 import KaChingWalletToggle from "@/components/kaching/KaChingWalletToggle";
+
+const TTT_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/878bee477_generated_image.png";
+const TTT_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/252651f98_image.png";
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
@@ -25,7 +28,7 @@ const Toast = ({ message, type, onClose }) => (
     exit={{ opacity: 0, x: 100, scale: 0.8 }}
     className="fixed bottom-6 right-6 z-[10050] max-w-xs"
   >
-    <div className={`bg-black/95 backdrop-blur-xl border ${type === 'success' ? 'border-green-500/30' : 'border-red-500/30'} rounded-lg p-3 shadow-2xl`}>
+    <div className={`bg-[#0a0000]/95 backdrop-blur-xl border ${type === 'success' ? 'border-[#ff4d4d]/40' : 'border-red-700/50'} rounded-xl p-3 shadow-[0_0_25px_rgba(255,77,77,0.25)]`}>
       <div className="flex items-start gap-2">
         <span className="text-lg flex-shrink-0">{type === 'success' ? '✅' : '❌'}</span>
         <p className="text-white text-xs flex-1 leading-relaxed">{message}</p>
@@ -41,17 +44,17 @@ const Toast = ({ message, type, onClose }) => (
 const ConfirmModal = ({ title, message, onConfirm, onCancel }) => (
   <motion.div
     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
     onClick={onCancel}
   >
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
       onClick={e => e.stopPropagation()}
-      className="bg-black border border-red-500/30 rounded-xl p-6 max-w-md w-full shadow-2xl"
+      className="bg-[#0a0000] border border-[#ff4d4d]/40 rounded-2xl p-6 max-w-md w-full shadow-[0_0_40px_rgba(255,77,77,0.3)]"
     >
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-          <AlertTriangle className="w-5 h-5 text-red-400" />
+        <div className="w-10 h-10 bg-[#ff4d4d]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+          <AlertTriangle className="w-5 h-5 text-[#ff4d4d]" />
         </div>
         <div className="flex-1">
           <h3 className="text-white font-bold text-lg mb-1">{title}</h3>
@@ -60,7 +63,7 @@ const ConfirmModal = ({ title, message, onConfirm, onCancel }) => (
       </div>
       <div className="flex gap-3">
         <Button onClick={onCancel} className="flex-1 bg-white/5 border border-white/10 text-white hover:bg-white/10">Cancel</Button>
-        <Button onClick={onConfirm} className="flex-1 bg-red-500 hover:bg-red-600 text-white">Clear Wallet</Button>
+        <Button onClick={onConfirm} className="flex-1 bg-[#ff4d4d] hover:bg-[#ff6b6b] text-white">Clear Wallet</Button>
       </div>
     </motion.div>
   </motion.div>
@@ -460,14 +463,23 @@ export default function WalletPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: `linear-gradient(rgba(10,0,0,0.7), rgba(10,0,0,0.85)), url(${TTT_BG}) center/cover fixed` }}>
+        <div className="flex flex-col items-center gap-4">
+          <img src={TTT_LOGO} alt="TTT" className="w-20 h-20 object-contain animate-pulse" style={{ filter: 'drop-shadow(0 0 18px rgba(255,77,77,0.8))' }} />
+          <Loader2 className="w-8 h-8 text-[#ff4d4d] animate-spin" />
+        </div>
       </div>
     );
   }
 
+  const glassCard = "bg-[#0a0000]/70 backdrop-blur-xl border border-[#ff4d4d]/25 shadow-[0_0_30px_rgba(255,77,77,0.12)]";
+  const glowBtn = "bg-[#ff4d4d] hover:bg-[#ff6b6b] text-white shadow-[0_0_20px_rgba(255,77,77,0.5)]";
+
   return (
-    <div className="min-h-screen bg-black p-4">
+    <div
+      className="min-h-screen p-4 sm:p-6"
+      style={{ background: `linear-gradient(rgba(10,0,0,0.72), rgba(10,0,0,0.85)), url(${TTT_BG}) center/cover no-repeat fixed` }}
+    >
       <AnimatePresence>
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </AnimatePresence>
@@ -501,13 +513,13 @@ export default function WalletPage() {
         {showReceiveQR && address && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
             onClick={() => setShowReceiveQR(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm space-y-4"
+              className={`${glassCard} rounded-2xl p-6 w-full max-w-sm space-y-4`}
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-bold text-lg">Receive / Request</h3>
@@ -522,7 +534,7 @@ export default function WalletPage() {
                     requestAmount ? `${address}?amount=${requestAmount}` : address
                   )}`}
                   alt="Kaspa QR"
-                  className="rounded-xl border border-zinc-700"
+                  className="rounded-xl border border-[#ff4d4d]/30 p-1 bg-black"
                 />
               </div>
               <div className="text-center">
@@ -535,13 +547,13 @@ export default function WalletPage() {
                   value={requestAmount}
                   onChange={e => setRequestAmount(e.target.value)}
                   placeholder="0.00 KAS"
-                  className="bg-black border-zinc-800 text-white text-center"
+                  className="bg-black border-[#ff4d4d]/30 text-white text-center"
                 />
-                {requestAmount && <p className="text-xs text-center text-cyan-400 mt-1">QR encodes {requestAmount} KAS request</p>}
+                {requestAmount && <p className="text-xs text-center text-[#ff4d4d] mt-1">QR encodes {requestAmount} KAS request</p>}
               </div>
               <Button
                 onClick={() => { navigator.clipboard.writeText(requestAmount ? `${address}?amount=${requestAmount}` : address); showToast('Copied!', 'success'); }}
-                className="w-full bg-zinc-800 text-white hover:bg-zinc-700"
+                className="w-full bg-white/5 border border-[#ff4d4d]/30 text-white hover:bg-[#ff4d4d]/10"
               >
                 <Copy className="w-4 h-4 mr-2" /> Copy Address{requestAmount ? ' + Amount' : ''}
               </Button>
@@ -555,13 +567,13 @@ export default function WalletPage() {
         {showSend && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
             onClick={() => !isSending && setShowSend(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-md space-y-4"
+              className={`${glassCard} rounded-2xl p-6 w-full max-w-md space-y-4`}
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-bold text-lg">Send KAS</h3>
@@ -576,12 +588,12 @@ export default function WalletPage() {
                     value={sendTo}
                     onChange={e => setSendTo(e.target.value)}
                     placeholder="kaspa:q..."
-                    className="bg-black border-zinc-800 text-white font-mono text-sm flex-1"
+                    className="bg-black border-[#ff4d4d]/30 text-white font-mono text-sm flex-1"
                   />
                   <Button
                     onClick={() => setShowQRScanner(true)}
                     variant="outline"
-                    className="border-zinc-700 bg-black text-gray-300 hover:bg-zinc-800 px-3"
+                    className="border-[#ff4d4d]/40 bg-black text-gray-300 hover:bg-[#ff4d4d]/10 px-3"
                     title="Scan QR"
                   >
                     <QrCode className="w-4 h-4" />
@@ -595,20 +607,20 @@ export default function WalletPage() {
                   value={sendAmount}
                   onChange={e => setSendAmount(e.target.value)}
                   placeholder="0.00"
-                  className="bg-black border-zinc-800 text-white"
+                  className="bg-black border-[#ff4d4d]/30 text-white"
                 />
                 {kaspaBalance && (
                   <p className="text-xs text-gray-500 mt-1">
                     Available: {kaspaBalance.balanceKAS.toFixed(4)} KAS
                     <button
                       onClick={() => setSendAmount(String(kaspaBalance.balanceKAS.toFixed(8)))}
-                      className="ml-2 text-cyan-400 hover:text-cyan-300 font-semibold"
+                      className="ml-2 text-[#ff4d4d] hover:text-[#ff6b6b] font-semibold"
                     >Max</button>
                   </p>
                 )}
               </div>
               <div>
-                <label className="text-xs text-cyan-400 mb-1.5 block">Enter your local wallet PIN to authorize</label>
+                <label className="text-xs text-[#ff4d4d] mb-1.5 block">Enter your local wallet PIN to authorize</label>
                 <Input
                   type="password"
                   inputMode="numeric"
@@ -616,14 +628,14 @@ export default function WalletPage() {
                   value={sendPin}
                   onChange={e => setSendPin(e.target.value.replace(/\D/g, ''))}
                   placeholder="6-digit PIN"
-                  className="bg-black border-cyan-500/40 text-white text-center tracking-[0.5em]"
+                  className="bg-black border-[#ff4d4d]/40 text-white text-center tracking-[0.5em]"
                 />
                 <p className="text-[11px] text-gray-500 mt-1.5">Your seed phrase stays on this device and is never re-entered here.</p>
               </div>
               <Button
                 onClick={handleSend}
                 disabled={isSending}
-                className="w-full bg-white text-black hover:bg-gray-200 h-12"
+                className={`w-full ${glowBtn} h-12`}
               >
                 {isSending ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Sending...</> : <><Send className="w-4 h-4 mr-2" />Send KAS</>}
               </Button>
@@ -633,22 +645,28 @@ export default function WalletPage() {
       </AnimatePresence>
 
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">TTT WALLET</h1>
-            <p className="text-gray-400 text-sm">{user?.username || user?.email || 'TTT'}</p>
+        {/* Brand Header */}
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="flex items-center justify-between w-full mb-6">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/30">
+              <span className="text-[10px] tracking-widest text-white font-semibold leading-tight">KASPA<br/>NATIVE</span>
+            </div>
+            <img src={TTT_LOGO} alt="TTT" className="w-9 h-9 object-contain" style={{ filter: 'drop-shadow(0 0 10px rgba(255,77,77,0.7))' }} />
           </div>
+          <img src={TTT_LOGO} alt="TTT Eye" className="w-28 h-28 object-contain mb-4" style={{ filter: 'drop-shadow(0 0 35px rgba(255,77,77,0.85))' }} />
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">TTT (TapToTip)</h1>
+          <p className="text-xs sm:text-sm tracking-[0.3em] text-gray-400 mt-2 font-semibold">KASPA-NATIVE SOFTWARE SUPER-APP</p>
           {address && (
-            <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />Clear
+            <Button onClick={() => setShowClearConfirm(true)} variant="outline" className="mt-4 bg-white/5 border-[#ff4d4d]/30 text-white hover:bg-[#ff4d4d]/10">
+              <ArrowLeft className="w-4 h-4 mr-2" />Clear Wallet
             </Button>
           )}
+          <p className="text-gray-500 text-xs mt-2">{user?.username || user?.email || 'TTT'}</p>
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-            <span className="text-sm text-red-300">{error}</span>
+          <div className="mb-4 bg-[#ff4d4d]/10 border border-[#ff4d4d]/40 rounded-lg p-3">
+            <span className="text-sm text-[#ff8080]">{error}</span>
           </div>
         )}
 
@@ -658,31 +676,31 @@ export default function WalletPage() {
             <div className="grid grid-cols-2 gap-4">
               <Button
                 onClick={() => { setMode('create'); setError(null); }}
-                className={mode === 'create' ? 'bg-white text-black' : 'bg-zinc-900 text-gray-400 border border-zinc-800'}
+                className={mode === 'create' ? `${glowBtn}` : 'bg-white/5 text-gray-400 border border-[#ff4d4d]/20'}
               >Create New</Button>
               <Button
                 onClick={() => { setMode('import'); setError(null); }}
-                className={mode === 'import' ? 'bg-white text-black' : 'bg-zinc-900 text-gray-400 border border-zinc-800'}
+                className={mode === 'import' ? `${glowBtn}` : 'bg-white/5 text-gray-400 border border-[#ff4d4d]/20'}
               >Import Existing</Button>
             </div>
 
             {mode === 'create' && (
               <>
-                <Card className="bg-zinc-950 border-zinc-800">
+                <Card className={`${glassCard} border-[#ff4d4d]/25`}>
                   <CardContent className="p-6">
                     <label className="text-sm text-gray-400 mb-2 block">Seed Phrase Length</label>
                     <Select value={wordCount.toString()} onValueChange={v => setWordCount(parseInt(v))}>
-                      <SelectTrigger className="bg-black border-zinc-800 text-white">
+                      <SelectTrigger className="bg-black border-[#ff4d4d]/30 text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-800">
+                      <SelectContent className="bg-[#0a0000] border-[#ff4d4d]/30">
                         <SelectItem value="12">12 words</SelectItem>
                         <SelectItem value="24">24 words</SelectItem>
                       </SelectContent>
                     </Select>
                   </CardContent>
                 </Card>
-                <Button onClick={handleCreateWallet} disabled={isCreating} className="w-full bg-white text-black hover:bg-gray-200 h-12">
+                <Button onClick={handleCreateWallet} disabled={isCreating} className={`w-full ${glowBtn} h-12`}>
                   {isCreating ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Creating...</> : 'Create Wallet'}
                 </Button>
               </>
@@ -695,7 +713,7 @@ export default function WalletPage() {
                     value={importMnemonic}
                     onChange={e => setImportMnemonic(e.target.value)}
                     placeholder="Enter seed phrase (12 or 24 words)..."
-                    className="bg-zinc-950 border-zinc-800 text-white font-mono min-h-[120px] pr-10"
+                    className="bg-[#0a0000]/70 border-[#ff4d4d]/25 text-white font-mono min-h-[120px] pr-10 focus-visible:border-[#ff4d4d]/60"
                     style={{ WebkitTextSecurity: showImportPhrase ? 'none' : 'disc' }}
                     rows={4}
                   />
@@ -709,7 +727,7 @@ export default function WalletPage() {
                 <Button
                   onClick={handleImportWallet}
                   disabled={isImporting || !importMnemonic.trim()}
-                  className="w-full bg-white text-black hover:bg-gray-200 h-12"
+                  className={`w-full ${glowBtn} h-12`}
                 >
                   {isImporting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Importing...</> : 'Import Wallet'}
                 </Button>
@@ -719,7 +737,7 @@ export default function WalletPage() {
         ) : (
           /* Wallet connected */
           <div className="space-y-4">
-            <Card className="bg-zinc-950 border-zinc-800">
+            <Card className={`${glassCard}`}>
               <CardContent className="p-6">
                 {/* Balance row */}
                 <div className="flex items-center justify-between mb-4">
@@ -728,14 +746,14 @@ export default function WalletPage() {
                     <button
                       onClick={() => fetchBalance(address)}
                       disabled={isFetchingBalance}
-                      className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                      className="text-gray-400 hover:text-[#ff4d4d] transition-colors disabled:opacity-50"
                       title="Refresh balance"
                     >
                       <RefreshCw className={`w-4 h-4 ${isFetchingBalance ? 'animate-spin' : ''}`} />
                     </button>
                     <button
                       onClick={() => setShowBalance(s => !s)}
-                      className="text-gray-400 hover:text-white transition-colors"
+                      className="text-gray-400 hover:text-[#ff4d4d] transition-colors"
                     >
                       {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -747,7 +765,7 @@ export default function WalletPage() {
                           if (mnemonic) setShowMnemonic(true);
                         }
                       }}
-                      className="text-gray-400 hover:text-white transition-colors"
+                      className="text-gray-400 hover:text-[#ff4d4d] transition-colors"
                       title="View seed phrase"
                     >
                       <Shield className="w-5 h-5" />
@@ -755,7 +773,7 @@ export default function WalletPage() {
                   </div>
                 </div>
 
-                <div className="text-4xl font-bold text-white mb-2">
+                <div className="text-4xl font-bold text-white mb-2" style={{ textShadow: '0 0 25px rgba(255,77,77,0.35)' }}>
                   {isFetchingBalance && kaspaBalance === null ? (
                     <span className="text-gray-500 text-2xl">Loading...</span>
                   ) : showBalance && kaspaBalance !== null ? (
@@ -772,21 +790,21 @@ export default function WalletPage() {
                 )}
 
                 {/* Address */}
-                <div className="bg-black border border-zinc-800 rounded-lg p-3 mb-4">
+                <div className="bg-black/60 border border-[#ff4d4d]/25 rounded-lg p-3 mb-4">
                   <div className="flex items-center justify-between gap-2">
-                    <code className="text-cyan-400 text-sm break-all flex-1">{address}</code>
+                    <code className="text-[#ff8080] text-sm break-all flex-1">{address}</code>
                     <Button onClick={copyAddress} size="sm" variant="ghost" className="shrink-0">
-                      {copiedAddress ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                      {copiedAddress ? <CheckCircle2 className="w-4 h-4 text-[#ff4d4d]" /> : <Copy className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <Button onClick={() => setShowReceiveQR(true)} className="bg-zinc-950 border border-zinc-800 text-white hover:bg-zinc-900">
+                  <Button onClick={() => setShowReceiveQR(true)} className="bg-white/5 border border-[#ff4d4d]/30 text-white hover:bg-[#ff4d4d]/10">
                     <Download className="w-4 h-4 mr-2" />Receive
                   </Button>
-                  <Button onClick={() => setShowSend(true)} className="bg-white text-black hover:bg-gray-200">
+                  <Button onClick={() => setShowSend(true)} className={glowBtn}>
                     Send
                   </Button>
                 </div>
@@ -796,7 +814,7 @@ export default function WalletPage() {
                   onClick={handleCompound}
                   disabled={isCompounding}
                   variant="outline"
-                  className="w-full mb-4 bg-zinc-950 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                  className="w-full mb-4 bg-black/40 border-[#ff4d4d]/30 text-[#ff8080] hover:bg-[#ff4d4d]/10"
                   title="Merge all small UTXOs into one to fix send errors and reduce fees"
                 >
                   {isCompounding
@@ -806,17 +824,17 @@ export default function WalletPage() {
 
                 {/* Seal */}
                 {pinSet && !isSealed && mnemonic && (
-                  <Button onClick={handleSealWallet} disabled={isSealing} className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold">
+                  <Button onClick={handleSealWallet} disabled={isSealing} className={`w-full h-12 ${glowBtn} font-semibold`}>
                     {isSealing ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Sealing...</> : <><Shield className="w-5 h-5 mr-2" />Seal Wallet</>}
                   </Button>
                 )}
 
                 {isSealed && (
-                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 flex items-center gap-3">
-                    <CheckCircle2 className="w-6 h-6 text-green-400" />
+                  <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/40 rounded-lg p-4 flex items-center gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-[#ff4d4d]" />
                     <div>
-                      <div className="text-sm font-semibold text-green-300">✅ Sealed!</div>
-                      <div className="text-xs text-green-400 mt-1">Stamped</div>
+                      <div className="text-sm font-semibold text-[#ff8080]">✅ Sealed!</div>
+                      <div className="text-xs text-[#ff4d4d] mt-1">Stamped</div>
                     </div>
                   </div>
                 )}
@@ -836,23 +854,23 @@ export default function WalletPage() {
 
             {/* PIN Setup */}
             {showPinSetup && !pinSet && (
-              <Card className="bg-yellow-500/10 border-yellow-500/30">
+              <Card className="bg-[#ff4d4d]/10 border-[#ff4d4d]/40">
                 <CardContent className="p-6 space-y-4">
                   <h3 className="text-white font-bold">Set PIN</h3>
                   <Input
                     type="password" inputMode="numeric" maxLength={6}
                     value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="6 digits" className="bg-black border-zinc-800 text-white text-center text-lg"
+                    placeholder="6 digits" className="bg-black border-[#ff4d4d]/30 text-white text-center text-lg"
                   />
                   <Input
                     type="password" inputMode="numeric" maxLength={6}
                     value={confirmPin} onChange={e => setConfirmPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Confirm" className="bg-black border-zinc-800 text-white text-center text-lg"
+                    placeholder="Confirm" className="bg-black border-[#ff4d4d]/30 text-white text-center text-lg"
                   />
                   <Button
                     onClick={handleSetPin}
                     disabled={isSettingPin || pin.length !== 6 || pin !== confirmPin}
-                    className="w-full bg-yellow-500 text-black hover:bg-yellow-600"
+                    className={`w-full ${glowBtn}`}
                   >
                     {isSettingPin ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Setting...</> : 'Set PIN'}
                   </Button>
@@ -863,13 +881,13 @@ export default function WalletPage() {
             {/* Seed Phrase */}
             <div id="seed-phrase-section">
               {mnemonic ? (
-                <Card className="bg-zinc-950 border-zinc-800">
-                  <CardHeader className="border-b border-zinc-800">
+                <Card className={`${glassCard}`}>
+                  <CardHeader className="border-b border-[#ff4d4d]/20">
                     <div className="flex justify-between items-center">
                       <h3 className="text-white font-bold">Seed Phrase</h3>
                       <div className="flex gap-2">
                         <Button onClick={copyPhrase} size="sm" variant="ghost">
-                          {copiedPhrase ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                          {copiedPhrase ? <CheckCircle2 className="w-4 h-4 text-[#ff4d4d]" /> : <Copy className="w-4 h-4" />}
                         </Button>
                         <Button onClick={() => setShowMnemonic(s => !s)} size="sm" variant="ghost">
                           {showMnemonic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -882,13 +900,13 @@ export default function WalletPage() {
                       <>
                         <div className="grid grid-cols-3 gap-2 mb-4">
                           {mnemonic.split(' ').filter(w => w).map((word, i) => (
-                            <div key={i} className="bg-black border border-zinc-800 rounded px-2 py-1 text-white text-sm font-mono">
+                            <div key={i} className="bg-black/60 border border-[#ff4d4d]/25 rounded px-2 py-1 text-white text-sm font-mono">
                               {i + 1}. {word}
                             </div>
                           ))}
                         </div>
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                          <p className="text-xs text-red-300">⚠️ Save securely. Never share.</p>
+                        <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/40 rounded-lg p-3">
+                          <p className="text-xs text-[#ff8080]">⚠️ Save securely. Never share.</p>
                         </div>
                       </>
                     ) : (
@@ -900,8 +918,8 @@ export default function WalletPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="bg-zinc-950 border-zinc-800">
-                  <CardHeader className="border-b border-zinc-800">
+                <Card className={`${glassCard}`}>
+                  <CardHeader className="border-b border-[#ff4d4d]/20">
                     <h3 className="text-white font-bold">Seed Phrase</h3>
                   </CardHeader>
                   <CardContent className="p-6">
@@ -909,16 +927,16 @@ export default function WalletPage() {
                       <Shield className="w-12 h-12 text-gray-700 mx-auto mb-2" />
                       <p className="text-gray-500 text-sm mb-3">Seed phrase not stored in this session</p>
                       <p className="text-gray-600 text-xs mb-4">Re-import your wallet to view your seed phrase</p>
-                      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mt-4 text-left">
-                        <p className="text-yellow-400 text-xs font-semibold mb-2">⚠️ Can you still send funds?</p>
+                      <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/30 rounded-lg p-4 mt-4 text-left">
+                        <p className="text-[#ff8080] text-xs font-semibold mb-2">⚠️ Can you still send funds?</p>
                         <p className="text-gray-400 text-xs leading-relaxed">
                           {localStorage.getItem('ttt_wallet_pk') 
                             ? "✅ Yes - Private key cached. You can send transactions." 
                             : "❌ No - You need your seed phrase to send funds. Without it, funds cannot be recovered."}
                         </p>
                         {!localStorage.getItem('ttt_wallet_pk') && (
-                          <div className="mt-3 pt-3 border-t border-yellow-500/20">
-                            <p className="text-red-400 text-xs font-semibold mb-1">🚨 CRITICAL</p>
+                          <div className="mt-3 pt-3 border-t border-[#ff4d4d]/20">
+                            <p className="text-[#ff4d4d] text-xs font-semibold mb-1">🚨 CRITICAL</p>
                             <p className="text-gray-400 text-xs">Without the seed phrase, these funds are permanently inaccessible. Always backup your seed phrase when creating a wallet.</p>
                           </div>
                         )}
@@ -955,6 +973,25 @@ export default function WalletPage() {
             );
           })()}
         </AnimatePresence>
+
+        {/* Footer */}
+        <div className="mt-10 flex items-center justify-between text-white/70">
+          <a href="https://tttz.xyz" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-white transition-colors">
+            <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center">
+              <Globe className="w-4 h-4" />
+            </div>
+            <div className="leading-tight">
+              <div className="text-[10px] tracking-widest text-white/50">VISIT OUR WEBSITE</div>
+              <div className="text-sm font-bold">tttz.xyz</div>
+            </div>
+          </a>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] tracking-widest">BUILT ON KASPA</span>
+            <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center">
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
