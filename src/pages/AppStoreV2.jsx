@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight, Bot, Menu, X, FileText, MapPin, Dumbbell, Monitor } from "lucide-react";
@@ -61,6 +61,7 @@ export default function AppStoreV2Page() {
   const [blueprintOpen, setBlueprintOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [view, setView] = useState("kaspa");
+  const filtersRef = useRef(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -212,14 +213,23 @@ export default function AppStoreV2Page() {
         {!search && category === "All" && <AppStoreFeatured />}
 
         {/* Category pills — larger, below Featured */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8 flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+        <motion.div ref={filtersRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-8 flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const active = view === "all" && category === cat.id;
             return (
               <button
                 key={cat.id}
-                onClick={() => { setCategory(cat.id); setView("all"); }}
+                onClick={() => {
+                  setCategory(cat.id);
+                  setView("all");
+                  requestAnimationFrame(() => {
+                    if (filtersRef.current) {
+                      const top = filtersRef.current.getBoundingClientRect().top + window.scrollY - 64;
+                      window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+                    }
+                  });
+                }}
                 className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all ${
                   active
                     ? "bg-zinc-900 text-white shadow-md"
