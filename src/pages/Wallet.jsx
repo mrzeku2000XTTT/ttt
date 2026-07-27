@@ -18,7 +18,7 @@ import KRC20SendSheet from "@/components/terra/KRC20SendSheet";
 import KaChingWalletToggle from "@/components/kaching/KaChingWalletToggle";
 
 const TTT_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/878bee477_generated_image.png";
-const TTT_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/252651f98_image.png";
+const TTT_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9926270c1_generated_image.png";
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
@@ -28,7 +28,7 @@ const Toast = ({ message, type, onClose }) => (
     exit={{ opacity: 0, x: 100, scale: 0.8 }}
     className="fixed bottom-6 right-6 z-[10050] max-w-xs"
   >
-    <div className={`bg-[#0a0000]/95 backdrop-blur-xl border ${type === 'success' ? 'border-[#ff4d4d]/40' : 'border-red-700/50'} rounded-xl p-3 shadow-[0_0_25px_rgba(255,77,77,0.25)]`}>
+    <div className={`bg-[#0a0000]/95 backdrop-blur-xl border ${type === 'success' ? 'border-[#ff4d4d]/40' : 'border-red-700/50'} rounded-xl p-3`}>
       <div className="flex items-start gap-2">
         <span className="text-lg flex-shrink-0">{type === 'success' ? '✅' : '❌'}</span>
         <p className="text-white text-xs flex-1 leading-relaxed">{message}</p>
@@ -50,7 +50,7 @@ const ConfirmModal = ({ title, message, onConfirm, onCancel }) => (
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
       onClick={e => e.stopPropagation()}
-      className="bg-[#0a0000] border border-[#ff4d4d]/40 rounded-2xl p-6 max-w-md w-full shadow-[0_0_40px_rgba(255,77,77,0.3)]"
+      className="bg-[#0a0000] border border-[#ff4d4d]/40 rounded-2xl p-6 max-w-md w-full"
     >
       <div className="flex items-start gap-3 mb-4">
         <div className="w-10 h-10 bg-[#ff4d4d]/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -463,19 +463,19 @@ export default function WalletPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'radial-gradient(circle at 50% 30%, #4a0a0a 0%, #1a0303 45%, #0a0000 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: `linear-gradient(rgba(10,0,0,0.75), rgba(10,0,0,0.88)), url(${TTT_BG}) center/cover no-repeat fixed` }}>
         <Loader2 className="w-10 h-10 text-[#ff4d4d] animate-spin" />
       </div>
     );
   }
 
-  const glassCard = "bg-[#0a0000]/70 backdrop-blur-xl border border-[#ff4d4d]/25 shadow-[0_0_30px_rgba(255,77,77,0.12)]";
-  const glowBtn = "bg-[#ff4d4d] hover:bg-[#ff6b6b] text-white shadow-[0_0_20px_rgba(255,77,77,0.5)]";
+  const glassCard = "bg-[#0a0000]/70 backdrop-blur-xl border border-[#ff4d4d]/25";
+  const glowBtn = "bg-[#ff4d4d] hover:bg-[#ff6b6b] text-white";
 
   return (
     <div
       className="min-h-screen p-4 sm:p-6"
-      style={{ background: 'radial-gradient(circle at 50% 20%, #4a0a0a 0%, #1a0303 45%, #0a0000 100%)' }}
+      style={{ background: `linear-gradient(rgba(10,0,0,0.75), rgba(10,0,0,0.88)), url(${TTT_BG}) center/cover no-repeat fixed` }}
     >
       <AnimatePresence>
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -768,7 +768,7 @@ export default function WalletPage() {
                   </div>
                 </div>
 
-                <div className="text-4xl font-bold text-white mb-2" style={{ textShadow: '0 0 25px rgba(255,77,77,0.35)' }}>
+                <div className="text-4xl font-bold text-white mb-2">
                   {isFetchingBalance && kaspaBalance === null ? (
                     <span className="text-gray-500 text-2xl">Loading...</span>
                   ) : showBalance && kaspaBalance !== null ? (
