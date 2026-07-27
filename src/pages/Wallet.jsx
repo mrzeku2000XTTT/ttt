@@ -881,10 +881,10 @@ export default function WalletPage() {
                     <div className="flex justify-between items-center">
                       <h3 className="text-white font-bold">Seed Phrase</h3>
                       <div className="flex gap-2">
-                        <Button onClick={copyPhrase} size="sm" variant="ghost">
+                        <Button onClick={copyPhrase} size="sm" variant="ghost" className="text-white hover:text-white">
                           {copiedPhrase ? <CheckCircle2 className="w-4 h-4 text-[#ff4d4d]" /> : <Copy className="w-4 h-4" />}
                         </Button>
-                        <Button onClick={() => setShowMnemonic(s => !s)} size="sm" variant="ghost">
+                        <Button onClick={() => setShowMnemonic(s => !s)} size="sm" variant="ghost" className="text-white hover:text-white">
                           {showMnemonic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
                       </div>
@@ -906,8 +906,8 @@ export default function WalletPage() {
                       </>
                     ) : (
                       <div className="text-center py-8">
-                        <EyeOff className="w-12 h-12 text-gray-700 mx-auto mb-2" />
-                        <p className="text-gray-600">Tap eye to reveal</p>
+                        <EyeOff className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-400">Tap eye to reveal</p>
                       </div>
                     )}
                   </CardContent>
