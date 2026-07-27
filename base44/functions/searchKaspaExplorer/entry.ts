@@ -89,8 +89,8 @@ function parseTransaction(tx) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Public endpoint — no login required so anyone can explore the blockchain
+    try { await base44.auth.me(); } catch { /* anonymous access allowed */ }
 
     const { query } = await req.json();
     if (!query) return Response.json({ error: 'Query required' }, { status: 400 });

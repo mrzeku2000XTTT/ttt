@@ -10,8 +10,8 @@ function sompiToKas(sompi) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Public endpoint — no login required so anyone can view transactions
+    try { await base44.auth.me(); } catch { /* anonymous access allowed */ }
 
     const { txId } = await req.json();
     if (!txId) return Response.json({ error: 'Transaction ID required' }, { status: 400 });
