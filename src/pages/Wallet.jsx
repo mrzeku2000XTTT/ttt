@@ -267,9 +267,12 @@ export default function WalletPage() {
           setUser(currentUser);
           const localAddr = localStorage.getItem('ttt_wallet_address');
           const localPK = localStorage.getItem('ttt_wallet_pk');
+          const localMnemonic = localStorage.getItem('ttt_wallet_mnemonic');
           const savedAddr = localPK && localAddr ? localAddr : (currentUser.created_wallet_address || localAddr);
           if (savedAddr) {
             setAddress(savedAddr);
+            if (localMnemonic) setMnemonic(localMnemonic);
+            if (localPK) setPrivateKey(localPK);
             setPinSet(!!(currentUser.wallet_pin_hash || localStorage.getItem('ttt_wallet_pin_hash')));
             checkIfSealed(savedAddr, currentUser);
             startBalancePolling(savedAddr);
@@ -277,8 +280,12 @@ export default function WalletPage() {
         }
       } catch {
         const localAddr = localStorage.getItem('ttt_wallet_address');
+        const localMnemonic = localStorage.getItem('ttt_wallet_mnemonic');
+        const localPK = localStorage.getItem('ttt_wallet_pk');
         if (localAddr) {
           setAddress(localAddr);
+          if (localMnemonic) setMnemonic(localMnemonic);
+          if (localPK) setPrivateKey(localPK);
           setPinSet(!!localStorage.getItem('ttt_wallet_pin_hash'));
           startBalancePolling(localAddr);
         }
@@ -321,6 +328,7 @@ export default function WalletPage() {
       setAddress(fullAddr);
       setShowMnemonic(false);
       if (pk) localStorage.setItem('ttt_wallet_pk', pk);
+      if (phrase) localStorage.setItem('ttt_wallet_mnemonic', phrase);
       await saveWallet(fullAddr, wordCount);
       startBalancePolling(fullAddr);
       setShowPinSetup(true);
@@ -356,6 +364,8 @@ export default function WalletPage() {
       setShowMnemonic(false);
       setImportMnemonic('');
       if (pk) localStorage.setItem('ttt_wallet_pk', pk);
+      const finalPhrase = phrase || importMnemonic.trim();
+      if (finalPhrase) localStorage.setItem('ttt_wallet_mnemonic', finalPhrase);
       await saveWallet(fullAddr, words.length);
       startBalancePolling(fullAddr);
       setShowPinSetup(true);
@@ -452,6 +462,7 @@ export default function WalletPage() {
       try { await base44.auth.updateMe({ created_wallet_address: null, wallet_pin_hash: null }); } catch { }
       localStorage.removeItem('ttt_wallet_address');
       localStorage.removeItem('ttt_wallet_pk');
+      localStorage.removeItem('ttt_wallet_mnemonic');
       localStorage.removeItem('ttt_wallet_pin_hash');
       stopBalancePolling();
       setAddress(null); setMnemonic(null); setPrivateKey(null);
