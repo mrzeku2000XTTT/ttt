@@ -18,17 +18,19 @@ Deno.serve(async (req) => {
     const kaspaApi = Deno.env.get('KASPA_API_KEY');
     const headers = { 'X-API-KEY': kaspaApi || '' };
 
-    // Fetch with one retry on transient errors — NO AbortSignal.timeout (crashes Deno)
+    // Fetch with retry — NO AbortSignal.timeout (crashes Deno).
+    // 429 = rate limited: wait 2s before retry.
     let res;
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       try {
         res = await fetch(`${API_BASE}/transactions/${txId}?resolve_previous_outpoints=light`, { headers });
       } catch (e) {
-        if (i === 0) { await new Promise((s) => setTimeout(s, 400)); continue; }
+        if (i < 2) { await new Promise((s) => setTimeout(s, 800)); continue; }
         throw e;
       }
       if (res.ok || res.status === 404) break;
-      if (i === 0) { await new Promise((s) => setTimeout(s, 400)); }
+      const delay = res.status === 429 ? 2000 : 600;
+      if (i < 2) { await new Promise((s) => setTimeout(s, delay)); }
     }
 
     if (!res || !res.ok) {

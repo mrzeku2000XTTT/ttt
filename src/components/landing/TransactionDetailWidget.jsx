@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   X, Copy, ExternalLink, ArrowLeftRight, ArrowRight, Search,
@@ -161,6 +161,8 @@ export default function TransactionDetailWidget({ transaction, onClose }) {
     try { return JSON.parse(localStorage.getItem("kaspa_search_history") || "[]"); }
     catch { return []; }
   });
+  // In-memory cache: searching the same hash twice doesn't re-hit the Kaspa API
+  const cacheRef = useRef(new Map());
 
   const runSearch = useCallback(async (query) => {
     if (!query) return;
@@ -168,9 +170,16 @@ export default function TransactionDetailWidget({ transaction, onClose }) {
     setError(null);
     setShowHistory(false);
     try {
+      // Return cached result if we searched this recently
+      const cached = cacheRef.current.get(query);
+      if (cached) {
+        setResult(cached);
+        return;
+      }
       const res = await base44.functions.invoke("searchKaspaExplorer", { query });
       const data = res?.data || res;
       if (data?.error) throw new Error(data.error);
+      cacheRef.current.set(query, data);
       setResult(data);
       setHistory((prev) => {
         const next = [query, ...prev.filter((q) => q !== query)].slice(0, 8);

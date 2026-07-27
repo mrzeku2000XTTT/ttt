@@ -79,19 +79,20 @@ function parseTransaction(tx) {
   };
 }
 
-// Simple fetch with one retry on transient errors — NO AbortSignal.timeout
-// (AbortSignal.timeout crashes the Deno runtime, causing 502s)
+// Fetch with retry on transient errors — NO AbortSignal.timeout (crashes Deno).
+// 429 = rate limited: wait 2s before retry. 5xx = server error: wait 500ms.
 async function fetchKaspa(url, headers) {
   let res;
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     try {
       res = await fetch(url, { headers });
     } catch (e) {
-      if (i === 0) { await new Promise((s) => setTimeout(s, 400)); continue; }
+      if (i < 2) { await new Promise((s) => setTimeout(s, 800)); continue; }
       throw e;
     }
     if (res.ok || res.status === 404) return res;
-    if (i === 0) { await new Promise((s) => setTimeout(s, 400)); continue; }
+    const delay = res.status === 429 ? 2000 : 600;
+    if (i < 2) { await new Promise((s) => setTimeout(s, delay)); }
   }
   return res;
 }
