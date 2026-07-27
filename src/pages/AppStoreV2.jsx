@@ -18,6 +18,7 @@ import AppStoreFeatured from "@/components/appstore2/AppStoreFeatured";
 import ListAppButton from "@/components/appstore2/ListAppButton";
 import AdminProposalsPanel from "@/components/appstore2/AdminProposalsPanel";
 import BlueprintModal from "@/components/appstore2/BlueprintModal";
+import AppStoreAISearch from "@/components/appstore2/AppStoreAISearch";
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },
@@ -55,6 +56,7 @@ const STORE_MENU_ITEMS = [
 
 export default function AppStoreV2Page() {
   const [search, setSearch] = useState("");
+  const [aiResults, setAiResults] = useState(null);
   const [category, setCategory] = useState("All");
   const [user, setUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -196,17 +198,13 @@ export default function AppStoreV2Page() {
         {/* Admin proposals panel */}
         {isAdmin && <AdminProposalsPanel onChange={() => setRefreshKey(k => k + 1)} />}
 
-        {/* Search */}
+        {/* Search — LLM-powered semantic search */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search apps…"
-              className="w-full h-11 pl-10 pr-4 rounded-xl bg-white ring-1 ring-zinc-200/60 text-sm outline-none focus:ring-zinc-300 placeholder-zinc-400 transition-all"
-            />
-          </div>
+          <AppStoreAISearch
+            value={search}
+            onSearchChange={setSearch}
+            onResults={setAiResults}
+          />
         </motion.div>
 
         {/* Featured (only when no search) */}
@@ -244,7 +242,7 @@ export default function AppStoreV2Page() {
         </motion.div>
 
         {/* Grid */}
-        <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} view={view} onViewChange={setView} />
+        <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} view={view} onViewChange={setView} aiResults={aiResults} />
 
         {/* Footer */}
         <div className="mt-16 pt-8 border-t border-zinc-200/60 text-center">
