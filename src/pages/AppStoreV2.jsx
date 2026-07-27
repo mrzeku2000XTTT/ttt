@@ -64,6 +64,7 @@ export default function AppStoreV2Page() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [view, setView] = useState("kaspa");
   const filtersRef = useRef(null);
+  const gridRef = useRef(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -222,8 +223,9 @@ export default function AppStoreV2Page() {
                   setCategory(cat.id);
                   setView("all");
                   requestAnimationFrame(() => {
-                    if (filtersRef.current) {
-                      const top = filtersRef.current.getBoundingClientRect().top + window.scrollY - 64;
+                    const target = gridRef.current || filtersRef.current;
+                    if (target) {
+                      const top = target.getBoundingClientRect().top + window.scrollY - 64;
                       window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
                     }
                   });
@@ -242,7 +244,9 @@ export default function AppStoreV2Page() {
         </motion.div>
 
         {/* Grid */}
-        <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} view={view} onViewChange={setView} aiResults={aiResults} />
+        <div ref={gridRef}>
+          <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} view={view} onViewChange={setView} aiResults={aiResults} />
+        </div>
 
         {/* Footer */}
         <div className="mt-16 pt-8 border-t border-zinc-200/60 text-center">
