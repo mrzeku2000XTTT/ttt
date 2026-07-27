@@ -10,28 +10,30 @@ function sompiToKas(sompi) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    // Public endpoint — no login required so anyone can view transactions
     try { await base44.auth.me(); } catch { /* anonymous access allowed */ }
 
     const { txId } = await req.json();
-    if (!txId) return Response.json({ error: 'Transaction ID required' }, { status: 400 });
+    if (!txId) return Response.json({ error: 'Transaction ID required' });
 
     const kaspaApi = Deno.env.get('KASPA_API_KEY');
     const headers = { 'X-API-KEY': kaspaApi || '' };
 
-    // Fetch the full transaction with resolved previous outpoints (sender addresses)
-    const res = await fetch(
-      `${API_BASE}/transactions/${txId}?resolve_previous_outpoints=light`,
-      { headers }
-    );
+    // Fetch with one retry on transient errors — NO AbortSignal.timeout (crashes Deno)
+    let res;
+    for (let i = 0; i < 2; i++) {
+      try {
+        res = await fetch(`${API_BASE}/transactions/${txId}?resolve_previous_outpoints=light`, { headers });
+      } catch (e) {
+        if (i === 0) { await new Promise((s) => setTimeout(s, 400)); continue; }
+        throw e;
+      }
+      if (res.ok || res.status === 404) break;
+      if (i === 0) { await new Promise((s) => setTimeout(s, 400)); }
+    }
 
-    if (!res.ok) {
-      const body = await res.text();
-      console.error('Kaspa tx detail error:', res.status, body);
-      return Response.json(
-        { error: `API returned ${res.status}` },
-        { status: 502 }
-      );
+    if (!res || !res.ok) {
+      if (res?.status === 404) return Response.json({ error: 'Transaction not found.' });
+      return Response.json({ error: 'Kaspa API temporarily unavailable. Please try again.' });
     }
 
     const tx = await res.json();
@@ -75,6 +77,6 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error('getKaspaTransactionDetails error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'Failed to load transaction. Please try again.' });
   }
 });
