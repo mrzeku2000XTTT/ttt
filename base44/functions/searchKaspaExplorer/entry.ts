@@ -159,10 +159,20 @@ Deno.serve(async (req) => {
 
     // 2. 64-char hex — could be a transaction OR a block hash
     if (isHex64(q)) {
+      const fetchWithRetry = async (url, tries = 2) => {
+        for (let i = 0; i < tries; i++) {
+          const r = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+          if (r.ok || r.status === 404) return r;
+          // Transient error (429, 5xx) — retry once
+          if (i < tries - 1) await new Promise((s) => setTimeout(s, 500));
+        }
+        // Return last response
+        return await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+      };
+
       // Try transaction first
-      const txRes = await fetch(
-        `${API_BASE}/transactions/${q}?resolve_previous_outpoints=light`,
-        { headers }
+      const txRes = await fetchWithRetry(
+        `${API_BASE}/transactions/${q}?resolve_previous_outpoints=light`
       );
       if (txRes.ok) {
         const tx = await txRes.json();
@@ -170,7 +180,7 @@ Deno.serve(async (req) => {
       }
 
       // Try block
-      const blkRes = await fetch(`${API_BASE}/blocks/${q}`, { headers });
+      const blkRes = await fetchWithRetry(`${API_BASE}/blocks/${q}`);
       if (blkRes.ok) {
         const blk = await blkRes.json();
         const blkData = Array.isArray(blk) ? blk[0] : blk;
@@ -186,7 +196,17 @@ Deno.serve(async (req) => {
         });
       }
 
-      return Response.json({ error: 'Not found as transaction or block' }, { status: 404 });
+      // Distinguish "genuinely not found" from "API error"
+      const txStatus = txRes.status;
+      const blkStatus = blkRes.status;
+      if (txStatus === 404 && blkStatus === 404) {
+        return Response.json({ error: 'Not found as transaction or block' }, { status: 404 });
+      }
+      const errStatus = txStatus !== 404 ? txStatus : blkStatus;
+      return Response.json(
+        { error: `Kaspa API error (status ${errStatus}). Please try again.` },
+        { status: 502 }
+      );
     }
 
     return Response.json({ error: 'Unrecognized query format' }, { status: 400 });
