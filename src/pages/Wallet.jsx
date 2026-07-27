@@ -18,7 +18,7 @@ import KRC20SendSheet from "@/components/terra/KRC20SendSheet";
 import KaChingWalletToggle from "@/components/kaching/KaChingWalletToggle";
 
 const TTT_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/878bee477_generated_image.png";
-const TTT_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9926270c1_generated_image.png";
+const TTT_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f0cc99ea2_generated_image.png";
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
