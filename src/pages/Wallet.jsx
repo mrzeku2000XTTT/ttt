@@ -464,10 +464,7 @@ export default function WalletPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: `linear-gradient(rgba(10,0,0,0.7), rgba(10,0,0,0.85)), url(${TTT_BG}) center/cover fixed` }}>
-        <div className="flex flex-col items-center gap-4">
-          <img src={TTT_LOGO} alt="TTT" className="w-20 h-20 object-contain animate-pulse" style={{ filter: 'drop-shadow(0 0 18px rgba(255,77,77,0.8))' }} />
-          <Loader2 className="w-8 h-8 text-[#ff4d4d] animate-spin" />
-        </div>
+        <Loader2 className="w-10 h-10 text-[#ff4d4d] animate-spin" />
       </div>
     );
   }
@@ -651,9 +648,7 @@ export default function WalletPage() {
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/30">
               <span className="text-[10px] tracking-widest text-white font-semibold leading-tight">KASPA<br/>NATIVE</span>
             </div>
-            <img src={TTT_LOGO} alt="TTT" className="w-9 h-9 object-contain" style={{ filter: 'drop-shadow(0 0 10px rgba(255,77,77,0.7))' }} />
           </div>
-          <img src={TTT_LOGO} alt="TTT Eye" className="w-28 h-28 object-contain mb-4" style={{ filter: 'drop-shadow(0 0 35px rgba(255,77,77,0.85))' }} />
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">TTT (TapToTip)</h1>
           <p className="text-xs sm:text-sm tracking-[0.3em] text-gray-400 mt-2 font-semibold">KASPA-NATIVE SOFTWARE SUPER-APP</p>
           {address && (
