@@ -463,7 +463,7 @@ export default function WalletPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: `linear-gradient(rgba(10,0,0,0.7), rgba(10,0,0,0.85)), url(${TTT_BG}) center/cover fixed` }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'radial-gradient(circle at 50% 30%, #4a0a0a 0%, #1a0303 45%, #0a0000 100%)' }}>
         <Loader2 className="w-10 h-10 text-[#ff4d4d] animate-spin" />
       </div>
     );
@@ -475,7 +475,7 @@ export default function WalletPage() {
   return (
     <div
       className="min-h-screen p-4 sm:p-6"
-      style={{ background: `linear-gradient(rgba(10,0,0,0.72), rgba(10,0,0,0.85)), url(${TTT_BG}) center/cover no-repeat fixed` }}
+      style={{ background: 'radial-gradient(circle at 50% 20%, #4a0a0a 0%, #1a0303 45%, #0a0000 100%)' }}
     >
       <AnimatePresence>
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
