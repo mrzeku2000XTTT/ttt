@@ -58,21 +58,41 @@ export default function ExplorePage() {
     setGenerating(true);
     setResult(null);
     try {
+      // Detect URLs in the input — agent will deep-research them
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const urls = idea.match(urlRegex);
+      const hasUrl = urls && urls.length > 0;
+
+      const urlInstruction = hasUrl
+        ? `\n\nThe user has provided this URL: ${urls.join(', ')}. Visit and research the content at this URL thoroughly — extract what the site does, its target audience, features, and business model. Base your concept on what you find there.`
+        : '';
+
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert Web3 product designer and startup advisor. The user wants to build something on the Kaspa blockchain ecosystem (blockDAG, KRC-20, GHOSTDAG, PoW).
+        prompt: `You are an expert Web3 product designer and startup advisor with real-time web search. The user wants to build something on the Kaspa blockchain ecosystem (blockDAG, KRC-20, GHOSTDAG, PoW).
 
-Their idea seed: "${idea.trim()}"
+Their idea seed: "${idea.trim()}"${urlInstruction}
 
-Generate a concise, inspiring product concept that includes:
+SEARCH THE WEB for real, current information about:
+- Market size and trends for this type of product
+- Existing competitors and similar projects (especially on Kaspa and other blockchains)
+- Current best practices, tools, and technologies
+- Real data that grounds this concept in reality
+
+Then generate a concise, inspiring product concept that includes:
 1. **Name** — a catchy, memorable product name
 2. **One-liner** — a single sentence pitch
 3. **The Problem** — what pain point it solves (2-3 sentences)
 4. **The Solution** — how it works on Kaspa (2-3 sentences)
 5. **Key Features** — 4 bullet points
 6. **Why Kaspa** — why blockDAG is perfect for this (1-2 sentences)
-7. **Get Started** — a single next step to begin building
+7. **Market Research** — real findings from your web search (competitors, market size, trends — 3-4 sentences)
+8. **Competitors** — 3-5 real competitor names or similar projects you found
+9. **Next Step** — a single next step to begin building
+10. **Sources** — list of real URLs you found during your research
 
-Keep it punchy, visionary, and practical.`,
+Ground everything in real data. Be punchy, visionary, and practical.`,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash',
         response_json_schema: {
           type: "object",
           properties: {
@@ -82,7 +102,10 @@ Keep it punchy, visionary, and practical.`,
             solution: { type: "string" },
             features: { type: "array", items: { type: "string" } },
             why_kaspa: { type: "string" },
+            market_research: { type: "string" },
+            competitors: { type: "array", items: { type: "string" } },
             next_step: { type: "string" },
+            source_urls: { type: "array", items: { type: "string" } },
           },
         },
       });
@@ -96,7 +119,7 @@ Keep it punchy, visionary, and practical.`,
 
   const formatResultText = () => {
     if (!result || result.error) return "";
-    return `💡 ${result.name}\n${result.one_liner}\n\n🔴 Problem: ${result.problem}\n\n✅ Solution: ${result.solution}\n\n⚡ Key Features:\n${result.features?.map(f => `• ${f}`).join("\n")}\n\n🔷 Why Kaspa: ${result.why_kaspa}\n\n🚀 Next Step: ${result.next_step}\n\n— Generated with TTT Idea Lab`;
+    return `💡 ${result.name}\n${result.one_liner}\n\n🔴 Problem: ${result.problem}\n\n✅ Solution: ${result.solution}\n\n⚡ Key Features:\n${result.features?.map(f => `• ${f}`).join("\n")}\n\n🔷 Why Kaspa: ${result.why_kaspa}\n\n📊 Market Research: ${result.market_research || "N/A"}\n\n🏢 Competitors: ${(result.competitors || []).join(", ") || "N/A"}\n\n🚀 Next Step: ${result.next_step}\n\n🔗 Sources:\n${(result.source_urls || []).map(u => `• ${u}`).join("\n")}\n\n— Generated with TTT Idea Lab (Web-Powered)`;
   };
 
   const copyResult = () => {
@@ -207,7 +230,7 @@ Keep it punchy, visionary, and practical.`,
             className="text-[14px] max-w-sm mx-auto leading-relaxed"
             style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}
           >
-            Describe a rough idea and we'll shape it into a full product concept on Kaspa.
+            Type any idea or paste a URL — the agent searches the web and shapes it into a full product concept on Kaspa.
           </p>
         </motion.div>
 
@@ -246,7 +269,7 @@ Keep it punchy, visionary, and practical.`,
                 className="text-[12px] leading-relaxed"
                 style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}
               >
-                TTT's AI-powered brainstorming tool. Type any rough concept — even just a few words — and it generates a complete product pitch built for the Kaspa ecosystem. You can copy the result, share it directly to the TTT Feed, or keep iterating. Your generated ideas are saved so you never lose them.
+                TTT's AI-powered brainstorming agent with real-time web search. Type any rough concept or paste a URL — the agent researches competitors, market data, and trends from the live web, then generates a complete product pitch built for the Kaspa ecosystem. Copy, share to the TTT Feed, or keep iterating.
               </p>
             </div>
             {/* Bottom flourish */}
@@ -265,7 +288,7 @@ Keep it punchy, visionary, and practical.`,
                 value={idea}
                 onChange={e => setIdea(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); } }}
-                placeholder="A platform where artists can sell AI-generated NFTs using Kaspa…"
+                placeholder="Type any idea or paste a URL to research — e.g. 'AI NFT marketplace on Kaspa' or 'https://example.com'…"
                 rows={4}
                 className="w-full bg-transparent text-[15px] outline-none resize-none leading-relaxed"
                 style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
@@ -310,7 +333,8 @@ Keep it punchy, visionary, and practical.`,
           {generating && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
               <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" style={{ color: GOLD }} />
-              <p className="text-[13px]" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>Crafting your concept…</p>
+              <p className="text-[13px] mb-1" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>Searching the web & researching competitors…</p>
+              <p className="text-[11px]" style={{ color: `${GOLD}66`, fontFamily: "'Fraunces', Georgia, serif" }}>Crafting your concept with real market data</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -392,6 +416,39 @@ Keep it punchy, visionary, and practical.`,
                     <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Why Kaspa</h3>
                     <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.why_kaspa}</p>
                   </div>
+                  {result.market_research && (
+                    <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                      <h3 className="text-[10px] font-bold uppercase mb-2 flex items-center gap-1.5" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>
+                        <Sparkles className="w-3 h-3" /> Market Research
+                      </h3>
+                      <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.market_research}</p>
+                    </div>
+                  )}
+                  {result.competitors && result.competitors.length > 0 && (
+                    <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                      <h3 className="text-[10px] font-bold uppercase mb-3" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Competitors</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {result.competitors.map((c, i) => (
+                          <span key={i} className="text-[12px] px-3 py-1 rounded-full" style={{ background: `${GOLD}15`, color: `${CHARCOAL}cc`, border: `1px solid ${GOLD}33`, fontFamily: "'Fraunces', Georgia, serif" }}>
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {result.source_urls && result.source_urls.length > 0 && (
+                    <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                      <h3 className="text-[10px] font-bold uppercase mb-3" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Sources</h3>
+                      <div className="space-y-1.5">
+                        {result.source_urls.map((u, i) => (
+                          <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] hover:underline" style={{ color: GOLD, fontFamily: "'Fraunces', Georgia, serif" }}>
+                            <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{u}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
                     <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Next Step</h3>
                     <p className="text-[14px] font-medium leading-relaxed" style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}>{result.next_step}</p>
