@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ArrowLeft, ArrowUpRight, Sparkles, Lightbulb, Twitter,
-  Loader2, RefreshCw, Copy, Check, Settings, Share2, Info, Layout
+  Loader2, RefreshCw, Copy, Check, Settings, Share2, Info, Layout, Globe, X
 } from "lucide-react";
 import BlueprintBuilder from "@/components/explore/BlueprintBuilder";
 
@@ -45,6 +45,7 @@ export default function ExplorePage() {
   const [sharing, setSharing] = useState(false);
   const [shared, setShared] = useState(false);
   const [view, setView] = useState('idea');
+  const [kaspanetOpen, setKaspanetOpen] = useState(false);
 
   useEffect(() => {
     try { localStorage.setItem("idea_lab_history", JSON.stringify(history)); } catch {}
@@ -211,6 +212,13 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
               <Layout className="w-3.5 h-3.5" /> Blueprint
             </button>
           )}
+          <button
+            onClick={() => setKaspanetOpen(true)}
+            className="flex items-center gap-1.5 text-[12px] font-medium transition-colors"
+            style={{ color: GOLD_BRIGHT }}
+          >
+            <Globe className="w-3.5 h-3.5" /> Kaspanet
+          </button>
           <Link
             to="/TTTV2"
             className="text-[12px] font-medium transition-colors"
@@ -578,6 +586,40 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         )}
         </div>
         )}
+
+      {/* Kaspanet Browser iframe overlay */}
+      {kaspanetOpen && (
+        <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: EMERALD_DARK }}>
+          <div
+            className="h-12 flex items-center justify-between px-5 flex-shrink-0"
+            style={{ background: EMERALD_DARK, borderBottom: `1px solid ${GOLD}33` }}
+          >
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4" style={{ color: GOLD_BRIGHT }} />
+              <span className="text-[13px] font-bold" style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}>
+                Kaspanet Browser
+              </span>
+              <span className="text-[10px]" style={{ color: `${GOLD}aa` }}>kaspanet.online</span>
+            </div>
+            <button
+              onClick={() => setKaspanetOpen(false)}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg transition-colors"
+              style={{ color: CREAM, background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
+            >
+              <X className="w-4 h-4" />
+              <span className="text-[12px] font-medium" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Close</span>
+            </button>
+          </div>
+          <iframe
+            src="https://kaspanet.online"
+            title="Kaspanet Browser"
+            className="flex-1 w-full border-0"
+            sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+            referrerPolicy="no-referrer"
+            allow="clipboard-read; clipboard-write"
+          />
+        </div>
+      )}
         </div>
         );
         }
