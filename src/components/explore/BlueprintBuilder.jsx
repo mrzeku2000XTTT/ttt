@@ -1,370 +1,275 @@
-import React, { useState, useRef } from "react";
-import { motion } from "framer-motion";
-import {
-  Type, Heading, Square, Image as ImageIcon, MousePointerClick,
-  Trash2, Layout, Eye, X
-} from "lucide-react";
-
-const EMERALD = "#0a3a2d";
-const EMERALD_DARK = "#072a22";
-const CREAM = "#f4efdf";
-const GOLD = "#b89a66";
-const GOLD_BRIGHT = "#d4b878";
-const CHARCOAL = "#2e2e2e";
-
-const ELEMENT_TYPES = [
-  { type: "heading", label: "Heading", icon: Heading, defaultContent: "Your Heading", defaults: { width: 280, fontSize: 26, fontWeight: 700 } },
-  { type: "text", label: "Text", icon: Type, defaultContent: "Your paragraph text goes here. Click to edit.", defaults: { width: 280, fontSize: 14, fontWeight: 400 } },
-  { type: "button", label: "Button", icon: MousePointerClick, defaultContent: "Get Started", defaults: { width: 140, fontSize: 14, fontWeight: 600 } },
-  { type: "box", label: "Section", icon: Square, defaultContent: "", defaults: { width: 300, fontSize: 14, fontWeight: 400 } },
-  { type: "image", label: "Image", icon: ImageIcon, defaultContent: "https://images.unsplash.com/photo-1557683316-ea9c9d4e6d70?w=400", defaults: { width: 250, fontSize: 14, fontWeight: 400 } },
-];
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { Menu, X } from "lucide-react";
+import { COLORS, ELEMENT_TYPES, createElement, createPage } from "./blueprintConstants";
+import BlueprintCanvas from "./BlueprintCanvas";
+import BlueprintSidebar from "./BlueprintSidebar";
+import BlueprintToolbar from "./BlueprintToolbar";
+import BlueprintRightPanel from "./BlueprintRightPanel";
+import BlueprintAgent from "./BlueprintAgent";
 
 export default function BlueprintBuilder({ idea, concept }) {
-  const [elements, setElements] = useState(() => {
-    const init = [];
+  const [pages, setPages] = useState(() => {
+    const page = createPage('Page 1');
     if (concept?.name) {
-      init.push(
-        { id: 'el-init-1', type: 'heading', x: 20, y: 20, content: concept.name, width: 320, fontSize: 30, fontWeight: 700, color: CHARCOAL, bg: 'transparent' },
-        { id: 'el-init-2', type: 'text', x: 20, y: 70, content: concept.one_liner || idea || "", width: 320, fontSize: 14, fontWeight: 400, color: `${CHARCOAL}aa`, bg: 'transparent' },
+      page.elements.push(
+        createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: concept.name, width: 320, fontSize: 30, fontWeight: 700 }),
+        createElement('text', ELEMENT_TYPES[1], { x: 20, y: 70, content: concept.one_liner || idea || '', width: 320, fontSize: 14, color: `${COLORS.CHARCOAL}aa` }),
       );
       if (concept.features) {
-        init.push({ id: 'el-init-3', type: 'text', x: 20, y: 130, content: concept.features.map((f) => `• ${f}`).join('\n'), width: 320, fontSize: 13, fontWeight: 400, color: `${CHARCOAL}cc`, bg: 'transparent' });
+        page.elements.push(createElement('text', ELEMENT_TYPES[1], { x: 20, y: 130, content: concept.features.map(f => `• ${f}`).join('\n'), width: 320, fontSize: 13, color: `${COLORS.CHARCOAL}cc` }));
       }
     } else if (idea) {
-      init.push({ id: 'el-init-1', type: 'heading', x: 20, y: 20, content: idea.slice(0, 60), width: 320, fontSize: 26, fontWeight: 700, color: CHARCOAL, bg: 'transparent' });
+      page.elements.push(createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: idea.slice(0, 60), width: 320, fontSize: 26, fontWeight: 700 }));
     }
-    return init;
+    return [page];
   });
+  const [currentPageId, setCurrentPageId] = useState(pages[0].id);
   const [selectedId, setSelectedId] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 20, y: 20 });
+  const [tool, setTool] = useState('select');
   const [previewMode, setPreviewMode] = useState(false);
-  const [propsOpen, setPropsOpen] = useState(false);
-  const canvasRef = useRef(null);
-  const idCounter = useRef(Date.now());
+  const [agentMode, setAgentMode] = useState(false);
+  const [codeMode, setCodeMode] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const addElement = (typeDef) => {
-    const id = `el-${idCounter.current++}`;
-    setElements(prev => [...prev, {
-      id,
-      type: typeDef.type,
-      x: 30 + Math.random() * 60,
-      y: 30 + Math.random() * 60,
-      content: typeDef.defaultContent,
-      width: typeDef.defaults.width,
-      fontSize: typeDef.defaults.fontSize,
-      fontWeight: typeDef.defaults.fontWeight,
-      color: CHARCOAL,
-      bg: typeDef.type === 'button' ? GOLD : typeDef.type === 'box' ? `${GOLD}11` : 'transparent',
-    }]);
-    setSelectedId(id);
-    setPropsOpen(true);
-  };
-
-  const updateElement = (id, updates) => {
-    setElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
-  };
-
-  const deleteElement = (id) => {
-    setElements(prev => prev.filter(el => el.id !== id));
-    setSelectedId(null);
-    setPropsOpen(false);
-  };
-
+  const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
+  const elements = currentPage?.elements || [];
   const selected = elements.find(e => e.id === selectedId);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 1024);
+  React.useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
-  const renderElementContent = (el) => {
-    const baseStyle = { fontFamily: "'Fraunces', Georgia, serif" };
-    switch (el.type) {
-      case 'heading':
-        return <div style={{ ...baseStyle, fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color }}>{el.content}</div>;
-      case 'text':
-        return <div style={{ ...baseStyle, fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{el.content}</div>;
-      case 'button':
-        return (
-          <div style={{
-            ...baseStyle, fontSize: el.fontSize, fontWeight: el.fontWeight,
-            color: EMERALD_DARK, background: el.bg, padding: '10px 24px',
-            borderRadius: 999, border: `1px solid ${GOLD}`, textAlign: 'center',
-            boxShadow: `0 2px 8px ${GOLD}33`,
-          }}>{el.content}</div>
-        );
-      case 'box':
-        return <div style={{ width: '100%', height: '100%', minHeight: 80, background: el.bg, borderRadius: 8, border: `1px solid ${GOLD}44` }} />;
-      case 'image':
-        return <img src={el.content} alt="" style={{ width: '100%', borderRadius: 8, display: 'block' }} draggable={false} />;
-      default:
-        return null;
+  const updatePageElements = (pageId, updater) => {
+    setPages(prev => prev.map(p => p.id === pageId ? { ...p, elements: updater(p.elements) } : p));
+  };
+
+  const handleAddElement = (type) => {
+    const typeDef = ELEMENT_TYPES.find(t => t.type === type) || ELEMENT_TYPES[0];
+    const el = createElement(type, typeDef);
+    updatePageElements(currentPageId, els => [...els, el]);
+    setSelectedId(el.id);
+  };
+
+  const handleUploadFile = async (file) => {
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const isVideo = file.type.startsWith('video/');
+      const type = isVideo ? 'video' : 'image';
+      const typeDef = ELEMENT_TYPES.find(t => t.type === type);
+      const el = createElement(type, typeDef, { content: file_url, mediaType: isVideo ? 'video' : 'image', width: isVideo ? 320 : 300 });
+      updatePageElements(currentPageId, els => [...els, el]);
+      setSelectedId(el.id);
+    } catch (err) {
+      console.error('Upload failed:', err);
     }
   };
 
-  const renderElement = (el) => {
-    const isSelected = el.id === selectedId && !previewMode;
-    return (
-      <motion.div
-        key={el.id}
-        drag={!previewMode}
-        dragMomentum={false}
-        dragConstraints={canvasRef}
-        onDragEnd={(e, info) => {
-          updateElement(el.id, {
-            x: Math.max(0, el.x + info.offset.x),
-            y: Math.max(0, el.y + info.offset.y),
-          });
-        }}
-        onClick={(e) => { e.stopPropagation(); if (!previewMode) { setSelectedId(el.id); setPropsOpen(true); } }}
-        initial={false}
-        animate={{ x: el.x, y: el.y }}
-        className="cursor-move"
-        style={{
-          position: 'absolute',
-          width: el.width,
-          maxWidth: '90%',
-          outline: isSelected ? `2px solid ${GOLD}` : 'none',
-          outlineOffset: '4px',
-          borderRadius: el.type === 'box' ? 8 : 0,
-          touchAction: 'none',
-        }}
-      >
-        {renderElementContent(el)}
-      </motion.div>
-    );
+  const handleUpdateElement = (id, updates) => {
+    updatePageElements(currentPageId, els => els.map(el => el.id === id ? { ...el, ...updates } : el));
   };
 
-  const PropertiesContent = () => (
-    <>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[9px] font-bold uppercase" style={{ color: GOLD, letterSpacing: '0.15em' }}>Properties</p>
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => deleteElement(selected.id)}
-            className="w-8 h-8 rounded-md flex items-center justify-center transition-colors"
-            style={{ background: '#dc262620', border: '1px solid #dc262655' }}
-            title="Delete element"
-          >
-            <Trash2 className="w-3.5 h-3.5" style={{ color: '#dc2626' }} />
-          </button>
-          <button
-            onClick={() => setPropsOpen(false)}
-            className="w-8 h-8 rounded-md flex items-center justify-center transition-colors lg:hidden"
-            style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33` }}
-            title="Close"
-          >
-            <X className="w-4 h-4" style={{ color: CHARCOAL }} />
-          </button>
-        </div>
-      </div>
+  const handleDeleteElement = (id) => {
+    updatePageElements(currentPageId, els => els.filter(el => el.id !== id));
+    setSelectedId(null);
+  };
 
-      {selected.type !== 'image' && selected.type !== 'box' && (
-        <div className="mb-3">
-          <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Content</label>
-          <textarea
-            value={selected.content}
-            onChange={e => updateElement(selected.id, { content: e.target.value })}
-            rows={selected.type === 'text' ? 3 : 2}
-            className="w-full text-[12px] p-2 rounded-md outline-none resize-none"
-            style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
-          />
-        </div>
-      )}
+  const handleAddPage = () => {
+    const page = createPage(`Page ${pages.length + 1}`);
+    setPages(prev => [...prev, page]);
+    setCurrentPageId(page.id);
+    setSelectedId(null);
+  };
 
-      {selected.type === 'image' && (
-        <div className="mb-3">
-          <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Image URL</label>
-          <input
-            type="text"
-            value={selected.content}
-            onChange={e => updateElement(selected.id, { content: e.target.value })}
-            className="w-full text-[11px] p-2 rounded-md outline-none"
-            style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
-          />
-        </div>
-      )}
+  const handleDeletePage = (pageId) => {
+    if (pages.length <= 1) return;
+    setPages(prev => prev.filter(p => p.id !== pageId));
+    if (currentPageId === pageId) {
+      const remaining = pages.filter(p => p.id !== pageId);
+      setCurrentPageId(remaining[0].id);
+    }
+  };
 
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div>
-          <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Width</label>
-          <input
-            type="number"
-            value={selected.width}
-            onChange={e => updateElement(selected.id, { width: parseInt(e.target.value) || 100 })}
-            className="w-full text-[12px] p-2 rounded-md outline-none"
-            style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
-          />
-        </div>
-        {selected.type !== 'image' && selected.type !== 'box' && (
-          <div>
-            <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Size</label>
-            <input
-              type="number"
-              value={selected.fontSize}
-              onChange={e => updateElement(selected.id, { fontSize: parseInt(e.target.value) || 14 })}
-              className="w-full text-[12px] p-2 rounded-md outline-none"
-              style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
-            />
-          </div>
-        )}
-      </div>
+  const handleRenamePage = (pageId, name) => {
+    setPages(prev => prev.map(p => p.id === pageId ? { ...p, name } : p));
+  };
 
-      {selected.type !== 'image' && selected.type !== 'box' && (
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <div>
-            <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Weight</label>
-            <select
-              value={selected.fontWeight}
-              onChange={e => updateElement(selected.id, { fontWeight: parseInt(e.target.value) })}
-              className="w-full text-[12px] p-2 rounded-md outline-none"
-              style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
-            >
-              <option value={400}>Regular</option>
-              <option value={600}>Semibold</option>
-              <option value={700}>Bold</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Color</label>
-            <input
-              type="color"
-              value={selected.color.startsWith('#') && selected.color.length === 7 ? selected.color : '#2e2e2e'}
-              onChange={e => updateElement(selected.id, { color: e.target.value })}
-              className="w-full h-9 rounded-md cursor-pointer"
-              style={{ border: `1px solid ${GOLD}33` }}
-            />
-          </div>
-        </div>
-      )}
+  const handleSelectPage = (pageId) => {
+    setCurrentPageId(pageId);
+    setSelectedId(null);
+    setSidebarOpen(false);
+  };
 
-      {(selected.type === 'button' || selected.type === 'box') && (
-        <div className="mb-3">
-          <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Background</label>
-          <input
-            type="color"
-            value={selected.bg.startsWith('#') && selected.bg.length === 7 ? selected.bg : '#b89a66'}
-            onChange={e => updateElement(selected.id, { bg: e.target.value })}
-            className="w-full h-9 rounded-md cursor-pointer"
-            style={{ border: `1px solid ${GOLD}33` }}
-          />
-        </div>
-      )}
+  const handleAgentGenerate = async ({ prompt, imageUrl }) => {
+    const res = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are an expert UI/UX designer. ${imageUrl ? 'Analyze the uploaded image and recreate its layout.' : 'Create a modern website.'} ${prompt ? `The user wants: ${prompt}` : 'Create a complete landing page.'}
 
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>X</label>
-          <input
-            type="number"
-            value={Math.round(selected.x)}
-            onChange={e => updateElement(selected.id, { x: parseInt(e.target.value) || 0 })}
-            className="w-full text-[12px] p-2 rounded-md outline-none"
-            style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Y</label>
-          <input
-            type="number"
-            value={Math.round(selected.y)}
-            onChange={e => updateElement(selected.id, { y: parseInt(e.target.value) || 0 })}
-            className="w-full text-[12px] p-2 rounded-md outline-none"
-            style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
-          />
-        </div>
-      </div>
-    </>
-  );
+Generate a JSON object with "pages" array. Each page: { "name": string, "elements": array }.
+Each element: { "type": "heading"|"text"|"button"|"box"|"image", "x": number, "y": number, "content": string, "width": number, "fontSize": number, "fontWeight": number, "color": "#hex", "bg": "#hex or transparent" }.
+
+Guidelines:
+- Use 1-3 pages (e.g., "Landing", "About", "Pricing")
+- x: 0-800, y: 0-1200 range
+- heading: fontSize 24-36, fontWeight 700, color "#1f2937"
+- text: fontSize 13-16, fontWeight 400, color "#4b5563"
+- button: bg "#4F46E5", color "#ffffff", fontWeight 600, width 140-200
+- box: bg "#f3f4f6"
+- image: content = full URL (use unsplash.com URLs)
+- Use realistic, professional content${concept?.name ? ` related to: ${concept.name}` : ''}
+
+Return ONLY the JSON object.`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          pages: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                elements: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      type: { type: "string" },
+                      x: { type: "number" },
+                      y: { type: "number" },
+                      content: { type: "string" },
+                      width: { type: "number" },
+                      fontSize: { type: "number" },
+                      fontWeight: { type: "number" },
+                      color: { type: "string" },
+                      bg: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      file_urls: imageUrl ? [imageUrl] : undefined,
+      model: 'claude_sonnet_4_6',
+    });
+
+    const generated = res.pages || [];
+    if (generated.length > 0) {
+      const newPages = generated.map((p, i) => ({
+        id: `page-${Date.now()}-${i}`,
+        name: p.name || `Page ${i + 1}`,
+        elements: (p.elements || []).map((el, j) => ({
+          id: `el-${Date.now()}-${i}-${j}`,
+          type: el.type || 'text',
+          x: el.x || 20,
+          y: el.y || 20 + j * 40,
+          content: el.content || '',
+          width: el.width || 280,
+          fontSize: el.fontSize || 14,
+          fontWeight: el.fontWeight || 400,
+          color: el.color || COLORS.CHARCOAL,
+          bg: el.bg || 'transparent',
+          mediaType: el.type === 'video' ? 'video' : 'image',
+        })),
+      }));
+      setPages(newPages);
+      setCurrentPageId(newPages[0].id);
+      setSelectedId(null);
+      setPan({ x: 20, y: 20 });
+      setZoom(0.5);
+    }
+  };
+
+  const codeOutput = React.useMemo(() => {
+    return JSON.stringify(pages, null, 2);
+  }, [pages]);
 
   return (
-    <div
-      className="flex flex-col lg:flex-row gap-2 lg:gap-3"
-      style={{ height: 'calc(100dvh - 5rem)', fontFamily: "'Fraunces', Georgia, serif" }}
-    >
-      {/* Toolbar — horizontal scroll on mobile, vertical sidebar on desktop */}
-      {!previewMode && (
-        <div
-          className="lg:w-48 rounded-lg p-2 lg:p-3 flex flex-wrap lg:flex-nowrap lg:flex-col gap-2 lg:overflow-y-auto flex-shrink-0"
-          style={{ background: CREAM, border: `1px solid ${GOLD}55` }}
-        >
-          <p className="hidden lg:block text-[9px] font-bold uppercase mb-1" style={{ color: GOLD, letterSpacing: '0.15em' }}>Add Element</p>
-          {ELEMENT_TYPES.map((t) => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.type}
-                onClick={() => addElement(t)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-md text-[12px] font-medium transition-colors whitespace-nowrap flex-shrink-0 min-h-[44px]"
-                style={{ color: CHARCOAL, background: `${GOLD}11`, border: `1px solid ${GOLD}33`, touchAction: 'manipulation' }}
-              >
-                <Icon className="w-4 h-4" style={{ color: GOLD }} />
-                {t.label}
-              </button>
-            );
-          })}
-          <button
-            onClick={() => setPreviewMode(true)}
-            disabled={elements.length === 0}
-            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-md text-[12px] font-medium transition-colors flex-shrink-0 min-h-[44px]"
-            style={{ color: EMERALD_DARK, background: `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`, border: `1px solid ${GOLD}` }}
-          >
-            <Eye className="w-4 h-4" /> Preview
-          </button>
-        </div>
-      )}
-
-      {/* Canvas */}
-      <div
-        ref={canvasRef}
-        onClick={() => { if (!previewMode) { setSelectedId(null); setPropsOpen(false); } }}
-        className="flex-1 rounded-lg overflow-auto relative min-h-0"
-        style={{
-          background: previewMode ? '#fff' : `repeating-conic-gradient(${CREAM} 0% 25%, #ebe5d4 0% 50%) 50% / 24px 24px`,
-          border: `1px solid ${GOLD}55`,
-        }}
+    <div className="flex flex-col lg:flex-row" style={{ height: 'calc(100dvh - 5rem)', fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* Mobile sidebar toggle */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden absolute top-2 left-2 z-40 w-9 h-9 rounded-lg flex items-center justify-center"
+        style={{ background: '#fff', border: `1px solid ${COLORS.BORDER}`, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
       >
-        <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 600 }}>
-          {elements.map(renderElement)}
-          {elements.length === 0 && !previewMode && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-4">
-              <div className="text-center">
-                <Layout className="w-10 h-10 mx-auto mb-2" style={{ color: `${GOLD}44` }} />
-                <p className="text-[13px]" style={{ color: `${CHARCOAL}66` }}>Add elements from the toolbar to start building</p>
-              </div>
-            </div>
-          )}
-        </div>
+        {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+      </button>
+
+      {/* Sidebar — desktop: static, mobile: drawer */}
+      {sidebarOpen && (
+        <div className="lg:hidden fixed inset-0 z-30" style={{ background: 'rgba(0,0,0,0.3)' }} onClick={() => setSidebarOpen(false)} />
+      )}
+      <div className={`${sidebarOpen ? 'fixed lg:static z-30 h-full' : 'hidden lg:flex'} `}>
+        <BlueprintSidebar
+          pages={pages}
+          currentPageId={currentPageId}
+          elements={elements}
+          selectedId={selectedId}
+          onSelectPage={handleSelectPage}
+          onAddPage={handleAddPage}
+          onDeletePage={handleDeletePage}
+          onRenamePage={handleRenamePage}
+          onSelectElement={(id) => { setSelectedId(id); setSidebarOpen(false); }}
+        />
       </div>
 
-      {/* Properties — desktop: right sidebar, mobile: slide-up bottom sheet */}
-      {!previewMode && selected && propsOpen && (
-        <>
-          <div
-            className="lg:hidden fixed inset-0 z-40"
-            style={{ background: 'rgba(0,0,0,0.4)' }}
-            onClick={() => { setSelectedId(null); setPropsOpen(false); }}
-          />
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="lg:w-56 rounded-t-xl lg:rounded-lg p-4 overflow-y-auto fixed lg:static bottom-0 left-0 right-0 z-50 lg:z-auto max-h-[60vh] lg:max-h-none"
-            style={{ background: CREAM, border: `1px solid ${GOLD}55` }}
-          >
-            {PropertiesContent()}
-          </motion.div>
-        </>
-      )}
+      {/* Canvas area */}
+      <div className="flex-1 relative overflow-hidden">
+        {agentMode && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-full px-4 max-w-md">
+            <BlueprintAgent onGenerate={handleAgentGenerate} />
+          </div>
+        )}
 
-      {/* Preview mode banner */}
-      {previewMode && (
-        <div
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full flex items-center gap-2"
-          style={{ background: EMERALD_DARK, border: `1px solid ${GOLD}`, boxShadow: `0 4px 20px rgba(0,0,0,0.4)` }}
-        >
-          <Eye className="w-4 h-4" style={{ color: GOLD_BRIGHT }} />
-          <span className="text-[12px] font-medium" style={{ color: CREAM }}>Preview Mode</span>
-          <button
-            onClick={() => setPreviewMode(false)}
-            className="text-[12px] font-semibold underline ml-2"
-            style={{ color: GOLD_BRIGHT }}
-          >Exit</button>
-        </div>
+        {codeMode ? (
+          <div className="absolute inset-0 overflow-auto p-4" style={{ background: '#1e1e1e' }}>
+            <pre className="text-[11px] text-green-400 font-mono whitespace-pre-wrap">{codeOutput}</pre>
+          </div>
+        ) : (
+          <BlueprintCanvas
+            elements={elements}
+            selectedId={selectedId}
+            zoom={zoom}
+            pan={pan}
+            tool={tool}
+            previewMode={previewMode}
+            onSelectElement={setSelectedId}
+            onUpdateElement={handleUpdateElement}
+            onCanvasClick={() => setSelectedId(null)}
+            onPanChange={setPan}
+            onZoomChange={setZoom}
+          />
+        )}
+
+        <BlueprintToolbar
+          tool={tool}
+          setTool={setTool}
+          previewMode={previewMode}
+          setPreviewMode={setPreviewMode}
+          agentMode={agentMode}
+          setAgentMode={setAgentMode}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          onAddElement={handleAddElement}
+          onUploadFile={handleUploadFile}
+          codeMode={codeMode}
+          setCodeMode={setCodeMode}
+        />
+      </div>
+
+      {/* Right panel — desktop: static, mobile: bottom sheet */}
+      {selected && !previewMode && (
+        <BlueprintRightPanel
+          selected={selected}
+          onUpdateElement={handleUpdateElement}
+          onDeleteElement={handleDeleteElement}
+          onClose={() => setSelectedId(null)}
+          isMobile={isMobile}
+        />
       )}
     </div>
   );
