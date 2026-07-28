@@ -22,6 +22,13 @@ const PROMPTS = [
   "A blockchain-verified credential platform",
 ];
 
+const EMERALD = "#0a3a2d";
+const EMERALD_DARK = "#072a22";
+const CREAM = "#f4efdf";
+const GOLD = "#b89a66";
+const GOLD_BRIGHT = "#d4b878";
+const CHARCOAL = "#2e2e2e";
+
 export default function ExplorePage() {
   const navigate = useNavigate();
   const [idea, setIdea] = useState("");
@@ -117,78 +124,153 @@ Keep it punchy, visionary, and practical.`,
     setSharing(false);
   };
 
+  const Ornament = () => (
+    <div className="flex items-center justify-center gap-3 my-8">
+      <div className="h-px w-16 sm:w-24" style={{ background: `linear-gradient(90deg, transparent, ${GOLD})` }} />
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs" style={{ color: GOLD }}>◆</span>
+        <span className="text-sm" style={{ color: GOLD_BRIGHT }}>❦</span>
+        <span className="text-xs" style={{ color: GOLD }}>◆</span>
+      </div>
+      <div className="h-px w-16 sm:w-24" style={{ background: `linear-gradient(90deg, ${GOLD}, transparent)` }} />
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-white text-zinc-900 selection:bg-black/10">
+    <div
+      className="min-h-screen selection:bg-amber-200/30"
+      style={{ background: EMERALD, fontFamily: "'Fraunces', Georgia, serif" }}
+    >
+      {/* Decorative border frame */}
+      <div
+        className="fixed inset-2 sm:inset-3 pointer-events-none z-30"
+        style={{ border: `1px solid ${GOLD}55`, borderRadius: 4 }}
+      />
+      <div
+        className="fixed inset-3 sm:inset-4 pointer-events-none z-30"
+        style={{ border: `1px solid ${GOLD}22`, borderRadius: 3 }}
+      />
 
       {/* Nav */}
-      <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-white/80 backdrop-blur-2xl border-b border-zinc-100">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="flex items-center justify-center gap-1.5 h-full px-4 -ml-3 rounded-full active:bg-zinc-100 transition-colors duration-150 text-zinc-400 cursor-pointer"
-          style={{ touchAction: 'manipulation', minHeight: '48px', minWidth: '88px', WebkitTapHighlightColor: 'transparent' }}
+      <nav
+        className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 backdrop-blur-2xl"
+        style={{ background: `${EMERALD_DARK}cc`, borderBottom: `1px solid ${GOLD}33` }}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center gap-1.5 h-full px-4 -ml-3 transition-colors duration-150 cursor-pointer"
+          style={{ touchAction: 'manipulation', minHeight: '48px', minWidth: '88px', WebkitTapHighlightColor: 'transparent', color: GOLD_BRIGHT }}
           aria-label="Go back"
         >
           <ArrowLeft className="w-5 h-5 flex-shrink-0" />
-          <span className="text-[15px] font-semibold select-none">Back</span>
+          <span className="text-[15px] font-medium select-none" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Back</span>
         </button>
-        <span className="text-[15px] font-[800] tracking-tight text-zinc-900">Idea Lab</span>
-        <Link to="/TTTV2" className="text-[12px] font-semibold text-zinc-400 hover:text-zinc-700 transition-colors">
+        <span
+          className="text-[15px] font-bold tracking-wide"
+          style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '0.02em' }}
+        >
+          Idea Lab
+        </span>
+        <Link
+          to="/TTTV2"
+          className="text-[12px] font-medium transition-colors"
+          style={{ color: `${GOLD}cc` }}
+        >
           TTT 2.0
         </Link>
       </nav>
 
-      <div className="max-w-xl mx-auto px-5 pt-28 pb-24">
+      <div className="max-w-2xl mx-auto px-5 pt-28 pb-24 relative z-10">
 
         {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-14">
-          <div className="w-14 h-14 mx-auto mb-6 rounded-2xl bg-zinc-900 flex items-center justify-center shadow-lg">
-            <Lightbulb className="w-6 h-6 text-white" />
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+          <div
+            className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center"
+            style={{ background: EMERALD_DARK, border: `1.5px solid ${GOLD}`, boxShadow: `0 0 30px ${GOLD}33, inset 0 1px 0 ${GOLD}22` }}
+          >
+            <Lightbulb className="w-7 h-7" style={{ color: GOLD_BRIGHT }} />
           </div>
-          <h1 className="text-[clamp(1.8rem,5vw,3rem)] font-[900] tracking-tight leading-[1.05] mb-3">
-            What will you build?
+          <h1
+            className="text-[clamp(1.8rem,5vw,2.8rem)] font-bold tracking-tight leading-[1.05] mb-3"
+            style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}
+          >
+            What Will You Build?
           </h1>
-          <p className="text-[15px] text-zinc-400 max-w-sm mx-auto leading-relaxed">
+          <p
+            className="text-[14px] max-w-sm mx-auto leading-relaxed"
+            style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}
+          >
             Describe a rough idea and we'll shape it into a full product concept on Kaspa.
           </p>
         </motion.div>
 
-        {/* What is this */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="mb-10 bg-zinc-50 rounded-2xl border border-zinc-100 p-5">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-zinc-200/60 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Info className="w-4 h-4 text-zinc-500" />
+        {/* Two-column: Info card + Input area */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="grid sm:grid-cols-5 gap-4 mb-8"
+        >
+          {/* Info Card */}
+          <div
+            className="sm:col-span-2 rounded-lg p-5 flex flex-col"
+            style={{ background: CREAM, border: `1px solid ${GOLD}66`, boxShadow: `0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)` }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}55` }}
+              >
+                <Info className="w-3.5 h-3.5" style={{ color: GOLD }} />
+              </div>
+              <h3
+                className="text-[12px] font-bold uppercase"
+                style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '0.05em' }}
+              >
+                What is Idea Lab?
+              </h3>
             </div>
-            <div>
-              <h3 className="text-[13px] font-bold text-zinc-800 mb-1">What is Idea Lab?</h3>
-              <p className="text-[12px] text-zinc-500 leading-relaxed">
-                Idea Lab is TTT's AI-powered brainstorming tool. Type any rough concept — even just a few words — and it generates a complete product pitch built for the Kaspa ecosystem. You can copy the result, share it directly to the TTT Feed, or keep iterating. Your generated ideas are saved so you never lose them.
-              </p>
-            </div>
+            <p
+              className="text-[12px] leading-relaxed"
+              style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}
+            >
+              TTT's AI-powered brainstorming tool. Type any rough concept — even just a few words — and it generates a complete product pitch built for the Kaspa ecosystem. You can copy the result, share it directly to the TTT Feed, or keep iterating. Your generated ideas are saved so you never lose them.
+            </p>
           </div>
-        </motion.div>
 
-        {/* Input Card */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mb-10">
-          <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-100">
+          {/* Input Area */}
+          <div
+            className="sm:col-span-3 rounded-lg p-5 flex flex-col"
+            style={{ background: CREAM, border: `1.5px solid ${GOLD}`, boxShadow: `0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)` }}
+          >
             <textarea
               value={idea}
               onChange={e => setIdea(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); } }}
               placeholder="A platform where artists can sell AI-generated NFTs using Kaspa…"
               rows={3}
-              className="w-full bg-transparent text-[15px] text-zinc-900 outline-none placeholder-zinc-300 resize-none leading-relaxed"
+              className="w-full bg-transparent text-[15px] outline-none resize-none leading-relaxed flex-1"
+              style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
             />
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-200/60">
+            <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: `1px solid ${GOLD}33` }}>
               <button
                 onClick={randomPrompt}
-                className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-400 hover:text-zinc-600 transition-colors"
+                className="flex items-center gap-1.5 text-[12px] font-medium transition-colors"
+                style={{ color: `${CHARCOAL}88`, fontFamily: "'Fraunces', Georgia, serif" }}
               >
                 <RefreshCw className="w-3 h-3" /> Surprise me
               </button>
               <button
                 onClick={generate}
                 disabled={!idea.trim() || generating}
-                className="flex items-center gap-2 h-10 px-6 bg-zinc-900 text-white text-[13px] font-semibold rounded-full disabled:opacity-30 hover:bg-zinc-800 transition-all"
+                className="flex items-center gap-2 h-10 px-6 text-[13px] font-semibold rounded-full transition-all"
+                style={{
+                  background: !idea.trim() || generating ? `${GOLD}44` : `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`,
+                  color: EMERALD_DARK,
+                  border: `1px solid ${GOLD}`,
+                  boxShadow: !idea.trim() || generating ? 'none' : `0 2px 12px ${GOLD}44`,
+                  fontFamily: "'Fraunces', Georgia, serif",
+                }}
               >
                 {generating ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
@@ -204,8 +286,8 @@ Keep it punchy, visionary, and practical.`,
         <AnimatePresence>
           {generating && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-zinc-300 mx-auto mb-3" />
-              <p className="text-[13px] text-zinc-400">Crafting your concept…</p>
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" style={{ color: GOLD }} />
+              <p className="text-[13px]" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>Crafting your concept…</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -220,85 +302,100 @@ Keep it punchy, visionary, and practical.`,
               className="space-y-0"
             >
               {/* Concept Name */}
-              <div className="bg-zinc-900 rounded-t-2xl p-6 sm:p-8">
+              <div
+                className="rounded-t-lg p-6 sm:p-8"
+                style={{ background: EMERALD_DARK, border: `1px solid ${GOLD}`, borderBottom: 'none' }}
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-2">Your Concept</p>
-                    <h2 className="text-xl sm:text-2xl font-[900] text-white tracking-tight leading-tight">{result.name}</h2>
-                    <p className="text-[14px] text-zinc-400 mt-2 leading-relaxed">{result.one_liner}</p>
+                    <p
+                      className="text-[10px] font-bold uppercase mb-2"
+                      style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}
+                    >
+                      Your Concept
+                    </p>
+                    <h2
+                      className="text-xl sm:text-2xl font-bold tracking-tight leading-tight"
+                      style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}
+                    >
+                      {result.name}
+                    </h2>
+                    <p className="text-[14px] mt-2 leading-relaxed" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>
+                      {result.one_liner}
+                    </p>
                   </div>
                   <button
                     onClick={copyResult}
-                    className="flex-shrink-0 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+                    className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                    style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
                     title="Copy to clipboard"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white/60" />}
+                    {copied ? <Check className="w-3.5 h-3.5" style={{ color: GOLD_BRIGHT }} /> : <Copy className="w-3.5 h-3.5" style={{ color: `${GOLD}aa` }} />}
                   </button>
                 </div>
               </div>
 
               {/* Content */}
-              <div className="bg-zinc-50 rounded-b-2xl border border-t-0 border-zinc-100 divide-y divide-zinc-100">
-                {/* Problem */}
-                <div className="p-6">
-                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">The Problem</h3>
-                  <p className="text-[14px] text-zinc-600 leading-relaxed">{result.problem}</p>
-                </div>
-
-                {/* Solution */}
-                <div className="p-6">
-                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">The Solution</h3>
-                  <p className="text-[14px] text-zinc-600 leading-relaxed">{result.solution}</p>
-                </div>
-
-                {/* Features */}
-                <div className="p-6">
-                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-3">Key Features</h3>
-                  <div className="space-y-2">
-                    {result.features?.map((f, i) => (
-                      <div key={i} className="flex items-start gap-3 py-2">
-                        <div className="w-5 h-5 rounded-md bg-zinc-900 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="text-[10px] font-bold text-white">{i + 1}</span>
-                        </div>
-                        <span className="text-[13px] text-zinc-600 leading-snug">{f}</span>
-                      </div>
-                    ))}
+              <div
+                className="rounded-b-lg divide-y"
+                style={{ background: CREAM, border: `1px solid ${GOLD}66`, borderTop: 'none' }}
+              >
+                <div style={{ borderColor: `${GOLD}33` }}>
+                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                    <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>The Problem</h3>
+                    <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.problem}</p>
                   </div>
-                </div>
-
-                {/* Why Kaspa */}
-                <div className="p-6">
-                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Why Kaspa</h3>
-                  <p className="text-[14px] text-zinc-600 leading-relaxed">{result.why_kaspa}</p>
-                </div>
-
-                {/* Next Step */}
-                <div className="p-6">
-                  <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Next Step</h3>
-                  <p className="text-[14px] text-zinc-900 font-medium leading-relaxed">{result.next_step}</p>
-                </div>
-
-                {/* Actions */}
-                <div className="p-6 flex flex-wrap gap-3">
-                  <button
-                    onClick={() => { setResult(null); setIdea(""); }}
-                    className="h-10 px-5 text-[13px] font-semibold text-zinc-500 rounded-full border border-zinc-200 hover:border-zinc-300 hover:bg-white transition-all"
-                  >
-                    New Idea
-                  </button>
-                  <button
-                    onClick={shareToFeed}
-                    disabled={sharing || shared}
-                    className="h-10 px-5 bg-zinc-900 text-white text-[13px] font-semibold rounded-full hover:bg-zinc-800 disabled:opacity-60 transition-colors flex items-center gap-2"
-                  >
-                    {shared ? (
-                      <><Check className="w-3.5 h-3.5" /> Posted!</>
-                    ) : sharing ? (
-                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting…</>
-                    ) : (
-                      <><Share2 className="w-3.5 h-3.5" /> Share on Feed</>
-                    )}
-                  </button>
+                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                    <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>The Solution</h3>
+                    <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.solution}</p>
+                  </div>
+                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                    <h3 className="text-[10px] font-bold uppercase mb-3" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Key Features</h3>
+                    <div className="space-y-2">
+                      {result.features?.map((f, i) => (
+                        <div key={i} className="flex items-start gap-3 py-2">
+                          <div
+                            className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
+                            style={{ background: EMERALD_DARK, border: `1px solid ${GOLD}55` }}
+                          >
+                            <span className="text-[10px] font-bold" style={{ color: GOLD_BRIGHT }}>{i + 1}</span>
+                          </div>
+                          <span className="text-[13px] leading-snug" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                    <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Why Kaspa</h3>
+                    <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.why_kaspa}</p>
+                  </div>
+                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                    <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Next Step</h3>
+                    <p className="text-[14px] font-medium leading-relaxed" style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}>{result.next_step}</p>
+                  </div>
+                  <div className="p-6 flex flex-wrap gap-3">
+                    <button
+                      onClick={() => { setResult(null); setIdea(""); }}
+                      className="h-10 px-5 text-[13px] font-semibold rounded-full transition-all"
+                      style={{ color: `${CHARCOAL}88`, border: `1px solid ${GOLD}55`, background: 'transparent', fontFamily: "'Fraunces', Georgia, serif" }}
+                    >
+                      New Idea
+                    </button>
+                    <button
+                      onClick={shareToFeed}
+                      disabled={sharing || shared}
+                      className="h-10 px-5 text-[13px] font-semibold rounded-full transition-colors flex items-center gap-2 disabled:opacity-60"
+                      style={{ background: `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`, color: EMERALD_DARK, border: `1px solid ${GOLD}`, fontFamily: "'Fraunces', Georgia, serif" }}
+                    >
+                      {shared ? (
+                        <><Check className="w-3.5 h-3.5" /> Posted!</>
+                      ) : sharing ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting…</>
+                      ) : (
+                        <><Share2 className="w-3.5 h-3.5" /> Share on Feed</>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -308,8 +405,8 @@ Keep it punchy, visionary, and practical.`,
         {/* Error */}
         {result?.error && !generating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-10">
-            <p className="text-sm text-zinc-400 mb-3">Something went wrong.</p>
-            <button onClick={generate} className="text-[13px] font-semibold text-zinc-900 underline underline-offset-2">
+            <p className="text-sm mb-3" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>Something went wrong.</p>
+            <button onClick={generate} className="text-[13px] font-semibold underline underline-offset-2" style={{ color: GOLD_BRIGHT }}>
               Try again
             </button>
           </motion.div>
@@ -318,16 +415,18 @@ Keep it punchy, visionary, and practical.`,
         {/* History */}
         {history.length > 0 && !generating && !result && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-3">Recent</h3>
+            <Ornament />
+            <h3 className="text-[10px] font-bold uppercase mb-3 text-center" style={{ color: `${GOLD}aa`, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Recent</h3>
             <div className="space-y-2">
               {history.map((h, i) => (
                 <button
                   key={i}
                   onClick={() => { setIdea(h.idea); setResult(h.result); }}
-                  className="w-full text-left p-4 bg-zinc-50 rounded-xl border border-zinc-100 hover:border-zinc-200 transition-all"
+                  className="w-full text-left p-4 rounded-lg transition-all"
+                  style={{ background: CREAM, border: `1px solid ${GOLD}44` }}
                 >
-                  <div className="text-[14px] font-semibold text-zinc-900">{h.result.name}</div>
-                  <div className="text-[12px] text-zinc-400 mt-0.5 line-clamp-1">{h.result.one_liner}</div>
+                  <div className="text-[14px] font-semibold" style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}>{h.result.name}</div>
+                  <div className="text-[12px] mt-0.5 line-clamp-1" style={{ color: `${CHARCOAL}88`, fontFamily: "'Fraunces', Georgia, serif" }}>{h.result.one_liner}</div>
                 </button>
               ))}
             </div>
@@ -337,16 +436,18 @@ Keep it punchy, visionary, and practical.`,
         {/* Empty state — prompt suggestions */}
         {!result && !generating && history.length === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-[0.15em] mb-3 text-center">Or start with one of these</p>
-            <div className="grid grid-cols-2 gap-2">
+            <Ornament />
+            <p className="text-[10px] font-bold uppercase mb-4 text-center" style={{ color: `${GOLD}88`, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Or start with one of these</p>
+            <div className="grid grid-cols-2 gap-3">
               {PROMPTS.slice(0, 4).map((p, i) => (
                 <button
                   key={i}
                   onClick={() => setIdea(p)}
-                  className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 hover:border-zinc-200 text-left transition-all group"
+                  className="p-4 rounded-lg text-left transition-all group"
+                  style={{ background: CREAM, border: `1px solid ${GOLD}44` }}
                 >
-                  <Lightbulb className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-500 mb-2 transition-colors" />
-                  <span className="text-[12px] text-zinc-500 leading-snug line-clamp-2">{p}</span>
+                  <Lightbulb className="w-3.5 h-3.5 mb-2 transition-colors" style={{ color: `${GOLD}88` }} />
+                  <span className="text-[12px] leading-snug line-clamp-2" style={{ color: `${CHARCOAL}aa`, fontFamily: "'Fraunces', Georgia, serif" }}>{p}</span>
                 </button>
               ))}
             </div>
