@@ -1,0 +1,330 @@
+import React, { useState, useRef } from "react";
+import { motion } from "framer-motion";
+import {
+  Type, Heading, Square, Image as ImageIcon, MousePointerClick,
+  Trash2, Layout, Save, Eye, Plus
+} from "lucide-react";
+
+const EMERALD = "#0a3a2d";
+const EMERALD_DARK = "#072a22";
+const CREAM = "#f4efdf";
+const GOLD = "#b89a66";
+const GOLD_BRIGHT = "#d4b878";
+const CHARCOAL = "#2e2e2e";
+
+const ELEMENT_TYPES = [
+  { type: "heading", label: "Heading", icon: Heading, defaultContent: "Your Heading", defaults: { width: 320, fontSize: 28, fontWeight: 700 } },
+  { type: "text", label: "Text", icon: Type, defaultContent: "Your paragraph text goes here. Click to edit.", defaults: { width: 320, fontSize: 15, fontWeight: 400 } },
+  { type: "button", label: "Button", icon: MousePointerClick, defaultContent: "Get Started", defaults: { width: 150, fontSize: 14, fontWeight: 600 } },
+  { type: "box", label: "Section", icon: Square, defaultContent: "", defaults: { width: 400, fontSize: 14, fontWeight: 400 } },
+  { type: "image", label: "Image", icon: ImageIcon, defaultContent: "https://images.unsplash.com/photo-1557683316-ea9c9d4e6d70?w=400", defaults: { width: 300, fontSize: 14, fontWeight: 400 } },
+];
+
+export default function BlueprintBuilder({ idea, concept }) {
+  const [elements, setElements] = useState(() => {
+    const init = [];
+    if (concept?.name) {
+      init.push(
+        { id: 'el-init-1', type: 'heading', x: 40, y: 30, content: concept.name, width: 450, fontSize: 34, fontWeight: 700, color: CHARCOAL, bg: 'transparent' },
+        { id: 'el-init-2', type: 'text', x: 40, y: 85, content: concept.one_liner || idea || "", width: 450, fontSize: 16, fontWeight: 400, color: `${CHARCOAL}aa`, bg: 'transparent' },
+      );
+      if (concept.features) {
+        init.push({ id: 'el-init-3', type: 'text', x: 40, y: 150, content: concept.features.map((f, i) => `• ${f}`).join('\n'), width: 450, fontSize: 14, fontWeight: 400, color: `${CHARCOAL}cc`, bg: 'transparent' });
+      }
+    } else if (idea) {
+      init.push({ id: 'el-init-1', type: 'heading', x: 40, y: 30, content: idea.slice(0, 60), width: 450, fontSize: 30, fontWeight: 700, color: CHARCOAL, bg: 'transparent' });
+    }
+    return init;
+  });
+  const [selectedId, setSelectedId] = useState(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const canvasRef = useRef(null);
+  const idCounter = useRef(Date.now());
+
+  const addElement = (typeDef) => {
+    const id = `el-${idCounter.current++}`;
+    setElements(prev => [...prev, {
+      id,
+      type: typeDef.type,
+      x: 60 + Math.random() * 80,
+      y: 60 + Math.random() * 80,
+      content: typeDef.defaultContent,
+      width: typeDef.defaults.width,
+      fontSize: typeDef.defaults.fontSize,
+      fontWeight: typeDef.defaults.fontWeight,
+      color: CHARCOAL,
+      bg: typeDef.type === 'button' ? GOLD : typeDef.type === 'box' ? `${GOLD}11` : 'transparent',
+    }]);
+    setSelectedId(id);
+  };
+
+  const updateElement = (id, updates) => {
+    setElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
+  };
+
+  const deleteElement = (id) => {
+    setElements(prev => prev.filter(el => el.id !== id));
+    setSelectedId(null);
+  };
+
+  const selected = elements.find(e => e.id === selectedId);
+
+  const renderElementContent = (el) => {
+    const baseStyle = { fontFamily: "'Fraunces', Georgia, serif" };
+    switch (el.type) {
+      case 'heading':
+        return <div style={{ ...baseStyle, fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color }}>{el.content}</div>;
+      case 'text':
+        return <div style={{ ...baseStyle, fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{el.content}</div>;
+      case 'button':
+        return (
+          <div style={{
+            ...baseStyle, fontSize: el.fontSize, fontWeight: el.fontWeight,
+            color: EMERALD_DARK, background: el.bg, padding: '10px 24px',
+            borderRadius: 999, border: `1px solid ${GOLD}`, textAlign: 'center',
+            boxShadow: `0 2px 8px ${GOLD}33`,
+          }}>{el.content}</div>
+        );
+      case 'box':
+        return <div style={{ width: '100%', height: '100%', minHeight: 80, background: el.bg, borderRadius: 8, border: `1px solid ${GOLD}44` }} />;
+      case 'image':
+        return <img src={el.content} alt="" style={{ width: '100%', borderRadius: 8, display: 'block' }} draggable={false} />;
+      default:
+        return null;
+    }
+  };
+
+  const renderElement = (el) => {
+    const isSelected = el.id === selectedId && !previewMode;
+    return (
+      <motion.div
+        key={el.id}
+        drag={!previewMode}
+        dragMomentum={false}
+        dragConstraints={canvasRef}
+        onDragEnd={(e, info) => {
+          updateElement(el.id, {
+            x: Math.max(0, el.x + info.offset.x),
+            y: Math.max(0, el.y + info.offset.y),
+          });
+        }}
+        onClick={(e) => { e.stopPropagation(); if (!previewMode) setSelectedId(el.id); }}
+        initial={false}
+        animate={{ x: el.x, y: el.y }}
+        className="cursor-move"
+        style={{
+          position: 'absolute',
+          width: el.width,
+          outline: isSelected ? `2px solid ${GOLD}` : 'none',
+          outlineOffset: '4px',
+          borderRadius: el.type === 'box' ? 8 : 0,
+        }}
+      >
+        {renderElementContent(el)}
+      </motion.div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-3" style={{ height: 'calc(100vh - 80px)', fontFamily: "'Fraunces', Georgia, serif" }}>
+      {/* Left Toolbar */}
+      {!previewMode && (
+        <div
+          className="lg:w-48 rounded-lg p-3 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto"
+          style={{ background: CREAM, border: `1px solid ${GOLD}55` }}
+        >
+          <p className="hidden lg:block text-[9px] font-bold uppercase mb-1" style={{ color: GOLD, letterSpacing: '0.15em' }}>Add Element</p>
+          {ELEMENT_TYPES.map((t) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.type}
+                onClick={() => addElement(t)}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                style={{ color: CHARCOAL, background: `${GOLD}11`, border: `1px solid ${GOLD}33` }}
+              >
+                <Icon className="w-3.5 h-3.5" style={{ color: GOLD }} />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Canvas */}
+      <div
+        ref={canvasRef}
+        onClick={() => !previewMode && setSelectedId(null)}
+        className="flex-1 rounded-lg overflow-auto relative"
+        style={{
+          background: previewMode ? '#fff' : `repeating-conic-gradient(${CREAM} 0% 25%, #ebe5d4 0% 50%) 50% / 24px 24px`,
+          border: `1px solid ${GOLD}55`,
+          minHeight: 500,
+        }}
+      >
+        <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 600 }}>
+          {elements.map(renderElement)}
+          {elements.length === 0 && !previewMode && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center">
+                <Layout className="w-10 h-10 mx-auto mb-2" style={{ color: `${GOLD}44` }} />
+                <p className="text-[13px]" style={{ color: `${CHARCOAL}66` }}>Add elements from the left to start building</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Properties Panel */}
+      {!previewMode && selected && (
+        <div
+          className="lg:w-56 rounded-lg p-4 overflow-y-auto"
+          style={{ background: CREAM, border: `1px solid ${GOLD}55` }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[9px] font-bold uppercase" style={{ color: GOLD, letterSpacing: '0.15em' }}>Properties</p>
+            <button
+              onClick={() => deleteElement(selected.id)}
+              className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
+              style={{ background: '#dc262620', border: '1px solid #dc262655' }}
+              title="Delete element"
+            >
+              <Trash2 className="w-3.5 h-3.5" style={{ color: '#dc2626' }} />
+            </button>
+          </div>
+
+          {selected.type !== 'image' && selected.type !== 'box' && (
+            <div className="mb-3">
+              <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Content</label>
+              <textarea
+                value={selected.content}
+                onChange={e => updateElement(selected.id, { content: e.target.value })}
+                rows={selected.type === 'text' ? 4 : 2}
+                className="w-full text-[12px] p-2 rounded-md outline-none resize-none"
+                style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+              />
+            </div>
+          )}
+
+          {selected.type === 'image' && (
+            <div className="mb-3">
+              <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Image URL</label>
+              <input
+                type="text"
+                value={selected.content}
+                onChange={e => updateElement(selected.id, { content: e.target.value })}
+                className="w-full text-[11px] p-2 rounded-md outline-none"
+                style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Width</label>
+              <input
+                type="number"
+                value={selected.width}
+                onChange={e => updateElement(selected.id, { width: parseInt(e.target.value) || 100 })}
+                className="w-full text-[12px] p-1.5 rounded-md outline-none"
+                style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+              />
+            </div>
+            {selected.type !== 'image' && selected.type !== 'box' && (
+              <div>
+                <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Size</label>
+                <input
+                  type="number"
+                  value={selected.fontSize}
+                  onChange={e => updateElement(selected.id, { fontSize: parseInt(e.target.value) || 14 })}
+                  className="w-full text-[12px] p-1.5 rounded-md outline-none"
+                  style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+                />
+              </div>
+            )}
+          </div>
+
+          {selected.type !== 'image' && selected.type !== 'box' && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div>
+                <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Weight</label>
+                <select
+                  value={selected.fontWeight}
+                  onChange={e => updateElement(selected.id, { fontWeight: parseInt(e.target.value) })}
+                  className="w-full text-[12px] p-1.5 rounded-md outline-none"
+                  style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+                >
+                  <option value={400}>Regular</option>
+                  <option value={600}>Semibold</option>
+                  <option value={700}>Bold</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Color</label>
+                <input
+                  type="color"
+                  value={selected.color.startsWith('#') && selected.color.length === 7 ? selected.color : '#2e2e2e'}
+                  onChange={e => updateElement(selected.id, { color: e.target.value })}
+                  className="w-full h-8 rounded-md cursor-pointer"
+                  style={{ border: `1px solid ${GOLD}33` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {(selected.type === 'button' || selected.type === 'box') && (
+            <div className="mb-3">
+              <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Background</label>
+              <input
+                type="color"
+                value={selected.bg.startsWith('#') && selected.bg.length === 7 ? selected.bg : '#b89a66'}
+                onChange={e => updateElement(selected.id, { bg: e.target.value })}
+                className="w-full h-8 rounded-md cursor-pointer"
+                style={{ border: `1px solid ${GOLD}33` }}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>X</label>
+              <input
+                type="number"
+                value={Math.round(selected.x)}
+                onChange={e => updateElement(selected.id, { x: parseInt(e.target.value) || 0 })}
+                className="w-full text-[12px] p-1.5 rounded-md outline-none"
+                style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium block mb-1" style={{ color: `${CHARCOAL}88` }}>Y</label>
+              <input
+                type="number"
+                value={Math.round(selected.y)}
+                onChange={e => updateElement(selected.id, { y: parseInt(e.target.value) || 0 })}
+                className="w-full text-[12px] p-1.5 rounded-md outline-none"
+                style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33`, color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview mode banner */}
+      {previewMode && (
+        <div
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full flex items-center gap-2"
+          style={{ background: EMERALD_DARK, border: `1px solid ${GOLD}`, boxShadow: `0 4px 20px rgba(0,0,0,0.4)` }}
+        >
+          <Eye className="w-4 h-4" style={{ color: GOLD_BRIGHT }} />
+          <span className="text-[12px] font-medium" style={{ color: CREAM }}>Preview Mode</span>
+          <button
+            onClick={() => setPreviewMode(false)}
+            className="text-[12px] font-semibold underline ml-2"
+            style={{ color: GOLD_BRIGHT }}
+          >Exit</button>
+        </div>
+      )}
+    </div>
+  );
+}

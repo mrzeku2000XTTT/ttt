@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
-  ArrowLeft, ArrowUpRight, Sparkles, Lightbulb,
-  Loader2, RefreshCw, Copy, Check, Settings, Share2, Info
+  ArrowLeft, ArrowUpRight, Sparkles, Lightbulb, Twitter,
+  Loader2, RefreshCw, Copy, Check, Settings, Share2, Info, Layout
 } from "lucide-react";
+import BlueprintBuilder from "@/components/explore/BlueprintBuilder";
 
 const PROMPTS = [
   "A decentralized voting platform for DAOs",
@@ -43,6 +44,7 @@ export default function ExplorePage() {
   });
   const [sharing, setSharing] = useState(false);
   const [shared, setShared] = useState(false);
+  const [view, setView] = useState('idea');
 
   useEffect(() => {
     try { localStorage.setItem("idea_lab_history", JSON.stringify(history)); } catch {}
@@ -73,6 +75,7 @@ export default function ExplorePage() {
 Their idea seed: "${idea.trim()}"${urlInstruction}
 
 SEARCH THE WEB for real, current information about:
+- **X.com (Twitter)** — search for REAL posts, threads, and discussions about this type of product or idea. What are people actually saying on X.com? What's the social sentiment? Quote real takes if possible.
 - Market size and trends for this type of product
 - Existing competitors and similar projects (especially on Kaspa and other blockchains)
 - Current best practices, tools, and technologies
@@ -86,11 +89,12 @@ Then generate a concise, inspiring product concept that includes:
 5. **Key Features** — 4 bullet points
 6. **Why Kaspa** — why blockDAG is perfect for this (1-2 sentences)
 7. **Market Research** — real findings from your web search (competitors, market size, trends — 3-4 sentences)
-8. **Competitors** — 3-5 real competitor names or similar projects you found
-9. **Next Step** — a single next step to begin building
-10. **Sources** — list of real URLs you found during your research
+8. **Social Buzz** — real findings from X.com/Twitter: what people are saying, real sentiment, notable voices (3-4 sentences with real quotes or paraphrased takes)
+9. **Competitors** — 3-5 real competitor names or similar projects you found
+10. **Next Step** — a single next step to begin building
+11. **Sources** — list of real URLs you found during your research (include X.com post URLs if found)
 
-Ground everything in real data. Be punchy, visionary, and practical.`,
+Ground everything in real data from the live web. Be punchy, visionary, and practical.`,
         add_context_from_internet: true,
         model: 'gemini_3_flash',
         response_json_schema: {
@@ -103,6 +107,7 @@ Ground everything in real data. Be punchy, visionary, and practical.`,
             features: { type: "array", items: { type: "string" } },
             why_kaspa: { type: "string" },
             market_research: { type: "string" },
+            social_buzz: { type: "string", description: "Real findings from X.com/Twitter — what people are saying" },
             competitors: { type: "array", items: { type: "string" } },
             next_step: { type: "string" },
             source_urls: { type: "array", items: { type: "string" } },
@@ -182,29 +187,45 @@ Ground everything in real data. Be punchy, visionary, and practical.`,
         style={{ background: `${EMERALD_DARK}cc`, borderBottom: `1px solid ${GOLD}33` }}
       >
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => view === 'blueprint' ? setView('idea') : navigate(-1)}
           className="flex items-center justify-center gap-1.5 h-full px-4 -ml-3 transition-colors duration-150 cursor-pointer"
           style={{ touchAction: 'manipulation', minHeight: '48px', minWidth: '88px', WebkitTapHighlightColor: 'transparent', color: GOLD_BRIGHT }}
           aria-label="Go back"
         >
           <ArrowLeft className="w-5 h-5 flex-shrink-0" />
-          <span className="text-[15px] font-medium select-none" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Back</span>
+          <span className="text-[15px] font-medium select-none" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>{view === 'blueprint' ? 'Idea Lab' : 'Back'}</span>
         </button>
         <span
           className="text-[15px] font-bold tracking-wide"
           style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '0.02em' }}
         >
-          Idea Lab
+          {view === 'blueprint' ? 'Blueprint' : 'Idea Lab'}
         </span>
-        <Link
-          to="/TTTV2"
-          className="text-[12px] font-medium transition-colors"
-          style={{ color: `${GOLD}cc` }}
-        >
-          TTT 2.0
-        </Link>
+        <div className="flex items-center gap-3">
+          {view === 'idea' && (
+            <button
+              onClick={() => setView('blueprint')}
+              className="flex items-center gap-1.5 text-[12px] font-medium transition-colors"
+              style={{ color: GOLD_BRIGHT }}
+            >
+              <Layout className="w-3.5 h-3.5" /> Blueprint
+            </button>
+          )}
+          <Link
+            to="/TTTV2"
+            className="text-[12px] font-medium transition-colors"
+            style={{ color: `${GOLD}cc` }}
+          >
+            TTT 2.0
+          </Link>
+        </div>
       </nav>
 
+      {view === 'blueprint' ? (
+        <div className="px-3 lg:px-5 pt-16 pb-4 relative z-10">
+          <BlueprintBuilder idea={idea} concept={result} />
+        </div>
+      ) : (
       <div className="max-w-2xl mx-auto px-5 pt-28 pb-24 relative z-10">
 
         {/* Hero */}
@@ -333,8 +354,8 @@ Ground everything in real data. Be punchy, visionary, and practical.`,
           {generating && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
               <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" style={{ color: GOLD }} />
-              <p className="text-[13px] mb-1" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>Searching the web & researching competitors…</p>
-              <p className="text-[11px]" style={{ color: `${GOLD}66`, fontFamily: "'Fraunces', Georgia, serif" }}>Crafting your concept with real market data</p>
+              <p className="text-[13px] mb-1" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>Searching the web, X.com posts & researching competitors…</p>
+              <p className="text-[11px]" style={{ color: `${GOLD}66`, fontFamily: "'Fraunces', Georgia, serif" }}>Gathering real social buzz and market data</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -424,6 +445,14 @@ Ground everything in real data. Be punchy, visionary, and practical.`,
                       <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.market_research}</p>
                     </div>
                   )}
+                  {result.social_buzz && (
+                    <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
+                      <h3 className="text-[10px] font-bold uppercase mb-2 flex items-center gap-1.5" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>
+                        <Twitter className="w-3 h-3" /> Social Buzz (X.com)
+                      </h3>
+                      <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.social_buzz}</p>
+                    </div>
+                  )}
                   {result.competitors && result.competitors.length > 0 && (
                     <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
                       <h3 className="text-[10px] font-bold uppercase mb-3" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Competitors</h3>
@@ -454,6 +483,13 @@ Ground everything in real data. Be punchy, visionary, and practical.`,
                     <p className="text-[14px] font-medium leading-relaxed" style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}>{result.next_step}</p>
                   </div>
                   <div className="p-6 flex flex-wrap gap-3">
+                    <button
+                      onClick={() => setView('blueprint')}
+                      className="h-10 px-5 text-[13px] font-semibold rounded-full transition-all flex items-center gap-2"
+                      style={{ color: EMERALD_DARK, background: `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`, border: `1px solid ${GOLD}`, boxShadow: `0 2px 12px ${GOLD}44`, fontFamily: "'Fraunces', Georgia, serif" }}
+                    >
+                      <Layout className="w-3.5 h-3.5" /> Blueprint
+                    </button>
                     <button
                       onClick={() => { setResult(null); setIdea(""); }}
                       className="h-10 px-5 text-[13px] font-semibold rounded-full transition-all"
@@ -540,7 +576,8 @@ Ground everything in real data. Be punchy, visionary, and practical.`,
             </div>
           </motion.div>
         )}
-      </div>
-    </div>
-  );
-}
+        </div>
+        )}
+        </div>
+        );
+        }
