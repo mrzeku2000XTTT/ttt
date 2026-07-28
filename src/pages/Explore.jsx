@@ -61,19 +61,30 @@ export default function ExplorePage() {
     setGenerating(true);
     setResult(null);
     try {
-      // Detect URLs in the input — agent will deep-research them
+      // Detect URLs — fetch REAL page content so the agent doesn't hallucinate
       const urlRegex = /(https?:\/\/[^\s]+)/g;
       const urls = idea.match(urlRegex);
       const hasUrl = urls && urls.length > 0;
 
-      const urlInstruction = hasUrl
-        ? `\n\nThe user has provided this URL: ${urls.join(', ')}. Visit and research the content at this URL thoroughly — extract what the site does, its target audience, features, and business model. Base your concept on what you find there.`
-        : '';
+      let urlContext = '';
+      if (hasUrl) {
+        try {
+          const resp = await base44.functions.invoke('fetchUrlContent', { url: urls[0] });
+          const d = resp.data;
+          if (d && !d.error && d.textContent) {
+            urlContext = `\n\nThe user provided this URL: ${d.url}\nHere is the ACTUAL content scraped from that URL — use this real data, do NOT guess or fabricate:\nTitle: ${d.title || 'N/A'}\nSite: ${d.siteName || d.host || 'N/A'}\nMeta Description: ${d.metaDescription || 'N/A'}\nHeadings: ${(d.headings || []).join(' | ') || 'N/A'}\nPage Content:\n${d.textContent}\n\nBase your concept on this real content. Describe what the site actually does based on the text above.`;
+          } else {
+            urlContext = `\n\nThe user provided this URL: ${urls[0]} — the page could not be fetched automatically. Search the web for information about this URL and describe what it actually does.`;
+          }
+        } catch {
+          urlContext = `\n\nThe user provided this URL: ${urls[0]} — search the web for information about this URL.`;
+        }
+      }
 
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `You are an expert Web3 product designer and startup advisor with real-time web search. The user wants to build something on the Kaspa blockchain ecosystem (blockDAG, KRC-20, GHOSTDAG, PoW).
 
-Their idea seed: "${idea.trim()}"${urlInstruction}
+Their idea seed: "${idea.trim()}"${urlContext}
 
 SEARCH THE WEB for real, current information about:
 - **X.com (Twitter)** — search for REAL posts, threads, and discussions about this type of product or idea. What are people actually saying on X.com? What's the social sentiment? Quote real takes if possible.
