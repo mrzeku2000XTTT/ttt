@@ -279,7 +279,7 @@ export default function BlueprintBuilder({ idea, concept }) {
       {/* Toolbar — horizontal scroll on mobile, vertical sidebar on desktop */}
       {!previewMode && (
         <div
-          className="lg:w-48 rounded-lg p-2 lg:p-3 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto flex-shrink-0"
+          className="lg:w-48 rounded-lg p-2 lg:p-3 flex flex-wrap lg:flex-nowrap lg:flex-col gap-2 lg:overflow-y-auto flex-shrink-0"
           style={{ background: CREAM, border: `1px solid ${GOLD}55` }}
         >
           <p className="hidden lg:block text-[9px] font-bold uppercase mb-1" style={{ color: GOLD, letterSpacing: '0.15em' }}>Add Element</p>
@@ -344,9 +344,9 @@ export default function BlueprintBuilder({ idea, concept }) {
             animate={{ y: 0 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className="lg:w-56 rounded-t-xl lg:rounded-lg p-4 overflow-y-auto fixed lg:static bottom-0 left-0 right-0 z-50 lg:z-auto max-h-[60vh] lg:max-h-none"
-            style={{ background: CREAM, border: `1px solid ${GOLD}55`, touchAction: 'pan-y' }}
+            style={{ background: CREAM, border: `1px solid ${GOLD}55` }}
           >
-            <PropertiesContent />
+            {PropertiesContent()}
           </motion.div>
         </>
       )}
