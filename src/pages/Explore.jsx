@@ -213,27 +213,27 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         >
           {view === 'blueprint' ? 'Blueprint' : 'Idea Lab'}
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
           {view === 'idea' && (
             <button
               onClick={() => setView('blueprint')}
-              className="flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-              style={{ color: GOLD_BRIGHT }}
+              className="flex items-center gap-1.5 text-[14px] font-medium transition-colors rounded-lg"
+              style={{ color: GOLD_BRIGHT, minHeight: '44px', minWidth: '88px', padding: '0 12px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
-              <Layout className="w-3.5 h-3.5" /> Blueprint
+              <Layout className="w-4 h-4" /> Blueprint
             </button>
           )}
           <button
             onClick={() => setKaspanetOpen(true)}
-            className="flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-            style={{ color: GOLD_BRIGHT }}
+            className="flex items-center gap-1.5 text-[14px] font-medium transition-colors rounded-lg"
+            style={{ color: GOLD_BRIGHT, minHeight: '44px', minWidth: '88px', padding: '0 12px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
-            <Globe className="w-3.5 h-3.5" /> Kaspanet
+            <Globe className="w-4 h-4" /> Kaspanet
           </button>
           <Link
             to="/TTTV2"
-            className="text-[12px] font-medium transition-colors"
-            style={{ color: `${GOLD}cc` }}
+            className="flex items-center text-[14px] font-medium transition-colors rounded-lg"
+            style={{ color: `${GOLD}cc`, minHeight: '44px', minWidth: '72px', padding: '0 10px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             TTT 2.0
           </Link>
