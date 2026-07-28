@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ArrowLeft, ArrowUpRight, Sparkles, Lightbulb,
-  Loader2, RefreshCw, Copy, Check, Wand2, Share2, Info
+  Loader2, RefreshCw, Copy, Check, Settings, Share2, Info
 } from "lucide-react";
 
 const PROMPTS = [
@@ -126,13 +126,15 @@ Keep it punchy, visionary, and practical.`,
 
   const Ornament = () => (
     <div className="flex items-center justify-center gap-3 my-8">
-      <div className="h-px w-16 sm:w-24" style={{ background: `linear-gradient(90deg, transparent, ${GOLD})` }} />
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs" style={{ color: GOLD }}>◆</span>
-        <span className="text-sm" style={{ color: GOLD_BRIGHT }}>❦</span>
-        <span className="text-xs" style={{ color: GOLD }}>◆</span>
+      <div className="h-px w-16 sm:w-32" style={{ background: `linear-gradient(90deg, transparent, ${GOLD})` }} />
+      <div className="flex items-center gap-2">
+        <span className="text-[10px]" style={{ color: `${GOLD}88` }}>✦</span>
+        <span className="text-xs" style={{ color: GOLD }}>❦</span>
+        <span className="text-base" style={{ color: GOLD_BRIGHT }}>✺</span>
+        <span className="text-xs" style={{ color: GOLD }}>❦</span>
+        <span className="text-[10px]" style={{ color: `${GOLD}88` }}>✦</span>
       </div>
-      <div className="h-px w-16 sm:w-24" style={{ background: `linear-gradient(90deg, ${GOLD}, transparent)` }} />
+      <div className="h-px w-16 sm:w-32" style={{ background: `linear-gradient(90deg, ${GOLD}, transparent)` }} />
     </div>
   );
 
@@ -184,11 +186,16 @@ Keep it punchy, visionary, and practical.`,
 
         {/* Hero */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-          <div
-            className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center"
-            style={{ background: EMERALD_DARK, border: `1.5px solid ${GOLD}`, boxShadow: `0 0 30px ${GOLD}33, inset 0 1px 0 ${GOLD}22` }}
-          >
-            <Lightbulb className="w-7 h-7" style={{ color: GOLD_BRIGHT }} />
+          {/* Decorative logo with flourishes */}
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <span className="text-lg" style={{ color: `${GOLD}66` }}>❧</span>
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center relative"
+              style={{ background: EMERALD_DARK, border: `1.5px solid ${GOLD}`, boxShadow: `0 0 40px ${GOLD}44, inset 0 1px 0 ${GOLD}22` }}
+            >
+              <Lightbulb className="w-7 h-7" style={{ color: GOLD_BRIGHT }} />
+            </div>
+            <span className="text-lg" style={{ color: `${GOLD}66`, transform: 'scaleX(-1)' }}>❧</span>
           </div>
           <h1
             className="text-[clamp(1.8rem,5vw,2.8rem)] font-bold tracking-tight leading-[1.05] mb-3"
@@ -213,70 +220,86 @@ Keep it punchy, visionary, and practical.`,
         >
           {/* Info Card */}
           <div
-            className="sm:col-span-2 rounded-lg p-5 flex flex-col"
+            className="sm:col-span-2 rounded-lg flex flex-col relative overflow-hidden"
             style={{ background: CREAM, border: `1px solid ${GOLD}66`, boxShadow: `0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)` }}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}55` }}
-              >
-                <Info className="w-3.5 h-3.5" style={{ color: GOLD }} />
-              </div>
-              <h3
-                className="text-[12px] font-bold uppercase"
-                style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '0.05em' }}
-              >
-                What is Idea Lab?
-              </h3>
+            {/* Top flourish */}
+            <div className="text-center py-2" style={{ background: `${GOLD}11`, borderBottom: `1px solid ${GOLD}33` }}>
+              <span className="text-sm" style={{ color: GOLD }}>❦ ❦ ❦</span>
             </div>
-            <p
-              className="text-[12px] leading-relaxed"
-              style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}
-            >
-              TTT's AI-powered brainstorming tool. Type any rough concept — even just a few words — and it generates a complete product pitch built for the Kaspa ecosystem. You can copy the result, share it directly to the TTT Feed, or keep iterating. Your generated ideas are saved so you never lose them.
-            </p>
+            <div className="p-5 flex-1 flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}55` }}
+                >
+                  <Info className="w-4 h-4" style={{ color: GOLD }} />
+                </div>
+                <h3
+                  className="text-[12px] font-bold uppercase"
+                  style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '0.05em' }}
+                >
+                  What is Idea Lab?
+                </h3>
+              </div>
+              <p
+                className="text-[12px] leading-relaxed"
+                style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}
+              >
+                TTT's AI-powered brainstorming tool. Type any rough concept — even just a few words — and it generates a complete product pitch built for the Kaspa ecosystem. You can copy the result, share it directly to the TTT Feed, or keep iterating. Your generated ideas are saved so you never lose them.
+              </p>
+            </div>
+            {/* Bottom flourish */}
+            <div className="text-center py-2" style={{ background: `${GOLD}11`, borderTop: `1px solid ${GOLD}33` }}>
+              <span className="text-sm" style={{ color: GOLD }}>❦ ❦ ❦</span>
+            </div>
           </div>
 
           {/* Input Area */}
-          <div
-            className="sm:col-span-3 rounded-lg p-5 flex flex-col"
-            style={{ background: CREAM, border: `1.5px solid ${GOLD}`, boxShadow: `0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)` }}
-          >
-            <textarea
-              value={idea}
-              onChange={e => setIdea(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); } }}
-              placeholder="A platform where artists can sell AI-generated NFTs using Kaspa…"
-              rows={3}
-              className="w-full bg-transparent text-[15px] outline-none resize-none leading-relaxed flex-1"
-              style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
-            />
-            <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: `1px solid ${GOLD}33` }}>
+          <div className="sm:col-span-3">
+            <div
+              className="rounded-lg p-5 relative"
+              style={{ background: CREAM, border: `2px solid ${GOLD}`, boxShadow: `0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)` }}
+            >
+              <textarea
+                value={idea}
+                onChange={e => setIdea(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); } }}
+                placeholder="A platform where artists can sell AI-generated NFTs using Kaspa…"
+                rows={4}
+                className="w-full bg-transparent text-[15px] outline-none resize-none leading-relaxed"
+                style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+              />
+              {/* Generate button at bottom-right of input box */}
+              <div className="flex justify-end mt-3">
+                <button
+                  onClick={generate}
+                  disabled={!idea.trim() || generating}
+                  className="flex items-center gap-2 h-10 px-6 text-[13px] font-semibold rounded-full transition-all"
+                  style={{
+                    background: !idea.trim() || generating ? `${GOLD}44` : `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`,
+                    color: EMERALD_DARK,
+                    border: `1px solid ${GOLD}`,
+                    boxShadow: !idea.trim() || generating ? 'none' : `0 2px 12px ${GOLD}44`,
+                    fontFamily: "'Fraunces', Georgia, serif",
+                  }}
+                >
+                  {generating ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                  ) : (
+                    <><Settings className="w-3.5 h-3.5" /> Generate</>
+                  )}
+                </button>
+              </div>
+            </div>
+            {/* Surprise me below the input box */}
+            <div className="text-center mt-3">
               <button
                 onClick={randomPrompt}
-                className="flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-                style={{ color: `${CHARCOAL}88`, fontFamily: "'Fraunces', Georgia, serif" }}
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium transition-colors"
+                style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}
               >
                 <RefreshCw className="w-3 h-3" /> Surprise me
-              </button>
-              <button
-                onClick={generate}
-                disabled={!idea.trim() || generating}
-                className="flex items-center gap-2 h-10 px-6 text-[13px] font-semibold rounded-full transition-all"
-                style={{
-                  background: !idea.trim() || generating ? `${GOLD}44` : `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`,
-                  color: EMERALD_DARK,
-                  border: `1px solid ${GOLD}`,
-                  boxShadow: !idea.trim() || generating ? 'none' : `0 2px 12px ${GOLD}44`,
-                  fontFamily: "'Fraunces', Georgia, serif",
-                }}
-              >
-                {generating ? (
-                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
-                ) : (
-                  <><Wand2 className="w-3.5 h-3.5" /> Generate</>
-                )}
               </button>
             </div>
           </div>
@@ -443,11 +466,18 @@ Keep it punchy, visionary, and practical.`,
                 <button
                   key={i}
                   onClick={() => setIdea(p)}
-                  className="p-4 rounded-lg text-left transition-all group"
-                  style={{ background: CREAM, border: `1px solid ${GOLD}44` }}
+                  className="p-4 rounded-lg text-center transition-all group"
+                  style={{ background: CREAM, border: `1px solid ${GOLD}44`, boxShadow: '0 2px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.4)' }}
                 >
-                  <Lightbulb className="w-3.5 h-3.5 mb-2 transition-colors" style={{ color: `${GOLD}88` }} />
-                  <span className="text-[12px] leading-snug line-clamp-2" style={{ color: `${CHARCOAL}aa`, fontFamily: "'Fraunces', Georgia, serif" }}>{p}</span>
+                  <div className="flex justify-center mb-2">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33` }}
+                    >
+                      <Lightbulb className="w-3.5 h-3.5" style={{ color: GOLD }} />
+                    </div>
+                  </div>
+                  <span className="text-[12px] leading-snug block" style={{ color: `${CHARCOAL}aa`, fontFamily: "'Fraunces', Georgia, serif" }}>{p}</span>
                 </button>
               ))}
             </div>
