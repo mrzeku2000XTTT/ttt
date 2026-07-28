@@ -46,6 +46,37 @@ export default function ExplorePage() {
   const [shared, setShared] = useState(false);
   const [view, setView] = useState('idea');
   const [kaspanetOpen, setKaspanetOpen] = useState(false);
+  const [kaspanetUrl, setKaspanetUrl] = useState("https://kaspanet.online");
+  const [kaspanetHtml, setKaspanetHtml] = useState("");
+  const [kaspanetLoading, setKaspanetLoading] = useState(false);
+  const [kaspanetError, setKaspanetError] = useState(false);
+
+  const fetchKaspanet = async (url) => {
+    setKaspanetLoading(true);
+    setKaspanetError(false);
+    setKaspanetHtml("");
+    try {
+      const res = await fetch('/api/functions/webProxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      if (data.html) {
+        setKaspanetHtml(data.html);
+      } else {
+        setKaspanetError(true);
+      }
+    } catch {
+      setKaspanetError(true);
+    } finally {
+      setKaspanetLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (kaspanetOpen) fetchKaspanet(kaspanetUrl);
+  }, [kaspanetOpen]);
 
   useEffect(() => {
     try { localStorage.setItem("idea_lab_history", JSON.stringify(history)); } catch {}
@@ -598,37 +629,80 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         </div>
         )}
 
-      {/* Kaspanet Browser iframe overlay */}
+      {/* Kaspanet Browser overlay (proxied to bypass X-Frame-Options) */}
       {kaspanetOpen && (
         <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: EMERALD_DARK }}>
           <div
-            className="h-12 flex items-center justify-between px-5 flex-shrink-0"
+            className="flex items-center justify-between gap-2 px-3 py-2 flex-shrink-0"
             style={{ background: EMERALD_DARK, borderBottom: `1px solid ${GOLD}33` }}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Globe className="w-4 h-4" style={{ color: GOLD_BRIGHT }} />
-              <span className="text-[13px] font-bold" style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}>
-                Kaspanet Browser
+              <span className="text-[13px] font-bold hidden sm:inline" style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}>
+                Kaspanet
               </span>
-              <span className="text-[10px]" style={{ color: `${GOLD}aa` }}>kaspanet.online</span>
             </div>
+            <form
+              className="flex-1 flex items-center gap-1"
+              onSubmit={(e) => { e.preventDefault(); fetchKaspanet(kaspanetUrl); }}
+            >
+              <input
+                type="text"
+                value={kaspanetUrl}
+                onChange={(e) => setKaspanetUrl(e.target.value)}
+                className="flex-1 h-9 px-3 rounded-lg text-[12px] outline-none"
+                style={{ background: `${CREAM}11`, color: CREAM, border: `1px solid ${GOLD}33`, fontFamily: "'Fraunces', Georgia, serif" }}
+                placeholder="Enter URL"
+              />
+              <button
+                type="submit"
+                className="flex items-center justify-center h-9 w-9 rounded-lg flex-shrink-0"
+                style={{ color: GOLD_BRIGHT, background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </form>
             <button
               onClick={() => setKaspanetOpen(false)}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 h-9 px-3 rounded-lg flex-shrink-0"
               style={{ color: CREAM, background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
             >
               <X className="w-4 h-4" />
-              <span className="text-[12px] font-medium" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Close</span>
+              <span className="text-[12px] font-medium hidden sm:inline" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Close</span>
             </button>
           </div>
-          <iframe
-            src="https://kaspanet.online"
-            title="Kaspanet Browser"
-            className="flex-1 w-full border-0"
-            sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-            referrerPolicy="no-referrer"
-            allow="clipboard-read; clipboard-write"
-          />
+          <div className="flex-1 relative">
+            {kaspanetLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin" style={{ color: GOLD_BRIGHT }} />
+              </div>
+            )}
+            {kaspanetError && !kaspanetLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6">
+                <p className="text-[13px] text-center" style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}>
+                  Could not load this page.
+                </p>
+                <a
+                  href={kaspanetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-[12px] font-medium"
+                  style={{ color: GOLD_BRIGHT, background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
+                >
+                  <ArrowUpRight className="w-4 h-4" /> Open in new tab
+                </a>
+              </div>
+            )}
+            {!kaspanetLoading && !kaspanetError && kaspanetHtml && (
+              <iframe
+                srcDoc={kaspanetHtml}
+                title="Kaspanet Browser"
+                className="w-full h-full border-0"
+                sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                referrerPolicy="no-referrer"
+              />
+            )}
+          </div>
         </div>
       )}
         </div>
