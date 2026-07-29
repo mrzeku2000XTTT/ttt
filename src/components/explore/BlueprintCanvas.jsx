@@ -83,6 +83,18 @@ export default function BlueprintCanvas({
         return el.content
           ? <video src={el.content} controls style={{ width: '100%', borderRadius: 8, display: 'block' }} />
           : <div style={{ ...baseStyle, fontSize: 12, color: COLORS.TEXT_MED, padding: '1rem', textAlign: 'center', background: '#f9fafb', borderRadius: 8, border: `2px dashed ${COLORS.BORDER}` }}>Video URL required</div>;
+      case 'html':
+        return (
+          <div style={{ width: '100%', minHeight: 60, borderRadius: 8, overflow: 'hidden', background: '#fff', border: `1px solid ${COLORS.BORDER}` }}>
+            <iframe
+              srcDoc={el.content}
+              title={`html-${el.id}`}
+              className="w-full"
+              style={{ height: el.height || 200, border: 0, pointerEvents: previewMode ? 'auto' : 'none' }}
+              sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -122,7 +134,7 @@ export default function BlueprintCanvas({
                 maxWidth: '100%',
                 outline: isSelected ? `2px solid ${COLORS.BLUE}` : 'none',
                 outlineOffset: '2px',
-                borderRadius: el.type === 'box' ? 8 : 0,
+                borderRadius: el.type === 'box' || el.type === 'html' ? 8 : 0,
                 cursor: previewMode ? 'default' : (tool === 'select' ? 'move' : 'default'),
                 touchAction: 'none',
                 userSelect: 'none',

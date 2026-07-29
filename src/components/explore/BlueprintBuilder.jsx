@@ -7,6 +7,8 @@ import BlueprintSidebar from "./BlueprintSidebar";
 import BlueprintToolbar from "./BlueprintToolbar";
 import BlueprintRightPanel from "./BlueprintRightPanel";
 import BlueprintAgent from "./BlueprintAgent";
+import BlueprintHtmlImport from "./BlueprintHtmlImport";
+import { FileCode } from "lucide-react";
 
 export default function BlueprintBuilder({ idea, concept }) {
   const [pages, setPages] = useState(() => {
@@ -33,6 +35,7 @@ export default function BlueprintBuilder({ idea, concept }) {
   const [agentMode, setAgentMode] = useState(false);
   const [codeMode, setCodeMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [htmlImportOpen, setHtmlImportOpen] = useState(false);
 
   const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
   const elements = currentPage?.elements || [];
@@ -51,6 +54,18 @@ export default function BlueprintBuilder({ idea, concept }) {
   const handleAddElement = (type) => {
     const typeDef = ELEMENT_TYPES.find(t => t.type === type) || ELEMENT_TYPES[0];
     const el = createElement(type, typeDef);
+    updatePageElements(currentPageId, els => [...els, el]);
+    setSelectedId(el.id);
+  };
+
+  const handleImportHtml = (htmlCode, label) => {
+    const typeDef = ELEMENT_TYPES.find(t => t.type === 'html');
+    const el = createElement('html', typeDef, {
+      content: htmlCode,
+      width: 400,
+      height: 250,
+      label,
+    });
     updatePageElements(currentPageId, els => [...els, el]);
     setSelectedId(el.id);
   };
@@ -185,7 +200,12 @@ Return ONLY the JSON object.`,
   };
 
   const codeOutput = React.useMemo(() => {
-    return JSON.stringify(pages, null, 2);
+    const allHtml = pages.flatMap(p => p.elements).filter(e => e.type === 'html');
+    const hasHtml = allHtml.length > 0;
+    const json = JSON.stringify(pages, null, 2);
+    if (!hasHtml) return json;
+    const htmlExport = allHtml.map((el, i) => `<!-- ${el.label || `HTML Component ${i + 1}`} -->\n${el.content}`).join('\n\n');
+    return `// === Saved Blueprint (JSON) ===\n${json}\n\n// === HTML Components ===\n${htmlExport}`;
   }, [pages]);
 
   return (
@@ -258,8 +278,16 @@ Return ONLY the JSON object.`,
           onUploadFile={handleUploadFile}
           codeMode={codeMode}
           setCodeMode={setCodeMode}
+          onImportHtml={() => setHtmlImportOpen(true)}
         />
       </div>
+
+      {htmlImportOpen && (
+        <BlueprintHtmlImport
+          onImport={handleImportHtml}
+          onClose={() => setHtmlImportOpen(false)}
+        />
+      )}
 
       {/* Right panel — desktop: static, mobile: bottom sheet */}
       {selected && !previewMode && (

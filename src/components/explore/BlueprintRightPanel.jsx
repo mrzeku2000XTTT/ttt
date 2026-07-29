@@ -39,7 +39,21 @@ export default function BlueprintRightPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-3">
-        {selected.type !== 'image' && selected.type !== 'video' && selected.type !== 'box' && (
+        {selected.type === 'html' && (
+          <div>
+            <label style={label}>HTML code</label>
+            <textarea
+              value={selected.content}
+              onChange={e => onUpdateElement(selected.id, { content: e.target.value })}
+              rows={10}
+              className="w-full text-[11px] p-2 rounded-md outline-none resize-none font-mono"
+              style={{ ...inputStyle, background: '#1e1e1e', color: '#a5d6ff', fontFamily: "monospace" }}
+              spellCheck={false}
+            />
+          </div>
+        )}
+
+        {selected.type !== 'image' && selected.type !== 'video' && selected.type !== 'box' && selected.type !== 'html' && (
           <div>
             <label style={label}>Content</label>
             <textarea
@@ -70,7 +84,12 @@ export default function BlueprintRightPanel({
             <label style={label}>Width</label>
             <input type="number" value={selected.width} onChange={e => onUpdateElement(selected.id, { width: parseInt(e.target.value) || 100 })} className="w-full text-[12px] p-2 rounded-md outline-none" style={inputStyle} />
           </div>
-          {selected.type !== 'image' && selected.type !== 'video' && selected.type !== 'box' && (
+          {selected.type === 'html' ? (
+            <div>
+              <label style={label}>Height</label>
+              <input type="number" value={selected.height || 200} onChange={e => onUpdateElement(selected.id, { height: parseInt(e.target.value) || 200 })} className="w-full text-[12px] p-2 rounded-md outline-none" style={inputStyle} />
+            </div>
+          ) : selected.type !== 'image' && selected.type !== 'video' && selected.type !== 'box' && (
             <div>
               <label style={label}>Font size</label>
               <input type="number" value={selected.fontSize} onChange={e => onUpdateElement(selected.id, { fontSize: parseInt(e.target.value) || 14 })} className="w-full text-[12px] p-2 rounded-md outline-none" style={inputStyle} />

@@ -21,6 +21,7 @@ export const ELEMENT_TYPES = [
   { type: "box", label: "Section", defaultContent: "", defaults: { width: 300, fontSize: 14, fontWeight: 400 } },
   { type: "image", label: "Image URL", defaultContent: "https://images.unsplash.com/photo-1557683316-ea9c9d4e6d70?w=400", defaults: { width: 250, fontSize: 14, fontWeight: 400 } },
   { type: "video", label: "Video URL", defaultContent: "", defaults: { width: 320, fontSize: 14, fontWeight: 400 } },
+  { type: "html", label: "HTML Code", defaultContent: "<div style=\"padding:16px;font-family:sans-serif\"><h2>Hello!</h2><p>Edit this HTML.</p></div>", defaults: { width: 360, fontSize: 14, fontWeight: 400 } },
 ];
 
 let idCounter = Date.now();
