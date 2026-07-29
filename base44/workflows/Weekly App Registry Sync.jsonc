@@ -1,0 +1,41 @@
+{
+  "name": "Weekly App Registry Sync",
+  "description": "Syncs all apps from AppStoreV2 to TTTAppRegistry every week",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 7,
+      "interval_unit": "days",
+      "interval_anchor": "2026-06-18T12:46:25.928000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "weekly_app_registry_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncAppRegistry",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "Process YouTube Transcript",
+  "description": "When a KaiTranscript record is created with status=pending, fetches the YouTube transcript via the agent's yt-transcript skill and updates the record to ready (or failed if no captions).",
+  "trigger": {
+    "condition": "${ (.trigger.data.status == \"pending\") }",
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "KaiTranscript"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "process_youtube_transcript",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "kaiTranscriptQueue",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

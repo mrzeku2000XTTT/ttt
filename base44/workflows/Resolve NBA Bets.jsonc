@@ -1,0 +1,41 @@
+{
+  "name": "Resolve NBA Bets",
+  "description": "Auto-resolve active NBA bets every 5 minutes by checking ESPN final scores",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 5,
+      "interval_unit": "minutes",
+      "interval_anchor": "2026-04-09T03:45:25.338000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "resolve_nba_bets",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "resolveNBABets",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

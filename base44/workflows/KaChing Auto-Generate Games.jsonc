@@ -1,0 +1,41 @@
+{
+  "name": "KaChing Auto-Generate Games",
+  "description": "Auto-generates prediction games every 15 minutes from live NBA, crypto, and weather data",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 15,
+      "interval_unit": "minutes",
+      "interval_anchor": "2026-04-11T00:26:31.732000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "kaching_auto_generate_games",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "kachingAutoGenerate",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}
