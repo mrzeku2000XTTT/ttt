@@ -54,7 +54,7 @@ const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2
 const KASPA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3bab8f8ae_generated_image.png";
 const WORLD_ICON = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/39f382722_generated_image.png";
 const YOUTUBE_VIDEO_ID = "aUSD-WFhKwY";
-const AGENT_INTERNET_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/7fafdaeed_generated_image.png";
+const AGENT_INTERNET_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26ce8cf3d_generated_image.png";
 
 const AI_MODELS = [
   { id: "claude_opus_4_8", label: "Claude Opus 4.8", maker: "Anthropic", color: "#c084fc" },
@@ -1269,6 +1269,7 @@ export default function TTTLandingPage() {
   const [bgReady, setBgReady] = useState(false);
   const [worldMode, setWorldMode] = useState(false);
   const [worldIndex, setWorldIndex] = useState(0);
+  const [agentNetOpen, setAgentNetOpen] = useState(true);
   const sounds = useGameSounds();
 
   // IGRA AGENT sector is admin-only — hide it from the world carousel for everyone else
@@ -1600,19 +1601,39 @@ export default function TTTLandingPage() {
           style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "linear-gradient(180deg, rgba(30,22,8,0.75) 0%, rgba(0,0,0,0.6) 100%)", fontFamily: "monospace", boxShadow: "0 4px 0 rgba(140,100,30,0.55), 0 7px 16px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,200,80,0.15)" }}>[ KASPA ]</span>
       </motion.button>
 
-      {/* AGENT INTERNET — transparent robot on the left side, showcases the new frontier */}
-      <motion.button whileHover={{ scale: 1.14, x: 2 }} whileTap={{ scale: 0.92 }}
-        animate={{ opacity: worldMode ? 0 : 1, y: [0, -7, 0] }}
-        transition={{ y: { duration: 3.4, repeat: Infinity, ease: "easeInOut" }, opacity: { duration: 0.4 } }}
-        onClick={() => { sounds.playSelect(); navigate("/AgentInternet"); }}
-        title="Agent Internet — the new frontier"
-        style={{ pointerEvents: worldMode ? "none" : "auto", touchAction: "manipulation", WebkitTapHighlightColor: "transparent", background: "transparent", border: "none" }}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 focus:outline-none flex flex-col items-center gap-1.5">
-        <img src={AGENT_INTERNET_IMG} alt="Agent Internet" className="w-16 h-16 sm:w-20 sm:h-20 object-contain" style={{ filter: "drop-shadow(0 0 16px rgba(6,182,212,0.6)) drop-shadow(0 6px 14px rgba(0,0,0,0.85))" }} />
-        <span className="text-[8px] tracking-[0.32em] uppercase whitespace-nowrap leading-tight text-center" style={{ color: "rgba(34,211,238,0.9)", fontFamily: "monospace", textShadow: "0 0 12px rgba(6,182,212,0.6)" }}>
-          Agent<br />Internet
-        </span>
-      </motion.button>
+      {/* AGENT INTERNET — collapsible left side tab, matches landing gold theme */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center"
+        style={{ pointerEvents: worldMode ? "none" : "auto", opacity: worldMode ? 0 : 1, transition: "opacity 0.4s" }}>
+        <AnimatePresence>
+          {agentNetOpen && (
+            <motion.button key="agentnet" type="button"
+              initial={{ x: -80, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 24 }}
+              whileTap={{ scale: 0.94 }}
+              onClick={() => { sounds.playSelect(); navigate("/AgentInternet"); }}
+              title="Agent Internet — new frontier apps"
+              style={{ background: "transparent", border: "none", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+              className="focus:outline-none flex flex-col items-center gap-1 pl-3 py-2 min-h-[44px]">
+              <motion.img src={AGENT_INTERNET_IMG} alt="Agent Internet"
+                animate={{ y: [0, -5, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                className="w-12 h-12 sm:w-14 sm:h-14 object-contain" draggable={false}
+                style={{ mixBlendMode: "screen" }} />
+              <span className="text-[8px] tracking-[0.28em] uppercase whitespace-nowrap leading-tight text-center"
+                style={{ color: "rgba(215,170,80,0.75)", fontFamily: "monospace" }}>
+                Agent<br />Internet
+              </span>
+            </motion.button>
+          )}
+        </AnimatePresence>
+        <button type="button" onClick={() => setAgentNetOpen(v => !v)}
+          className="focus:outline-none flex items-center justify-center min-w-[24px] min-h-[44px] py-3"
+          title={agentNetOpen ? "Hide" : "Show Agent Internet"}
+          style={{ background: "transparent", border: "none", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
+          <span className="text-[11px]" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>
+            {agentNetOpen ? "◀" : "▶"}
+          </span>
+        </button>
+      </div>
 
       {/* Advent Calendar */}
       <AnimatePresence>
