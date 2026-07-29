@@ -23,12 +23,14 @@ const PROMPTS = [
   "A blockchain-verified credential platform",
 ];
 
-const EMERALD = "#0a3a2d";
-const EMERALD_DARK = "#072a22";
-const CREAM = "#f4efdf";
-const GOLD = "#b89a66";
-const GOLD_BRIGHT = "#d4b878";
-const CHARCOAL = "#2e2e2e";
+// Editorial Light palette — clean white, black ink, hairline rules
+const WHITE = "#ffffff";
+const INK = "#000000";
+const INK_SOFT = "#1a1a1a";
+const GREY = "#6b6b6b";
+const GREY_LIGHT = "#a8a8a8";
+const LINE = "#e5e5e5";
+const SERIF = "'Fraunces', Georgia, serif";
 
 export default function ExplorePage() {
   const navigate = useNavigate();
@@ -50,6 +52,7 @@ export default function ExplorePage() {
   const [kaspanetHtml, setKaspanetHtml] = useState("");
   const [kaspanetLoading, setKaspanetLoading] = useState(false);
   const [kaspanetError, setKaspanetError] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   const fetchKaspanet = async (url) => {
     setKaspanetLoading(true);
@@ -195,76 +198,87 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
     setSharing(false);
   };
 
-  const Ornament = () => (
-    <div className="flex items-center justify-center gap-3 my-8">
-      <div className="h-px w-16 sm:w-32" style={{ background: `linear-gradient(90deg, transparent, ${GOLD})` }} />
-      <div className="flex items-center gap-2">
-        <span className="text-[10px]" style={{ color: `${GOLD}88` }}>✦</span>
-        <span className="text-xs" style={{ color: GOLD }}>❦</span>
-        <span className="text-base" style={{ color: GOLD_BRIGHT }}>✺</span>
-        <span className="text-xs" style={{ color: GOLD }}>❦</span>
-        <span className="text-[10px]" style={{ color: `${GOLD}88` }}>✦</span>
+  // Numbered editorial section header
+  const Section = ({ n, title, children, className = "" }) => (
+    <section className={`relative ${className}`}>
+      <div className="flex items-baseline gap-4 mb-5">
+        <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>{n}</span>
+        {title && (
+          <h2 className="text-[clamp(1.5rem,4vw,2.1rem)] font-bold leading-[1.05]" style={{ color: INK, fontFamily: SERIF }}>
+            {title}
+          </h2>
+        )}
       </div>
-      <div className="h-px w-16 sm:w-32" style={{ background: `linear-gradient(90deg, ${GOLD}, transparent)` }} />
-    </div>
+      {children}
+    </section>
+  );
+
+  const Rule = () => <div className="h-px w-full" style={{ background: LINE }} />;
+
+  // A numbered outline row with hairline divider
+  const OutlineRow = ({ n, label, text, icon, strong }) => (
+    <>
+      <div className="py-8">
+        <div className="flex items-baseline gap-4 mb-3">
+          <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>{n}</span>
+          <h3 className="text-[12px] font-semibold uppercase tracking-[0.18em] flex items-center gap-1.5" style={{ color: INK, fontFamily: SERIF }}>
+            {icon}{label}
+          </h3>
+        </div>
+        <p className={`text-[15px] leading-[1.8] pl-0 sm:pl-[2.4rem] ${strong ? 'font-semibold' : ''}`} style={{ color: strong ? INK : INK_SOFT, fontFamily: SERIF }}>
+          {text}
+        </p>
+      </div>
+      <Rule />
+    </>
   );
 
   return (
     <div
-      className="min-h-screen selection:bg-amber-200/30"
-      style={{ background: EMERALD, fontFamily: "'Fraunces', Georgia, serif" }}
+      className="min-h-screen selection:bg-black selection:text-white"
+      style={{ background: WHITE, fontFamily: SERIF, color: INK_SOFT }}
     >
-      {/* Decorative border frame */}
-      <div
-        className="fixed inset-2 sm:inset-3 pointer-events-none z-30"
-        style={{ border: `1px solid ${GOLD}55`, borderRadius: 4 }}
-      />
-      <div
-        className="fixed inset-3 sm:inset-4 pointer-events-none z-30"
-        style={{ border: `1px solid ${GOLD}22`, borderRadius: 3 }}
-      />
-
       {/* Nav */}
       <nav
-        className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 backdrop-blur-2xl"
-        style={{ background: `${EMERALD_DARK}cc`, borderBottom: `1px solid ${GOLD}33` }}
+        className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 sm:px-8"
+        style={{ background: WHITE, borderBottom: `1px solid ${LINE}` }}
       >
         <button
           onClick={() => view === 'blueprint' ? setView('idea') : navigate(-1)}
-          className="flex items-center justify-center gap-1.5 h-full px-4 -ml-3 transition-colors duration-150 cursor-pointer"
-          style={{ touchAction: 'manipulation', minHeight: '48px', minWidth: '88px', WebkitTapHighlightColor: 'transparent', color: GOLD_BRIGHT }}
+          className="flex items-center gap-1.5 h-full -ml-2 transition-colors duration-150 cursor-pointer"
+          style={{ touchAction: 'manipulation', minHeight: '44px', minWidth: '44px', WebkitTapHighlightColor: 'transparent', color: INK }}
           aria-label="Go back"
         >
-          <ArrowLeft className="w-5 h-5 flex-shrink-0" />
-          <span className="text-[15px] font-medium select-none" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>{view === 'blueprint' ? 'Idea Lab' : 'Back'}</span>
+          <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+          <span className="text-[14px] font-medium select-none" style={{ fontFamily: SERIF }}>{view === 'blueprint' ? 'Idea Lab' : 'Back'}</span>
         </button>
         <span
-          className="text-[15px] font-bold tracking-wide"
-          style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '0.02em' }}
+          className="text-[15px] font-semibold tracking-tight"
+          style={{ color: INK, fontFamily: SERIF }}
         >
           {view === 'blueprint' ? 'Blueprint' : 'Idea Lab'}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-4">
           {view === 'idea' && (
             <button
               onClick={() => setView('blueprint')}
-              className="flex items-center gap-1.5 text-[14px] font-medium transition-colors rounded-lg"
-              style={{ color: GOLD_BRIGHT, minHeight: '44px', minWidth: '88px', padding: '0 12px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+              className="flex items-center gap-1.5 text-[13px] font-medium transition-opacity hover:opacity-60"
+              style={{ color: INK, minHeight: '44px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
-              <Layout className="w-4 h-4" /> Blueprint
+              <Layout className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Blueprint</span>
             </button>
           )}
           <button
             onClick={() => setKaspanetOpen(true)}
-            className="flex items-center gap-1.5 text-[14px] font-medium transition-colors rounded-lg"
-            style={{ color: GOLD_BRIGHT, minHeight: '44px', minWidth: '88px', padding: '0 12px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            className="flex items-center gap-1.5 text-[13px] font-medium transition-opacity hover:opacity-60"
+            style={{ color: INK, minHeight: '44px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
-            <Globe className="w-4 h-4" /> Kaspanet
+            <Globe className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Kaspanet</span>
           </button>
           <Link
             to="/TTTV2"
-            className="flex items-center text-[14px] font-medium transition-colors rounded-lg"
-            style={{ color: `${GOLD}cc`, minHeight: '44px', minWidth: '72px', padding: '0 10px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            className="flex items-center text-[13px] font-medium transition-opacity hover:opacity-60"
+            style={{ color: INK, minHeight: '44px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             TTT 2.0
           </Link>
@@ -276,106 +290,83 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
           <BlueprintBuilder idea={idea} concept={result} />
         </div>
       ) : (
-      <div className="max-w-2xl mx-auto px-5 pt-28 pb-24 relative z-10">
+      <div className="max-w-2xl mx-auto px-5 sm:px-8 pt-20 pb-24 relative z-10">
 
-        {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-          {/* Decorative logo with flourishes */}
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <span className="text-lg" style={{ color: `${GOLD}66` }}>❧</span>
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center relative"
-              style={{ background: EMERALD_DARK, border: `1.5px solid ${GOLD}`, boxShadow: `0 0 40px ${GOLD}44, inset 0 1px 0 ${GOLD}22` }}
-            >
-              <Lightbulb className="w-7 h-7" style={{ color: GOLD_BRIGHT }} />
-            </div>
-            <span className="text-lg" style={{ color: `${GOLD}66`, transform: 'scaleX(-1)' }}>❧</span>
-          </div>
+        {/* 02 — Hero */}
+        <Section n="02">
           <h1
-            className="text-[clamp(1.8rem,5vw,2.8rem)] font-bold tracking-tight leading-[1.05] mb-3"
-            style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}
+            className="text-[clamp(1.9rem,6vw,3rem)] font-bold tracking-tight leading-[1.02] mb-4"
+            style={{ color: INK, fontFamily: SERIF }}
           >
             What Will You Build?
           </h1>
           <p
-            className="text-[14px] max-w-sm mx-auto leading-relaxed"
-            style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}
+            className="text-[15px] max-w-md leading-relaxed mb-4"
+            style={{ color: GREY, fontFamily: SERIF }}
           >
             Type any idea or paste a URL — the agent searches the web and shapes it into a full product concept on Kaspa.
           </p>
-        </motion.div>
-
-        {/* Two-column: Info card + Input area */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="grid sm:grid-cols-5 gap-4 mb-8"
-        >
-          {/* Info Card */}
-          <div
-            className="sm:col-span-2 rounded-lg flex flex-col relative overflow-hidden"
-            style={{ background: CREAM, border: `1px solid ${GOLD}66`, boxShadow: `0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)` }}
+          <button
+            onClick={() => setShowInfo(s => !s)}
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium transition-opacity hover:opacity-60"
+            style={{ color: INK, fontFamily: SERIF }}
           >
-            {/* Top flourish */}
-            <div className="text-center py-2" style={{ background: `${GOLD}11`, borderBottom: `1px solid ${GOLD}33` }}>
-              <span className="text-sm" style={{ color: GOLD }}>❦ ❦ ❦</span>
-            </div>
-            <div className="p-5 flex-1 flex flex-col">
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}55` }}
-                >
-                  <Info className="w-4 h-4" style={{ color: GOLD }} />
-                </div>
-                <h3
-                  className="text-[12px] font-bold uppercase"
-                  style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '0.05em' }}
-                >
-                  What is Idea Lab?
-                </h3>
-              </div>
-              <p
-                className="text-[12px] leading-relaxed"
-                style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}
-              >
-                TTT's AI-powered brainstorming agent with real-time web search. Type any rough concept or paste a URL — the agent researches competitors, market data, and trends from the live web, then generates a complete product pitch built for the Kaspa ecosystem. Copy, share to the TTT Feed, or keep iterating.
-              </p>
-            </div>
-            {/* Bottom flourish */}
-            <div className="text-center py-2" style={{ background: `${GOLD}11`, borderTop: `1px solid ${GOLD}33` }}>
-              <span className="text-sm" style={{ color: GOLD }}>❦ ❦ ❦</span>
-            </div>
-          </div>
+            <Info className="w-3.5 h-3.5" /> What is Idea Lab?
+          </button>
+        </Section>
 
-          {/* Input Area */}
-          <div className="sm:col-span-3">
+        <AnimatePresence>
+          {showInfo && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              {/* 05 — Additional Details */}
+              <div className="pt-8">
+                <Section n="05" title="Additional Details">
+                  <p className="text-[15px] leading-[1.8]" style={{ color: INK_SOFT, fontFamily: SERIF }}>
+                    TTT's <strong>AI-powered brainstorming agent</strong> with <strong>real-time web search</strong>. Type any rough concept or paste a URL — the agent researches competitors, market data, and trends from the live web, then generates a <strong>full product pitch built for the Kaspa ecosystem</strong>. Copy, share to the TTT Feed, or keep iterating.
+                  </p>
+                </Section>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 03 — Input */}
+        <div className="mt-10">
+          <Section n="03">
             <div
               className="rounded-lg p-5 relative"
-              style={{ background: CREAM, border: `2px solid ${GOLD}`, boxShadow: `0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)` }}
+              style={{ background: WHITE, border: `1px solid ${INK}` }}
             >
               <textarea
                 value={idea}
                 onChange={e => setIdea(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); } }}
-                placeholder="Type any idea or paste a URL to research — e.g. 'AI NFT marketplace on Kaspa' or 'https://example.com'…"
+                placeholder="Type any idea or URL to research — e.g. 'AI NFT marketplace on Kaspa' or 'https://example.com'…"
                 rows={4}
                 className="w-full bg-transparent text-[15px] outline-none resize-none leading-relaxed"
-                style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}
+                style={{ color: INK, fontFamily: SERIF }}
               />
-              {/* Generate button at bottom-right of input box */}
-              <div className="flex justify-end mt-3">
+              <div className="flex items-center justify-between mt-3">
+                <button
+                  onClick={randomPrompt}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium transition-opacity hover:opacity-60"
+                  style={{ color: GREY, fontFamily: SERIF }}
+                >
+                  <RefreshCw className="w-3 h-3" /> Surprise me
+                </button>
                 <button
                   onClick={generate}
                   disabled={!idea.trim() || generating}
                   className="flex items-center gap-2 h-10 px-6 text-[13px] font-semibold rounded-full transition-all"
                   style={{
-                    background: !idea.trim() || generating ? `${GOLD}44` : `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`,
-                    color: EMERALD_DARK,
-                    border: `1px solid ${GOLD}`,
-                    boxShadow: !idea.trim() || generating ? 'none' : `0 2px 12px ${GOLD}44`,
-                    fontFamily: "'Fraunces', Georgia, serif",
+                    background: (!idea.trim() || generating) ? LINE : INK,
+                    color: (!idea.trim() || generating) ? GREY : WHITE,
+                    fontFamily: SERIF,
                   }}
                 >
                   {generating ? (
@@ -386,183 +377,160 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
                 </button>
               </div>
             </div>
-            {/* Surprise me below the input box */}
-            <div className="text-center mt-3">
-              <button
-                onClick={randomPrompt}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium transition-colors"
-                style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}
-              >
-                <RefreshCw className="w-3 h-3" /> Surprise me
-              </button>
-            </div>
-          </div>
-        </motion.div>
+          </Section>
+        </div>
 
         {/* Loading */}
         <AnimatePresence>
           {generating && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" style={{ color: GOLD }} />
-              <p className="text-[13px] mb-1" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>Searching the web, X.com posts & researching competitors…</p>
-              <p className="text-[11px]" style={{ color: `${GOLD}66`, fontFamily: "'Fraunces', Georgia, serif" }}>Gathering real social buzz and market data</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-16 text-center">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto mb-3" style={{ color: INK }} />
+              <p className="text-[14px] mb-1" style={{ color: INK_SOFT, fontFamily: SERIF }}>Searching the web, X.com posts & researching competitors…</p>
+              <p className="text-[12px]" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>Gathering real social buzz and market data</p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Result */}
+        {/* Result / Outline */}
         <AnimatePresence>
           {result && !result.error && !generating && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="space-y-0"
+              className="mt-8"
             >
-              {/* Concept Name */}
-              <div
-                className="rounded-t-lg p-6 sm:p-8"
-                style={{ background: EMERALD_DARK, border: `1px solid ${GOLD}`, borderBottom: 'none' }}
-              >
+              {/* Concept header */}
+              <div className="pb-8">
+                <p className="text-[12px] font-semibold uppercase mb-3 tracking-[0.18em]" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>Your Concept</p>
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p
-                      className="text-[10px] font-bold uppercase mb-2"
-                      style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}
-                    >
-                      Your Concept
-                    </p>
+                  <div className="flex-1">
                     <h2
-                      className="text-xl sm:text-2xl font-bold tracking-tight leading-tight"
-                      style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}
+                      className="text-[clamp(1.7rem,5vw,2.4rem)] font-bold leading-[1.05] mb-3"
+                      style={{ color: INK, fontFamily: SERIF }}
                     >
                       {result.name}
                     </h2>
-                    <p className="text-[14px] mt-2 leading-relaxed" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>
+                    <p className="text-[15px] leading-relaxed max-w-lg" style={{ color: GREY, fontFamily: SERIF }}>
                       {result.one_liner}
                     </p>
                   </div>
                   <button
                     onClick={copyResult}
-                    className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-                    style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
+                    className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-60"
+                    style={{ border: `1px solid ${INK}` }}
                     title="Copy to clipboard"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5" style={{ color: GOLD_BRIGHT }} /> : <Copy className="w-3.5 h-3.5" style={{ color: `${GOLD}aa` }} />}
+                    {copied ? <Check className="w-4 h-4" style={{ color: INK }} /> : <Copy className="w-4 h-4" style={{ color: INK }} />}
                   </button>
                 </div>
               </div>
 
-              {/* Content */}
-              <div
-                className="rounded-b-lg divide-y"
-                style={{ background: CREAM, border: `1px solid ${GOLD}66`, borderTop: 'none' }}
-              >
-                <div style={{ borderColor: `${GOLD}33` }}>
-                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                    <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>The Problem</h3>
-                    <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.problem}</p>
-                  </div>
-                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                    <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>The Solution</h3>
-                    <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.solution}</p>
-                  </div>
-                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                    <h3 className="text-[10px] font-bold uppercase mb-3" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Key Features</h3>
-                    <div className="space-y-2">
-                      {result.features?.map((f, i) => (
-                        <div key={i} className="flex items-start gap-3 py-2">
-                          <div
-                            className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
-                            style={{ background: EMERALD_DARK, border: `1px solid ${GOLD}55` }}
-                          >
-                            <span className="text-[10px] font-bold" style={{ color: GOLD_BRIGHT }}>{i + 1}</span>
-                          </div>
-                          <span className="text-[13px] leading-snug" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{f}</span>
-                        </div>
+              <Rule />
+
+              {/* Numbered outline sections */}
+              <OutlineRow n="01" label="The Problem" text={result.problem} />
+              <OutlineRow n="02" label="The Solution" text={result.solution} />
+
+              {/* Key Features */}
+              <div className="py-8">
+                <div className="flex items-baseline gap-4 mb-4">
+                  <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>03</span>
+                  <h3 className="text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: INK, fontFamily: SERIF }}>Key Features</h3>
+                </div>
+                <div className="space-y-3 pl-0 sm:pl-[2.4rem]">
+                  {result.features?.map((f, i) => (
+                    <div key={i} className="flex items-baseline gap-3">
+                      <span className="text-[13px] font-semibold tabular-nums flex-shrink-0" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>{String(i + 1).padStart(2, '0')}</span>
+                      <span className="text-[15px] leading-snug" style={{ color: INK_SOFT, fontFamily: SERIF }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Rule />
+
+              <OutlineRow n="04" label="Why Kaspa" text={result.why_kaspa} />
+              {result.market_research && (
+                <OutlineRow n="05" label="Market Research" text={result.market_research} icon={<Sparkles className="w-3 h-3" />} />
+              )}
+              {result.social_buzz && (
+                <OutlineRow n="06" label="Social Buzz (X.com)" text={result.social_buzz} icon={<Twitter className="w-3 h-3" />} />
+              )}
+
+              {/* Competitors */}
+              {result.competitors && result.competitors.length > 0 && (
+                <>
+                  <div className="py-8">
+                    <div className="flex items-baseline gap-4 mb-4">
+                      <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>07</span>
+                      <h3 className="text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: INK, fontFamily: SERIF }}>Competitors</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pl-0 sm:pl-[2.4rem]">
+                      {result.competitors.map((c, i) => (
+                        <span key={i} className="text-[13px] px-3 py-1 rounded-full" style={{ color: INK_SOFT, border: `1px solid ${LINE}`, fontFamily: SERIF }}>
+                          {c}
+                        </span>
                       ))}
                     </div>
                   </div>
-                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                    <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Why Kaspa</h3>
-                    <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.why_kaspa}</p>
+                  <Rule />
+                </>
+              )}
+
+              {/* Sources */}
+              {result.source_urls && result.source_urls.length > 0 && (
+                <>
+                  <div className="py-8">
+                    <div className="flex items-baseline gap-4 mb-4">
+                      <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>08</span>
+                      <h3 className="text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: INK, fontFamily: SERIF }}>Sources</h3>
+                    </div>
+                    <div className="space-y-2 pl-0 sm:pl-[2.4rem]">
+                      {result.source_urls.map((u, i) => (
+                        <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[13px] hover:underline transition-opacity" style={{ color: INK, fontFamily: SERIF }}>
+                          <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{u}</span>
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                  {result.market_research && (
-                    <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                      <h3 className="text-[10px] font-bold uppercase mb-2 flex items-center gap-1.5" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>
-                        <Sparkles className="w-3 h-3" /> Market Research
-                      </h3>
-                      <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.market_research}</p>
-                    </div>
+                  <Rule />
+                </>
+              )}
+
+              {/* Next Step */}
+              <OutlineRow n="09" label="Next Step" text={result.next_step} strong />
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-3 pt-10">
+                <button
+                  onClick={() => setView('blueprint')}
+                  className="h-11 px-6 text-[13px] font-semibold rounded-full transition-all flex items-center gap-2"
+                  style={{ color: WHITE, background: INK, fontFamily: SERIF }}
+                >
+                  <Layout className="w-3.5 h-3.5" /> Blueprint
+                </button>
+                <button
+                  onClick={() => { setResult(null); setIdea(""); }}
+                  className="h-11 px-6 text-[13px] font-semibold rounded-full transition-all"
+                  style={{ color: INK, border: `1px solid ${LINE}`, background: WHITE, fontFamily: SERIF }}
+                >
+                  New Idea
+                </button>
+                <button
+                  onClick={shareToFeed}
+                  disabled={sharing || shared}
+                  className="h-11 px-6 text-[13px] font-semibold rounded-full transition-all flex items-center gap-2 disabled:opacity-50"
+                  style={{ color: INK, border: `1px solid ${INK}`, background: WHITE, fontFamily: SERIF }}
+                >
+                  {shared ? (
+                    <><Check className="w-3.5 h-3.5" /> Posted!</>
+                  ) : sharing ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting…</>
+                  ) : (
+                    <><Share2 className="w-3.5 h-3.5" /> Share on Feed</>
                   )}
-                  {result.social_buzz && (
-                    <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                      <h3 className="text-[10px] font-bold uppercase mb-2 flex items-center gap-1.5" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>
-                        <Twitter className="w-3 h-3" /> Social Buzz (X.com)
-                      </h3>
-                      <p className="text-[14px] leading-relaxed" style={{ color: `${CHARCOAL}cc`, fontFamily: "'Fraunces', Georgia, serif" }}>{result.social_buzz}</p>
-                    </div>
-                  )}
-                  {result.competitors && result.competitors.length > 0 && (
-                    <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                      <h3 className="text-[10px] font-bold uppercase mb-3" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Competitors</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {result.competitors.map((c, i) => (
-                          <span key={i} className="text-[12px] px-3 py-1 rounded-full" style={{ background: `${GOLD}15`, color: `${CHARCOAL}cc`, border: `1px solid ${GOLD}33`, fontFamily: "'Fraunces', Georgia, serif" }}>
-                            {c}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {result.source_urls && result.source_urls.length > 0 && (
-                    <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                      <h3 className="text-[10px] font-bold uppercase mb-3" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Sources</h3>
-                      <div className="space-y-1.5">
-                        {result.source_urls.map((u, i) => (
-                          <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] hover:underline" style={{ color: GOLD, fontFamily: "'Fraunces', Georgia, serif" }}>
-                            <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{u}</span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div className="p-6" style={{ borderBottom: `1px solid ${GOLD}22` }}>
-                    <h3 className="text-[10px] font-bold uppercase mb-2" style={{ color: GOLD, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Next Step</h3>
-                    <p className="text-[14px] font-medium leading-relaxed" style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}>{result.next_step}</p>
-                  </div>
-                  <div className="p-6 flex flex-wrap gap-3">
-                    <button
-                      onClick={() => setView('blueprint')}
-                      className="h-10 px-5 text-[13px] font-semibold rounded-full transition-all flex items-center gap-2"
-                      style={{ color: EMERALD_DARK, background: `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`, border: `1px solid ${GOLD}`, boxShadow: `0 2px 12px ${GOLD}44`, fontFamily: "'Fraunces', Georgia, serif" }}
-                    >
-                      <Layout className="w-3.5 h-3.5" /> Blueprint
-                    </button>
-                    <button
-                      onClick={() => { setResult(null); setIdea(""); }}
-                      className="h-10 px-5 text-[13px] font-semibold rounded-full transition-all"
-                      style={{ color: `${CHARCOAL}88`, border: `1px solid ${GOLD}55`, background: 'transparent', fontFamily: "'Fraunces', Georgia, serif" }}
-                    >
-                      New Idea
-                    </button>
-                    <button
-                      onClick={shareToFeed}
-                      disabled={sharing || shared}
-                      className="h-10 px-5 text-[13px] font-semibold rounded-full transition-colors flex items-center gap-2 disabled:opacity-60"
-                      style={{ background: `linear-gradient(135deg, ${GOLD}, ${GOLD_BRIGHT})`, color: EMERALD_DARK, border: `1px solid ${GOLD}`, fontFamily: "'Fraunces', Georgia, serif" }}
-                    >
-                      {shared ? (
-                        <><Check className="w-3.5 h-3.5" /> Posted!</>
-                      ) : sharing ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Posting…</>
-                      ) : (
-                        <><Share2 className="w-3.5 h-3.5" /> Share on Feed</>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                </button>
               </div>
             </motion.div>
           )}
@@ -571,79 +539,83 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         {/* Error */}
         {result?.error && !generating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-10">
-            <p className="text-sm mb-3" style={{ color: `${CREAM}88`, fontFamily: "'Fraunces', Georgia, serif" }}>Something went wrong.</p>
-            <button onClick={generate} className="text-[13px] font-semibold underline underline-offset-2" style={{ color: GOLD_BRIGHT }}>
+            <p className="text-[14px] mb-3" style={{ color: GREY, fontFamily: SERIF }}>Something went wrong.</p>
+            <button onClick={generate} className="text-[13px] font-semibold underline underline-offset-2" style={{ color: INK, fontFamily: SERIF }}>
               Try again
             </button>
           </motion.div>
         )}
 
-        {/* History */}
+        {/* 06 — Community Highlights (history) */}
         {history.length > 0 && !generating && !result && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <Ornament />
-            <h3 className="text-[10px] font-bold uppercase mb-3 text-center" style={{ color: `${GOLD}aa`, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Recent</h3>
-            <div className="space-y-2">
-              {history.map((h, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setIdea(h.idea); setResult(h.result); }}
-                  className="w-full text-left p-4 rounded-lg transition-all"
-                  style={{ background: CREAM, border: `1px solid ${GOLD}44` }}
-                >
-                  <div className="text-[14px] font-semibold" style={{ color: CHARCOAL, fontFamily: "'Fraunces', Georgia, serif" }}>{h.result.name}</div>
-                  <div className="text-[12px] mt-0.5 line-clamp-1" style={{ color: `${CHARCOAL}88`, fontFamily: "'Fraunces', Georgia, serif" }}>{h.result.one_liner}</div>
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Empty state — prompt suggestions */}
-        {!result && !generating && history.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            <Ornament />
-            <p className="text-[10px] font-bold uppercase mb-4 text-center" style={{ color: `${GOLD}88`, letterSpacing: '0.15em', fontFamily: "'Fraunces', Georgia, serif" }}>Or start with one of these</p>
-            <div className="grid grid-cols-2 gap-3">
-              {PROMPTS.slice(0, 4).map((p, i) => (
-                <button
-                  key={i}
-                  onClick={() => setIdea(p)}
-                  className="p-4 rounded-lg text-center transition-all group"
-                  style={{ background: CREAM, border: `1px solid ${GOLD}44`, boxShadow: '0 2px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.4)' }}
-                >
-                  <div className="flex justify-center mb-2">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center"
-                      style={{ background: `${GOLD}11`, border: `1px solid ${GOLD}33` }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-12">
+            <Rule />
+            <div className="pt-8">
+              <Section n="06" title="Community Highlights">
+                <p className="text-[12px] uppercase tracking-[0.18em] mb-4" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>Recent Projects</p>
+                <div className="divide-y" style={{ borderColor: LINE }}>
+                  {history.map((h, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setIdea(h.idea); setResult(h.result); }}
+                      className="w-full text-left py-5 flex items-baseline gap-4 transition-opacity hover:opacity-60"
                     >
-                      <Lightbulb className="w-3.5 h-3.5" style={{ color: GOLD }} />
-                    </div>
-                  </div>
-                  <span className="text-[12px] leading-snug block" style={{ color: `${CHARCOAL}aa`, fontFamily: "'Fraunces', Georgia, serif" }}>{p}</span>
-                </button>
-              ))}
+                      <span className="text-[13px] font-semibold tabular-nums flex-shrink-0" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>{String(i + 1).padStart(2, '0')}</span>
+                      <div className="flex-1">
+                        <div className="text-[16px] font-semibold" style={{ color: INK, fontFamily: SERIF }}>{h.result.name}</div>
+                        <div className="text-[13px] mt-0.5 line-clamp-1" style={{ color: GREY, fontFamily: SERIF }}>{h.result.one_liner}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </Section>
             </div>
           </motion.div>
         )}
-        </div>
-        )}
 
-      {/* Kaspanet Browser overlay (proxied to bypass X-Frame-Options) */}
+        {/* 04 — Empty state suggestions */}
+        {!result && !generating && history.length === 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-12">
+            <Rule />
+            <div className="pt-8">
+              <Section n="04" title="Or start with one of these">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-0">
+                  {PROMPTS.slice(0, 4).map((p, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setIdea(p)}
+                      className="text-left py-5 transition-opacity hover:opacity-60 flex items-start gap-3"
+                      style={{ borderRight: i % 2 === 0 ? `1px solid ${LINE}` : 'none' }}
+                    >
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ border: `1px solid ${INK}` }}>
+                        <Lightbulb className="w-3.5 h-3.5" style={{ color: INK }} />
+                      </div>
+                      <span className="text-[14px] leading-snug" style={{ color: INK_SOFT, fontFamily: SERIF }}>{p}</span>
+                    </button>
+                  ))}
+                </div>
+              </Section>
+            </div>
+          </motion.div>
+        )}
+      </div>
+      )}
+
+      {/* Kaspanet Browser overlay */}
       {kaspanetOpen && (
-        <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: EMERALD_DARK }}>
+        <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: WHITE }}>
           <div
-            className="flex items-center justify-between gap-2 px-3 py-2 flex-shrink-0"
-            style={{ background: EMERALD_DARK, borderBottom: `1px solid ${GOLD}33` }}
+            className="flex items-center justify-between gap-2 px-4 py-3 flex-shrink-0"
+            style={{ borderBottom: `1px solid ${LINE}` }}
           >
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Globe className="w-4 h-4" style={{ color: GOLD_BRIGHT }} />
-              <span className="text-[13px] font-bold hidden sm:inline" style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}>
+              <Globe className="w-4 h-4" style={{ color: INK }} />
+              <span className="text-[13px] font-semibold hidden sm:inline" style={{ color: INK, fontFamily: SERIF }}>
                 Kaspanet
               </span>
             </div>
             <form
-              className="flex-1 flex items-center gap-1"
+              className="flex-1 flex items-center gap-1.5 max-w-xl"
               onSubmit={(e) => { e.preventDefault(); fetchKaspanet(kaspanetUrl); }}
             >
               <input
@@ -651,35 +623,35 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
                 value={kaspanetUrl}
                 onChange={(e) => setKaspanetUrl(e.target.value)}
                 className="flex-1 h-9 px-3 rounded-lg text-[12px] outline-none"
-                style={{ background: `${CREAM}11`, color: CREAM, border: `1px solid ${GOLD}33`, fontFamily: "'Fraunces', Georgia, serif" }}
+                style={{ background: WHITE, color: INK, border: `1px solid ${LINE}`, fontFamily: SERIF }}
                 placeholder="Enter URL"
               />
               <button
                 type="submit"
-                className="flex items-center justify-center h-9 w-9 rounded-lg flex-shrink-0"
-                style={{ color: GOLD_BRIGHT, background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
+                className="flex items-center justify-center h-9 w-9 rounded-lg flex-shrink-0 transition-opacity hover:opacity-60"
+                style={{ color: INK, border: `1px solid ${INK}` }}
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
             </form>
             <button
               onClick={() => setKaspanetOpen(false)}
-              className="flex items-center gap-1.5 h-9 px-3 rounded-lg flex-shrink-0"
-              style={{ color: CREAM, background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
+              className="flex items-center gap-1.5 h-9 px-3 rounded-lg flex-shrink-0 transition-opacity hover:opacity-60"
+              style={{ color: INK, border: `1px solid ${LINE}` }}
             >
               <X className="w-4 h-4" />
-              <span className="text-[12px] font-medium hidden sm:inline" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>Close</span>
+              <span className="text-[12px] font-medium hidden sm:inline" style={{ fontFamily: SERIF }}>Close</span>
             </button>
           </div>
           <div className="flex-1 relative">
             {kaspanetLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin" style={{ color: GOLD_BRIGHT }} />
+                <Loader2 className="w-5 h-5 animate-spin" style={{ color: INK }} />
               </div>
             )}
             {kaspanetError && !kaspanetLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6">
-                <p className="text-[13px] text-center" style={{ color: CREAM, fontFamily: "'Fraunces', Georgia, serif" }}>
+                <p className="text-[13px] text-center" style={{ color: INK_SOFT, fontFamily: SERIF }}>
                   Could not load this page.
                 </p>
                 <a
@@ -687,7 +659,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-[12px] font-medium"
-                  style={{ color: GOLD_BRIGHT, background: `${GOLD}22`, border: `1px solid ${GOLD}44` }}
+                  style={{ color: INK, border: `1px solid ${INK}` }}
                 >
                   <ArrowUpRight className="w-4 h-4" /> Open in new tab
                 </a>
@@ -705,6 +677,6 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
           </div>
         </div>
       )}
-        </div>
-        );
-        }
+    </div>
+  );
+}
