@@ -27,30 +27,32 @@ export function AgentCardFront({ videoSrc, agent, index, zOffset }) {
     >
       <video src={videoSrc} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover rounded-[16px]" />
 
-      <div className="absolute inset-0 p-5 sm:p-6 text-white h-full w-full z-10 bg-black/25">
-        <div className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2">
-          <ChipSvg gradId={`agent_chip_${index}`} />
+      <div className="absolute inset-0 p-3 sm:p-5 text-white h-full w-full z-10 bg-black/30 flex flex-col justify-between">
+        {/* Top row: chip + identity */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-shrink-0">
+            <ChipSvg gradId={`agent_chip_${index}`} />
+          </div>
+          <div className="text-right min-w-0">
+            <div className="text-[7px] sm:text-[10px] tracking-[0.2em] text-white/50 font-mono uppercase truncate">Agent Internet</div>
+            <div className="text-[13px] sm:text-lg font-bold tracking-tight leading-tight truncate">{agent.name}</div>
+            <div className="text-[8px] sm:text-[10px] text-cyan-300/80 font-mono truncate">{agent.role}</div>
+          </div>
         </div>
 
-        {/* Agent identity — top right */}
-        <div className="absolute right-5 sm:right-6 top-5 sm:top-6 text-right">
-          <div className="text-[10px] sm:text-xs tracking-[0.3em] text-white/50 font-mono uppercase">Agent Internet</div>
-          <div className="text-base sm:text-xl font-bold tracking-tight leading-tight">{agent.name}</div>
-          <div className="text-[9px] sm:text-[11px] text-cyan-300/80 font-mono">{agent.role}</div>
-        </div>
-
-        {/* Skills — bottom left */}
-        <div className="absolute left-5 sm:left-6 bottom-5 sm:bottom-6 flex flex-wrap gap-1 max-w-[60%]">
-          {agent.skills.map((s) => (
-            <span key={s} className="text-[7px] sm:text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/20 bg-white/10 text-white/80">
-              {s}
-            </span>
-          ))}
-        </div>
-
-        <div className="absolute right-5 sm:right-6 bottom-5 sm:bottom-6 flex -space-x-3 items-center opacity-90">
-          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/20 backdrop-blur-[1px] border border-white/10" />
-          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/35 backdrop-blur-[1px] border border-white/10" />
+        {/* Bottom row: skills + dots */}
+        <div className="flex items-end justify-between gap-2">
+          <div className="flex flex-wrap gap-1 min-w-0">
+            {agent.skills.slice(0, 3).map((s) => (
+              <span key={s} className="text-[6.5px] sm:text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/20 bg-white/10 text-white/80 whitespace-nowrap">
+                {s}
+              </span>
+            ))}
+          </div>
+          <div className="flex -space-x-2 items-center opacity-90 flex-shrink-0">
+            <div className="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-white/20 backdrop-blur-[1px] border border-white/10" />
+            <div className="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-white/35 backdrop-blur-[1px] border border-white/10" />
+          </div>
         </div>
       </div>
     </div>
@@ -74,14 +76,14 @@ export function AgentCardBack({ videoSrc, agent, zOffset }) {
 
       <div className="absolute left-0 right-0 top-4 sm:top-5 h-7 sm:h-9 bg-black/85 backdrop-blur-md z-10" />
 
-      <div className="absolute left-4 sm:left-6 bottom-4 sm:bottom-5 z-20 flex flex-col gap-0.5 sm:gap-1 text-left" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
-        <div className="font-mono text-[10px] sm:text-[12px] font-medium tracking-[0.14em] text-white select-none">{agent.id}</div>
-        <div className="font-mono text-[7px] sm:text-[9px] font-medium text-white/70 tracking-wide flex items-center gap-2 select-none">
-          <span className="uppercase">{agent.name}</span>
+      <div className="absolute left-3 right-3 sm:left-5 sm:right-5 bottom-3 sm:bottom-4 z-20 flex flex-col gap-0.5 text-left" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+        <div className="font-mono text-[9px] sm:text-[11px] font-medium tracking-[0.1em] text-white select-none truncate">{agent.id}</div>
+        <div className="font-mono text-[6.5px] sm:text-[9px] font-medium text-white/70 tracking-wide flex items-center gap-1.5 select-none min-w-0">
+          <span className="uppercase truncate">{agent.name}</span>
           <span className="text-white/40 font-light">•</span>
-          <span>{agent.protocol}</span>
-          <span className="text-white/40 font-light">•</span>
-          <span>KEY: {agent.key}</span>
+          <span className="truncate">{agent.protocol}</span>
+          <span className="text-white/40 font-light hidden sm:inline">•</span>
+          <span className="hidden sm:inline truncate">KEY: {agent.key}</span>
         </div>
       </div>
     </div>
