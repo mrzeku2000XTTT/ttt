@@ -772,7 +772,7 @@ Format as a single, comprehensive paragraph.`
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-[101]"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md z-[101] max-h-[85vh] overflow-y-auto"
             >
               <Card className="bg-gradient-to-br from-zinc-900/95 to-black/95 border-green-500/30">
                 <CardContent className="p-6">
@@ -788,7 +788,7 @@ Format as a single, comprehensive paragraph.`
                     <img
                       src={purchasingTemplate.preview_image_url}
                       alt={purchasingTemplate.title}
-                      className="w-full rounded-lg mb-4 border border-green-500/30"
+                      className="w-full max-h-44 object-cover rounded-lg mb-4 border border-green-500/30"
                     />
                   )}
 
