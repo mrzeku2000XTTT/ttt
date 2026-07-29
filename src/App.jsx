@@ -201,7 +201,16 @@ const AuthenticatedApp = () => {
           </LayoutWrapper>
         } />
       )}
-      {Object.entries(Pages).filter(([path]) => path !== 'Xunhua' && path !== 'Wallet' && path !== 'KGigZ' && path !== 'OuTKasTT').map(([path, Page]) => (
+      {Pages['AppStore'] && (
+        <Route path="/AppStore" element={
+          <AdminRoute>
+            <LayoutWrapper currentPageName="AppStore">
+              {React.createElement(Pages['AppStore'])}
+            </LayoutWrapper>
+          </AdminRoute>
+        } />
+      )}
+      {Object.entries(Pages).filter(([path]) => path !== 'Xunhua' && path !== 'Wallet' && path !== 'KGigZ' && path !== 'OuTKasTT' && path !== 'AppStore').map(([path, Page]) => (
         <Route
           key={path}
           path={`/${path}`}
