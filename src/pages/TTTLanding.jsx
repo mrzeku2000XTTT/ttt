@@ -1486,7 +1486,7 @@ export default function TTTLandingPage() {
           {/* MENU ITEMS — horizontal buttons */}
           <div className="w-full flex flex-row justify-center gap-2 sm:gap-3 flex-wrap">
             {[
-              { label: "TAP", path: "/AppStoreV2" },
+              { label: "TAP", path: "/TTTV2" },
               { label: "TO", path: "/Feed" },
               { label: "TIP", path: "/Tip" },
               { label: "GATE", path: "/TTTGate", iconOnly: true, icon: Gem },
