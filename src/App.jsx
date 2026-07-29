@@ -241,7 +241,7 @@ const AuthenticatedApp = () => {
       <Route path="/TTTV3" element={<TTTV3Page />} />
       <Route path="/WhatIsKaspa" element={<WhatIsKaspaPage />} />
       <Route path="/Explore" element={<ExplorePage />} />
-      <Route path="/AgentInternet" element={<AgentInternetPage />} />
+      <Route path="/AgentInternet" element={<AdminRoute><AgentInternetPage /></AdminRoute>} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="/ValorantRange" element={<ValorantRangePage />} />

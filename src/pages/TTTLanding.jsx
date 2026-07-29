@@ -29,6 +29,7 @@ import LyricsTracker, { SONG_DURATION } from "@/components/landing/LyricsTracker
 import KaspaPanel from "@/components/landing/KaspaPanel";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
 import WorldCarouselOrbs from "@/components/landing/WorldCarouselOrbs";
+import BuildingFutureModal from "@/components/agentinternet/BuildingFutureModal";
 
 // Worlds in the greater universe — index 0 is this live landing page
 const WORLDS = [
@@ -1270,6 +1271,7 @@ export default function TTTLandingPage() {
   const [worldMode, setWorldMode] = useState(false);
   const [worldIndex, setWorldIndex] = useState(0);
   const [agentNetOpen, setAgentNetOpen] = useState(true);
+  const [showBlueprint, setShowBlueprint] = useState(false);
   const sounds = useGameSounds();
 
   // IGRA AGENT sector is admin-only — hide it from the world carousel for everyone else
@@ -1610,7 +1612,7 @@ export default function TTTLandingPage() {
               initial={{ x: -80, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 24 }}
               whileTap={{ scale: 0.94 }}
-              onClick={() => { sounds.playSelect(); navigate("/AgentInternet"); }}
+              onClick={() => { sounds.playSelect(); if (isAdmin) navigate("/AgentInternet"); else setShowBlueprint(true); }}
               title="Agent Internet — new frontier apps"
               style={{ background: "transparent", border: "none", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
               className="focus:outline-none flex flex-col items-center gap-1 pl-3 py-2 min-h-[44px]">
@@ -1634,6 +1636,11 @@ export default function TTTLandingPage() {
           </span>
         </button>
       </div>
+
+      {/* Building the Future — Agent Internet blueprint */}
+      <AnimatePresence>
+        {showBlueprint && <BuildingFutureModal onClose={() => setShowBlueprint(false)} />}
+      </AnimatePresence>
 
       {/* Advent Calendar */}
       <AnimatePresence>
