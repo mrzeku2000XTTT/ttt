@@ -33,7 +33,7 @@ export default function BlueprintBuilder({ idea, concept }) {
   const [pan, setPan] = useState({ x: 20, y: 20 });
   const [tool, setTool] = useState('select');
   const [previewMode, setPreviewMode] = useState(false);
-  const [agentMode, setAgentMode] = useState(false);
+  const [agentMode, setAgentMode] = useState(true);
   const [codeMode, setCodeMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [htmlImportOpen, setHtmlImportOpen] = useState(false);
