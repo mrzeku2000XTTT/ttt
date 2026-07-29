@@ -14,7 +14,12 @@ export const AGENT_CARDS = [
     id: 'A2A 8908 1121 4892',
     protocol: 'A2A / MCP',
     key: 'zk-9f3',
-    skills: ['identity', 'proofs', 'wallet']
+    skills: ['identity', 'proofs', 'wallet'],
+    blueprint: [
+      { status: 'done', title: 'Signed Agent Identity', branch: 'main', desc: 'Issues and verifies agent ID cards with local key custody.', files: ['zk/identity.card.ts', 'zk/keys.local.ts'] },
+      { status: 'active', title: 'Proof Engine', branch: 'feat/zk-proofs', desc: 'Generates zero-knowledge proofs of balance, work and ownership.', files: ['zk/prove.ts', 'zk/verify.ts'] },
+      { status: 'planned', title: 'Delegated Signing', branch: 'next', desc: 'Agents request signatures; humans approve with a PIN.', files: ['zk/delegate.ts'] }
+    ]
   },
   {
     name: 'AGENT YING',
@@ -22,7 +27,12 @@ export const AGENT_CARDS = [
     id: 'MCP 7831 9904 5124',
     protocol: 'MCP',
     key: 'yg-1c8',
-    skills: ['vision', 'search', 'summaries']
+    skills: ['vision', 'search', 'summaries'],
+    blueprint: [
+      { status: 'done', title: 'Vision Pipeline', branch: 'main', desc: 'Reads images, screenshots and documents into structured facts.', files: ['ying/vision.ts', 'ying/extract.ts'] },
+      { status: 'active', title: 'Live Web Research', branch: 'feat/deep-research', desc: 'Grounded search with source citations instead of guesses.', files: ['ying/research.ts', 'ying/sources.ts'] },
+      { status: 'planned', title: 'Long-Term Recall', branch: 'next', desc: 'Persistent research memory shared across agents.', files: ['ying/memory.ts'] }
+    ]
   },
   {
     name: 'AGENT KAI',
@@ -30,7 +40,12 @@ export const AGENT_CARDS = [
     id: 'A2A 4120 7733 9035',
     protocol: 'A2A',
     key: 'ka-7b2',
-    skills: ['memory', 'routing', 'docs']
+    skills: ['memory', 'routing', 'docs'],
+    blueprint: [
+      { status: 'done', title: 'Intent Router', branch: 'main', desc: 'Routes any request to the right agent or app route.', files: ['kai/router.ts', 'kai/sitemap.json'] },
+      { status: 'active', title: 'Knowledge Index', branch: 'feat/kb-index', desc: 'Indexes docs, apps and registry data for instant answers.', files: ['kai/index.ts', 'kai/embed.ts'] },
+      { status: 'planned', title: 'Agent Handoff', branch: 'next', desc: 'Passes a task mid-flight to a better-suited agent.', files: ['kai/handoff.ts'] }
+    ]
   },
   {
     name: 'AGENT SLOBZ',
@@ -38,7 +53,12 @@ export const AGENT_CARDS = [
     id: 'X402 5567 1223 2468',
     protocol: 'x402',
     key: 'sl-4d1',
-    skills: ['escrow', 'payments', 'verify']
+    skills: ['escrow', 'payments', 'verify'],
+    blueprint: [
+      { status: 'done', title: 'Covenant Escrow', branch: 'main', desc: 'Per-gig escrow wallets that lock KAS until work is proven.', files: ['slobz/escrow.ts', 'slobz/wallet.ts'] },
+      { status: 'active', title: 'x402 Settlement', branch: 'feat/x402-kaspa', desc: 'Machine-to-machine invoicing and payout on Kaspa L1.', files: ['x402/invoice.ts', 'x402/settle.kaspa.ts'] },
+      { status: 'planned', title: 'Dispute Arbiter', branch: 'next', desc: 'AI arbitration when proof and requirements disagree.', files: ['slobz/arbiter.ts'] }
+    ]
   },
   {
     name: 'AGENT TREE',
@@ -46,6 +66,11 @@ export const AGENT_CARDS = [
     id: 'A2A 8891 2234 7713',
     protocol: 'A2A',
     key: 'tr-6e5',
-    skills: ['ads', 'copy', 'media']
+    skills: ['ads', 'copy', 'media'],
+    blueprint: [
+      { status: 'done', title: 'Campaign Planner', branch: 'main', desc: 'Turns a product into a full multi-template campaign strategy.', files: ['tree/strategy.ts', 'tree/templates.ts'] },
+      { status: 'active', title: 'Media Generator', branch: 'feat/ad-media', desc: 'Generates ad visuals and narration per template.', files: ['tree/image.ts', 'tree/voice.ts'] },
+      { status: 'planned', title: 'Performance Loop', branch: 'next', desc: 'Feeds real results back into the next campaign.', files: ['tree/feedback.ts'] }
+    ]
   }
 ];

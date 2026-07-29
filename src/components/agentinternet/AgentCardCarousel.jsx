@@ -4,12 +4,47 @@ import { AgentCardFront, AgentCardBack } from "./AgentCardFaces";
 
 const THICKNESS_LAYERS = [-1.47, -0.73, 0, 0.73, 1.47];
 
-export default function AgentCardCarousel() {
+export default function AgentCardCarousel({ onSelect }) {
   const cardCount = AGENT_CARDS.length;
   const cardsRefs = useRef([]);
   const frameId = useRef(0);
   const progress = useRef(0);
   const mouse = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
+
+  // Native scroll / drag control
+  const velocity = useRef(0);
+  const dragging = useRef(false);
+  const interacted = useRef(false);
+  const lastPointerY = useRef(0);
+  const dragMoved = useRef(0);
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    interacted.current = true;
+    velocity.current += e.deltaY * 0.00035;
+    velocity.current = Math.max(-0.12, Math.min(0.12, velocity.current));
+  };
+
+  const handlePointerDown = (e) => {
+    dragging.current = true;
+    interacted.current = true;
+    velocity.current = 0;
+    dragMoved.current = 0;
+    lastPointerY.current = e.clientY;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!dragging.current) return;
+    const dy = e.clientY - lastPointerY.current;
+    lastPointerY.current = e.clientY;
+    dragMoved.current += Math.abs(dy);
+    const delta = -dy * 0.006;
+    progress.current += delta;
+    velocity.current = delta;
+  };
+
+  const handlePointerUp = () => { dragging.current = false; };
 
   const [metrics, setMetrics] = useState({ cardW: 336, cardH: 211 });
 
@@ -49,7 +84,19 @@ export default function AgentCardCarousel() {
 
   useEffect(() => {
     const renderLoop = () => {
-      progress.current += 0.0016;
+      if (dragging.current) {
+        // progress driven directly by the drag handler
+      } else if (interacted.current) {
+        progress.current += velocity.current;
+        velocity.current *= 0.9;
+        if (Math.abs(velocity.current) < 0.0009) {
+          velocity.current = 0;
+          const target = Math.round(progress.current);
+          progress.current += (target - progress.current) * 0.14;
+        }
+      } else {
+        progress.current += 0.0016;
+      }
       mouse.current.x += (mouse.current.targetX - mouse.current.x) * 0.08;
       mouse.current.y += (mouse.current.targetY - mouse.current.y) * 0.08;
 
@@ -146,7 +193,15 @@ export default function AgentCardCarousel() {
 
   return (
     <div className="absolute inset-0 bg-[#000000] text-white flex items-center justify-center overflow-hidden select-none">
-      <div className="relative w-full h-full flex items-center justify-center pointer-events-none" style={{ perspective: "1350px" }}>
+      <div
+        className="relative w-full h-full flex items-center justify-center"
+        style={{ perspective: "1350px", touchAction: "none", overscrollBehavior: "none" }}
+        onWheel={handleWheel}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
         <div
           className="absolute"
           style={{ width: `${metrics.cardW}px`, height: `${metrics.cardH}px`, transformStyle: "preserve-3d" }}
@@ -155,7 +210,8 @@ export default function AgentCardCarousel() {
             <div
               key={agent.name}
               ref={(el) => { cardsRefs.current[i] = el; }}
-              className="absolute inset-0"
+              className="absolute inset-0 cursor-pointer"
+              onClick={() => { if (dragMoved.current < 8) onSelect?.(agent); }}
               style={{
                 width: `${metrics.cardW}px`,
                 height: `${metrics.cardH}px`,
