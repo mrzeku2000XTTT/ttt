@@ -3,7 +3,7 @@ import { Bot, X, Loader2, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { COLORS } from "./blueprintConstants";
 
-export default function BlueprintAgent({ onGenerate, onUploadImage, loading }) {
+export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onClose }) {
   const [prompt, setPrompt] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -42,11 +42,21 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading }) {
           <Bot className="w-4 h-4" style={{ color: COLORS.BLUE }} />
           <p className="text-sm font-bold" style={{ color: COLORS.TEXT_DARK }}>Ask to Edit</p>
         </div>
-        {imageUrl && (
-          <button onClick={() => setImageUrl('')} className="text-[11px]" style={{ color: COLORS.TEXT_MED }}>
-            Clear image
+        <div className="flex items-center gap-3">
+          {imageUrl && (
+            <button onClick={() => setImageUrl('')} className="text-[11px]" style={{ color: COLORS.TEXT_MED }}>
+              Clear image
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-100"
+            style={{ color: COLORS.TEXT_MED }}
+            title="Close panel"
+          >
+            <X className="w-4 h-4" />
           </button>
-        )}
+        </div>
       </div>
 
       {/* Image upload zone */}

@@ -211,7 +211,7 @@ Return ONLY the HTML. No markdown, no backticks, no explanation.`,
       <div className="flex-1 relative overflow-hidden flex flex-col">
         {agentMode && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-full px-4 max-w-md">
-            <BlueprintAgent onGenerate={handleAgentGenerate} loading={landingLoading} />
+            <BlueprintAgent onGenerate={handleAgentGenerate} loading={landingLoading} onClose={() => setAgentMode(false)} />
           </div>
         )}
 
