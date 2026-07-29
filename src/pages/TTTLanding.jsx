@@ -54,7 +54,7 @@ const CORNER_ART = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2
 const KASPA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3bab8f8ae_generated_image.png";
 const WORLD_ICON = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/39f382722_generated_image.png";
 const YOUTUBE_VIDEO_ID = "aUSD-WFhKwY";
-const AGENT_INTERNET_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/02e6273c8_generated_image.png";
+const AGENT_INTERNET_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/7fafdaeed_generated_image.png";
 
 const AI_MODELS = [
   { id: "claude_opus_4_8", label: "Claude Opus 4.8", maker: "Anthropic", color: "#c084fc" },
@@ -1600,16 +1600,18 @@ export default function TTTLandingPage() {
           style={{ border: "1px solid rgba(180,140,60,0.4)", color: "rgba(200,160,70,0.6)", background: "linear-gradient(180deg, rgba(30,22,8,0.75) 0%, rgba(0,0,0,0.6) 100%)", fontFamily: "monospace", boxShadow: "0 4px 0 rgba(140,100,30,0.55), 0 7px 16px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,200,80,0.15)" }}>[ KASPA ]</span>
       </motion.button>
 
-      {/* AGENT INTERNET — floating transparent robot button */}
-      <motion.button whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.92 }}
-        animate={{ opacity: worldMode ? 0 : 1, y: [0, -6, 0] }}
-        transition={{ y: { duration: 3, repeat: Infinity, ease: "easeInOut" }, opacity: { duration: 0.4 } }}
+      {/* AGENT INTERNET — transparent robot on the left side, showcases the new frontier */}
+      <motion.button whileHover={{ scale: 1.14, x: 2 }} whileTap={{ scale: 0.92 }}
+        animate={{ opacity: worldMode ? 0 : 1, y: [0, -7, 0] }}
+        transition={{ y: { duration: 3.4, repeat: Infinity, ease: "easeInOut" }, opacity: { duration: 0.4 } }}
         onClick={() => { sounds.playSelect(); navigate("/AgentInternet"); }}
-        title="Agent Internet"
-        style={{ pointerEvents: worldMode ? "none" : "auto", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
-        className="absolute left-1/2 -translate-x-1/2 bottom-20 z-20 focus:outline-none flex flex-col items-center gap-1">
-        <img src={AGENT_INTERNET_IMG} alt="Agent Internet" className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-[0_0_18px_rgba(6,182,212,0.55)]" style={{ filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.8))" }} />
-        <span className="text-[8px] tracking-[0.3em] uppercase whitespace-nowrap" style={{ color: "rgba(34,211,238,0.85)", fontFamily: "monospace", textShadow: "0 0 12px rgba(6,182,212,0.6)" }}>Agent Net</span>
+        title="Agent Internet — the new frontier"
+        style={{ pointerEvents: worldMode ? "none" : "auto", touchAction: "manipulation", WebkitTapHighlightColor: "transparent", background: "transparent", border: "none" }}
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 focus:outline-none flex flex-col items-center gap-1.5">
+        <img src={AGENT_INTERNET_IMG} alt="Agent Internet" className="w-16 h-16 sm:w-20 sm:h-20 object-contain" style={{ filter: "drop-shadow(0 0 16px rgba(6,182,212,0.6)) drop-shadow(0 6px 14px rgba(0,0,0,0.85))" }} />
+        <span className="text-[8px] tracking-[0.32em] uppercase whitespace-nowrap leading-tight text-center" style={{ color: "rgba(34,211,238,0.9)", fontFamily: "monospace", textShadow: "0 0 12px rgba(6,182,212,0.6)" }}>
+          Agent<br />Internet
+        </span>
       </motion.button>
 
       {/* Advent Calendar */}
