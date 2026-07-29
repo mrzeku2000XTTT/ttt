@@ -3,15 +3,15 @@ import { Bot, X, Loader2, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { COLORS } from "./blueprintConstants";
 
-export default function BlueprintAgent({ onGenerate, onUploadImage }) {
+export default function BlueprintAgent({ onGenerate, onUploadImage, loading }) {
   const [prompt, setPrompt] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
   const handleImageUpload = async (file) => {
-    setLoading(true);
+    setUploading(true);
     setError('');
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -19,7 +19,7 @@ export default function BlueprintAgent({ onGenerate, onUploadImage }) {
     } catch (err) {
       setError('Failed to upload image');
     }
-    setLoading(false);
+    setUploading(false);
   };
 
   const handleGenerate = async () => {
@@ -27,14 +27,12 @@ export default function BlueprintAgent({ onGenerate, onUploadImage }) {
       setError('Enter a prompt or upload an image');
       return;
     }
-    setLoading(true);
     setError('');
     try {
       await onGenerate({ prompt: prompt.trim(), imageUrl });
     } catch (err) {
       setError(err.message || 'Generation failed');
     }
-    setLoading(false);
   };
 
   return (
@@ -72,7 +70,7 @@ export default function BlueprintAgent({ onGenerate, onUploadImage }) {
           >
             <ImageIcon className="w-6 h-6" style={{ color: COLORS.TEXT_MED }} />
             <span className="text-[12px]" style={{ color: COLORS.TEXT_MED }}>
-              {loading ? 'Uploading...' : 'Upload a screenshot or mockup'}
+              {uploading ? 'Uploading...' : 'Upload a screenshot or mockup'}
             </span>
           </button>
         )}
@@ -103,7 +101,7 @@ export default function BlueprintAgent({ onGenerate, onUploadImage }) {
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-[13px] font-semibold transition-opacity"
         style={{ background: COLORS.BLUE, color: '#fff', opacity: loading ? 0.6 : 1 }}
       >
-        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</> : <><Bot className="w-4 h-4" /> Generate site</>}
+        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating landing page…</> : <><Bot className="w-4 h-4" /> Generate site</>}
       </button>
     </div>
   );

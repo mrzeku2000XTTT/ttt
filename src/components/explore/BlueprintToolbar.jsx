@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { MousePointer2, Hand, Square, Upload, Eye, EyeOff, Bot, Code, Plus, Minus, Type, Image as ImageIcon, Video, FileCode } from "lucide-react";
+import { MousePointer2, Hand, Square, Upload, Eye, EyeOff, Bot, Code, Plus, Minus, Type, Image as ImageIcon, Video, FileCode, Layout } from "lucide-react";
 import { COLORS, ELEMENT_TYPES } from "./blueprintConstants";
 
 const TOOL_ICONS = {
@@ -13,7 +13,8 @@ const TOOL_ICONS = {
 
 export default function BlueprintToolbar({
   tool, setTool, previewMode, setPreviewMode, agentMode, setAgentMode,
-  zoom, onZoomChange, onAddElement, onUploadFile, codeMode, setCodeMode, onImportHtml
+  zoom, onZoomChange, onAddElement, onUploadFile, codeMode, setCodeMode, onImportHtml,
+  landingMode, setLandingMode
 }) {
   const fileInputRef = useRef(null);
 
@@ -67,6 +68,9 @@ export default function BlueprintToolbar({
 
         {/* Divider */}
         <div className="w-px h-6 mx-0.5" style={{ background: COLORS.BORDER }} />
+
+        {/* Landing mode toggle */}
+        <ToolButton active={landingMode} onClick={() => { setLandingMode(!landingMode); setCodeMode(false); }} icon={Layout} />
 
         {/* Code mode toggle */}
         <ToolButton active={codeMode} onClick={() => setCodeMode(!codeMode)} icon={Code} />

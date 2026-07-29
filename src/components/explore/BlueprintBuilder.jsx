@@ -8,6 +8,7 @@ import BlueprintToolbar from "./BlueprintToolbar";
 import BlueprintRightPanel from "./BlueprintRightPanel";
 import BlueprintAgent from "./BlueprintAgent";
 import BlueprintHtmlImport from "./BlueprintHtmlImport";
+import BlueprintLandingPreview from "./BlueprintLandingPreview";
 import { FileCode } from "lucide-react";
 
 export default function BlueprintBuilder({ idea, concept }) {
@@ -36,6 +37,9 @@ export default function BlueprintBuilder({ idea, concept }) {
   const [codeMode, setCodeMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [htmlImportOpen, setHtmlImportOpen] = useState(false);
+  const [landingMode, setLandingMode] = useState(false);
+  const [landingHtml, setLandingHtml] = useState('');
+  const [landingLoading, setLandingLoading] = useState(false);
 
   const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
   const elements = currentPage?.elements || [];
@@ -120,83 +124,49 @@ export default function BlueprintBuilder({ idea, concept }) {
   };
 
   const handleAgentGenerate = async ({ prompt, imageUrl }) => {
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an expert UI/UX designer. ${imageUrl ? 'Analyze the uploaded image and recreate its layout.' : 'Create a modern website.'} ${prompt ? `The user wants: ${prompt}` : 'Create a complete landing page.'}
+    setLandingLoading(true);
+    setLandingMode(true);
+    try {
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are an elite front-end engineer and product designer. Generate a complete, production-quality marketing landing page as a single HTML document using Tailwind CSS classes (loaded via CDN).
 
-Generate a JSON object with "pages" array. Each page: { "name": string, "elements": array }.
-Each element: { "type": "heading"|"text"|"button"|"box"|"image", "x": number, "y": number, "content": string, "width": number, "fontSize": number, "fontWeight": number, "color": "#hex", "bg": "#hex or transparent" }.
+${imageUrl ? 'Analyze the uploaded reference image and recreate its layout, sections, and visual style faithfully.' : 'Create a modern, visually stunning landing page.'}
+${prompt ? `The user wants: ${prompt}` : 'Create a complete SaaS landing page.'}
+${concept?.name ? `Product/brand context: ${concept.name}${concept.one_liner ? ` — ${concept.one_liner}` : ''}` : ''}
 
-Guidelines:
-- Use 1-3 pages (e.g., "Landing", "About", "Pricing")
-- x: 0-800, y: 0-1200 range
-- heading: fontSize 24-36, fontWeight 700, color "#1f2937"
-- text: fontSize 13-16, fontWeight 400, color "#4b5563"
-- button: bg "#4F46E5", color "#ffffff", fontWeight 600, width 140-200
-- box: bg "#f3f4f6"
-- image: content = full URL (use unsplash.com URLs)
-- Use realistic, professional content${concept?.name ? ` related to: ${concept.name}` : ''}
+REQUIREMENTS:
+1. Output ONLY the inner HTML (everything inside <body>). Do NOT include <html>, <head>, <body>, or <script> tags — those are provided by the host.
+2. Use Tailwind CSS utility classes ONLY. No <style> tags.
+3. Use Google Fonts classes: font-light, font-normal, font-medium, font-semibold, font-bold, font-extrabold.
+4. Include these sections (skip any that don't fit):
+   - Sticky/fixed navbar with logo text, nav links, and a CTA button
+   - Hero section (full viewport): bold headline, subheadline, 2 CTA buttons, background gradient or image
+   - Logos/social proof strip (trusted by...)
+   - Features grid (3-4 cards with lucide-style SVG icons)
+   - How it works (3 steps)
+   - Testimonial / quote section
+   - Pricing (2-3 tiers) if applicable
+   - Final CTA section with gradient background
+   - Footer with columns of links
+5. Use real, compelling marketing copy — no lorem ipsum.
+6. Modern aesthetics: generous spacing, rounded-xl/2xl corners, subtle shadows, hover transitions, gradient accents.
+7. Inline SVG icons (lucide-style) directly in the HTML — do not reference external icon libraries.
+8. For images, use https://images.unsplash.com/photo-XXXX URLs that actually exist (use well-known photo IDs).
+9. Make it fully responsive: mobile-first, with sm:/md:/lg: breakpoints.
+10. Add subtle hover effects with transition classes.
 
-Return ONLY the JSON object.`,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          pages: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                name: { type: "string" },
-                elements: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      type: { type: "string" },
-                      x: { type: "number" },
-                      y: { type: "number" },
-                      content: { type: "string" },
-                      width: { type: "number" },
-                      fontSize: { type: "number" },
-                      fontWeight: { type: "number" },
-                      color: { type: "string" },
-                      bg: { type: "string" },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      file_urls: imageUrl ? [imageUrl] : undefined,
-      model: 'claude_sonnet_4_6',
-    });
+Return ONLY the HTML. No markdown, no backticks, no explanation.`,
+        file_urls: imageUrl ? [imageUrl] : undefined,
+        model: 'claude_sonnet_4_6',
+      });
 
-    const generated = res.pages || [];
-    if (generated.length > 0) {
-      const newPages = generated.map((p, i) => ({
-        id: `page-${Date.now()}-${i}`,
-        name: p.name || `Page ${i + 1}`,
-        elements: (p.elements || []).map((el, j) => ({
-          id: `el-${Date.now()}-${i}-${j}`,
-          type: el.type || 'text',
-          x: el.x || 20,
-          y: el.y || 20 + j * 40,
-          content: el.content || '',
-          width: el.width || 280,
-          fontSize: el.fontSize || 14,
-          fontWeight: el.fontWeight || 400,
-          color: el.color || COLORS.CHARCOAL,
-          bg: el.bg || 'transparent',
-          mediaType: el.type === 'video' ? 'video' : 'image',
-        })),
-      }));
-      setPages(newPages);
-      setCurrentPageId(newPages[0].id);
-      setSelectedId(null);
-      setPan({ x: 20, y: 20 });
-      setZoom(0.5);
+      const htmlContent = typeof res === 'string' ? res : (res.html || res.content || JSON.stringify(res));
+      setLandingHtml(htmlContent);
+    } catch (err) {
+      console.error('Landing generation failed:', err);
+      setLandingHtml(`<div class="p-8 text-center text-red-500">Generation failed: ${err.message || 'unknown error'}</div>`);
     }
+    setLandingLoading(false);
   };
 
   const codeOutput = React.useMemo(() => {
@@ -238,10 +208,10 @@ Return ONLY the JSON object.`,
       </div>
 
       {/* Canvas area */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden flex flex-col">
         {agentMode && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-full px-4 max-w-md">
-            <BlueprintAgent onGenerate={handleAgentGenerate} />
+            <BlueprintAgent onGenerate={handleAgentGenerate} loading={landingLoading} />
           </div>
         )}
 
@@ -249,6 +219,12 @@ Return ONLY the JSON object.`,
           <div className="absolute inset-0 overflow-auto p-4" style={{ background: '#1e1e1e' }}>
             <pre className="text-[11px] text-green-400 font-mono whitespace-pre-wrap">{codeOutput}</pre>
           </div>
+        ) : landingMode ? (
+          <BlueprintLandingPreview
+            html={landingHtml}
+            onUpdateHtml={setLandingHtml}
+            loading={landingLoading}
+          />
         ) : (
           <BlueprintCanvas
             elements={elements}
@@ -279,6 +255,8 @@ Return ONLY the JSON object.`,
           codeMode={codeMode}
           setCodeMode={setCodeMode}
           onImportHtml={() => setHtmlImportOpen(true)}
+          landingMode={landingMode}
+          setLandingMode={setLandingMode}
         />
       </div>
 
