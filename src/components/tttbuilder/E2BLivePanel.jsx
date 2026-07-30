@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { Loader2, Play, Square, ExternalLink, Server, Terminal } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Loader2, Play, Square, ExternalLink, Server, Terminal, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function E2BLivePanel({ files }) {
+export default function E2BLivePanel({ files, autoStart = false }) {
   const [state, setState] = useState({ status: "idle", url: null, sandboxId: null, logs: [], error: null });
+  const started = useRef(false);
 
   const boot = async () => {
     setState({ status: "booting", url: null, sandboxId: null, logs: [], error: null });
@@ -21,6 +22,23 @@ export default function E2BLivePanel({ files }) {
       setState({ status: "error", url: null, sandboxId: null, logs: [], error: err.message });
     }
   };
+
+  // Auto-boot the sandbox the first time this panel is shown
+  useEffect(() => {
+    if (autoStart && !started.current && files.length) {
+      started.current = true;
+      boot();
+    }
+  }, [autoStart, files.length]);
+
+  // Keep the microVM from timing out while the user is watching it
+  useEffect(() => {
+    if (state.status !== "live" || !state.sandboxId) return;
+    const id = setInterval(() => {
+      base44.functions.invoke("e2bSandbox", { action: "keepalive", sandboxId: state.sandboxId }).catch(() => {});
+    }, 60000);
+    return () => clearInterval(id);
+  }, [state.status, state.sandboxId]);
 
   const stop = async () => {
     if (state.sandboxId) {
@@ -42,10 +60,16 @@ export default function E2BLivePanel({ files }) {
             </a>
           )}
           {state.status === "live" ? (
+            <>
+            <button onClick={boot}
+              className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold whitespace-nowrap">
+              <RefreshCw className="w-3 h-3" /> Restart
+            </button>
             <button onClick={stop}
               className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold whitespace-nowrap">
               <Square className="w-3 h-3" /> Stop
             </button>
+            </>
           ) : (
             <button onClick={boot} disabled={state.status === "booting" || !files.length}
               className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#70C7BA] text-black text-xs font-bold disabled:opacity-40 whitespace-nowrap">

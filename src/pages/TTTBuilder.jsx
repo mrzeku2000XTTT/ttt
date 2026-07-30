@@ -9,7 +9,6 @@ import E2BLivePanel from "@/components/tttbuilder/E2BLivePanel";
 import ModelSelector from "@/components/tttbuilder/ModelSelector";
 import BuildModeToggle from "@/components/tttbuilder/BuildModeToggle";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
-import { buildReactPreview, isReactProject } from "@/components/tttbuilder/reactPreview";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -153,11 +152,7 @@ function TTTBuilderStudio() {
     return [];
   });
   const [activePath, setActivePath] = useState("index.html");
-  // npm/React projects are compiled in-browser so they render in Preview too
-  const html = useMemo(
-    () => (isReactProject(files) ? buildReactPreview(files) : bundleProject(files)),
-    [files]
-  );
+  const html = useMemo(() => bundleProject(files), [files]);
   const activeFile = files.find(f => f.path === activePath) || files[0] || null;
   const isRealProject = files.some(f => f.path === "package.json");
   const [messages, setMessages] = useState(() => {
@@ -248,8 +243,8 @@ Return the file operations only.`,
       const touched = (result?.files || []).map(f => norm(f.path));
       setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
-      // React/Vite projects compile in-browser, so stay on Preview. Only backend-ish npm projects need Live.
-      setTab(isNpm && !isReactProject(nextFiles) ? "live" : "preview");
+      // npm projects auto-run their real sandbox right inside the Preview tab
+      setTab("preview");
       setMessages(prev => [...prev, {
         role: "assistant",
         content: `✅ ${result?.summary || "Project updated."}${touched.length ? `\n\n📁 ${touched.join("\n📁 ")}` : ""}`,
@@ -626,7 +621,7 @@ Return the file operations only.`,
 
                 {/* Content */}
                 <div className="flex-1 min-h-0 relative">
-                  {!html && !loading && tab !== "live" && (
+                  {!html && !loading && tab !== "live" && !isRealProject && (
                     <div className="absolute inset-0 flex items-center justify-center text-center p-8">
                       <div>
                         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#70C7BA]/10 border border-[#70C7BA]/20 flex items-center justify-center">
@@ -655,7 +650,12 @@ Return the file operations only.`,
                     </div>
                   )}
 
-                  {html && tab === "preview" && (
+                  {/* Real npm projects run in the cloud sandbox, streamed straight into Preview */}
+                  {tab === "preview" && isRealProject && !loading && (
+                    <E2BLivePanel files={files} autoStart />
+                  )}
+
+                  {html && tab === "preview" && !isRealProject && (
                     effectiveDevice === "desktop" ? (
                       <iframe
                         key={iframeKey}

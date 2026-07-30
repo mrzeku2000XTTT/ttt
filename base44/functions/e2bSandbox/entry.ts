@@ -30,6 +30,13 @@ export default async function (req) {
 
     const action = body.action || 'run';
 
+    if (action === 'keepalive') {
+      if (!body.sandboxId) return Response.json({ error: 'sandboxId required' }, { status: 400 });
+      const sbx = await Sandbox.connect(body.sandboxId, { apiKey });
+      await sbx.setTimeout(15 * 60 * 1000);
+      return Response.json({ alive: true });
+    }
+
     if (action === 'kill') {
       if (!body.sandboxId) return Response.json({ error: 'sandboxId required' }, { status: 400 });
       await Sandbox.kill(body.sandboxId, { apiKey });
@@ -94,13 +101,21 @@ export default async function (req) {
     await sandbox.commands.run(startCmd, { cwd: APP_DIR, background: true, timeoutMs: 15 * 60 * 1000 });
     logs.push(`$ ${startCmd} (background, port ${port})`);
 
-    await new Promise((r) => setTimeout(r, 4000));
-
     const host = await sandbox.getHost(port);
     const url = `https://${host}`;
-    logs.push(`● live at ${url}`);
 
-    return Response.json({ sandboxId: sandbox.sandboxId, url, port, startCmd, logs });
+    // Wait until the server actually answers — otherwise the iframe loads a dead page
+    let ready = false;
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      try {
+        const probe = await fetch(url, { redirect: 'follow' });
+        if (probe.status < 500) { ready = true; break; }
+      } catch { /* not up yet */ }
+    }
+    logs.push(ready ? `● live at ${url}` : `⚠️ server did not respond yet at ${url}`);
+
+    return Response.json({ sandboxId: sandbox.sandboxId, url, port, startCmd, ready, logs });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
