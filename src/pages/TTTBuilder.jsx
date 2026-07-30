@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
 import FileEditor from "@/components/tttbuilder/FileEditor";
+import E2BLivePanel from "@/components/tttbuilder/E2BLivePanel";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
@@ -28,9 +29,23 @@ FILE SYSTEM RULES — MUST FOLLOW EXACTLY:
 - Only include files you actually touched. Use "deleted_files" for files that should be removed.
 - Keep existing file paths stable when modifying an app — edit those same files instead of renaming them.
 
+TWO PROJECT MODES — pick based on what the user asks for:
+
+A) STATIC MODE (default): vanilla HTML/CSS/JS, no build step. Renders instantly in the Preview tab.
+   - NO external CDN scripts or fonts, no npm — everything self-contained.
+
+B) REAL PROJECT MODE: use this when the user asks for React, Vue, Svelte, Next, TypeScript, Node/Express, an API, a database, Python, or any real backend.
+   - Write a proper npm project: package.json (with all dependencies and a "dev" or "start" script), config files (e.g. vite.config.js), src/ files with real imports/JSX/modules.
+   - For frontends use Vite and make the dev script bind publicly: "dev": "vite --host 0.0.0.0 --port 3000"
+   - For Node backends listen on port 3000 and host 0.0.0.0.
+   - For Python write main.py serving on port 8000, host 0.0.0.0.
+   - CDN links and npm packages ARE allowed here — the sandbox has real internet.
+   - This mode runs in the Live tab (a real Linux sandbox that runs npm install and starts the server). Tell the user to hit the Live tab to run it.
+   - index.html still must exist at the project root (Vite's entry point).
+
 CODE RULES:
-- Write ALL logic in pure vanilla JavaScript (no frameworks, no build step)
-- Write ALL styles in CSS files (no Tailwind)
+- Static mode: pure vanilla JavaScript, no frameworks, no build step
+- Write ALL styles in CSS files (no Tailwind unless you add it to package.json in real project mode)
 - Use CSS custom properties, CSS animations, CSS Grid/Flexbox for beautiful layouts
 - Write REAL interactivity: event listeners, DOM manipulation, state variables in JS
 - For games: implement full game logic (win detection, turn switching, score tracking, AI if needed)
@@ -498,6 +513,12 @@ Return the file operations only.`,
                     >
                       <Code2 className="w-3 h-3" /> Files{files.length ? ` (${files.length})` : ""}
                     </button>
+                    <button
+                      onClick={() => setTab("live")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap ${tab === "live" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                    >
+                      <Server className="w-3 h-3" /> Live
+                    </button>
                   </div>
                   <div className="ml-auto flex items-center gap-2 flex-shrink-0">
                     {html && (
@@ -543,7 +564,7 @@ Return the file operations only.`,
 
                 {/* Content */}
                 <div className="flex-1 min-h-0 relative">
-                  {!html && !loading && (
+                  {!html && !loading && tab !== "live" && (
                     <div className="absolute inset-0 flex items-center justify-center text-center p-8">
                       <div>
                         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#70C7BA]/10 border border-[#70C7BA]/20 flex items-center justify-center">
@@ -609,6 +630,8 @@ Return the file operations only.`,
                       <FileEditor file={activeFile} onChange={updateFile} />
                     </div>
                   )}
+
+                  {tab === "live" && <E2BLivePanel files={files} />}
                 </div>
               </div>
             </div>
