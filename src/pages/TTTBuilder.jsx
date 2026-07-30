@@ -534,8 +534,8 @@ Output ONLY the complete HTML — nothing else.`,
                         title="Site Preview"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center p-1.5 sm:p-4" style={{ display: loading ? "none" : "flex" }}>
-                        <div className="relative w-full h-full max-w-[340px] max-h-[740px] mx-auto">
+                      <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden" style={{ display: loading ? "none" : "flex" }}>
+                        <div className="relative w-[min(300px,100%)] aspect-[9/19] max-h-full">
                           <div className="absolute inset-0 rounded-[2rem] bg-white/5 border border-white/15 pointer-events-none" />
                           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-4 bg-white/10 rounded-b-xl z-10 pointer-events-none" />
                           <iframe
