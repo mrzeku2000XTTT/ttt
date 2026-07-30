@@ -12,8 +12,8 @@ export default function E2BLivePanel({ files, autoStart = false }) {
   // re-load the frame a few times so the app doesn't stay blank.
   useEffect(() => {
     if (state.status !== "live" || !state.url) return;
-    const timers = [3000, 9000, 18000].map(ms => setTimeout(() => setFrameKey(k => k + 1), ms));
-    return () => timers.forEach(clearTimeout);
+    const t = setTimeout(() => setFrameKey(k => k + 1), 4000);
+    return () => clearTimeout(t);
   }, [state.status, state.url]);
 
   const boot = async () => {
