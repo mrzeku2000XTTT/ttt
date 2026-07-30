@@ -14,6 +14,7 @@ import EnhanceButton from "@/components/tttbuilder/EnhanceButton";
 import WalletKitToggle from "@/components/tttbuilder/WalletKitToggle";
 import AttachButton from "@/components/tttbuilder/AttachButton";
 import TemplateGallery from "@/components/tttbuilder/TemplateGallery";
+import PasteHtmlButton from "@/components/tttbuilder/PasteHtmlButton";
 import { IMAGE_RULE, resolveImages } from "@/components/tttbuilder/imageGen";
 import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
@@ -123,6 +124,14 @@ CODE RULES:
 - index.html is a complete <!DOCTYPE html> ... </html> document
 - IMPORTANT: The app must render and work immediately — no loading, no missing assets
 - Build whatever the user asks, fully functional, beautiful, production quality`;
+
+const HTML_TO_REACT_DIRECTIVE = `CONVERSION TASK — turn the pasted HTML below into a COMPLETE React + Vite application (not a copy-paste of the markup):
+- Recreate the design faithfully: same layout, sections, copy, spacing, typography and colour palette as the pasted HTML.
+- Produce a real npm project: package.json (react, react-dom, react-router-dom, vite, @vitejs/plugin-react, "dev": "vite --host 0.0.0.0 --port 3000"), vite.config.js, index.html, src/main.jsx, src/App.jsx.
+- src/App.jsx sets up react-router-dom routes. The pasted page becomes the real landing page at "/". Every nav link / anchor in the pasted HTML that points at a page (features, pricing, about, docs, dashboard, contact…) becomes its own route + page file under src/pages/, fully designed in the same visual language — no dead links, no empty pages.
+- Split every section of the page into its own component under src/components/ (Navbar, Hero, Features, Pricing, Footer, …), each under ~150 lines. Convert inline <script> logic into React state/effects and <style>/CSS into CSS files imported by the components.
+- Make it a working app, not a static shell: real React state, working forms with validation, mobile nav that opens/closes, and any data shown must be fetched live per the LIVE DATA rules.
+- Keep the mandatory TTT Kaspa wallet widget in the header.`;
 
 const MODE_DIRECTIVE = {
   html: `\n\nLOCKED MODE: STATIC MODE (A). The user explicitly chose HTML mode.
@@ -268,8 +277,9 @@ function TTTBuilderStudio() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const generate = async (userPrompt) => {
+  const generate = async (userPrompt, opts = {}) => {
     if (!userPrompt.trim() || loading) return;
+    const runMode = opts.mode || buildMode;
     setLoading(true);
     setPhase("studio");
 
@@ -289,7 +299,7 @@ function TTTBuilderStudio() {
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
-      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${IMAGE_RULE}${MODE_DIRECTIVE[buildMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${IMAGE_RULE}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
       const fileUrls = attached.map(a => a.url);
       const attachmentNote = attached.length
@@ -387,6 +397,15 @@ Return the file operations only.`,
     } finally {
       setLoading(false);
     }
+  };
+
+  // Paste raw HTML → rebuild it as a real React + Vite project
+  const convertHtmlToReact = (rawHtml) => {
+    changeBuildMode("react");
+    generate(
+      `${HTML_TO_REACT_DIRECTIVE}\n\n--- PASTED HTML START ---\n${rawHtml.slice(0, 60000)}\n--- PASTED HTML END ---`,
+      { mode: "react" }
+    );
   };
 
   const handleExampleClick = (ex) => {
@@ -527,6 +546,7 @@ Return the file operations only.`,
                   <ModelSelector value={model} onChange={changeModel} disabled={loading} />
                   <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
                   <AttachButton attachments={attachments} onChange={setAttachments} disabled={loading} />
+                  <PasteHtmlButton onConvert={convertHtmlToReact} disabled={loading} />
                   <EnhanceButton
                     prompt={prompt}
                     onEnhanced={setPrompt}
@@ -667,6 +687,7 @@ Return the file operations only.`,
                     <ModelSelector value={model} onChange={changeModel} disabled={loading} />
                     <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
                     <AttachButton attachments={attachments} onChange={setAttachments} disabled={loading} />
+                    <PasteHtmlButton onConvert={convertHtmlToReact} disabled={loading} />
                     <EnhanceButton
                       prompt={prompt}
                       onEnhanced={setPrompt}
