@@ -14,6 +14,7 @@ import EnhanceButton from "@/components/tttbuilder/EnhanceButton";
 import WalletKitToggle from "@/components/tttbuilder/WalletKitToggle";
 import { WALLET_KIT_PATH, WALLET_KIT_SOURCE, WALLET_RULE } from "@/components/tttbuilder/walletKit";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
+import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -282,50 +283,80 @@ function TTTBuilderStudio() {
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
+      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${MODE_DIRECTIVE[buildMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
-      const raw = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${MODE_DIRECTIVE[buildMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}
+      const patchLast = (patch) =>
+        setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, ...patch } : m)));
+
+      let nextFiles, summary, thinking = [], touched = [], agentList = null, planText = "";
+
+      if (isAgent1) {
+        // TTT Agent 1 orchestrates as many specialist subagents as the build needs
+        setMessages(prev => [...prev, { role: "assistant", content: "Planning the build…", agents: [] }]);
+        let live = [];
+        const run = await orchestrateBuild({
+          baseRules,
+          userPrompt,
+          history,
+          files,
+          model: TTT_AGENT_1,
+          onProgress: (ev) => {
+            if (ev.type === "planned") {
+              live = ev.agents;
+              patchLast({ content: `Dispatching ${live.length} subagents…`, plan: ev.plan, agents: live });
+            } else if (ev.type === "agent_start") {
+              live = live.map((a, i) => (i === ev.index ? { ...a, status: "running" } : a));
+              patchLast({ content: `Running: ${ev.name}`, agents: live });
+            } else if (ev.type === "agent_done") {
+              live = live.map((a, i) => (i === ev.index ? { ...a, status: ev.status, files: ev.files?.length ? ev.files : a.files } : a));
+              patchLast({ agents: live });
+            }
+          },
+        });
+        nextFiles = run.files;
+        touched = run.touched;
+        summary = run.summary;
+        thinking = run.thinking;
+        agentList = live.length ? live : run.agents;
+        planText = run.summary;
+      } else {
+        const raw = await base44.integrations.Core.InvokeLLM({
+          prompt: `${baseRules}
 
 ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
 ${userPrompt}
 
 Return the file operations only.`,
-        model: isAgent1 ? TTT_AGENT_1 : model,
-        response_json_schema: FILE_OPS_SCHEMA,
-      });
-
-      // Some models wrap their structured output in a `response` key (or return it as a JSON string)
-      let result = raw;
-      if (result && !Array.isArray(result.files) && result.response !== undefined) {
-        result = typeof result.response === "string"
-          ? JSON.parse(result.response.replace(/^```(?:json)?|```$/g, "").trim())
-          : result.response;
+          model,
+          response_json_schema: FILE_OPS_SCHEMA,
+        });
+        const result = parseResult(raw);
+        nextFiles = applyFileOps(files, result);
+        touched = (result?.files || []).map(f => norm(f.path));
+        summary = result?.summary || "Project updated.";
+        thinking = Array.isArray(result?.thinking) ? result.thinking : [];
       }
 
-      let nextFiles = applyFileOps(files, result);
       // Every generated app ships with the Kaspa wallet protocol
       if (walletKit && !nextFiles.some(f => f.path === WALLET_KIT_PATH)) {
         nextFiles = sortFiles([...nextFiles, { path: WALLET_KIT_PATH, content: WALLET_KIT_SOURCE }]);
       }
-      if (!nextFiles.length) throw new Error("The model returned no files. Try rephrasing your prompt.");
+      if (!nextFiles.length) throw new Error("The build produced no files. Try rephrasing your prompt.");
       const isNpm = nextFiles.some(f => f.path === "package.json");
       // Only static projects need a root index.html — npm projects run through the Live sandbox
       if (!isNpm && !nextFiles.some(f => f.path === "index.html")) {
-        throw new Error("The model didn't return an index.html. Try again.");
+        throw new Error("The build didn't produce an index.html. Try again.");
       }
 
       setFiles(nextFiles);
-      const touched = (result?.files || []).map(f => norm(f.path));
       setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
       // npm projects auto-run their real sandbox right inside the Preview tab
       setTab("preview");
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: result?.summary || "Project updated.",
-        thinking: Array.isArray(result?.thinking) ? result.thinking : [],
-        files: touched,
-      }]);
+
+      const finalMsg = { role: "assistant", content: summary, thinking, files: touched, agents: agentList || undefined, plan: planText || undefined };
+      if (isAgent1) patchLast(finalMsg);
+      else setMessages(prev => [...prev, finalMsg]);
     } catch (err) {
       setMessages(prev => [...prev, {
         role: "assistant",
