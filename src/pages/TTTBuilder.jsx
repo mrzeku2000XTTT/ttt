@@ -134,6 +134,7 @@ function TTTBuilderStudio() {
   const [activePath, setActivePath] = useState("index.html");
   const html = useMemo(() => bundleProject(files), [files]);
   const activeFile = files.find(f => f.path === activePath) || files[0] || null;
+  const isRealProject = files.some(f => f.path === "package.json");
   const [messages, setMessages] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ttt_builder_messages") || "[]"); } catch { return []; }
   });
@@ -209,6 +210,8 @@ Return the file operations only.`,
       const touched = (result?.files || []).map(f => norm(f.path));
       setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
+      // npm projects (React/Vue/Node…) can't run in the static preview — send them to the Live sandbox
+      if (nextFiles.some(f => f.path === "package.json")) setTab("live");
       setMessages(prev => [...prev, {
         role: "assistant",
         content: `✅ ${result?.summary || "Project updated."}${touched.length ? `\n\n📁 ${touched.join("\n📁 ")}` : ""}`,
@@ -586,7 +589,11 @@ Return the file operations only.`,
                         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#70C7BA]/10 border border-[#70C7BA]/20 flex items-center justify-center">
                           <Globe className="w-8 h-8 text-[#70C7BA]/60" />
                         </div>
-                        <p className="text-white/30 text-sm">Your site preview will appear here</p>
+                        <p className="text-white/30 text-sm">
+                          {isRealProject
+                            ? "This is a real npm project — open the Live tab to run it."
+                            : "Your site preview will appear here"}
+                        </p>
                       </div>
                     </div>
                   )}
