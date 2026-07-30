@@ -57,6 +57,27 @@ const PLAN_SCHEMA = {
   required: ["plan", "agents", "contract"],
 };
 
+/** Subagents sometimes import a CSS file no agent wrote — create it so Vite doesn't hard-fail. */
+function stubMissingCssImports(files) {
+  const paths = new Set(files.map(f => f.path));
+  const out = [...files];
+  files.forEach(f => {
+    if (!/\.(js|jsx|ts|tsx)$/.test(f.path)) return;
+    const dir = f.path.split("/").slice(0, -1);
+    [...f.content.matchAll(/import\s+["'](\.[^"']+\.css)["']/g)].forEach(m => {
+      const rel = m[1].split("/").filter(p => p !== ".");
+      const stack = [...dir];
+      rel.forEach(p => (p === ".." ? stack.pop() : stack.push(p)));
+      const target = norm(stack.join("/"));
+      if (!paths.has(target)) {
+        paths.add(target);
+        out.push({ path: target, content: `/* auto-created: imported by ${f.path} */\n` });
+      }
+    });
+  });
+  return out;
+}
+
 export async function orchestrateBuild({ baseRules, userPrompt, history, files, model, onProgress }) {
   const projectDump = files.length
     ? `Existing project files (paths only):\n${files.map(f => f.path).join("\n")}`
@@ -76,6 +97,7 @@ You are TTT Agent 1, the ORCHESTRATOR. Do NOT write code now. Break this build i
 Rules for the plan:
 - FEWEST AGENTS POSSIBLE. Hard cap: 5. A simple app (a game, a small dashboard, a landing page) is 1-2 agents total; do not split a small build into many tiny agents — it is slower and produces worse code. Each agent can own 4-6 files.
 - Only add an agent when the work genuinely cannot be written by the previous one.
+- The "contract" MUST list the exact, complete set of files that will exist. Nobody may import a path that is not in that list — a missing import crashes the whole build.
 - The "contract" is law: exact file paths, exact global/exported function names, CSS variable + class naming, and the shared state shape, so the separately-written files fit together perfectly.
 - Put shared foundations (styles, state, api layer) before the features that consume them, and the entry point (index.html / src/main.jsx) last.
 
@@ -152,6 +174,8 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
     log.push(`${agent.name}: ${ops?.summary || "done"}`);
     onProgress?.({ type: "agent_done", index: i, status: "done", files: wrote });
   }
+
+  working = stubMissingCssImports(working);
 
   return {
     files: working,
