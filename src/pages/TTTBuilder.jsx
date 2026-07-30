@@ -12,7 +12,7 @@ import BuilderOrb from "@/components/tttbuilder/BuilderOrb";
 import ChatMessage from "@/components/tttbuilder/ChatMessage";
 import EnhanceButton from "@/components/tttbuilder/EnhanceButton";
 import WalletKitToggle from "@/components/tttbuilder/WalletKitToggle";
-import { WALLET_KIT_PATH, WALLET_KIT_SOURCE, WALLET_RULE } from "@/components/tttbuilder/walletKit";
+import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
 
@@ -279,7 +279,7 @@ function TTTBuilderStudio() {
         .join("\n");
 
       const projectDump = files.length
-        ? `Current project files:\n${files.filter(f => f.path !== WALLET_KIT_PATH).map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 6000)}`).join("\n\n")}`
+        ? `Current project files:\n${files.filter(f => !f.path.includes("kaspa-wallet.js")).map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 6000)}`).join("\n\n")}`
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
@@ -341,9 +341,7 @@ Return the file operations only.`,
       }
 
       // Every generated app ships with the Kaspa wallet protocol
-      if (walletKit && !nextFiles.some(f => f.path === WALLET_KIT_PATH)) {
-        nextFiles = sortFiles([...nextFiles, { path: WALLET_KIT_PATH, content: WALLET_KIT_SOURCE }]);
-      }
+      if (walletKit) nextFiles = sortFiles(ensureWalletKit(nextFiles));
       if (!nextFiles.length) throw new Error("The build produced no files. Try rephrasing your prompt.");
       const isNpm = nextFiles.some(f => f.path === "package.json");
       // Only static projects need a root index.html — npm projects run through the Live sandbox
