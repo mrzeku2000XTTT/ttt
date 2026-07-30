@@ -293,7 +293,7 @@ function TTTBuilderStudio() {
 
       const fileUrls = attached.map(a => a.url);
       const attachmentNote = attached.length
-        ? `\nATTACHMENTS from the user (study them closely — if they show a UI, reproduce its layout, spacing, typography and colours faithfully; if they contain data or copy, use it):\n${attached.map(a => `- ${a.name}: ${a.url}`).join("\n")}\n`
+        ? `\nATTACHED REFERENCE${attached.length > 1 ? "S" : ""} (${attached.length}): the user's file${attached.length > 1 ? "s are" : " is"} attached DIRECTLY to this message and you can already see ${attached.length > 1 ? "them" : "it"} — do NOT try to open, download or fetch any URL, and never say you couldn't open it. Look at the attached image and reproduce its layout, structure, spacing, typography and colour palette faithfully in the build.\n`
         : "";
 
       const patchLast = (patch) =>
