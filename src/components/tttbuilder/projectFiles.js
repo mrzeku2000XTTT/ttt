@@ -65,6 +65,11 @@ export const FILE_OPS_SCHEMA = {
   type: "object",
   properties: {
     summary: { type: "string", description: "Short friendly explanation of what changed" },
+    thinking: {
+      type: "array",
+      description: "3-6 short first-person reasoning steps describing how you planned and built this (scope decision, data source, file structure, tricky parts). One sentence each.",
+      items: { type: "string" },
+    },
     files: {
       type: "array",
       description: "Full contents of every file created or modified",

@@ -8,10 +8,32 @@ import FileEditor from "@/components/tttbuilder/FileEditor";
 import E2BLivePanel from "@/components/tttbuilder/E2BLivePanel";
 import ModelSelector from "@/components/tttbuilder/ModelSelector";
 import BuildModeToggle from "@/components/tttbuilder/BuildModeToggle";
+import BuilderOrb from "@/components/tttbuilder/BuilderOrb";
+import ChatMessage from "@/components/tttbuilder/ChatMessage";
+import EnhanceButton from "@/components/tttbuilder/EnhanceButton";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
-const ORB_VIDEO = "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/6e804c6dc_Floating_Orb.mp4";
+
+const SCOPE_RULE = `
+
+SCOPE DISCIPLINE — FOLLOW THE REQUEST LITERALLY:
+- Build EXACTLY what the user asked for and nothing else. Do not widen the subject.
+- If the user asks for a KASPA dashboard, show KASPA data only (price, 24h change, market cap, volume, supply, hashrate, blocks) — do NOT add Bitcoin, Ethereum, Solana or any other coin unless they explicitly ask for them.
+- Same rule for every domain: no extra sections, no extra entities, no filler cards the user did not request.
+- Depth over breadth: make the requested subject rich (chart, stats, detail panels) instead of padding with unrelated items.`;
+
+const LIVE_DATA_RULE = `
+
+LIVE DATA — HARD REQUIREMENT (violating this is a failed build):
+- NEVER write a hardcoded price, percentage or stat into the code. No seed arrays of prices, no Math.random(), no "simulated" drift, no fake tick animation. If you cannot fetch it, show an error state.
+- Fetch on mount AND on a 30s setInterval, and clear the interval on teardown.
+- Kaspa specifically:
+  price/change/mcap/volume: https://api.coingecko.com/api/v3/coins/kaspa?localization=false&tickers=false&community_data=false&developer_data=false
+  simple price: https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true
+  7d chart: https://api.coingecko.com/api/v3/coins/kaspa/market_chart?vs_currency=usd&days=7
+  network stats: https://api.kaspa.org/info/hashrate and https://api.kaspa.org/info/blockdag and https://api.kaspa.org/info/coinsupply
+- Render only values that came back from the response. Show a skeleton while loading, a visible error + Retry button on failure, and a real "Updated HH:MM:SS" timestamp taken from the moment the fetch succeeded.`;
 
 // TTT Agent 1 = strongest available model + elite engineering directive
 const TTT_AGENT_1 = "claude_opus_4_8";
@@ -244,7 +266,7 @@ function TTTBuilderStudio() {
       const isAgent1 = model === "ttt_agent_1";
 
       const raw = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}${MODE_DIRECTIVE[buildMode] || ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}
+        prompt: `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${MODE_DIRECTIVE[buildMode] || ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}
 
 ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
 ${userPrompt}
@@ -278,7 +300,9 @@ Return the file operations only.`,
       setTab("preview");
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: `✅ ${result?.summary || "Project updated."}${touched.length ? `\n\n📁 ${touched.join("\n📁 ")}` : ""}`,
+        content: result?.summary || "Project updated.",
+        thinking: Array.isArray(result?.thinking) ? result.thinking : [],
+        files: touched,
       }]);
     } catch (err) {
       setMessages(prev => [...prev, {
@@ -426,6 +450,13 @@ Return the file operations only.`,
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                   <ModelSelector value={model} onChange={changeModel} disabled={loading} />
+                  <EnhanceButton
+                    prompt={prompt}
+                    onEnhanced={setPrompt}
+                    buildMode={buildMode}
+                    hasProject={files.length > 0}
+                    disabled={loading}
+                  />
                 </div>
               </motion.div>
 
@@ -457,7 +488,7 @@ Return the file operations only.`,
               >
                 {[
                   { label: "Generation time", value: "~15s" },
-                  { label: "AI model", value: "Claude" },
+                  { label: "AI model", value: "TTT Agent 1" },
                   { label: "Output", value: "Pure HTML" },
                 ].map(s => (
                   <div key={s.label}>
@@ -499,15 +530,7 @@ Return the file operations only.`,
               {/* Left: Chat */}
               <div className={`flex flex-col border-r border-white/5 min-h-0 min-w-0 overflow-hidden bg-[#0d1117] ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
                 <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                  <video
-                    src={ORB_VIDEO}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-8 h-8 rounded-full object-cover ring-1 ring-[#70C7BA]/40 shadow-[0_0_16px_rgba(112,199,186,0.45)]"
-                    aria-label="TTT Builder agent orb"
-                  />
+                  <BuilderOrb size={30} />
                   <span className="font-bold text-sm">TTT Builder</span>
                   <button
                     onClick={() => {
@@ -527,15 +550,7 @@ Return the file operations only.`,
                     </div>
                   )}
                   {messages.map((m, i) => (
-                    <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
-                        m.role === "user"
-                          ? "bg-[#70C7BA]/20 text-white"
-                          : "bg-white/5 text-white/80"
-                      }`}>
-                        {m.content}
-                      </div>
-                    </div>
+                    <ChatMessage key={i} message={m} />
                   ))}
                   {loading && (
                     <div className="flex items-center gap-2 text-white/40 text-xs">
@@ -570,6 +585,13 @@ Return the file operations only.`,
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                     <ModelSelector value={model} onChange={changeModel} disabled={loading} />
+                    <EnhanceButton
+                      prompt={prompt}
+                      onEnhanced={setPrompt}
+                      buildMode={buildMode}
+                      hasProject={files.length > 0}
+                      disabled={loading}
+                    />
                   </div>
 
                   {/* Quick actions */}
@@ -680,7 +702,7 @@ Return the file operations only.`,
                           <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-[#70C7BA]" />
                         </div>
                         <p className="text-white/50 text-sm font-medium">Building your site…</p>
-                        <p className="text-white/25 text-xs mt-1">Claude is writing the code</p>
+                        <p className="text-white/25 text-xs mt-1">TTT Agent 1 is writing the code</p>
                       </div>
                     </div>
                   )}
