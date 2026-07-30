@@ -77,6 +77,7 @@ function TTTBuilderStudio() {
   const chatEndRef = useRef(null);
   const [iframeKey, setIframeKey] = useState(0);
   const [device, setDevice] = useState("desktop"); // desktop | mobile
+  const [mobileView, setMobileView] = useState("preview"); // chat | preview (mobile only)
 
   // Persist session across refreshes
   const [html, setHtml] = useState(() => {
@@ -332,11 +333,29 @@ Output ONLY the complete HTML — nothing else.`,
             animate={{ opacity: 1 }}
             className="pt-12 h-screen flex flex-col"
           >
+            {/* Mobile view toggle */}
+            <div className="lg:hidden flex items-center gap-1 px-3 py-2 border-b border-white/5 bg-[#0d1117] flex-shrink-0">
+              <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 w-full">
+                <button
+                  onClick={() => setMobileView("chat")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold transition-colors ${mobileView === "chat" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Chat
+                </button>
+                <button
+                  onClick={() => setMobileView("preview")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold transition-colors ${mobileView === "preview" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                >
+                  <Eye className="w-3.5 h-3.5" /> Preview
+                </button>
+              </div>
+            </div>
+
             {/* Studio layout */}
             <div className="flex-1 grid lg:grid-cols-[380px_1fr] min-h-0">
 
               {/* Left: Chat */}
-              <div className="flex flex-col border-r border-white/5 min-h-0 bg-[#0d1117]">
+              <div className={`flex flex-col border-r border-white/5 min-h-0 bg-[#0d1117] ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
                 <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
                   <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#70C7BA] to-cyan-400 flex items-center justify-center">
                     <Sparkles className="w-3.5 h-3.5 text-black" />
@@ -417,10 +436,10 @@ Output ONLY the complete HTML — nothing else.`,
               </div>
 
               {/* Right: Preview / Code */}
-              <div className="flex flex-col min-h-0 bg-[#080c10]">
+              <div className={`flex flex-col min-h-0 bg-[#080c10] ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}>
                 {/* Tab bar */}
-                <div className="flex items-center gap-1 px-3 py-2 border-b border-white/5 flex-shrink-0">
-                  <div className="flex gap-1 bg-white/5 rounded-lg p-0.5">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
                     <button
                       onClick={() => setTab("preview")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === "preview" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
@@ -431,13 +450,13 @@ Output ONLY the complete HTML — nothing else.`,
                       onClick={() => setTab("code")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === "code" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
                     >
-                      <Code2 className="w-3 h-3" /> Source Code
+                      <Code2 className="w-3 h-3" /> Code
                     </button>
                   </div>
-                  <div className="ml-auto flex items-center gap-2">
+                  <div className="ml-auto flex items-center gap-2 flex-shrink-0">
                     {html && (
                       <>
-                        <div className="flex gap-1 bg-white/5 rounded-lg p-0.5">
+                        <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
                           <button
                             onClick={() => setDevice("desktop")}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "desktop" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
@@ -455,21 +474,21 @@ Output ONLY the complete HTML — nothing else.`,
                         </div>
                         <button
                           onClick={() => generate("Regenerate with the same concept but different design")}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors"
+                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
                         >
                           <RefreshCw className="w-3 h-3" /> Remix
                         </button>
                         <button
                           onClick={downloadHtml}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors"
+                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
                         >
                           <Globe className="w-3 h-3" /> Export
                         </button>
                         <button
                           onClick={() => { setShowPublishModal(true); setPublishResult(null); }}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors"
+                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors flex-shrink-0 whitespace-nowrap"
                         >
-                          <GitBranch className="w-3 h-3" /> Publish to GitHub
+                          <GitBranch className="w-3 h-3" /> Publish
                         </button>
                       </>
                     )}
