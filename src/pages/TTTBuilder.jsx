@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
 import FileEditor from "@/components/tttbuilder/FileEditor";
 import E2BLivePanel from "@/components/tttbuilder/E2BLivePanel";
+import ModelSelector from "@/components/tttbuilder/ModelSelector";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
@@ -100,6 +101,14 @@ function TTTBuilderStudio() {
   const chatEndRef = useRef(null);
   const [iframeKey, setIframeKey] = useState(0);
   const [device, setDevice] = useState("desktop"); // desktop | mobile
+  const [model, setModel] = useState(() => {
+    try { return localStorage.getItem("ttt_builder_model") || "claude_sonnet_4_6"; } catch { return "claude_sonnet_4_6"; }
+  });
+
+  const changeModel = (m) => {
+    setModel(m);
+    try { localStorage.setItem("ttt_builder_model", m); } catch {}
+  };
   const [mobileView, setMobileView] = useState("preview"); // chat | preview (mobile only)
   const [isNarrow, setIsNarrow] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
 
@@ -189,7 +198,7 @@ ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUs
 ${userPrompt}
 
 Return the file operations only.`,
-        model: "claude_sonnet_4_6",
+        model,
         response_json_schema: FILE_OPS_SCHEMA,
       });
 
@@ -346,6 +355,9 @@ Return the file operations only.`,
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Build</>}
                   </button>
                 </div>
+                <div className="mt-3 flex justify-center">
+                  <ModelSelector value={model} onChange={changeModel} disabled={loading} />
+                </div>
               </motion.div>
 
               {/* Examples */}
@@ -479,6 +491,10 @@ Return the file operations only.`,
                       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                     </button>
                   </form>
+
+                  <div className="mt-2">
+                    <ModelSelector value={model} onChange={changeModel} disabled={loading} />
+                  </div>
 
                   {/* Quick actions */}
                   <div className="mt-2 flex flex-wrap gap-1.5">
