@@ -29,10 +29,10 @@ export default function AttachButton({ attachments, onChange, disabled }) {
         onClick={() => inputRef.current?.click()}
         disabled={disabled || busy}
         title="Attach images or files (screenshots, designs, data)"
-        className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg border border-white/10 text-white/50 hover:text-white hover:border-white/30 text-[11px] font-bold disabled:opacity-40 transition-colors"
+        className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] hover:bg-[#70C7BA]/25 text-[11px] font-bold disabled:opacity-40 transition-colors"
       >
         {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
-        Attach
+        Upload image
       </button>
       <input ref={inputRef} type="file" multiple onChange={pick} className="hidden" />
 

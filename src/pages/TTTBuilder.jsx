@@ -13,6 +13,7 @@ import ChatMessage from "@/components/tttbuilder/ChatMessage";
 import EnhanceButton from "@/components/tttbuilder/EnhanceButton";
 import WalletKitToggle from "@/components/tttbuilder/WalletKitToggle";
 import AttachButton from "@/components/tttbuilder/AttachButton";
+import TemplateGallery from "@/components/tttbuilder/TemplateGallery";
 import { IMAGE_RULE, resolveImages } from "@/components/tttbuilder/imageGen";
 import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
@@ -554,6 +555,9 @@ Return the file operations only.`,
                   </button>
                 ))}
               </motion.div>
+
+              {/* Kaspa app templates */}
+              <TemplateGallery onPick={(t) => generate(t.prompt)} disabled={loading} />
 
               {/* Stats row */}
               <motion.div
