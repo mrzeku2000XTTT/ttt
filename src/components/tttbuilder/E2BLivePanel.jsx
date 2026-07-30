@@ -5,7 +5,16 @@ import { base44 } from "@/api/base44Client";
 export default function E2BLivePanel({ files, autoStart = false }) {
   const [state, setState] = useState({ status: "idle", url: null, sandboxId: null, logs: [], error: null });
   const [showLogs, setShowLogs] = useState(false);
+  const [frameKey, setFrameKey] = useState(0);
   const started = useRef(false);
+
+  // Vite often finishes compiling a second or two after the port opens —
+  // re-load the frame a few times so the app doesn't stay blank.
+  useEffect(() => {
+    if (state.status !== "live" || !state.url) return;
+    const timers = [3000, 9000, 18000].map(ms => setTimeout(() => setFrameKey(k => k + 1), ms));
+    return () => timers.forEach(clearTimeout);
+  }, [state.status, state.url]);
 
   const boot = async () => {
     setState({ status: "booting", url: null, sandboxId: null, logs: [], error: null });
@@ -70,6 +79,10 @@ export default function E2BLivePanel({ files, autoStart = false }) {
           )}
           {state.status === "live" ? (
             <>
+            <button onClick={() => setFrameKey(k => k + 1)}
+              className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold whitespace-nowrap">
+              <RefreshCw className="w-3 h-3" /> <span className="hidden sm:inline">Reload</span>
+            </button>
             <button onClick={boot}
               className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold whitespace-nowrap">
               <RefreshCw className="w-3 h-3" /> <span className="hidden sm:inline">Restart</span>
@@ -110,7 +123,7 @@ export default function E2BLivePanel({ files, autoStart = false }) {
           </div>
         )}
         {state.status === "live" && state.url && (
-          <iframe src={state.url} className="w-full h-full border-0" title="Live Sandbox" />
+          <iframe key={frameKey} src={state.url} className="w-full h-full border-0" title="Live Sandbox" />
         )}
         {state.status === "error" && (
           <div className="absolute inset-0 overflow-auto p-4">
