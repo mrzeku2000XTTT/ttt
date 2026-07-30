@@ -534,16 +534,16 @@ Output ONLY the complete HTML — nothing else.`,
                         title="Site Preview"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4" style={{ display: loading ? "none" : "flex" }}>
-                        <div className="relative w-full h-full max-w-[390px] max-h-[780px] mx-auto">
-                          <div className="absolute -inset-[6px] rounded-[2.2rem] bg-white/5 border border-white/15 pointer-events-none" />
-                          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-white/10 rounded-b-xl z-10 pointer-events-none" />
+                      <div className="absolute inset-0 flex items-center justify-center p-1.5 sm:p-4" style={{ display: loading ? "none" : "flex" }}>
+                        <div className="relative w-full h-full max-w-[340px] max-h-[740px] mx-auto">
+                          <div className="absolute inset-0 rounded-[2rem] bg-white/5 border border-white/15 pointer-events-none" />
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-4 bg-white/10 rounded-b-xl z-10 pointer-events-none" />
                           <iframe
                             key={iframeKey}
                             ref={iframeRef}
                             srcDoc={html}
                             sandbox="allow-scripts"
-                            className="relative w-full h-full rounded-[1.8rem] border border-white/15 overflow-hidden bg-black"
+                            className="relative w-full h-full rounded-[1.6rem] border border-white/15 overflow-hidden bg-black"
                             title="Site Preview (Mobile)"
                           />
                         </div>
