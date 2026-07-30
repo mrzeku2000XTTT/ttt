@@ -2,6 +2,7 @@ import React from "react";
 import { Cpu } from "lucide-react";
 
 export const BUILDER_MODELS = [
+  { id: "ttt_agent_1", label: "TTT Agent 1 ⚡" },
   { id: "automatic", label: "Auto (best available)" },
   { id: "claude_opus_4_8", label: "Claude Opus 4.8" },
   { id: "claude-sonnet-5", label: "Claude Sonnet 5" },

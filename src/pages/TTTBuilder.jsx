@@ -11,6 +11,20 @@ import BuildModeToggle from "@/components/tttbuilder/BuildModeToggle";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
+const ORB_VIDEO = "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/6e804c6dc_Floating_Orb.mp4";
+
+// TTT Agent 1 = strongest available model + elite engineering directive
+const TTT_AGENT_1 = "claude_opus_4_8";
+const AGENT_1_DIRECTIVE = `
+
+YOU ARE TTT AGENT 1 — the highest tier build agent. Work at the level of a staff engineer shipping production software:
+- THINK FIRST: silently decide the data model, the file structure and the component boundaries before writing a line.
+- ARCHITECTURE: many small single-purpose files. No file over ~150 lines. Shared logic extracted into its own module. Named, meaningful functions — no giant inline blobs.
+- COMPLETENESS: every feature you name in your summary is fully wired — no TODOs, no stubs, no dead handlers, no "coming soon".
+- CORRECTNESS: guard every async call, validate inputs, handle empty/loading/error states, avoid race conditions on intervals and fetches, clean up listeners and timers.
+- REAL DATA ALWAYS: live APIs over invented numbers, with retry and a visible last-updated state.
+- DESIGN: cohesive design system (spacing scale, type scale, tokens), deliberate motion, hover/focus/active states, perfect mobile layout at 375px, no horizontal scroll.
+- Ship something a user could put in front of customers today.`;
 
 const EXAMPLES = [
   "Kaspa staking dashboard with live price ticker and animated stats",
@@ -128,7 +142,7 @@ function TTTBuilderStudio() {
   const [iframeKey, setIframeKey] = useState(0);
   const [device, setDevice] = useState("desktop"); // desktop | mobile
   const [model, setModel] = useState(() => {
-    try { return localStorage.getItem("ttt_builder_model") || "claude_sonnet_4_6"; } catch { return "claude_sonnet_4_6"; }
+    try { return localStorage.getItem("ttt_builder_model") || "ttt_agent_1"; } catch { return "ttt_agent_1"; }
   });
 
   const [buildMode, setBuildMode] = useState(() => {
@@ -227,14 +241,16 @@ function TTTBuilderStudio() {
         ? `Current project files:\n${files.map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 6000)}`).join("\n\n")}`
         : "";
 
+      const isAgent1 = model === "ttt_agent_1";
+
       const raw = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}${MODE_DIRECTIVE[buildMode] || ""}
+        prompt: `${SYSTEM_PROMPT}${MODE_DIRECTIVE[buildMode] || ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}
 
 ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
 ${userPrompt}
 
 Return the file operations only.`,
-        model,
+        model: isAgent1 ? TTT_AGENT_1 : model,
         response_json_schema: FILE_OPS_SCHEMA,
       });
 
@@ -322,8 +338,6 @@ Return the file operations only.`,
           <span className="text-[10px] font-bold bg-[#70C7BA] text-black px-1.5 py-0.5 rounded">BUILDER</span>
         </div>
         <div className="hidden sm:flex items-center gap-4 text-xs text-white/50">
-          <span>Vanilla JS · CSS · Claude</span>
-          <span>·</span>
           <span>Built on Kaspa</span>
         </div>
         {html && (
@@ -485,9 +499,15 @@ Return the file operations only.`,
               {/* Left: Chat */}
               <div className={`flex flex-col border-r border-white/5 min-h-0 min-w-0 overflow-hidden bg-[#0d1117] ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
                 <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#70C7BA] to-cyan-400 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-black" />
-                  </div>
+                  <video
+                    src={ORB_VIDEO}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-8 h-8 rounded-full object-cover ring-1 ring-[#70C7BA]/40 shadow-[0_0_16px_rgba(112,199,186,0.45)]"
+                    aria-label="TTT Builder agent orb"
+                  />
                   <span className="font-bold text-sm">TTT Builder</span>
                   <button
                     onClick={() => {
