@@ -32,6 +32,41 @@ const GREY_LIGHT = "#a8a8a8";
 const LINE = "#e5e5e5";
 const SERIF = "'Fraunces', Georgia, serif";
 
+// Numbered editorial section header (module-level so it keeps stable identity across renders)
+const Section = ({ n, title, children, className = "" }) => (
+  <section className={`relative ${className}`}>
+    <div className="flex items-baseline gap-4 mb-5">
+      <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>{n}</span>
+      {title && (
+        <h2 className="text-[clamp(1.5rem,4vw,2.1rem)] font-bold leading-[1.05]" style={{ color: INK, fontFamily: SERIF }}>
+          {title}
+        </h2>
+      )}
+    </div>
+    {children}
+  </section>
+);
+
+const Rule = () => <div className="h-px w-full" style={{ background: LINE }} />;
+
+// A numbered outline row with hairline divider
+const OutlineRow = ({ n, label, text, icon, strong }) => (
+  <>
+    <div className="py-8">
+      <div className="flex items-baseline gap-4 mb-3">
+        <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>{n}</span>
+        <h3 className="text-[12px] font-semibold uppercase tracking-[0.18em] flex items-center gap-1.5" style={{ color: INK, fontFamily: SERIF }}>
+          {icon}{label}
+        </h3>
+      </div>
+      <p className={`text-[15px] leading-[1.8] pl-0 sm:pl-[2.4rem] ${strong ? 'font-semibold' : ''}`} style={{ color: strong ? INK : INK_SOFT, fontFamily: SERIF }}>
+        {text}
+      </p>
+    </div>
+    <Rule />
+  </>
+);
+
 export default function ExplorePage() {
   const navigate = useNavigate();
   const [idea, setIdea] = useState("");
@@ -197,41 +232,6 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
     }
     setSharing(false);
   };
-
-  // Numbered editorial section header
-  const Section = ({ n, title, children, className = "" }) => (
-    <section className={`relative ${className}`}>
-      <div className="flex items-baseline gap-4 mb-5">
-        <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>{n}</span>
-        {title && (
-          <h2 className="text-[clamp(1.5rem,4vw,2.1rem)] font-bold leading-[1.05]" style={{ color: INK, fontFamily: SERIF }}>
-            {title}
-          </h2>
-        )}
-      </div>
-      {children}
-    </section>
-  );
-
-  const Rule = () => <div className="h-px w-full" style={{ background: LINE }} />;
-
-  // A numbered outline row with hairline divider
-  const OutlineRow = ({ n, label, text, icon, strong }) => (
-    <>
-      <div className="py-8">
-        <div className="flex items-baseline gap-4 mb-3">
-          <span className="text-[13px] font-semibold tabular-nums" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>{n}</span>
-          <h3 className="text-[12px] font-semibold uppercase tracking-[0.18em] flex items-center gap-1.5" style={{ color: INK, fontFamily: SERIF }}>
-            {icon}{label}
-          </h3>
-        </div>
-        <p className={`text-[15px] leading-[1.8] pl-0 sm:pl-[2.4rem] ${strong ? 'font-semibold' : ''}`} style={{ color: strong ? INK : INK_SOFT, fontFamily: SERIF }}>
-          {text}
-        </p>
-      </div>
-      <Rule />
-    </>
-  );
 
   return (
     <div

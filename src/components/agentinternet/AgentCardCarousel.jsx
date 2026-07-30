@@ -31,7 +31,11 @@ export default function AgentCardCarousel({ onSelect }) {
     velocity.current = 0;
     dragMoved.current = 0;
     lastPointerY.current = e.clientY;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // Use window listeners instead of pointer capture so click events
+    // still fire on the child card elements.
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp, { once: true });
+    window.addEventListener("pointercancel", handlePointerUp, { once: true });
   };
 
   const handlePointerMove = (e) => {
@@ -44,7 +48,12 @@ export default function AgentCardCarousel({ onSelect }) {
     velocity.current = delta;
   };
 
-  const handlePointerUp = () => { dragging.current = false; };
+  const handlePointerUp = () => {
+    dragging.current = false;
+    window.removeEventListener("pointermove", handlePointerMove);
+    window.removeEventListener("pointerup", handlePointerUp);
+    window.removeEventListener("pointercancel", handlePointerUp);
+  };
 
   const [metrics, setMetrics] = useState({ cardW: 336, cardH: 211 });
 
