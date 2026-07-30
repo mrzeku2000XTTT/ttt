@@ -4,7 +4,7 @@
 // reads balances from api.kaspa.org and signs + submits real transactions.
 // No browser extension required.
 
-export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) — create, import, balance, receive, send.
+export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) KIT v2 — create, import, live balance, receive, send.
    await TTTWallet.connect();                  // load or create the native wallet
    await TTTWallet.createWallet();             // new seed phrase
    await TTTWallet.importWallet(mnemonic);
@@ -21,7 +21,7 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) — create
   var REV = {};
   CHARSET.split('').forEach(function (c, i) { REV[c] = i; });
 
-  var state = { address: null, mode: null }; // 'native' | 'watch'
+  var state = { address: null, mode: null, balance: null }; // 'native' | 'watch'
   var secret = null; // { mnemonic, privateKeyHex }
   var listeners = [];
   var libs = null;
@@ -40,8 +40,26 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) — create
   }
 
   function emit() { listeners.forEach(function (fn) { try { fn(getState()); } catch (e) {} }); }
-  function getState() { return { address: state.address, mode: state.mode, connected: !!state.address }; }
-  function normalize(a) { if (!a) return null; var s = String(a).trim(); return s.indexOf('kaspa:') === 0 ? s : 'kaspa:' + s; }
+  function getState() { return { address: state.address, mode: state.mode, connected: !!state.address, balance: state.balance }; }
+  function normalize(a) { if (!a) return null; var s = String(a).trim().toLowerCase(); return s.indexOf('kaspa:') === 0 ? s : 'kaspa:' + s; }
+
+  /* ---------- live balance tracking ---------- */
+  var pollTimer = null;
+  async function refreshBalance() {
+    if (!state.address) return;
+    try {
+      var b = await TTTWallet.getBalance();
+      if (b !== state.balance) { state.balance = b; emit(); }
+    } catch (e) {}
+  }
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(refreshBalance, 10000);
+    refreshBalance();
+  }
+  function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+  // After a send (or expected receive) the DAG needs a moment — refresh in a burst.
+  function burstRefresh() { refreshBalance(); [1500, 4000, 8000, 15000, 30000].forEach(function (t) { setTimeout(refreshBalance, t); }); }
   function isValid(a) { return /^kaspa:[a-z0-9]{60,70}$/.test(normalize(a) || ''); }
 
   /* ---------- bytes ---------- */
@@ -149,15 +167,15 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) — create
     createWallet: async function () {
       var l = await load();
       var w = await fromMnemonic(l.bip39.generateMnemonic(l.wordlist, 128));
-      secret = w; state.address = w.address; state.mode = 'native';
-      persist(w); emit();
+      secret = w; state.address = w.address; state.mode = 'native'; state.balance = null;
+      persist(w); emit(); startPolling();
       return { address: w.address, mnemonic: w.mnemonic };
     },
 
     importWallet: async function (mnemonic) {
       var w = await fromMnemonic(String(mnemonic || '').trim());
-      secret = w; state.address = w.address; state.mode = 'native';
-      persist(w); emit();
+      secret = w; state.address = w.address; state.mode = 'native'; state.balance = null;
+      persist(w); emit(); startPolling();
       return { address: w.address, mnemonic: w.mnemonic };
     },
 
@@ -165,11 +183,13 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) — create
 
     watch: function (address) {
       if (!isValid(address)) throw new Error('That is not a valid Kaspa address.');
-      secret = null; state.address = normalize(address); state.mode = 'watch'; emit();
+      var a = normalize(address);
+      try { scriptFromAddress(a); } catch (e) { throw new Error('Invalid Kaspa address (' + e.message + '). Copy the full kaspa:... address exactly.'); }
+      secret = null; state.address = a; state.mode = 'watch'; state.balance = null; emit(); startPolling();
       return state.address;
     },
 
-    disconnect: function () { secret = null; state.address = null; state.mode = null; emit(); },
+    disconnect: function () { stopPolling(); secret = null; state.address = null; state.mode = null; state.balance = null; emit(); },
     forget: function () { try { localStorage.removeItem(STORE); } catch (e) {} TTTWallet.disconnect(); },
 
     getState: getState,
@@ -179,10 +199,21 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) — create
       var addr = normalize(address || state.address);
       if (!addr) throw new Error('No wallet connected.');
       var res = await fetch(API + '/addresses/' + encodeURIComponent(addr) + '/balance');
-      if (!res.ok) throw new Error('Balance lookup failed (' + res.status + ')');
-      var d = await res.json();
-      return Number(d.balance || 0) / 1e8;
+      if (res.ok) {
+        var d = await res.json();
+        return Number(d.balance || 0) / 1e8;
+      }
+      // Some addresses 400 on /balance — fall back to summing UTXOs.
+      var r2 = await fetch(API + '/addresses/' + encodeURIComponent(addr) + '/utxos');
+      if (r2.ok) {
+        var utxos = await r2.json();
+        return (utxos || []).reduce(function (s, u) { return s + Number(u.utxoEntry.amount); }, 0) / 1e8;
+      }
+      var body = ''; try { body = (await res.text()).slice(0, 120); } catch (e) {}
+      throw new Error('Balance lookup failed (' + res.status + (body ? ': ' + body : '') + '). Check that ' + addr.slice(0, 18) + '... is a valid mainnet address.');
     },
+
+    refreshBalance: refreshBalance,
 
     getTransactions: async function (address, limit) {
       var addr = normalize(address || state.address);
@@ -253,6 +284,7 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) — create
       var text = await sub.text();
       if (!sub.ok) throw new Error('Transaction rejected: ' + text.slice(0, 200));
       var data; try { data = JSON.parse(text); } catch (e) { data = text; }
+      burstRefresh(); // balance changes on-chain within seconds — push updates to onChange listeners
       return data.transactionId || data.txid || data;
     },
 
@@ -342,8 +374,7 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) — create
     function refreshPill() {
       var s = getState();
       if (!s.connected) { label.textContent = 'TTT Kaspa - Connect'; return; }
-      label.textContent = 'TTT Kaspa - ' + short(s.address);
-      TTTWallet.getBalance().then(function (b) { label.textContent = 'TTT Kaspa - ' + short(s.address) + ' - ' + b.toFixed(2) + ' KAS'; }).catch(function () {});
+      label.textContent = 'TTT Kaspa - ' + short(s.address) + (s.balance != null ? ' - ' + s.balance.toFixed(2) + ' KAS' : '');
     }
 
     pill.onclick = function () {

@@ -49,6 +49,17 @@ RESILIENT FETCHING — CoinGecko rate-limits (429) and then the browser reports 
 - Prefer CoinCap as the PRIMARY source. Wrap each attempt in try/catch, check res.ok, use AbortController with an ~8s timeout, and keep the previously loaded values visible while a refresh is retrying (never blank the UI on a failed refresh — show a small "retrying…" note instead).
 - The Retry button re-runs the same helper chain.`;
 
+const TROUBLESHOOT_RULE = `
+
+TROUBLESHOOTING PROTOCOL — when the user reports something broken (an error, a blank screen, a 400/404/500, "doesn't work", "shows wrong data"):
+1. REPRODUCE MENTALLY: trace the exact user action through the current project files, line by line, until you find the code that actually governs the reported behavior. Never guess.
+2. ROOT CAUSE, NOT SYMPTOM: identify WHY it happens (malformed URL, wrong query param, missing file, bad address encoding, race condition, unhandled promise, stale state) and fix that — never patch around it.
+3. HTTP FAILURES: inspect the exact URL and body being sent. A 400 means the request itself is wrong — check encoding, casing, required params. Surface the response body text in the error shown to the user, never just the status code.
+4. VERIFY THE FIX: re-trace the same user action through your changed code end-to-end; confirm every import resolves, every element id referenced in JS exists in the markup, and every async path has a visible error state.
+5. If the same bug was "fixed" before and came back, the previous fix missed — search WIDER in the project for other code paths producing the same symptom.
+6. STATE THE ROOT CAUSE in your summary in one plain sentence so the user learns what was actually wrong.
+7. Everything you build must surface failures visibly: failed fetches show the real error message and a Retry button — never a silent blank screen.`;
+
 // TTT Agent 1 = strongest available model + elite engineering directive
 const TTT_AGENT_1 = "claude_opus_4_8";
 const AGENT_1_DIRECTIVE = `
@@ -295,12 +306,13 @@ function TTTBuilderStudio() {
         .map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.role === "assistant" ? "[previous HTML omitted]" : m.content}`)
         .join("\n");
 
+      const wantsWallet = /wallet|balance|seed|send kas|receive|transaction/i.test(userPrompt);
       const projectDump = files.length
-        ? `Current project files:\n${files.filter(f => !f.path.includes("kaspa-wallet.js")).map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 6000)}`).join("\n\n")}`
+        ? `Current project files:\n${files.filter(f => wantsWallet || !f.path.includes("kaspa-wallet.js")).map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, f.path.includes("kaspa-wallet.js") ? 30000 : 6000)}`).join("\n\n")}`
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
-      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${IMAGE_RULE}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${IMAGE_RULE}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
       const fileUrls = attached.map(a => a.url);
       const attachmentNote = attached.length

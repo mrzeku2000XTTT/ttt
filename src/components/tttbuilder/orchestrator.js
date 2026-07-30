@@ -129,9 +129,11 @@ User request: ${userPrompt}`,
     const existing = new Set(working.map(f => f.path));
     onProgress?.({ type: "agent_start", index: i, name: agent.name });
 
+    // Wallet-related requests get the FULL kit source so agents can actually edit it.
+    const wantsWallet = /wallet|balance|seed|send kas|receive|transaction/i.test(userPrompt);
     const context = working
-      .filter(f => f.path !== "scripts/kaspa-wallet.js")
-      .map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 3500)}`)
+      .filter(f => wantsWallet || !f.path.includes("kaspa-wallet.js"))
+      .map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, f.path.includes("kaspa-wallet.js") ? 30000 : 3500)}`)
       .join("\n\n");
 
     const raw = await base44.integrations.Core.InvokeLLM({
