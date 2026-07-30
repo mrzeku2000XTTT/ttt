@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 
@@ -76,6 +76,7 @@ function TTTBuilderStudio() {
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
   const [iframeKey, setIframeKey] = useState(0);
+  const [device, setDevice] = useState("desktop"); // desktop | mobile
 
   // Persist session across refreshes
   const [html, setHtml] = useState(() => {
@@ -436,6 +437,22 @@ Output ONLY the complete HTML — nothing else.`,
                   <div className="ml-auto flex items-center gap-2">
                     {html && (
                       <>
+                        <div className="flex gap-1 bg-white/5 rounded-lg p-0.5">
+                          <button
+                            onClick={() => setDevice("desktop")}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "desktop" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                            title="Desktop preview"
+                          >
+                            <Monitor className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => setDevice("mobile")}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "mobile" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                            title="Mobile preview"
+                          >
+                            <Smartphone className="w-3 h-3" />
+                          </button>
+                        </div>
                         <button
                           onClick={() => generate("Regenerate with the same concept but different design")}
                           className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors"
@@ -487,15 +504,32 @@ Output ONLY the complete HTML — nothing else.`,
                   )}
 
                   {html && tab === "preview" && (
-                    <iframe
-                      key={iframeKey}
-                      ref={iframeRef}
-                      srcDoc={html}
-                      sandbox="allow-scripts"
-                      className="w-full h-full border-0"
-                      style={{ display: loading ? "none" : "block" }}
-                      title="Site Preview"
-                    />
+                    device === "desktop" ? (
+                      <iframe
+                        key={iframeKey}
+                        ref={iframeRef}
+                        srcDoc={html}
+                        sandbox="allow-scripts"
+                        className="w-full h-full border-0"
+                        style={{ display: loading ? "none" : "block" }}
+                        title="Site Preview"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 overflow-auto flex items-start justify-center p-4 sm:p-6" style={{ display: loading ? "none" : "flex" }}>
+                        <div className="relative shrink-0" style={{ width: "min(390px, 100%)", height: "min(780px, 100%)" }}>
+                          <div className="absolute -inset-[6px] rounded-[2.2rem] bg-white/5 border border-white/15 pointer-events-none" />
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-white/10 rounded-b-xl z-10 pointer-events-none" />
+                          <iframe
+                            key={iframeKey}
+                            ref={iframeRef}
+                            srcDoc={html}
+                            sandbox="allow-scripts"
+                            className="relative w-full h-full rounded-[1.8rem] border border-white/15 overflow-hidden bg-black"
+                            title="Site Preview (Mobile)"
+                          />
+                        </div>
+                      </div>
+                    )
                   )}
 
                   {html && tab === "code" && !loading && (
