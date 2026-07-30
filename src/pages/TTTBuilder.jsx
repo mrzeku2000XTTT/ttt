@@ -212,7 +212,7 @@ function TTTBuilderStudio() {
         ? `Current project files:\n${files.map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 6000)}`).join("\n\n")}`
         : "";
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const raw = await base44.integrations.Core.InvokeLLM({
         prompt: `${SYSTEM_PROMPT}${MODE_DIRECTIVE[buildMode] || ""}
 
 ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
@@ -222,6 +222,14 @@ Return the file operations only.`,
         model,
         response_json_schema: FILE_OPS_SCHEMA,
       });
+
+      // Some models wrap their structured output in a `response` key (or return it as a JSON string)
+      let result = raw;
+      if (result && !Array.isArray(result.files) && result.response !== undefined) {
+        result = typeof result.response === "string"
+          ? JSON.parse(result.response.replace(/^```(?:json)?|```$/g, "").trim())
+          : result.response;
+      }
 
       const nextFiles = applyFileOps(files, result);
       if (!nextFiles.length) throw new Error("The model returned no files. Try rephrasing your prompt.");
