@@ -204,20 +204,28 @@ Return the file operations only.`,
       });
 
       const nextFiles = applyFileOps(files, result);
-      if (!nextFiles.some(f => f.path === "index.html")) throw new Error("no index.html");
+      if (!nextFiles.length) throw new Error("The model returned no files. Try rephrasing your prompt.");
+      const isNpm = nextFiles.some(f => f.path === "package.json");
+      // Only static projects need a root index.html — npm projects run through the Live sandbox
+      if (!isNpm && !nextFiles.some(f => f.path === "index.html")) {
+        throw new Error("The model didn't return an index.html. Try again.");
+      }
 
       setFiles(nextFiles);
       const touched = (result?.files || []).map(f => norm(f.path));
       setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
       // npm projects (React/Vue/Node…) can't run in the static preview — send them to the Live sandbox
-      if (nextFiles.some(f => f.path === "package.json")) setTab("live");
+      if (isNpm) setTab("live");
       setMessages(prev => [...prev, {
         role: "assistant",
         content: `✅ ${result?.summary || "Project updated."}${touched.length ? `\n\n📁 ${touched.join("\n📁 ")}` : ""}`,
       }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: "assistant", content: "⚠️ Generation failed. Try again or rephrase your prompt." }]);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `⚠️ Generation failed: ${err?.message || "unknown error"}\n\nTip: big multi-file projects work best with a shorter, more specific prompt.`,
+      }]);
     } finally {
       setLoading(false);
     }
