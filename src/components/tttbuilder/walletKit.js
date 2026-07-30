@@ -217,6 +217,7 @@ export const WALLET_RULE = `
 
 KASPA WALLET PROTOCOL — ALWAYS AVAILABLE:
 - The wallet kit is injected automatically and loaded via a script tag in index.html. NEVER import it from JS/JSX, never add it to package.json, never rewrite or delete it. Just use the global \`window.TTTWallet\` at runtime.
+- REACT/VITE PROJECTS: the file lives at public/kaspa-wallet.js and index.html loads it with <script src="/kaspa-wallet.js"></script>. Do NOT import it, do NOT put it in src/. Read it inside a useEffect via \`window.TTTWallet\` (it is guaranteed to exist by the time components mount) and subscribe with \`TTTWallet.onChange(cb)\` to drive React state.
 - It already renders a floating "TTT Kaspa" pill top-right with connect / balance / receive / send, so the wallet always works even if you build no wallet UI of your own.
 - API: TTTWallet.connect() (KasWare extension), TTTWallet.watch(address) (watch-only), TTTWallet.getState(), TTTWallet.onChange(cb), TTTWallet.getBalance(), TTTWallet.getTransactions(), TTTWallet.getPrice(), TTTWallet.send(to, amountKas) -> txId, TTTWallet.receiveQR(amount) -> QR image URL, TTTWallet.receiveURI(), TTTWallet.isValidAddress(a), TTTWallet.explorerUrl(txId).
 - Whenever the app involves a wallet, payments, tipping, balances or receiving KAS, build the UI on top of this kit — never invent your own wallet logic and never ask the user for a seed phrase or private key.

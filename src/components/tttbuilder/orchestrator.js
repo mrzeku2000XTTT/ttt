@@ -39,7 +39,7 @@ const PLAN_SCHEMA = {
     plan: { type: "string", description: "One short sentence describing the overall build plan" },
     agents: {
       type: "array",
-      description: "One entry per specialist subagent. Use as many as the job genuinely needs (2 for a small change, 10+ for a large app). Order them so dependencies come first.",
+      description: "One entry per specialist subagent. Keep it TIGHT: 1-2 agents for a small change or simple app, 3-4 for a medium app, 5 maximum. Order them so dependencies come first.",
       items: {
         type: "object",
         properties: {
@@ -74,8 +74,8 @@ export async function orchestrateBuild({ baseRules, userPrompt, history, files, 
 You are TTT Agent 1, the ORCHESTRATOR. Do NOT write code now. Break this build into specialist subagents that each own a small set of files.
 
 Rules for the plan:
-- Split by concern (markup/shell, design system, data layer, each feature flow, wiring/entry point). Never give one agent more than ~3 files.
-- Use as many agents as the job needs — no upper limit — but every agent must produce real, needed files.
+- FEWEST AGENTS POSSIBLE. Hard cap: 5. A simple app (a game, a small dashboard, a landing page) is 1-2 agents total; do not split a small build into many tiny agents — it is slower and produces worse code. Each agent can own 4-6 files.
+- Only add an agent when the work genuinely cannot be written by the previous one.
 - The "contract" is law: exact file paths, exact global/exported function names, CSS variable + class naming, and the shared state shape, so the separately-written files fit together perfectly.
 - Put shared foundations (styles, state, api layer) before the features that consume them, and the entry point (index.html / src/main.jsx) last.
 
@@ -88,7 +88,7 @@ User request: ${userPrompt}`,
   });
 
   const plan = parseResult(planRaw);
-  const agents = (plan?.agents || []).filter(a => a?.name && Array.isArray(a.files));
+  const agents = (plan?.agents || []).filter(a => a?.name && Array.isArray(a.files)).slice(0, 5);
   if (!agents.length) throw new Error("The orchestrator produced no plan. Try again.");
 
   onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(t0), text: plan.reasoning || plan.plan } });
