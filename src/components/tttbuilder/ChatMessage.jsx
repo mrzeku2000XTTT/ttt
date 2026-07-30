@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronRight, Brain, FolderOpen } from "lucide-react";
 import AgentRunPanel from "./AgentRunPanel";
+import ActivityTimeline from "./ActivityTimeline";
 
 function Collapsible({ icon: Icon, label, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -38,6 +39,8 @@ export default function ChatMessage({ message }) {
     <div className="flex justify-start">
       <div className="max-w-[92%] w-full rounded-2xl px-4 py-3 text-sm bg-white/[0.04] border border-white/5 text-white/80">
         <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+
+        {message.activity?.length > 0 && <ActivityTimeline items={message.activity} />}
 
         {message.agents?.length > 0 && <AgentRunPanel plan={message.plan} agents={message.agents} />}
 

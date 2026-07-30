@@ -288,11 +288,11 @@ function TTTBuilderStudio() {
       const patchLast = (patch) =>
         setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, ...patch } : m)));
 
-      let nextFiles, summary, thinking = [], touched = [], agentList = null, planText = "";
+      let nextFiles, summary, thinking = [], touched = [], agentList = null, planText = "", activityLog = [];
 
       if (isAgent1) {
         // TTT Agent 1 orchestrates as many specialist subagents as the build needs
-        setMessages(prev => [...prev, { role: "assistant", content: "Planning the build…", agents: [] }]);
+        setMessages(prev => [...prev, { role: "assistant", content: "Planning the build…", agents: [], activity: [] }]);
         let live = [];
         const run = await orchestrateBuild({
           baseRules,
@@ -301,7 +301,10 @@ function TTTBuilderStudio() {
           files,
           model: TTT_AGENT_1,
           onProgress: (ev) => {
-            if (ev.type === "planned") {
+            if (ev.type === "activity") {
+              activityLog = [...activityLog, ev.item];
+              patchLast({ activity: activityLog });
+            } else if (ev.type === "planned") {
               live = ev.agents;
               patchLast({ content: `Dispatching ${live.length} subagents…`, plan: ev.plan, agents: live });
             } else if (ev.type === "agent_start") {
@@ -354,7 +357,7 @@ Return the file operations only.`,
       // npm projects auto-run their real sandbox right inside the Preview tab
       setTab("preview");
 
-      const finalMsg = { role: "assistant", content: summary, thinking, files: touched, agents: agentList || undefined, plan: planText || undefined };
+      const finalMsg = { role: "assistant", content: summary, thinking, files: touched, agents: agentList || undefined, plan: planText || undefined, activity: activityLog.length ? activityLog : undefined };
       if (isAgent1) patchLast(finalMsg);
       else setMessages(prev => [...prev, finalMsg]);
     } catch (err) {

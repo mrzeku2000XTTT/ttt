@@ -52,6 +52,7 @@ const PLAN_SCHEMA = {
       },
     },
     contract: { type: "string", description: "The shared contract every agent must respect: file names, global/exported function names, CSS class prefixes, state shape, design tokens." },
+    reasoning: { type: "string", description: "Your first-person reasoning: what the user is really asking for, the issues you spotted, and why you split the work this way. 3-6 sentences." },
   },
   required: ["plan", "agents", "contract"],
 };
@@ -61,8 +62,12 @@ export async function orchestrateBuild({ baseRules, userPrompt, history, files, 
     ? `Existing project files (paths only):\n${files.map(f => f.path).join("\n")}`
     : "No existing files — this is a new project.";
 
+  const t0 = Date.now();
+  const since = (t) => Math.max(1, Math.round((Date.now() - t) / 1000));
+
   // 1. PLAN
   onProgress?.({ type: "plan" });
+  files.forEach(f => onProgress?.({ type: "activity", item: { kind: "read", path: f.path } }));
   const planRaw = await base44.integrations.Core.InvokeLLM({
     prompt: `${baseRules}
 
@@ -86,6 +91,7 @@ User request: ${userPrompt}`,
   const agents = (plan?.agents || []).filter(a => a?.name && Array.isArray(a.files));
   if (!agents.length) throw new Error("The orchestrator produced no plan. Try again.");
 
+  onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(t0), text: plan.reasoning || plan.plan } });
   onProgress?.({ type: "planned", plan: plan.plan, agents: agents.map(a => ({ name: a.name, goal: a.goal, files: a.files, status: "queued" })) });
 
   // 2. DISPATCH
@@ -95,6 +101,8 @@ User request: ${userPrompt}`,
 
   for (let i = 0; i < agents.length; i++) {
     const agent = agents[i];
+    const tAgent = Date.now();
+    const existing = new Set(working.map(f => f.path));
     onProgress?.({ type: "agent_start", index: i, name: agent.name });
 
     const context = working
@@ -138,6 +146,8 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
 
     working = applyFileOps(working, ops);
     const wrote = (ops?.files || []).map(f => norm(f.path));
+    onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(tAgent), text: `${agent.name}: ${ops?.summary || agent.goal}` } });
+    wrote.forEach(p => onProgress?.({ type: "activity", item: { kind: existing.has(p) ? "edited" : "wrote", path: p } }));
     wrote.forEach(p => { if (!touched.includes(p)) touched.push(p); });
     log.push(`${agent.name}: ${ops?.summary || "done"}`);
     onProgress?.({ type: "agent_done", index: i, status: "done", files: wrote });
