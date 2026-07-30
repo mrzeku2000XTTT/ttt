@@ -12,6 +12,8 @@ import BuilderOrb from "@/components/tttbuilder/BuilderOrb";
 import ChatMessage from "@/components/tttbuilder/ChatMessage";
 import EnhanceButton from "@/components/tttbuilder/EnhanceButton";
 import WalletKitToggle from "@/components/tttbuilder/WalletKitToggle";
+import AttachButton from "@/components/tttbuilder/AttachButton";
+import { IMAGE_RULE, resolveImages } from "@/components/tttbuilder/imageGen";
 import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
@@ -199,6 +201,7 @@ function TTTBuilderStudio() {
     setModel(m);
     try { localStorage.setItem("ttt_builder_model", m); } catch {}
   };
+  const [attachments, setAttachments] = useState([]);
   const [mobileView, setMobileView] = useState("preview"); // chat | preview (mobile only)
   const [isNarrow, setIsNarrow] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
 
@@ -269,9 +272,11 @@ function TTTBuilderStudio() {
     setLoading(true);
     setPhase("studio");
 
+    const attached = attachments;
     const newMsg = { role: "user", content: userPrompt };
     setMessages(prev => [...prev, newMsg]);
     setPrompt("");
+    setAttachments([]);
 
     try {
       const history = [...messages, newMsg]
@@ -283,7 +288,12 @@ function TTTBuilderStudio() {
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
-      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${MODE_DIRECTIVE[buildMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${IMAGE_RULE}${MODE_DIRECTIVE[buildMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+
+      const fileUrls = attached.map(a => a.url);
+      const attachmentNote = attached.length
+        ? `\nATTACHMENTS from the user (study them closely — if they show a UI, reproduce its layout, spacing, typography and colours faithfully; if they contain data or copy, use it):\n${attached.map(a => `- ${a.name}: ${a.url}`).join("\n")}\n`
+        : "";
 
       const patchLast = (patch) =>
         setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, ...patch } : m)));
@@ -300,6 +310,8 @@ function TTTBuilderStudio() {
           history,
           files,
           model: TTT_AGENT_1,
+          fileUrls,
+          attachmentNote,
           onProgress: (ev) => {
             if (ev.type === "activity") {
               activityLog = [...activityLog, ev.item];
@@ -327,10 +339,12 @@ function TTTBuilderStudio() {
           prompt: `${baseRules}
 
 ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
+${attachmentNote}
 ${userPrompt}
 
 Return the file operations only.`,
           model,
+          file_urls: fileUrls.length ? fileUrls : undefined,
           response_json_schema: FILE_OPS_SCHEMA,
         });
         const result = parseResult(raw);
@@ -339,6 +353,12 @@ Return the file operations only.`,
         summary = result?.summary || "Project updated.";
         thinking = Array.isArray(result?.thinking) ? result.thinking : [];
       }
+
+      // Turn TTT_IMAGE[...] markers into real generated artwork
+      nextFiles = await resolveImages(nextFiles, (item) => {
+        activityLog = [...activityLog, item];
+        if (isAgent1) patchLast({ activity: activityLog });
+      });
 
       // Every generated app ships with the Kaspa wallet protocol
       if (walletKit) nextFiles = sortFiles(ensureWalletKit(nextFiles));
@@ -505,6 +525,7 @@ Return the file operations only.`,
                   <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                   <ModelSelector value={model} onChange={changeModel} disabled={loading} />
                   <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
+                  <AttachButton attachments={attachments} onChange={setAttachments} disabled={loading} />
                   <EnhanceButton
                     prompt={prompt}
                     onEnhanced={setPrompt}
@@ -641,6 +662,7 @@ Return the file operations only.`,
                     <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                     <ModelSelector value={model} onChange={changeModel} disabled={loading} />
                     <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
+                    <AttachButton attachments={attachments} onChange={setAttachments} disabled={loading} />
                     <EnhanceButton
                       prompt={prompt}
                       onEnhanced={setPrompt}

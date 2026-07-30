@@ -78,7 +78,7 @@ function stubMissingCssImports(files) {
   return out;
 }
 
-export async function orchestrateBuild({ baseRules, userPrompt, history, files, model, onProgress }) {
+export async function orchestrateBuild({ baseRules, userPrompt, history, files, model, onProgress, fileUrls = [], attachmentNote = "" }) {
   const projectDump = files.length
     ? `Existing project files (paths only):\n${files.map(f => f.path).join("\n")}`
     : "No existing files — this is a new project.";
@@ -104,8 +104,10 @@ Rules for the plan:
 ${projectDump}
 
 ${history ? `Conversation so far:\n${history}\n` : ""}
+${attachmentNote}
 User request: ${userPrompt}`,
     model,
+    file_urls: fileUrls.length ? fileUrls : undefined,
     response_json_schema: PLAN_SCHEMA,
   });
 
@@ -139,6 +141,7 @@ You are "${agent.name}", a specialist subagent inside TTT Agent 1's build team.
 
 OVERALL BUILD: ${plan.plan}
 USER REQUEST: ${userPrompt}
+${attachmentNote}
 
 SHARED CONTRACT — obey it exactly, other agents depend on it:
 ${plan.contract}
@@ -154,6 +157,7 @@ ${context ? `Files written so far by the team (reference only — do NOT rewrite
 
 Return the file operations for YOUR files only. Complete, production-ready, no placeholders, no TODOs.`,
       model,
+      file_urls: fileUrls.length ? fileUrls : undefined,
       response_json_schema: FILE_OPS_SCHEMA,
     });
 
