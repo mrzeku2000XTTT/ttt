@@ -9,6 +9,7 @@ import E2BLivePanel from "@/components/tttbuilder/E2BLivePanel";
 import ModelSelector from "@/components/tttbuilder/ModelSelector";
 import BuildModeToggle from "@/components/tttbuilder/BuildModeToggle";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
+import { buildReactPreview, isReactProject } from "@/components/tttbuilder/reactPreview";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -67,7 +68,7 @@ const MODE_DIRECTIVE = {
   react: `\n\nLOCKED MODE: REAL PROJECT MODE (B). The user explicitly chose React mode.
 - Write a real npm project: package.json (react, react-dom, vite, @vitejs/plugin-react, "dev": "vite --host 0.0.0.0 --port 3000"), vite.config.js, index.html at root, src/main.jsx, src/App.jsx and separate components under src/components/.
 - Real ES module imports and JSX. Plain CSS files unless you add a styling package to package.json.
-- This runs in the Live tab sandbox.`,
+- This renders directly in the Preview tab (compiled in-browser), and can also run in the Live sandbox.`,
 };
 
 export default function TTTBuilderPage() {
@@ -152,7 +153,11 @@ function TTTBuilderStudio() {
     return [];
   });
   const [activePath, setActivePath] = useState("index.html");
-  const html = useMemo(() => bundleProject(files), [files]);
+  // npm/React projects are compiled in-browser so they render in Preview too
+  const html = useMemo(
+    () => (isReactProject(files) ? buildReactPreview(files) : bundleProject(files)),
+    [files]
+  );
   const activeFile = files.find(f => f.path === activePath) || files[0] || null;
   const isRealProject = files.some(f => f.path === "package.json");
   const [messages, setMessages] = useState(() => {
@@ -243,8 +248,8 @@ Return the file operations only.`,
       const touched = (result?.files || []).map(f => norm(f.path));
       setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
-      // npm projects (React/Vue/Node…) can't run in the static preview — send them to the Live sandbox
-      if (isNpm) setTab("live");
+      // React/Vite projects compile in-browser, so stay on Preview. Only backend-ish npm projects need Live.
+      setTab(isNpm && !isReactProject(nextFiles) ? "live" : "preview");
       setMessages(prev => [...prev, {
         role: "assistant",
         content: `✅ ${result?.summary || "Project updated."}${touched.length ? `\n\n📁 ${touched.join("\n📁 ")}` : ""}`,
@@ -629,7 +634,7 @@ Return the file operations only.`,
                         </div>
                         <p className="text-white/30 text-sm">
                           {isRealProject
-                            ? "This is a real npm project — open the Live tab to run it."
+                            ? "This npm project needs a server — open the Live tab to run it."
                             : "Your site preview will appear here"}
                         </p>
                       </div>
@@ -656,7 +661,7 @@ Return the file operations only.`,
                         key={iframeKey}
                         ref={iframeRef}
                         srcDoc={html}
-                        sandbox="allow-scripts"
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                         className="w-full h-full border-0"
                         style={{ display: loading ? "none" : "block" }}
                         title="Site Preview"
@@ -670,7 +675,7 @@ Return the file operations only.`,
                             key={iframeKey}
                             ref={iframeRef}
                             srcDoc={html}
-                            sandbox="allow-scripts"
+                            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                             className="relative w-full h-full rounded-[1.6rem] border border-white/15 overflow-hidden bg-black"
                             title="Site Preview (Mobile)"
                           />
