@@ -11,6 +11,8 @@ import BuildModeToggle from "@/components/tttbuilder/BuildModeToggle";
 import BuilderOrb from "@/components/tttbuilder/BuilderOrb";
 import ChatMessage from "@/components/tttbuilder/ChatMessage";
 import EnhanceButton from "@/components/tttbuilder/EnhanceButton";
+import WalletKitToggle from "@/components/tttbuilder/WalletKitToggle";
+import { WALLET_KIT_PATH, WALLET_KIT_SOURCE, WALLET_RULE } from "@/components/tttbuilder/walletKit";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
@@ -183,6 +185,15 @@ function TTTBuilderStudio() {
     try { localStorage.setItem("ttt_builder_mode", m); } catch {}
   };
 
+  const [walletKit, setWalletKit] = useState(() => {
+    try { return localStorage.getItem("ttt_builder_wallet") !== "off"; } catch { return true; }
+  });
+
+  const changeWalletKit = (v) => {
+    setWalletKit(v);
+    try { localStorage.setItem("ttt_builder_wallet", v ? "on" : "off"); } catch {}
+  };
+
   const changeModel = (m) => {
     setModel(m);
     try { localStorage.setItem("ttt_builder_model", m); } catch {}
@@ -267,13 +278,13 @@ function TTTBuilderStudio() {
         .join("\n");
 
       const projectDump = files.length
-        ? `Current project files:\n${files.map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 6000)}`).join("\n\n")}`
+        ? `Current project files:\n${files.filter(f => f.path !== WALLET_KIT_PATH).map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 6000)}`).join("\n\n")}`
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
 
       const raw = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${MODE_DIRECTIVE[buildMode] || ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}
+        prompt: `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${MODE_DIRECTIVE[buildMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}
 
 ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
 ${userPrompt}
@@ -291,7 +302,11 @@ Return the file operations only.`,
           : result.response;
       }
 
-      const nextFiles = applyFileOps(files, result);
+      let nextFiles = applyFileOps(files, result);
+      // Every generated app ships with the Kaspa wallet protocol
+      if (walletKit && !nextFiles.some(f => f.path === WALLET_KIT_PATH)) {
+        nextFiles = sortFiles([...nextFiles, { path: WALLET_KIT_PATH, content: WALLET_KIT_SOURCE }]);
+      }
       if (!nextFiles.length) throw new Error("The model returned no files. Try rephrasing your prompt.");
       const isNpm = nextFiles.some(f => f.path === "package.json");
       // Only static projects need a root index.html — npm projects run through the Live sandbox
@@ -457,6 +472,7 @@ Return the file operations only.`,
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                   <ModelSelector value={model} onChange={changeModel} disabled={loading} />
+                  <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
                   <EnhanceButton
                     prompt={prompt}
                     onEnhanced={setPrompt}
@@ -592,6 +608,7 @@ Return the file operations only.`,
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                     <ModelSelector value={model} onChange={changeModel} disabled={loading} />
+                    <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
                     <EnhanceButton
                       prompt={prompt}
                       onEnhanced={setPrompt}
