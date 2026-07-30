@@ -1,0 +1,83 @@
+// Virtual multi-file project helpers for TTT Builder
+
+export const norm = (p) => String(p || "").replace(/^\.?\//, "").trim();
+
+export const sortFiles = (files) =>
+  [...files].sort((a, b) => {
+    if (a.path === "index.html") return -1;
+    if (b.path === "index.html") return 1;
+    return a.path.localeCompare(b.path);
+  });
+
+export const fileLang = (path) => {
+  const ext = path.split(".").pop().toLowerCase();
+  if (ext === "css") return "css";
+  if (ext === "js" || ext === "mjs") return "javascript";
+  if (ext === "json") return "json";
+  if (ext === "html") return "html";
+  return "text";
+};
+
+/**
+ * Bundles a virtual file tree into a single self-contained HTML document
+ * so it can run inside a sandboxed iframe (no network access).
+ */
+export function bundleProject(files) {
+  const map = {};
+  files.forEach((f) => { map[norm(f.path)] = f.content || ""; });
+
+  let html = map["index.html"];
+  if (!html) return "";
+
+  // Inline <link rel="stylesheet" href="...">
+  html = html.replace(/<link[^>]*href=["']([^"']+)["'][^>]*>/gi, (tag, href) => {
+    if (!/stylesheet/i.test(tag)) return tag;
+    const css = map[norm(href)];
+    return css !== undefined ? `<style>\n${css}\n</style>` : tag;
+  });
+
+  // Inline <script src="...">
+  html = html.replace(/<script([^>]*)src=["']([^"']+)["']([^>]*)><\/script>/gi, (tag, pre, src, post) => {
+    const js = map[norm(src)];
+    if (js === undefined) return tag;
+    const isModule = /type=["']module["']/i.test(pre + post);
+    return `<script${isModule ? ' type="module"' : ""}>\n${js}\n</script>`;
+  });
+
+  return html;
+}
+
+/** Applies the agent's file operations to the current tree. */
+export function applyFileOps(current, ops) {
+  const next = [...current];
+  (ops?.files || []).forEach((f) => {
+    const path = norm(f.path);
+    if (!path || typeof f.content !== "string") return;
+    const idx = next.findIndex((x) => x.path === path);
+    if (idx >= 0) next[idx] = { path, content: f.content };
+    else next.push({ path, content: f.content });
+  });
+  const deleted = (ops?.deleted_files || []).map(norm);
+  return sortFiles(next.filter((f) => !deleted.includes(f.path)));
+}
+
+export const FILE_OPS_SCHEMA = {
+  type: "object",
+  properties: {
+    summary: { type: "string", description: "Short friendly explanation of what changed" },
+    files: {
+      type: "array",
+      description: "Full contents of every file created or modified",
+      items: {
+        type: "object",
+        properties: {
+          path: { type: "string" },
+          content: { type: "string" },
+        },
+        required: ["path", "content"],
+      },
+    },
+    deleted_files: { type: "array", items: { type: "string" } },
+  },
+  required: ["summary", "files"],
+};

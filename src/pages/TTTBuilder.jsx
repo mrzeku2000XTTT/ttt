@@ -1,8 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
+import FileExplorer from "@/components/tttbuilder/FileExplorer";
+import FileEditor from "@/components/tttbuilder/FileEditor";
+import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -14,14 +17,20 @@ const EXAMPLES = [
   "Web3 developer portfolio with project cards and contact form",
 ];
 
-const SYSTEM_PROMPT = `You are TTT Builder — an expert full-stack web developer. Generate a COMPLETE, fully interactive web application as a SINGLE self-contained HTML file.
+const SYSTEM_PROMPT = `You are TTT Builder — an expert full-stack web developer working in a REAL multi-file project.
 
-CRITICAL RULES — MUST FOLLOW EXACTLY:
-- Output ONLY raw HTML — no markdown, no code fences, no explanation, no \`\`\`html wrapper
-- NO external CDN scripts — the iframe has NO internet access. Everything must be inline.
-- Write ALL logic in pure vanilla JavaScript inside <script> tags
-- Write ALL styles in <style> tags using CSS (no Tailwind, no external CSS)
-- The app must be 100% self-contained — zero external dependencies
+FILE SYSTEM RULES — MUST FOLLOW EXACTLY:
+- The project is a folder of files. index.html is the entry point and MUST always exist.
+- Split the app into proper files, e.g.: index.html, styles/main.css, scripts/app.js, scripts/state.js, data/config.json
+- index.html links its files with RELATIVE paths only: <link rel="stylesheet" href="styles/main.css"> and <script src="scripts/app.js"></script>
+- NO external CDN scripts or fonts — the preview has NO internet access.
+- Return in "files" the FULL final content of every file you create or change (never diffs, never partial files, no placeholders like "// rest unchanged")
+- Only include files you actually touched. Use "deleted_files" for files that should be removed.
+- Keep existing file paths stable when modifying an app — edit those same files instead of renaming them.
+
+CODE RULES:
+- Write ALL logic in pure vanilla JavaScript (no frameworks, no build step)
+- Write ALL styles in CSS files (no Tailwind)
 - Use CSS custom properties, CSS animations, CSS Grid/Flexbox for beautiful layouts
 - Write REAL interactivity: event listeners, DOM manipulation, state variables in JS
 - For games: implement full game logic (win detection, turn switching, score tracking, AI if needed)
@@ -30,9 +39,8 @@ CRITICAL RULES — MUST FOLLOW EXACTLY:
 - Use dark theme with these colors unless user says otherwise: bg #0d1117, accent #70C7BA (Kaspa green), text #e6edf3
 - Add CSS animations: keyframes, transitions, hover effects, pulse effects
 - Make it fully responsive with media queries
-- Structure: complete <!DOCTYPE html> ... </html> document
-- IMPORTANT: The HTML must render and work immediately — no loading, no missing assets
-- For a tic tac toe game example: implement the board, X/O turns, win detection, restart button, score tracker — all working
+- index.html is a complete <!DOCTYPE html> ... </html> document
+- IMPORTANT: The app must render and work immediately — no loading, no missing assets
 - Build whatever the user asks, fully functional, beautiful, production quality`;
 
 export default function TTTBuilderPage() {
@@ -89,10 +97,19 @@ function TTTBuilderStudio() {
   // On real phones always show the phone-framed preview
   const effectiveDevice = isNarrow ? "mobile" : device;
 
-  // Persist session across refreshes
-  const [html, setHtml] = useState(() => {
-    try { return localStorage.getItem("ttt_builder_html") || ""; } catch { return ""; }
+  // Persist session across refreshes — real multi-file project
+  const [files, setFiles] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("ttt_builder_files") || "null");
+      if (Array.isArray(saved) && saved.length) return saved;
+      const legacy = localStorage.getItem("ttt_builder_html");
+      if (legacy) return [{ path: "index.html", content: legacy }];
+    } catch {}
+    return [];
   });
+  const [activePath, setActivePath] = useState("index.html");
+  const html = useMemo(() => bundleProject(files), [files]);
+  const activeFile = files.find(f => f.path === activePath) || files[0] || null;
   const [messages, setMessages] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ttt_builder_messages") || "[]"); } catch { return []; }
   });
@@ -101,8 +118,24 @@ function TTTBuilderStudio() {
   });
 
   useEffect(() => {
-    try { localStorage.setItem("ttt_builder_html", html); } catch {}
-  }, [html]);
+    try { localStorage.setItem("ttt_builder_files", JSON.stringify(files)); } catch {}
+  }, [files]);
+
+  const updateFile = (path, content) => {
+    setFiles(prev => prev.map(f => (f.path === path ? { ...f, content } : f)));
+    setIframeKey(k => k + 1);
+  };
+
+  const createFile = (path) => {
+    setFiles(prev => (prev.some(f => f.path === path) ? prev : sortFiles([...prev, { path, content: "" }])));
+    setActivePath(path);
+  };
+
+  const deleteFile = (path) => {
+    setFiles(prev => prev.filter(f => f.path !== path));
+    setActivePath("index.html");
+    setIframeKey(k => k + 1);
+  };
 
   useEffect(() => {
     try { localStorage.setItem("ttt_builder_messages", JSON.stringify(messages)); } catch {}
@@ -130,29 +163,32 @@ function TTTBuilderStudio() {
         .map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.role === "assistant" ? "[previous HTML omitted]" : m.content}`)
         .join("\n");
 
+      const projectDump = files.length
+        ? `Current project files:\n${files.map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 6000)}`).join("\n\n")}`
+        : "";
+
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `${SYSTEM_PROMPT}
 
-${messages.length > 0 ? `Previous conversation:\n${history}\n\nUser wants to MODIFY the existing page:` : "User wants to BUILD a new page:"}
+${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
 ${userPrompt}
 
-${html && messages.length > 0 ? `Here is the current HTML to modify:\n${html.slice(0, 8000)}` : ""}
-
-Output ONLY the complete HTML — nothing else.`,
+Return the file operations only.`,
         model: "claude_sonnet_4_6",
+        response_json_schema: FILE_OPS_SCHEMA,
       });
 
-      const generated = typeof result === "string" ? result : result?.html || result?.code || JSON.stringify(result);
-      // Strip any markdown fences Claude might add
-      const cleaned = generated
-        .replace(/^```html\s*/i, "")
-        .replace(/^```\s*/i, "")
-        .replace(/```\s*$/i, "")
-        .trim();
+      const nextFiles = applyFileOps(files, result);
+      if (!nextFiles.some(f => f.path === "index.html")) throw new Error("no index.html");
 
-      setHtml(cleaned);
+      setFiles(nextFiles);
+      const touched = (result?.files || []).map(f => norm(f.path));
+      setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
-      setMessages(prev => [...prev, { role: "assistant", content: "✅ Site generated! You can see the preview on the right. Ask me to change anything." }]);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `✅ ${result?.summary || "Project updated."}${touched.length ? `\n\n📁 ${touched.join("\n📁 ")}` : ""}`,
+      }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: "assistant", content: "⚠️ Generation failed. Try again or rephrase your prompt." }]);
     } finally {
@@ -373,8 +409,8 @@ Output ONLY the complete HTML — nothing else.`,
                   <span className="font-bold text-sm">TTT Builder</span>
                   <button
                     onClick={() => {
-                      setHtml(""); setMessages([]); setPhase("hero");
-                      try { localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); } catch {}
+                      setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html");
+                      try { localStorage.removeItem("ttt_builder_files"); localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); } catch {}
                     }}
                     className="ml-auto text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
                   >
@@ -390,7 +426,7 @@ Output ONLY the complete HTML — nothing else.`,
                   )}
                   {messages.map((m, i) => (
                     <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
                         m.role === "user"
                           ? "bg-[#70C7BA]/20 text-white"
                           : "bg-white/5 text-white/80"
@@ -460,7 +496,7 @@ Output ONLY the complete HTML — nothing else.`,
                       onClick={() => setTab("code")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === "code" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
                     >
-                      <Code2 className="w-3 h-3" /> Code
+                      <Code2 className="w-3 h-3" /> Files{files.length ? ` (${files.length})` : ""}
                     </button>
                   </div>
                   <div className="ml-auto flex items-center gap-2 flex-shrink-0">
@@ -561,11 +597,16 @@ Output ONLY the complete HTML — nothing else.`,
                     )
                   )}
 
-                  {html && tab === "code" && !loading && (
-                    <div className="h-full overflow-auto">
-                      <pre className="p-4 text-[11px] font-mono text-green-300/80 whitespace-pre-wrap leading-relaxed">
-                        {html}
-                      </pre>
+                  {tab === "code" && !loading && (
+                    <div className="absolute inset-0 flex min-h-0">
+                      <FileExplorer
+                        files={files}
+                        activePath={activeFile?.path}
+                        onSelect={setActivePath}
+                        onCreate={createFile}
+                        onDelete={deleteFile}
+                      />
+                      <FileEditor file={activeFile} onChange={updateFile} />
                     </div>
                   )}
                 </div>
