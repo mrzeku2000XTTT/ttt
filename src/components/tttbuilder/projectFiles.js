@@ -47,15 +47,20 @@ export function bundleProject(files) {
   return html;
 }
 
+/** LLMs sometimes emit literal "\u2014" text instead of the character. Decode it. */
+const decodeEscapes = (s) =>
+  s.replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+
 /** Applies the agent's file operations to the current tree. */
 export function applyFileOps(current, ops) {
   const next = [...current];
   (ops?.files || []).forEach((f) => {
     const path = norm(f.path);
     if (!path || typeof f.content !== "string") return;
+    const content = decodeEscapes(f.content);
     const idx = next.findIndex((x) => x.path === path);
-    if (idx >= 0) next[idx] = { path, content: f.content };
-    else next.push({ path, content: f.content });
+    if (idx >= 0) next[idx] = { path, content };
+    else next.push({ path, content });
   });
   const deleted = (ops?.deleted_files || []).map(norm);
   return sortFiles(next.filter((f) => !deleted.includes(f.path)));
