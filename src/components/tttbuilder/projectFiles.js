@@ -47,6 +47,42 @@ export function bundleProject(files) {
   return html;
 }
 
+/** Resolves a relative import from `fromPath` to a concrete project path. */
+const resolveImport = (fromPath, spec) => {
+  const stack = fromPath.split("/").slice(0, -1);
+  spec.split("/").forEach((p) => {
+    if (p === "." || p === "") return;
+    if (p === "..") stack.pop();
+    else stack.push(p);
+  });
+  return norm(stack.join("/"));
+};
+
+/**
+ * Every relative import in the project that has no matching file.
+ * A single missing module (e.g. src/App.jsx) makes the whole build fail to render.
+ */
+export function findMissingImports(files) {
+  const paths = new Set(files.map((f) => norm(f.path)));
+  const missing = new Map(); // path -> importer
+  files.forEach((f) => {
+    if (!/\.(js|jsx|ts|tsx)$/.test(f.path)) return;
+    const specs = [
+      ...[...f.content.matchAll(/(?:from|import)\s*["'](\.[^"']+)["']/g)].map((m) => m[1]),
+    ];
+    specs.forEach((spec) => {
+      const base = resolveImport(f.path, spec);
+      const candidates = /\.\w+$/.test(base)
+        ? [base]
+        : [`${base}.jsx`, `${base}.js`, `${base}.ts`, `${base}.tsx`, `${base}/index.jsx`, `${base}/index.js`];
+      if (candidates.some((c) => paths.has(c))) return;
+      const target = /\.\w+$/.test(base) ? base : `${base}.jsx`;
+      if (!missing.has(target)) missing.set(target, f.path);
+    });
+  });
+  return [...missing].map(([path, importer]) => ({ path, importer }));
+}
+
 /** LLMs sometimes emit literal "\u2014" text instead of the character. Decode it. */
 const decodeEscapes = (s) =>
   s.replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));

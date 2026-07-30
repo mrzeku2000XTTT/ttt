@@ -17,7 +17,7 @@ import TemplateGallery from "@/components/tttbuilder/TemplateGallery";
 import PasteHtmlButton from "@/components/tttbuilder/PasteHtmlButton";
 import { IMAGE_RULE, resolveImages } from "@/components/tttbuilder/imageGen";
 import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit";
-import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
+import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm, findMissingImports } from "@/components/tttbuilder/projectFiles";
 import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
@@ -238,6 +238,7 @@ function TTTBuilderStudio() {
   const html = useMemo(() => bundleProject(files), [files]);
   const activeFile = files.find(f => f.path === activePath) || files[0] || null;
   const isRealProject = files.some(f => f.path === "package.json");
+  const missingImports = useMemo(() => findMissingImports(files), [files]);
   const [messages, setMessages] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ttt_builder_messages") || "[]"); } catch { return []; }
   });
@@ -812,7 +813,24 @@ Return the file operations only.`,
 
                   {/* Real npm projects run in the cloud sandbox, streamed straight into Preview */}
                   {tab === "preview" && isRealProject && !loading && (
-                    <E2BLivePanel files={files} autoStart />
+                    <div className="absolute inset-0 flex flex-col">
+                      {missingImports.length > 0 && (
+                        <div className="flex-shrink-0 px-3 py-2 bg-red-500/10 border-b border-red-500/30 text-[11px] text-red-300 flex items-center justify-between gap-3">
+                          <span className="truncate">
+                            Missing file{missingImports.length > 1 ? "s" : ""}: {missingImports.map(m => m.path).join(", ")} — the app can't render without {missingImports.length > 1 ? "them" : "it"}.
+                          </span>
+                          <button
+                            onClick={() => generate(`Create the missing files that are imported but do not exist: ${missingImports.map(m => `${m.path} (imported by ${m.importer})`).join(", ")}. Write their full real implementation.`, { mode: "react" })}
+                            className="flex-shrink-0 px-2 py-1 rounded bg-red-500/20 border border-red-500/40 font-bold hover:bg-red-500/30"
+                          >
+                            Fix now
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex-1 min-h-0 relative">
+                        <E2BLivePanel files={files} autoStart />
+                      </div>
+                    </div>
                   )}
 
                   {html && tab === "preview" && !isRealProject && (

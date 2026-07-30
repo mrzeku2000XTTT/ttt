@@ -1,7 +1,7 @@
 // TTT Agent 1 orchestration — plans a build, then dispatches as many
 // specialist subagents as the job needs, one file-group each.
 import { base44 } from "@/api/base44Client";
-import { applyFileOps, FILE_OPS_SCHEMA, norm } from "./projectFiles";
+import { applyFileOps, FILE_OPS_SCHEMA, norm, findMissingImports } from "./projectFiles";
 
 /** Models sometimes wrap structured output in `response`, or return JSON with trailing junk. */
 export function parseResult(raw) {
@@ -180,6 +180,62 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
   }
 
   working = stubMissingCssImports(working);
+
+  // 3. REPAIR — a single missing module (src/App.jsx, a page, a component) makes the
+  // whole project fail to render, so write anything the team imported but never created.
+  for (let round = 0; round < 2; round++) {
+    const missing = findMissingImports(working).filter(m => !/\.css$/.test(m.path));
+    if (!missing.length) break;
+
+    const tRepair = Date.now();
+    onProgress?.({ type: "activity", item: { kind: "thought", seconds: 1, text: `Repair Agent: ${missing.length} imported file(s) were never written — creating them: ${missing.map(m => m.path).join(", ")}` } });
+
+    const context = working
+      .filter(f => f.path !== "scripts/kaspa-wallet.js" && f.path !== "public/kaspa-wallet.js")
+      .map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, 3500)}`)
+      .join("\n\n");
+
+    try {
+      const raw = await base44.integrations.Core.InvokeLLM({
+        prompt: `${baseRules}
+
+You are the REPAIR AGENT. The build team imported files that were never written, so the app currently fails to render.
+
+OVERALL BUILD: ${plan.plan}
+USER REQUEST: ${userPrompt}
+${attachmentNote}
+SHARED CONTRACT:
+${plan.contract}
+
+WRITE THESE MISSING FILES — full, final, production-ready content, matching how they are already imported and used:
+${missing.map(m => `${m.path}  (imported by ${m.importer})`).join("\n")}
+
+Rules:
+- Default-export the component/module under the name it is imported as, and accept the props the importer passes.
+- These are NOT stubs: build the real, complete, fully designed implementation the project needs, consistent with the existing files' styling and structure.
+- Do not rewrite or return any other file.
+
+Existing project files:
+${context}`,
+        model,
+        file_urls: fileUrls.length ? fileUrls : undefined,
+        response_json_schema: FILE_OPS_SCHEMA,
+      });
+      const ops = parseResult(raw);
+      working = applyFileOps(working, ops);
+      const wrote = (ops?.files || []).map(f => norm(f.path));
+      wrote.forEach(p => {
+        onProgress?.({ type: "activity", item: { kind: "wrote", path: p } });
+        if (!touched.includes(p)) touched.push(p);
+      });
+      log.push(`Repair Agent: created ${wrote.length} missing file(s)`);
+      onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(tRepair), text: `Repair Agent: wrote ${wrote.join(", ")}` } });
+      working = stubMissingCssImports(working);
+    } catch (err) {
+      log.push(`Repair Agent: failed (${err.message})`);
+      break;
+    }
+  }
 
   return {
     files: working,
