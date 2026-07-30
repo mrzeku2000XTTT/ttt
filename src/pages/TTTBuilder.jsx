@@ -7,6 +7,7 @@ import FileExplorer from "@/components/tttbuilder/FileExplorer";
 import FileEditor from "@/components/tttbuilder/FileEditor";
 import E2BLivePanel from "@/components/tttbuilder/E2BLivePanel";
 import ModelSelector from "@/components/tttbuilder/ModelSelector";
+import BuildModeToggle from "@/components/tttbuilder/BuildModeToggle";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm } from "@/components/tttbuilder/projectFiles";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
@@ -59,6 +60,16 @@ CODE RULES:
 - IMPORTANT: The app must render and work immediately — no loading, no missing assets
 - Build whatever the user asks, fully functional, beautiful, production quality`;
 
+const MODE_DIRECTIVE = {
+  html: `\n\nLOCKED MODE: STATIC MODE (A). The user explicitly chose HTML mode.
+- Use ONLY vanilla HTML/CSS/JS. NO package.json, NO npm, NO React/JSX, NO build step.
+- index.html at the project root must be a complete document that renders in a sandboxed iframe with no internet.`,
+  react: `\n\nLOCKED MODE: REAL PROJECT MODE (B). The user explicitly chose React mode.
+- Write a real npm project: package.json (react, react-dom, vite, @vitejs/plugin-react, "dev": "vite --host 0.0.0.0 --port 3000"), vite.config.js, index.html at root, src/main.jsx, src/App.jsx and separate components under src/components/.
+- Real ES module imports and JSX. Plain CSS files unless you add a styling package to package.json.
+- This runs in the Live tab sandbox.`,
+};
+
 export default function TTTBuilderPage() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -104,6 +115,15 @@ function TTTBuilderStudio() {
   const [model, setModel] = useState(() => {
     try { return localStorage.getItem("ttt_builder_model") || "claude_sonnet_4_6"; } catch { return "claude_sonnet_4_6"; }
   });
+
+  const [buildMode, setBuildMode] = useState(() => {
+    try { return localStorage.getItem("ttt_builder_mode") || "html"; } catch { return "html"; }
+  });
+
+  const changeBuildMode = (m) => {
+    setBuildMode(m);
+    try { localStorage.setItem("ttt_builder_mode", m); } catch {}
+  };
 
   const changeModel = (m) => {
     setModel(m);
@@ -193,7 +213,7 @@ function TTTBuilderStudio() {
         : "";
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}
+        prompt: `${SYSTEM_PROMPT}${MODE_DIRECTIVE[buildMode] || ""}
 
 ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
 ${userPrompt}
@@ -366,7 +386,8 @@ Return the file operations only.`,
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Build</>}
                   </button>
                 </div>
-                <div className="mt-3 flex justify-center">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                   <ModelSelector value={model} onChange={changeModel} disabled={loading} />
                 </div>
               </motion.div>
@@ -503,7 +524,8 @@ Return the file operations only.`,
                     </button>
                   </form>
 
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                     <ModelSelector value={model} onChange={changeModel} disabled={loading} />
                   </div>
 
