@@ -33,7 +33,14 @@ LIVE DATA — HARD REQUIREMENT (violating this is a failed build):
   simple price: https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true
   7d chart: https://api.coingecko.com/api/v3/coins/kaspa/market_chart?vs_currency=usd&days=7
   network stats: https://api.kaspa.org/info/hashrate and https://api.kaspa.org/info/blockdag and https://api.kaspa.org/info/coinsupply
-- Render only values that came back from the response. Show a skeleton while loading, a visible error + Retry button on failure, and a real "Updated HH:MM:SS" timestamp taken from the moment the fetch succeeded.`;
+- Render only values that came back from the response. Show a skeleton while loading, a visible error + Retry button on failure, and a real "Updated HH:MM:SS" timestamp taken from the moment the fetch succeeded.
+
+RESILIENT FETCHING — CoinGecko rate-limits (429) and then the browser reports "Failed to fetch". You MUST write a helper that tries multiple CORS-friendly sources in order and only shows an error if ALL of them fail:
+  1. CoinCap (very reliable, CORS open): https://api.coincap.io/v2/assets?ids=bitcoin,ethereum,solana,cardano,polkadot,kaspa  → data[].priceUsd, changePercent24Hr, marketCapUsd, volumeUsd24Hr
+  2. Binance (per symbol): https://api.binance.com/api/v3/ticker/24hr?symbol=KASUSDT → lastPrice, priceChangePercent
+  3. CoinGecko simple/price (as written above)
+- Prefer CoinCap as the PRIMARY source. Wrap each attempt in try/catch, check res.ok, use AbortController with an ~8s timeout, and keep the previously loaded values visible while a refresh is retrying (never blank the UI on a failed refresh — show a small "retrying…" note instead).
+- The Retry button re-runs the same helper chain.`;
 
 // TTT Agent 1 = strongest available model + elite engineering directive
 const TTT_AGENT_1 = "claude_opus_4_8";
