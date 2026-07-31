@@ -122,6 +122,7 @@ User request: ${userPrompt}`,
   let working = files;
   const touched = [];
   const log = [];
+  const failedFiles = []; // files owed by agents that failed — handed to the Repair Agent
 
   for (let i = 0; i < agents.length; i++) {
     const agent = agents[i];
@@ -136,9 +137,8 @@ User request: ${userPrompt}`,
       .map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, f.path.includes("kaspa-wallet.js") ? 30000 : 3500)}`)
       .join("\n\n");
 
-    const raw = await base44.integrations.Core.InvokeLLM({
-      prompt: `${baseRules}
-
+    const agentPrompt = (retryNote) => `${baseRules}
+${retryNote}
 You are "${agent.name}", a specialist subagent inside TTT Agent 1's build team.
 
 OVERALL BUILD: ${plan.plan}
@@ -157,18 +157,29 @@ ${agent.instructions}
 
 ${context ? `Files written so far by the team (reference only — do NOT rewrite them):\n${context}` : ""}
 
-Return the file operations for YOUR files only. Complete, production-ready, no placeholders, no TODOs.`,
-      model,
-      file_urls: fileUrls.length ? fileUrls : undefined,
-      response_json_schema: FILE_OPS_SCHEMA,
-    });
+Return the file operations for YOUR files only. Complete, production-ready, no placeholders, no TODOs.`;
 
-    let ops;
-    try {
-      ops = parseResult(raw);
-    } catch (err) {
+    // A malformed response must not kill the build — retry once, then hand the
+    // agent's files to the Repair Agent instead of silently skipping them.
+    let ops = null, lastErr = null;
+    for (let attempt = 0; attempt < 2 && !ops; attempt++) {
+      try {
+        const raw = await base44.integrations.Core.InvokeLLM({
+          prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
+          model,
+          file_urls: fileUrls.length ? fileUrls : undefined,
+          response_json_schema: FILE_OPS_SCHEMA,
+        });
+        ops = parseResult(raw);
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    if (!ops) {
       onProgress?.({ type: "agent_done", index: i, status: "failed", files: [] });
-      log.push(`${agent.name}: failed (${err.message})`);
+      onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(tAgent), text: `${agent.name} failed twice (${lastErr?.message}). Repair Agent will write its files: ${agent.files.join(", ")}` } });
+      log.push(`${agent.name}: failed (${lastErr?.message}) — files handed to Repair Agent`);
+      agent.files.forEach(p => failedFiles.push(norm(p)));
       continue;
     }
 
@@ -186,7 +197,14 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
   // 3. REPAIR — a single missing module (src/App.jsx, a page, a component) makes the
   // whole project fail to render, so write anything the team imported but never created.
   for (let round = 0; round < 2; round++) {
-    const missing = findMissingImports(working).filter(m => !/\.css$/.test(m.path));
+    const written = new Set(working.map(f => f.path));
+    const owed = failedFiles
+      .filter(p => !written.has(p))
+      .map(p => ({ path: p, importer: "build plan (its agent failed)" }));
+    const missing = [
+      ...owed,
+      ...findMissingImports(working).filter(m => !/\.css$/.test(m.path) && !owed.some(o => o.path === m.path)),
+    ];
     if (!missing.length) break;
 
     const tRepair = Date.now();
