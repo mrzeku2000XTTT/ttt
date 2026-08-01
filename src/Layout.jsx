@@ -265,6 +265,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "KCC NFT", icon: Key, path: "KCCNft" },
     ...(isAdmin ? [{ name: "AWA Signer", icon: Shield, path: "AWASigner" }] : []),
     ...(isAdmin ? [{ name: "KAS Dollar", icon: Wallet, path: "KASDollar" }] : []),
+    ...(isAdmin ? [{ name: "Argent Studio", icon: Bot, path: "ArgentStudio" }] : []),
     { name: "K-University", icon: BookOpen, path: "KUniversity" },
     { name: "Area 51", icon: AlertTriangle, path: "Area51" },
     { name: "Docs", icon: FileText, path: "Docs" },

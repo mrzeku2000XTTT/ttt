@@ -134,6 +134,7 @@ import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
 import KASDollarPage from './pages/KASDollar';
+import ArgentStudioPage from './pages/ArgentStudio';
 import TreePage from './pages/Tree';
 import KuttPage from './pages/Kutt';
 import SlobzPage from './pages/Slobz';
@@ -326,6 +327,7 @@ const AuthenticatedApp = () => {
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />
       <Route path="/KASDollar" element={<AdminRoute><KASDollarPage /></AdminRoute>} />
+      <Route path="/ArgentStudio" element={<AdminRoute><ArgentStudioPage /></AdminRoute>} />
       <Route path="/Tree" element={<TreePage />} />
       <Route path="/Kutt" element={<KuttPage />} />
       <Route path="/Slobz" element={<SlobzPage />} />
