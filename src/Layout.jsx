@@ -264,7 +264,7 @@ export default function Layout({ children, currentPageName }) {
     ...(isAdmin ? [{ name: "App Store", icon: LayoutGrid, path: "AppStore" }] : []),
     { name: "KCC NFT", icon: Key, path: "KCCNft" },
     ...(isAdmin ? [{ name: "AWA Signer", icon: Shield, path: "AWASigner" }] : []),
-    { name: "KAS Dollar", icon: Wallet, path: "KASDollar" },
+    ...(isAdmin ? [{ name: "KAS Dollar", icon: Wallet, path: "KASDollar" }] : []),
     { name: "K-University", icon: BookOpen, path: "KUniversity" },
     { name: "Area 51", icon: AlertTriangle, path: "Area51" },
     { name: "Docs", icon: FileText, path: "Docs" },

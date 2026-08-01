@@ -325,7 +325,7 @@ const AuthenticatedApp = () => {
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />
-      <Route path="/KASDollar" element={<KASDollarPage />} />
+      <Route path="/KASDollar" element={<AdminRoute><KASDollarPage /></AdminRoute>} />
       <Route path="/Tree" element={<TreePage />} />
       <Route path="/Kutt" element={<KuttPage />} />
       <Route path="/Slobz" element={<SlobzPage />} />

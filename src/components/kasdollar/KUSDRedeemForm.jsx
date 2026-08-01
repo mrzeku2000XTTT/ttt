@@ -6,7 +6,10 @@ import { KAS_USD_PRICE, REDEMPTION_FEE } from "./kusdConfig";
 
 export default function KUSDRedeemForm() {
   const [kusdAmount, setKusdAmount] = useState("");
+  const [receiver, setReceiver] = useState("");
   const [redeemed, setRedeemed] = useState(false);
+
+  const receiverValid = /^kaspa:[a-z0-9]{50,}$/.test(receiver.trim());
 
   const kusd = parseFloat(kusdAmount) || 0;
   const kasOut = (kusd / KAS_USD_PRICE) * (1 - REDEMPTION_FEE);
@@ -27,6 +30,17 @@ export default function KUSDRedeemForm() {
         className="bg-black/60 border-white/10 text-white rounded-2xl h-12 text-lg"
       />
 
+      <label className="text-xs text-zinc-400 font-semibold mb-2 mt-4 block tracking-wide">RECEIVER KASPA ADDRESS</label>
+      <Input
+        value={receiver}
+        onChange={(e) => { setReceiver(e.target.value); setRedeemed(false); }}
+        placeholder="kaspa:..."
+        className="bg-black/60 border-white/10 text-white rounded-2xl h-12 font-mono text-sm"
+      />
+      {receiver && !receiverValid && (
+        <p className="text-xs text-amber-400 mt-1">Enter a valid Kaspa address (starts with kaspa:)</p>
+      )}
+
       <div className="mt-5 flex items-center justify-between bg-black/40 rounded-2xl px-4 py-3">
         <span className="text-sm text-zinc-400">You will receive <span className="text-zinc-600">(−0.5% fee)</span></span>
         <span className="text-cyan-400 font-bold font-mono">{kasOut.toFixed(4)} KAS</span>
@@ -34,7 +48,7 @@ export default function KUSDRedeemForm() {
 
       <Button
         onClick={() => setRedeemed(true)}
-        disabled={kusd <= 0}
+        disabled={kusd <= 0 || !receiverValid}
         className="w-full h-12 mt-5 rounded-2xl bg-cyan-500 hover:bg-cyan-600 text-black font-bold"
       >
         Redeem
@@ -42,7 +56,7 @@ export default function KUSDRedeemForm() {
 
       {redeemed && (
         <p className="text-sm text-green-400 mt-3 text-center">
-          ✓ {kusd} kUSD burned — {kasOut.toFixed(4)} KAS collateral released to your address.
+          ✓ {kusd} kUSD burned — {kasOut.toFixed(4)} KAS collateral released to {receiver.trim().slice(0, 16)}…
         </p>
       )}
     </div>
