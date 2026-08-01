@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Play, RefreshCw, Home, ExternalLink, Loader2, Youtube, History, Minimize2, Maximize2, Tv } from "lucide-react";
+import { Play, RefreshCw, Home, ExternalLink, Loader2, Youtube, History, Minimize2, Maximize2, Tv, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -20,6 +20,9 @@ export default function TTTVPage() {
   const [customChannels, setCustomChannels] = useState([]);
   const [channelVideos, setChannelVideos] = useState({});
   const [isFetchingChannel, setIsFetchingChannel] = useState(false);
+  const [ytSearchResults, setYtSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const iframeRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
@@ -273,42 +276,59 @@ export default function TTTVPage() {
     return null;
   };
 
-  const handleLoadVideo = async (searchQuery = url, title = null) => {
-    const query = searchQuery.trim();
-    
+  const handleLoadVideo = async (input = url, title = null) => {
+    const query = (input || "").trim();
     if (!query) return;
 
-    setIsLoading(true);
-
     const vidId = extractVideoId(query);
-    
+
+    // Direct URL or 11-char ID → play immediately
     if (vidId) {
       console.log('🎥 Loading video:', vidId);
+      setIsLoading(true);
       const embedUrl = `https://www.youtube.com/embed/${vidId}?autoplay=1`;
-      
-      // Update LOCAL state
       setVideoUrl(embedUrl);
       setVideoId(vidId);
       setUrl(query);
       setSelectedCategory(null);
       setIsMiniPlayer(false);
-      
-      // Update GLOBAL state for mini player
+      setYtSearchResults([]);
       setVideoState({
         isPlaying: true,
         videoUrl: embedUrl,
         videoId: vidId,
         title: title || 'YouTube Video',
         isMinimized: false,
-        isMuted: false
+        isMuted: false,
       });
-      
       saveToRecentlyWatched(vidId, title || 'YouTube Video');
-      
       setTimeout(() => setIsLoading(false), 1000);
-    } else {
-      alert('Please enter a valid YouTube URL or video ID');
-      setIsLoading(false);
+      return;
+    }
+
+    // Otherwise → topic search via the youtubeApiSearch backend function (real YouTube + Google)
+    setIsSearching(true);
+    setSearchQuery(query);
+    setYtSearchResults([]);
+    try {
+      const response = await base44.functions.invoke('youtubeApiSearch', { query });
+      if (response.data?.success && Array.isArray(response.data.videos)) {
+        const mapped = response.data.videos.map((v) => ({
+          id: v.videoId,
+          title: v.title,
+          channel: v.channelName,
+          thumbnail: v.thumbnail || `https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`,
+          views: v.views || '',
+        }));
+        setYtSearchResults(mapped);
+        if (mapped.length === 0) alert('No videos found. Try a different topic.');
+      } else {
+        alert('Search failed. Please try again.');
+      }
+    } catch (err) {
+      alert('Search failed: ' + (err?.message || 'unknown error'));
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -612,30 +632,98 @@ export default function TTTVPage() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Paste YouTube URL..."
+              placeholder="Paste YouTube URL or search a topic…"
               data-agent-id="search"
               aria-label="search videos"
               className="flex-1 bg-transparent border-0 text-white placeholder:text-gray-500 focus-visible:ring-0 text-sm"
             />
             <Button
               onClick={() => handleLoadVideo()}
-              disabled={isLoading}
+              disabled={isLoading || isSearching}
               size="sm"
               data-agent-id="play"
-              aria-label="Play"
+              aria-label="Play or search"
               className="bg-cyan-500/20 border border-cyan-500 hover:bg-cyan-500/30 text-cyan-400 h-8 px-4 shadow-[0_0_10px_rgba(6,182,212,0.4)] hover:shadow-[0_0_15px_rgba(6,182,212,0.6)] transition-all"
             >
-              {isLoading ? (
+              {isLoading || isSearching ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <Play className="w-4 h-4 mr-1 fill-current" />
-                  <span className="text-xs">Play</span>
+                  <Search className="w-4 h-4 mr-1" />
+                  <span className="text-xs">Search</span>
                 </>
               )}
             </Button>
           </div>
         </motion.div>
+
+        {(ytSearchResults.length > 0 || isSearching) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-8"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <Search className="w-5 h-5 text-cyan-400" />
+              <h2 className="text-lg font-bold text-white">
+                {isSearching ? 'Searching YouTube…' : (
+                  <>Results for <span className="text-cyan-400">"{searchQuery}"</span></>
+                )}
+              </h2>
+              {ytSearchResults.length > 0 && (
+                <button
+                  onClick={() => setYtSearchResults([])}
+                  className="ml-auto text-xs text-gray-500 hover:text-cyan-400"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {isSearching ? (
+              <div className="flex flex-col items-center justify-center py-16 text-white/50">
+                <Loader2 className="w-10 h-10 animate-spin mb-3 text-cyan-400" />
+                <p className="text-sm">Finding real videos from YouTube…</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {ytSearchResults.map((video) => (
+                  <motion.div
+                    key={video.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => handlePlayVideo(video)}
+                    className="group bg-black border border-cyan-500/30 rounded-lg overflow-hidden cursor-pointer hover:border-cyan-500 transition-all hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                  >
+                    <div className="aspect-video bg-black border-b border-cyan-500/20 relative overflow-hidden">
+                      <img
+                        src={video.thumbnail}
+                        alt={video.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 group-hover:bg-black/30 transition-colors">
+                        <Play className="w-12 h-12 text-cyan-400 fill-current opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+                      </div>
+                      {video.views && (
+                        <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-white font-semibold">
+                          {video.views}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <h3 className="text-white font-semibold text-xs mb-1 line-clamp-2">{video.title}</h3>
+                      <p className="text-gray-500 text-[10px] flex items-center gap-1">
+                        <Youtube className="w-3 h-3 fill-current" />
+                        {video.channel}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {recentlyWatched.length > 0 && (
           <motion.div
