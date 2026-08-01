@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, ArrowLeft, Sparkles, Crown, TrendingUp, Gamepad2, Wallet, BookOpen, Users, Wrench, Shield, Palette, Radio, ShoppingBag, ChevronRight, Bot, Menu, X, FileText, MapPin, Dumbbell, Monitor } from "lucide-react";
+import { ArrowLeft, Sparkles, Shield, Wallet, Gamepad2, Dumbbell, Wrench, Palette, BookOpen, Users, Radio, ShoppingBag, Bot } from "lucide-react";
 
 const playGTA = () => { try { const a = new Audio("https://media.base44.com/files/public/6901295fa9bcfaa0f5ba2c2a/e5aa22c46_gta-menu.mp3"); a.volume = 0.8; a.play().catch(() => {}); } catch {} };
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import AppStoreGrid from "@/components/appstore2/AppStoreGrid";
 import AppStoreFeatured from "@/components/appstore2/AppStoreFeatured";
@@ -40,21 +34,6 @@ const CATEGORIES = [
   { id: "Security", label: "Security", icon: Shield },
 ];
 
-const STORE_MENU_ITEMS = [
-  { label: "Explore", path: "/AppStoreV2", icon: Sparkles },
-  { label: "Products", path: "/AppStoreV2", icon: ShoppingBag },
-  { label: "Kaspa", path: "/WhatIsKaspa", icon: Shield },
-  { label: "TTT OS", path: "/TTTOS", icon: Monitor },
-  { label: "TTTV", path: "/Browser", icon: Search },
-  { label: "Community", path: "/Feed", icon: Users },
-  { label: "What's New", path: "/TTTV2", icon: TrendingUp },
-  { label: "Roadmap", path: "/TTTV2", icon: MapPin },
-  { label: "Blog", path: "/Blog", icon: FileText },
-  { label: "Docs", path: "/Docs", icon: FileText },
-  { label: "About", path: "/About", icon: Sparkles },
-  { label: "Wallet", path: "/WalletHub", icon: Wallet },
-];
-
 export default function AppStoreV2Page() {
   const [search, setSearch] = useState("");
   const [aiResults, setAiResults] = useState(null);
@@ -62,7 +41,6 @@ export default function AppStoreV2Page() {
   const [user, setUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [blueprintOpen, setBlueprintOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [view, setView] = useState("kaspa");
   const filtersRef = useRef(null);
   const gridRef = useRef(null);
@@ -80,7 +58,7 @@ export default function AppStoreV2Page() {
         className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-5 bg-[#F5F5F7]/80 backdrop-blur-2xl border-b border-zinc-200/50"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="flex items-center justify-between w-full h-14">
+        <div className="flex items-center justify-between w-full h-14 gap-2">
           <Link
             to="/TTTV2"
             className="flex items-center gap-1.5 text-zinc-700 hover:text-zinc-900 transition-colors h-14 px-3 -ml-3 rounded-lg active:bg-zinc-200/60"
@@ -90,43 +68,6 @@ export default function AppStoreV2Page() {
             <span className="text-[14px] font-medium">Back</span>
           </Link>
           <span className="text-[15px] font-[800] tracking-tight">App Store</span>
-          <div className="hidden sm:flex items-center gap-2">
-            {STORE_MENU_ITEMS.map(item => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.label}
-                  to={item.path}
-                  className="flex items-center gap-1 text-[13px] font-medium text-zinc-600 hover:text-zinc-900 px-2 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors"
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-          <div className="sm:hidden flex items-center">
-            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 hover:bg-zinc-100 rounded-lg transition-colors">
-                  {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                {STORE_MENU_ITEMS.map(item => {
-                  const Icon = item.icon;
-                  return (
-                    <Link key={item.label} to={item.path}>
-                      <DropdownMenuItem onClick={() => setMenuOpen(false)} className="cursor-pointer">
-                        <Icon className="w-4 h-4 mr-2" />
-                        <span>{item.label}</span>
-                      </DropdownMenuItem>
-                    </Link>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
           <div className="flex items-center gap-2">
             <Link
               to="/AIAgentHub"
