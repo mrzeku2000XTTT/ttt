@@ -20,23 +20,22 @@ Deno.serve(async (req) => {
         // Use LLM with web search to find YouTube videos
         // This is more robust than direct API for "scalping" channels from URLs
         const response = await base44.integrations.Core.InvokeLLM({
-            prompt: `Search YouTube for "${query}".
-            
-CRITICAL INSTRUCTION:
-If the query looks like a specific Channel (URL, @handle, or Name), you MUST find the most recent and popular videos UPLOADED BY THAT SPECIFIC CHANNEL.
-Do not return random videos about the topic, return videos FROM the channel.
+            prompt: `Search YouTube (and Google) for "${query}".
 
-If the query is just a topic, find the best videos for it.
+CRITICAL INSTRUCTIONS:
+1. If the query looks like a specific Channel (URL, @handle, or Name), find the most recent AND most popular videos UPLOADED BY THAT SPECIFIC CHANNEL — not random videos about the topic.
+2. If the query is a topic, find the most relevant AND most popular videos across many different channels — aim for variety, not just one channel.
+3. Return as many videos as you can confidently verify — TARGET 20 videos, with a hard minimum of 15 if the topic/channel is rich enough. Only return fewer if you genuinely cannot find more real ones.
 
-Return a JSON object with a "videos" array containing:
-- videoId (11 character YouTube video ID)
-- title (video title)
-- channelName (channel that uploaded it)
+For EACH video in the JSON "videos" array, include:
+- videoId (11-character YouTube video ID — must be a real, valid ID)
+- title (the video's actual title)
+- channelName (the channel that uploaded it)
 - thumbnail (use format: https://img.youtube.com/vi/VIDEO_ID/mqdefault.jpg)
 - duration (estimated duration like "5:30")
 - views (estimated view count like "1.2M")
 
-Ensure videoIds are valid.`,
+Ensure every videoId is a real, valid 11-character YouTube video ID. Do not invent or guess IDs.`,
             add_context_from_internet: true,
             response_json_schema: {
                 type: "object",
