@@ -1,0 +1,94 @@
+{
+  "name": "BlogPost",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Post title"
+    },
+    "subtitle": {
+      "type": "string",
+      "description": "Optional one-line subtitle"
+    },
+    "content": {
+      "type": "string",
+      "description": "Markdown body of the post"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Topic tags"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Display name of the author (set by the writer)"
+    },
+    "cover_emoji": {
+      "type": "string",
+      "default": "\u270d\ufe0f",
+      "description": "Single emoji used as the cover"
+    },
+    "read_minutes": {
+      "type": "number",
+      "default": 2,
+      "description": "Estimated read time in minutes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "published",
+        "draft"
+      ],
+      "default": "published"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "title",
+    "content",
+    "author_name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.status": "published"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

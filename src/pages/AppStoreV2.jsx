@@ -49,6 +49,7 @@ const STORE_MENU_ITEMS = [
   { label: "Community", path: "/Feed", icon: Users },
   { label: "What's New", path: "/TTTV2", icon: TrendingUp },
   { label: "Roadmap", path: "/TTTV2", icon: MapPin },
+  { label: "Blog", path: "/Blog", icon: FileText },
   { label: "Docs", path: "/Docs", icon: FileText },
   { label: "About", path: "/About", icon: Sparkles },
   { label: "Wallet", path: "/WalletHub", icon: Wallet },

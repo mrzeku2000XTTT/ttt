@@ -135,6 +135,8 @@ import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
 import KASDollarPage from './pages/KASDollar';
 import ArgentStudioPage from './pages/ArgentStudio';
+import BlogHubPage from './pages/BlogHub';
+import BlogDetailPage from './pages/BlogDetail';
 import TreePage from './pages/Tree';
 import KuttPage from './pages/Kutt';
 import SlobzPage from './pages/Slobz';
@@ -328,6 +330,8 @@ const AuthenticatedApp = () => {
       <Route path="/Signer" element={<SignerPage />} />
       <Route path="/KASDollar" element={<AdminRoute><KASDollarPage /></AdminRoute>} />
       <Route path="/ArgentStudio" element={<AdminRoute><ArgentStudioPage /></AdminRoute>} />
+      <Route path="/Blog" element={<BlogHubPage />} />
+      <Route path="/Blog/:id" element={<BlogDetailPage />} />
       <Route path="/Tree" element={<TreePage />} />
       <Route path="/Kutt" element={<KuttPage />} />
       <Route path="/Slobz" element={<SlobzPage />} />
