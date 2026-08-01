@@ -41,7 +41,7 @@ export const APPS = [
   { name: "RMX Ultra", path: "RMX", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f2f74ca6e_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/d46344bca_generated_video.mp4", desc: "Visual workflow automation" },
   { name: "TELE", path: "TELE", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/242215e43_generated_image.png", desc: "TTT agent on Telegram" },
   { name: "Hiro", path: "Hiro", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1a11decfa_generated_image.png", desc: "AI typography studio" },
-  { name: "NEPU", path: "NEPU", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8f9fda87e_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/52b020b2c_generated_video.mp4", desc: "Free TV shows & movies" },
+  { name: "NEPU", path: null, externalUrl: "https://nepu.my", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8f9fda87e_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/52b020b2c_generated_video.mp4", desc: "Free TV shows & movies", admin: true },
 
   // ── Featured / Core ──
   { name: "Feed", path: "Feed", cat: "Community", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fdf274d16_generated_image.png", video: "https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/e412d2ebc_generated_video.mp4", desc: "Social feed + KAS tips" },
