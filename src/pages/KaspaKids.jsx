@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Wallet, Sparkles, Rocket, TrendingUp, TrendingDown, Bot, Droplets, Plus, Coins, Eye, EyeOff, RefreshCw, ExternalLink, Copy, Check } from "lucide-react";
+import { ArrowLeft, Wallet, Sparkles, Rocket, TrendingUp, TrendingDown, Bot, Droplets, Plus, Coins, Eye, EyeOff, RefreshCw, ExternalLink, Copy, Check, LineChart } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import KidsMascot from "@/components/kaspakids/KidsMascot";
@@ -307,6 +307,9 @@ export default function KaspaKidsPage() {
           <ArrowLeft className="w-4 h-4" /> Store
         </Link>
         <div className="flex items-center gap-2 text-sm font-display font-black text-[#3D2E7C]">🟣 Slobz Trading</div>
+        <Link to="/KaspaKidsDEX" className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-gradient-to-r from-[#FF8A6B] to-[#F96B4C] text-white text-xs font-display font-extrabold shadow-[0_6px_16px_rgba(249,107,76,0.35)]">
+          <LineChart className="w-3.5 h-3.5" /> Pro DEX
+        </Link>
         <button onClick={sandboxTopUp} className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-[#7C5CFC]/15 border border-[#7C5CFC]/40 text-[#5A4B8A] text-xs font-display font-bold">
           <Droplets className="w-3.5 h-3.5" /> +Play
         </button>
