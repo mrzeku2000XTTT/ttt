@@ -1,24 +1,41 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Rocket, CheckCircle2, Lock } from "lucide-react";
+import { ArrowLeft, Rocket, CheckCircle2, Lock, Pencil } from "lucide-react";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import { SECTIONS, ALL_CHAPTERS } from "@/components/kaspakids/academyChapters";
 import KidsLesson from "@/components/kaspakids/KidsLesson";
+import KidsIntroduce from "@/components/kaspakids/KidsIntroduce";
 
 const MASCOT = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
 const STORE_KEY = "slobz_academy_progress";
+const KID_INTERESTS_KEY = "slobz_kid_interests";
 
 export default function KaspaKidsAcademyPage() {
   const [done, setDone] = useState({});
   const [active, setActive] = useState(null); // chapter object or null
+  const [interests, setInterests] = useState(null); // null = loading, []/array once loaded
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORE_KEY);
       if (saved) setDone(JSON.parse(saved));
+      const iv = localStorage.getItem(KID_INTERESTS_KEY);
+      setInterests(iv ? JSON.parse(iv) : null);
     } catch {}
+    setReady(true);
   }, []);
+
+  const saveInterests = (v) => {
+    try { localStorage.setItem(KID_INTERESTS_KEY, JSON.stringify(v)); } catch {}
+    setInterests(v);
+  };
+
+  const resetInterests = () => {
+    try { localStorage.removeItem(KID_INTERESTS_KEY); } catch {}
+    setInterests(null);
+  };
 
   const markLearned = (n) => {
     setDone((d) => {
@@ -32,6 +49,11 @@ export default function KaspaKidsAcademyPage() {
   const total = ALL_CHAPTERS.length;
   const allDone = doneCount >= total;
   const pct = Math.round((doneCount / total) * 100);
+
+  if (!ready) return null;
+  if (!interests || interests.length === 0) {
+    return <KidsIntroduce onDone={saveInterests} />;
+  }
 
   return (
     <div className="relative min-h-screen bg-[#e0d7f5] font-body text-[#1F1B2E] overflow-x-hidden">
@@ -67,6 +89,9 @@ export default function KaspaKidsAcademyPage() {
         <div className="mt-3 h-2.5 rounded-full bg-white/70 border border-[#7C4DFF]/15 overflow-hidden max-w-md mx-auto">
           <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="h-full bg-gradient-to-r from-[#7C4DFF] to-[#FF8A6B] rounded-full" />
         </div>
+        <button onClick={resetInterests} className="mt-3 inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/70 border border-[#7C4DFF]/20 text-[11px] font-bold text-[#5A4B8A] hover:bg-white">
+          <Pencil className="w-3 h-3" /> Update what I like ({interests.length})
+        </button>
       </div>
 
       {/* SECTIONS + CHAPTERS */}

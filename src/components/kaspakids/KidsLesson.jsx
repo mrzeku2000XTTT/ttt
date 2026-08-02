@@ -4,6 +4,14 @@ import { X, Loader2, Sparkles, Send, CheckCircle2, RotateCcw, MessageCircle } fr
 import { base44 } from "@/api/base44Client";
 
 const MASCOT = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
+const KID_INTERESTS_KEY = "slobz_kid_interests";
+function kidInterests() {
+  try { return JSON.parse(localStorage.getItem(KID_INTERESTS_KEY) || "null") || []; } catch { return []; }
+}
+function interestsLine() {
+  const i = kidInterests();
+  return i.length ? `\nThe kid personally loves: ${i.join(", ")}. USE THESE as analogies, examples, and quiz scenarios wherever you can (games, apps, food, hobbies they named). NEVER mention the kid's name, age, or any personal detail — only the things/activities.` : "";
+}
 
 // Slobby = the Slobz tutor. Kid-friendly, purple, encouraging, emojis, analogies.
 const TUTOR_SYSTEM = `You are Slobby, a friendly, encouraging trading tutor for kids ages 10-14. You teach inside the Slobz Trading Playground (a Kaspa-themed kids' app, purple/lavender mascot). 
@@ -34,7 +42,7 @@ export default function KidsLesson({ chapter, onClose, onLearned }) {
     setLearned(false);
     try {
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${TUTOR_SYSTEM}\n\nTeach Chapter ${chapter.n}: "${chapter.title}".\nTopic to cover: ${chapter.topic}\nKey idea to anchor: ${chapter.keyIdea}\n\nCreate a complete, kid-friendly lesson. Return JSON with: intro (1-2 sentences hook), key_points (4-6 bullet strings), example (a concrete example a kid can picture), analogy (a relatable analogy), pro_tip (one actionable trading tip), quiz (object with question, options array of 4 strings, correct_index 0-3).`,
+        prompt: `${TUTOR_SYSTEM}\n\nTeach Chapter ${chapter.n}: "${chapter.title}".\nTopic to cover: ${chapter.topic}\nKey idea to anchor: ${chapter.keyIdea}\n\nCreate a complete, kid-friendly lesson. Return JSON with: intro (1-2 sentences hook), key_points (4-6 bullet strings), example (a concrete example a kid can picture), analogy (a relatable analogy), pro_tip (one actionable trading tip), quiz (object with question, options array of 4 strings, correct_index 0-3).${interestsLine()}`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -74,7 +82,7 @@ export default function KidsLesson({ chapter, onClose, onLearned }) {
     setAskLoading(true);
     try {
       const a = await base44.integrations.Core.InvokeLLM({
-        prompt: `${TUTOR_SYSTEM}\n\nYou are teaching Chapter ${chapter.n}: "${chapter.title}" (${chapter.topic}). The kid just asked:\n"${q}"\n\nAnswer in 2-4 short, fun sentences. Stay on topic. If off-topic, gently steer back to trading basics.`,
+        prompt: `${TUTOR_SYSTEM}\n\nYou are teaching Chapter ${chapter.n}: "${chapter.title}" (${chapter.topic}). The kid just asked:\n"${q}"\n\nAnswer in 2-4 short, fun sentences. Stay on topic. If off-topic, gently steer back to trading basics.${interestsLine()}`,
       });
       setQa((prev) => [...prev, { q, a: typeof a === "string" ? a : JSON.stringify(a) }]);
       setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 100);
