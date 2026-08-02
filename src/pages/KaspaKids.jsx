@@ -202,7 +202,7 @@ export default function KaspaKidsPage() {
   const myHolding = selected ? (agents.find((a) => a.name === "you")?.holdings || {})[selected.symbol] || 0 : 0;
 
   return (
-    <div className="relative h-screen overflow-hidden bg-[#e0d7f5] font-body text-[#1F1B2E] flex flex-col">
+    <div className="relative min-h-screen lg:h-screen bg-[#e0d7f5] font-body text-[#1F1B2E] flex flex-col lg:overflow-hidden">
       <SlobzBlobs />
       {/* TOP BAR */}
       <div className="relative z-20 flex items-center gap-3 h-14 px-3 sm:px-5 border-b border-[#7C4DFF]/15 bg-[#e0d7f5]/85 backdrop-blur-xl flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -226,9 +226,9 @@ export default function KaspaKidsPage() {
       </div>
 
       {/* MAIN GRID */}
-      <div className="relative z-10 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-2 p-2 overflow-hidden">
+      <div className="relative z-10 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-2 p-2 overflow-y-auto lg:overflow-hidden">
         {/* LEFT: get ready + launch */}
-        <div className="hidden lg:flex flex-col gap-2 overflow-y-auto pr-1 scrollbar-hide">
+        <div className="flex flex-col gap-2 pr-1 scrollbar-hide order-3 lg:order-none lg:overflow-y-auto">
           {/* Get Ready for Pro */}
           <div className="rounded-2xl bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)] border border-white p-3">
             <button onClick={() => setShowReady((v) => !v)} className="w-full flex items-center gap-2">
@@ -293,9 +293,9 @@ export default function KaspaKidsPage() {
         </div>
 
         {/* CENTER: chart + active token */}
-        <div className="flex flex-col gap-2 min-h-0">
+        <div className="flex flex-col gap-2 min-h-0 order-1 lg:order-none">
           {/* Real market chart (for learning to read charts) */}
-          <div className="flex-1 min-h-0 rounded-2xl overflow-hidden border border-white bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)]">
+          <div className="h-72 lg:h-auto lg:flex-1 min-h-0 rounded-2xl overflow-hidden border border-white bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)]">
             <div className="flex items-center gap-2 px-3 h-9 border-b border-[#e6d9fb] bg-white">
               <LineChart className="w-3.5 h-3.5 text-[#7C4DFF]" />
               <span className="text-xs font-display font-bold text-[#1F1B2E]">KASPAUSD · Live Market Chart</span>
@@ -354,7 +354,7 @@ export default function KaspaKidsPage() {
         </div>
 
         {/* RIGHT: agents + activity */}
-        <div className="flex flex-col gap-2 overflow-y-auto pr-1 scrollbar-hide min-h-0">
+        <div className="flex flex-col gap-2 pr-1 scrollbar-hide min-h-0 order-2 lg:order-none lg:overflow-y-auto">
           <div className="rounded-2xl bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)] border border-white p-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
