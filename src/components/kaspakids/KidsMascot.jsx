@@ -14,10 +14,10 @@ export default function KidsMascot({ message, size = "md" }) {
     }
   }, [message]);
 
-  const dim = size === "lg" ? "w-28 h-28 sm:w-36 sm:h-36" : "w-20 h-20 sm:w-24 sm:h-24";
+  const dim = size === "lg" ? "w-16 h-16 sm:w-20 sm:h-20" : "w-11 h-11 sm:w-12 sm:h-12";
 
   return (
-    <div className="fixed bottom-4 right-4 z-[60] flex flex-col items-center pointer-events-none">
+    <div className="fixed bottom-3 right-3 z-[60] flex flex-col items-center pointer-events-none">
       <AnimatePresence>
         {show && message && (
           <motion.div
@@ -35,7 +35,7 @@ export default function KidsMascot({ message, size = "md" }) {
         alt="Slobby — the Slobz mascot from Sector 6"
         animate={{ y: [0, -10, 0], rotate: [0, 4, -4, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className={`${dim} rounded-[28px] object-cover shadow-[0_12px_36px_rgba(124,92,252,0.45)] pointer-events-auto`}
+        className={`${dim} rounded-2xl object-cover shadow-[0_6px_18px_rgba(124,92,252,0.35)] pointer-events-auto`}
       />
     </div>
   );

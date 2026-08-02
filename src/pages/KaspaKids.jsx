@@ -8,7 +8,7 @@ import {
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import KidsMascot from "@/components/kaspakids/KidsMascot";
 import KidsMarketChart from "@/components/kaspakids/KidsMarketChart";
-import KidsTradingViewChart from "@/components/kaspakids/KidsTradingViewChart";
+import KidsSLBZChart from "@/components/kaspakids/KidsSLBZChart";
 import KidsChartAcademy from "@/components/kaspakids/KidsChartAcademy";
 
 const MASCOT_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
@@ -300,11 +300,19 @@ export default function KaspaKidsPage() {
           <div className="h-[55vh] lg:h-auto lg:flex-1 min-h-0 rounded-2xl overflow-hidden border border-white bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)]">
             <div className="flex items-center gap-2 px-3 h-9 border-b border-[#e6d9fb] bg-white">
               <LineChart className="w-3.5 h-3.5 text-[#7C4DFF]" />
-              <span className="text-xs font-display font-bold text-[#1F1B2E]">KASPAUSD · Live Market Chart</span>
-              <span className="ml-auto text-[9px] text-[#7f7f7f]">Learn to read charts · TradingView</span>
+              <span className="text-xs font-display font-bold text-[#1F1B2E]">{selected ? `${selected.symbol} · Live Sandbox Chart` : "SLBZ · Live Sandbox Chart"}</span>
+              <span className="ml-auto text-[9px] text-[#7f7f7f]">Draw tools & call patterns like TradingView</span>
             </div>
             <div className="h-[calc(100%-2.25rem)]">
-              <KidsTradingViewChart symbol="KASPAUSD" theme="light" />
+              {selected ? <KidsSLBZChart token={selected} /> : (
+                <div className="h-full flex items-center justify-center text-center px-6">
+                  <div>
+                    <Rocket className="w-6 h-6 text-[#7C4DFF] mx-auto mb-2" />
+                    <div className="text-sm text-[#5A4B8A] font-display font-bold">Launch a token to see its live chart</div>
+                    <div className="text-[10px] text-[#7f7f7f] mt-1">Then use the tools to call patterns like a real trader.</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -320,7 +328,7 @@ export default function KaspaKidsPage() {
                   </div>
                   <div className="ml-auto text-right">
                     <div className="font-display font-black text-sm text-[#1F1B2E]">{selected.price.toFixed(3)} <span className="text-[10px] text-[#7f7f7f]">TTT</span></div>
-                    <div className="text-[10px] text-[#7f7f7f]">You hold {myHolding} · reserve {selected.reserve.toFixed(1)}</div>
+                    <div className="text-[10px] text-[#7f7f7f]">You hold {myHolding} · supply {selected.supply} · reserve {selected.reserve.toFixed(1)}</div>
                   </div>
                 </div>
                 <div className="h-16 mb-2"><KidsMarketChart data={selected.history} /></div>
