@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, Sparkles, Rocket, TrendingUp, TrendingDown, Bot, Plus, Coins,
-  LineChart, GraduationCap, Wallet, Droplets, Brain, BarChart3, ShieldCheck, ArrowRight, Info,
+  LineChart, GraduationCap, Wallet, Droplets, Brain, BarChart3, ShieldCheck, ArrowRight, Info, Radio,
 } from "lucide-react";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import KidsMascot from "@/components/kaspakids/KidsMascot";
 import KidsMarketChart from "@/components/kaspakids/KidsMarketChart";
+import KidsTradingViewChart from "@/components/kaspakids/KidsTradingViewChart";
 
 const MASCOT_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
 const LS_KEY = "kaspakids_state_v3";
@@ -27,12 +28,12 @@ const buyCost = (s, qty) => (A / 3) * (Math.pow(s + qty, 3) - Math.pow(s, 3)) + 
 const sellProceeds = (s, qty) => (A / 3) * (Math.pow(s, 3) - Math.pow(s - qty, 3)) + B * qty;
 
 const READY_CARDS = [
-  { icon: Wallet, color: "#8B6FF5", title: "Real Testnet Wallet", what: "On Pro you get a real Kaspa testnet wallet holding real TKAS (free test coins).", tip: "Here you practice with fake TTT — nothing to lose." },
-  { icon: Droplets, color: "#FF8A6B", title: "Faucet & TKAS", what: "Pro uses TKAS from a free faucet. Never real money — just real test coins on a real network.", tip: "You'll fund your Pro wallet with one tap." },
-  { icon: BarChart3, color: "#5CE1A4", title: "Bonding Curve", what: "The same math you use here: price rises as more people buy. Pro uses it too.", tip: "You already know how it works!" },
-  { icon: Brain, color: "#8B6FF5", title: "AI Market Sentiment", what: "Pro's AI reads real Kaspa news + live price to decide buy/sell. Here, agents just guess.", tip: "Pro AI = real-time, real data." },
-  { icon: LineChart, color: "#FF8A6B", title: "Real TradingView Charts", what: "Pro shows live professional charts and a real-time KAS price ticker.", tip: "Learn the basics here, chart like a pro there." },
-  { icon: ShieldCheck, color: "#5CE1A4", title: "Risk Rules", what: "Never spend money you can't lose. Pro is testnet, but the habits you build here stick.", tip: "Finish the checklist on Pro before trading." },
+  { icon: Wallet, color: "#7C4DFF", title: "Real Testnet Wallet", what: "On Pro you get a real Kaspa testnet wallet with real TKAS (free test coins).", tip: "Here you practice with fake TTT — nothing to lose." },
+  { icon: Droplets, color: "#FF8A6B", title: "Faucet & TKAS", what: "Pro uses TKAS from a free faucet. Never real money — just real test coins.", tip: "You'll fund your Pro wallet with one tap." },
+  { icon: BarChart3, color: "#4CAF50", title: "Bonding Curve", what: "The same math you use here: price rises as more people buy. Pro uses it too.", tip: "You already know how it works!" },
+  { icon: Brain, color: "#7C4DFF", title: "AI Sentiment", what: "Pro's AI reads real Kaspa news + live price to decide buy/sell. Here, agents guess.", tip: "Pro AI = real-time, real data." },
+  { icon: LineChart, color: "#FF8A6B", title: "Real Charts", what: "Pro shows live TradingView charts + a real KAS price ticker.", tip: "Learn the basics here, chart like a pro there." },
+  { icon: ShieldCheck, color: "#4CAF50", title: "Risk Rules", what: "Never spend money you can't lose. Pro is testnet, but habits stick.", tip: "Finish the checklist on Pro before trading." },
 ];
 
 export default function KaspaKidsPage() {
@@ -45,6 +46,8 @@ export default function KaspaKidsPage() {
   const [launchForm, setLaunchForm] = useState({ name: "", symbol: "", emoji: "🚀", seed: 50 });
   const [buyQty, setBuyQty] = useState({});
   const [showReady, setShowReady] = useState(true);
+  const [showLaunch, setShowLaunch] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
   const tickRef = useRef(null);
 
   useEffect(() => {
@@ -56,16 +59,17 @@ export default function KaspaKidsPage() {
         setTokens(s.tokens || []);
         setAgents(s.agents || AGENTS.map((a) => ({ ...a, holdings: {} })));
         setLog(s.log || []);
+        if (s.tokens?.length) setSelectedId(s.tokens[0].id);
       }
     } catch {}
     setMascot("Hi! I'm Slobby 🟣 This is the SAFE playground — fake TTT money only. Have fun!");
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify({ tttBalance, tokens, agents, log }));
-    } catch {}
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ tttBalance, tokens, agents, log })); } catch {}
   }, [tttBalance, tokens, agents, log]);
+
+  useEffect(() => { if (!selectedId && tokens.length) setSelectedId(tokens[0].id); }, [tokens, selectedId]);
 
   const pushLog = useCallback((entry) => {
     setLog((l) => [{ ...entry, t: Date.now() }, ...l].slice(0, 40));
@@ -94,6 +98,7 @@ export default function KaspaKidsPage() {
     };
     setTttBalance((b) => b - seed);
     setTokens((ts) => [token, ...ts]);
+    setSelectedId(token.id);
     setAgents((as) => {
       const hasYou = as.some((a) => a.name === "you");
       if (!hasYou) as = [{ name: "you", emoji: "🧒", cash: 0, holdings: {} }, ...as];
@@ -102,6 +107,7 @@ export default function KaspaKidsPage() {
     setMascot(`${emoji} ${symbol} is LIVE! You hold ${initialSupply} ${symbol}. Watch the agents trade it!`);
     pushLog({ kind: "launch", text: `🚀 ${symbol} launched · seed ${seed} TTT` });
     setLaunchForm({ name: "", symbol: "", emoji: "🚀", seed: 50 });
+    setShowLaunch(false);
   };
 
   const kidBuy = (token) => {
@@ -113,7 +119,7 @@ export default function KaspaKidsPage() {
     setTokens((ts) => ts.map((t) => t.id === token.id ? {
       ...t, supply: t.supply + qty, reserve: t.reserve + cost,
       price: priceAt(t.supply + qty),
-      history: [...t.history, priceAt(t.supply + qty)].slice(-40),
+      history: [...t.history, priceAt(t.supply + qty)].slice(-60),
     } : t));
     setAgents((as) => as.map((a) => a.name === "you" ? { ...a, holdings: { ...a.holdings, [token.symbol]: (a.holdings[token.symbol] || 0) + qty } } : a));
     pushLog({ kind: "buy", text: `🧒 You bought ${qty} ${token.symbol} for ${cost.toFixed(2)} TTT` });
@@ -130,7 +136,7 @@ export default function KaspaKidsPage() {
     setTokens((ts) => ts.map((t) => t.id === token.id ? {
       ...t, supply: t.supply - qty, reserve: Math.max(0, t.reserve - proceeds),
       price: priceAt(Math.max(0, t.supply - qty)),
-      history: [...t.history, priceAt(Math.max(0, t.supply - qty))].slice(-40),
+      history: [...t.history, priceAt(Math.max(0, t.supply - qty))].slice(-60),
     } : t));
     setAgents((as) => as.map((a) => a.name === "you" ? { ...a, holdings: { ...a.holdings, [token.symbol]: Math.max(0, held - qty) } } : a));
     pushLog({ kind: "sell", text: `🧒 You sold ${qty} ${token.symbol} for ${proceeds.toFixed(2)} TTT` });
@@ -170,7 +176,7 @@ export default function KaspaKidsPage() {
               agent.holdings[t.symbol] = (agent.holdings[t.symbol] || 0) + qty;
               const tk = tks.find((x) => x.id === t.id);
               tk.supply += qty; tk.reserve += cost; tk.price = priceAt(tk.supply);
-              tk.history = [...tk.history, tk.price].slice(-40);
+              tk.history = [...tk.history, tk.price].slice(-60);
               pushLog({ kind: "buy", text: `${agent.emoji} ${agent.name} bought ${qty} ${t.symbol}` });
             } else if (action === "sell") {
               const qty = Math.min(held, Math.max(1, Math.floor(held * 0.3)));
@@ -180,7 +186,7 @@ export default function KaspaKidsPage() {
               agent.holdings[t.symbol] = held - qty;
               const tk = tks.find((x) => x.id === t.id);
               tk.supply = Math.max(1, tk.supply - qty); tk.reserve = Math.max(0, tk.reserve - proceeds); tk.price = priceAt(tk.supply);
-              tk.history = [...tk.history, tk.price].slice(-40);
+              tk.history = [...tk.history, tk.price].slice(-60);
               pushLog({ kind: "sell", text: `${agent.emoji} ${agent.name} sold ${qty} ${t.symbol}` });
             }
           });
@@ -192,17 +198,25 @@ export default function KaspaKidsPage() {
     return () => clearInterval(tickRef.current);
   }, [agentsOn, tokens.length]);
 
+  const selected = tokens.find((t) => t.id === selectedId) || tokens[0] || null;
+  const myHolding = selected ? (agents.find((a) => a.name === "you")?.holdings || {})[selected.symbol] || 0 : 0;
+
   return (
-    <div className="relative min-h-screen bg-[#DED6F2] overflow-hidden font-body text-[#1F1B2E] pb-24">
+    <div className="relative h-screen overflow-hidden bg-[#e0d7f5] font-body text-[#1F1B2E] flex flex-col">
       <SlobzBlobs />
-      {/* Top bar */}
-      <div className="relative z-20 sticky top-0 flex items-center justify-between px-3 sm:px-5 h-14 bg-[#DED6F2]/85 backdrop-blur-xl border-b border-[#7C5CFC]/15" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      {/* TOP BAR */}
+      <div className="relative z-20 flex items-center gap-3 h-14 px-3 sm:px-5 border-b border-[#7C4DFF]/15 bg-[#e0d7f5]/85 backdrop-blur-xl flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <Link to="/AppStoreV2" className="flex items-center gap-2 text-[#5A4B8A] hover:text-[#3D2E7C] text-sm">
-          <ArrowLeft className="w-4 h-4" /> Store
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Store</span>
         </Link>
-        <div className="flex items-center gap-2 text-sm font-display font-black text-[#3D2E7C]">🟣 Slobz Playground</div>
-        <div className="flex items-center gap-2">
-          <button onClick={sandboxTopUp} className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-[#7C5CFC]/15 border border-[#7C5CFC]/40 text-[#5A4B8A] text-xs font-display font-bold">
+        <div className="flex items-center gap-2 text-sm font-display font-black text-[#3D2E7C]">🟣 <span className="hidden sm:inline">Slobz Playground</span></div>
+        <div className="flex items-center gap-2 ml-1 px-3 py-1.5 rounded-xl bg-white/70 border border-[#7C4DFF]/20">
+          <Radio className="w-3.5 h-3.5 text-[#4CAF50] animate-pulse" />
+          <span className="text-[10px] text-[#7f7f7f] uppercase tracking-widest font-bold">TTT Demo</span>
+          <span className="font-display font-black text-sm text-[#3D2E7C]">{tttBalance.toFixed(0)}</span>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <button onClick={sandboxTopUp} className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-white/70 border border-[#7C4DFF]/20 text-[#5A4B8A] text-xs font-display font-bold">
             <Droplets className="w-3.5 h-3.5" /> +TTT
           </button>
           <Link to="/KaspaKidsDEX" className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-gradient-to-r from-[#FF8A6B] to-[#F96B4C] text-white text-xs font-display font-extrabold shadow-[0_6px_16px_rgba(249,107,76,0.35)]">
@@ -211,152 +225,147 @@ export default function KaspaKidsPage() {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-5">
-        {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl bg-[#FDFBF7] shadow-[0_16px_40px_rgba(124,92,252,0.18)] p-5 sm:p-6 mb-4 flex flex-col sm:flex-row items-center gap-5">
-          <motion.img
-            src={MASCOT_IMG}
-            alt="Slobby the Slobz mascot"
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="w-24 h-24 rounded-[24px] object-cover shadow-[0_12px_30px_rgba(124,92,252,0.3)] flex-shrink-0"
-          />
-          <div className="flex-1 text-center sm:text-left">
-            <h1 className="font-display text-2xl sm:text-3xl font-black text-[#3D2E7C] tracking-tight">Slobz Trading Playground</h1>
-            <p className="text-[#5A4B8A] text-sm mt-1 leading-relaxed">
-              The safe place to learn crypto trading. Launch your own tokens on a bonding curve, watch friendly AI agents buy &amp; sell, and get ready for the <b>Pro DEX</b> — all with <b>fake TTT Demo money</b>. You can't lose anything here. 🎈
-            </p>
-            <div className="flex items-center gap-2 mt-3 justify-center sm:justify-start">
-              <span className="px-3 py-1.5 rounded-full bg-[#7C5CFC]/15 border border-[#7C5CFC]/40 text-[#5A4B8A] text-xs font-display font-extrabold">🧪 Sandbox · Fake Money</span>
-              <span className="px-3 py-1.5 rounded-full bg-green-500/15 border border-green-500/40 text-green-700 text-xs font-display font-extrabold">🛡️ Zero Risk</span>
-            </div>
-          </div>
-          <div className="text-center sm:text-right">
-            <div className="text-3xl font-display font-black text-[#3D2E7C]">{tttBalance.toFixed(0)}</div>
-            <div className="text-[10px] text-[#7A7290] uppercase tracking-widest font-bold">TTT Demo Money</div>
-          </div>
-        </motion.div>
-
-        {/* GET READY FOR PRO */}
-        <div className="rounded-3xl bg-[#FDFBF7] shadow-[0_16px_40px_rgba(124,92,252,0.14)] border border-[#EBE6F8] p-5 mb-4">
-          <button onClick={() => setShowReady((v) => !v)} className="w-full flex items-center gap-2 mb-1">
-            <GraduationCap className="w-5 h-5 text-[#7C5CFC]" />
-            <h2 className="font-display font-extrabold text-lg text-[#1F1B2E] text-left">Get Ready for the Pro DEX</h2>
-            <span className="ml-auto text-[#7A7290] text-xs">{showReady ? "Hide" : "Show"}</span>
-          </button>
-          <p className="text-xs text-[#5A4B8A] mb-3">Learn what each thing does here, then jump to Pro when you're ready. Pro uses a <b>real Kaspa testnet wallet</b> with real TKAS — still free, but real on-chain.</p>
-          <AnimatePresence>
-            {showReady && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {READY_CARDS.map((c, i) => {
-                    const Icon = c.icon;
-                    return (
-                      <motion.div key={c.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                        className="rounded-2xl bg-[#F3EFFA] border border-[#EBE6F8] p-4">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: c.color + "22" }}>
-                          <Icon className="w-4 h-4" style={{ color: c.color }} />
+      {/* MAIN GRID */}
+      <div className="relative z-10 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-2 p-2 overflow-hidden">
+        {/* LEFT: get ready + launch */}
+        <div className="hidden lg:flex flex-col gap-2 overflow-y-auto pr-1 scrollbar-hide">
+          {/* Get Ready for Pro */}
+          <div className="rounded-2xl bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)] border border-white p-3">
+            <button onClick={() => setShowReady((v) => !v)} className="w-full flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-[#7C4DFF]" />
+              <span className="font-display font-extrabold text-sm text-[#1F1B2E]">Get Ready for Pro</span>
+              <span className="ml-auto text-[10px] text-[#7f7f7f]">{showReady ? "Hide" : "Show"}</span>
+            </button>
+            <AnimatePresence>
+              {showReady && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                  <div className="space-y-2 mt-2">
+                    {READY_CARDS.map((c) => {
+                      const Icon = c.icon;
+                      return (
+                        <div key={c.title} className="rounded-xl bg-[#f3eefa] border border-[#e6d9fb] p-2.5">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: c.color + "22" }}>
+                              <Icon className="w-3.5 h-3.5" style={{ color: c.color }} />
+                            </div>
+                            <div className="font-display font-extrabold text-xs text-[#1F1B2E]">{c.title}</div>
+                          </div>
+                          <div className="text-[10px] text-[#5A4B8A] leading-snug flex items-start gap-1"><Info className="w-2.5 h-2.5 mt-0.5 flex-shrink-0 text-[#7C4DFF]" />{c.what}</div>
+                          <div className="text-[10px] text-[#7C4DFF] font-bold mt-1">✓ {c.tip}</div>
                         </div>
-                        <div className="font-display font-extrabold text-sm text-[#1F1B2E]">{c.title}</div>
-                        <div className="text-[11px] text-[#5A4B8A] leading-snug mt-1 flex items-start gap-1"><Info className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#7C5CFC]" />{c.what}</div>
-                        <div className="text-[11px] text-[#7C5CFC] font-bold leading-snug mt-1.5">✓ {c.tip}</div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-                <Link to="/KaspaKidsDEX" className="mt-4 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#FF8A6B] to-[#F96B4C] text-white font-display font-extrabold text-sm shadow-[0_10px_24px_rgba(249,107,76,0.4)]">
-                  I'm Ready — Open the Pro DEX <ArrowRight className="w-4 h-4" />
-                </Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Launch a token */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl bg-[#FDFBF7] shadow-[0_16px_40px_rgba(124,92,252,0.18)] p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Rocket className="w-4 h-4 text-[#7C5CFC]" />
-            <h2 className="font-display font-extrabold text-sm text-[#1F1B2E]">Launch a Token</h2>
-            <span className="text-[9px] text-[#7A7290] uppercase tracking-widest ml-auto font-bold">KRC20-style · bonding curve</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <input value={launchForm.name} onChange={(e) => setLaunchForm({ ...launchForm, name: e.target.value })} placeholder="Token Name (e.g. MoonJuice)" className="col-span-2 h-10 px-3 rounded-xl bg-[#F3EFFA] border border-[#E9E4F5] text-[#1F1B2E] text-sm placeholder:text-[#7A7290] focus:outline-none focus:border-[#7C5CFC]" />
-            <input value={launchForm.symbol} onChange={(e) => setLaunchForm({ ...launchForm, symbol: e.target.value })} placeholder="Ticker (e.g. JUICE)" maxLength={6} className="h-10 px-3 rounded-xl bg-[#F3EFFA] border border-[#E9E4F5] text-[#1F1B2E] text-sm placeholder:text-[#7A7290] focus:outline-none focus:border-[#7C5CFC] uppercase" />
-            <div className="flex gap-2">
-              <input value={launchForm.emoji} onChange={(e) => setLaunchForm({ ...launchForm, emoji: e.target.value })} placeholder="🚀" className="w-12 h-10 px-2 rounded-xl bg-[#F3EFFA] border border-[#E9E4F5] text-[#1F1B2E] text-center text-lg focus:outline-none focus:border-[#7C5CFC]" />
-              <input type="number" value={launchForm.seed} onChange={(e) => setLaunchForm({ ...launchForm, seed: e.target.value })} placeholder="Seed TTT" className="flex-1 h-10 px-3 rounded-xl bg-[#F3EFFA] border border-[#E9E4F5] text-[#1F1B2E] text-sm placeholder:text-[#7A7290] focus:outline-none focus:border-[#7C5CFC]" />
-            </div>
-          </div>
-          <button onClick={launchToken} className="w-full mt-2 h-11 rounded-xl bg-gradient-to-r from-[#8B6FF5] to-[#7C5CFC] text-white font-display font-extrabold text-sm flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(124,92,252,0.35)]">
-            <Sparkles className="w-4 h-4" /> Launch {launchForm.symbol || "Token"}
-          </button>
-        </motion.div>
-
-        {/* Agents toggle */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-sm font-display font-bold text-[#3D2E7C]">
-            <Bot className="w-4 h-4 text-[#7C5CFC]" /> AI Agents Trading
-          </div>
-          <button onClick={() => setAgentsOn((v) => !v)} className={`flex items-center gap-2 h-8 px-3 rounded-full text-xs font-display font-extrabold border ${agentsOn ? "bg-green-500/20 border-green-500/50 text-green-700" : "bg-[#F3EFFA] border-[#E9E4F5] text-[#7A7290]"}`}>
-            {agentsOn ? "● LIVE" : "○ Paused"}
-          </button>
-        </div>
-
-        {/* Tokens grid */}
-        {tokens.length === 0 ? (
-          <div className="rounded-3xl border-2 border-dashed border-[#7C5CFC]/30 p-10 text-center text-[#5A4B8A] text-sm bg-[#FDFBF7]/50">
-            No tokens yet. Launch your first one above! 🚀
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            {tokens.map((t) => {
-              const held = (agents.find((a) => a.name === "you")?.holdings || {})[t.symbol] || 0;
-              const last = t.history[t.history.length - 1] || t.price;
-              const first = t.history[0] || t.price;
-              const change = first ? ((last - first) / first) * 100 : 0;
-              const up = change >= 0;
-              return (
-                <motion.div key={t.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl bg-[#FDFBF7] shadow-[0_10px_28px_rgba(124,92,252,0.14)] border border-[#E9E4F5] p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">{t.emoji}</span>
-                    <div className="min-w-0">
-                      <div className="font-display font-black text-sm text-[#1F1B2E] truncate">{t.symbol}</div>
-                      <div className="text-[10px] text-[#7A7290] truncate">{t.name}</div>
-                    </div>
-                    <div className="ml-auto text-right">
-                      <div className="font-display font-black text-sm text-[#1F1B2E]">{t.price.toFixed(3)}</div>
-                      <div className={`text-[10px] flex items-center justify-end gap-0.5 font-bold ${up ? "text-green-600" : "text-red-500"}`}>
-                        {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />} {Math.abs(change).toFixed(1)}%
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                  <KidsMarketChart data={t.history} />
-                  <div className="flex items-center justify-between text-[10px] text-[#7A7290] mt-1 mb-2">
-                    <span>Reserve: {t.reserve.toFixed(1)} TTT</span>
-                    <span>You hold: {held}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="number" min="1" value={buyQty[t.id] ?? 1} onChange={(e) => setBuyQty({ ...buyQty, [t.id]: e.target.value })} className="w-14 h-9 px-2 rounded-lg bg-[#F3EFFA] border border-[#E9E4F5] text-[#1F1B2E] text-sm text-center focus:outline-none focus:border-[#7C5CFC]" />
-                    <button onClick={() => kidBuy(t)} className="flex-1 h-9 rounded-lg bg-green-500/15 border border-green-500/40 text-green-700 text-xs font-display font-extrabold flex items-center justify-center gap-1">
-                      <Plus className="w-3 h-3" /> Buy
-                    </button>
-                    <button onClick={() => kidSell(t)} className="flex-1 h-9 rounded-lg bg-red-500/15 border border-red-500/40 text-red-600 text-xs font-display font-extrabold flex items-center justify-center gap-1">
-                      <TrendingDown className="w-3 h-3" /> Sell
-                    </button>
-                  </div>
+                  <Link to="/KaspaKidsDEX" className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full bg-gradient-to-r from-[#FF8A6B] to-[#F96B4C] text-white font-display font-extrabold text-xs shadow-[0_8px_20px_rgba(249,107,76,0.35)]">
+                    I'm Ready — Open Pro <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </motion.div>
-              );
-            })}
+              )}
+            </AnimatePresence>
           </div>
-        )}
 
-        {/* Agents leaderboard + log */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-          <div className="rounded-2xl bg-[#FDFBF7] shadow-[0_10px_28px_rgba(124,92,252,0.14)] border border-[#E9E4F5] p-3">
-            <div className="flex items-center gap-2 text-sm font-display font-bold text-[#3D2E7C] mb-2">
-              <Coins className="w-4 h-4 text-[#7C5CFC]" /> Agent Standings
+          {/* Launch a token */}
+          <div className="rounded-2xl bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)] border border-white p-3">
+            <button onClick={() => setShowLaunch((v) => !v)} className="w-full flex items-center gap-2 mb-1">
+              <Rocket className="w-4 h-4 text-[#7C4DFF]" />
+              <span className="font-display font-extrabold text-sm text-[#1F1B2E]">Launch a Token</span>
+              <span className="ml-auto text-[9px] text-[#7f7f7f] uppercase tracking-widest font-bold">Bonding curve</span>
+            </button>
+            <AnimatePresence>
+              {showLaunch && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <input value={launchForm.name} onChange={(e) => setLaunchForm({ ...launchForm, name: e.target.value })} placeholder="Token Name" className="col-span-2 h-9 px-3 rounded-xl bg-[#f3eefa] border border-[#e6d9fb] text-[#1F1B2E] text-xs focus:outline-none focus:border-[#7C4DFF]" />
+                    <input value={launchForm.symbol} onChange={(e) => setLaunchForm({ ...launchForm, symbol: e.target.value })} placeholder="Ticker" maxLength={6} className="h-9 px-3 rounded-xl bg-[#f3eefa] border border-[#e6d9fb] text-[#1F1B2E] text-xs focus:outline-none focus:border-[#7C4DFF] uppercase" />
+                    <div className="flex gap-1.5">
+                      <input value={launchForm.emoji} onChange={(e) => setLaunchForm({ ...launchForm, emoji: e.target.value })} placeholder="🚀" className="w-10 h-9 px-1 rounded-xl bg-[#f3eefa] border border-[#e6d9fb] text-[#1F1B2E] text-center text-base focus:outline-none focus:border-[#7C4DFF]" />
+                      <input type="number" value={launchForm.seed} onChange={(e) => setLaunchForm({ ...launchForm, seed: e.target.value })} placeholder="Seed" className="flex-1 h-9 px-2 rounded-xl bg-[#f3eefa] border border-[#e6d9fb] text-[#1F1B2E] text-xs focus:outline-none focus:border-[#7C4DFF]" />
+                    </div>
+                  </div>
+                  <button onClick={launchToken} className="w-full mt-2 h-10 rounded-xl bg-gradient-to-r from-[#7C4DFF] to-[#6b3fe0] text-white font-display font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-[0_6px_16px_rgba(124,77,255,0.3)]">
+                    <Sparkles className="w-3.5 h-3.5" /> Launch {launchForm.symbol || "Token"}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {!showLaunch && <div className="text-[10px] text-[#7f7f7f] mt-1">Tap to create your own KRC20-style token.</div>}
+          </div>
+        </div>
+
+        {/* CENTER: chart + active token */}
+        <div className="flex flex-col gap-2 min-h-0">
+          {/* Real market chart (for learning to read charts) */}
+          <div className="flex-1 min-h-0 rounded-2xl overflow-hidden border border-white bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)]">
+            <div className="flex items-center gap-2 px-3 h-9 border-b border-[#e6d9fb] bg-white">
+              <LineChart className="w-3.5 h-3.5 text-[#7C4DFF]" />
+              <span className="text-xs font-display font-bold text-[#1F1B2E]">KASPAUSD · Live Market Chart</span>
+              <span className="ml-auto text-[9px] text-[#7f7f7f]">Learn to read charts · TradingView</span>
             </div>
-            <div className="space-y-1">
+            <div className="h-[calc(100%-2.25rem)]">
+              <KidsTradingViewChart symbol="KASPAUSD" theme="light" />
+            </div>
+          </div>
+
+          {/* Active sandbox token + buy/sell */}
+          <div className="rounded-2xl bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)] border border-white p-3 flex-shrink-0">
+            {selected ? (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">{selected.emoji}</span>
+                  <div>
+                    <div className="font-display font-black text-sm text-[#1F1B2E]">{selected.symbol}</div>
+                    <div className="text-[10px] text-[#7f7f7f]">{selected.name}</div>
+                  </div>
+                  <div className="ml-auto text-right">
+                    <div className="font-display font-black text-sm text-[#1F1B2E]">{selected.price.toFixed(3)} <span className="text-[10px] text-[#7f7f7f]">TTT</span></div>
+                    <div className="text-[10px] text-[#7f7f7f]">You hold {myHolding} · reserve {selected.reserve.toFixed(1)}</div>
+                  </div>
+                </div>
+                <div className="h-16 mb-2"><KidsMarketChart data={selected.history} /></div>
+                <div className="flex items-center gap-2">
+                  <input type="number" min="1" value={buyQty[selected.id] ?? 1} onChange={(e) => setBuyQty({ ...buyQty, [selected.id]: e.target.value })} className="w-14 h-9 px-2 rounded-lg bg-[#f3eefa] border border-[#e6d9fb] text-[#1F1B2E] text-sm text-center focus:outline-none focus:border-[#7C4DFF]" />
+                  <button onClick={() => kidBuy(selected)} className="flex-1 h-9 rounded-lg bg-[#4CAF50] hover:bg-[#43a047] text-white text-xs font-display font-extrabold flex items-center justify-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5" /> Buy · {buyCost(selected.supply, Number(buyQty[selected.id] || 1)).toFixed(2)}
+                  </button>
+                  <button onClick={() => kidSell(selected)} className="flex-1 h-9 rounded-lg bg-[#e54848] hover:bg-[#d33838] text-white text-xs font-display font-extrabold flex items-center justify-center gap-1">
+                    <TrendingDown className="w-3.5 h-3.5" /> Sell · {sellProceeds(selected.supply, Number(buyQty[selected.id] || 1)).toFixed(2)}
+                  </button>
+                </div>
+                {/* token pills */}
+                {tokens.length > 1 && (
+                  <div className="flex gap-1.5 mt-2 overflow-x-auto scrollbar-hide">
+                    {tokens.map((t) => (
+                      <button key={t.id} onClick={() => setSelectedId(t.id)} className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-display font-bold whitespace-nowrap border ${t.id === selectedId ? "bg-[#7C4DFF] text-white border-[#7C4DFF]" : "bg-[#f3eefa] text-[#5A4B8A] border-[#e6d9fb]"}`}>
+                        {t.emoji} {t.symbol}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <div className="text-sm text-[#5A4B8A] mb-2">No tokens yet — launch your first one!</div>
+                <button onClick={() => { setShowLaunch(true); if (window.matchMedia('(max-width: 1023px)').matches) setShowLaunch(true); }} className="lg:hidden inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-[#7C4DFF] to-[#6b3fe0] text-white text-xs font-display font-extrabold">
+                  <Rocket className="w-3.5 h-3.5" /> Launch a Token
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT: agents + activity */}
+        <div className="flex flex-col gap-2 overflow-y-auto pr-1 scrollbar-hide min-h-0">
+          <div className="rounded-2xl bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)] border border-white p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-[#7C4DFF]" />
+                <span className="font-display font-bold text-sm text-[#1F1B2E]">AI Agents Trading</span>
+              </div>
+              <button onClick={() => setAgentsOn((v) => !v)} className={`flex items-center gap-1 h-7 px-2.5 rounded-full text-[10px] font-display font-extrabold border ${agentsOn ? "bg-[#4CAF50]/20 border-[#4CAF50]/50 text-[#2e7d32]" : "bg-[#f3eefa] border-[#e6d9fb] text-[#7f7f7f]"}`}>
+                {agentsOn ? "● LIVE" : "○ PAUSED"}
+              </button>
+            </div>
+            <div className="space-y-1.5">
               {agents.map((a) => {
                 const totalHoldings = Object.entries(a.holdings).reduce((acc, [sym, qty]) => {
                   const tk = tokens.find((t) => t.symbol === sym);
@@ -365,21 +374,22 @@ export default function KaspaKidsPage() {
                 const net = a.cash + totalHoldings;
                 return (
                   <div key={a.name} className="flex items-center gap-2 text-xs">
-                    <span>{a.emoji}</span>
+                    <span className="text-base">{a.emoji}</span>
                     <span className="font-display font-bold w-16 truncate text-[#1F1B2E]">{a.name === "you" ? "🧒 You" : a.name}</span>
-                    <span className="text-[#7A7290] flex-1">{a.cash.toFixed(0)} · holdings {totalHoldings.toFixed(1)}</span>
+                    <span className="text-[#7f7f7f] flex-1 text-[10px]">{a.cash.toFixed(0)} · {totalHoldings.toFixed(1)}</span>
                     <span className="text-[#3D2E7C] font-display font-black">≈ {net.toFixed(1)}</span>
                   </div>
                 );
               })}
             </div>
           </div>
-          <div className="rounded-2xl bg-[#FDFBF7] shadow-[0_10px_28px_rgba(124,92,252,0.14)] border border-[#E9E4F5] p-3">
-            <div className="text-sm font-display font-bold text-[#3D2E7C] mb-2">📡 Market Activity</div>
-            <div className="space-y-1 max-h-40 overflow-y-auto">
-              {log.length === 0 && <div className="text-[#7A7290] text-xs">Nothing happening yet…</div>}
+
+          <div className="rounded-2xl bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)] border border-white p-3">
+            <div className="flex items-center gap-2 mb-2"><Coins className="w-4 h-4 text-[#7C4DFF]" /><span className="font-display font-bold text-sm text-[#1F1B2E]">Market Activity</span></div>
+            <div className="space-y-1 max-h-60 overflow-y-auto">
+              {log.length === 0 && <div className="text-[#7f7f7f] text-xs">Nothing happening yet…</div>}
               {log.map((e, i) => (
-                <div key={i} className={`text-xs ${e.kind === "buy" ? "text-green-700/70" : e.kind === "sell" ? "text-red-600/70" : e.kind === "launch" ? "text-[#7C5CFC]" : "text-[#5A4B8A]"}`}>
+                <div key={i} className={`text-[11px] ${e.kind === "buy" ? "text-[#2e7d32]" : e.kind === "sell" ? "text-[#c62828]" : e.kind === "launch" ? "text-[#7C4DFF]" : "text-[#5A4B8A]"}`}>
                   {e.text}
                 </div>
               ))}
