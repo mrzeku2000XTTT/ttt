@@ -174,9 +174,27 @@ export default function KaspaKidsAcademyPage() {
         </motion.div>
       )}
 
-      {active && (
-        <KidsLesson chapter={active} onClose={() => setActive(null)} onLearned={markLearned} />
-      )}
+      {active && (() => {
+        const idx = ALL_CHAPTERS.findIndex((c) => c.n === active.n);
+        const prevC = idx > 0 ? ALL_CHAPTERS[idx - 1] : null;
+        const nextC = idx >= 0 && idx < ALL_CHAPTERS.length - 1 ? ALL_CHAPTERS[idx + 1] : null;
+        const goTo = (c) => {
+          if (!c) return;
+          const sec = SECTIONS.find((s) => s.chapters.some((ch) => ch.n === c.n)) || SECTIONS[0];
+          setActive({ ...c, section: sec.name, sectionColor: sec.color });
+        };
+        return (
+          <KidsLesson
+            chapter={active}
+            prevChapter={prevC}
+            nextChapter={nextC}
+            onPrev={() => goTo(prevC)}
+            onNext={() => goTo(nextC)}
+            onClose={() => setActive(null)}
+            onLearned={markLearned}
+          />
+        );
+      })()}
     </div>
   );
 }

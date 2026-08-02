@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Sparkles, Send, CheckCircle2, RotateCcw, MessageCircle } from "lucide-react";
+import { X, Loader2, Sparkles, Send, CheckCircle2, RotateCcw, MessageCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const MASCOT = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
@@ -22,7 +22,7 @@ Rules:
 - Be accurate about real trading concepts, but keep it safe and educational.
 - Never give real financial advice or promise profits. Remind kids this is learning, not a way to get rich.`;
 
-export default function KidsLesson({ chapter, onClose, onLearned }) {
+export default function KidsLesson({ chapter, prevChapter, nextChapter, onPrev, onNext, onClose, onLearned }) {
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -98,6 +98,14 @@ export default function KidsLesson({ chapter, onClose, onLearned }) {
     onLearned?.(chapter.n);
   };
 
+  // Auto-advance to the next chapter shortly after a chapter is marked learned.
+  useEffect(() => {
+    if (!learned || !nextChapter || !onNext) return;
+    const t = setTimeout(() => onNext(), 1800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [learned, chapter?.n]);
+
   return (
     <AnimatePresence>
       <motion.div
@@ -120,6 +128,16 @@ export default function KidsLesson({ chapter, onClose, onLearned }) {
               <div className="text-[10px] font-black uppercase tracking-widest" style={{ color: chapter.sectionColor }}>{chapter.section} · Ch. {chapter.n}</div>
               <h2 className="font-display font-black text-base text-[#1F1B2E] truncate">{chapter.title}</h2>
             </div>
+            {prevChapter && (
+              <button
+                onClick={onPrev}
+                title={`Back to Ch. ${prevChapter.n}: ${prevChapter.title}`}
+                className="h-9 px-3 rounded-full flex items-center gap-1 bg-white/70 hover:bg-white text-[#5A4B8A] flex-shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline text-[10px] font-black uppercase tracking-wider">Relearn</span>
+              </button>
+            )}
             <button onClick={onClose} className="w-9 h-9 rounded-full flex items-center justify-center bg-white/70 hover:bg-white text-[#5A4B8A] flex-shrink-0">
               <X className="w-4 h-4" />
             </button>
@@ -245,6 +263,17 @@ export default function KidsLesson({ chapter, onClose, onLearned }) {
               >
                 {learned ? <><CheckCircle2 className="w-4 h-4" /> Chapter learned!</> : "Mark this chapter as learned"}
               </button>
+              {learned && nextChapter && (
+                <button
+                  onClick={onNext}
+                  className="w-full mt-2 h-11 rounded-full bg-gradient-to-r from-[#FF8A6B] to-[#F96B4C] text-white font-display font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-[0_8px_20px_rgba(249,107,76,0.4)]"
+                >
+                  Next: Ch. {nextChapter.n} · {nextChapter.title} <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+              {learned && !nextChapter && (
+                <p className="text-center text-[11px] font-bold text-[#2e7d32] mt-2">🎓 That was the last chapter! Close to see your diploma.</p>
+              )}
             </div>
           )}
         </motion.div>
