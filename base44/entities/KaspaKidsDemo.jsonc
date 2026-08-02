@@ -1,0 +1,44 @@
+{
+  "name": "KaspaKidsDemo",
+  "type": "object",
+  "properties": {
+    "room_name": {
+      "type": "string",
+      "description": "Short label for this shared sandbox demo"
+    },
+    "creator_name": {
+      "type": "string",
+      "description": "Display name of the kid who shared it"
+    },
+    "code": {
+      "type": "string",
+      "description": "Short 4-char join code"
+    },
+    "snapshot": {
+      "type": "object",
+      "description": "Sandbox snapshot { tttBalance, tokens, agents, log } so friends can load & continue the demo"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "room_name",
+    "code",
+    "snapshot"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": {
+      "created_by": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
