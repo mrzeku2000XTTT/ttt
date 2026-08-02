@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Send, Loader2, Rocket, Sparkles } from "lucide-react";
+import { Send, Loader2, Rocket, Sparkles, ArrowLeft } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const MASCOT = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
@@ -69,7 +70,10 @@ export default function KidsIntroduce({ onDone }) {
   return (
     <div className="relative min-h-screen bg-[#e0d7f5] font-body text-[#1F1B2E] overflow-x-hidden flex flex-col">
       {/* HEADER */}
-      <div className="flex items-center gap-2 h-14 px-4 border-b border-[#7C4DFF]/15 bg-[#e0d7f5]/85 backdrop-blur-xl sticky top-0 z-20" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <div className="flex items-center gap-2 h-14 px-3 border-b border-[#7C4DFF]/15 bg-[#e0d7f5]/85 backdrop-blur-xl sticky top-0 z-20" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <Link to="/AppStoreV2" className="flex items-center gap-1 text-[#5A4B8A] hover:text-[#3D2E7C] text-sm h-9 px-2 rounded-lg hover:bg-white/60">
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Store</span>
+        </Link>
         <img src={MASCOT} alt="Slobby" className="w-8 h-8 rounded-xl object-cover" />
         <span className="font-display font-black text-sm text-[#3D2E7C]">Meet Slobby 🟣</span>
       </div>
