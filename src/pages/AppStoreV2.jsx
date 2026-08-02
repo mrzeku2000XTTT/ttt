@@ -135,7 +135,7 @@ export default function AppStoreV2Page() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 rounded-2xl overflow-hidden ring-1 ring-[#9B84F6]/40 shadow-lg shadow-purple-500/20"
         >
-          <Link to="/KaspaKids" className="block relative bg-gradient-to-br from-[#DED6F2] to-[#EBE6F8] p-5 sm:p-6">
+          <Link to="/KaspaKidsAcademy" className="block relative bg-gradient-to-br from-[#DED6F2] to-[#EBE6F8] p-5 sm:p-6">
             <img
               src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png"
               alt="Slobby the Slobz mascot"
@@ -145,10 +145,10 @@ export default function AppStoreV2Page() {
               <div className="text-[10px] font-bold tracking-[0.2em] text-[#7C5CFC] mb-1 uppercase">New · Demo</div>
               <h3 className="text-xl sm:text-2xl font-[900] text-[#3D2E7C] tracking-tight mb-1 max-w-[60%]">Slobz Trading Playground</h3>
               <p className="text-[#5A4B8A] text-xs sm:text-sm max-w-md mb-3">
-                A kids' trading simulator. Generate a <b>real Kaspa testnet wallet</b>, launch your own KRC20-style tokens on a bonding curve, and watch friendly AI agents buy &amp; sell. Like KRON, but for learning. 🎈
+              A kids' trading simulator. <b>Learn trading first</b> with 10 quick lessons, then launch your own KRC20-style tokens on a bonding curve and watch friendly AI agents buy &amp; sell. Like KRON, but for learning. 🎈
               </p>
               <span className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-gradient-to-r from-[#FF8A6B] to-[#F96B4C] text-white text-xs font-bold shadow-lg shadow-orange-500/30">
-                Play the Demo →
+              Learn &amp; Play the Demo →
               </span>
             </div>
           </Link>
