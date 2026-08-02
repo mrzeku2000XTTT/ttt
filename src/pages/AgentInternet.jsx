@@ -5,6 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import AgentCardCarousel from "@/components/agentinternet/AgentCardCarousel";
 import AgentBlueprintModal from "@/components/agentinternet/AgentBlueprintModal";
 import AgentInternetConsole from "@/components/agentinternet/AgentInternetConsole";
+import TokenExplorer from "@/components/agentinternet/TokenExplorer";
 
 export default function AgentInternetPage() {
   const [selected, setSelected] = useState(null);
@@ -39,6 +40,8 @@ export default function AgentInternetPage() {
         <Zap className="w-4 h-4" />
         Launch Agent Internet
       </button>
+
+      <TokenExplorer />
 
       <AnimatePresence>
         {selected && <AgentBlueprintModal agent={selected} onClose={() => setSelected(null)} />}
