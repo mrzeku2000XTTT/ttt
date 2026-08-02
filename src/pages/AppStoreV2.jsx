@@ -129,6 +129,27 @@ export default function AppStoreV2Page() {
 
         <BlueprintModal open={blueprintOpen} onClose={() => setBlueprintOpen(false)} />
 
+        {/* Slobz Kids Trading Playground — Featured Demo */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 rounded-2xl overflow-hidden ring-1 ring-[#9B84F6]/40 shadow-lg shadow-purple-500/20"
+        >
+          <Link to="/KaspaKids" className="block relative bg-gradient-to-br from-[#2a1a4a] to-[#1a1230] p-5 sm:p-6">
+            <div className="absolute top-0 right-0 text-7xl sm:text-8xl opacity-30 -mr-2 -mt-2">🟣</div>
+            <div className="relative z-10">
+              <div className="text-[10px] font-bold tracking-[0.2em] text-[#c9bcff] mb-1 uppercase">New · Demo</div>
+              <h3 className="text-xl sm:text-2xl font-[900] text-white tracking-tight mb-1">Slobz Trading Playground</h3>
+              <p className="text-white/60 text-xs sm:text-sm max-w-md mb-3">
+                A kids' trading simulator. Generate a real Kaspa wallet, launch your own KRC20-style tokens on a bonding curve, and watch friendly AI agents buy &amp; sell. Like KRON, but for learning. 🎈
+              </p>
+              <span className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-gradient-to-r from-[#9B84F6] to-[#7C5CFC] text-white text-xs font-bold shadow-lg shadow-purple-500/40">
+                Play the Demo →
+              </span>
+            </div>
+          </Link>
+        </motion.div>
+
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-start justify-between gap-4">
           <div>

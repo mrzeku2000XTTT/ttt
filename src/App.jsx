@@ -137,6 +137,7 @@ import KASDollarPage from './pages/KASDollar';
 import ArgentStudioPage from './pages/ArgentStudio';
 import BlogHubPage from './pages/BlogHub';
 import BlogDetailPage from './pages/BlogDetail';
+import KaspaKidsPage from './pages/KaspaKids';
 import TreePage from './pages/Tree';
 import KuttPage from './pages/Kutt';
 import SlobzPage from './pages/Slobz';
@@ -332,6 +333,7 @@ const AuthenticatedApp = () => {
       <Route path="/ArgentStudio" element={<AdminRoute><ArgentStudioPage /></AdminRoute>} />
       <Route path="/Blog" element={<BlogHubPage />} />
       <Route path="/Blog/:id" element={<BlogDetailPage />} />
+      <Route path="/KaspaKids" element={<KaspaKidsPage />} />
       <Route path="/Tree" element={<TreePage />} />
       <Route path="/Kutt" element={<KuttPage />} />
       <Route path="/Slobz" element={<SlobzPage />} />
