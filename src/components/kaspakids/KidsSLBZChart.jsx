@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Trash2, Brain, X, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { Sparkles, Trash2, Brain, X, ZoomIn, ZoomOut, Maximize2, Calendar, ChevronFirst, ChevronLast } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-// Timeframes — bucket = minutes of raw history per candle (like real TradingView aggregation)
+// Timeframes — bucket = minutes of raw 1-min history per candle (like real TradingView aggregation)
 const TIMEFRAMES = [
   { id: "1m", bucket: 1 }, { id: "5m", bucket: 5 }, { id: "15m", bucket: 15 },
   { id: "1h", bucket: 60 }, { id: "4h", bucket: 240 }, { id: "1d", bucket: 1440 },
@@ -23,6 +23,20 @@ const TOOLS = [
 ];
 
 const PAD = { top: 10, right: 58, bottom: 22, left: 6 };
+const DAYS = 30;            // how far back the synthesized history reaches
+const DEFAULT_COUNT = 120;  // candles shown by default (recent window)
+const MAX_RENDER = 260;     // max candles actually drawn (downsampled beyond this)
+
+// deterministic PRNG so the synthesized back-history is stable across re-renders
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const strSeed = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 
 function fmtTime(ts, bucket) {
   const d = new Date(ts);
@@ -33,16 +47,38 @@ function fmtTime(ts, bucket) {
   return `${hh}:${mm}`;
 }
 
+// merge a window of candles down to <= max candles (TradingView-style downsampling)
+function downsample(candles, max) {
+  if (candles.length <= max) return candles;
+  const k = Math.ceil(candles.length / max);
+  const out = [];
+  for (let i = 0; i < candles.length; i += k) {
+    const slice = candles.slice(i, i + k);
+    out.push({
+      t: slice[0].t,
+      o: slice[0].o, c: slice[slice.length - 1].c,
+      h: Math.max(...slice.map((s) => s.h)),
+      l: Math.min(...slice.map((s) => s.l)),
+    });
+  }
+  return out;
+}
+
 export default function KidsSLBZChart({ token }) {
   const wrapRef = useRef(null);
+  const svgRef = useRef(null);
   const [size, setSize] = useState({ w: 600, h: 320 });
   const [tf, setTf] = useState("1m");
-  const [viewN, setViewN] = useState(null); // null = fit all; zoom controls candle count
+  const [viewStart, setViewStart] = useState(0);   // first visible tf candle index
+  const [viewCount, setViewCount] = useState(DEFAULT_COUNT);
   const [activeTool, setActiveTool] = useState(null);
   const [pins, setPins] = useState([]);
   const [hover, setHover] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState(null);
+  const [pickDate, setPickDate] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef(null);
 
   useEffect(() => {
     if (!wrapRef.current) return;
@@ -56,62 +92,161 @@ export default function KidsSLBZChart({ token }) {
     return () => ro.disconnect();
   }, []);
 
-  // reset zoom when timeframe changes
-  useEffect(() => { setViewN(null); }, [tf]);
-
   const bucket = TIMEFRAMES.find((t) => t.id === tf).bucket;
   const history = token?.history?.length ? token.history : [token?.price || 1, token?.price || 1];
 
-  // base 1-minute candles from raw sandbox history
+  // 1-minute candle series: synthesized back-history (stable, seeded) + real sandbox tail
   const baseCandles = useMemo(() => {
-    const n = history.length;
+    const total = DAYS * 1440;
+    const realLen = Math.min(history.length, total);
+    const synthLen = total - realLen;
+    const rng = mulberry32(strSeed((token?.symbol || "SLBZ") + ":" + (token?.supply || 0)));
+    const out = new Array(total);
+    let p = history[0] || 1;
+    // build synth backwards from the first known price, then reverse
+    const synth = new Array(synthLen);
+    for (let i = 0; i < synthLen; i++) {
+      const drift = 0.0009;          // slight upward bias (bonding-curve feel)
+      const vol = 0.018;
+      p = p / (1 + drift + (rng() - 0.5) * vol);
+      synth[synthLen - 1 - i] = p;
+    }
     const now = Date.now();
-    return history.map((c, i) => {
-      const o = i > 0 ? history[i - 1] : c;
+    for (let i = 0; i < total; i++) {
+      const c = i < synthLen ? synth[i] : history[i - synthLen];
+      const o = i > 0 ? out[i - 1].c : c;
       const body = Math.abs(c - o);
       const hi = Math.max(o, c) + body * 0.4 + c * 0.0008;
       const lo = Math.min(o, c) - body * 0.4 - c * 0.0008;
-      return { t: now - (n - 1 - i) * 60000, o, h: hi, l: lo, c };
-    });
-  }, [history]);
+      out[i] = { t: now - (total - 1 - i) * 60000, o, h: hi, l: lo, c };
+    }
+    return out;
+  }, [history, token?.symbol, token?.supply]);
 
-  // aggregate base candles into timeframe candles (this is what makes the chart LOOK different per TF)
+  // aggregate 1-min candles into the selected timeframe
   const tfCandles = useMemo(() => {
     const out = [];
     const groups = Math.ceil(baseCandles.length / bucket);
     for (let g = 0; g < groups; g++) {
-      const slice = baseCandles.slice(g * bucket, (g + 1) * bucket);
+      const s = g * bucket, e = s + bucket;
+      const slice = baseCandles.slice(s, e);
       if (!slice.length) break;
       out.push({
         i: g, t: slice[0].t,
         o: slice[0].o, c: slice[slice.length - 1].c,
-        h: Math.max(...slice.map((s) => s.h)),
-        l: Math.min(...slice.map((s) => s.l)),
+        h: Math.max(...slice.map((x) => x.h)),
+        l: Math.min(...slice.map((x) => x.l)),
       });
     }
     return out;
   }, [baseCandles, bucket]);
 
-  // visible (zoomed) candles
-  const candles = useMemo(() => {
-    if (!viewN || viewN >= tfCandles.length) return tfCandles;
-    return tfCandles.slice(-viewN);
-  }, [tfCandles, viewN]);
+  const len = tfCandles.length;
 
-  const zoomIn = () => setViewN((n) => Math.max(8, Math.floor((n ?? tfCandles.length) * 0.6)));
-  const zoomOut = () => setViewN((n) => {
-    const v = Math.ceil((n ?? tfCandles.length) * 1.6);
-    return v >= tfCandles.length ? null : v;
-  });
-  const fit = () => setViewN(null);
+  // reset window when timeframe or token changes (NOT on every history tick)
+  useEffect(() => {
+    const vc = Math.min(DEFAULT_COUNT, len);
+    setViewCount(vc);
+    setViewStart(Math.max(0, len - vc));
+  }, [tf, token?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // clamp window to valid range (handles history growth without resetting user's pan)
+  const vc = Math.max(8, Math.min(viewCount, len));
+  const vs = Math.max(0, Math.min(viewStart, len - vc));
+  const window = useMemo(() => tfCandles.slice(vs, vs + vc), [tfCandles, vs, vc]);
+  const candles = useMemo(() => downsample(window, MAX_RENDER), [window]);
+
+  const zoomAt = (factor, anchorPx) => {
+    setViewCount((curVC) => {
+      const cur = Math.max(8, Math.min(curVC, len));
+      const newCount = Math.max(8, Math.min(len, Math.round(cur * factor)));
+      if (newCount === cur) return cur;
+      // keep the candle under the cursor at the same x position
+      const plotWcur = Math.max(10, size.w - PAD.left - PAD.right);
+      const ratio = anchorPx != null ? (anchorPx - PAD.left) / plotWcur : 1;
+      const globalIdx = vs + Math.round(ratio * (cur - 1));
+      const newAnchorIdx = Math.round(ratio * (newCount - 1));
+      let newStart = globalIdx - newAnchorIdx;
+      newStart = Math.max(0, Math.min(newStart, len - newCount));
+      setViewStart(newStart);
+      return newCount;
+    });
+  };
+
+  const panBy = (deltaCandles) => {
+    setViewStart((cur) => {
+      const curVC = Math.max(8, Math.min(viewCount, len));
+      let next = cur + deltaCandles;
+      next = Math.max(0, Math.min(next, len - curVC));
+      return next;
+    });
+  };
+
+  // wheel = zoom (cursor-anchored); shift+wheel or horizontal wheel = pan
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const anchorPx = e.clientX - r.left;
+      if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        const plotWcur = Math.max(10, size.w - PAD.left - PAD.right);
+        const candleSpacing = plotWcur / Math.max(1, vc);
+        const delta = Math.round(-(e.shiftKey ? e.deltaY : e.deltaX) / candleSpacing);
+        if (delta) panBy(delta);
+      } else {
+        const factor = e.deltaY < 0 ? 0.82 : 1.22;
+        zoomAt(factor, anchorPx);
+      }
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [size.w, vc, vs, len]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // arrow-key panning
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "ArrowLeft") { panBy(-Math.max(1, Math.round(vc * 0.1))); }
+      else if (e.key === "ArrowRight") { panBy(Math.max(1, Math.round(vc * 0.1))); }
+      else if (e.key === "Home") { setViewStart(0); }
+      else if (e.key === "End") { setViewStart(Math.max(0, len - vc)); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [vc, len]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fitAll = () => { setViewCount(len); setViewStart(0); };
+  const zoomIn = () => zoomAt(0.7, size.w / 2);
+  const zoomOut = () => zoomAt(1.4, size.w / 2);
+  const goStart = () => setViewStart(0);
+  const goNow = () => setViewStart(Math.max(0, len - vc));
+
+  const onPickDate = (val) => {
+    setPickDate(val);
+    if (!val) return;
+    const target = new Date(val + "T00:00:00").getTime();
+    // find tf candle closest to that day
+    let best = 0, bestDiff = Infinity;
+    for (let i = 0; i < tfCandles.length; i++) {
+      const d = Math.abs(tfCandles[i].t - target);
+      if (d < bestDiff) { bestDiff = d; best = i; }
+    }
+    let newStart = best - Math.floor(vc / 2);
+    newStart = Math.max(0, Math.min(newStart, len - vc));
+    setViewStart(newStart);
+  };
+
+  const minDateStr = tfCandles.length ? new Date(tfCandles[0].t).toISOString().slice(0, 10) : "";
+  const maxDateStr = tfCandles.length ? new Date(tfCandles[tfCandles.length - 1].t).toISOString().slice(0, 10) : "";
 
   const { w, h } = size;
   const plotW = Math.max(10, w - PAD.left - PAD.right);
   const plotH = Math.max(10, h - PAD.top - PAD.bottom);
 
   const prices = candles.flatMap((c) => [c.h, c.l]);
-  const minP = Math.min(...prices);
-  const maxP = Math.max(...prices);
+  const minP = prices.length ? Math.min(...prices) : 0;
+  const maxP = prices.length ? Math.max(...prices) : 1;
   const padP = (maxP - minP) * 0.12 || maxP * 0.05 || 1;
   const loP = minP - padP;
   const hiP = maxP + padP;
@@ -132,6 +267,28 @@ export default function KidsSLBZChart({ token }) {
   const handleMove = (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     setHover({ mx: e.clientX - r.left, my: e.clientY - r.top });
+  };
+
+  const handlePointerDown = (e) => {
+    if (activeTool) return; // drawing, not panning
+    const r = e.currentTarget.getBoundingClientRect();
+    dragStart.current = { x: e.clientX, vs };
+    setDragging(true);
+    const move = (ev) => {
+      const dx = ev.clientX - dragStart.current.x;
+      const candleSpacing = plotW / Math.max(1, vc);
+      const delta = Math.round(-dx / candleSpacing);
+      let next = dragStart.current.vs + delta;
+      next = Math.max(0, Math.min(next, len - vc));
+      setViewStart(next);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
   };
 
   const handlePlotClick = (e) => {
@@ -187,20 +344,30 @@ Name the EXACT chart pattern a real pattern trader would CALL right now (uptrend
 
   const callColor = (c) => (c || "").toLowerCase().includes("long") || (c || "").toLowerCase().includes("buy") ? "#4CAF50" : (c || "").toLowerCase().includes("short") || (c || "").toLowerCase().includes("sell") ? "#e54848" : "#7f7f7f";
 
+  const rangeLabel = candles.length > 1
+    ? `${new Date(candles[0].t).toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${new Date(candles[candles.length - 1].t).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    : "";
+
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* ROW 1: timeframe + zoom + AI analyze */}
-      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-[#e6d9fb] flex-shrink-0">
+      {/* ROW 1: timeframe + zoom + date + AI analyze */}
+      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-[#e6d9fb] flex-shrink-0 flex-wrap">
         <div className="flex items-center gap-0.5 bg-[#f3eefa] rounded-lg p-0.5">
           {TIMEFRAMES.map((t) => (
             <button key={t.id} onClick={() => setTf(t.id)} className={`h-6 px-2 rounded-md text-[10px] font-display font-extrabold transition-all ${tf === t.id ? "bg-[#7C4DFF] text-white shadow-sm" : "text-[#5A4B8A] hover:text-[#3D2E7C]"}`}>{t.id}</button>
           ))}
         </div>
         <div className="flex items-center gap-0.5 bg-[#f3eefa] rounded-lg p-0.5">
+          <button onClick={goStart} title="Jump to start" className="h-6 w-6 flex items-center justify-center rounded-md text-[#5A4B8A] hover:bg-white"><ChevronFirst className="w-3.5 h-3.5" /></button>
           <button onClick={zoomOut} title="Zoom out" className="h-6 w-6 flex items-center justify-center rounded-md text-[#5A4B8A] hover:bg-white"><ZoomOut className="w-3.5 h-3.5" /></button>
-          <button onClick={fit} title="Fit all" className="h-6 w-6 flex items-center justify-center rounded-md text-[#5A4B8A] hover:bg-white"><Maximize2 className="w-3 h-3" /></button>
+          <button onClick={fitAll} title="Fit all" className="h-6 w-6 flex items-center justify-center rounded-md text-[#5A4B8A] hover:bg-white"><Maximize2 className="w-3 h-3" /></button>
           <button onClick={zoomIn} title="Zoom in" className="h-6 w-6 flex items-center justify-center rounded-md text-[#5A4B8A] hover:bg-white"><ZoomIn className="w-3.5 h-3.5" /></button>
+          <button onClick={goNow} title="Jump to now" className="h-6 w-6 flex items-center justify-center rounded-md text-[#5A4B8A] hover:bg-white"><ChevronLast className="w-3.5 h-3.5" /></button>
         </div>
+        <label className="flex items-center gap-1 h-7 px-2 rounded-lg bg-[#f3eefa] border border-[#e6d9fb] cursor-pointer">
+          <Calendar className="w-3.5 h-3.5 text-[#7C4DFF]" />
+          <input type="date" value={pickDate} min={minDateStr} max={maxDateStr} onChange={(e) => onPickDate(e.target.value)} className="bg-transparent text-[10px] font-display font-bold text-[#3D2E7C] outline-none cursor-pointer w-[118px]" />
+        </label>
         <button onClick={runAnalyze} disabled={analyzing} className="ml-auto flex items-center gap-1.5 h-7 px-3 rounded-lg text-[11px] font-display font-extrabold text-white shadow-sm disabled:opacity-60 bg-gradient-to-r from-[#7C4DFF] to-[#6b3fe0]">
           {analyzing ? <><Sparkles className="w-3.5 h-3.5 animate-spin" /> Reading…</> : <><Brain className="w-3.5 h-3.5" /> AI Auto-Analyze</>}
         </button>
@@ -264,10 +431,11 @@ Name the EXACT chart pattern a real pattern trader would CALL right now (uptrend
 
       {/* CHART */}
       <div ref={wrapRef} className="relative flex-1 min-h-0" onMouseMove={handleMove} onMouseLeave={() => setHover(null)}>
-        {!activeTool && !hover && (
-          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 z-10 text-[9px] text-[#9f9f9f] bg-white/70 px-2 py-0.5 rounded-full pointer-events-none">Hover for price · Tap a tool to call a pattern · Switch TF to re-aggregate candles</div>
-        )}
-        <svg width={w} height={h} className="block">
+        <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1.5 pointer-events-none">
+          <span className="text-[9px] text-[#9f9f9f] bg-white/70 px-2 py-0.5 rounded-full">Scroll = zoom · Shift+Scroll / drag = pan · ←/→ keys too</span>
+          {rangeLabel && <span className="text-[9px] text-[#7C4DFF] bg-white/70 px-2 py-0.5 rounded-full font-bold">{rangeLabel} · {vc} {tf}</span>}
+        </div>
+        <svg ref={svgRef} width={w} height={h} className={`block ${activeTool ? "cursor-crosshair" : dragging ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={handlePointerDown}>
           {priceTicks.map((p, i) => (
             <g key={i}>
               <line x1={PAD.left} y1={yOf(p)} x2={PAD.left + plotW} y2={yOf(p)} stroke="#7C4DFF" strokeOpacity="0.06" strokeWidth="1" />
