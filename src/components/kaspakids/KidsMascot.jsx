@@ -17,7 +17,7 @@ export default function KidsMascot({ message, size = "md" }) {
   const dim = size === "lg" ? "w-28 h-28 sm:w-36 sm:h-36" : "w-20 h-20 sm:w-24 sm:h-24";
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-[60] flex flex-col items-center pointer-events-none">
       <AnimatePresence>
         {show && message && (
           <motion.div

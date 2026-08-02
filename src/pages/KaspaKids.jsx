@@ -9,6 +9,7 @@ import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import KidsMascot from "@/components/kaspakids/KidsMascot";
 import KidsMarketChart from "@/components/kaspakids/KidsMarketChart";
 import KidsTradingViewChart from "@/components/kaspakids/KidsTradingViewChart";
+import KidsChartAcademy from "@/components/kaspakids/KidsChartAcademy";
 
 const MASCOT_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
 const LS_KEY = "kaspakids_state_v3";
@@ -226,7 +227,7 @@ export default function KaspaKidsPage() {
       </div>
 
       {/* MAIN GRID */}
-      <div className="relative z-10 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-2 p-2 overflow-y-auto lg:overflow-hidden">
+      <div className="relative z-10 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-2 p-2 pb-28 lg:pb-2 overflow-y-auto lg:overflow-hidden">
         {/* LEFT: get ready + launch */}
         <div className="flex flex-col gap-2 pr-1 scrollbar-hide order-3 lg:order-none lg:overflow-y-auto">
           {/* Get Ready for Pro */}
@@ -290,12 +291,13 @@ export default function KaspaKidsPage() {
             </AnimatePresence>
             {!showLaunch && <div className="text-[10px] text-[#7f7f7f] mt-1">Tap to create your own KRC20-style token.</div>}
           </div>
+          <KidsChartAcademy />
         </div>
 
         {/* CENTER: chart + active token */}
         <div className="flex flex-col gap-2 min-h-0 order-1 lg:order-none">
           {/* Real market chart (for learning to read charts) */}
-          <div className="h-72 lg:h-auto lg:flex-1 min-h-0 rounded-2xl overflow-hidden border border-white bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)]">
+          <div className="h-[55vh] lg:h-auto lg:flex-1 min-h-0 rounded-2xl overflow-hidden border border-white bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)]">
             <div className="flex items-center gap-2 px-3 h-9 border-b border-[#e6d9fb] bg-white">
               <LineChart className="w-3.5 h-3.5 text-[#7C4DFF]" />
               <span className="text-xs font-display font-bold text-[#1F1B2E]">KASPAUSD · Live Market Chart</span>
@@ -359,7 +361,7 @@ export default function KaspaKidsPage() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Bot className="w-4 h-4 text-[#7C4DFF]" />
-                <span className="font-display font-bold text-sm text-[#1F1B2E]">AI Agents Trading</span>
+                <span className="font-display font-bold text-sm text-[#1F1B2E]">AI Agents <span className="text-[#7C4DFF]">{agents.filter((a) => a.name !== "you").length}</span> trading</span>
               </div>
               <button onClick={() => setAgentsOn((v) => !v)} className={`flex items-center gap-1 h-7 px-2.5 rounded-full text-[10px] font-display font-extrabold border ${agentsOn ? "bg-[#4CAF50]/20 border-[#4CAF50]/50 text-[#2e7d32]" : "bg-[#f3eefa] border-[#e6d9fb] text-[#7f7f7f]"}`}>
                 {agentsOn ? "● LIVE" : "○ PAUSED"}
