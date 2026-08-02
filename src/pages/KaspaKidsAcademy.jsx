@@ -1,68 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Rocket, CheckCircle2, LineChart, TrendingUp, TrendingDown, Coins, Droplets, Brain, ShieldCheck, CandlestickChart } from "lucide-react";
+import { ArrowLeft, Rocket, CheckCircle2, Lock } from "lucide-react";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
+import { SECTIONS, ALL_CHAPTERS } from "@/components/kaspakids/academyChapters";
+import KidsLesson from "@/components/kaspakids/KidsLesson";
 
 const MASCOT = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0809726ab_generated_image.png";
-
-const LESSONS = [
-  {
-    n: 1, icon: Coins, color: "#7C4DFF", title: "What is a Token?",
-    body: "A token is a digital coin you can trade. Every token has a SUPPLY — how many coins exist. Fewer coins = rarer = usually pricier.",
-    tip: "In the playground you LAUNCH your own token and pick its supply!",
-  },
-  {
-    n: 2, icon: Droplets, color: "#FF8A6B", title: "Price & Supply / Demand",
-    body: "Price moves because of buyers and sellers. More people want to BUY than SELL → price goes UP. More people want to SELL → price goes DOWN.",
-    tip: "When the AI agents all rush to buy, watch the price climb. 📈",
-  },
-  {
-    n: 3, icon: LineChart, color: "#4CAF50", title: "The Bonding Curve",
-    body: "Our playground uses a bonding curve: the more tokens that are bought, the higher the price goes — automatically. Sell some, and price comes down.",
-    tip: "Same math real tokens like KRON use. Buy early = cheaper! 🟣",
-  },
-  {
-    n: 4, icon: CandlestickChart, color: "#7C4DFF", title: "Candlesticks",
-    body: "Each candle shows 4 things: Open, High, Low, Close. Green candle = price went UP that period. Red candle = price went DOWN.",
-    tip: "Switch the timeframe (1m, 5m, 1h, 1d) to see bigger or smaller candles.",
-  },
-  {
-    n: 5, icon: TrendingUp, color: "#4CAF50", title: "Trends",
-    body: "An UPTREND = higher highs and higher lows (price climbing). A DOWNTREND = lower highs and lower lows (price falling). SIDEWAYS = price stuck in a range.",
-    tip: "Trade WITH the trend, not against it. 'The trend is your friend.' 🤝",
-  },
-  {
-    n: 6, icon: ShieldCheck, color: "#FF8A6B", title: "Support & Resistance",
-    body: "SUPPORT = a price floor where buyers keep bouncing price up. RESISTANCE = a ceiling where sellers push price back down. Smart traders buy near support, sell near resistance.",
-    tip: "Use the chart tools to draw support (🟢) and resistance (🔴) lines.",
-  },
-  {
-    n: 7, icon: Brain, color: "#7C4DFF", title: "Chart Patterns",
-    body: "Double Top (M) → price may drop. Double Bottom (W) → price may rise. Head & Shoulders → trend reversal. Triangles & flags → a breakout is coming.",
-    tip: "Tap a pattern tool, then tap the chart to label what you see.",
-  },
-  {
-    n: 8, icon: TrendingDown, color: "#e54848", title: "Buy / Sell / Wait",
-    body: "Don't just buy because you're excited. Have a PLAN: an entry price, a stop-loss (where you admit you're wrong), and a target (where you take profit).",
-    tip: "The AI Auto-Analyze button gives you a real trade call with entry, stop & target!",
-  },
-  {
-    n: 9, icon: ShieldCheck, color: "#4CAF50", title: "Risk Rules",
-    body: "NEVER spend money you can't afford to lose. Here it's all FAKE TTT Demo money — so practice the habits now, for free. On the Pro DEX it's real testnet coins (still free, but real).",
-    tip: "Finish this lesson and you're ready for the Pro DEX. 🛡️",
-  },
-  {
-    n: 10, icon: Brain, color: "#7C4DFF", title: "The AI Agents",
-    body: "Each agent has its OWN strategy: Trend Follower, Contrarian, Diamond Hands, Scalper, Whale. They think for themselves — they don't copy you. Watch their sentiment to learn different styles.",
-    tip: "Tap an agent to see WHY they're bullish or bearish right now.",
-  },
-];
+const STORE_KEY = "slobz_academy_progress";
 
 export default function KaspaKidsAcademyPage() {
   const [done, setDone] = useState({});
+  const [active, setActive] = useState(null); // chapter object or null
 
-  const allDone = LESSONS.every((l) => done[l.n]);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORE_KEY);
+      if (saved) setDone(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  const markLearned = (n) => {
+    setDone((d) => {
+      const next = { ...d, [n]: true };
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const doneCount = Object.keys(done).length;
+  const total = ALL_CHAPTERS.length;
+  const allDone = doneCount >= total;
+  const pct = Math.round((doneCount / total) * 100);
 
   return (
     <div className="relative min-h-screen bg-[#e0d7f5] font-body text-[#1F1B2E] overflow-x-hidden">
@@ -76,11 +45,11 @@ export default function KaspaKidsAcademyPage() {
         <div className="flex items-center gap-2 text-sm font-display font-black text-[#3D2E7C]">🎓 <span>Slobz Trading Academy</span></div>
         <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 border border-[#7C4DFF]/20">
           <span className="text-[10px] text-[#7f7f7f] uppercase tracking-widest font-bold">Progress</span>
-          <span className="font-display font-black text-sm text-[#3D2E7C]">{Object.keys(done).length}/{LESSONS.length}</span>
+          <span className="font-display font-black text-sm text-[#3D2E7C]">{doneCount}/{total}</span>
         </div>
       </div>
 
-      {/* HERO */}
+      {/* HERO + PROGRESS BAR */}
       <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 pb-2 text-center">
         <motion.img
           src={MASCOT}
@@ -90,50 +59,61 @@ export default function KaspaKidsAcademyPage() {
           className="w-24 h-24 sm:w-28 sm:h-28 rounded-[24px] object-cover shadow-[0_12px_30px_rgba(124,92,252,0.35)] mx-auto -rotate-3"
         />
         <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="font-display font-black text-2xl sm:text-3xl text-[#3D2E7C] tracking-tight mt-3">
-          Learn Trading First 🟣
+          30 Chapters · Real AI Tutor 🟣
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[#5A4B8A] text-sm mt-2 max-w-md mx-auto">
-          Before you touch the playground, Slobby will teach you everything you need to know. Finish all 10 lessons, then enter the sandbox like a pro.
+          Slobby (a real AI) teaches you every chapter live — with examples, analogies, quizzes, and you can ask it anything. Finish all {total} to unlock the playground.
         </motion.p>
+        <div className="mt-3 h-2.5 rounded-full bg-white/70 border border-[#7C4DFF]/15 overflow-hidden max-w-md mx-auto">
+          <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="h-full bg-gradient-to-r from-[#7C4DFF] to-[#FF8A6B] rounded-full" />
+        </div>
       </div>
 
-      {/* LESSONS */}
-      <div className="relative z-10 max-w-2xl mx-auto px-4 py-4 space-y-3 pb-28">
-        {LESSONS.map((l, idx) => {
-          const Icon = l.icon;
-          const isDone = done[l.n];
-          return (
-            <motion.div
-              key={l.n}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.04 }}
-              className={`rounded-2xl bg-white shadow-[0_10px_28px_rgba(124,77,255,0.12)] border p-4 ${isDone ? "border-[#4CAF50]/40" : "border-white"}`}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: l.color + "22" }}>
-                  <Icon className="w-4.5 h-4.5" style={{ color: l.color }} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: l.color }}>LESSON {l.n}</span>
-                  <h3 className="font-display font-extrabold text-base text-[#1F1B2E]">{l.title}</h3>
-                </div>
-                {isDone && <CheckCircle2 className="w-5 h-5 text-[#4CAF50] ml-auto flex-shrink-0" />}
-              </div>
-              <p className="text-sm text-[#5A4B8A] leading-relaxed">{l.body}</p>
-              <div className="mt-2.5 rounded-xl bg-[#f3eefa] border border-[#e6d9fb] px-3 py-2 flex items-start gap-2">
-                <Rocket className="w-3.5 h-3.5 text-[#7C4DFF] mt-0.5 flex-shrink-0" />
-                <span className="text-xs text-[#3D2E7C] font-bold leading-snug">{l.tip}</span>
-              </div>
-              <button
-                onClick={() => setDone((d) => ({ ...d, [l.n]: !d[l.n] }))}
-                className={`mt-3 h-9 px-4 rounded-full text-xs font-display font-extrabold flex items-center gap-1.5 transition-all ${isDone ? "bg-[#4CAF50]/20 text-[#2e7d32] border border-[#4CAF50]/50" : "bg-[#7C4DFF] text-white shadow-[0_6px_16px_rgba(124,77,255,0.3)]"}`}
-              >
-                {isDone ? <><CheckCircle2 className="w-3.5 h-3.5" /> Got it!</> : <><CheckCircle2 className="w-3.5 h-3.5" /> Mark as learned</>}
-              </button>
-            </motion.div>
-          );
-        })}
+      {/* SECTIONS + CHAPTERS */}
+      <div className="relative z-10 max-w-2xl mx-auto px-4 py-4 space-y-6 pb-28">
+        {SECTIONS.map((section) => (
+          <div key={section.name}>
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: section.color }} />
+              <h2 className="font-display font-black text-sm tracking-wide" style={{ color: section.color }}>{section.name}</h2>
+              <span className="text-[10px] text-[#7f7f7f] font-bold">
+                {section.chapters.filter((c) => done[c.n]).length}/{section.chapters.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {section.chapters.map((c, idx) => {
+                const Icon = c.icon;
+                const isDone = done[c.n];
+                return (
+                  <motion.button
+                    key={c.n}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    onClick={() => setActive({ ...c, section: section.name, sectionColor: section.color })}
+                    className={`w-full text-left flex items-center gap-3 rounded-2xl bg-white shadow-[0_6px_18px_rgba(124,77,255,0.08)] border p-3 transition-all active:scale-[0.98] ${isDone ? "border-[#4CAF50]/40" : "border-white hover:border-[#7C4DFF]/40"}`}
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: section.color + "22" }}>
+                      <Icon className="w-5 h-5" style={{ color: section.color }} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-md" style={{ background: section.color }}>{c.n}</span>
+                        <span className="font-display font-extrabold text-sm text-[#1F1B2E] truncate">{c.title}</span>
+                      </div>
+                      <p className="text-[11px] text-[#7f7f7f] truncate mt-0.5">{c.keyIdea}</p>
+                    </div>
+                    {isDone ? (
+                      <CheckCircle2 className="w-5 h-5 text-[#4CAF50] flex-shrink-0" />
+                    ) : (
+                      <span className="text-[10px] font-black text-[#9f8fbf] uppercase tracking-widest flex-shrink-0">Learn</span>
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
 
         {/* FINAL GATE */}
         <motion.div
@@ -144,17 +124,17 @@ export default function KaspaKidsAcademyPage() {
           {allDone ? (
             <>
               <div className="text-3xl mb-1">🎉</div>
-              <h3 className="font-display font-black text-lg text-white">You're ready!</h3>
-              <p className="text-white/80 text-sm mt-1 mb-3">You finished every lesson. Enter the Slobz Trading Playground.</p>
+              <h3 className="font-display font-black text-lg text-white">You finished all {total} chapters!</h3>
+              <p className="text-white/80 text-sm mt-1 mb-3">You're a Slobz Trading Graduate. Enter the playground like a pro.</p>
               <Link to="/KaspaKids" className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full bg-white text-[#3D2E7C] font-display font-extrabold text-sm shadow-lg">
                 <Rocket className="w-4 h-4" /> Enter the Playground
               </Link>
             </>
           ) : (
             <>
-              <div className="text-2xl mb-1">🔒</div>
-              <h3 className="font-display font-black text-base text-[#1F1B2E]">Finish all 10 lessons to unlock the playground</h3>
-              <p className="text-[#7f7f7f] text-xs mt-1">{LESSONS.length - Object.keys(done).length} lesson(s) left — tap "Mark as learned" on each.</p>
+              <div className="text-2xl mb-1"><Lock className="w-7 h-7 mx-auto text-[#7C4DFF]" /></div>
+              <h3 className="font-display font-black text-base text-[#1F1B2E]">Unlock the playground</h3>
+              <p className="text-[#7f7f7f] text-xs mt-1">{total - doneCount} chapter(s) left — tap any chapter to learn with Slobby.</p>
             </>
           )}
         </motion.div>
@@ -167,6 +147,10 @@ export default function KaspaKidsAcademyPage() {
             <Rocket className="w-4 h-4" /> Enter the Playground →
           </Link>
         </motion.div>
+      )}
+
+      {active && (
+        <KidsLesson chapter={active} onClose={() => setActive(null)} onLearned={markLearned} />
       )}
     </div>
   );
