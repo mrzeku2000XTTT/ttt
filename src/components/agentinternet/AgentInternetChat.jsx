@@ -12,6 +12,8 @@ import ChatWalletButton from "@/components/agentinternet/ChatWalletButton";
 import ResultLightbox from "@/components/agentinternet/ResultLightbox";
 import { generateWallet } from "@/lib/localKaspaWallet";
 import { tryQuickAnswer } from "@/components/agentinternet/quickAnswer";
+import { runAgent } from "@/components/agentinternet/agentRunner";
+import AgentStepFeed from "@/components/agentinternet/AgentStepFeed";
 
 const STORAGE_KEY = "ttt_ai_chats";
 // commands that create a wallet locally (never touch the server)
@@ -370,9 +372,15 @@ function Message({ msg, onOpen }) {
               </div>
             )}
             {!msg.loading && msg.skill && <SkillBadge skill={msg.skill} />}
-            {!msg.loading && msg.plan && <PlanChecklist plan={msg.plan} />}
+            {msg.steps?.length > 0 && <AgentStepFeed steps={msg.steps} />}
+            {!msg.loading && msg.plan?.length > 0 && <PlanChecklist plan={msg.plan} />}
             {!msg.loading && (
               <OutputCard output={msg.output} image={msg.image} generating={msg.genLoading} genFailed={msg.genFailed} onOpen={onOpen} />
+            )}
+            {!msg.loading && msg.question && (
+              <div className="mt-2 text-[11px] text-cyan-200/90 leading-snug border-l-2 border-cyan-400/40 pl-2">
+                {msg.question}
+              </div>
             )}
             {msg.error && <div className="text-red-400 text-[10px] font-mono mt-2">router error — retry</div>}
           </>
@@ -503,6 +511,24 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
         setChats((prev) => prev.map((c) =>
           c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, ack: ackText } : m) } : c
         ));
+      }
+    } catch {}
+
+    // Real multi-app run: plan → call our actual apps → narrate each step live
+    try {
+      const run = await runAgent({
+        text,
+        history: hist,
+        onStep: (steps) => setChats((prev) => prev.map((c) =>
+          c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, steps } : m) } : c
+        )),
+      });
+      if (run) {
+        setChats((prev) => prev.map((c) =>
+          c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, loading: false, ...run } : m) } : c
+        ));
+        setSending(false);
+        return;
       }
     } catch {}
 
