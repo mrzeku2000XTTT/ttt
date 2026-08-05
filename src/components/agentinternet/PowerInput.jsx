@@ -75,8 +75,8 @@ export default function PowerInput({ onSubmit }) {
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center gap-2 px-4 h-14 sm:h-16 rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl focus-within:border-cyan-400/60 focus-within:shadow-[0_0_40px_rgba(6,182,212,0.15)] transition-all">
-          <span className="text-cyan-400 font-mono text-sm sm:text-base shrink-0">›</span>
+        <div className="relative flex items-stretch gap-2 px-4 h-14 sm:h-16 rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl focus-within:border-cyan-400/60 focus-within:shadow-[0_0_40px_rgba(6,182,212,0.15)] transition-all">
+          <span className="text-cyan-400 font-mono text-sm sm:text-base shrink-0 flex items-center">›</span>
 
           <input
             ref={inputRef}
@@ -89,7 +89,7 @@ export default function PowerInput({ onSubmit }) {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="flex-1 h-14 sm:h-16 bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-[3.5rem] sm:leading-[4rem] caret-cyan-400 self-stretch"
+            className="flex-1 w-full h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-tight caret-cyan-400"
           />
 
           {/* Animated placeholder — only when input empty & not focused */}
@@ -107,7 +107,7 @@ export default function PowerInput({ onSubmit }) {
           <button
             type="submit"
             disabled={!userValue.trim()}
-            className="relative z-10 shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-xl bg-cyan-400 text-black text-[10px] font-bold tracking-widest uppercase disabled:opacity-30 enabled:hover:bg-cyan-300 transition-colors"
+            className="relative z-10 shrink-0 self-center flex items-center gap-1.5 px-3 h-9 rounded-xl bg-cyan-400 text-black text-[10px] font-bold tracking-widest uppercase disabled:opacity-30 enabled:hover:bg-cyan-300 transition-colors"
           >
             <CornerDownLeft className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Run</span>
