@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 import { SETTINGS } from "@/components/agentinternet/LandingSettings";
 import ChatSessionsDrawer from "@/components/agentinternet/ChatSessionsDrawer";
+import ChatWalletButton from "@/components/agentinternet/ChatWalletButton";
 import { generateWallet } from "@/lib/localKaspaWallet";
 
 const STORAGE_KEY = "ttt_ai_chats";
@@ -527,9 +528,12 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
                 </div>
               </button>
             </div>
-            <div className="flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-white/15 bg-black/40">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[9px] font-mono tracking-widest uppercase text-white/50">Agent Internet</span>
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-white/15 bg-black/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[9px] font-mono tracking-widest uppercase text-white/50">Agent Internet</span>
+              </div>
+              <ChatWalletButton />
             </div>
           </div>
 
