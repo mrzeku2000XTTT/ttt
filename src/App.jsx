@@ -193,7 +193,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/Xunhua" element={<XunhuaPage />} />
-      <Route path="/" element={<TTTLandingPage />} />
+      <Route path="/" element={<AgentInternetLandingPage />} />
+      <Route path="/TTTHome" element={<TTTLandingPage />} />
       <Route path="/TTTGate" element={<TTTGatePage />} />
       <Route path="/Home" element={
         <LayoutWrapper currentPageName={mainPageKey}>
@@ -248,7 +249,7 @@ const AuthenticatedApp = () => {
       <Route path="/TTTV3" element={<TTTV3Page />} />
       <Route path="/WhatIsKaspa" element={<WhatIsKaspaPage />} />
       <Route path="/Explore" element={<ExplorePage />} />
-      <Route path="/AgentInternetLanding" element={<AdminRoute><AgentInternetLandingPage /></AdminRoute>} />
+      <Route path="/AgentInternetLanding" element={<AgentInternetLandingPage />} />
       <Route path="/AgentInternet" element={<AdminRoute><AgentInternetPage /></AdminRoute>} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />

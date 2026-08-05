@@ -1,92 +1,111 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Lock, Terminal, Zap, Radio, Shield, Cpu,
-  Network, KeyRound, Activity, Globe2, Fingerprint, ChevronRight
+  ArrowLeft, Lock, Zap, Radio, Settings as SettingsIcon, ShieldCheck,
+  Cpu, ChevronRight
 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
-import { AGENT_CARDS } from "@/components/agentinternet/agentCards";
+import PowerInput from "@/components/agentinternet/PowerInput";
+import LandingSettings, { useLandingSettings } from "@/components/agentinternet/LandingSettings";
 
 /**
- * AgentInternetLanding — admin-only "dark web" entry point for the Agent Internet.
- * Galaxy video background, terminal aesthetic, agent roster, launch gate.
+ * AgentInternetLanding — the published landing for all users (Gen Z).
+ * Mobile-native, dark-web editorial style. Galaxy video background.
+ * Two launches: Agent Internet (admin) + TTT (everyone).
+ * Back to original TTT landing. No widget cards — a single power input instead.
  */
 export default function AgentInternetLanding() {
   const navigate = useNavigate();
   const [booted, setBooted] = useState(false);
   const [bootLines, setBootLines] = useState([]);
-  const [hovered, setHovered] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [denied, setDenied] = useState(false);
+  const { settings, update } = useLandingSettings();
 
-  const BOOT_SEQUENCE = [
-    "> establishing encrypted relay... OK",
-    "> loading agent registry... 5 nodes",
-    "> verifying zero-knowledge keys... OK",
-    "> mounting app endpoints... 48 callable",
-    "> x402 payment channel... live",
-    "> agent internet: READY",
-  ];
+  const BOOT_SEQUENCE = useMemo(() => [
+    "> establishing encrypted relay...",
+    "> loading agent registry · 5 nodes",
+    "> mounting callable apps · 48",
+    "> x402 payment channel live",
+    "> agent internet ready",
+  ], []);
 
   useEffect(() => {
     let i = 0;
     const t = setInterval(() => {
       if (i < BOOT_SEQUENCE.length) {
-        setBootLines((prev) => [...prev, BOOT_SEQUENCE[i]]);
+        setBootLines((p) => [...p, BOOT_SEQUENCE[i]]);
         i++;
       } else {
         clearInterval(t);
-        setTimeout(() => setBooted(true), 400);
+        setTimeout(() => setBooted(true), 350);
       }
-    }, 280);
+    }, 260);
     return () => clearInterval(t);
+  }, [BOOT_SEQUENCE]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isAuth) { setIsAdmin(false); return; }
+        const me = await base44.auth.me();
+        setIsAdmin(me?.role === "admin");
+      } catch { setIsAdmin(false); }
+    })();
   }, []);
+
+  const handleLaunchAgentInternet = () => {
+    if (isAdmin) navigate("/AgentInternet");
+    else setDenied(true);
+  };
 
   return (
     <div className="fixed inset-0 bg-black text-white overflow-hidden select-none">
-      <GalaxyVideoBg />
+      {settings.galaxy && <GalaxyVideoBg />}
 
       {/* Top bar */}
       <div
-        className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3"
+        className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}
       >
         <Link
-          to="/"
-          className="flex items-center gap-2 px-3 h-10 rounded-full border border-white/15 bg-black/60 backdrop-blur-md text-white/70 hover:text-white hover:border-cyan-400/50 transition-colors text-[11px] font-mono tracking-widest uppercase"
+          to="/TTTHome"
+          className="flex items-center gap-2 px-3 h-10 rounded-full border border-white/15 bg-black/60 backdrop-blur-md text-white/70 hover:text-white hover:border-white/40 transition-colors text-[10px] font-mono tracking-widest uppercase"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Exit
+          <span className="hidden sm:inline">TTT</span>
         </Link>
 
-        <div className="flex items-center gap-2 px-3 h-10 rounded-full border border-red-500/30 bg-red-500/10 backdrop-blur-md">
-          <Lock className="w-3.5 h-3.5 text-red-400" />
-          <span className="text-[10px] font-mono tracking-widest uppercase text-red-300">Admin Only</span>
+        <div className="flex items-center gap-1.5 px-3 h-10 rounded-full border border-white/15 bg-black/60 backdrop-blur-md">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[9px] font-mono tracking-widest uppercase text-white/50">LIVE</span>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full border border-white/15 bg-black/60 backdrop-blur-md">
-          <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-          <span className="text-[10px] font-mono tracking-widest uppercase text-white/50">RELAY · LIVE</span>
-        </div>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="w-10 h-10 flex items-center justify-center rounded-full border border-white/15 bg-black/60 backdrop-blur-md text-white/70 hover:text-white hover:border-white/40 transition-colors"
+        >
+          <SettingsIcon className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Main content */}
-      <div className="relative z-20 h-full flex flex-col items-center justify-center px-4 sm:px-6">
-        {/* Boot terminal */}
+      {/* Content — centered, mobile-native, no overlap */}
+      <div className="relative z-20 h-full flex flex-col items-center justify-center px-5 sm:px-8 max-w-2xl mx-auto">
+        {/* Boot sequence */}
         <AnimatePresence>
           {!booted && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="w-full max-w-md font-mono text-[11px] sm:text-xs space-y-1 mb-6"
+              className="w-full max-w-sm font-mono text-[10px] sm:text-xs space-y-1 mb-6 text-emerald-400/80"
             >
-              {bootLines.map((line, i) => (
-                <motion.div
-                  key={line}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={i === bootLines.length - 1 ? "text-cyan-300" : "text-emerald-400/80"}
-                >
+              {bootLines.map((line) => (
+                <motion.div key={line} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
                   {line}
                 </motion.div>
               ))}
@@ -98,156 +117,129 @@ export default function AgentInternetLanding() {
         <AnimatePresence>
           {booted && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-10"
+              transition={{ duration: 0.55 }}
+              className="w-full text-center"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-400/30 bg-cyan-500/5 mb-5">
-                <Globe2 className="w-3 h-3 text-cyan-400" />
-                <span className="text-[10px] font-mono tracking-[0.3em] uppercase text-cyan-300/80">v3.0 · Supercomputer</span>
-              </div>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-400/30 bg-cyan-500/5 mb-5"
+              >
+                <Radio className="w-3 h-3 text-cyan-400" />
+                <span className="text-[9px] sm:text-[10px] font-mono tracking-[0.3em] uppercase text-cyan-300/80">v3.0 · Supercomputer</span>
+              </motion.div>
 
-              <h1 className="font-black tracking-tighter leading-[0.9] text-4xl sm:text-6xl lg:text-7xl">
-                <span className="bg-gradient-to-r from-cyan-200 via-white to-violet-300 bg-clip-text text-transparent">
-                  AGENT
-                </span>
-                <br />
-                <span className="text-white/90">INTERNET</span>
+              <h1
+                className="font-heading font-black tracking-[-0.03em] leading-[0.85] text-5xl sm:text-7xl lg:text-8xl"
+                style={{ textShadow: "0 0 40px rgba(6,182,212,0.15)" }}
+              >
+                <span className="block bg-gradient-to-b from-white via-white to-white/50 bg-clip-text text-transparent">AGENT</span>
+                <span className="block bg-gradient-to-r from-cyan-300 via-white to-violet-300 bg-clip-text text-transparent">INTERNET</span>
               </h1>
 
-              <p className="mt-5 max-w-lg mx-auto text-sm sm:text-base text-white/55 leading-relaxed">
+              <p className="mt-5 max-w-md mx-auto text-sm sm:text-base text-white/60 leading-relaxed font-body">
                 A network of autonomous agents that use TTT's apps as their internet —
                 moving real money, signing real identity, producing real media.
-                Not a chatbot. A <span className="text-cyan-300">supercomputer</span>.
+                Not a chatbot. A <span className="text-cyan-300 font-medium">supercomputer</span>.
               </p>
 
-              <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+              {/* Power input — replaces widget cards */}
+              {settings.showPowers && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-8 max-w-lg mx-auto"
+                >
+                  <PowerInput />
+                </motion.div>
+              )}
+
+              {/* Launch buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+                className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
+              >
                 <button
-                  onClick={() => navigate("/AgentInternet")}
-                  className="group flex items-center gap-2 px-6 h-12 rounded-full bg-cyan-400 text-black font-bold text-xs tracking-widest uppercase hover:bg-cyan-300 transition-colors shadow-[0_0_30px_rgba(6,182,212,0.4)]"
+                  onClick={handleLaunchAgentInternet}
+                  className="group w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-cyan-400 text-black font-bold text-xs tracking-widest uppercase hover:bg-cyan-300 transition-colors shadow-[0_0_30px_rgba(6,182,212,0.35)]"
+                  style={{ minHeight: 48 }}
                 >
                   <Zap className="w-4 h-4" />
-                  Enter Network
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  Launch Agent Internet
+                  {isAdmin ? (
+                    <ShieldCheck className="w-3.5 h-3.5 text-black/60" />
+                  ) : (
+                    <Lock className="w-3.5 h-3.5 text-black/60" />
+                  )}
                 </button>
+
                 <Link
-                  to="/AppStoreV2"
-                  className="flex items-center gap-2 px-6 h-12 rounded-full border border-white/20 bg-black/40 backdrop-blur-md text-white/70 hover:text-white hover:border-white/40 text-xs tracking-widest uppercase font-mono transition-colors"
+                  to="/TTTHome"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-white/20 bg-black/50 backdrop-blur-md text-white/80 hover:text-white hover:border-white/40 text-xs tracking-widest uppercase font-mono font-medium transition-colors"
+                  style={{ minHeight: 48 }}
                 >
-                  <Terminal className="w-4 h-4" />
-                  App Registry
+                  <Cpu className="w-4 h-4" />
+                  Launch TTT
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
 
-        {/* Agent roster */}
-        <AnimatePresence>
-          {booted && (
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="w-full max-w-5xl"
-            >
-              <div className="flex items-center gap-3 mb-4 px-1">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/20" />
-                <span className="text-[10px] font-mono tracking-[0.3em] uppercase text-white/40">Agent Roster · 5 Nodes</span>
-                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/20" />
-              </div>
-
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
-                {AGENT_CARDS.map((agent, i) => (
-                  <motion.button
-                    key={agent.name}
-                    onHoverStart={() => setHovered(agent.name)}
-                    onHoverEnd={() => setHovered(null)}
-                    onClick={() => navigate("/AgentInternet")}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + i * 0.08 }}
-                    className="relative group text-left p-3 rounded-xl border border-white/10 bg-black/50 backdrop-blur-md hover:border-cyan-400/40 hover:bg-black/70 transition-all"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[8px] font-mono text-white/40 tracking-widest uppercase">{agent.protocol}</span>
-                    </div>
-                    <div className="font-bold text-xs sm:text-sm text-white leading-tight mb-1">
-                      {agent.name.replace("AGENT ", "")}
-                    </div>
-                    <div className="text-[9px] sm:text-[10px] text-white/40 leading-snug mb-2">{agent.role}</div>
-                    <div className="flex flex-wrap gap-1">
-                      {agent.skills.slice(0, 2).map((s) => (
-                        <span key={s} className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-cyan-300/70 border border-white/5">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                    {hovered === agent.name && (
-                      <motion.div
-                        layoutId="agent-glow"
-                        className="absolute inset-0 rounded-xl ring-1 ring-cyan-400/50 pointer-events-none"
-                      />
-                    )}
-                  </motion.button>
-                ))}
-              </div>
+              {/* Admin hint */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="mt-4 text-[10px] font-mono tracking-widest uppercase text-white/35"
+              >
+                {isAdmin ? "admin access · agent internet unlocked" : "agent internet · admin only · TTT open to all"}
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Stat strip */}
+      {/* Footer line */}
       <AnimatePresence>
         {booted && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="absolute bottom-0 left-0 right-0 z-20"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="absolute bottom-0 left-0 right-0 z-20 px-4 py-3 text-center"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
           >
-            <div className="max-w-5xl mx-auto px-4 sm:px-6">
-              <div className="grid grid-cols-4 gap-2 sm:gap-4 py-3 border-t border-white/10">
-                {[
-                  { icon: Cpu, label: "Agents", value: "5" },
-                  { icon: Network, label: "Callable Apps", value: "48" },
-                  { icon: KeyRound, label: "Protocols", value: "A2A · MCP · x402" },
-                  { icon: Shield, label: "Network", value: "Kaspa L1" },
-                ].map((s) => {
-                  const Icon = s.icon;
-                  return (
-                    <div key={s.label} className="flex flex-col items-center sm:items-start gap-0.5">
-                      <div className="flex items-center gap-1.5 text-white/40">
-                        <Icon className="w-3 h-3 text-cyan-400/60" />
-                        <span className="text-[8px] sm:text-[9px] font-mono tracking-widest uppercase">{s.label}</span>
-                      </div>
-                      <div className="text-[10px] sm:text-xs font-mono font-bold text-white/90 truncate">{s.value}</div>
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="text-[9px] font-mono tracking-[0.25em] uppercase text-white/25">
+              TTT · Kaspa-native · 48 callable apps · 5 agents
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Floating activity badge */}
-      <div className="absolute top-1/2 right-4 -translate-y-1/2 z-20 hidden lg:flex flex-col items-center gap-2">
-        <motion.div
-          animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="flex flex-col items-center gap-1"
-        >
-          <Activity className="w-4 h-4 text-cyan-400" />
-          <div className="w-px h-16 bg-gradient-to-b from-cyan-400/60 to-transparent" />
-        </motion.div>
-        <span className="text-[9px] font-mono tracking-widest uppercase text-white/30 rotate-90 origin-center whitespace-nowrap mt-8">
-          MONITORING
-        </span>
-      </div>
+      {/* Access denied toast for non-admins trying Agent Internet */}
+      <AnimatePresence>
+        {denied && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute z-50 left-1/2 -translate-x-1/2 bottom-24 px-4 py-3 rounded-2xl bg-red-500/15 border border-red-500/40 backdrop-blur-md text-center"
+          >
+            <div className="flex items-center gap-2 text-red-300 text-xs font-mono">
+              <Lock className="w-3.5 h-3.5" />
+              Admin access required for Agent Internet
+            </div>
+            <div className="text-white/50 text-[10px] mt-1">Launch TTT to enter the app.</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <LandingSettings open={showSettings} onClose={() => setShowSettings(false)} settings={settings} update={update} />
     </div>
   );
 }
