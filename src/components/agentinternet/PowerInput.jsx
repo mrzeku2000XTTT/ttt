@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CornerDownLeft, Sparkles } from "lucide-react";
+import { CornerDownLeft } from "lucide-react";
+import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 
 /**
  * PowerInput — a real input box with a live-typing animation that cycles
@@ -8,15 +9,15 @@ import { CornerDownLeft, Sparkles } from "lucide-react";
  * When the user focuses/types, the animation yields to their input.
  */
 export const POWERS = [
-  { text: "draw me a spooky fantasy crowd", skill: "Xùnhuà · sketch→image" },
-  { text: "send 5 KAS to kaspa:qzr…", skill: "Bridge · real payment" },
-  { text: "clip the best moment from this stream", skill: "Klipz · live clip" },
-  { text: "research Kaspa's price action today", skill: "Ying · grounded search" },
-  { text: "mint my agent identity on-chain", skill: "Agent ZK · signed ID" },
-  { text: "build me a landing page for my drop", skill: "TTT Builder · live site" },
-  { text: "turn this URL into a viral video", skill: "KUTT · render export" },
-  { text: "lock 100 KAS in escrow for this gig", skill: "Slobz · covenant escrow" },
-  { text: "post this to all my channels", skill: "TELE · encrypted reach" },
+  { text: "draw me a spooky fantasy crowd", skill: "Xùnhuà · sketch→image", orb: ["#ec4899", "#a855f7", "#7c3aed"] },
+  { text: "send 5 KAS to kaspa:qzr…", skill: "Bridge · real payment", orb: ["#34d399", "#06b6d4", "#0e7490"] },
+  { text: "clip the best moment from this stream", skill: "Klipz · live clip", orb: ["#fb7185", "#f43f5e", "#9f1239"] },
+  { text: "research Kaspa's price action today", skill: "Ying · grounded search", orb: ["#22d3ee", "#3b82f6", "#1d4ed8"] },
+  { text: "mint my agent identity on-chain", skill: "Agent ZK · signed ID", orb: ["#818cf8", "#6366f1", "#4338ca"] },
+  { text: "build me a landing page for my drop", skill: "TTT Builder · live site", orb: ["#fbbf24", "#f59e0b", "#b45309"] },
+  { text: "turn this URL into a viral video", skill: "KUTT · render export", orb: ["#e879f9", "#d946ef", "#a21caf"] },
+  { text: "lock 100 KAS in escrow for this gig", skill: "Slobz · covenant escrow", orb: ["#a3e635", "#84cc16", "#4d7c0f"] },
+  { text: "post this to all my channels", skill: "TELE · encrypted reach", orb: ["#38bdf8", "#0ea5e9", "#0369a1"] },
 ];
 
 const TYPE_MS = 55;
@@ -125,7 +126,7 @@ export default function PowerInput({ onSubmit }) {
             transition={{ duration: 0.2 }}
             className="flex items-center gap-2"
           >
-            <Sparkles className="w-3 h-3 text-violet-300" />
+            <OrganicOrb size={14} colors={focused ? ["#ffffff", "#22d3ee", "#6366f1"] : current.orb} glow={false} />
             <span className="text-[10px] sm:text-xs font-mono tracking-widest uppercase text-white/45">
               {focused ? "type a command…" : current.skill}
             </span>

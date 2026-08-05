@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Lock, Zap, Radio, Settings as SettingsIcon, ShieldCheck,
-  Cpu, ChevronRight
-} from "lucide-react";
+import { Lock, Settings as SettingsIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
 import PowerConsole from "@/components/agentinternet/PowerConsole";
 import LandingSettings, { useLandingSettings } from "@/components/agentinternet/LandingSettings";
+import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -71,10 +69,13 @@ export default function AgentInternetLanding() {
         className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}
       >
-        {/* TTT A.I logo — static, not a button */}
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-heading font-black text-lg sm:text-xl tracking-tight text-white">TTT</span>
-          <span className="font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase text-cyan-300/80">A.I</span>
+        {/* TTT A.I logo — custom orb mark, not a button */}
+        <div className="flex items-center gap-2">
+          <OrganicOrb size={26} colors={["#ffffff", "#22d3ee", "#6366f1"]} />
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-heading font-black text-lg sm:text-xl tracking-tight text-white">TTT</span>
+            <span className="font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase text-cyan-300/80">A.I</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 px-3 h-9 rounded-full border border-white/15 bg-black/60 backdrop-blur-md">
@@ -127,7 +128,7 @@ export default function AgentInternetLanding() {
                   transition={{ delay: 0.1 }}
                   className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-400/30 bg-cyan-500/5 mb-4"
                 >
-                  <Radio className="w-3 h-3 text-cyan-400" />
+                  <OrganicOrb size={12} colors={["#67e8f9", "#22d3ee", "#6366f1"]} glow={false} />
                   <span className="text-[9px] sm:text-[10px] font-mono tracking-[0.3em] uppercase text-cyan-300/80">v3.0 · Unified Superagent</span>
                 </motion.div>
 
@@ -167,9 +168,8 @@ export default function AgentInternetLanding() {
                     className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-cyan-400 text-black font-bold text-xs tracking-widest uppercase hover:bg-cyan-300 transition-colors shadow-[0_0_30px_rgba(6,182,212,0.35)]"
                     style={{ minHeight: 48 }}
                   >
-                    <Zap className="w-4 h-4" />
+                    <OrganicOrb size={16} colors={["#67e8f9", "#22d3ee", "#0891b2"]} />
                     Launch Agent Internet
-                    {isAdmin ? <ShieldCheck className="w-3.5 h-3.5 text-black/60" /> : <Lock className="w-3.5 h-3.5 text-black/60" />}
                   </button>
 
                   <Link
@@ -177,9 +177,8 @@ export default function AgentInternetLanding() {
                     className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-white/20 bg-black/50 backdrop-blur-md text-white/80 hover:text-white hover:border-white/40 text-xs tracking-widest uppercase font-mono font-medium transition-colors"
                     style={{ minHeight: 48 }}
                   >
-                    <Cpu className="w-4 h-4" />
+                    <OrganicOrb size={16} colors={["#a78bfa", "#8b5cf6", "#6366f1"]} />
                     Launch TTT
-                    <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </motion.div>
 
