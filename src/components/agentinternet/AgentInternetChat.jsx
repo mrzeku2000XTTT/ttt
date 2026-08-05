@@ -13,6 +13,7 @@ import ResultLightbox from "@/components/agentinternet/ResultLightbox";
 import { generateWallet } from "@/lib/localKaspaWallet";
 import { tryQuickAnswer } from "@/components/agentinternet/quickAnswer";
 import { runAgent } from "@/components/agentinternet/agentRunner";
+import { instantAck } from "@/components/agentinternet/instantAck";
 import AgentStepFeed from "@/components/agentinternet/AgentStepFeed";
 
 const STORAGE_KEY = "ttt_ai_chats";
@@ -480,13 +481,18 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
         ? {
             ...c,
             title: (c.title === "New chat" || !c.title) ? text.slice(0, 42) : c.title,
-            messages: [...c.messages, { id: uid, role: "user", text: text.trim() }, { id: aid, role: "assistant", loading: true }],
+            messages: [
+              ...c.messages,
+              { id: uid, role: "user", text: text.trim() },
+              // ack is computed locally so it paints in the SAME frame as the user's message
+              { id: aid, role: "assistant", loading: true, ack: instantAck(text) },
+            ],
           }
         : c
     ));
 
-    // Instant acknowledgment — fired in parallel so it lands before any
-    // classification or orchestration finishes.
+    // The LLM then refines that acknowledgment in the background — the user is
+    // never left staring at a spinner while it arrives.
     base44.integrations.Core.InvokeLLM({
       prompt: `A user just told a superagent: "${text}". Reply with ONE short sentence (max 14 words) acknowledging you understood and are on it — reference what they actually asked for. No quotes, no preamble, just the sentence. Example: user "advertise kaspa.org" → "On it — spinning up a Kaspa.org ad campaign now."`,
       model: "gemini_3_flash",
@@ -494,7 +500,7 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
       const ackText = (typeof r === "string" ? r : "").trim();
       if (!ackText) return;
       setChats((prev) => prev.map((c) =>
-        c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, ack: m.ack || ackText } : m) } : c
+        c.id === chatId ? { ...c, messages: c.messages.map((m) => (m.id === aid && m.loading) ? { ...m, ack: ackText } : m) } : c
       ));
     }).catch(() => {});
 
