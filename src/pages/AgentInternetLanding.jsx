@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Settings as SettingsIcon } from "lucide-react";
@@ -8,6 +8,8 @@ import PowerConsole from "@/components/agentinternet/PowerConsole";
 import LandingSettings, { useLandingSettings } from "@/components/agentinternet/LandingSettings";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 import AgentInternetChat from "@/components/agentinternet/AgentInternetChat";
+import { APPS } from "@/components/appstore2/appCatalog";
+import { AGENT_CARDS } from "@/components/agentinternet/agentCards";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -32,19 +34,22 @@ export default function AgentInternetLanding() {
 
   const BOOT_SEQUENCE = useMemo(() => [
     "> establishing encrypted relay...",
-    "> loading unified superagent · KAI",
-    "> mounting callable apps · 48",
-    "> arming 100 sub-agent slots",
+    "> auth · verifying session",
+    `> mounting callable apps · ${APPS.length}`,
+    `> loading agent registry · ${AGENT_CARDS.length} agents`,
+    `> arming ${AGENT_CARDS.length} sub-agent slots`,
     "> agent internet ready",
   ], []);
 
+  const bootStartedRef = useRef(false);
   useEffect(() => {
+    if (bootStartedRef.current) return; // guard against StrictMode double-invoke
+    bootStartedRef.current = true;
     let i = 0;
     const t = setInterval(() => {
-      if (i < BOOT_SEQUENCE.length) {
-        setBootLines((p) => [...p, BOOT_SEQUENCE[i]]);
-        i++;
-      } else {
+      setBootLines((p) => (p.length === i ? [...p, BOOT_SEQUENCE[i]] : p));
+      i++;
+      if (i >= BOOT_SEQUENCE.length) {
         clearInterval(t);
         setTimeout(() => setBooted(true), 350);
       }
@@ -112,8 +117,8 @@ export default function AgentInternetLanding() {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="w-full max-w-sm font-mono text-[10px] sm:text-xs space-y-1 mb-6 text-emerald-400/80"
               >
-                {bootLines.map((line) => (
-                  <motion.div key={line} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
+                {bootLines.map((line, idx) => (
+                  <motion.div key={idx} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
                     {line}
                   </motion.div>
                 ))}
