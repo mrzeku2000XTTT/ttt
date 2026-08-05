@@ -157,8 +157,8 @@ export default function AgentInternetLanding() {
           <AnimatePresence>
             {booted && (
               <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 0.55 }}
                 className="w-full text-center"
               >
@@ -188,8 +188,8 @@ export default function AgentInternetLanding() {
 
                 {/* Real input + output console */}
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ delay: 0.25 }}
                   className="mt-7 max-w-lg mx-auto w-full"
                 >
