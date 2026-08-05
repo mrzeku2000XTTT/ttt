@@ -96,11 +96,6 @@ export default function PowerInput({ onSubmit }) {
           {!focused && userValue.length === 0 && (
             <span className="absolute left-11 right-16 top-1/2 -translate-y-1/2 text-white/55 font-mono text-sm sm:text-base leading-none truncate pointer-events-none z-0 flex items-center">
               <span className="truncate">{typed}</span>
-              <motion.span
-                animate={{ opacity: [1, 0] }}
-                transition={{ duration: 0.6, repeat: Infinity }}
-                className="inline-block w-[2px] h-[1.05em] bg-cyan-400 ml-0.5 shrink-0"
-              />
             </span>
           )}
 
