@@ -8,6 +8,7 @@ import PowerConsole from "@/components/agentinternet/PowerConsole";
 import LandingSettings, { useLandingSettings } from "@/components/agentinternet/LandingSettings";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 import AgentInternetChat from "@/components/agentinternet/AgentInternetChat";
+import GuestAgentPreview from "@/components/agentinternet/GuestAgentPreview";
 import OnboardingModal, { hasOnboarded } from "@/components/agentinternet/OnboardingModal";
 import { APPS } from "@/components/appstore2/appCatalog";
 import { AGENT_CARDS } from "@/components/agentinternet/agentCards";
@@ -27,11 +28,13 @@ export default function AgentInternetLanding() {
   const { settings, update, reset } = useLandingSettings();
   const [chatOpen, setChatOpen] = useState(false);
   const [chatCommand, setChatCommand] = useState("");
+  const [guestOpen, setGuestOpen] = useState(false);
   const [onboard, setOnboard] = useState(null); // null | "agent" | "ttt"
 
   const openChat = (command) => {
     setChatCommand(command);
-    setChatOpen(true);
+    if (isAdmin) setChatOpen(true);      // admin → real Agent Internet chat
+    else setGuestOpen(true);              // guest → intent router → app
   };
 
   const guardLaunch = (target) => {
@@ -264,6 +267,12 @@ export default function AgentInternetLanding() {
         open={!!onboard}
         onClose={() => setOnboard(null)}
         onFinish={finishOnboard}
+      />
+
+      <GuestAgentPreview
+        open={guestOpen}
+        command={chatCommand}
+        onClose={() => setGuestOpen(false)}
       />
     </div>
   );
