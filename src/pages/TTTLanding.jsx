@@ -1612,8 +1612,8 @@ export default function TTTLandingPage() {
               initial={{ x: -80, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 24 }}
               whileTap={{ scale: 0.94 }}
-              onClick={() => { sounds.playSelect(); if (isAdmin) navigate("/AgentInternet"); else setShowBlueprint(true); }}
-              title="Agent Internet — new frontier apps"
+              onClick={() => { sounds.playSelect(); navigate("/"); }}
+              title="Back to landing"
               style={{ background: "transparent", border: "none", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
               className="focus:outline-none flex flex-col items-center gap-1 pl-3 py-2 min-h-[44px]">
               <motion.img src={AGENT_INTERNET_IMG} alt="Agent Internet"
@@ -1622,14 +1622,14 @@ export default function TTTLandingPage() {
                 style={{ mixBlendMode: "screen" }} />
               <span className="text-[8px] tracking-[0.28em] uppercase whitespace-nowrap leading-tight text-center"
                 style={{ color: "rgba(215,170,80,0.75)", fontFamily: "monospace" }}>
-                Agent<br />Internet
+                TTT<br />Landing
               </span>
             </motion.button>
           )}
         </AnimatePresence>
         <button type="button" onClick={() => setAgentNetOpen(v => !v)}
           className="focus:outline-none flex items-center justify-center min-w-[24px] min-h-[44px] py-3"
-          title={agentNetOpen ? "Hide" : "Show Agent Internet"}
+          title={agentNetOpen ? "Hide" : "Show TTT Landing"}
           style={{ background: "transparent", border: "none", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
           <span className="text-[11px]" style={{ color: "rgba(200,150,40,0.5)", fontFamily: "monospace" }}>
             {agentNetOpen ? "◀" : "▶"}
