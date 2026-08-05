@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Loader2, Check, X, Circle } from "lucide-react";
 
-export default function AgentStepFeed({ steps }) {
+export default function AgentStepFeed({ steps, onOpen }) {
   if (!steps?.length) return null;
   return (
     <div className="mt-2 space-y-1.5">
@@ -29,6 +29,20 @@ export default function AgentStepFeed({ steps }) {
             )}
             {s.status === "failed" && s.result && (
               <div className="text-[10px] text-red-400/70 mt-0.5">{s.result}</div>
+            )}
+            {s.images?.length > 0 && (
+              <div className="flex gap-1.5 mt-1.5 overflow-x-auto scrollbar-hide">
+                {s.images.map((img, k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => onOpen?.({ type: "image", title: `${s.app} · plate ${k + 1}`, detail: img.prompt, image: img.url })}
+                    className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-white/15 hover:border-cyan-400/60 transition-colors"
+                  >
+                    <img src={img.url} alt={`plate ${k + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </motion.div>

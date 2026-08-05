@@ -352,7 +352,7 @@ function Message({ msg, onOpen }) {
         <OrganicOrb size={28} colors={["#67e8f9", "#22d3ee", "#6366f1"]} />
       </div>
       <div className="min-w-0 flex-1">
-        {msg.loading && !msg.ack ? (
+        {msg.loading && !msg.ack && !msg.steps?.length ? (
           <div className="flex items-center gap-2 text-white/55 text-xs font-mono py-2">
             <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
             orchestrating sub-agents…
@@ -372,7 +372,7 @@ function Message({ msg, onOpen }) {
               </div>
             )}
             {!msg.loading && msg.skill && <SkillBadge skill={msg.skill} />}
-            {msg.steps?.length > 0 && <AgentStepFeed steps={msg.steps} />}
+            {msg.steps?.length > 0 && <AgentStepFeed steps={msg.steps} onOpen={onOpen} />}
             {!msg.loading && msg.plan?.length > 0 && <PlanChecklist plan={msg.plan} />}
             {!msg.loading && (
               <OutputCard output={msg.output} image={msg.image} generating={msg.genLoading} genFailed={msg.genFailed} onOpen={onOpen} />
@@ -485,6 +485,19 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
         : c
     ));
 
+    // Instant acknowledgment — fired in parallel so it lands before any
+    // classification or orchestration finishes.
+    base44.integrations.Core.InvokeLLM({
+      prompt: `A user just told a superagent: "${text}". Reply with ONE short sentence (max 14 words) acknowledging you understood and are on it — reference what they actually asked for. No quotes, no preamble, just the sentence. Example: user "advertise kaspa.org" → "On it — spinning up a Kaspa.org ad campaign now."`,
+      model: "gemini_3_flash",
+    }).then((r) => {
+      const ackText = (typeof r === "string" ? r : "").trim();
+      if (!ackText) return;
+      setChats((prev) => prev.map((c) =>
+        c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, ack: m.ack || ackText } : m) } : c
+      ));
+    }).catch(() => {});
+
     // Fast lane: plain questions skip orchestration entirely and get an
     // internet-grounded answer straight away.
     try {
@@ -497,20 +510,6 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
         ));
         setSending(false);
         return;
-      }
-    } catch {}
-
-    // Instant acknowledgment — real LLM-generated per message, reflects actual intent
-    try {
-      const ackRes = await base44.integrations.Core.InvokeLLM({
-        prompt: `A user just told a superagent: "${text}". Reply with ONE short sentence (max 14 words) acknowledging you understood and are on it — reference what they actually asked for. No quotes, no preamble, just the sentence. Example: user "advertise kaspa.org" → "On it — spinning up a Kaspa.org ad campaign now."`,
-        model: "gemini_3_flash",
-      });
-      const ackText = typeof ackRes === "string" ? ackRes.trim() : (ackRes?.ack || "").toString().trim();
-      if (ackText) {
-        setChats((prev) => prev.map((c) =>
-          c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, ack: ackText } : m) } : c
-        ));
       }
     } catch {}
 

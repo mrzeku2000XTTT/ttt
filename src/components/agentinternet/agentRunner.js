@@ -55,7 +55,7 @@ ${TOOL_MENU}
 Rules:
 - Pick only the tools the request genuinely needs, in a sensible order (capture/research first, prompt_lab before any render, storyboard before video for anything narrative).
 - Always pass concrete args. If the user named a website, pass its url to brand_capture.
-- A "launch video" / "promo" means: brand_capture → deep_research → storyboard → prompt_lab → generate_video (and generate_image for a poster if useful).
+- A "launch video" / "promo" means: brand_capture → deep_research → storyboard → prompt_lab → generate_image (pass "prompts": an array of 3 background plate / key frame prompts, one per major beat) → generate_video.
 - Set "question" ONLY if a required detail is truly missing and unguessable. Otherwise make a confident choice and proceed.
 - Labels are what the user reads live, so make them specific and human.
 
@@ -80,10 +80,13 @@ ${convo ? `Conversation so far:\n${convo}\n` : ""}Request: "${text}"`,
   for (const step of steps) {
     step.status = "running";
     onStep?.([...steps]);
+    const before = (ctx.images || []).length;
     try {
       const result = await TOOLS[step.tool].run(step.args || {}, ctx);
       step.status = "done";
       step.result = typeof result === "string" ? result.slice(0, 400) : "";
+      const fresh = (ctx.images || []).slice(before);
+      if (fresh.length) step.images = fresh;
     } catch (e) {
       step.status = "failed";
       step.result = e?.message?.slice(0, 140) || "failed";
@@ -114,6 +117,7 @@ Report the actual deliverable. "points" = the beat sheet if there is one, else t
     steps,
     question: fin.next_question || "",
     image: ctx.image,
+    gallery: ctx.images || [],
     output: {
       type,
       title: fin.title,

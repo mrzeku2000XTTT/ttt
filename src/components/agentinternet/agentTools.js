@@ -102,11 +102,17 @@ Each beat: shot (what the camera sees) + copy (on-screen text, max 6 words).`,
 
   generate_image: {
     app: "Hikaru · image render",
-    desc: "Render a still (key frame, poster, thumbnail). args: { prompt }",
+    desc: "Render one or more stills — key frames, background plates, poster, thumbnail. args: { prompt } or { prompts: [..] }",
     run: async (args, ctx) => {
-      const r = await base44.integrations.Core.GenerateImage({ prompt: args.prompt || ctx.prompt });
-      ctx.image = r?.url;
-      return ctx.image ? "still rendered" : "render failed";
+      const prompts = (args.prompts?.length ? args.prompts : [args.prompt || ctx.prompt]).filter(Boolean).slice(0, 5);
+      ctx.images = ctx.images || [];
+      const urls = [];
+      for (const p of prompts) {
+        const r = await base44.integrations.Core.GenerateImage({ prompt: p });
+        if (r?.url) { urls.push(r.url); ctx.images.push({ url: r.url, prompt: p }); }
+      }
+      ctx.image = ctx.images[0]?.url;
+      return urls.length ? `${urls.length} still${urls.length > 1 ? "s" : ""} rendered` : "render failed";
     },
   },
 
@@ -114,8 +120,9 @@ Each beat: shot (what the camera sees) + copy (on-screen text, max 6 words).`,
     app: "Motion · video render",
     desc: "Render the actual video clip (6s, silent unless asked). args: { prompt, aspect_ratio }",
     run: async (args, ctx) => {
+      const plates = (ctx.images || []).map((i) => i.prompt).slice(0, 3).join(" | ");
       const r = await base44.integrations.Core.GenerateVideo({
-        prompt: args.prompt || ctx.prompt,
+        prompt: `${args.prompt || ctx.prompt}${plates ? `\nBackground plates already rendered for this piece (match their look exactly): ${plates}` : ""}`,
         duration: 6,
         aspect_ratio: args.aspect_ratio === "9:16" ? "9:16" : "16:9",
         generate_audio: false,
