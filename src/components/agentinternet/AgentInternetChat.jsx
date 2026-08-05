@@ -11,6 +11,7 @@ import ChatSessionsDrawer from "@/components/agentinternet/ChatSessionsDrawer";
 import ChatWalletButton from "@/components/agentinternet/ChatWalletButton";
 import ResultLightbox from "@/components/agentinternet/ResultLightbox";
 import { generateWallet } from "@/lib/localKaspaWallet";
+import { tryQuickAnswer } from "@/components/agentinternet/quickAnswer";
 
 const STORAGE_KEY = "ttt_ai_chats";
 // commands that create a wallet locally (never touch the server)
@@ -475,6 +476,21 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
           }
         : c
     ));
+
+    // Fast lane: plain questions skip orchestration entirely and get an
+    // internet-grounded answer straight away.
+    try {
+      const quick = await tryQuickAnswer(text, hist);
+      if (quick) {
+        setChats((prev) => prev.map((c) =>
+          c.id === chatId
+            ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, loading: false, ...quick } : m) }
+            : c
+        ));
+        setSending(false);
+        return;
+      }
+    } catch {}
 
     // Instant acknowledgment — real LLM-generated per message, reflects actual intent
     try {
