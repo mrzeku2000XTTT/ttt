@@ -59,7 +59,6 @@ export default function PowerInput({ onSubmit }) {
   const handleFocus = () => setFocused(true);
   const handleBlur = () => {
     setFocused(false);
-    setUserValue("");
     setPhase("typing");
     setTyped("");
   };
