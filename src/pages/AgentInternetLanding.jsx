@@ -178,7 +178,7 @@ export default function AgentInternetLanding() {
                 >
                   <button
                     onClick={handleLaunchAgentInternet}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-cyan-400 text-black font-bold text-xs tracking-widest uppercase hover:bg-cyan-300 transition-colors shadow-[0_0_30px_rgba(6,182,212,0.35)]"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-cyan-400/40 bg-transparent text-cyan-300 font-bold text-xs tracking-widest uppercase hover:border-cyan-300/70 hover:text-cyan-200 transition-colors"
                     style={{ minHeight: 48 }}
                   >
                     <OrganicOrb size={16} colors={["#67e8f9", "#22d3ee", "#0891b2"]} />
@@ -187,7 +187,7 @@ export default function AgentInternetLanding() {
 
                   <Link
                     to="/TTTHome"
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-white/20 bg-black/50 backdrop-blur-md text-white/80 hover:text-white hover:border-white/40 text-xs tracking-widest uppercase font-mono font-medium transition-colors"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-white/20 bg-transparent text-white/80 hover:text-white hover:border-white/40 text-xs tracking-widest uppercase font-mono font-medium transition-colors"
                     style={{ minHeight: 48 }}
                   >
                     <OrganicOrb size={16} colors={["#a78bfa", "#8b5cf6", "#6366f1"]} />
