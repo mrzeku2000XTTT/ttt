@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Send, Loader2, Check, CreditCard, Globe,
-  FileText, Lock, Sparkles, Image as ImageIcon, Play, Shield
+  FileText, Lock, Sparkles, Image as ImageIcon, Play, Shield, MessageSquare,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 import { SETTINGS } from "@/components/agentinternet/LandingSettings";
+import ChatSessionsDrawer from "@/components/agentinternet/ChatSessionsDrawer";
+
+const STORAGE_KEY = "ttt_ai_chats";
 
 const SCHEMA = {
   type: "object",
@@ -43,11 +46,11 @@ function buildPrompt(command, settings, history) {
   const moneyMode = settings.money_testnet ? "testnet" : settings.money_mainnet ? "mainnet" : "disabled";
   const autonomy = settings.auto_execute ? "execute without asking" : "plan only";
 
-  const ctx = history.slice(-4).map((m) =>
+  const ctx = (history || []).slice(-6).map((m) =>
     m.role === "user" ? `User: ${m.text}` : `Assistant used ${m.skill || "KAI"} → ${m.output?.title || ""}`
   ).join("\n");
 
-  return `You are KAI — the unified superagent at the center of the Agent Internet. You control up to ${maxAgents} sub-agents and ${apps.length} callable apps. You decide how many to call and in what order.
+  return `You are KAI — the unified superagent at the center of the Agent Internet. You control up to ${maxAgents} sub-agents and ${apps.length} callable apps. You decide how many to call and in what order. You remember the full conversation history.
 
 ACTIVE AGENTS: ${agents.join(", ") || "none"}
 ENABLED APPS: ${apps.join(", ") || "none"}
@@ -58,7 +61,7 @@ Respond as JSON matching the schema. Plan = ordered sub-agent calls (2-5 steps).
 - payment: meta = { amount, address, txid, status }
 - escrow: meta = { amount, address, status }
 - mint: meta = { token_id, address, status }
-- image: meta = { prompt }  (a vivid image prompt)
+- image: meta = { prompt }
 - site: meta = { url }
 - video: meta = { url, duration }
 - research: meta = { points: [string, ...] }
@@ -66,9 +69,18 @@ Respond as JSON matching the schema. Plan = ordered sub-agent calls (2-5 steps).
 
 Be specific and confident. Invent realistic kaspa: addresses and txids for payment/escrow/mint.
 CRITICAL: If the user asks to draw, sketch, paint, render, generate, or create any image/picture/visual/artwork, you MUST set output.type = "image" and put a VIVID, detailed visual prompt in output.meta.prompt (describe subject, style, lighting, mood, composition). Example: "draw me a cloud" → type "image", meta.prompt "a majestic fluffy cumulus cloud at golden hour, volumetric soft light, cinematic, hyper-detailed, warm color grading".
+Use prior context to maintain continuity across the conversation.
 
-${ctx ? `Prior context:\n${ctx}\n` : ""}
+${ctx ? `Conversation so far:\n${ctx}\n` : ""}
 User command: "${command}"`;
+}
+
+function loadChats() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
 }
 
 function SkillBadge({ skill }) {
@@ -231,7 +243,6 @@ function OutputCard({ output, image, generating, genFailed }) {
     );
   }
 
-  // text / fallback
   return (
     <div className="mt-3 rounded-2xl border border-white/10 bg-black/40 p-3">
       <span className="text-white text-xs font-semibold">{title}</span>
@@ -275,59 +286,134 @@ function Message({ msg }) {
 }
 
 export default function AgentInternetChat({ open, initialCommand, settings, onClose }) {
-  const [messages, setMessages] = useState([]);
+  const [chats, setChats] = useState(loadChats);
+  const [activeId, setActiveId] = useState(() => loadChats()[0]?.id || null);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [showSessions, setShowSessions] = useState(false);
   const scrollRef = useRef(null);
+  const chatsRef = useRef(chats);
   const sentRef = useRef(false);
+
+  useEffect(() => { chatsRef.current = chats; }, [chats]);
+
+  // persist
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(chats)); } catch {}
+  }, [chats]);
+
+  const activeChat = chats.find((c) => c.id === activeId);
+  const messages = activeChat?.messages || [];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const send = async (text) => {
+  const createChat = (title = "New chat") => {
+    const id = `c${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const chat = { id, title, createdAt: Date.now(), messages: [] };
+    setChats((prev) => [...prev, chat]);
+    return id;
+  };
+
+  const newChat = () => {
+    const id = createChat();
+    setActiveId(id);
+    setShowSessions(false);
+    setInput("");
+    sentRef.current = true; // don't auto-send a landing command into the blank chat
+  };
+
+  const selectChat = (id) => {
+    setActiveId(id);
+    setShowSessions(false);
+  };
+
+  const deleteChat = (id) => {
+    setChats((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      if (id === activeId) setActiveId(next[0]?.id || null);
+      return next;
+    });
+  };
+
+  const send = async (text, chatId) => {
     if (!text.trim() || sending) return;
     setSending(true);
     const uid = `u${Date.now()}`;
-    setMessages((m) => [...m, { id: uid, role: "user", text: text.trim() }]);
     const aid = `a${Date.now()}`;
-    setMessages((m) => [...m, { id: aid, role: "assistant", loading: true }]);
+    const hist = chatsRef.current.find((c) => c.id === chatId)?.messages || [];
+
+    setChats((prev) => prev.map((c) =>
+      c.id === chatId
+        ? {
+            ...c,
+            title: (c.title === "New chat" || !c.title) ? text.slice(0, 42) : c.title,
+            messages: [...c.messages, { id: uid, role: "user", text: text.trim() }, { id: aid, role: "assistant", loading: true }],
+          }
+        : c
+    ));
+
     try {
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: buildPrompt(text, settings, messages),
+        prompt: buildPrompt(text, settings, hist),
         response_json_schema: SCHEMA,
         model: "gemini_3_flash",
       });
       const data = typeof res === "string" ? JSON.parse(res) : res;
-      setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, loading: false, ...data } : msg));
+      setChats((prev) => prev.map((c) =>
+        c.id === chatId
+          ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, loading: false, ...data } : m) }
+          : c
+      ));
       if (data.output?.type === "image") {
-        const imgPrompt = data.output?.meta?.prompt ||
-          `${text}. ${data.output?.title || ""}. ${data.output?.detail || ""}`.trim();
-        setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, genLoading: true } : msg));
+        const imgPrompt = data.output?.meta?.prompt || `${text}. ${data.output?.title || ""}. ${data.output?.detail || ""}`.trim();
+        setChats((prev) => prev.map((c) =>
+          c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, genLoading: true } : m) } : c
+        ));
         try {
           const r = await base44.integrations.Core.GenerateImage({ prompt: imgPrompt });
-          setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, genLoading: false, image: r?.url } : msg));
+          setChats((prev) => prev.map((c) =>
+            c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, genLoading: false, image: r?.url } : m) } : c
+          ));
         } catch {
-          setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, genLoading: false, genFailed: true } : msg));
+          setChats((prev) => prev.map((c) =>
+            c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, genLoading: false, genFailed: true } : m) } : c
+          ));
         }
       }
     } catch {
-      setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, loading: false, error: true } : msg));
+      setChats((prev) => prev.map((c) =>
+        c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, loading: false, error: true } : m) } : c
+      ));
     } finally {
       setSending(false);
     }
   };
 
+  // seed a new chat from the landing power input
   useEffect(() => {
     if (open && initialCommand && !sentRef.current) {
       sentRef.current = true;
-      send(initialCommand);
+      const id = createChat(initialCommand.slice(0, 42));
+      setActiveId(id);
+      send(initialCommand, id);
     }
+    if (!open) sentRef.current = false;
   }, [open, initialCommand]);
+
+  // ensure there's always an active chat to type into
+  useEffect(() => {
+    if (open && !activeId) {
+      const id = createChat();
+      setActiveId(id);
+    }
+  }, [open]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    send(input);
+    if (!activeId) return;
+    send(input, activeId);
     setInput("");
   };
 
@@ -342,21 +428,37 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
           className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col"
           style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
-          {/* Header — back to landing */}
+          <ChatSessionsDrawer
+            open={showSessions}
+            onClose={() => setShowSessions(false)}
+            chats={chats}
+            activeId={activeId}
+            onSelect={selectChat}
+            onNew={newChat}
+            onDelete={deleteChat}
+          />
+
+          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/60 backdrop-blur-xl">
-            <button
-              onClick={onClose}
-              className="flex items-center gap-2 group"
-            >
-              <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5 text-white/70" />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <OrganicOrb size={18} colors={["#ffffff", "#22d3ee", "#6366f1"]} glow={false} />
-                <span className="font-heading font-black text-sm tracking-tight text-white">TTT</span>
-                <span className="font-mono text-[8px] tracking-[0.3em] uppercase text-cyan-300/80">A.I</span>
-              </div>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSessions(true)}
+                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
+                title="Chats"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-white/70" />
+              </button>
+              <button onClick={onClose} className="flex items-center gap-2 group" title="Back to landing">
+                <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                  <ArrowLeft className="w-3.5 h-3.5 text-white/70" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <OrganicOrb size={18} colors={["#ffffff", "#22d3ee", "#6366f1"]} glow={false} />
+                  <span className="font-heading font-black text-sm tracking-tight text-white">TTT</span>
+                  <span className="font-mono text-[8px] tracking-[0.3em] uppercase text-cyan-300/80">A.I</span>
+                </div>
+              </button>
+            </div>
             <div className="flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-white/15 bg-black/40">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[9px] font-mono tracking-widest uppercase text-white/50">Agent Internet</span>
@@ -367,7 +469,9 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
           <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-hide px-4 py-4">
             <div className="max-w-2xl mx-auto space-y-4">
               {messages.length === 0 && (
-                <div className="text-center text-white/30 text-xs font-mono mt-10">starting the superagent…</div>
+                <div className="text-center text-white/30 text-xs font-mono mt-10">
+                  new chat — tell the superagent what to do
+                </div>
               )}
               {messages.map((m) => <Message key={m.id} msg={m} />)}
             </div>
@@ -379,7 +483,7 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="tell the superagent what to do next…"
+                placeholder={activeId ? "tell the superagent what to do next…" : "start a new chat…"}
                 autoCapitalize="off"
                 autoCorrect="off"
                 spellCheck={false}
