@@ -18,6 +18,7 @@ export default function GalaxyVideoBg() {
   const [active, setActive] = useState(0);
   const [loaded, setLoaded] = useState(() => VIDEO_URLS.map(() => false));
   const timerRef = useRef(null);
+  const videoRefs = useRef({});
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
@@ -25,6 +26,18 @@ export default function GalaxyVideoBg() {
     }, ROTATION_MS);
     return () => clearInterval(timerRef.current);
   }, []);
+
+  // React's `muted` prop on <video> is famously unreliable — it sets the DOM
+  // attribute but the property often stays false, so the browser blocks
+  // autoplay and shows a play button. Force muted + play via ref whenever the
+  // active clip changes.
+  useEffect(() => {
+    const v = videoRefs.current[active];
+    if (!v) return;
+    v.muted = true;
+    v.defaultMuted = true;
+    v.play().catch(() => {});
+  }, [active]);
 
   const markLoaded = (idx) => setLoaded((prev) => {
     if (prev[idx]) return prev;
@@ -43,6 +56,7 @@ export default function GalaxyVideoBg() {
         return (
           <video
             key={src}
+            ref={(el) => { if (el) videoRefs.current[idx] = el; }}
             src={src}
             autoPlay={isActive}
             muted
