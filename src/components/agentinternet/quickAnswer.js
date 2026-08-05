@@ -25,7 +25,35 @@ const SCHEMA = {
   required: ["mode"],
 };
 
+// live KAS price questions are answered by our own price oracle, never by the LLM
+const PRICE_Q = /\b(kas|kaspa)\b[^?]*\b(price|worth|cost|trading|value|usd)\b|\b(price|worth|value)\b[^?]*\b(kas|kaspa)\b/i;
+
+async function livePriceAnswer() {
+  const res = await base44.functions.getKaspaPrice({});
+  const d = res?.data || res;
+  if (!d?.price) return null;
+  const price = Number(d.price);
+  const chg = Number(d.change24h || 0);
+  const dir = chg > 0 ? "up" : chg < 0 ? "down" : "flat";
+  return {
+    skill: "Kaspa Oracle · live",
+    plan: [],
+    output: {
+      type: "text",
+      title: "KAS Price",
+      detail: `Kaspa (KAS) is trading at $${price.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")} right now${chg ? `, ${dir} ${Math.abs(chg).toFixed(2)}% over the last 24 hours` : ""}. Live from ${d.source || "our price oracle"}.`,
+    },
+  };
+}
+
 export async function tryQuickAnswer(text, history) {
+  if (PRICE_Q.test(text)) {
+    try {
+      const p = await livePriceAnswer();
+      if (p) return p;
+    } catch {}
+  }
+
   const ctx = (history || [])
     .slice(-6)
     .map((m) => (m.role === "user" ? `User: ${m.text}` : `Assistant: ${m.output?.detail || m.output?.title || ""}`))
