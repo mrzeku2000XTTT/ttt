@@ -34,10 +34,15 @@ export default function AgentInternetLanding() {
 
   const BOOT_SEQUENCE = useMemo(() => [
     "> establishing encrypted relay...",
+    "> resolving tttz.xyz · edge node",
     "> auth · verifying session",
+    "> handshake · kaspa.org mainnet",
+    "> syncing DAG · ghostdag consensus",
     `> mounting callable apps · ${APPS.length}`,
     `> loading agent registry · ${AGENT_CARDS.length} agents`,
     `> arming ${AGENT_CARDS.length} sub-agent slots`,
+    "> opening KAI relay · wss://tttz.xyz",
+    "> linking kaspa.org · L1 finality",
     "> agent internet ready",
   ], []);
 
@@ -51,9 +56,9 @@ export default function AgentInternetLanding() {
       i++;
       if (i >= BOOT_SEQUENCE.length) {
         clearInterval(t);
-        setTimeout(() => setBooted(true), 350);
+        setTimeout(() => setBooted(true), 900);
       }
-    }, 260);
+    }, 430);
     return () => clearInterval(t);
   }, [BOOT_SEQUENCE]);
 
@@ -115,7 +120,7 @@ export default function AgentInternetLanding() {
             {!booted && (
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="w-full max-w-sm font-mono text-[10px] sm:text-xs space-y-1 mb-6 text-emerald-400/80"
+                className="w-full max-w-xs font-mono text-[9px] sm:text-[11px] space-y-0.5 mb-4 text-emerald-400/80"
               >
                 {bootLines.map((line, idx) => (
                   <motion.div key={idx} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
