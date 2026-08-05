@@ -52,7 +52,8 @@ export default function AgentInternetLanding() {
     bootStartedRef.current = true;
     let i = 0;
     const t = setInterval(() => {
-      setBootLines((p) => (p.length === i ? [...p, BOOT_SEQUENCE[i]] : p));
+      const idx = i; // capture before increment so the updater reads the right line
+      setBootLines((p) => [...p, BOOT_SEQUENCE[idx]]);
       i++;
       if (i >= BOOT_SEQUENCE.length) {
         clearInterval(t);
