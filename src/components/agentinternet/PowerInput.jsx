@@ -89,7 +89,7 @@ export default function PowerInput({ onSubmit }) {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="flex-1 h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-none caret-cyan-400"
+            className="flex-1 h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-[3.5rem] sm:leading-[4rem] caret-cyan-400"
           />
 
           {/* Animated placeholder — only when input empty & not focused */}
