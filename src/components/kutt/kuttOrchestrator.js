@@ -3,6 +3,7 @@ import { runEditorAgent } from "./kuttEditorAgent";
 import { applyEditorPlan, splitClip, trimClip, moveClip, deleteClip } from "./kuttEditorTools";
 import { researchGrounded } from "./kuttResearch";
 import { directVisuals } from "./kuttVisualDirector";
+import { runMotionAgent, isUIMotionTopic } from "./motionAgent";
 
 const uid = () => `k_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -13,6 +14,7 @@ const BRIEF_SCHEMA = {
     topic: { type: "string", description: "The core subject (e.g., 'French Bulldogs', 'a SaaS landing page')" },
     intent: { type: "string", enum: ["script", "analyze", "autocut", "chat"], description: "What the user wants" },
     consistency_mode: { type: "string", enum: ["strict", "flexible"], description: "strict = maintain consistent style/subject throughout; flexible = variations OK" },
+    visual_mode: { type: "string", enum: ["ui_motion", "cinematic"], description: "ui_motion = the piece shows software UI (app, website, dashboard, widget, product demo) and must be built as browser/device interface animation. cinematic = real-world footage look." },
     enhanced_brief: { type: "string", description: "The director's enhanced, rephrased version of the user's request — same intent, richer, understandable by editor agents" },
     target_duration: { type: "number", description: "Estimated total duration in seconds" },
     scene_count: { type: "number", description: "How many scenes (3-6)" },
@@ -119,6 +121,7 @@ ABSORB THE INTENT:
    - When in doubt, the user's topic specificity determines this
 4. ENHANCE: Rephrase into a rich creative brief that editor agents can follow. Same intent, expanded with professional direction, style notes, and emotional beats.
 5. PLAN: How many scenes (3-6)? How many editor agents (1-10)? Rule: 1 editor per 1-2 scenes. More duration/complexity = more editors.
+6. VISUAL MODE: If this is about an app, website, dashboard, widget, SaaS product, feature or product demo — or a URL was given — set visual_mode="ui_motion" so the MOTION agent builds real browser/device interface animation. Otherwise "cinematic".
 
 Be decisive. The enhanced_brief is what your editor agents will receive — make it rich and actionable.`,
     response_json_schema: BRIEF_SCHEMA,
@@ -197,20 +200,34 @@ TOPIC: ${brief.topic}${scraped ? `\nREAL NAME: ${scraped.name}` : ""}
 
 Write ${sceneCount} scenes (2-6s each). Every voiceover line and caption must be traceable to a VERIFIED fact — if it isn't factual, make it visual/emotional instead of inventing a claim. Each scene's visual_prompt must be rich and cinematic.
 ${brief.consistency_mode === "strict" ? "ALL scenes MUST be visually consistent — same art direction, same subject type, same color palette." : "Some variation between scenes is OK — different angles/types within the topic."}
+${brief.visual_mode === "ui_motion" || url ? `This is a UI-MOTION piece: every scene happens inside real browser or device interface — pages, dashboards, widgets, lists, search, navigation. Describe which screen and which interaction, in a clean minimalist Apple/iOS design language. No real-world footage, no people, no abstract backgrounds.` : ""}
 Set media="video" for 1-2 key scenes (hook + climax, duration 4/6/8), media="image" for the rest.`,
     response_json_schema: SCRIPT_SCHEMA,
   });
   onStep?.({ label: "📝 Scriptwriter drafting scenes…", status: "done", agent: "scriptwriter" });
 
-  // ── PHASE 3.5: VISUAL DIRECTION — no generic backgrounds ──
-  const scenes = await directVisuals({
-    scenes: (script.scenes || []).slice(0, sceneCount),
-    brief: brief.enhanced_brief,
-    topic: brief.topic,
-    visualIdentity: facts.visual_identity,
-    consistencyMode: brief.consistency_mode,
-    onStep,
-  });
+  // ── PHASE 3.5: VISUALS — MOTION agent for UI pieces, cinematographer otherwise ──
+  const rawScenes = (script.scenes || []).slice(0, sceneCount);
+  const uiMotion = brief.visual_mode === "ui_motion" || !!url || isUIMotionTopic(`${brief.topic} ${input}`);
+
+  const scenes = uiMotion
+    ? await runMotionAgent({
+        scenes: rawScenes,
+        brief: brief.enhanced_brief,
+        topic: scraped?.name || brief.topic,
+        visualIdentity: facts.visual_identity,
+        realFeatures: facts.real_features,
+        aspect: "16:9",
+        onStep,
+      })
+    : await directVisuals({
+        scenes: rawScenes,
+        brief: brief.enhanced_brief,
+        topic: brief.topic,
+        visualIdentity: facts.visual_identity,
+        consistencyMode: brief.consistency_mode,
+        onStep,
+      });
 
   // ── PHASE 4: MEDIA GENERATION — parallel media agents ──
   const genLabel = `🎨 Media agents generating ${scenes.length} scenes…`;
@@ -304,7 +321,7 @@ Set media="video" for 1-2 key scenes (hook + climax, duration 4/6/8), media="ima
     ? `\n\n---\n### 🛡️ Fact-Checked Basis${scraped ? ` — scraped ${scraped.pages.length + 1} page${scraped.pages.length ? "s" : ""} of ${scraped.name || scraped.url}` : ""}\n${facts.verified_facts.slice(0, 6).map((f) => `- ✅ ${f.claim} _(${f.source})_`).join("\n")}${(facts.unverified || []).length ? `\n\n_Excluded as unverified: ${facts.unverified.slice(0, 4).join("; ")}_` : ""}`
     : "";
 
-  const message = `## 🎬 ${script.title}\n\n**HOOK:** ${script.hook}\n\n${sceneList}\n\n---\n### 📜 Full Script\n${script.script}${factBlock}\n\n---\n### 📈 Viral Analysis\n${script.viral_notes}\n\n---\n### 🤖 Orchestration Summary\n- **${actualEditorCount} editor agent${actualEditorCount > 1 ? "s" : ""}** worked in parallel\n- **${hyperframeCount} text/animation hyperframe${hyperframeCount !== 1 ? "s" : ""}** added\n- **Consistency:** ${brief.consistency_mode}\n- **Topic:** ${brief.topic}\n\n✅ ${allClips.length} clips + ${hyperframeCount} hyperframes on your timeline — press play, then Export.`;
+  const message = `## 🎬 ${script.title}\n\n**HOOK:** ${script.hook}\n\n${sceneList}\n\n---\n### 📜 Full Script\n${script.script}${factBlock}\n\n---\n### 📈 Viral Analysis\n${script.viral_notes}\n\n---\n### 🤖 Orchestration Summary\n- **${actualEditorCount} editor agent${actualEditorCount > 1 ? "s" : ""}** worked in parallel\n- **${hyperframeCount} text/animation hyperframe${hyperframeCount !== 1 ? "s" : ""}** added\n- **Visuals:** ${uiMotion ? `MOTION agent — UI components: ${scenes.map((s) => s.motion_component).filter(Boolean).join(", ") || "n/a"}` : "Cinematographer"}\n- **Consistency:** ${brief.consistency_mode}\n- **Topic:** ${brief.topic}\n\n✅ ${allClips.length} clips + ${hyperframeCount} hyperframes on your timeline — press play, then Export.`;
 
   return { message, script };
 }
