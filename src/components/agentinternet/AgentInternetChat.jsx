@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Send, Loader2, Check, CreditCard, Globe,
-  FileText, Lock, Sparkles, Image as ImageIcon, Play, Shield, MessageSquare,
+  FileText, Lock, Sparkles, Image as ImageIcon, Play, Shield, MessageSquare, Download, ExternalLink,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 import { SETTINGS } from "@/components/agentinternet/LandingSettings";
 import ChatSessionsDrawer from "@/components/agentinternet/ChatSessionsDrawer";
 import ChatWalletButton from "@/components/agentinternet/ChatWalletButton";
+import ResultLightbox from "@/components/agentinternet/ResultLightbox";
 import { generateWallet } from "@/lib/localKaspaWallet";
 
 const STORAGE_KEY = "ttt_ai_chats";
@@ -20,6 +21,7 @@ const SCHEMA = {
   properties: {
     skill: { type: "string", description: "primary app/agent handling it" },
     agent: { type: "string", description: "lead sub-agent name" },
+    ack: { type: "string", description: "one short sentence acknowledging the user's specific intent, referencing what they actually asked for" },
     plan: {
       type: "array",
       items: {
@@ -62,6 +64,7 @@ MONEY MODE: ${moneyMode}
 AUTONOMY: ${autonomy}
 
 Respond as JSON matching the schema.
+- ALWAYS set "ack" to a single short sentence confirming you understood the user's intent — reference their actual request specifically (never a generic "got it"). Example: user says "advertise kaspa.org" → ack "On it — I'll spin up a Kaspa.org ad campaign across our broadcast agents."
 - If the user is asking a QUESTION or chatting (not commanding an app task), reply FAST: set plan = [] and output.type = "text", output.title = a short 2-4 word label, output.detail = a direct, concise, factual, conversational answer (1-3 sentences). Do NOT invent sub-agent steps or fake transactions for questions.
 - If the user is commanding a real app task, set plan = ordered sub-agent calls (1-4 steps, only as many as needed) and produce a concrete, specific result:
 Output = a concrete, simulated-but-specific result:
@@ -159,11 +162,13 @@ function WalletCard({ output }) {
   );
 }
 
-function OutputCard({ output, image, generating, genFailed }) {
+function OutputCard({ output, image, generating, genFailed, onOpen }) {
   if (!output) return null;
   const { type, title, detail, meta } = output;
 
   if (type === "wallet") return <WalletCard output={output} />;
+
+  const openable = image || meta?.url;
 
   if (type === "payment" || type === "escrow") {
     const Icon = type === "escrow" ? Lock : CreditCard;
@@ -203,14 +208,24 @@ function OutputCard({ output, image, generating, genFailed }) {
   if (type === "image") {
     return (
       <div className="mt-3 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
-        <div className="aspect-video relative flex items-center justify-center bg-gradient-to-br from-fuchsia-500/20 via-violet-500/10 to-cyan-500/20">
+        <button
+          type="button"
+          disabled={!image || generating}
+          onClick={() => onOpen?.({ type, title, detail, image })}
+          className="block w-full text-left aspect-video relative flex items-center justify-center bg-gradient-to-br from-fuchsia-500/20 via-violet-500/10 to-cyan-500/20 group disabled:cursor-default"
+        >
           {generating ? (
             <div className="flex flex-col items-center gap-2 text-white/50 text-[10px] font-mono">
               <Loader2 className="w-5 h-5 animate-spin text-violet-300" />
               generating visual…
             </div>
           ) : image ? (
-            <img src={image} alt={title} className="w-full h-full object-cover" />
+            <>
+              <img src={image} alt={title} className="w-full h-full object-cover" />
+              <span className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-1.5 text-white text-[10px] font-mono opacity-0 group-hover:opacity-100">
+                <ExternalLink className="w-3.5 h-3.5" /> tap to view & save
+              </span>
+            </>
           ) : genFailed ? (
             <div className="text-center px-4">
               <div className="text-white/40 text-[10px] font-mono">visual unavailable</div>
@@ -219,13 +234,24 @@ function OutputCard({ output, image, generating, genFailed }) {
           ) : (
             <OrganicOrb size={64} colors={["#ec4899", "#a855f7", "#22d3ee"]} />
           )}
-        </div>
-        <div className="p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <ImageIcon className="w-3.5 h-3.5 text-violet-300" />
-            <span className="text-white text-xs font-semibold">{title}</span>
+        </button>
+        <div className="p-3 flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <ImageIcon className="w-3.5 h-3.5 text-violet-300" />
+              <span className="text-white text-xs font-semibold">{title}</span>
+            </div>
+            <p className="text-[10px] text-white/55 leading-relaxed">{detail}</p>
           </div>
-          <p className="text-[10px] text-white/55 leading-relaxed">{detail}</p>
+          {image && (
+            <button
+              type="button"
+              onClick={() => onOpen?.({ type, title, detail, image })}
+              className="shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-full bg-cyan-400/15 border border-cyan-400/30 text-cyan-300 text-[9px] font-mono uppercase tracking-wider hover:bg-cyan-400/25 transition-colors"
+            >
+              <Download className="w-3 h-3" /> save
+            </button>
+          )}
         </div>
       </div>
     );
@@ -233,7 +259,12 @@ function OutputCard({ output, image, generating, genFailed }) {
 
   if (type === "site") {
     return (
-      <div className="mt-3 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+      <a
+        href={meta?.url || "#"}
+        target="_blank"
+        rel="noreferrer"
+        className="block mt-3 rounded-2xl border border-white/10 bg-black/40 overflow-hidden hover:border-cyan-400/40 transition-colors"
+      >
         <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border-b border-white/10">
           <div className="flex gap-1">
             <span className="w-2 h-2 rounded-full bg-red-400/60" />
@@ -249,13 +280,18 @@ function OutputCard({ output, image, generating, genFailed }) {
           <span className="text-white text-xs font-semibold">{title}</span>
           <p className="text-[10px] text-white/55 mt-0.5">{detail}</p>
         </div>
-      </div>
+      </a>
     );
   }
 
   if (type === "video") {
     return (
-      <div className="mt-3 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+      <a
+        href={meta?.url || "#"}
+        target="_blank"
+        rel="noreferrer"
+        className="block mt-3 rounded-2xl border border-white/10 bg-black/40 overflow-hidden hover:border-rose-400/40 transition-colors"
+      >
         <div className="aspect-video relative flex items-center justify-center bg-gradient-to-br from-rose-500/20 to-orange-500/10">
           <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
             <Play className="w-4 h-4 text-black ml-0.5" />
@@ -266,7 +302,7 @@ function OutputCard({ output, image, generating, genFailed }) {
           <span className="text-white text-xs font-semibold">{title}</span>
           <p className="text-[10px] text-white/55 mt-0.5">{detail}</p>
         </div>
-      </div>
+      </a>
     );
   }
 
@@ -297,7 +333,7 @@ function OutputCard({ output, image, generating, genFailed }) {
   );
 }
 
-function Message({ msg }) {
+function Message({ msg, onOpen }) {
   if (msg.role === "user") {
     return (
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
@@ -313,16 +349,30 @@ function Message({ msg }) {
         <OrganicOrb size={28} colors={["#67e8f9", "#22d3ee", "#6366f1"]} />
       </div>
       <div className="min-w-0 flex-1">
-        {msg.loading ? (
+        {msg.loading && !msg.ack ? (
           <div className="flex items-center gap-2 text-white/55 text-xs font-mono py-2">
             <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
             orchestrating sub-agents…
           </div>
         ) : (
           <>
-            {msg.skill && <SkillBadge skill={msg.skill} />}
-            {msg.plan && <PlanChecklist plan={msg.plan} />}
-            <OutputCard output={msg.output} image={msg.image} generating={msg.genLoading} genFailed={msg.genFailed} />
+            {msg.ack && (
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="text-white/80 text-sm font-medium leading-snug">{msg.ack}</span>
+              </div>
+            )}
+            {msg.loading && (
+              <div className="flex items-center gap-2 text-white/55 text-xs font-mono py-1">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                orchestrating sub-agents…
+              </div>
+            )}
+            {!msg.loading && msg.skill && <SkillBadge skill={msg.skill} />}
+            {!msg.loading && msg.plan && <PlanChecklist plan={msg.plan} />}
+            {!msg.loading && (
+              <OutputCard output={msg.output} image={msg.image} generating={msg.genLoading} genFailed={msg.genFailed} onOpen={onOpen} />
+            )}
             {msg.error && <div className="text-red-400 text-[10px] font-mono mt-2">router error — retry</div>}
           </>
         )}
@@ -337,6 +387,7 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
   const scrollRef = useRef(null);
   const chatsRef = useRef(chats);
   const sentRef = useRef(false);
@@ -425,6 +476,20 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
         : c
     ));
 
+    // Instant acknowledgment — real LLM-generated per message, reflects actual intent
+    try {
+      const ackRes = await base44.integrations.Core.InvokeLLM({
+        prompt: `A user just told a superagent: "${text}". Reply with ONE short sentence (max 14 words) acknowledging you understood and are on it — reference what they actually asked for. No quotes, no preamble, just the sentence. Example: user "advertise kaspa.org" → "On it — spinning up a Kaspa.org ad campaign now."`,
+        model: "gemini_3_flash",
+      });
+      const ackText = typeof ackRes === "string" ? ackRes.trim() : (ackRes?.ack || "").toString().trim();
+      if (ackText) {
+        setChats((prev) => prev.map((c) =>
+          c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, ack: ackText } : m) } : c
+        ));
+      }
+    } catch {}
+
     try {
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: buildPrompt(text, settings, hist),
@@ -432,6 +497,12 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
         model: "gemini_3_flash",
       });
       const data = typeof res === "string" ? JSON.parse(res) : res;
+      // keep the instant ack if the orchestration didn't return one
+      if (!data.ack) {
+        setChats((prev) => prev.map((c) => c.id === chatId
+          ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, ack: m.ack || "" } : m) }
+          : c));
+      }
       setChats((prev) => prev.map((c) =>
         c.id === chatId
           ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, loading: false, ...data } : m) }
@@ -545,7 +616,7 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
                   new chat — tell the superagent what to do
                 </div>
               )}
-              {messages.map((m) => <Message key={m.id} msg={m} />)}
+              {messages.map((m) => <Message key={m.id} msg={m} onOpen={setLightbox} />)}
             </div>
           </div>
 
@@ -570,6 +641,8 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
               </button>
             </form>
           </div>
+
+          <ResultLightbox item={lightbox} onClose={() => setLightbox(null)} />
         </motion.div>
       )}
     </AnimatePresence>
