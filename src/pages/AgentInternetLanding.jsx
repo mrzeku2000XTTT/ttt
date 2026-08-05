@@ -8,6 +8,7 @@ import PowerConsole from "@/components/agentinternet/PowerConsole";
 import LandingSettings, { useLandingSettings } from "@/components/agentinternet/LandingSettings";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 import AgentInternetChat from "@/components/agentinternet/AgentInternetChat";
+import OnboardingModal, { hasOnboarded } from "@/components/agentinternet/OnboardingModal";
 import { APPS } from "@/components/appstore2/appCatalog";
 import { AGENT_CARDS } from "@/components/agentinternet/agentCards";
 
@@ -26,10 +27,27 @@ export default function AgentInternetLanding() {
   const { settings, update, reset } = useLandingSettings();
   const [chatOpen, setChatOpen] = useState(false);
   const [chatCommand, setChatCommand] = useState("");
+  const [onboard, setOnboard] = useState(null); // null | "agent" | "ttt"
 
   const openChat = (command) => {
     setChatCommand(command);
     setChatOpen(true);
+  };
+
+  const guardLaunch = (target) => {
+    if (hasOnboarded()) {
+      if (target === "agent") handleLaunchAgentInternet();
+      else navigate("/TTTHome");
+    } else {
+      setOnboard(target); // show 5-step onboarding for new users
+    }
+  };
+
+  const finishOnboard = () => {
+    const target = onboard;
+    setOnboard(null);
+    if (target === "agent") handleLaunchAgentInternet();
+    else navigate("/TTTHome");
   };
 
   const BOOT_SEQUENCE = useMemo(() => [
@@ -183,7 +201,7 @@ export default function AgentInternetLanding() {
                   className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
                 >
                   <button
-                    onClick={handleLaunchAgentInternet}
+                    onClick={() => guardLaunch("agent")}
                     className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-cyan-400/40 bg-transparent text-cyan-300 font-bold text-xs tracking-widest uppercase hover:border-cyan-300/70 hover:text-cyan-200 transition-colors"
                     style={{ minHeight: 48 }}
                   >
@@ -191,14 +209,14 @@ export default function AgentInternetLanding() {
                     Launch Agent Internet
                   </button>
 
-                  <Link
-                    to="/TTTHome"
+                  <button
+                    onClick={() => guardLaunch("ttt")}
                     className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-white/20 bg-transparent text-white/80 hover:text-white hover:border-white/40 text-xs tracking-widest uppercase font-mono font-medium transition-colors"
                     style={{ minHeight: 48 }}
                   >
                     <OrganicOrb size={16} colors={["#a78bfa", "#8b5cf6", "#6366f1"]} />
                     Launch TTT
-                  </Link>
+                  </button>
                 </motion.div>
 
                 <motion.div
@@ -240,6 +258,12 @@ export default function AgentInternetLanding() {
         initialCommand={chatCommand}
         settings={settings}
         onClose={() => setChatOpen(false)}
+      />
+
+      <OnboardingModal
+        open={!!onboard}
+        onClose={() => setOnboard(null)}
+        onFinish={finishOnboard}
       />
     </div>
   );
