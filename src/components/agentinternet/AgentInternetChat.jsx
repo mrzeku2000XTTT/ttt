@@ -65,6 +65,7 @@ Respond as JSON matching the schema. Plan = ordered sub-agent calls (2-5 steps).
 - text: meta = {}
 
 Be specific and confident. Invent realistic kaspa: addresses and txids for payment/escrow/mint.
+CRITICAL: If the user asks to draw, sketch, paint, render, generate, or create any image/picture/visual/artwork, you MUST set output.type = "image" and put a VIVID, detailed visual prompt in output.meta.prompt (describe subject, style, lighting, mood, composition). Example: "draw me a cloud" → type "image", meta.prompt "a majestic fluffy cumulus cloud at golden hour, volumetric soft light, cinematic, hyper-detailed, warm color grading".
 
 ${ctx ? `Prior context:\n${ctx}\n` : ""}
 User command: "${command}"`;
@@ -102,7 +103,7 @@ function PlanChecklist({ plan }) {
   );
 }
 
-function OutputCard({ output, image, generating }) {
+function OutputCard({ output, image, generating, genFailed }) {
   if (!output) return null;
   const { type, title, detail, meta } = output;
 
@@ -152,6 +153,11 @@ function OutputCard({ output, image, generating }) {
             </div>
           ) : image ? (
             <img src={image} alt={title} className="w-full h-full object-cover" />
+          ) : genFailed ? (
+            <div className="text-center px-4">
+              <div className="text-white/40 text-[10px] font-mono">visual unavailable</div>
+              <div className="text-white/30 text-[9px] font-mono mt-1 line-clamp-2">{meta?.prompt || detail}</div>
+            </div>
           ) : (
             <OrganicOrb size={64} colors={["#ec4899", "#a855f7", "#22d3ee"]} />
           )}
@@ -259,7 +265,7 @@ function Message({ msg }) {
           <>
             {msg.skill && <SkillBadge skill={msg.skill} />}
             {msg.plan && <PlanChecklist plan={msg.plan} />}
-            <OutputCard output={msg.output} image={msg.image} generating={msg.genLoading} />
+            <OutputCard output={msg.output} image={msg.image} generating={msg.genLoading} genFailed={msg.genFailed} />
             {msg.error && <div className="text-red-400 text-[10px] font-mono mt-2">router error — retry</div>}
           </>
         )}
@@ -294,13 +300,15 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
       });
       const data = typeof res === "string" ? JSON.parse(res) : res;
       setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, loading: false, ...data } : msg));
-      if (data.output?.type === "image" && data.output.meta?.prompt) {
+      if (data.output?.type === "image") {
+        const imgPrompt = data.output?.meta?.prompt ||
+          `${text}. ${data.output?.title || ""}. ${data.output?.detail || ""}`.trim();
         setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, genLoading: true } : msg));
         try {
-          const r = await base44.integrations.Core.GenerateImage({ prompt: data.output.meta.prompt });
-          setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, genLoading: false, image: r.url } : msg));
+          const r = await base44.integrations.Core.GenerateImage({ prompt: imgPrompt });
+          setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, genLoading: false, image: r?.url } : msg));
         } catch {
-          setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, genLoading: false } : msg));
+          setMessages((m) => m.map((msg) => msg.id === aid ? { ...msg, genLoading: false, genFailed: true } : msg));
         }
       }
     } catch {
