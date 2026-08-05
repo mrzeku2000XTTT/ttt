@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings as SettingsIcon, X, Cpu, Zap, Shield, Wallet, Bot, Radio, Layers, Lock, Activity } from "lucide-react";
+import { Settings as SettingsIcon, X, Cpu, Zap, Shield, Wallet, Bot, Radio, Layers, Lock, Activity, Copy, Eye, EyeOff, Trash2, Plus } from "lucide-react";
+import { getWallet, generateWallet, clearWallet } from "@/lib/localKaspaWallet";
 
 /**
  * Agent Internet settings — 50 real configuration knobs for the unified superagent.
@@ -122,6 +123,51 @@ function Toggle({ on, onClick, label, desc }) {
   );
 }
 
+function LocalWalletSection() {
+  const [wallet, setWallet] = useState(() => getWallet());
+  const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState("");
+  const copy = (k, v) => { try { navigator.clipboard?.writeText(v); } catch {} setCopied(k); setTimeout(() => setCopied(""), 1500); };
+  const gen = () => { setWallet(generateWallet()); setRevealed(false); };
+  const clear = () => { clearWallet(); setWallet(null); setRevealed(false); };
+  return (
+    <div className="rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-2.5 space-y-2">
+      <div className="flex items-center gap-2">
+        <Wallet className="w-3.5 h-3.5 text-cyan-300" />
+        <span className="text-[10px] font-mono tracking-widest uppercase text-cyan-200/80">Local Wallet</span>
+        <span className="ml-auto text-[8px] font-mono uppercase text-white/30">on-device only</span>
+      </div>
+      {wallet ? (
+        <>
+          <div className="text-[9px] font-mono">
+            <div className="text-white/40">address</div>
+            <button onClick={() => copy("address", wallet.address)} className="text-cyan-300 break-all text-left hover:underline">{wallet.address}</button>
+          </div>
+          <div className="text-[9px] font-mono">
+            <div className="text-white/40 flex items-center justify-between">
+              <span>private key</span>
+              <button onClick={() => setRevealed((v) => !v)} className="text-cyan-300/80 hover:text-cyan-200 flex items-center gap-1">
+                {revealed ? <><EyeOff className="w-3 h-3" /> hide</> : <><Eye className="w-3 h-3" /> reveal</>}
+              </button>
+            </div>
+            <button onClick={() => copy("key", wallet.privateKey)} className="text-white/80 break-all text-left hover:underline block">
+              {revealed ? wallet.privateKey : "•".repeat(52)}
+            </button>
+          </div>
+          {copied && <div className="text-emerald-300 text-[9px]">copied {copied}</div>}
+          <button onClick={clear} className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-mono uppercase tracking-widest text-red-300 hover:bg-red-500/10">
+            <Trash2 className="w-3 h-3" /> clear wallet
+          </button>
+        </>
+      ) : (
+        <button onClick={gen} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-cyan-400 text-black text-[10px] font-bold uppercase tracking-widest hover:bg-cyan-300">
+          <Plus className="w-3.5 h-3.5" /> generate wallet
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function LandingSettings({ open, onClose, settings, update, reset }) {
   const groups = [...new Set(SETTINGS.map((s) => s.group))];
   return (
@@ -156,6 +202,7 @@ export default function LandingSettings({ open, onClose, settings, update, reset
               <div className="text-[9px] font-mono tracking-widest uppercase text-white/30">
                 {SETTINGS.filter((s) => settings[s.key]).length}/{SETTINGS.length} active · unified superagent
               </div>
+              <LocalWalletSection />
               {groups.map((g) => {
                 const Icon = GROUP_ICON[g] || Cpu;
                 const items = SETTINGS.filter((s) => s.group === g);

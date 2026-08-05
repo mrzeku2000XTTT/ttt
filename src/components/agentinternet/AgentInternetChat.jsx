@@ -8,8 +8,11 @@ import { base44 } from "@/api/base44Client";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 import { SETTINGS } from "@/components/agentinternet/LandingSettings";
 import ChatSessionsDrawer from "@/components/agentinternet/ChatSessionsDrawer";
+import { generateWallet } from "@/lib/localKaspaWallet";
 
 const STORAGE_KEY = "ttt_ai_chats";
+// commands that create a wallet locally (never touch the server)
+const WALLET_CMD = /^(generate|create|make)\s+(me\s+)?(a\s+)?(mainnet\s+|testnet\s+)?wallet\b|^new wallet\b/i;
 
 const SCHEMA = {
   type: "object",
@@ -118,9 +121,48 @@ function PlanChecklist({ plan }) {
   );
 }
 
+function WalletCard({ output }) {
+  const meta = output?.meta || {};
+  const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState("");
+  const copy = (k, v) => {
+    try { navigator.clipboard?.writeText(v); } catch {}
+    setCopied(k);
+    setTimeout(() => setCopied(""), 1500);
+  };
+  return (
+    <div className="mt-3 rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/10 to-emerald-500/5 p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Shield className="w-3.5 h-3.5 text-cyan-300" />
+        <span className="text-white text-xs font-semibold">{output?.title || "Mainnet Wallet"}</span>
+        <span className="ml-auto text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-300 uppercase">local</span>
+      </div>
+      <div className="space-y-2 text-[10px] font-mono">
+        <div>
+          <div className="text-white/40">address</div>
+          <button onClick={() => copy("address", meta.address)} className="text-cyan-300 break-all text-left hover:underline">{meta.address}</button>
+        </div>
+        <div>
+          <div className="text-white/40 flex items-center justify-between">
+            <span>private key</span>
+            <button onClick={() => setRevealed((v) => !v)} className="text-cyan-300/80 hover:text-cyan-200">{revealed ? "hide" : "reveal"}</button>
+          </div>
+          <button onClick={() => copy("key", meta.privateKey)} className="text-white/80 break-all text-left hover:underline block">
+            {revealed ? meta.privateKey : "•".repeat(52)}
+          </button>
+        </div>
+        {copied && <div className="text-emerald-300 text-[9px]">copied {copied}</div>}
+      </div>
+      {output?.detail && <p className="text-[9px] text-white/40 mt-2 leading-snug">{output.detail}</p>}
+    </div>
+  );
+}
+
 function OutputCard({ output, image, generating, genFailed }) {
   if (!output) return null;
   const { type, title, detail, meta } = output;
+
+  if (type === "wallet") return <WalletCard output={output} />;
 
   if (type === "payment" || type === "escrow") {
     const Icon = type === "escrow" ? Lock : CreditCard;
@@ -342,9 +384,34 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
 
   const send = async (text, chatId) => {
     if (!text.trim() || sending) return;
-    setSending(true);
+
     const uid = `u${Date.now()}`;
     const aid = `a${Date.now()}`;
+
+    // Local-only wallet generation — private key never leaves the device
+    if (WALLET_CMD.test(text.trim())) {
+      setSending(true);
+      setChats((prev) => prev.map((c) =>
+        c.id === chatId
+          ? {
+              ...c,
+              title: (c.title === "New chat" || !c.title) ? text.slice(0, 42) : c.title,
+              messages: [...c.messages, { id: uid, role: "user", text: text.trim() }, { id: aid, role: "assistant", loading: true }],
+            }
+          : c
+      ));
+      try {
+        const w = await generateWallet();
+        setChats((prev) => prev.map((c) => c.id === chatId
+          ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, loading: false, skill: "Wallet · local", output: { type: "wallet", title: "Mainnet Wallet Created", detail: "Generated entirely on this device — your private key never touched the server. Save it somewhere safe; clearing browser data will erase it.", meta: { address: w.address, privateKey: w.privateKey } } } : m) }
+          : c));
+      } catch {
+        setChats((prev) => prev.map((c) => c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, loading: false, error: true } : m) } : c));
+      } finally { setSending(false); }
+      return;
+    }
+
+    setSending(true);
     const hist = chatsRef.current.find((c) => c.id === chatId)?.messages || [];
 
     setChats((prev) => prev.map((c) =>
