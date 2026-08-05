@@ -35,16 +35,20 @@ export default function GalaxyVideoBg() {
     <div className="absolute inset-0 overflow-hidden bg-black">
       {VIDEO_URLS.map((src, idx) => {
         const isActive = idx === active;
+        const isNext = idx === (active + 1) % VIDEO_URLS.length;
+        // Only mount the active clip + preload the next one — mounting all 5
+        // at once makes mobile browsers throttle/block autoplay (black screen).
+        if (!isActive && !isNext) return null;
         const isReady = loaded[idx];
         return (
           <video
             key={src}
             src={src}
-            autoPlay
+            autoPlay={isActive}
             muted
             loop
             playsInline
-            preload="auto"
+            preload={isActive ? "auto" : "metadata"}
             onCanPlay={() => markLoaded(idx)}
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out"
             style={{
