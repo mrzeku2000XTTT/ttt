@@ -30,11 +30,12 @@ export default function AgentInternetLanding() {
   const [chatCommand, setChatCommand] = useState("");
   const [guestOpen, setGuestOpen] = useState(false);
   const [onboard, setOnboard] = useState(null); // null | "agent" | "ttt"
+  const [viewAsGuest, setViewAsGuest] = useState(false); // admin-only preview toggle
 
   const openChat = (command) => {
     setChatCommand(command);
-    if (isAdmin) setChatOpen(true);      // admin → real Agent Internet chat
-    else setGuestOpen(true);              // guest → intent router → app
+    if (isAdmin && !viewAsGuest) setChatOpen(true); // admin → real Agent Internet chat
+    else setGuestOpen(true);                        // guest → intent router → app
   };
 
   const guardLaunch = (target) => {
@@ -194,6 +195,24 @@ export default function AgentInternetLanding() {
                   className="mt-7 max-w-lg mx-auto w-full"
                 >
                   <PowerConsole onSubmit={openChat} />
+
+                  {isAdmin && (
+                    <div className="mt-3 flex items-center justify-center gap-1 p-1 rounded-full border border-white/10 bg-black/50 backdrop-blur-md w-fit mx-auto">
+                      <span className="px-2 text-[9px] font-mono tracking-widest uppercase text-white/35">view as</span>
+                      <button
+                        onClick={() => setViewAsGuest(false)}
+                        className={`px-3 py-1.5 rounded-full text-[9px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-cyan-500/15 text-cyan-300 border border-cyan-400/40" : "text-white/45 border border-transparent hover:text-white/70"}`}
+                      >
+                        TTT A.I
+                      </button>
+                      <button
+                        onClick={() => setViewAsGuest(true)}
+                        className={`px-3 py-1.5 rounded-full text-[9px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-violet-500/15 text-violet-300 border border-violet-400/40" : "text-white/45 border border-transparent hover:text-white/70"}`}
+                      >
+                        Guest
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
 
                 {/* Launch buttons */}
@@ -228,7 +247,11 @@ export default function AgentInternetLanding() {
                   transition={{ delay: 0.6 }}
                   className="mt-4 text-[10px] font-mono tracking-widest uppercase text-white/35"
                 >
-                  {isAdmin ? "admin access · agent internet unlocked" : "agent internet · admin only · TTT open to all"}
+                  {isAdmin
+                    ? viewAsGuest
+                      ? "admin access · previewing guest mode"
+                      : "admin access · agent internet unlocked"
+                    : "agent internet · admin only · TTT open to all"}
                 </motion.div>
               </motion.div>
             )}
