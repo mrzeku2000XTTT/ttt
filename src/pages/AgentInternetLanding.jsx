@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
-import PowerInput from "@/components/agentinternet/PowerInput";
+import PowerConsole from "@/components/agentinternet/PowerConsole";
 import LandingSettings, { useLandingSettings } from "@/components/agentinternet/LandingSettings";
 
 /**
@@ -146,7 +146,7 @@ export default function AgentInternetLanding() {
                 Not a chatbot. A <span className="text-cyan-300 font-medium">supercomputer</span>.
               </p>
 
-              {/* Power input — replaces widget cards */}
+              {/* Power console — real input that routes through the agent internet */}
               {settings.showPowers && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -154,7 +154,7 @@ export default function AgentInternetLanding() {
                   transition={{ delay: 0.3 }}
                   className="mt-8 max-w-lg mx-auto"
                 >
-                  <PowerInput />
+                  <PowerConsole />
                 </motion.div>
               )}
 
