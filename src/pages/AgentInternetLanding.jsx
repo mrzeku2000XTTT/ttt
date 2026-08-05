@@ -204,23 +204,6 @@ export default function AgentInternetLanding() {
         </div>
       </div>
 
-      {/* Footer */}
-      <AnimatePresence>
-        {booted && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="absolute bottom-0 left-0 right-0 z-20 px-4 py-3 text-center pointer-events-none"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
-          >
-            <div className="text-[9px] font-mono tracking-[0.25em] uppercase text-white/25">
-              TTT A.I · Kaspa-native · 48 apps · 100 sub-agents
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Access denied */}
       <AnimatePresence>
         {denied && (
