@@ -15,6 +15,10 @@ import { tryQuickAnswer } from "@/components/agentinternet/quickAnswer";
 import { runAgent } from "@/components/agentinternet/agentRunner";
 import { instantAck } from "@/components/agentinternet/instantAck";
 import K6ixLaunchCard from "@/components/agentinternet/K6ixLaunchCard";
+import MotionSpecPicker from "@/components/agentinternet/MotionSpecPicker";
+import MotionSceneBoard from "@/components/agentinternet/MotionSceneBoard";
+import { runMotionPipeline } from "@/components/agentinternet/motionPipeline";
+import { isVideoRequest } from "@/components/agentinternet/videoSpec";
 import AgentStepFeed from "@/components/agentinternet/AgentStepFeed";
 
 const STORAGE_KEY = "ttt_ai_chats";
@@ -340,7 +344,7 @@ function OutputCard({ output, image, generating, genFailed, onOpen }) {
   );
 }
 
-function Message({ msg, onOpen }) {
+function Message({ msg, onOpen, onMotion }) {
   if (msg.role === "user") {
     return (
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
@@ -376,6 +380,8 @@ function Message({ msg, onOpen }) {
               </div>
             )}
             {!msg.loading && msg.skill && <SkillBadge skill={msg.skill} />}
+            {msg.motion?.stage === "spec" && <MotionSpecPicker text={msg.motion.text} onRun={onMotion} />}
+            {msg.motion && msg.motion.stage !== "spec" && <MotionSceneBoard motion={msg.motion} onOpen={onOpen} />}
             {msg.steps?.length > 0 && <AgentStepFeed steps={msg.steps} onOpen={onOpen} />}
             {!msg.loading && msg.plan?.length > 0 && <PlanChecklist plan={msg.plan} />}
             {!msg.loading && (
@@ -447,6 +453,27 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
     });
   };
 
+  const patchMsg = (chatId, msgId, update) =>
+    setChats((prev) => prev.map((c) =>
+      c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === msgId ? { ...m, ...update } : m) } : c
+    ));
+
+  // Real motion run: scrape the site, research it live, write the scenes,
+  // render a saveable still for each. No orchestration theatre.
+  const runMotion = async (msgId, chatId, text, spec) => {
+    patchMsg(chatId, msgId, { motion: { stage: "run", spec, text, progress: "reading the site" } });
+    try {
+      const res = await runMotionPipeline({
+        text,
+        spec,
+        onProgress: (progress) => patchMsg(chatId, msgId, { motion: { stage: "run", spec, text, progress } }),
+      });
+      patchMsg(chatId, msgId, { motion: { stage: "done", spec, text, ...res } });
+    } catch {
+      patchMsg(chatId, msgId, { motion: { stage: "error", spec, text } });
+    }
+  };
+
   const send = async (text, chatId) => {
     if (!text.trim() || sending) return;
 
@@ -473,6 +500,24 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
       } catch {
         setChats((prev) => prev.map((c) => c.id === chatId ? { ...c, messages: c.messages.map((m) => m.id === aid ? { ...m, loading: false, error: true } : m) } : c));
       } finally { setSending(false); }
+      return;
+    }
+
+    // Motion / video: straight to the spec picker, then the real pipeline.
+    if (isVideoRequest(text)) {
+      setChats((prev) => prev.map((c) =>
+        c.id === chatId
+          ? {
+              ...c,
+              title: (c.title === "New chat" || !c.title) ? text.slice(0, 42) : c.title,
+              messages: [
+                ...c.messages,
+                { id: uid, role: "user", text: text.trim() },
+                { id: aid, role: "assistant", loading: false, skill: "Motion · real assets", motion: { stage: "spec", text: text.trim() } },
+              ],
+            }
+          : c
+      ));
       return;
     }
 
@@ -666,7 +711,14 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
                   new chat — tell the superagent what to do
                 </div>
               )}
-              {messages.map((m) => <Message key={m.id} msg={m} onOpen={setLightbox} />)}
+              {messages.map((m) => (
+                <Message
+                  key={m.id}
+                  msg={m}
+                  onOpen={setLightbox}
+                  onMotion={(spec) => runMotion(m.id, activeId, m.motion?.text || "", spec)}
+                />
+              ))}
             </div>
           </div>
 
