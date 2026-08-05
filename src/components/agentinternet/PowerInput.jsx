@@ -89,17 +89,17 @@ export default function PowerInput({ onSubmit }) {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="flex-1 bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10"
+            className="flex-1 bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 leading-6 caret-cyan-400"
           />
 
           {/* Animated placeholder — only when input empty & not focused */}
           {!focused && userValue.length === 0 && (
-            <span className="absolute left-11 right-16 top-1/2 -translate-y-1/2 text-white/55 font-mono text-sm sm:text-base truncate pointer-events-none z-0">
-              {typed}
+            <span className="absolute left-11 right-16 top-1/2 -translate-y-1/2 text-white/55 font-mono text-sm sm:text-base leading-none truncate pointer-events-none z-0 flex items-center">
+              <span className="truncate">{typed}</span>
               <motion.span
                 animate={{ opacity: [1, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity }}
-                className="inline-block w-[2px] h-4 sm:h-5 bg-cyan-400 align-middle ml-0.5 -mt-0.5"
+                className="inline-block w-[2px] h-[1.05em] bg-cyan-400 ml-0.5 shrink-0"
               />
             </span>
           )}
