@@ -391,24 +391,22 @@ export default function AgentInternetChat({ open, initialCommand, settings, onCl
     }
   };
 
-  // seed a new chat from the landing power input
+  // open: seed a new chat from the landing power input, else ensure one active chat.
+  // single guarded init so we never create a competing blank chat over the seeded one.
   useEffect(() => {
-    if (open && initialCommand && !sentRef.current) {
-      sentRef.current = true;
+    if (!open) { sentRef.current = false; return; }
+    if (sentRef.current) return;
+    sentRef.current = true;
+    if (initialCommand) {
       const id = createChat(initialCommand.slice(0, 42));
       setActiveId(id);
       send(initialCommand, id);
-    }
-    if (!open) sentRef.current = false;
-  }, [open, initialCommand]);
-
-  // ensure there's always an active chat to type into
-  useEffect(() => {
-    if (open && !activeId) {
+    } else if (!activeId) {
       const id = createChat();
       setActiveId(id);
     }
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialCommand]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
