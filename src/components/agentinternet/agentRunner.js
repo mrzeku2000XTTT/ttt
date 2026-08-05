@@ -35,6 +35,13 @@ const FINAL_SCHEMA = {
   required: ["title", "detail"],
 };
 
+// No step may hang the whole run. Renders get longer than thinking steps.
+const withTimeout = (promise, ms, label) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), ms)),
+  ]);
+
 /**
  * Plans a real multi-app run, executes each app in order, narrating every step
  * back into the chat, then synthesises the deliverable.
@@ -61,7 +68,7 @@ export async function runAgent({ text, history, onStep }) {
     .map((m) => (m.role === "user" ? `User: ${m.text}` : `Assistant: ${m.output?.title || ""}`))
     .join("\n");
 
-  const planRes = await base44.integrations.Core.InvokeLLM({
+  const planRes = await withTimeout(base44.integrations.Core.InvokeLLM({
     prompt: `You are KAI, the superagent of the TTT Agent Internet. You fulfil requests by calling the app's REAL tools below, in order. Never invent tools.
 
 TOOLS:
@@ -78,7 +85,7 @@ Rules:
 ${ctx.spec ? `Locked video spec (obey exactly — pass these to generate_video as aspect_ratio and duration, and write the cut style into every prompt): ${JSON.stringify(ctx.spec)}\n` : ""}${convo ? `Conversation so far:\n${convo}\n` : ""}Request: "${text}"`,
     response_json_schema: PLAN_SCHEMA,
     model: "gemini_3_flash",
-  });
+  }), 30000, "Planner");
   const plan = typeof planRes === "string" ? JSON.parse(planRes) : planRes;
 
   if (plan.question && !(plan.steps || []).length) {
@@ -87,6 +94,7 @@ ${ctx.spec ? `Locked video spec (obey exactly — pass these to generate_video a
 
   const steps = (plan.steps || [])
     .filter((s) => TOOLS[s.tool])
+    .slice(0, 6)
     .map((s) => ({ ...s, app: TOOLS[s.tool].app, status: "pending" }));
 
   if (!steps.length) return null; // nothing runnable — let the caller fall back
@@ -98,7 +106,11 @@ ${ctx.spec ? `Locked video spec (obey exactly — pass these to generate_video a
     onStep?.([...steps]);
     const before = (ctx.images || []).length;
     try {
-      const result = await TOOLS[step.tool].run(step.args || {}, ctx);
+      const result = await withTimeout(
+        TOOLS[step.tool].run(step.args || {}, ctx),
+        step.tool === "generate_image" ? 75000 : 40000,
+        step.app
+      );
       step.status = "done";
       step.result = typeof result === "string" ? result.slice(0, 400) : "";
       const fresh = (ctx.images || []).slice(before);
@@ -110,7 +122,7 @@ ${ctx.spec ? `Locked video spec (obey exactly — pass these to generate_video a
     onStep?.([...steps]);
   }
 
-  const finalRes = await base44.integrations.Core.InvokeLLM({
+  const finalRes = await withTimeout(base44.integrations.Core.InvokeLLM({
     prompt: `You just executed a real multi-app run for the request "${text}".
 Goal: ${plan.goal}
 Steps and their real results:
@@ -123,7 +135,7 @@ Motion brief handed to K6ix: ${ctx.k6ix ? "yes — the user opens the K6ix motio
 Report the actual deliverable. "points" = the beat sheet if there is one, else the key deliverables. Be specific — use the brand's real name and details. If a step failed, say so plainly. Add next_question only if there's an obvious next move worth offering.`,
     response_json_schema: FINAL_SCHEMA,
     model: "gemini_3_flash",
-  });
+  }), 30000, "Report");
   const fin = typeof finalRes === "string" ? JSON.parse(finalRes) : finalRes;
 
   const type = ctx.k6ix ? "k6ix" : ctx.image ? "image" : (fin.points || []).length ? "research" : "text";

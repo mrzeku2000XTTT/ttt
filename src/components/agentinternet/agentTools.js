@@ -105,13 +105,18 @@ Each beat: shot (what the camera sees) + copy (on-screen text, max 6 words).`,
     app: "Hikaru · image render",
     desc: "Render one or more stills — key frames, background plates, poster, thumbnail. args: { prompt } or { prompts: [..] }",
     run: async (args, ctx) => {
-      const prompts = (args.prompts?.length ? args.prompts : [args.prompt || ctx.prompt]).filter(Boolean).slice(0, 5);
+      const prompts = (args.prompts?.length ? args.prompts : [args.prompt || ctx.prompt]).filter(Boolean).slice(0, 3);
       ctx.images = ctx.images || [];
+      // render every plate at once — serial renders were the bulk of the wait
+      const results = await Promise.all(
+        prompts.map((p) =>
+          base44.integrations.Core.GenerateImage({ prompt: p })
+            .then((r) => (r?.url ? { url: r.url, prompt: p } : null))
+            .catch(() => null)
+        )
+      );
       const urls = [];
-      for (const p of prompts) {
-        const r = await base44.integrations.Core.GenerateImage({ prompt: p });
-        if (r?.url) { urls.push(r.url); ctx.images.push({ url: r.url, prompt: p }); }
-      }
+      for (const img of results.filter(Boolean)) { urls.push(img.url); ctx.images.push(img); }
       ctx.image = ctx.images[0]?.url;
       return urls.length ? `${urls.length} still${urls.length > 1 ? "s" : ""} rendered` : "render failed";
     },
