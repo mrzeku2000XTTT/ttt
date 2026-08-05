@@ -7,6 +7,7 @@ import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
 import PowerConsole from "@/components/agentinternet/PowerConsole";
 import LandingSettings, { useLandingSettings } from "@/components/agentinternet/LandingSettings";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
+import AgentInternetChat from "@/components/agentinternet/AgentInternetChat";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -21,6 +22,13 @@ export default function AgentInternetLanding() {
   const [showSettings, setShowSettings] = useState(false);
   const [denied, setDenied] = useState(false);
   const { settings, update, reset } = useLandingSettings();
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatCommand, setChatCommand] = useState("");
+
+  const openChat = (command) => {
+    setChatCommand(command);
+    setChatOpen(true);
+  };
 
   const BOOT_SEQUENCE = useMemo(() => [
     "> establishing encrypted relay...",
@@ -153,7 +161,7 @@ export default function AgentInternetLanding() {
                   transition={{ delay: 0.25 }}
                   className="mt-7 max-w-lg mx-auto w-full"
                 >
-                  <PowerConsole settings={settings} />
+                  <PowerConsole onSubmit={openChat} />
                 </motion.div>
 
                 {/* Launch buttons */}
@@ -232,6 +240,13 @@ export default function AgentInternetLanding() {
       </AnimatePresence>
 
       <LandingSettings open={showSettings} onClose={() => setShowSettings(false)} settings={settings} update={update} reset={reset} />
+
+      <AgentInternetChat
+        open={chatOpen}
+        initialCommand={chatCommand}
+        settings={settings}
+        onClose={() => setChatOpen(false)}
+      />
     </div>
   );
 }
