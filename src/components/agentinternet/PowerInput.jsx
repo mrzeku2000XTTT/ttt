@@ -30,6 +30,8 @@ export default function PowerInput({ onSubmit }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [phase, setPhase] = useState("typing"); // typing | holding | erasing
   const [focused, setFocused] = useState(false);
+  const [caretReady, setCaretReady] = useState(false);
+  const caretTimer = useRef(null);
   const inputRef = useRef(null);
 
   const current = POWERS[activeIdx];
@@ -59,14 +61,20 @@ export default function PowerInput({ onSubmit }) {
 
   const handleFocus = () => {
     setFocused(true);
-    // iOS Safari: the keyboard resize detaches the caret from the input.
-    // Scroll it into view so the caret stays anchored to the box.
+    // iOS Safari: the keyboard animation detaches the caret from the input,
+    // drawing it outside the box for a moment. Hide the native caret until
+    // the layout settles, then reveal it in place.
+    setCaretReady(false);
+    clearTimeout(caretTimer.current);
+    caretTimer.current = setTimeout(() => setCaretReady(true), 600);
     setTimeout(() => {
       inputRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
     }, 300);
   };
   const handleBlur = () => {
     setFocused(false);
+    setCaretReady(false);
+    clearTimeout(caretTimer.current);
     setPhase("typing");
     setTyped("");
   };
@@ -96,8 +104,8 @@ export default function PowerInput({ onSubmit }) {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="flex-1 h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-none caret-cyan-400"
-            style={{ height: "100%" }}
+            className="flex-1 h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-none"
+            style={{ height: "100%", caretColor: focused && !caretReady ? "transparent" : "#22d3ee" }}
           />
 
           {/* Animated placeholder — only when input empty & not focused */}
