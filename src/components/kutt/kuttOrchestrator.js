@@ -1,6 +1,8 @@
 import { base44 } from "@/api/base44Client";
 import { runEditorAgent } from "./kuttEditorAgent";
 import { applyEditorPlan, splitClip, trimClip, moveClip, deleteClip } from "./kuttEditorTools";
+import { researchGrounded } from "./kuttResearch";
+import { directVisuals } from "./kuttVisualDirector";
 
 const uid = () => `k_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -176,38 +178,41 @@ Apply CapCut-style edits: split long clips, trim dead air, move the best clip to
     return { message: result.reply };
   }
 
-  // ── PHASE 2: RESEARCH — Researcher agent ──
-  onStep?.({ label: "🔎 Researcher scanning the web…", status: "running", agent: "researcher" });
-  const research = await base44.integrations.Core.InvokeLLM({
-    model: "gemini_3_flash",
-    add_context_from_internet: true,
-    prompt: `You are a viral-content researcher. ${url ? `Browse this URL LIVE: ${url}` : `Research this topic: "${brief.topic}"`}
-Extract: what it's about, the most gripping angle, key facts/quotes/numbers, target audience, and 3 viral hook ideas.`,
-  });
-  onStep?.({ label: "🔎 Researcher scanning the web…", status: "done", agent: "researcher" });
+  // ── PHASE 2: RESEARCH — real scrape + live web + fact-check ──
+  const { scraped, facts, groundingBlock } = await researchGrounded({ url, topic: brief.topic, onStep });
 
   // ── PHASE 3: SCRIPT — Scriptwriter agent ──
   const sceneCount = Math.min(Math.max(brief.scene_count || 5, 3), 6);
   onStep?.({ label: "📝 Scriptwriter drafting scenes…", status: "running", agent: "scriptwriter" });
   const script = await base44.integrations.Core.InvokeLLM({
-    prompt: `You are a professional scriptwriter agent working under the KUTT Director.
+    prompt: `You are a professional scriptwriter agent working under the KUTT Director. You are writing about a REAL product — accuracy outranks flair.
 
-RESEARCH:
-${typeof research === "string" ? research : JSON.stringify(research)}
+${groundingBlock}
+
+HOOK OPTIONS THAT ARE ALREADY FACT-SAFE: ${(facts.hooks || []).join(" | ")}
 
 DIRECTOR'S BRIEF: ${brief.enhanced_brief}
 CONSISTENCY: ${brief.consistency_mode}
-TOPIC: ${brief.topic}
+TOPIC: ${brief.topic}${scraped ? `\nREAL NAME: ${scraped.name}` : ""}
 
-Write ${sceneCount} scenes (2-6s each). Each scene's visual_prompt must be rich and cinematic.
+Write ${sceneCount} scenes (2-6s each). Every voiceover line and caption must be traceable to a VERIFIED fact — if it isn't factual, make it visual/emotional instead of inventing a claim. Each scene's visual_prompt must be rich and cinematic.
 ${brief.consistency_mode === "strict" ? "ALL scenes MUST be visually consistent — same art direction, same subject type, same color palette." : "Some variation between scenes is OK — different angles/types within the topic."}
 Set media="video" for 1-2 key scenes (hook + climax, duration 4/6/8), media="image" for the rest.`,
     response_json_schema: SCRIPT_SCHEMA,
   });
   onStep?.({ label: "📝 Scriptwriter drafting scenes…", status: "done", agent: "scriptwriter" });
 
+  // ── PHASE 3.5: VISUAL DIRECTION — no generic backgrounds ──
+  const scenes = await directVisuals({
+    scenes: (script.scenes || []).slice(0, sceneCount),
+    brief: brief.enhanced_brief,
+    topic: brief.topic,
+    visualIdentity: facts.visual_identity,
+    consistencyMode: brief.consistency_mode,
+    onStep,
+  });
+
   // ── PHASE 4: MEDIA GENERATION — parallel media agents ──
-  const scenes = (script.scenes || []).slice(0, sceneCount);
   const genLabel = `🎨 Media agents generating ${scenes.length} scenes…`;
   onStep?.({ label: genLabel, status: "running", agent: "media" });
   const generated = await Promise.all(
@@ -295,7 +300,11 @@ Set media="video" for 1-2 key scenes (hook + climax, duration 4/6/8), media="ima
   onStep?.({ label: "📊 Viral Analyst final review…", status: "done", agent: "analyst" });
 
   const hyperframeCount = allHyperframes.length;
-  const message = `## 🎬 ${script.title}\n\n**HOOK:** ${script.hook}\n\n${sceneList}\n\n---\n### 📜 Full Script\n${script.script}\n\n---\n### 📈 Viral Analysis\n${script.viral_notes}\n\n---\n### 🤖 Orchestration Summary\n- **${actualEditorCount} editor agent${actualEditorCount > 1 ? "s" : ""}** worked in parallel\n- **${hyperframeCount} text/animation hyperframe${hyperframeCount !== 1 ? "s" : ""}** added\n- **Consistency:** ${brief.consistency_mode}\n- **Topic:** ${brief.topic}\n\n✅ ${allClips.length} clips + ${hyperframeCount} hyperframes on your timeline — press play, then Export.`;
+  const factBlock = (facts.verified_facts || []).length
+    ? `\n\n---\n### 🛡️ Fact-Checked Basis${scraped ? ` — scraped ${scraped.pages.length + 1} page${scraped.pages.length ? "s" : ""} of ${scraped.name || scraped.url}` : ""}\n${facts.verified_facts.slice(0, 6).map((f) => `- ✅ ${f.claim} _(${f.source})_`).join("\n")}${(facts.unverified || []).length ? `\n\n_Excluded as unverified: ${facts.unverified.slice(0, 4).join("; ")}_` : ""}`
+    : "";
+
+  const message = `## 🎬 ${script.title}\n\n**HOOK:** ${script.hook}\n\n${sceneList}\n\n---\n### 📜 Full Script\n${script.script}${factBlock}\n\n---\n### 📈 Viral Analysis\n${script.viral_notes}\n\n---\n### 🤖 Orchestration Summary\n- **${actualEditorCount} editor agent${actualEditorCount > 1 ? "s" : ""}** worked in parallel\n- **${hyperframeCount} text/animation hyperframe${hyperframeCount !== 1 ? "s" : ""}** added\n- **Consistency:** ${brief.consistency_mode}\n- **Topic:** ${brief.topic}\n\n✅ ${allClips.length} clips + ${hyperframeCount} hyperframes on your timeline — press play, then Export.`;
 
   return { message, script };
 }
