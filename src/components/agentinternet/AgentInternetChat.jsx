@@ -14,6 +14,7 @@ import { generateWallet } from "@/lib/localKaspaWallet";
 import { tryQuickAnswer } from "@/components/agentinternet/quickAnswer";
 import { runAgent } from "@/components/agentinternet/agentRunner";
 import { instantAck } from "@/components/agentinternet/instantAck";
+import K6ixLaunchCard from "@/components/agentinternet/K6ixLaunchCard";
 import AgentStepFeed from "@/components/agentinternet/AgentStepFeed";
 
 const STORAGE_KEY = "ttt_ai_chats";
@@ -171,6 +172,8 @@ function OutputCard({ output, image, generating, genFailed, onOpen }) {
   const { type, title, detail, meta } = output;
 
   if (type === "wallet") return <WalletCard output={output} />;
+  // video/motion never renders here — it hands off to the K6ix launcher in-chat
+  if (type === "k6ix") return <K6ixLaunchCard output={output} />;
 
   const openable = image || meta?.url;
 

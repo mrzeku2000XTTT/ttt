@@ -70,7 +70,8 @@ ${TOOL_MENU}
 Rules:
 - Pick only the tools the request genuinely needs, in a sensible order (capture/research first, prompt_lab before any render, storyboard before video for anything narrative).
 - Always pass concrete args. If the user named a website, pass its url to brand_capture.
-- A "launch video" / "promo" means: brand_capture → deep_research → storyboard → prompt_lab → generate_image (pass "prompts": an array of 3 background plate / key frame prompts, one per major beat) → generate_video.
+- A "launch video" / "promo" means: brand_capture → deep_research → storyboard → prompt_lab → generate_image (pass "prompts": an array of 3 background plate / key frame prompts, one per major beat) → motion_launcher.
+- NEVER try to render video here. Every video/motion request ends with motion_launcher, which hands the brief to the K6ix app so the user generates it inside the chat.
 - Set "question" ONLY if a required detail is truly missing and unguessable. Otherwise make a confident choice and proceed.
 - Labels are what the user reads live, so make them specific and human.
 
@@ -117,7 +118,7 @@ ${steps.map((s) => `- ${s.app} [${s.status}]: ${s.result || ""}`).join("\n")}
 Brand captured: ${JSON.stringify(ctx.brand || {}).slice(0, 1200)}
 Beats: ${JSON.stringify(ctx.beats || []).slice(0, 1200)}
 Final prompt used: ${ctx.prompt || "none"}
-Rendered video: ${ctx.video ? "yes" : "no"} · rendered still: ${ctx.image ? "yes" : "no"}
+Motion brief handed to K6ix: ${ctx.k6ix ? "yes — the user opens the K6ix motion launcher in this chat to generate the clip" : "no"} · rendered still: ${ctx.image ? "yes" : "no"}
 
 Report the actual deliverable. "points" = the beat sheet if there is one, else the key deliverables. Be specific — use the brand's real name and details. If a step failed, say so plainly. Add next_question only if there's an obvious next move worth offering.`,
     response_json_schema: FINAL_SCHEMA,
@@ -125,7 +126,7 @@ Report the actual deliverable. "points" = the beat sheet if there is one, else t
   });
   const fin = typeof finalRes === "string" ? JSON.parse(finalRes) : finalRes;
 
-  const type = ctx.video ? "video" : ctx.image ? "image" : (fin.points || []).length ? "research" : "text";
+  const type = ctx.k6ix ? "k6ix" : ctx.image ? "image" : (fin.points || []).length ? "research" : "text";
   return {
     skill: fin.skill || "KAI · multi-app run",
     plan: [],
@@ -138,8 +139,8 @@ Report the actual deliverable. "points" = the beat sheet if there is one, else t
       title: fin.title,
       detail: fin.detail,
       meta: {
-        ...(ctx.video ? { url: ctx.video, duration: `0:0${ctx.videoSpec?.duration || 6}` } : {}),
-        ...(ctx.prompt ? { prompt: ctx.prompt } : {}),
+        ...(ctx.k6ix || {}),
+        ...(ctx.prompt && !ctx.k6ix ? { prompt: ctx.prompt } : {}),
         ...((fin.points || []).length ? { points: fin.points } : {}),
       },
     },

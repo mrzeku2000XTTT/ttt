@@ -117,9 +117,9 @@ Each beat: shot (what the camera sees) + copy (on-screen text, max 6 words).`,
     },
   },
 
-  generate_video: {
-    app: "Motion · video render",
-    desc: "Render the actual video clip (silent unless asked). args: { prompt, aspect_ratio: '9:16'|'16:9', duration: 4|6|8 }",
+  motion_launcher: {
+    app: "K6ix · motion launcher",
+    desc: "Hand the finished motion brief to the K6ix motion launcher so the user generates the video there, in chat. Use this for every video / launch video / promo — never render video here. args: { prompt }",
     run: async (args, ctx) => {
       const spec = ctx.spec || {};
       const plates = (ctx.images || []).map((i) => i.prompt).slice(0, 3).join(" | ");
@@ -127,17 +127,14 @@ Each beat: shot (what the camera sees) + copy (on-screen text, max 6 words).`,
         ? "\nEditing: punchy zoom cuts — hard punch-in on each beat, escalating scale, no dissolves."
         : spec.cuts ? `\nEditing: ${spec.cuts}.` : "";
       const bg = spec.background === "image" ? "\nBackground: hold the static rendered plate, camera move only." : "";
-      const duration = [4, 6, 8].includes(spec.duration || args.duration) ? (spec.duration || args.duration) : 6;
-      const aspect = (spec.aspect_ratio || args.aspect_ratio) === "16:9" ? "16:9" : "9:16";
-      const r = await base44.integrations.Core.GenerateVideo({
-        prompt: `${args.prompt || ctx.prompt}${plates ? `\nBackground plates already rendered for this piece (match their look exactly): ${plates}` : ""}${bg}${cuts}`,
-        duration,
-        aspect_ratio: aspect,
-        generate_audio: false,
-      });
-      ctx.videoSpec = { duration, aspect };
-      ctx.video = r?.url;
-      return ctx.video ? "clip rendered" : "render failed";
+      ctx.k6ix = {
+        prompt: `${args.prompt || ctx.prompt || ""}${plates ? `\nBackground plates already rendered for this piece (match their look exactly): ${plates}` : ""}${bg}${cuts}`.trim(),
+        aspect_ratio: spec.aspect_ratio || "9:16",
+        duration: spec.duration || 6,
+        background: spec.background || "video",
+        cuts: spec.cuts || "zoom cuts",
+      };
+      return "brief handed to K6ix — motion launcher ready in chat";
     },
   },
 };
