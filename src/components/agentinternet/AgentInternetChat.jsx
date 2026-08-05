@@ -57,7 +57,10 @@ ENABLED APPS: ${apps.join(", ") || "none"}
 MONEY MODE: ${moneyMode}
 AUTONOMY: ${autonomy}
 
-Respond as JSON matching the schema. Plan = ordered sub-agent calls (2-5 steps). Output = a concrete, simulated-but-specific result:
+Respond as JSON matching the schema.
+- If the user is asking a QUESTION or chatting (not commanding an app task), reply FAST: set plan = [] and output.type = "text", output.title = a short 2-4 word label, output.detail = a direct, concise, factual, conversational answer (1-3 sentences). Do NOT invent sub-agent steps or fake transactions for questions.
+- If the user is commanding a real app task, set plan = ordered sub-agent calls (1-4 steps, only as many as needed) and produce a concrete, specific result:
+Output = a concrete, simulated-but-specific result:
 - payment: meta = { amount, address, txid, status }
 - escrow: meta = { amount, address, status }
 - mint: meta = { token_id, address, status }
