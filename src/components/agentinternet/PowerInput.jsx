@@ -75,8 +75,8 @@ export default function PowerInput({ onSubmit }) {
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-stretch gap-2 px-4 h-14 sm:h-16 rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl focus-within:border-cyan-400/60 focus-within:shadow-[0_0_40px_rgba(6,182,212,0.15)] transition-all">
-          <span className="text-cyan-400 font-mono text-sm sm:text-base shrink-0 flex items-center">›</span>
+        <div className="relative flex items-center gap-2 px-4 h-14 sm:h-16 rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl focus-within:border-cyan-400/60 focus-within:shadow-[0_0_40px_rgba(6,182,212,0.15)] transition-all">
+          <span className="text-cyan-400 font-mono text-sm sm:text-base shrink-0">›</span>
 
           <input
             ref={inputRef}
@@ -89,20 +89,25 @@ export default function PowerInput({ onSubmit }) {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="flex-1 w-full h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-tight caret-cyan-400"
+            className="flex-1 h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-none caret-cyan-400"
           />
 
           {/* Animated placeholder — only when input empty & not focused */}
           {!focused && userValue.length === 0 && (
             <span className="absolute left-11 right-16 top-1/2 -translate-y-1/2 text-white/55 font-mono text-sm sm:text-base leading-none truncate pointer-events-none z-0 flex items-center">
               <span className="truncate">{typed}</span>
+              <motion.span
+                animate={{ opacity: [1, 0] }}
+                transition={{ duration: 0.6, repeat: Infinity }}
+                className="inline-block w-[2px] h-[1.05em] bg-cyan-400 ml-0.5 shrink-0"
+              />
             </span>
           )}
 
           <button
             type="submit"
             disabled={!userValue.trim()}
-            className="relative z-10 shrink-0 self-center flex items-center gap-1.5 px-3 h-9 rounded-xl bg-cyan-400 text-black text-[10px] font-bold tracking-widest uppercase disabled:opacity-30 enabled:hover:bg-cyan-300 transition-colors"
+            className="relative z-10 shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-xl bg-cyan-400 text-black text-[10px] font-bold tracking-widest uppercase disabled:opacity-30 enabled:hover:bg-cyan-300 transition-colors"
           >
             <CornerDownLeft className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Run</span>
