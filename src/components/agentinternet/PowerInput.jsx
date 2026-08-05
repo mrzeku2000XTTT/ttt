@@ -57,7 +57,14 @@ export default function PowerInput({ onSubmit }) {
     return () => clearTimeout(t);
   }, [typed, phase, activeIdx, focused, current.text]);
 
-  const handleFocus = () => setFocused(true);
+  const handleFocus = () => {
+    setFocused(true);
+    // iOS Safari: the keyboard resize detaches the caret from the input.
+    // Scroll it into view so the caret stays anchored to the box.
+    setTimeout(() => {
+      inputRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 300);
+  };
   const handleBlur = () => {
     setFocused(false);
     setPhase("typing");
@@ -90,6 +97,7 @@ export default function PowerInput({ onSubmit }) {
             autoCorrect="off"
             spellCheck={false}
             className="flex-1 h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-none caret-cyan-400"
+            style={{ height: "100%" }}
           />
 
           {/* Animated placeholder — only when input empty & not focused */}
