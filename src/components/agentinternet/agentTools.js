@@ -10,8 +10,9 @@ export const TOOLS = {
     app: "MetaMimic · brand capture",
     desc: "Scrape a website for its real name, tagline, description, OG image and inner pages. args: { url }",
     run: async (args, ctx) => {
-      const res = await base44.functions.brandSiteScraper({ url: args.url });
+      const res = await base44.functions.invoke("brandSiteScraper", { url: args.url });
       const d = res?.data || res;
+      if (!d || d.error) throw new Error(d?.error || "could not read that site");
       ctx.brand = {
         url: d.url,
         name: d.site_name || d.title,
@@ -43,7 +44,7 @@ export const TOOLS = {
     app: "Kaspa Oracle · live price",
     desc: "Get the live KAS price and 24h change from our own price oracle. args: {}",
     run: async (_args, ctx) => {
-      const res = await base44.functions.getKaspaPrice({});
+      const res = await base44.functions.invoke("getKaspaPrice", {});
       const d = res?.data || res;
       ctx.price = d;
       return `KAS $${d.price} (${d.change24h > 0 ? "+" : ""}${Number(d.change24h || 0).toFixed(2)}% 24h, ${d.source})`;
@@ -118,15 +119,23 @@ Each beat: shot (what the camera sees) + copy (on-screen text, max 6 words).`,
 
   generate_video: {
     app: "Motion · video render",
-    desc: "Render the actual video clip (6s, silent unless asked). args: { prompt, aspect_ratio }",
+    desc: "Render the actual video clip (silent unless asked). args: { prompt, aspect_ratio: '9:16'|'16:9', duration: 4|6|8 }",
     run: async (args, ctx) => {
+      const spec = ctx.spec || {};
       const plates = (ctx.images || []).map((i) => i.prompt).slice(0, 3).join(" | ");
+      const cuts = spec.cuts === "zoom cuts"
+        ? "\nEditing: punchy zoom cuts — hard punch-in on each beat, escalating scale, no dissolves."
+        : spec.cuts ? `\nEditing: ${spec.cuts}.` : "";
+      const bg = spec.background === "image" ? "\nBackground: hold the static rendered plate, camera move only." : "";
+      const duration = [4, 6, 8].includes(spec.duration || args.duration) ? (spec.duration || args.duration) : 6;
+      const aspect = (spec.aspect_ratio || args.aspect_ratio) === "16:9" ? "16:9" : "9:16";
       const r = await base44.integrations.Core.GenerateVideo({
-        prompt: `${args.prompt || ctx.prompt}${plates ? `\nBackground plates already rendered for this piece (match their look exactly): ${plates}` : ""}`,
-        duration: 6,
-        aspect_ratio: args.aspect_ratio === "9:16" ? "9:16" : "16:9",
+        prompt: `${args.prompt || ctx.prompt}${plates ? `\nBackground plates already rendered for this piece (match their look exactly): ${plates}` : ""}${bg}${cuts}`,
+        duration,
+        aspect_ratio: aspect,
         generate_audio: false,
       });
+      ctx.videoSpec = { duration, aspect };
       ctx.video = r?.url;
       return ctx.video ? "clip rendered" : "render failed";
     },

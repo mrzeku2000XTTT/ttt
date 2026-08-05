@@ -1,5 +1,6 @@
 import { base44 } from "@/api/base44Client";
 import { TOOLS, TOOL_MENU } from "@/components/agentinternet/agentTools";
+import { isVideoRequest, resolveSpec, missingSpec, specQuestion } from "@/components/agentinternet/videoSpec";
 
 const PLAN_SCHEMA = {
   type: "object",
@@ -41,6 +42,20 @@ const FINAL_SCHEMA = {
  */
 export async function runAgent({ text, history, onStep }) {
   const ctx = {};
+
+  // Never burn a render on guesses — settle size, length, background and cuts first.
+  if (isVideoRequest(text)) {
+    const spec = resolveSpec(text, history);
+    const missing = missingSpec(spec);
+    if (missing.length) {
+      return {
+        skill: "Motion · spec check",
+        plan: [],
+        output: { type: "text", title: "Spec check", detail: specQuestion(missing) },
+      };
+    }
+    ctx.spec = spec;
+  }
   const convo = (history || [])
     .slice(-6)
     .map((m) => (m.role === "user" ? `User: ${m.text}` : `Assistant: ${m.output?.title || ""}`))
@@ -59,7 +74,7 @@ Rules:
 - Set "question" ONLY if a required detail is truly missing and unguessable. Otherwise make a confident choice and proceed.
 - Labels are what the user reads live, so make them specific and human.
 
-${convo ? `Conversation so far:\n${convo}\n` : ""}Request: "${text}"`,
+${ctx.spec ? `Locked video spec (obey exactly — pass these to generate_video as aspect_ratio and duration, and write the cut style into every prompt): ${JSON.stringify(ctx.spec)}\n` : ""}${convo ? `Conversation so far:\n${convo}\n` : ""}Request: "${text}"`,
     response_json_schema: PLAN_SCHEMA,
     model: "gemini_3_flash",
   });
@@ -123,7 +138,7 @@ Report the actual deliverable. "points" = the beat sheet if there is one, else t
       title: fin.title,
       detail: fin.detail,
       meta: {
-        ...(ctx.video ? { url: ctx.video, duration: "0:06" } : {}),
+        ...(ctx.video ? { url: ctx.video, duration: `0:0${ctx.videoSpec?.duration || 6}` } : {}),
         ...(ctx.prompt ? { prompt: ctx.prompt } : {}),
         ...((fin.points || []).length ? { points: fin.points } : {}),
       },

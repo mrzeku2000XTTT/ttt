@@ -29,7 +29,7 @@ const SCHEMA = {
 const PRICE_Q = /\b(kas|kaspa)\b[^?]*\b(price|worth|cost|trading|value|usd)\b|\b(price|worth|value)\b[^?]*\b(kas|kaspa)\b/i;
 
 async function livePriceAnswer() {
-  const res = await base44.functions.getKaspaPrice({});
+  const res = await base44.functions.invoke("getKaspaPrice", {});
   const d = res?.data || res;
   if (!d?.price) return null;
   const price = Number(d.price);
