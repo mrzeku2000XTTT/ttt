@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Download, Loader2, Wand2, Brain } from "lucide-react";
+import { Send, Sparkles, Download, Loader2, Wand2, Brain, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import MemoryPanel from "@/components/hunterbeat/MemoryPanel";
 import { useHunterBeatMemory } from "@/components/hunterbeat/useHunterBeatMemory";
@@ -25,6 +26,7 @@ const PROMPT_SCHEMA = {
 };
 
 export default function HunterBeat() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -135,6 +137,13 @@ export default function HunterBeat() {
           <span className="w-3 h-3 rounded-full bg-[#28c840]" />
         </div>
         <div className="flex-1 text-center text-[13px] font-semibold text-zinc-500">HunterBeat</div>
+        <button
+          onClick={() => navigate("/AppStoreV2")}
+          className="flex items-center justify-center w-7 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors"
+          title="Close & back to App Store"
+        >
+          <X className="w-4 h-4" />
+        </button>
         <button
           onClick={() => setMemoryOpen(true)}
           className="flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-[11px] font-semibold transition-colors"
