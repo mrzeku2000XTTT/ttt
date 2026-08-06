@@ -145,6 +145,18 @@ export default function HunterBeat() {
         <p className="text-zinc-500 text-sm mt-2 max-w-md mx-auto">
           Describe a motion graphic. HunterBeat crafts a refined Apple / macOS aesthetic prompt and renders a preview you can save.
         </p>
+        <button
+          onClick={() => setMemoryOpen(true)}
+          className="mt-4 inline-flex items-center gap-2 px-5 h-10 rounded-full bg-zinc-900 text-white text-[13px] font-semibold hover:bg-zinc-800 transition-colors"
+        >
+          <Brain className="w-4 h-4" />
+          Skills & Memory
+          {(skills.length + notes.length) > 0 && (
+            <span className="ml-1 min-w-5 h-5 px-1.5 rounded-full bg-white/20 text-[11px] font-bold flex items-center justify-center">
+              {skills.length + notes.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Suggestions */}
