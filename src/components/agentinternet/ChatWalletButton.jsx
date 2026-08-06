@@ -57,7 +57,7 @@ export default function ChatWalletButton() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ type: "spring", damping: 26, stiffness: 320 }}
-              className="absolute top-12 right-3 z-[111] w-[280px] rounded-2xl border border-white/10 bg-zinc-950/95 backdrop-blur-xl shadow-2xl overflow-hidden"
+              className="fixed top-14 right-3 z-[111] w-[calc(100vw-1.5rem)] max-w-[280px] max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-2xl border border-white/10 bg-zinc-950/95 backdrop-blur-xl shadow-2xl"
             >
               <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/10">
                 <Wallet className="w-3.5 h-3.5 text-cyan-300" />

@@ -75,11 +75,11 @@ export default function AgentWalletLinkButton({ compact = false, onLinked }) {
               className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[10000]"
             />
             <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.96 }}
-              transition={{ type: "spring", damping: 26, stiffness: 320 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[10001] w-[calc(100vw-2rem)] max-w-[360px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/15 bg-zinc-950/95 backdrop-blur-xl shadow-2xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[10001] mx-auto w-auto max-w-[360px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/15 bg-zinc-950/95 backdrop-blur-xl shadow-2xl"
             >
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
                 <Shield className="w-4 h-4 text-cyan-300" />
