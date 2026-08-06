@@ -86,23 +86,34 @@ export default function HunterBeat() {
 
   const renderPreview = async (msgId) => {
     const msg = messages.find((m) => m.id === msgId);
-    if (!msg || msg.rendering || msg.imageUrl) return;
+    if (!msg || msg.rendering || msg.videoUrl) return;
 
-    setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: true } : x)));
+    setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: true, renderProgress: "Directing keyframes…" } : x)));
     try {
-      const res = await base44.integrations.Core.GenerateImage({
-        prompt: `${msg.text}. NO TEXT, no words, no letters. Clean Apple macOS motion-graphic still frame.`,
+      const videoPrompt =
+        `${msg.text}. ` +
+        `Smooth, fluid Apple-style motion graphic animation. ` +
+        `Animate with natural easing: elements slide, scale, and fade with spring physics. ` +
+        `Frosted glass, soft depth, neutral palette with one accent. ` +
+        `NO TEXT, no words, no letters, no UI labels. ` +
+        `Clean macOS aesthetic, 6 seconds, loopable.`;
+      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, renderProgress: "Rendering frames…" } : x)));
+      const res = await base44.integrations.Core.GenerateVideo({
+        prompt: videoPrompt,
+        duration: 6,
+        aspect_ratio: "16:9",
+        generate_audio: false,
       });
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, imageUrl: res?.url } : x)));
+      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, videoUrl: res?.url, renderProgress: undefined } : x)));
     } catch (e) {
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, renderError: true } : x)));
+      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, renderError: true, renderProgress: undefined } : x)));
     }
   };
 
-  const downloadImage = (url, title) => {
+  const downloadVideo = (url, title) => {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${(title || "hunterbeat").replace(/\s+/g, "-").toLowerCase()}.png`;
+    a.download = `${(title || "hunterbeat").replace(/\s+/g, "-").toLowerCase()}.mp4`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -204,22 +215,33 @@ export default function HunterBeat() {
 
                 {/* Preview */}
                 <AnimatePresence>
-                  {(msg.rendering || msg.imageUrl || msg.renderError) && (
+                  {(msg.rendering || msg.videoUrl || msg.renderError) && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       className="px-4 pb-4"
                     >
                       {msg.rendering && (
-                        <div className="aspect-video rounded-xl bg-zinc-100 flex items-center justify-center">
+                        <div className="aspect-video rounded-xl bg-zinc-100 flex flex-col items-center justify-center gap-2">
                           <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+                          {msg.renderProgress && (
+                            <span className="text-[11px] text-zinc-400">{msg.renderProgress}</span>
+                          )}
                         </div>
                       )}
-                      {msg.imageUrl && (
+                      {msg.videoUrl && (
                         <div className="relative group">
-                          <img src={msg.imageUrl} alt={msg.title} className="w-full rounded-xl" />
+                          <video
+                            src={msg.videoUrl}
+                            controls
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full rounded-xl bg-black"
+                          />
                           <button
-                            onClick={() => downloadImage(msg.imageUrl, msg.title)}
+                            onClick={() => downloadVideo(msg.videoUrl, msg.title)}
                             className="absolute bottom-2 right-2 flex items-center gap-1.5 px-3 h-8 rounded-full bg-black/70 backdrop-blur text-white text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Download className="w-3.5 h-3.5" /> Save
@@ -228,7 +250,7 @@ export default function HunterBeat() {
                       )}
                       {msg.renderError && (
                         <div className="aspect-video rounded-xl bg-red-50 flex items-center justify-center text-[12px] text-red-500">
-                          Preview failed. Try again.
+                          Render failed. Try again.
                         </div>
                       )}
                     </motion.div>
@@ -236,13 +258,13 @@ export default function HunterBeat() {
                 </AnimatePresence>
 
                 {/* Actions */}
-                {!msg.error && !msg.imageUrl && !msg.rendering && (
+                {!msg.error && !msg.videoUrl && !msg.rendering && (
                   <div className="px-4 pb-4">
                     <button
                       onClick={() => renderPreview(msg.id)}
                       className="flex items-center gap-1.5 px-4 h-9 rounded-full bg-zinc-900 text-white text-[12px] font-semibold hover:bg-zinc-800 transition-colors"
                     >
-                      <Sparkles className="w-3.5 h-3.5" /> Render preview
+                      <Sparkles className="w-3.5 h-3.5" /> Generate 6s video
                     </button>
                   </div>
                 )}
