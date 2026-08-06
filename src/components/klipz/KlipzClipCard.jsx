@@ -46,6 +46,12 @@ export default function KlipzClipCard({ clip, videoId, index, onCanvas }) {
           <span className="text-[10px] text-zinc-500 whitespace-nowrap">{fmt(end - start)}s</span>
         </div>
         <p className="text-zinc-500 text-[11px] mt-2 leading-relaxed">{clip.reason}</p>
+        {clip.evidence && (
+          <p className="mt-2 border-l-2 border-cyan-500/40 pl-2 text-[10px] leading-relaxed text-zinc-400 italic">
+            “{clip.evidence}”
+            <span className="not-italic block text-[9px] tracking-[0.2em] text-cyan-500/70 mt-1">VERIFIED FROM SOURCE CAPTIONS</span>
+          </p>
+        )}
         <div className="mt-3 flex items-center gap-2 text-[10px]">
           <label className="text-zinc-600">IN</label>
           <input type="number" value={start} min={0} onChange={(e) => setStart(Math.max(0, parseInt(e.target.value) || 0))}

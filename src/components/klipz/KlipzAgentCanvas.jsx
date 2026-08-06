@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Bot, Loader2, Download, RotateCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { recordSegment } from "./klipzRecorder";
 
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function KlipzAgentCanvas({ clip, videoId, onClose }) {
   const [log, setLog] = useState([]);
@@ -12,6 +12,8 @@ export default function KlipzAgentCanvas({ clip, videoId, onClose }) {
   const [start, setStart] = useState(clip.start_s);
   const [end, setEnd] = useState(clip.end_s);
   const [renderKey, setRenderKey] = useState(0);
+  const [cutting, setCutting] = useState(false);
+  const [cutPct, setCutPct] = useState(0);
   const logEndRef = useRef(null);
   const ranRef = useRef(false);
 
@@ -26,33 +28,48 @@ export default function KlipzAgentCanvas({ clip, videoId, onClose }) {
     ranRef.current = true;
     (async () => {
       say(`Taking "${clip.title}" into the canvas…`);
-      await sleep(600);
       say("Fetching MP4 source from the video…");
       try {
         const res = await base44.functions.invoke("klipzClipMp4", { videoId });
         say(`Source locked · ${res.data.quality || "HD"} MP4`, "ok");
-        await sleep(500);
-        say(`Cutting ${fmt(clip.start_s)} → ${fmt(clip.end_s)}…`);
-        await sleep(700);
-        say("Rendering your clip on the canvas…");
-        await sleep(600);
         setMp4(res.data);
         setStatus("ready");
-        say("Done. Adjust IN/OUT below and I'll re-render instantly.", "ok");
+        say(`Loaded at ${fmt(clip.start_s)} → ${fmt(clip.end_s)}. Hit CUT & DOWNLOAD for a real MP4 of just this segment.`, "ok");
       } catch (err) {
         say(err.response?.data?.error || "MP4 engine unavailable", "warn");
-        await sleep(400);
         say("Falling back to segment preview — your cut times still apply.", "warn");
         setStatus("fallback");
       }
     })();
   }, []);
 
-  const reRender = async () => {
-    say(`Re-cutting ${fmt(start)} → ${fmt(end)}…`);
-    await sleep(500);
-    say("Re-rendered.", "ok");
+  const reRender = () => {
+    say(`Preview set to ${fmt(start)} → ${fmt(end)}.`);
     setRenderKey((k) => k + 1);
+  };
+
+  const cutAndDownload = async () => {
+    if (!mp4?.url || cutting) return;
+    setCutting(true);
+    setCutPct(0);
+    say(`Cutting ${fmt(start)} → ${fmt(end)} in real time (${Math.max(0, end - start)}s)…`);
+    try {
+      const out = await recordSegment({
+        url: mp4.url,
+        start,
+        end,
+        onProgress: (p) => setCutPct(Math.round(p * 100)),
+        onLog: say,
+      });
+      const a = document.createElement("a");
+      a.href = out.url;
+      a.download = `${clip.title.replace(/[^\w\s-]/g, "").slice(0, 60) || "klip"}.${out.ext}`;
+      a.click();
+      say(`Clip cut and downloaded · ${out.ext.toUpperCase()} · ${Math.round(out.duration)}s`, "ok");
+    } catch (err) {
+      say(err.message || "Cut failed", "warn");
+    }
+    setCutting(false);
   };
 
   const clampToSegment = (e) => {
@@ -105,6 +122,10 @@ export default function KlipzAgentCanvas({ clip, videoId, onClose }) {
                   autoPlay
                   onLoadedMetadata={(e) => { e.target.currentTime = start; }}
                   onTimeUpdate={clampToSegment}
+                  onError={() => {
+                    say("Direct MP4 stream refused by the source — switching to embedded preview.", "warn");
+                    setStatus("fallback");
+                  }}
                 />
               )}
               {status === "fallback" && (
@@ -137,10 +158,11 @@ export default function KlipzAgentCanvas({ clip, videoId, onClose }) {
                   <RotateCw className="w-3 h-3" /> RE-RENDER
                 </button>
                 {status === "ready" && mp4 && (
-                  <a href={mp4.url} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 transition-colors tracking-widest">
-                    <Download className="w-3 h-3" /> MP4
-                  </a>
+                  <button onClick={cutAndDownload} disabled={cutting}
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-40 transition-colors tracking-widest">
+                    {cutting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                    {cutting ? `CUTTING ${cutPct}%` : "CUT & DOWNLOAD"}
+                  </button>
                 )}
               </div>
             </div>

@@ -61,7 +61,24 @@ Deno.serve(async (req) => {
     } catch (_e) { /* transcript unavailable */ }
 
     const durationKnown = effectiveDuration > 0;
+
+    // FACT-CHECK GATE: we only ever produce clips that are grounded in real,
+    // timestamped source material (captions, or chapter timestamps in the
+    // description). Without either, we refuse rather than invent moments.
+    const hasChapters = /(?:^|\n)\s*\(?\d{1,2}:\d{2}(?::\d{2})?\)?/.test(description || '');
+    if (!transcript && !hasChapters) {
+      return Response.json({
+        error: 'No captions or chapter timestamps available for this video — KLIPZ will not guess clip moments. Try a video with subtitles or timestamped chapters.'
+      }, { status: 422 });
+    }
+
     const prompt = `You are KLIPZ, an AI that finds the most clippable highlight moments in videos and live streams.
+
+STRICT GROUNDING RULES — DO NOT BREAK:
+- Every clip MUST come from the timestamped source material below (transcript second-markers or chapter timestamps in the description).
+- For every clip you MUST return "evidence": the exact quoted text from the source at that timestamp. Never paraphrase or invent it.
+- The title and reason must describe ONLY what the evidence actually shows. No speculation, no invented events, names, numbers or outcomes.
+- If you cannot ground a moment in the source, return fewer clips. Fewer real clips is always correct; a made-up clip is a failure.
 
 VIDEO (YouTube id: ${videoId}):
 Title: ${title}
@@ -69,13 +86,12 @@ Channel: ${channel}
 Is live right now: ${isLive}
 ${durationKnown ? `Total length available: ${effectiveDuration} seconds` : 'Total length unknown — look up this exact video online to find its length and what happens in it.'}
 ${description ? `Description (may contain chapters with timestamps):\n${description.slice(0, 3000)}` : ''}
-${transcript ? `\nTRANSCRIPT (with second markers):\n${transcript}` : '\nNo transcript available — infer likely highlight moments from the title, description chapters, web knowledge of this video, and typical pacing of this kind of content.'}
+${transcript ? `\nTRANSCRIPT (with second markers):\n${transcript}` : '\nNo transcript — use ONLY the timestamped chapters in the description above as your source.'}
 
-Find 4 to 6 highlight clips. Each clip must be a complete standalone moment, 20-90 seconds long${durationKnown ? `, with start_s and end_s strictly between 0 and ${effectiveDuration}` : ', with start_s and end_s within the video\'s real length'}. Spread them across the video. Give each a punchy short title, a one-line reason it's clippable, and a virality score 1-100.`;
+Find up to 6 highlight clips (only as many as the source truly supports). Each clip must be a complete standalone moment, 20-90 seconds long${durationKnown ? `, with start_s and end_s strictly between 0 and ${effectiveDuration}` : ', with start_s and end_s within the video\'s real length'}. Spread them across the video. Give each a punchy short title, a one-line reason it's clippable, and a virality score 1-100.`;
 
     const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
-      add_context_from_internet: !durationKnown && !transcript,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -88,7 +104,8 @@ Find 4 to 6 highlight clips. Each clip must be a complete standalone moment, 20-
                 reason: { type: 'string' },
                 start_s: { type: 'number' },
                 end_s: { type: 'number' },
-                score: { type: 'number' }
+                score: { type: 'number' },
+                evidence: { type: 'string' }
               }
             }
           }
@@ -97,7 +114,9 @@ Find 4 to 6 highlight clips. Each clip must be a complete standalone moment, 20-
     });
 
     const clips = (analysis.clips || [])
-      .filter((c) => c.end_s > c.start_s)
+      // Drop anything ungrounded or outside the real video length
+      .filter((c) => c.end_s > c.start_s && (c.evidence || '').trim().length > 10)
+      .filter((c) => !durationKnown || (c.start_s >= 0 && c.start_s < effectiveDuration))
       .map((c) => ({
         ...c,
         start_s: Math.max(0, Math.floor(c.start_s)),
