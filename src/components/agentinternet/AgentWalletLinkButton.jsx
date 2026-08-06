@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link2, Unlink, Shield, Wallet, Check, X } from "lucide-react";
 import {
@@ -64,20 +65,21 @@ export default function AgentWalletLinkButton({ compact = false, onLinked }) {
         <Link2 className="w-3 h-3" /> Link to AgentInternet
       </button>
 
-      <AnimatePresence>
-        {showConsent && (
+      {typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          {showConsent && (
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowConsent(false)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[120]"
+              className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[10000]"
             />
             <motion.div
               initial={{ opacity: 0, y: 12, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.96 }}
               transition={{ type: "spring", damping: 26, stiffness: 320 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[121] w-[340px] max-w-[92vw] rounded-2xl border border-cyan-400/30 bg-zinc-950/95 backdrop-blur-xl shadow-2xl overflow-hidden"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[10001] w-[calc(100vw-2rem)] max-w-[360px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/15 bg-zinc-950/95 backdrop-blur-xl shadow-2xl"
             >
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
                 <Shield className="w-4 h-4 text-cyan-300" />
@@ -128,8 +130,10 @@ export default function AgentWalletLinkButton({ compact = false, onLinked }) {
               </div>
             </motion.div>
           </>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }
