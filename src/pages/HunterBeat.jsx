@@ -132,18 +132,15 @@ export default function HunterBeat() {
       {/* macOS window chrome */}
       <div className="flex items-center gap-2 px-4 h-11 bg-white/70 backdrop-blur-xl border-b border-zinc-200/60">
         <div className="flex gap-2">
-          <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+          <button
+            onClick={() => navigate("/AppStoreV2")}
+            className="w-3 h-3 rounded-full bg-[#ff5f57] hover:opacity-80 transition-opacity"
+            title="Close & back to App Store"
+          />
           <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
           <span className="w-3 h-3 rounded-full bg-[#28c840]" />
         </div>
         <div className="flex-1 text-center text-[13px] font-semibold text-zinc-500">HunterBeat</div>
-        <button
-          onClick={() => navigate("/AppStoreV2")}
-          className="flex items-center justify-center w-7 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors"
-          title="Close & back to App Store"
-        >
-          <X className="w-4 h-4" />
-        </button>
         <button
           onClick={() => setMemoryOpen(true)}
           className="flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-[11px] font-semibold transition-colors"
