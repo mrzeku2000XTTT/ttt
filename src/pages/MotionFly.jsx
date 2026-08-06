@@ -502,7 +502,9 @@ bgColor should match the mood/theme of the scene. Make 3-8 layers, cinematic App
         <div className={`lg:flex flex-col ${mobileTab === "preview" ? "hidden lg:flex" : "flex"}`}
           style={{ width: "100%" }}>
           <div className="flex flex-col h-full lg:w-[380px] lg:min-w-[340px]" style={{ background: "#1a1a21" }}>
-            <div className={`${mobileTab === "layers" ? "hidden lg:block" : "block"} flex-1 overflow-hidden flex flex-col min-h-0`} style={{ background: "#18181e" }}>
+            {/* Timeline — fixed top portion */}
+            <div className={`${mobileTab === "layers" ? "hidden lg:flex" : "flex"} flex-col flex-shrink-0 min-h-0`}
+              style={{ background: "#18181e", height: mobileTab === "timeline" ? "100%" : 220 }}>
               <div className="relative h-5 flex-shrink-0" style={{ marginLeft: 44, background: "rgba(255,255,255,0.02)" }}>
                 {Array.from({ length: durationSec + 1 }).map((_, i) => (
                   <span key={i} className="absolute text-[8px] font-mono text-white/15 top-0.5"
@@ -531,8 +533,9 @@ bgColor should match the mood/theme of the scene. Make 3-8 layers, cinematic App
               </div>
             </div>
 
-            <div className={`${mobileTab === "timeline" ? "hidden lg:block" : "block"} flex-shrink-0 min-h-0 overflow-hidden`}
-              style={{ height: mobileTab === "layers" ? undefined : 260, borderTop: "1px solid rgba(255,255,255,0.06)", flex: mobileTab === "layers" ? 1 : undefined }}>
+            {/* Layer panel — fills remaining space, scrolls internally */}
+            <div className={`${mobileTab === "timeline" ? "hidden lg:block" : "block"} flex-1 min-h-0 overflow-hidden`}
+              style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
               <LayerPanel
                 layers={layers}
                 selectedLayerIdx={selectedLayerIdx}

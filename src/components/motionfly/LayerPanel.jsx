@@ -3,9 +3,9 @@ import { Type, Image, Square, Star, Move, Trash2, Copy, Eye, EyeOff } from "luci
 
 export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, onUpdateLayer, onDeleteLayer, onDuplicateLayer, onAddLayer, onMoveLayer, bgColor, onBgColorChange, bgImage, onBgImageChange }) {
   return (
-    <div className="flex flex-col h-full" style={{ background: "#1a1a21" }}>
+    <div className="flex flex-col h-full overflow-hidden" style={{ background: "#1a1a21" }}>
       {/* Background controls */}
-      <div className="px-3 py-2 border-b border-white/10 space-y-2">
+      <div className="flex-shrink-0 px-3 py-2 border-b border-white/10 space-y-2">
         <p className="text-[8px] uppercase tracking-widest text-white/25">Background</p>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded border border-white/20 flex-shrink-0" style={{ background: bgColor || "#141419" }} />
@@ -22,7 +22,7 @@ export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, on
       </div>
 
       {/* Add layer bar */}
-      <div className="flex items-center gap-1 p-2 border-b border-white/5">
+      <div className="flex-shrink-0 flex items-center gap-1 p-2 border-b border-white/5">
         {[
           { type: "text", icon: Type, label: "T", color: "#ffcc00" },
           { type: "image", icon: Image, label: "Img", color: "#ff9500" },
@@ -42,7 +42,7 @@ export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, on
       </div>
 
       {/* Layer list */}
-      <div className="overflow-y-auto p-2 space-y-0.5" style={{ maxHeight: 220, minHeight: 80 }}>
+      <div className="flex-shrink-0 overflow-y-auto p-2 space-y-0.5" style={{ maxHeight: 180, minHeight: 60 }}>
         {layers.map((layer, i) => {
           const isSelected = i === selectedLayerIdx;
           const trackColors = ["#ffcc00", "#ff9500", "#00be8c", "#007aff", "#af52de", "#ff3b30"];
@@ -116,7 +116,7 @@ export default function LayerPanel({ layers, selectedLayerIdx, onSelectLayer, on
 
       {/* Selected layer properties */}
       {selectedLayerIdx !== null && layers[selectedLayerIdx] && (
-        <div className="border-t border-white/5 p-3 space-y-3 overflow-y-auto flex-1">
+        <div className="border-t border-white/5 p-3 space-y-3 overflow-y-auto flex-1 min-h-0">
           <div className="flex items-center justify-between">
             <p className="text-[9px] uppercase tracking-widest text-white/25">Properties</p>
             <span className="text-[9px] text-white/20 bg-white/5 px-2 py-0.5 rounded-full">
