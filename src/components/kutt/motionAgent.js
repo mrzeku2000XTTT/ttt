@@ -61,11 +61,28 @@ Return exactly ${scenes.length} scenes, in order.`,
       model: "claude_sonnet_4_6",
     });
   } catch {
-    onStep?.({ label: "🧩 Motion agent choosing UI components…", status: "error", agent: "motion" });
-    return scenes;
+    plan = null; // fall through to the deterministic library rotation below
   }
 
-  const picked = plan?.scenes || [];
+  // Fallback rotation so a scene ALWAYS gets a real component, even if the plan is thin
+  const FALLBACK_COMPONENTS = ["browser_window", "card_stack_2", "search_animation_1", "widget_box", "sidebar_expand", "macbook"];
+  const FALLBACK_CAMERAS = Object.keys(CAMERA_MOVES);
+  const normalize = (id) => {
+    if (!id) return null;
+    const clean = String(id).toLowerCase().trim().replace(/[\s-]+/g, "_");
+    return findPart(clean) ? clean : null;
+  };
+
+  const picked = scenes.map((s, i) => {
+    const raw = (plan?.scenes || [])[i] || {};
+    return {
+      component: normalize(raw.component) || FALLBACK_COMPONENTS[i % FALLBACK_COMPONENTS.length],
+      text_animation: normalize(raw.text_animation) || "",
+      camera: CAMERA_MOVES[raw.camera] ? raw.camera : FALLBACK_CAMERAS[i % FALLBACK_CAMERAS.length],
+      content: raw.content || s.visual_prompt,
+    };
+  });
+
   const used = picked.map((p) => findPart(p.component)?.label).filter(Boolean);
   onStep?.({
     label: `🧩 Motion built ${used.length} UI shots — ${used.join(" · ")}`,
@@ -75,19 +92,18 @@ Return exactly ${scenes.length} scenes, in order.`,
 
   return scenes.map((s, i) => {
     const p = picked[i];
-    if (!p) return s;
     return {
       ...s,
       motion_component: p.component,
       motion_camera: p.camera,
-      motion_palette: plan.palette,
+      motion_palette: plan?.palette,
       motion_label: (p.content || "").split(/[.,]/)[0].slice(0, 24),
       visual_prompt: buildMotionPrompt({
         component: p.component,
         textAnimation: p.text_animation,
         camera: p.camera,
         content: p.content,
-        palette: plan.palette,
+        palette: plan?.palette,
         aspect,
       }),
       motion: CAMERA_MOVES[p.camera] || "",
