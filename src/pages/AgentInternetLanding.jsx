@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Settings as SettingsIcon } from "lucide-react";
+import { Lock, Settings as SettingsIcon, Globe, Boxes } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
 import PowerConsole from "@/components/agentinternet/PowerConsole";
@@ -134,19 +134,19 @@ export default function AgentInternetLanding() {
 
       {/* Scrollable content */}
       <div
-        className="relative z-20 h-full overflow-y-auto scrollbar-hide"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 4.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 6rem)" }}
+        className="relative z-20 h-full overflow-y-auto scrollbar-hide flex flex-col items-center"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 4.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
       >
-        <div className="max-w-2xl mx-auto px-5 sm:px-8 flex flex-col items-center">
-          {/* Boot sequence */}
+        <div className="w-full max-w-sm px-4 flex flex-col items-center">
+          {/* Boot sequence — compact, above the card */}
           <AnimatePresence>
             {!booted && (
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="w-full max-w-xs font-mono text-[9px] sm:text-[11px] space-y-0.5 mb-4 text-emerald-400/80"
+                className="w-full font-mono text-[9px] sm:text-[10px] space-y-0.5 mb-3 text-emerald-400/80 px-1"
               >
                 {bootLines.map((line, idx) => (
-                  <motion.div key={idx} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
+                  <motion.div key={idx} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }}>
                     {line}
                   </motion.div>
                 ))}
@@ -154,105 +154,96 @@ export default function AgentInternetLanding() {
             )}
           </AnimatePresence>
 
-          {/* Hero */}
+          {/* Launcher card */}
           <AnimatePresence>
             {booted && (
               <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55 }}
-                className="w-full text-center"
+                initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="w-full flex flex-col items-center"
               >
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-400/30 bg-cyan-500/5 mb-4"
+                <div
+                  className="w-full rounded-2xl border border-white/10 bg-[#0d1117]/80 backdrop-blur-xl overflow-hidden"
+                  style={{ boxShadow: "0 0 60px rgba(6,182,212,0.08), 0 0 1px rgba(176,96,255,0.18)" }}
                 >
-                  <OrganicOrb size={12} colors={["#67e8f9", "#22d3ee", "#6366f1"]} glow={false} />
-                  <span className="text-[9px] sm:text-[10px] font-mono tracking-[0.3em] uppercase text-cyan-300/80">v3.0 · Unified Superagent</span>
-                </motion.div>
+                  {/* Terminal strip */}
+                  <div className="h-7 flex items-center px-3 border-b border-white/10 bg-[#161b22]/70 font-mono text-[9px] text-emerald-400/80 truncate">
+                    <span className="text-cyan-400/60 mr-1.5">›</span>
+                    {bootLines[bootLines.length - 1] || "> agent internet ready"}
+                  </div>
 
-                <h1
-                  className="font-heading font-black tracking-[-0.03em] leading-[0.85] text-4xl sm:text-6xl lg:text-7xl"
-                  style={{ textShadow: "0 0 40px rgba(6,182,212,0.15)" }}
-                >
-                  <span className="block bg-gradient-to-b from-white via-white to-white/50 bg-clip-text text-transparent">AGENT</span>
-                  <span className="block bg-gradient-to-r from-cyan-300 via-white to-violet-300 bg-clip-text text-transparent">INTERNET</span>
-                </h1>
+                  <div className="p-5 flex flex-col items-center">
+                    {/* Version badge */}
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-cyan-400/25 bg-cyan-500/5 mb-3">
+                      <OrganicOrb size={10} colors={["#67e8f9", "#22d3ee", "#6366f1"]} glow={false} />
+                      <span className="text-[8px] sm:text-[9px] font-mono tracking-[0.25em] uppercase text-cyan-300/80">v3.0 · Unified Superagent</span>
+                    </div>
 
-                <p className="mt-4 max-w-md mx-auto text-sm sm:text-base text-white/60 leading-relaxed font-body">
-                  One superagent that controls all of TTT's apps —
-                  calling up to <span className="text-cyan-300 font-medium">100 sub-agents</span> at its fingertips,
-                  knowing exactly how many to wake and in what order. Not a chatbot. A <span className="text-cyan-300 font-medium">supercomputer</span>.
-                </p>
+                    {/* Title — compact, one line */}
+                    <h1 className="font-heading font-black tracking-[-0.02em] leading-none text-2xl sm:text-3xl text-center">
+                      <span className="bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">AGENT</span>
+                      <span className="text-white/20 mx-1.5 font-light">/</span>
+                      <span className="bg-gradient-to-r from-cyan-300 via-white to-violet-300 bg-clip-text text-transparent">INTERNET</span>
+                    </h1>
 
-                {/* Real input + output console */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
-                  className="mt-7 max-w-lg mx-auto w-full"
-                >
-                  <PowerConsole onSubmit={openChat} />
+                    {/* Description — tight */}
+                    <p className="mt-2.5 max-w-[260px] text-[11px] sm:text-xs text-white/55 leading-relaxed font-body text-center">
+                      One superagent that controls all of TTT's apps — calling up to <span className="text-cyan-300 font-medium">100 sub-agents</span>, waking the right ones in order. Not a chatbot. A <span className="text-cyan-300 font-medium">supercomputer</span>.
+                    </p>
 
-                  {isAdmin && (
-                    <div className="mt-3 flex items-center justify-center gap-1 p-1 rounded-full border border-white/10 bg-black/50 backdrop-blur-md w-fit mx-auto">
-                      <span className="px-2 text-[9px] font-mono tracking-widest uppercase text-white/35">view as</span>
+                    {/* Input */}
+                    <div className="mt-4 w-full">
+                      <PowerConsole onSubmit={openChat} />
+                    </div>
+
+                    {/* View-as toggle (admin only) */}
+                    {isAdmin && (
+                      <div className="mt-3 flex items-center justify-center gap-1 p-1 rounded-full border border-white/10 bg-black/40 w-fit mx-auto">
+                        <span className="px-2 text-[8px] font-mono tracking-widest uppercase text-white/35">view as</span>
+                        <button
+                          onClick={() => setViewAsGuest(false)}
+                          className={`px-2.5 py-1 rounded-full text-[8px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-cyan-500/15 text-cyan-300 border border-cyan-400/40" : "text-white/45 border border-transparent hover:text-white/70"}`}
+                        >
+                          TTT A.I
+                        </button>
+                        <button
+                          onClick={() => setViewAsGuest(true)}
+                          className={`px-2.5 py-1 rounded-full text-[8px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-violet-500/15 text-violet-300 border border-violet-400/40" : "text-white/45 border border-transparent hover:text-white/70"}`}
+                        >
+                          Guest
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Launch tiles */}
+                    <div className="mt-4 grid grid-cols-2 gap-2 w-full">
                       <button
-                        onClick={() => setViewAsGuest(false)}
-                        className={`px-3 py-1.5 rounded-full text-[9px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-cyan-500/15 text-cyan-300 border border-cyan-400/40" : "text-white/45 border border-transparent hover:text-white/70"}`}
+                        onClick={() => guardLaunch("agent")}
+                        className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border border-cyan-400/40 bg-cyan-500/5 hover:border-cyan-300/70 hover:bg-cyan-500/10 transition-colors"
                       >
-                        TTT A.I
+                        <Globe className="w-4 h-4 text-cyan-300" />
+                        <span className="text-[9px] font-mono tracking-widest uppercase text-cyan-200">Agent Internet</span>
                       </button>
                       <button
-                        onClick={() => setViewAsGuest(true)}
-                        className={`px-3 py-1.5 rounded-full text-[9px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-violet-500/15 text-violet-300 border border-violet-400/40" : "text-white/45 border border-transparent hover:text-white/70"}`}
+                        onClick={() => guardLaunch("ttt")}
+                        className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border border-violet-400/40 bg-violet-500/5 hover:border-violet-300/70 hover:bg-violet-500/10 transition-colors"
                       >
-                        Guest
+                        <Boxes className="w-4 h-4 text-violet-300" />
+                        <span className="text-[9px] font-mono tracking-widest uppercase text-violet-200">TTT</span>
                       </button>
                     </div>
-                  )}
-                </motion.div>
+                  </div>
+                </div>
 
-                {/* Launch buttons */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
-                >
-                  <button
-                    onClick={() => guardLaunch("agent")}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-cyan-400/40 bg-transparent text-cyan-300 font-bold text-xs tracking-widest uppercase hover:border-cyan-300/70 hover:text-cyan-200 transition-colors"
-                    style={{ minHeight: 48 }}
-                  >
-                    <OrganicOrb size={16} colors={["#67e8f9", "#22d3ee", "#0891b2"]} />
-                    Launch Agent Internet
-                  </button>
-
-                  <button
-                    onClick={() => guardLaunch("ttt")}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-white/20 bg-transparent text-white/80 hover:text-white hover:border-white/40 text-xs tracking-widest uppercase font-mono font-medium transition-colors"
-                    style={{ minHeight: 48 }}
-                  >
-                    <OrganicOrb size={16} colors={["#a78bfa", "#8b5cf6", "#6366f1"]} />
-                    Launch TTT
-                  </button>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="mt-4 text-[10px] font-mono tracking-widest uppercase text-white/35"
-                >
+                {/* Footer status */}
+                <div className="mt-4 text-[9px] font-mono tracking-widest uppercase text-white/35 text-center">
                   {isAdmin
                     ? viewAsGuest
                       ? "admin access · previewing guest mode"
                       : "admin access · agent internet unlocked"
                     : "agent internet · admin only · TTT open to all"}
-                </motion.div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
