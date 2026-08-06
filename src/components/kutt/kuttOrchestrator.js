@@ -7,6 +7,10 @@ import { runMotionAgent, isUIMotionTopic } from "./motionAgent";
 
 const uid = () => `k_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
+// Image models misspell rendered words — keep every generated frame text-free.
+// All real copy is drawn on top by the motion/hyperframe renderers.
+const NO_TEXT = " ABSOLUTELY NO TEXT: no words, no letters, no numbers, no labels, no logos, no captions, no watermarks, no UI copy anywhere in the frame. Use blurred grey placeholder bars, icons and shapes instead of any writing.";
+
 // ─── SPONGE: Director absorbs user intent into a creative brief ───
 const BRIEF_SCHEMA = {
   type: "object",
@@ -238,12 +242,12 @@ Set media="video" for 1-2 key scenes (hook + climax, duration 4/6/8), media="ima
       if (s.media === "video" && !uiMotion) {
         try {
           const dur = s.duration >= 7 ? 8 : s.duration >= 5 ? 6 : 4;
-          const r = await base44.integrations.Core.GenerateVideo({ prompt: s.visual_prompt, duration: dur, aspect_ratio: "16:9" });
+          const r = await base44.integrations.Core.GenerateVideo({ prompt: s.visual_prompt + NO_TEXT, duration: dur, aspect_ratio: "16:9" });
           if (r?.url) return { url: r.url, type: "video", duration: dur };
         } catch {}
       }
       try {
-        const r = await base44.integrations.Core.GenerateImage({ prompt: s.visual_prompt });
+        const r = await base44.integrations.Core.GenerateImage({ prompt: s.visual_prompt + NO_TEXT });
         return r?.url ? { url: r.url, type: "image", duration: s.duration || 4 } : { error: "empty" };
       } catch (e) {
         return { error: e?.message || "failed" };
