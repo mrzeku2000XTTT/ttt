@@ -61,8 +61,9 @@ export default function OnboardingModal({ open, onFinish, onClose }) {
   };
 
   const skip = () => {
-    markOnboarded();
-    onClose?.();
+    // Skip the remaining steps but still proceed to the destination —
+    // don't dump the user back on the landing page.
+    finish(true);
   };
 
   const s = STEPS[step];
