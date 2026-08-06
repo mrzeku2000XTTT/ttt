@@ -152,6 +152,7 @@ import SlobzAnimationsPage from './pages/SlobzAnimations';
 import SlobzEntityXPage from './pages/SlobzEntityX';
 import SlobzTxTrackerPage from './pages/SlobzTxTracker';
 import SlobzSiteTrackerPage from './pages/SlobzSiteTracker';
+import HunterBeatPage from './pages/HunterBeat';
 import SentimentTradePage from './pages/SentimentTrade';
 import BullChartPage from './pages/BullChart';
 import SectorVIPage from './pages/SectorVI';
@@ -352,6 +353,7 @@ const AuthenticatedApp = () => {
       <Route path="/SlobzEntityX" element={<SlobzEntityXPage />} />
       <Route path="/SlobzTxTracker" element={<SlobzTxTrackerPage />} />
       <Route path="/SlobzSiteTracker" element={<SlobzSiteTrackerPage />} />
+      <Route path="/HunterBeat" element={<HunterBeatPage />} />
       <Route path="/SentimentTrade" element={<SentimentTradePage />} />
       <Route path="/BullChart" element={<BullChartPage />} />
       <Route path="/SectorVI" element={<AdminRoute><SectorVIPage /></AdminRoute>} />

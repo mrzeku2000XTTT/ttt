@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "HunterBeat", path: "HunterBeat", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Apple-style motion graphics prompt studio with in-chat preview" },
   { name: "2TIP", path: "TwoTip", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Instant KAS tipping", admin: true },
   { name: "KCC NFT", path: "KCCNft", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2e60c6e4a_generated_image.png", desc: "Mint KCC covenant NFT identities on Kaspa L1" },
   { name: "KUTT", path: "Kutt", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8d4bef7cb_generated_image.png", desc: "AI video editor — URL to viral video, real export", admin: true },
