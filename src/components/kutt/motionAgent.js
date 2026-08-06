@@ -80,6 +80,8 @@ Return exactly ${scenes.length} scenes, in order.`,
       ...s,
       motion_component: p.component,
       motion_camera: p.camera,
+      motion_palette: plan.palette,
+      motion_label: (p.content || "").split(/[.,]/)[0].slice(0, 24),
       visual_prompt: buildMotionPrompt({
         component: p.component,
         textAnimation: p.text_animation,

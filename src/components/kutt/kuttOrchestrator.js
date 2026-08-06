@@ -234,7 +234,8 @@ Set media="video" for 1-2 key scenes (hook + climax, duration 4/6/8), media="ima
   onStep?.({ label: genLabel, status: "running", agent: "media" });
   const generated = await Promise.all(
     scenes.map(async (s) => {
-      if (s.media === "video") {
+      // UI-motion scenes render their animation locally — generate the still screen only
+      if (s.media === "video" && !uiMotion) {
         try {
           const dur = s.duration >= 7 ? 8 : s.duration >= 5 ? 6 : 4;
           const r = await base44.integrations.Core.GenerateVideo({ prompt: s.visual_prompt, duration: dur, aspect_ratio: "16:9" });
@@ -308,7 +309,24 @@ Set media="video" for 1-2 key scenes (hook + climax, duration 4/6/8), media="ima
     segmentOffset += segDuration;
   });
 
-  setClips((prev) => [...prev, ...allClips, ...allHyperframes]);
+  // Tag visual clips as motion_ui so the renderer animates real UI motion graphics
+  const motionClips = uiMotion
+    ? allClips.map((c) => {
+        const asset = newAssets.find((a) => a.id === c.assetId);
+        const scene = asset ? scenes[asset.scene_index] : null;
+        if (!scene?.motion_component) return c;
+        return {
+          ...c,
+          clip_type: "motion_ui",
+          motion_component: scene.motion_component,
+          motion_camera: scene.motion_camera,
+          palette: scene.motion_palette,
+          text: scene.motion_label || scene.caption || "",
+        };
+      })
+    : allClips;
+
+  setClips((prev) => [...prev, ...motionClips, ...allHyperframes]);
   onStep?.({ label: "🔗 Director assembling timeline…", status: "done", agent: "director" });
 
   // ── PHASE 7: VIRAL ANALYSIS — Analyst agent ──

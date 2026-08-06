@@ -1,5 +1,6 @@
 import { base44 } from "@/api/base44Client";
 import { renderHyperframeCanvas } from "./kuttHyperframes";
+import { drawMotionUI } from "./motionUIRender";
 
 // Real video export: renders the timeline to a canvas in real time and records
 // it (video + audio) with MediaRecorder. Returns a downloadable webm Blob URL.
@@ -107,7 +108,14 @@ export async function exportTimeline({ clips, assets, width = 1280, height = 720
 
       if (active) {
         const m = media[active.assetId];
-        if (m) {
+        if (m && active.clip_type === "motion_ui" && m.kind === "image") {
+          drawMotionUI(
+            ctx,
+            { image: m.el, clip: active, progress: (t - active.start) / Math.max(0.001, active.duration), t },
+            width,
+            height
+          );
+        } else if (m) {
           if (m.kind === "video") {
             if (activeVideoId !== active.id) {
               activeVideoId = active.id;

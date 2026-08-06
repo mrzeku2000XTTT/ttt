@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Play, Pause, SkipBack } from "lucide-react";
 import { HyperframeOverlay } from "./kuttHyperframes";
+import MotionUILayer from "./MotionUILayer";
 
 const fmt = (s) => {
   const m = Math.floor(s / 60);
@@ -70,7 +71,10 @@ export default function KuttPreview({ assets, clips, playhead, setPlayhead, play
       </div>
 
       <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
-        {visualAsset?.type === "image" && (
+        {visualAsset?.type === "image" && activeVisual?.clip_type === "motion_ui" && (
+          <MotionUILayer clip={activeVisual} t={playhead} url={visualAsset.url} />
+        )}
+        {visualAsset?.type === "image" && activeVisual?.clip_type !== "motion_ui" && (
           <img src={visualAsset.url} alt="" className="max-w-full max-h-full object-contain" />
         )}
         {visualAsset?.type === "video" && (
