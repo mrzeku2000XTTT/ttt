@@ -1,10 +1,31 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Download, Loader2, Wand2, Brain, X } from "lucide-react";
+import { Send, Sparkles, Loader2, Wand2, Brain } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import MemoryPanel from "@/components/hunterbeat/MemoryPanel";
 import { useHunterBeatMemory } from "@/components/hunterbeat/useHunterBeatMemory";
+import FramePreview from "@/components/hunterbeat/FramePreview";
+
+const NO_TEXT = " ABSOLUTELY NO TEXT: no words, no letters, no numbers, no labels, no logos, no captions, no watermarks, no UI copy anywhere in the frame.";
+
+const FRAME_SCHEMA = {
+  type: "object",
+  properties: {
+    frames: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          prompt: { type: "string", description: "Detailed still-frame visual prompt" },
+          beat: { type: "string", description: "Short label for this keyframe beat" },
+        },
+        required: ["prompt", "beat"],
+      },
+    },
+  },
+  required: ["frames"],
+};
 
 const SUGGESTIONS = [
   "A macOS dock bouncing animation",
@@ -88,37 +109,43 @@ export default function HunterBeat() {
 
   const renderPreview = async (msgId) => {
     const msg = messages.find((m) => m.id === msgId);
-    if (!msg || msg.rendering || msg.videoUrl) return;
+    if (!msg || msg.rendering || msg.frames) return;
 
     setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: true, renderProgress: "Directing keyframes…" } : x)));
     try {
-      const videoPrompt =
-        `${msg.text}. ` +
-        `Smooth, fluid Apple-style motion graphic animation. ` +
-        `Animate with natural easing: elements slide, scale, and fade with spring physics. ` +
-        `Frosted glass, soft depth, neutral palette with one accent. ` +
-        `NO TEXT, no words, no letters, no UI labels. ` +
-        `Clean macOS aesthetic, 6 seconds, loopable.`;
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, renderProgress: "Rendering frames…" } : x)));
-      const res = await base44.integrations.Core.GenerateVideo({
-        prompt: videoPrompt,
-        duration: 6,
-        aspect_ratio: "16:9",
-        generate_audio: false,
+      // 1. LLM directs 4 keyframe beats from the prompt
+      const plan = await base44.integrations.Core.InvokeLLM({
+        prompt:
+          `You are a motion-graphics keyframe director. Break this motion-graphic prompt into 4 distinct keyframe beats that, when played in sequence, convey motion.\n\n` +
+          `PROMPT: """${msg.text}"""\n\n` +
+          `Each frame is a STILL image. Together they form an animated sequence (slide → settle → accent → loop).\n` +
+          `Style: Apple / macOS aesthetic, frosted glass, soft depth, neutral palette with one accent, rounded corners, generous whitespace.\n` +
+          `Each frame prompt: 2-4 sentences, highly visual, describes ONE frozen moment. NO TEXT in any frame.\n` +
+          `Return exactly 4 frames.`,
+        response_json_schema: FRAME_SCHEMA,
       });
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, videoUrl: res?.url, renderProgress: undefined } : x)));
+      const beats = (plan.frames || []).slice(0, 4);
+      if (beats.length < 2) throw new Error("Not enough keyframes");
+
+      // 2. Generate each keyframe in parallel
+      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, renderProgress: `Rendering ${beats.length} keyframes…` } : x)));
+      const results = await Promise.all(
+        beats.map(async (b) => {
+          try {
+            const r = await base44.integrations.Core.GenerateImage({ prompt: b.prompt + NO_TEXT });
+            return r?.url || null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      const frames = results.filter(Boolean);
+      if (frames.length < 2) throw new Error("Keyframe generation failed");
+
+      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, frames, renderProgress: undefined } : x)));
     } catch (e) {
       setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, renderError: true, renderProgress: undefined } : x)));
     }
-  };
-
-  const downloadVideo = (url, title) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${(title || "hunterbeat").replace(/\s+/g, "-").toLowerCase()}.mp4`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   const handleSubmit = (e) => {
@@ -221,7 +248,7 @@ export default function HunterBeat() {
 
                 {/* Preview */}
                 <AnimatePresence>
-                  {(msg.rendering || msg.videoUrl || msg.renderError) && (
+                  {(msg.rendering || msg.frames || msg.renderError) && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
@@ -235,24 +262,8 @@ export default function HunterBeat() {
                           )}
                         </div>
                       )}
-                      {msg.videoUrl && (
-                        <div className="relative group">
-                          <video
-                            src={msg.videoUrl}
-                            controls
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            className="w-full rounded-xl bg-black"
-                          />
-                          <button
-                            onClick={() => downloadVideo(msg.videoUrl, msg.title)}
-                            className="absolute bottom-2 right-2 flex items-center gap-1.5 px-3 h-8 rounded-full bg-black/70 backdrop-blur text-white text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Download className="w-3.5 h-3.5" /> Save
-                          </button>
-                        </div>
+                      {msg.frames && (
+                        <FramePreview frames={msg.frames} title={msg.title} />
                       )}
                       {msg.renderError && (
                         <div className="aspect-video rounded-xl bg-red-50 flex items-center justify-center text-[12px] text-red-500">
@@ -264,13 +275,13 @@ export default function HunterBeat() {
                 </AnimatePresence>
 
                 {/* Actions */}
-                {!msg.error && !msg.videoUrl && !msg.rendering && (
+                {!msg.error && !msg.frames && !msg.rendering && (
                   <div className="px-4 pb-4">
                     <button
                       onClick={() => renderPreview(msg.id)}
                       className="flex items-center gap-1.5 px-4 h-9 rounded-full bg-zinc-900 text-white text-[12px] font-semibold hover:bg-zinc-800 transition-colors"
                     >
-                      <Sparkles className="w-3.5 h-3.5" /> Generate 6s video
+                      <Sparkles className="w-3.5 h-3.5" /> Generate keyframes
                     </button>
                   </div>
                 )}
