@@ -189,7 +189,7 @@ export default function AgentInternetLanding() {
 
                     {/* Description — tight */}
                     <p className="mt-2.5 max-w-[260px] text-[11px] sm:text-xs text-white/55 leading-relaxed font-body text-center">
-                      One superagent that controls all of TTT's apps — calling up to <span className="text-cyan-300 font-medium">100 sub-agents</span>, waking the right ones in order. Not a chatbot. A <span className="text-cyan-300 font-medium">supercomputer</span>.
+                      One superagent runs every TTT app, waking up to <span className="text-cyan-300 font-medium">100 sub-agents</span> in the right order. A <span className="text-cyan-300 font-medium">supercomputer</span>, not a chatbot.
                     </p>
 
                     {/* Input */}
