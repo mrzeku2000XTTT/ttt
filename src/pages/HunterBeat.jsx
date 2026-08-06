@@ -9,22 +9,17 @@ import FramePreview from "@/components/hunterbeat/FramePreview";
 
 const NO_TEXT = " ABSOLUTELY NO TEXT: no words, no letters, no numbers, no labels, no logos, no captions, no watermarks, no UI copy anywhere in the frame.";
 
-const FRAME_SCHEMA = {
+const MOTION_SCHEMA = {
   type: "object",
   properties: {
-    frames: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          prompt: { type: "string", description: "Detailed still-frame visual prompt" },
-          beat: { type: "string", description: "Short label for this keyframe beat" },
-        },
-        required: ["prompt", "beat"],
-      },
-    },
+    title: { type: "string", description: "Short 2-4 word title for this motion graphic" },
+    image_prompt: { type: "string", description: "ONE detailed prompt for the background image — Apple / macOS aesthetic, frosted glass, soft depth, neutral palette with one accent, rounded corners, generous whitespace, NO text in the image" },
+    image_prompt_2: { type: "string", description: "Optional second background image prompt for a crossfade transition. Leave empty if not needed." },
+    overlay_text: { type: "string", description: "Short 1-3 word text to animate over the motion graphic (displayed in a frosted glass pill at bottom)" },
+    accent_color: { type: "string", description: "Hex color for the accent bar (e.g. #0A84FF for Apple blue)" },
+    motion_style: { type: "string", enum: ["ken_burns", "crossfade"], description: "Ken Burns pan+zoom for single image, or crossfade if two images" },
   },
-  required: ["frames"],
+  required: ["title", "image_prompt", "overlay_text", "accent_color"],
 };
 
 const SUGGESTIONS = [
@@ -111,38 +106,46 @@ export default function HunterBeat() {
     const msg = messages.find((m) => m.id === msgId);
     if (!msg || msg.rendering || msg.frames) return;
 
-    setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: true, renderProgress: "Directing keyframes…" } : x)));
+    setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: true, renderProgress: "Directing motion graphics…" } : x)));
     try {
-      // 1. LLM directs 4 keyframe beats from the prompt
+      // 1. LLM generates a motion spec (overlay text, accent color, image prompt)
       const plan = await base44.integrations.Core.InvokeLLM({
         prompt:
-          `You are a motion-graphics keyframe director. Break this motion-graphic prompt into 4 distinct keyframe beats that, when played in sequence, convey motion.\n\n` +
+          `You are a motion-graphics director. Create a motion-graphic spec for this prompt:\n\n` +
           `PROMPT: """${msg.text}"""\n\n` +
-          `Each frame is a STILL image. Together they form an animated sequence (slide → settle → accent → loop).\n` +
+          `Design ONE background image (or two for a crossfade). The composition will animate with Ken Burns pan+zoom, a spring-animated title overlay, and an accent bar.\n` +
           `Style: Apple / macOS aesthetic, frosted glass, soft depth, neutral palette with one accent, rounded corners, generous whitespace.\n` +
-          `Each frame prompt: 2-4 sentences, highly visual, describes ONE frozen moment. NO TEXT in any frame.\n` +
-          `Return exactly 4 frames.`,
-        response_json_schema: FRAME_SCHEMA,
+          `The overlay_text should be 1-3 words that capture the motion graphic's theme.\n` +
+          `The accent_color should be a hex color (e.g. #0A84FF for Apple blue).\n` +
+          `Return the full motion spec.`,
+        response_json_schema: MOTION_SCHEMA,
       });
-      const beats = (plan.frames || []).slice(0, 4);
-      if (beats.length < 2) throw new Error("Not enough keyframes");
 
-      // 2. Generate each keyframe in parallel
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, renderProgress: `Rendering ${beats.length} keyframes…` } : x)));
+      const spec = {
+        title: plan.title,
+        overlay_text: plan.overlay_text,
+        accent_color: plan.accent_color || "#0A84FF",
+        motion_style: plan.motion_style || "ken_burns",
+        background: "#000000",
+      };
+
+      // 2. Generate 1-2 background images in parallel
+      const prompts = [plan.image_prompt, plan.image_prompt_2].filter(Boolean);
+      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, renderProgress: `Rendering ${prompts.length} background image(s)…` } : x)));
       const results = await Promise.all(
-        beats.map(async (b) => {
+        prompts.map(async (p) => {
           try {
-            const r = await base44.integrations.Core.GenerateImage({ prompt: b.prompt + NO_TEXT });
+            const r = await base44.integrations.Core.GenerateImage({ prompt: p + NO_TEXT });
             return r?.url || null;
           } catch {
             return null;
           }
         })
       );
-      const frames = results.filter(Boolean);
-      if (frames.length < 2) throw new Error("Keyframe generation failed");
+      const images = results.filter(Boolean);
+      if (images.length < 1) throw new Error("Image generation failed");
 
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, frames, renderProgress: undefined } : x)));
+      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, frames: images, images, spec, renderProgress: undefined } : x)));
     } catch (e) {
       setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, renderError: true, renderProgress: undefined } : x)));
     }
@@ -263,7 +266,7 @@ export default function HunterBeat() {
                         </div>
                       )}
                       {msg.frames && (
-                        <FramePreview frames={msg.frames} title={msg.title} />
+                        <FramePreview images={msg.images || msg.frames} spec={msg.spec} title={msg.title} />
                       )}
                       {msg.renderError && (
                         <div className="aspect-video rounded-xl bg-red-50 flex items-center justify-center text-[12px] text-red-500">
@@ -281,7 +284,7 @@ export default function HunterBeat() {
                       onClick={() => renderPreview(msg.id)}
                       className="flex items-center gap-1.5 px-4 h-9 rounded-full bg-zinc-900 text-white text-[12px] font-semibold hover:bg-zinc-800 transition-colors"
                     >
-                      <Sparkles className="w-3.5 h-3.5" /> Generate keyframes
+                      <Sparkles className="w-3.5 h-3.5" /> Render motion graphic
                     </button>
                   </div>
                 )}

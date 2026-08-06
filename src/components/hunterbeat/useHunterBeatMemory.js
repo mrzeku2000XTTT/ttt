@@ -1,22 +1,41 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const KEY = (userEmail) => `hunterbeat_memory_${userEmail || "guest"}`;
+const GUEST_KEY = "hunterbeat_memory_guest";
 
 /**
  * Local, per-user memory store for HunterBeat.
- * Stores:
- *  - skills: [{ id, title, source_url, content, added_at }]
- *  - notes: [{ id, text, added_at }]
- * Persisted to localStorage, keyed by user email.
+ * Persists to localStorage, keyed by user email.
+ * Migrates guest data → user key on login.
  */
 export function useHunterBeatMemory(user) {
   const email = user?.email;
   const [skills, setSkills] = useState([]);
   const [notes, setNotes] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const emailRef = useRef(email);
 
+  // Load from localStorage when email changes
   useEffect(() => {
     try {
+      // Migrate guest data to user key on login
+      if (email && emailRef.current !== email) {
+        const guestRaw = localStorage.getItem(GUEST_KEY);
+        if (guestRaw) {
+          const guestData = JSON.parse(guestRaw);
+          const userRaw = localStorage.getItem(KEY(email));
+          const userData = userRaw ? JSON.parse(userRaw) : { skills: [], notes: [] };
+          // Merge guest skills into user (avoid duplicates by source_url)
+          const existingUrls = new Set((userData.skills || []).map((s) => s.source_url).filter(Boolean));
+          const mergedSkills = [...(userData.skills || []), ...(guestData.skills || []).filter((s) => !existingUrls.has(s.source_url))];
+          const mergedNotes = [...(userData.notes || []), ...(guestData.notes || [])];
+          const merged = { skills: mergedSkills, notes: mergedNotes };
+          localStorage.setItem(KEY(email), JSON.stringify(merged));
+          localStorage.removeItem(GUEST_KEY);
+        }
+        emailRef.current = email;
+      }
+
       const raw = localStorage.getItem(KEY(email));
       const data = raw ? JSON.parse(raw) : { skills: [], notes: [] };
       setSkills(data.skills || []);
@@ -26,6 +45,22 @@ export function useHunterBeatMemory(user) {
       setNotes([]);
     }
     setLoaded(true);
+  }, [email]);
+
+  // Cross-tab sync
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === KEY(email)) {
+        try {
+          const raw = e.newValue;
+          const data = raw ? JSON.parse(raw) : { skills: [], notes: [] };
+          setSkills(data.skills || []);
+          setNotes(data.notes || []);
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
   }, [email]);
 
   const persist = useCallback(
@@ -86,10 +121,6 @@ export function useHunterBeatMemory(user) {
 
 /**
  * Convert a github.com blob URL to its raw markdown URL.
- * Handles:
- *  - https://github.com/owner/repo/blob/branch/path/to/SKILL.md
- *  - https://github.com/owner/repo/tree/branch/path (dir → README.md)
- *  - already-raw URLs
  */
 export function githubUrlToRaw(url) {
   if (!url) return null;
@@ -105,7 +136,6 @@ export function githubUrlToRaw(url) {
 
 /**
  * Fetch a GitHub skill URL's raw markdown content.
- * Returns { title, content }.
  */
 export async function fetchSkillContent(url) {
   const raw = githubUrlToRaw(url);
