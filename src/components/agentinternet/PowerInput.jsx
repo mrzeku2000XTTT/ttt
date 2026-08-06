@@ -18,6 +18,16 @@ export const POWERS = [
   { text: "turn this URL into a viral video", skill: "KUTT · render export", orb: ["#e879f9", "#d946ef", "#a21caf"] },
   { text: "lock 100 KAS in escrow for this gig", skill: "Slobz · covenant escrow", orb: ["#a3e635", "#84cc16", "#4d7c0f"] },
   { text: "post this to all my channels", skill: "TELE · encrypted reach", orb: ["#38bdf8", "#0ea5e9", "#0369a1"] },
+  { text: "animate this product interface", skill: "Motion · UI animation", orb: ["#f472b6", "#db2777", "#831843"] },
+  { text: "clone the style of this website", skill: "MetaMimic · visual clone", orb: ["#c084fc", "#9333ea", "#581c87"] },
+  { text: "connect these tools into a workflow", skill: "NODA · agent workflow", orb: ["#2dd4bf", "#0d9488", "#134e4a"] },
+  { text: "turn this idea into a visual system", skill: "MIRAGE · visual nodes", orb: ["#60a5fa", "#2563eb", "#1e3a8a"] },
+  { text: "generate a polished campaign image", skill: "Hiro · image studio", orb: ["#fb923c", "#ea580c", "#7c2d12"] },
+  { text: "design a cinematic brand concept", skill: "Haru · creative studio", orb: ["#f9a8d4", "#ec4899", "#831843"] },
+  { text: "build consistent frames for this story", skill: "FrameZ · frame director", orb: ["#a78bfa", "#7c3aed", "#4c1d95"] },
+  { text: "make a high-click YouTube thumbnail", skill: "Thumbnail · creator", orb: ["#facc15", "#ca8a04", "#713f12"] },
+  { text: "turn my notes into a slide deck", skill: "Slides · deck builder", orb: ["#4ade80", "#16a34a", "#14532d"] },
+  { text: "build a Kaspa-ready app prototype", skill: "KaspaForge · app builder", orb: ["#22d3ee", "#0891b2", "#164e63"] },
 ];
 
 const TYPE_MS = 55;
@@ -110,7 +120,7 @@ export default function PowerInput({ onSubmit }) {
 
           {/* Animated placeholder — only when input empty & not focused */}
           {!focused && userValue.length === 0 && (
-            <span className="absolute left-11 right-16 top-1/2 -translate-y-1/2 text-white/55 font-mono text-sm sm:text-base leading-none truncate pointer-events-none z-0 flex items-center">
+            <span className="absolute left-11 right-24 sm:right-28 top-1/2 -translate-y-1/2 overflow-hidden text-white/55 font-mono text-sm sm:text-base leading-none pointer-events-none z-0 flex items-center">
               <span className="truncate">{typed}</span>
               <motion.span
                 animate={{ opacity: [1, 0] }}

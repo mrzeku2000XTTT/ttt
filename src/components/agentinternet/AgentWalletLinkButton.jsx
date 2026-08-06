@@ -68,18 +68,18 @@ export default function AgentWalletLinkButton({ compact = false, onLinked }) {
       {typeof document !== "undefined" && createPortal(
         <AnimatePresence>
           {showConsent && (
-          <>
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowConsent(false)}
-              className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[10000]"
+              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
             />
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[10001] mx-auto w-auto max-w-[360px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/15 bg-zinc-950/95 backdrop-blur-xl shadow-2xl"
+              className="relative z-10 w-full max-w-[360px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/15 bg-zinc-950/95 backdrop-blur-xl shadow-2xl"
             >
               <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
                 <Shield className="w-4 h-4 text-cyan-300" />
@@ -129,7 +129,7 @@ export default function AgentWalletLinkButton({ compact = false, onLinked }) {
                 </div>
               </div>
             </motion.div>
-          </>
+          </div>
           )}
         </AnimatePresence>,
         document.body
