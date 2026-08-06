@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Wallet, Eye, EyeOff, Copy, Trash2, Plus, Download, X } from "lucide-react";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 import { getWallet, generateWallet, clearWallet } from "@/lib/localKaspaWallet";
+import AgentWalletLinkButton from "@/components/agentinternet/AgentWalletLinkButton";
 
 export default function ChatWalletButton() {
   const [wallet, setWallet] = useState(() => getWallet());
@@ -99,6 +100,9 @@ export default function ChatWalletButton() {
                       <Trash2 className="w-3.5 h-3.5" /> clear
                     </button>
                   </div>
+                  <div className="pt-1 border-t border-white/10">
+                    <AgentWalletLinkButton compact />
+                  </div>
                   <p className="text-[8px] text-white/30 leading-snug font-mono">
                     Generated entirely on this device. Private key never touched the server. Export before clearing browser data.
                   </p>
@@ -109,6 +113,7 @@ export default function ChatWalletButton() {
                   <button onClick={gen} className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-cyan-400 text-black text-[10px] font-bold uppercase tracking-widest hover:bg-cyan-300">
                     <Plus className="w-3.5 h-3.5" /> generate wallet
                   </button>
+                  <p className="text-[9px] text-white/30 font-mono leading-snug pt-1">After generating, tap <b className="text-cyan-300">Link to AgentInternet</b> so the agent can read this wallet.</p>
                 </div>
               )}
             </motion.div>

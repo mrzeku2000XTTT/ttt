@@ -155,7 +155,49 @@ export function getWallet() {
 }
 export function clearWallet() {
   try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  unlinkWallet();
 }
+
+/* ---- Agent Internet link (consent) --------------------------------------
+ * The user explicitly authorizes the TTT AI agent to SEE their wallet
+ * address and call read-only tools (balance, UTXOs, history) with it.
+ * The private key is NEVER part of the link record and is NEVER sent to
+ * the agent / LLM. Sends still require local signing + the confirm_money
+ * gate, so linking only grants read access by default.
+ */
+const LINK_KEY = "ttt_agent_wallet_link";
+export const LINK_SCOPES = ["balance", "utxos", "history"];
+
+export function linkWallet(scope = LINK_SCOPES) {
+  const w = getWallet();
+  if (!w) return null;
+  const link = {
+    address: w.address,
+    linkedAt: Date.now(),
+    scope: Array.from(new Set(scope)).filter((s) => LINK_SCOPES.includes(s)),
+  };
+  try { localStorage.setItem(LINK_KEY, JSON.stringify(link)); } catch {}
+  return link;
+}
+
+export function unlinkWallet() {
+  try { localStorage.removeItem(LINK_KEY); } catch {}
+}
+
+export function getWalletLink() {
+  try {
+    const raw = localStorage.getItem(LINK_KEY);
+    if (!raw) return null;
+    const link = JSON.parse(raw);
+    // invalidate if the underlying wallet was cleared / changed
+    const w = getWallet();
+    if (!w || w.address !== link.address) { unlinkWallet(); return null; }
+    return link;
+  } catch { return null; }
+}
+
+export function isWalletLinked() { return !!getWalletLink(); }
+export function getLinkedAddress() { return getWalletLink()?.address || null; }
 
 export function isValidKaspaAddress(address) {
   try {

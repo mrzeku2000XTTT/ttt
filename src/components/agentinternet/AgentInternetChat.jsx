@@ -10,7 +10,7 @@ import { SETTINGS } from "@/components/agentinternet/LandingSettings";
 import ChatSessionsDrawer from "@/components/agentinternet/ChatSessionsDrawer";
 import ChatWalletButton from "@/components/agentinternet/ChatWalletButton";
 import ResultLightbox from "@/components/agentinternet/ResultLightbox";
-import { generateWallet } from "@/lib/localKaspaWallet";
+import { generateWallet, getLinkedAddress, isWalletLinked } from "@/lib/localKaspaWallet";
 import { tryQuickAnswer } from "@/components/agentinternet/quickAnswer";
 import { runAgent } from "@/components/agentinternet/agentRunner";
 import { instantAck } from "@/components/agentinternet/instantAck";
@@ -65,12 +65,18 @@ function buildPrompt(command, settings, history) {
     m.role === "user" ? `User: ${m.text}` : `Assistant used ${m.skill || "KAI"} → ${m.output?.title || ""}`
   ).join("\n");
 
+  const linkedAddr = getLinkedAddress();
+  const walletCtx = linkedAddr
+    ? `LINKED WALLET: ${linkedAddr} (user granted read access — balance, UTXOs, history). Use this address for any wallet/balance/payment lookup. Sends still require the user's local sign-off, so for payments ask the user to confirm or sign locally.`
+    : "LINKED WALLET: none. If the user asks about their wallet, balance, or payments, tell them to open the wallet button (top-right) and tap \"Link to AgentInternet\".";
+
   return `You are KAI — the unified superagent at the center of the Agent Internet. You control up to ${maxAgents} sub-agents and ${apps.length} callable apps. You decide how many to call and in what order. You remember the full conversation history.
 
 ACTIVE AGENTS: ${agents.join(", ") || "none"}
 ENABLED APPS: ${apps.join(", ") || "none"}
 MONEY MODE: ${moneyMode}
 AUTONOMY: ${autonomy}
+${walletCtx}
 
 Respond as JSON matching the schema.
 - ALWAYS set "ack" to a single short sentence confirming you understood the user's intent — reference their actual request specifically (never a generic "got it"). Example: user says "advertise kaspa.org" → ack "On it — I'll spin up a Kaspa.org ad campaign across our broadcast agents."

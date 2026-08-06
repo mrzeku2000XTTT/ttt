@@ -1,6 +1,7 @@
 import { base44 } from "@/api/base44Client";
 import { TOOLS, TOOL_MENU } from "@/components/agentinternet/agentTools";
 import { isVideoRequest, resolveSpec, missingSpec, specQuestion } from "@/components/agentinternet/videoSpec";
+import { getLinkedAddress } from "@/lib/localKaspaWallet";
 
 const PLAN_SCHEMA = {
   type: "object",
@@ -68,8 +69,15 @@ export async function runAgent({ text, history, onStep }) {
     .map((m) => (m.role === "user" ? `User: ${m.text}` : `Assistant: ${m.output?.title || ""}`))
     .join("\n");
 
+  const linkedAddr = getLinkedAddress();
+  const walletLine = linkedAddr
+    ? `LINKED WALLET: ${linkedAddr} (read access granted — balance/UTXOs/history). Use this address for wallet lookups. Sends need the user's local sign-off.`
+    : `LINKED WALLET: none — if the user asks about their wallet, tell them to tap the wallet button → "Link to AgentInternet".`;
+
   const planRes = await withTimeout(base44.integrations.Core.InvokeLLM({
     prompt: `You are KAI, the superagent of the TTT Agent Internet. You fulfil requests by calling the app's REAL tools below, in order. Never invent tools.
+
+${walletLine}
 
 TOOLS:
 ${TOOL_MENU}

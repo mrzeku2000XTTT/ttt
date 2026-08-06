@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings as SettingsIcon, X, Cpu, Zap, Shield, Wallet, Bot, Radio, Layers, Lock, Activity, Copy, Eye, EyeOff, Trash2, Plus } from "lucide-react";
 import { getWallet, generateWallet, clearWallet } from "@/lib/localKaspaWallet";
+import AgentWalletLinkButton from "@/components/agentinternet/AgentWalletLinkButton";
 
 /**
  * Agent Internet settings — 50 real configuration knobs for the unified superagent.
@@ -155,6 +156,7 @@ function LocalWalletSection() {
             </button>
           </div>
           {copied && <div className="text-emerald-300 text-[9px]">copied {copied}</div>}
+          <AgentWalletLinkButton compact />
           <button onClick={clear} className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-mono uppercase tracking-widest text-red-300 hover:bg-red-500/10">
             <Trash2 className="w-3 h-3" /> clear wallet
           </button>
