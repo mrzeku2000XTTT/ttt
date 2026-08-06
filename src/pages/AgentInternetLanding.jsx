@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Settings as SettingsIcon, Globe, Boxes } from "lucide-react";
+import { Lock, Settings as SettingsIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
 import PowerConsole from "@/components/agentinternet/PowerConsole";
@@ -119,10 +119,7 @@ export default function AgentInternetLanding() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 px-3 h-9 rounded-full border border-white/15 bg-black/60 backdrop-blur-md">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[9px] font-mono tracking-widest uppercase text-white/50">LIVE</span>
-        </div>
+        <div className="flex-1" />
 
         <button
           onClick={() => setShowSettings(true)}
@@ -165,10 +162,12 @@ export default function AgentInternetLanding() {
                 transition={{ duration: 0.6 }}
                 className="flex flex-col items-center w-full"
               >
-                {/* Version badge */}
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-400/25 bg-cyan-500/5 mb-5">
-                  <OrganicOrb size={12} colors={["#67e8f9", "#22d3ee", "#6366f1"]} glow={false} />
-                  <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-cyan-300/80">v3.0 · Unified Superagent</span>
+                {/* Merged status + version pill */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] mb-5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-white/70">LIVE</span>
+                  <span className="w-px h-3 bg-white/15" />
+                  <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-white/70">v3.0</span>
                 </div>
 
                 {/* Title — large, two lines */}
@@ -189,17 +188,17 @@ export default function AgentInternetLanding() {
 
                 {/* View-as toggle (admin only) */}
                 {isAdmin && (
-                  <div className="mt-4 flex items-center justify-center gap-1.5 p-1 rounded-full border border-white/10 bg-black/40">
+                  <div className="mt-4 flex items-center justify-center gap-1 p-1 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
                     <span className="px-2 text-[10px] font-mono tracking-widest uppercase text-white/40">view as</span>
                     <button
                       onClick={() => setViewAsGuest(false)}
-                      className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-cyan-500/15 text-cyan-300 border border-cyan-400/40" : "text-white/50 border border-transparent hover:text-white/75"}`}
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-white/10 text-white" : "text-white/50 hover:text-white/75"}`}
                     >
                       TTT A.I
                     </button>
                     <button
                       onClick={() => setViewAsGuest(true)}
-                      className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-violet-500/15 text-violet-300 border border-violet-400/40" : "text-white/50 border border-transparent hover:text-white/75"}`}
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-white/10 text-white" : "text-white/50 hover:text-white/75"}`}
                     >
                       Guest
                     </button>
@@ -210,17 +209,15 @@ export default function AgentInternetLanding() {
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
                   <button
                     onClick={() => guardLaunch("agent")}
-                    className="flex items-center justify-center gap-2.5 py-4 rounded-2xl border border-cyan-400/40 bg-cyan-500/5 hover:border-cyan-300/70 hover:bg-cyan-500/10 transition-colors"
+                    className="py-4 rounded-2xl border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/50 hover:border-white/25 transition-colors"
                   >
-                    <Globe className="w-5 h-5 text-cyan-300" />
-                    <span className="text-sm font-mono tracking-widest uppercase text-cyan-200">Launch Agent Internet</span>
+                    <span className="text-sm font-mono tracking-widest uppercase text-white/80">Launch Agent Internet</span>
                   </button>
                   <button
                     onClick={() => guardLaunch("ttt")}
-                    className="flex items-center justify-center gap-2.5 py-4 rounded-2xl border border-violet-400/40 bg-violet-500/5 hover:border-violet-300/70 hover:bg-violet-500/10 transition-colors"
+                    className="py-4 rounded-2xl border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/50 hover:border-white/25 transition-colors"
                   >
-                    <Boxes className="w-5 h-5 text-violet-300" />
-                    <span className="text-sm font-mono tracking-widest uppercase text-violet-200">Launch TTT</span>
+                    <span className="text-sm font-mono tracking-widest uppercase text-white/80">Launch TTT</span>
                   </button>
                 </div>
 
