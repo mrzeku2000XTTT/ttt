@@ -134,116 +134,109 @@ export default function AgentInternetLanding() {
 
       {/* Scrollable content */}
       <div
-        className="relative z-20 h-full overflow-y-auto scrollbar-hide flex flex-col items-center"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 4.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
+        className="relative z-20 h-full overflow-y-auto scrollbar-hide"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 4.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 6rem)" }}
       >
-        <div className="w-full max-w-sm px-4 flex flex-col items-center">
-          {/* Boot sequence — compact, above the card */}
+        <div className="max-w-2xl mx-auto px-5 sm:px-8 flex flex-col items-center">
+          {/* Boot sequence */}
           <AnimatePresence>
             {!booted && (
               <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="w-full font-mono text-[9px] sm:text-[10px] space-y-0.5 mb-3 text-emerald-400/80 px-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="w-full max-w-md font-mono text-[10px] sm:text-xs space-y-1 mb-6 text-emerald-400/80 px-2"
               >
                 {bootLines.map((line, idx) => (
-                  <motion.div key={idx} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }}>
-                    {line}
+                  <motion.div key={idx} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
+                    <span className="text-cyan-400/60 mr-1.5">›</span>{line}
                   </motion.div>
                 ))}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Launcher card */}
+          {/* Hero */}
           <AnimatePresence>
             {booted && (
               <motion.div
-                initial={{ opacity: 0, y: 14, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="w-full flex flex-col items-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="flex flex-col items-center w-full"
               >
-                <div
-                  className="w-full rounded-2xl border border-white/10 bg-[#0d1117]/80 backdrop-blur-xl overflow-hidden"
-                  style={{ boxShadow: "0 0 60px rgba(6,182,212,0.08), 0 0 1px rgba(176,96,255,0.18)" }}
-                >
-                  {/* Terminal strip */}
-                  <div className="h-7 flex items-center px-3 border-b border-white/10 bg-[#161b22]/70 font-mono text-[9px] text-emerald-400/80 truncate">
-                    <span className="text-cyan-400/60 mr-1.5">›</span>
-                    {bootLines[bootLines.length - 1] || "> agent internet ready"}
+                {/* Version badge */}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-400/25 bg-cyan-500/5 mb-5">
+                  <OrganicOrb size={12} colors={["#67e8f9", "#22d3ee", "#6366f1"]} glow={false} />
+                  <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-cyan-300/80">v3.0 · Unified Superagent</span>
+                </div>
+
+                {/* Title — large, two lines */}
+                <h1 className="font-heading font-black tracking-[-0.03em] leading-[0.9] text-center">
+                  <span className="block text-5xl sm:text-6xl md:text-7xl bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">AGENT</span>
+                  <span className="block text-5xl sm:text-6xl md:text-7xl mt-1 bg-gradient-to-r from-cyan-300 via-white to-violet-300 bg-clip-text text-transparent">INTERNET</span>
+                </h1>
+
+                {/* Description */}
+                <p className="mt-5 max-w-md text-sm sm:text-base text-white/60 leading-relaxed font-body text-center">
+                  One superagent runs every TTT app, waking up to <span className="text-cyan-300 font-medium">100 sub-agents</span> in the right order. A <span className="text-cyan-300 font-medium">supercomputer</span>, not a chatbot.
+                </p>
+
+                {/* Input */}
+                <div className="mt-6 w-full max-w-md">
+                  <PowerConsole onSubmit={openChat} />
+                </div>
+
+                {/* View-as toggle (admin only) */}
+                {isAdmin && (
+                  <div className="mt-4 flex items-center justify-center gap-1.5 p-1 rounded-full border border-white/10 bg-black/40">
+                    <span className="px-2 text-[10px] font-mono tracking-widest uppercase text-white/40">view as</span>
+                    <button
+                      onClick={() => setViewAsGuest(false)}
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-cyan-500/15 text-cyan-300 border border-cyan-400/40" : "text-white/50 border border-transparent hover:text-white/75"}`}
+                    >
+                      TTT A.I
+                    </button>
+                    <button
+                      onClick={() => setViewAsGuest(true)}
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-violet-500/15 text-violet-300 border border-violet-400/40" : "text-white/50 border border-transparent hover:text-white/75"}`}
+                    >
+                      Guest
+                    </button>
                   </div>
+                )}
 
-                  <div className="p-5 flex flex-col items-center">
-                    {/* Version badge */}
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-cyan-400/25 bg-cyan-500/5 mb-3">
-                      <OrganicOrb size={10} colors={["#67e8f9", "#22d3ee", "#6366f1"]} glow={false} />
-                      <span className="text-[8px] sm:text-[9px] font-mono tracking-[0.25em] uppercase text-cyan-300/80">v3.0 · Unified Superagent</span>
-                    </div>
-
-                    {/* Title — compact, one line */}
-                    <h1 className="font-heading font-black tracking-[-0.02em] leading-none text-2xl sm:text-3xl text-center">
-                      <span className="bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">AGENT</span>
-                      <span className="text-white/20 mx-1.5 font-light">/</span>
-                      <span className="bg-gradient-to-r from-cyan-300 via-white to-violet-300 bg-clip-text text-transparent">INTERNET</span>
-                    </h1>
-
-                    {/* Description — tight */}
-                    <p className="mt-2.5 max-w-[260px] text-[11px] sm:text-xs text-white/55 leading-relaxed font-body text-center">
-                      One superagent runs every TTT app, waking up to <span className="text-cyan-300 font-medium">100 sub-agents</span> in the right order. A <span className="text-cyan-300 font-medium">supercomputer</span>, not a chatbot.
-                    </p>
-
-                    {/* Input */}
-                    <div className="mt-4 w-full">
-                      <PowerConsole onSubmit={openChat} />
-                    </div>
-
-                    {/* View-as toggle (admin only) */}
-                    {isAdmin && (
-                      <div className="mt-3 flex items-center justify-center gap-1 p-1 rounded-full border border-white/10 bg-black/40 w-fit mx-auto">
-                        <span className="px-2 text-[8px] font-mono tracking-widest uppercase text-white/35">view as</span>
-                        <button
-                          onClick={() => setViewAsGuest(false)}
-                          className={`px-2.5 py-1 rounded-full text-[8px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-cyan-500/15 text-cyan-300 border border-cyan-400/40" : "text-white/45 border border-transparent hover:text-white/70"}`}
-                        >
-                          TTT A.I
-                        </button>
-                        <button
-                          onClick={() => setViewAsGuest(true)}
-                          className={`px-2.5 py-1 rounded-full text-[8px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-violet-500/15 text-violet-300 border border-violet-400/40" : "text-white/45 border border-transparent hover:text-white/70"}`}
-                        >
-                          Guest
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Launch tiles */}
-                    <div className="mt-4 grid grid-cols-2 gap-2 w-full">
-                      <button
-                        onClick={() => guardLaunch("agent")}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border border-cyan-400/40 bg-cyan-500/5 hover:border-cyan-300/70 hover:bg-cyan-500/10 transition-colors"
-                      >
-                        <Globe className="w-4 h-4 text-cyan-300" />
-                        <span className="text-[9px] font-mono tracking-widest uppercase text-cyan-200">Agent Internet</span>
-                      </button>
-                      <button
-                        onClick={() => guardLaunch("ttt")}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border border-violet-400/40 bg-violet-500/5 hover:border-violet-300/70 hover:bg-violet-500/10 transition-colors"
-                      >
-                        <Boxes className="w-4 h-4 text-violet-300" />
-                        <span className="text-[9px] font-mono tracking-widest uppercase text-violet-200">TTT</span>
-                      </button>
-                    </div>
-                  </div>
+                {/* Launch buttons */}
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+                  <button
+                    onClick={() => guardLaunch("agent")}
+                    className="flex items-center justify-center gap-2.5 py-4 rounded-2xl border border-cyan-400/40 bg-cyan-500/5 hover:border-cyan-300/70 hover:bg-cyan-500/10 transition-colors"
+                  >
+                    <Globe className="w-5 h-5 text-cyan-300" />
+                    <span className="text-sm font-mono tracking-widest uppercase text-cyan-200">Launch Agent Internet</span>
+                  </button>
+                  <button
+                    onClick={() => guardLaunch("ttt")}
+                    className="flex items-center justify-center gap-2.5 py-4 rounded-2xl border border-violet-400/40 bg-violet-500/5 hover:border-violet-300/70 hover:bg-violet-500/10 transition-colors"
+                  >
+                    <Boxes className="w-5 h-5 text-violet-300" />
+                    <span className="text-sm font-mono tracking-widest uppercase text-violet-200">Launch TTT</span>
+                  </button>
                 </div>
 
                 {/* Footer status */}
-                <div className="mt-4 text-[9px] font-mono tracking-widest uppercase text-white/35 text-center">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="mt-6 text-[10px] font-mono tracking-widest uppercase text-white/35 text-center"
+                >
                   {isAdmin
                     ? viewAsGuest
                       ? "admin access · previewing guest mode"
                       : "admin access · agent internet unlocked"
                     : "agent internet · admin only · TTT open to all"}
-                </div>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
