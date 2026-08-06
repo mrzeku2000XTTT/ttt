@@ -89,12 +89,26 @@ export async function exportTimeline({ clips, assets, width = 1280, height = 720
     recorder.start(250);
     const startedAt = performance.now();
     let activeVideoId = null;
+    let timer = null;
+    let finished = false;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearInterval(timer);
+      Object.values(media).forEach((m) => { if (m.kind !== "image") m.el.pause(); });
+      onProgress?.(1);
+      // let the last frames + chunks flush before closing the file
+      setTimeout(() => {
+        try { recorder.requestData(); } catch {}
+        setTimeout(() => { try { recorder.stop(); } catch {} }, 250);
+      }, 400);
+    };
 
     const frame = () => {
       const t = (performance.now() - startedAt) / 1000;
       if (t >= total) {
-        Object.values(media).forEach((m) => { if (m.kind !== "image") m.el.pause(); });
-        recorder.stop();
+        finish();
         return;
       }
       onProgress?.(Math.min(1, t / total));
@@ -155,9 +169,12 @@ export async function exportTimeline({ clips, assets, width = 1280, height = 720
         }
       });
 
-      requestAnimationFrame(frame);
     };
-    requestAnimationFrame(frame);
+
+    // setInterval keeps painting even when the tab is backgrounded or throttled,
+    // so the recording always covers the FULL timeline, not just the visible part.
+    timer = setInterval(frame, 1000 / fps);
+    frame();
   });
 }
 
