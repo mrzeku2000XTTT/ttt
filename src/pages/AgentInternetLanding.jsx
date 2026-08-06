@@ -123,7 +123,7 @@ export default function AgentInternetLanding() {
 
         <button
           onClick={() => setShowSettings(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-black/60 backdrop-blur-md text-white/70 hover:text-white hover:border-white/40 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-black/70 backdrop-blur-xl text-white/70 hover:text-white transition-colors"
         >
           <SettingsIcon className="w-4 h-4" />
         </button>
@@ -163,11 +163,11 @@ export default function AgentInternetLanding() {
                 className="flex flex-col items-center w-full"
               >
                 {/* Merged status + version pill */}
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] mb-5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-white/70">LIVE</span>
-                  <span className="w-px h-3 bg-white/15" />
-                  <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-white/70">v3.0</span>
+                <div className="w-full flex justify-center mb-5">
+                  <div className="inline-flex items-center justify-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-white/70">LIVE · v3.0</span>
+                  </div>
                 </div>
 
                 {/* Title — large, two lines */}
@@ -209,15 +209,15 @@ export default function AgentInternetLanding() {
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
                   <button
                     onClick={() => guardLaunch("agent")}
-                    className="py-4 rounded-2xl border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/50 hover:border-white/25 transition-colors"
+                    className="h-14 px-6 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
                   >
-                    <span className="text-sm font-mono tracking-widest uppercase text-white/80">Launch Agent Internet</span>
+                    <span className="text-xs font-mono tracking-widest uppercase text-white/80">Launch Agent Internet</span>
                   </button>
                   <button
                     onClick={() => guardLaunch("ttt")}
-                    className="py-4 rounded-2xl border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/50 hover:border-white/25 transition-colors"
+                    className="h-14 px-6 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
                   >
-                    <span className="text-sm font-mono tracking-widest uppercase text-white/80">Launch TTT</span>
+                    <span className="text-xs font-mono tracking-widest uppercase text-white/80">Launch TTT</span>
                   </button>
                 </div>
 

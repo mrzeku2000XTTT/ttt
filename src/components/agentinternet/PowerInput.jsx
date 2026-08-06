@@ -90,7 +90,7 @@ export default function PowerInput({ onSubmit }) {
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center gap-2 px-4 h-14 sm:h-16 rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] focus-within:border-white/30 transition-all">
+        <div className="relative flex items-center gap-2 px-4 h-14 sm:h-16 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] focus-within:border-white/30 transition-all">
           <span className="text-white/40 font-mono text-sm sm:text-base shrink-0">›</span>
 
           <input
