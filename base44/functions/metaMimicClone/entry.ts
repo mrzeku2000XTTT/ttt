@@ -41,18 +41,36 @@ ${instructions ? `\nEXTRA USER INSTRUCTIONS: ${instructions}` : ''}
 
 Return ONLY the raw HTML document.`;
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      file_urls: [imageUrl],
-      model: 'claude_sonnet_4_6',
-    });
+    const withTimeout = (p: Promise<any>, ms: number) =>
+      Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
 
-    let html = typeof result === 'string' ? result : (result?.html || '');
-    // Strip accidental markdown fences if present
-    html = html.replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const clean = (r: any) => {
+      const raw = typeof r === 'string' ? r : (r?.html || '');
+      const stripped = raw.replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      const start = stripped.search(/<!DOCTYPE|<html/i);
+      return start >= 0 ? stripped.slice(start) : '';
+    };
+
+    // Fast model first; only fall back to the slower, higher-fidelity model if it fails.
+    let html = '';
+    try {
+      html = clean(await withTimeout(
+        base44.integrations.Core.InvokeLLM({ prompt, file_urls: [imageUrl], model: 'gemini_3_flash' }),
+        90_000,
+      ));
+    } catch { /* fall through */ }
 
     if (!html) {
-      return Response.json({ error: 'No HTML generated' }, { status: 502 });
+      try {
+        html = clean(await withTimeout(
+          base44.integrations.Core.InvokeLLM({ prompt, file_urls: [imageUrl], model: 'claude_sonnet_4_6' }),
+          150_000,
+        ));
+      } catch { /* fall through */ }
+    }
+
+    if (!html) {
+      return Response.json({ error: 'The model took too long or returned no HTML. Try a smaller / simpler screenshot.' }, { status: 502 });
     }
 
     return Response.json({ html });

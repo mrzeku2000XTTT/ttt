@@ -11,6 +11,7 @@ export default function MetaMimicStudio() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState("preview");
   const [copied, setCopied] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
 
   const pickFile = () => fileInputRef.current?.click();
 
@@ -33,6 +34,8 @@ export default function MetaMimicStudio() {
     if (!imageUrl || generating) return;
     setError("");
     setGenerating(true);
+    setElapsed(0);
+    const tick = setInterval(() => setElapsed((s) => s + 1), 1000);
     try {
       const res = await base44.functions.invoke("metaMimicClone", { imageUrl });
       if (res?.data?.html) {
@@ -44,6 +47,7 @@ export default function MetaMimicStudio() {
     } catch (err) {
       setError(err?.response?.data?.error || "Generation failed. Please try again.");
     }
+    clearInterval(tick);
     setGenerating(false);
   };
 
@@ -109,7 +113,7 @@ export default function MetaMimicStudio() {
             >
               {generating ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Cloning… (~60s)
+                  <Loader2 className="h-4 w-4 animate-spin" /> Cloning… {elapsed}s
                 </>
               ) : (
                 <>
