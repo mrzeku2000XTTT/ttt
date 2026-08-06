@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Download, Loader2, Wand2 } from "lucide-react";
+import { Send, Sparkles, Download, Loader2, Wand2, Brain } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import MemoryPanel from "@/components/hunterbeat/MemoryPanel";
+import { useHunterBeatMemory } from "@/components/hunterbeat/useHunterBeatMemory";
 
 const SUGGESTIONS = [
   "A macOS dock bouncing animation",
@@ -23,10 +25,17 @@ const PROMPT_SCHEMA = {
 };
 
 export default function HunterBeat() {
+  const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [memoryOpen, setMemoryOpen] = useState(false);
   const scrollRef = useRef(null);
+  const { skills, notes } = useHunterBeatMemory(user);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => setUser(null));
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -38,11 +47,16 @@ export default function HunterBeat() {
     setMessages((m) => [...m, userMsg]);
     setInput("");
 
+    const learnedSkills = skills.map((s) => `### ${s.title}\n${s.content.slice(0, 4000)}`).join("\n\n");
+    const userNotes = notes.map((n) => n.text).join("\n- ");
+
     try {
       const res = await base44.integrations.Core.InvokeLLM({
         prompt:
           `You are HunterBeat, an AI that crafts premium motion-graphics prompts in the Apple / macOS aesthetic.\n` +
           `The user wants: "${userIdea}"\n\n` +
+          (learnedSkills ? `The user has ingested these skill references — follow their principles:\n\n${learnedSkills}\n\n` : "") +
+          (userNotes ? `User preferences / notes:\n- ${userNotes}\n\n` : "") +
           `Write ONE detailed, production-ready image prompt that captures this as a motion-graphic still frame.\n` +
           `Style rules: Apple Human Interface Guidelines, SF typography, frosted glass, soft depth, neutral palette with one accent, generous whitespace, subtle shadows, rounded corners, NO text in the image.\n` +
           `Return a title (short, 2-4 words) and the full prompt (detailed, visual, 2-4 sentences).`,
@@ -110,7 +124,16 @@ export default function HunterBeat() {
           <span className="w-3 h-3 rounded-full bg-[#28c840]" />
         </div>
         <div className="flex-1 text-center text-[13px] font-semibold text-zinc-500">HunterBeat</div>
-        <div className="w-12" />
+        <button
+          onClick={() => setMemoryOpen(true)}
+          className="flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-[11px] font-semibold transition-colors"
+          title="Memory & Skills"
+        >
+          <Brain className="w-3.5 h-3.5" />
+          {(skills.length + notes.length) > 0 && (
+            <span className="text-[10px] font-bold text-zinc-500">{skills.length + notes.length}</span>
+          )}
+        </button>
       </div>
 
       {/* Hero */}
@@ -244,6 +267,8 @@ export default function HunterBeat() {
           </button>
         </div>
       </form>
+
+      <MemoryPanel user={user} open={memoryOpen} onClose={() => setMemoryOpen(false)} />
     </div>
   );
 }
