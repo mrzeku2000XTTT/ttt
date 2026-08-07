@@ -18,6 +18,7 @@ export default function GalaxyVideoBg() {
   const [active, setActive] = useState(0);
   const [loaded, setLoaded] = useState(() => VIDEO_URLS.map(() => false));
   const timerRef = useRef(null);
+  const videoRefs = useRef([]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
@@ -25,6 +26,27 @@ export default function GalaxyVideoBg() {
     }, ROTATION_MS);
     return () => clearInterval(timerRef.current);
   }, []);
+
+  // Force playback — iOS blocks autoplay (esp. Low Power Mode) and shows a play button overlay
+  const forcePlay = () => {
+    videoRefs.current.forEach((v) => {
+      if (v && v.paused) v.play().catch(() => {});
+    });
+  };
+
+  useEffect(() => {
+    forcePlay();
+    // Retry on first user interaction (iOS allows play after any touch)
+    const retry = () => forcePlay();
+    document.addEventListener('touchstart', retry, { passive: true });
+    document.addEventListener('click', retry);
+    const t = setTimeout(forcePlay, 1000);
+    return () => {
+      document.removeEventListener('touchstart', retry);
+      document.removeEventListener('click', retry);
+      clearTimeout(t);
+    };
+  }, [active]);
 
   const markLoaded = (idx) => setLoaded((prev) => {
     if (prev[idx]) return prev;
@@ -39,14 +61,18 @@ export default function GalaxyVideoBg() {
         return (
           <video
             key={src}
+            ref={(el) => { videoRefs.current[idx] = el; }}
             src={src}
             autoPlay
             muted
             loop
             playsInline
+            webkit-playsinline="true"
+            controls={false}
+            disablePictureInPicture
             preload="auto"
-            onCanPlay={() => markLoaded(idx)}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out"
+            onCanPlay={(e) => { markLoaded(idx); e.currentTarget.play().catch(() => {}); }}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out pointer-events-none"
             style={{
               opacity: isActive && isReady ? 0.55 : 0,
               filter: "saturate(1.1) contrast(1.05)",
