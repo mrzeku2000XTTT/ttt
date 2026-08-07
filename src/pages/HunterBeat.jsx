@@ -46,18 +46,15 @@ export default function HunterBeat() {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
 
-  // Load active chat messages into view
-  useEffect(() => {
-    if (!activeChatId) return;
-    const chat = getActiveChat();
+  // Load chat messages when user explicitly selects a chat from the sidebar
+  const selectChat = (id) => {
+    const chat = chats.find((c) => c.id === id);
     if (chat) {
       setMessages(chat.messages || []);
       setDuration(chat.duration || 6);
-    } else {
-      setMessages([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeChatId]);
+    setActiveChatId(id);
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -146,12 +143,15 @@ export default function HunterBeat() {
       const imagePrompts = result.imagePrompts;
       const results = await Promise.all(
         imagePrompts.map(async (p) => {
-          try {
-            const r = await base44.integrations.Core.GenerateImage({ prompt: p + NO_TEXT });
-            return r?.url || null;
-          } catch {
-            return null;
+          for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+              const r = await base44.integrations.Core.GenerateImage({ prompt: p + NO_TEXT });
+              if (r?.url) return r.url;
+            } catch {
+              // retry once
+            }
           }
+          return null;
         })
       );
       const images = results.filter(Boolean);
@@ -305,8 +305,8 @@ export default function HunterBeat() {
                   </div>
                 )}
 
-                {/* Response text */}
-                {msg.text && !msg.thinking && (
+                {/* Response text (not shown when error) */}
+                {msg.text && !msg.thinking && !msg.error && (
                   <>
                     {msg.title && (
                       <div className="px-4 pt-3 pb-1 text-[11px] font-bold tracking-widest uppercase text-zinc-400">
@@ -416,7 +416,7 @@ export default function HunterBeat() {
         chats={chats}
         activeChatId={activeChatId}
         onSelectChat={(id) => {
-          setActiveChatId(id);
+          selectChat(id);
           setSidebarOpen(false);
         }}
         onNewChat={() => {
