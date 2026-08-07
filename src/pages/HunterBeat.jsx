@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Loader2, Wand2, Brain, Clock, Link2, Trash2 } from "lucide-react";
+import { Send, Sparkles, Loader2, Wand2, Brain, Clock, Link2, Trash2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import MemoryPanel from "@/components/hunterbeat/MemoryPanel";
@@ -174,7 +174,16 @@ export default function HunterBeat() {
     <div className="min-h-screen bg-[#f5f5f7] text-zinc-900 flex flex-col">
       {/* macOS window chrome */}
       <div className="flex items-center gap-2 px-4 h-11 bg-white/70 backdrop-blur-xl border-b border-zinc-200/60 sticky top-0 z-20">
-        <div className="flex gap-2">
+        {/* Mobile back button — big tap target */}
+        <button
+          onClick={() => navigate("/AppStoreV2")}
+          className="sm:hidden flex items-center gap-1 -ml-1 px-2 h-8 rounded-full text-[#007AFF] text-[13px] font-semibold active:bg-zinc-100"
+          title="Close"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Close
+        </button>
+        <div className="hidden sm:flex gap-2">
           <button
             onClick={() => navigate("/AppStoreV2")}
             className="w-3 h-3 rounded-full bg-[#ff5f57] hover:opacity-80 transition-opacity"
