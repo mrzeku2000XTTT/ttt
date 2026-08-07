@@ -3,9 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 /**
  * GalaxyVideoBg — crossfades through 5 space/galaxy videos as a full-bleed background.
  * Videos play muted, loop, and rotate every ~12s with a 1.5s crossfade.
- *
- * NOTE: React's `muted` JSX attribute does NOT set the DOM `muted` IDL property,
- * so browsers block autoplay. We use refs to force muted=true + play() explicitly.
  */
 const VIDEO_URLS = [
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_030111_a9e15665-d379-4a7f-8116-695bbe452ad1.mp4',
@@ -19,22 +16,9 @@ const ROTATION_MS = 12000;
 
 export default function GalaxyVideoBg() {
   const [active, setActive] = useState(0);
-  const [ready, setReady] = useState(() => VIDEO_URLS.map(() => false));
+  const [loaded, setLoaded] = useState(() => VIDEO_URLS.map(() => false));
   const timerRef = useRef(null);
-  const videoRefs = useRef([]);
 
-  // Force muted + play on every video once mounted (defeats autoplay blockers).
-  useEffect(() => {
-    videoRefs.current.forEach((v) => {
-      if (!v) return;
-      v.muted = true;
-      v.defaultMuted = true;
-      const p = v.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-    });
-  }, []);
-
-  // Rotate the active video every ROTATION_MS.
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setActive((i) => (i + 1) % VIDEO_URLS.length);
@@ -42,16 +26,7 @@ export default function GalaxyVideoBg() {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  // Ensure the freshly-active video keeps playing (in case it stalled).
-  useEffect(() => {
-    const v = videoRefs.current[active];
-    if (!v) return;
-    v.muted = true;
-    const p = v.play();
-    if (p && typeof p.catch === "function") p.catch(() => {});
-  }, [active]);
-
-  const markReady = (idx) => setReady((prev) => {
+  const markLoaded = (idx) => setLoaded((prev) => {
     if (prev[idx]) return prev;
     const next = [...prev]; next[idx] = true; return next;
   });
@@ -60,7 +35,7 @@ export default function GalaxyVideoBg() {
     <div className="absolute inset-0 overflow-hidden bg-black">
       {VIDEO_URLS.map((src, idx) => {
         const isActive = idx === active;
-        const isReady = ready[idx];
+        const isReady = loaded[idx];
         return (
           <video
             key={src}
@@ -70,9 +45,7 @@ export default function GalaxyVideoBg() {
             loop
             playsInline
             preload="auto"
-            ref={(el) => { videoRefs.current[idx] = el; }}
-            onCanPlay={() => markReady(idx)}
-            onLoadedData={() => markReady(idx)}
+            onCanPlay={() => markLoaded(idx)}
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out"
             style={{
               opacity: isActive && isReady ? 0.55 : 0,
