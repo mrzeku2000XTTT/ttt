@@ -5,7 +5,7 @@
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
   { name: "ContentCore", path: "ContentCore", cat: "Creative", logo: "https://images.unsplash.com/photo-1626785774573-4b7996d9b3e8?w=200&h=200&fit=crop", desc: "3D content studio · mockups, text, shapes & motion — export as images" },
-  { name: "HunterBeat", path: "HunterBeat", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Apple-style motion graphics prompt studio with in-chat preview" },
+  { name: "HunterBeat", path: "HunterBeat", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Apple-style motion graphics prompt studio with in-chat preview", admin: true },
   { name: "2TIP", path: "TwoTip", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Instant KAS tipping", admin: true },
   { name: "KCC NFT", path: "KCCNft", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2e60c6e4a_generated_image.png", desc: "Mint KCC covenant NFT identities on Kaspa L1" },
   { name: "KUTT", path: "Kutt", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8d4bef7cb_generated_image.png", desc: "AI video editor — URL to viral video, real export", admin: true },
