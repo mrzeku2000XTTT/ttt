@@ -13,6 +13,11 @@ Deno.serve(async (req) => {
 
     const { game_id } = await req.json().catch(() => ({}));
 
+    // Validate game_id format if provided (prevent injection)
+    if (game_id && typeof game_id !== 'string') {
+      return Response.json({ error: 'Invalid game_id' }, { status: 400 });
+    }
+
     // Get open games
     let games;
     if (game_id) {
@@ -22,8 +27,15 @@ Deno.serve(async (req) => {
     }
 
     const results = [];
+    const MIN_CONFIRMATIONS = 1; // Require at least 1 block confirmation
 
     for (const game of games) {
+      // Validate escrow address format
+      if (!game.escrow_address || !/^kaspa:[a-z0-9]{60,68}$/.test(game.escrow_address)) {
+        results.push({ game_id: game.id, error: 'Invalid escrow address' });
+        continue;
+      }
+
       // Get escrow balance
       const balRes = await fetch(`${KASPA_API}/addresses/kaspa:${game.escrow_address}/balance`);
       const balData = await balRes.json();
@@ -35,11 +47,14 @@ Deno.serve(async (req) => {
         status: 'pending_deposit'
       });
 
-      // Check UTXOs for matching deposits
-      let utxos = [];
+      // Get confirmed UTXOs (deposits) — only those with sufficient confirmations
+      let confirmedUtxos = [];
       try {
         const utxoRes = await fetch(`${KASPA_API}/addresses/kaspa:${game.escrow_address}/utxos`);
-        utxos = await utxoRes.json();
+        const utxoData = await utxoRes.json();
+        confirmedUtxos = (Array.isArray(utxoData) ? utxoData : []).filter(u => 
+          (u.confirmations || 0) >= MIN_CONFIRMATIONS
+        );
       } catch {}
 
       let confirmedCount = 0;
@@ -49,43 +64,52 @@ Deno.serve(async (req) => {
       let yesCount = game.yes_count || 0;
       let noCount = game.no_count || 0;
 
-      // Simple: if escrow has enough balance, confirm bets in order
-      const totalPending = pendingBets.reduce((s, b) => s + b.amount_kas, 0);
+      // Match individual UTXOs to bets by exact amount.
+      // This prevents confirming bets that weren't actually deposited.
+      // Each UTXO can only confirm one bet (consumed on match).
+      const usedUtxoIds = new Set();
       
-      if (escrowBalance > 0 && pendingBets.length > 0) {
-        let availableBalance = escrowBalance - totalPool; // Only new deposits
+      for (const bet of pendingBets) {
+        const betAmountSatoshis = Math.round(bet.amount_kas * 1e8);
         
-        for (const bet of pendingBets) {
-          if (availableBalance >= bet.amount_kas * 0.95) { // 5% tolerance for fees
-            await base44.asServiceRole.entities.GameBet.update(bet.id, {
-              status: 'confirmed',
-              verified: true
-            });
-            
-            if (bet.side === 'yes') {
-              yesPool += bet.amount_kas;
-              yesCount++;
-            } else {
-              noPool += bet.amount_kas;
-              noCount++;
-            }
-            totalPool += bet.amount_kas;
-            availableBalance -= bet.amount_kas;
-            confirmedCount++;
-          }
-        }
+        // Find a confirmed UTXO that matches this bet's amount exactly
+        const matchingUtxo = confirmedUtxos.find(u => {
+          if (usedUtxoIds.has(u.outpoint || u.id)) return false;
+          // Match within 0.1% tolerance for dust/fee rounding
+          const utxoAmount = u.amount || (u.value || 0);
+          return Math.abs(utxoAmount - betAmountSatoshis) <= betAmountSatoshis * 0.001;
+        });
 
-        // Update game pools
-        if (confirmedCount > 0) {
-          await base44.asServiceRole.entities.PredictionGame.update(game.id, {
-            yes_pool_kas: yesPool,
-            no_pool_kas: noPool,
-            total_pool_kas: totalPool,
-            yes_count: yesCount,
-            no_count: noCount,
-            bot_status: 'ready'
+        if (matchingUtxo) {
+          usedUtxoIds.add(matchingUtxo.outpoint || matchingUtxo.id);
+          
+          await base44.asServiceRole.entities.GameBet.update(bet.id, {
+            status: 'confirmed',
+            verified: true
           });
+          
+          if (bet.side === 'yes') {
+            yesPool += bet.amount_kas;
+            yesCount++;
+          } else {
+            noPool += bet.amount_kas;
+            noCount++;
+          }
+          totalPool += bet.amount_kas;
+          confirmedCount++;
         }
+      }
+
+      // Update game pools
+      if (confirmedCount > 0) {
+        await base44.asServiceRole.entities.PredictionGame.update(game.id, {
+          yes_pool_kas: yesPool,
+          no_pool_kas: noPool,
+          total_pool_kas: totalPool,
+          yes_count: yesCount,
+          no_count: noCount,
+          bot_status: 'ready'
+        });
       }
 
       results.push({
