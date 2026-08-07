@@ -56,6 +56,20 @@ export default function HunterBeat() {
     setActiveChatId(id);
   };
 
+  // On mount: load messages from the active chat (restored from localStorage)
+  const didInitialLoad = useRef(false);
+  useEffect(() => {
+    if (didInitialLoad.current) return;
+    if (activeChatId && chats.length > 0) {
+      const chat = chats.find((c) => c.id === activeChatId);
+      if (chat && chat.messages?.length > 0) {
+        setMessages(chat.messages);
+        setDuration(chat.duration || 6);
+      }
+      didInitialLoad.current = true;
+    }
+  }, [activeChatId, chats]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
