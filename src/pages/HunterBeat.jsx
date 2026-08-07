@@ -1,12 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Loader2, Wand2, Brain, Clock, Link2, Menu, Plus } from "lucide-react";
+import { Send, Sparkles, Loader2, Wand2, Brain, Clock, Link2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import MemoryPanel from "@/components/hunterbeat/MemoryPanel";
 import { useHunterBeatMemory } from "@/components/hunterbeat/useHunterBeatMemory";
-import { useHunterBeatChats } from "@/components/hunterbeat/useHunterBeatChats";
-import ChatHistorySidebar from "@/components/hunterbeat/ChatHistorySidebar";
 import FramePreview from "@/components/hunterbeat/FramePreview";
 import { orchestrate } from "@/components/hunterbeat/hunterBeatOrchestrator";
 
@@ -29,46 +27,39 @@ export default function HunterBeat() {
   const [busy, setBusy] = useState(false);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [duration, setDuration] = useState(6);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const scrollRef = useRef(null);
   const { skills, notes } = useHunterBeatMemory(user);
-  const {
-    chats,
-    activeChatId,
-    setActiveChatId,
-    createChat,
-    deleteChat,
-    updateChat,
-    getActiveChat,
-  } = useHunterBeatChats(user);
+
+  // Single conversation persisted to localStorage
+  const STORAGE_KEY = "hunterbeat_messages_v1";
+  const DUR_KEY = "hunterbeat_duration_v1";
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
 
-  // Load chat messages when user explicitly selects a chat from the sidebar
-  const selectChat = (id) => {
-    const chat = chats.find((c) => c.id === id);
-    if (chat) {
-      setMessages(chat.messages || []);
-      setDuration(chat.duration || 6);
-    }
-    setActiveChatId(id);
-  };
-
-  // On mount: load messages from the active chat (restored from localStorage)
-  const didInitialLoad = useRef(false);
+  // Load saved conversation on mount
   useEffect(() => {
-    if (didInitialLoad.current) return;
-    if (activeChatId && chats.length > 0) {
-      const chat = chats.find((c) => c.id === activeChatId);
-      if (chat && chat.messages?.length > 0) {
-        setMessages(chat.messages);
-        setDuration(chat.duration || 6);
-      }
-      didInitialLoad.current = true;
-    }
-  }, [activeChatId, chats]);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setMessages(JSON.parse(saved));
+      const savedDur = localStorage.getItem(DUR_KEY);
+      if (savedDur) setDuration(Number(savedDur));
+    } catch {}
+  }, []);
+
+  // Persist messages + duration whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    } catch {}
+  }, [messages]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DUR_KEY, String(duration));
+    } catch {}
+  }, [duration]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -81,21 +72,10 @@ export default function HunterBeat() {
     return null;
   };
 
-  // Persist messages + duration to active chat
-  const persistChat = useCallback(
-    (msgs, dur) => {
-      if (!activeChatId) return;
-      const title = msgs.find((m) => m.role === "user")?.text?.slice(0, 40) || "New chat";
-      updateChat(activeChatId, { messages: msgs, duration: dur, title });
-    },
-    [activeChatId, updateChat]
-  );
-
-  useEffect(() => {
-    if (activeChatId && messages.length > 0) {
-      persistChat(messages, duration);
-    }
-  }, [messages, duration, activeChatId, persistChat]);
+  const clearChat = () => {
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   const updateMessage = (id, patch) => {
     setMessages((m) => m.map((x) => (x.id === id ? { ...x, ...patch } : x)));
@@ -104,12 +84,6 @@ export default function HunterBeat() {
   const handleSend = async (rawInput) => {
     if (!rawInput?.trim() || busy) return;
     setBusy(true);
-
-    // Auto-create a chat if none active
-    let chatId = activeChatId;
-    if (!chatId) {
-      chatId = createChat();
-    }
 
     const userMsg = { id: Date.now(), role: "user", text: rawInput };
     const assistantId = Date.now() + 1;
@@ -208,24 +182,16 @@ export default function HunterBeat() {
           <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
           <span className="w-3 h-3 rounded-full bg-[#28c840]" />
         </div>
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-zinc-100 text-zinc-500 transition-colors"
-          title="Chat history"
-        >
-          <Menu className="w-4 h-4" />
-        </button>
         <div className="flex-1 text-center text-[13px] font-semibold text-zinc-500">HunterBeat</div>
-        <button
-          onClick={() => {
-            createChat();
-            setMessages([]);
-          }}
-          className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-zinc-100 text-zinc-500 transition-colors"
-          title="New chat"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+        {messages.length > 0 && (
+          <button
+            onClick={clearChat}
+            className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-zinc-100 text-zinc-500 transition-colors"
+            title="Clear chat"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
         <button
           onClick={() => setMemoryOpen(true)}
           className="flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-[11px] font-semibold transition-colors"
@@ -424,22 +390,6 @@ export default function HunterBeat() {
       </form>
 
       <MemoryPanel user={user} open={memoryOpen} onClose={() => setMemoryOpen(false)} />
-      <ChatHistorySidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        chats={chats}
-        activeChatId={activeChatId}
-        onSelectChat={(id) => {
-          selectChat(id);
-          setSidebarOpen(false);
-        }}
-        onNewChat={() => {
-          createChat();
-          setMessages([]);
-          setSidebarOpen(false);
-        }}
-        onDeleteChat={deleteChat}
-      />
     </div>
   );
 }
