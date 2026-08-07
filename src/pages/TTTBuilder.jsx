@@ -459,11 +459,17 @@ Return the file operations only.`,
     <div className="min-h-screen bg-[#0d1117] text-white overflow-x-hidden">
 
       {/* Top nav */}
-      <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-[#0d1117]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate("/AppStoreV2")} className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors mr-2">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-xs font-medium">Back</span>
+      <nav
+        className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 bg-[#0d1117]/80 backdrop-blur-xl border-b border-white/5"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)", minHeight: "calc(3rem + env(safe-area-inset-top, 0px))" }}
+      >
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => navigate("/AppStoreV2")}
+            className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-white/5"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-sm font-medium">Back</span>
           </button>
           <span className="font-black text-lg tracking-tight">TTT</span>
           <span className="text-[10px] font-bold bg-[#70C7BA] text-black px-1.5 py-0.5 rounded">BUILDER</span>
@@ -488,7 +494,8 @@ Return the file operations only.`,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
-            className="min-h-screen flex flex-col items-center justify-center px-5 pt-12"
+            className="min-h-screen flex flex-col items-center justify-center px-5"
+            style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
             {/* Glow bg */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -617,7 +624,8 @@ Return the file operations only.`,
             key="studio"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="pt-12 h-screen flex flex-col"
+            className="h-screen flex flex-col"
+            style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
             {/* Mobile view toggle */}
             <div className="lg:hidden flex items-center gap-1 px-3 py-2 border-b border-white/5 bg-[#0d1117] flex-shrink-0">
