@@ -152,10 +152,11 @@ export default function HunterBeat() {
         renderProgress: undefined,
       });
     } catch (e) {
+      console.error("HunterBeat orchestrate error:", e);
       updateMessage(assistantId, {
         thinking: false,
         rendering: false,
-        text: "Something went wrong. Try again or rephrase.",
+        text: `Error: ${e?.message || "Something went wrong"}`,
         error: true,
         renderProgress: undefined,
       });

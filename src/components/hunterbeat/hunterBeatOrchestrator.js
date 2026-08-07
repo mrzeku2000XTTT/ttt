@@ -85,8 +85,8 @@ export async function orchestrate({
     }
   }
 
-  // Phase 2: Art Director + Copywriter in parallel
-  const [art, copy] = await Promise.all([
+  // Phase 2: Art Director + Copywriter in parallel (each fails independently)
+  const [artRes, copyRes] = await Promise.allSettled([
     base44.integrations.Core.InvokeLLM({
       prompt:
         `You are the Art Director for HunterBeat, an Apple-style motion graphics studio.\n\n` +
@@ -103,7 +103,6 @@ export async function orchestrate({
         `Image prompts: 2-4 sentences, highly visual, NO text in the image.\n` +
         `Return the full spec.`,
       response_json_schema: ART_DIRECTOR_SCHEMA,
-      model: "claude_sonnet_4_6",
     }).then((r) => {
       onThought?.("Art Director", r.reasoning || "Motion spec designed");
       return r;
@@ -122,6 +121,14 @@ export async function orchestrate({
       return r;
     }),
   ]);
+
+  if (artRes.status === "rejected") {
+    console.error("Art Director failed:", artRes.reason);
+    throw new Error(`Art Director: ${artRes.reason?.message || artRes.reason || "LLM error"}`);
+  }
+
+  const art = artRes.value;
+  const copy = copyRes.status === "fulfilled" ? copyRes.value : { response: "Here's your motion graphic.", style_notes: "" };
 
   const imagePrompts = [art.image_prompt, art.image_prompt_2].filter(Boolean);
 
