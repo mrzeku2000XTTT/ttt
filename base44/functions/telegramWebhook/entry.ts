@@ -37,12 +37,10 @@ Deno.serve(async (req) => {
     // Use service role since webhook has no user session
     const base44 = createClientFromRequest(req);
 
-    // Find which user owns this bot
-    const allLinks = await base44.asServiceRole.entities.TelegramBotLink.list();
-    console.log(`[telegramWebhook] Total links in DB: ${allLinks.length}, looking for token: ${token.slice(0,15)}...`);
-    const link = allLinks.find(l => l.bot_token === token);
+    // Find which user owns this bot — filter by token directly (never load all tokens)
+    const links = await base44.asServiceRole.entities.TelegramBotLink.filter({ bot_token: token });
+    const link = links && links.length > 0 ? links[0] : null;
     if (!link) {
-      console.log(`[telegramWebhook] No match. Available tokens: ${allLinks.map(l => (l.bot_token||'').slice(0,15)).join(', ')}`);
       await sendTelegram(token, chatId, '❌ This bot is not linked to any TTT account.');
       return Response.json({ ok: true });
     }
