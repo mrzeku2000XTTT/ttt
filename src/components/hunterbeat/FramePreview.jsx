@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Player } from "@remotion/player";
 import { Download, Loader2 } from "lucide-react";
-import MotionGraphicsComposition, { MOTION_FPS, MOTION_DURATION } from "./MotionGraphicsComposition";
+import MotionGraphicsComposition, { MOTION_FPS } from "./MotionGraphicsComposition";
 
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const easeOutExpo = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
 
-export default function FramePreview({ images, spec, title }) {
+export default function FramePreview({ images, spec, title, durationSeconds = 6 }) {
   const [loaded, setLoaded] = useState(0);
   const [recording, setRecording] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
@@ -14,9 +14,8 @@ export default function FramePreview({ images, spec, title }) {
   const canvasRef = useRef(null);
 
   const FPS = MOTION_FPS;
-  const TOTAL_FRAMES = MOTION_DURATION;
+  const TOTAL_FRAMES = Math.round(durationSeconds * FPS);
 
-  // Load images for canvas export
   useEffect(() => {
     setLoaded(0);
     imgsRef.current = [];
@@ -41,7 +40,6 @@ export default function FramePreview({ images, spec, title }) {
     };
   }, [images]);
 
-  // Canvas-based export mirroring the Remotion composition
   const drawCanvasFrame = useCallback(
     (frameNum) => {
       const canvas = canvasRef.current;
@@ -54,9 +52,8 @@ export default function FramePreview({ images, spec, title }) {
       const imgs = imgsRef.current;
       const accent = spec?.accent_color || "#0A84FF";
       const overlayText = spec?.overlay_text || spec?.title || "";
-      const hasTwo = imgs.filter(Boolean).length >= 2;
+      const hasTwo = imgs.filter(Boolean).length >= 2 && spec?.motion_style === "crossfade";
 
-      // --- Background: Ken Burns or crossfade ---
       const t = frameNum / TOTAL_FRAMES;
       const zoom = 1.05 + 0.08 * easeOutExpo(t);
       const panProgress = easeInOut(Math.min(t * 1.5, 1));
@@ -79,13 +76,13 @@ export default function FramePreview({ images, spec, title }) {
         const crossStart = TOTAL_FRAMES * 0.35;
         const crossDur = TOTAL_FRAMES * 0.25;
         const progress = Math.max(0, Math.min(1, (frameNum - crossStart) / crossDur));
-        drawCover(imgs[0], 1 - progress, 1.05 + 0.05 * easeOutExpo(frameNum / 120), 0, 0);
-        if (progress > 0) drawCover(imgs[1], progress, 1.08 + 0.05 * easeOutExpo((frameNum - crossStart) / 120), 0, 0);
+        drawCover(imgs[0], 1 - progress, 1.05 + 0.05 * easeOutExpo(t), 0, 0);
+        if (progress > 0) drawCover(imgs[1], progress, 1.08 + 0.05 * easeOutExpo(Math.max(0, t - 0.35)), 0, 0);
       } else {
         drawCover(imgs[0], 1, zoom, panX, panY);
       }
 
-      // --- Vignette ---
+      // Vignette
       const vg = ctx.createLinearGradient(0, H * 0.4, 0, H);
       vg.addColorStop(0, "rgba(0,0,0,0)");
       vg.addColorStop(1, "rgba(0,0,0,0.35)");
@@ -95,31 +92,32 @@ export default function FramePreview({ images, spec, title }) {
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
 
-      // --- Overlay text (slide up + fade with spring-like easing) ---
+      // Overlay text
       if (overlayText) {
-        const delay = 20;
+        const delay = Math.floor(TOTAL_FRAMES * 0.11);
         const local = frameNum - delay;
         if (local >= 0) {
           const textProgress = Math.min(1, local / 20);
           const eased = easeOutExpo(textProgress);
-          const textY = H * 0.88 - eased * 40;
+          const textY = H * 0.86 - eased * 40;
           const textOpacity = eased;
           const blurPx = (1 - eased) * 8;
 
-          ctx.font = "bold 42px -apple-system, 'SF Pro Display', 'Inter', sans-serif";
+          const fadeOutStart = TOTAL_FRAMES - 15;
+          const fadeOut = frameNum > fadeOutStart ? Math.max(0, 1 - (frameNum - fadeOutStart) / 15) : 1;
+
+          ctx.font = "bold 44px -apple-system, 'SF Pro Display', 'Inter', sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
 
-          // Pill background
           const textW = ctx.measureText(overlayText).width;
-          const pillW = textW + 56;
-          const pillH = 62;
+          const pillW = textW + 64;
+          const pillH = 66;
           const pillX = W / 2 - pillW / 2;
           const pillY = textY - pillH / 2;
 
-          ctx.globalAlpha = textOpacity;
+          ctx.globalAlpha = textOpacity * fadeOut;
           ctx.fillStyle = "rgba(0,0,0,0.45)";
-          // Rounded rect
           const r = pillH / 2;
           ctx.beginPath();
           ctx.moveTo(pillX + r, pillY);
@@ -138,18 +136,21 @@ export default function FramePreview({ images, spec, title }) {
         }
       }
 
-      // --- Accent bar (scale in from center) ---
+      // Accent bar
       {
-        const delay = 35;
+        const delay = Math.floor(TOTAL_FRAMES * 0.19);
         const local = frameNum - delay;
         if (local >= 0) {
           const progress = easeOutExpo(Math.min(1, local / 18));
           const barW = 120 * progress;
           const barH = 5;
           const barX = W / 2 - barW / 2;
-          const barY = H * 0.94;
+          const barY = H * 0.93;
 
-          ctx.globalAlpha = progress * 0.9;
+          const fadeOutStart = TOTAL_FRAMES - 10;
+          const fadeOut = frameNum > fadeOutStart ? Math.max(0, 1 - (frameNum - fadeOutStart) / 10) : 1;
+
+          ctx.globalAlpha = progress * 0.9 * fadeOut;
           ctx.fillStyle = accent;
           ctx.shadowColor = accent;
           ctx.shadowBlur = 20;
@@ -204,16 +205,16 @@ export default function FramePreview({ images, spec, title }) {
   }, [recording, drawCanvasFrame, FPS, TOTAL_FRAMES]);
 
   const allLoaded = loaded >= (images?.length || 0) && (images?.length || 0) > 0;
+  const duration = durationSeconds || 6;
 
   return (
     <div className="relative">
-      {/* Remotion Player preview */}
       <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
         {allLoaded ? (
           <Player
             component={MotionGraphicsComposition}
-            inputProps={{ spec, images }}
-            durationInFrames={TOTAL_FRAMES}
+            inputProps={{ spec, images, durationSeconds: duration }}
+            durationInFrames={Math.round(duration * FPS)}
             fps={FPS}
             compositionWidth={1280}
             compositionHeight={720}
@@ -233,25 +234,22 @@ export default function FramePreview({ images, spec, title }) {
         )}
       </div>
 
-      {/* Export button */}
-      {allLoaded && (
-        <div className="mt-2 flex items-center gap-2 justify-end">
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-[11px] text-zinc-400 font-medium">{duration}s · {Math.round(duration * FPS)} frames</span>
+        {allLoaded && (
           <button
             onClick={exportVideo}
             disabled={recording}
             className="flex items-center gap-1.5 px-3 h-8 rounded-full bg-zinc-900 text-white text-[11px] font-semibold disabled:opacity-50 hover:bg-zinc-800 transition-colors"
-            title="Export as WebM video"
           >
             {recording ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
             {recording ? "Recording…" : "Export video"}
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Hidden canvas for export */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Exported video result */}
       {videoUrl && (
         <div className="mt-2">
           <video src={videoUrl} controls loop muted autoPlay playsInline className="w-full rounded-xl bg-black" />

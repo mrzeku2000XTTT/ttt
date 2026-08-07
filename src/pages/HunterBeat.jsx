@@ -1,45 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Loader2, Wand2, Brain } from "lucide-react";
+import { Send, Sparkles, Loader2, Wand2, Brain, Clock, Link2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import MemoryPanel from "@/components/hunterbeat/MemoryPanel";
 import { useHunterBeatMemory } from "@/components/hunterbeat/useHunterBeatMemory";
 import FramePreview from "@/components/hunterbeat/FramePreview";
+import { orchestrate } from "@/components/hunterbeat/hunterBeatOrchestrator";
 
 const NO_TEXT = " ABSOLUTELY NO TEXT: no words, no letters, no numbers, no labels, no logos, no captions, no watermarks, no UI copy anywhere in the frame.";
-
-const MOTION_SCHEMA = {
-  type: "object",
-  properties: {
-    title: { type: "string", description: "Short 2-4 word title for this motion graphic" },
-    image_prompt: { type: "string", description: "ONE detailed prompt for the background image — Apple / macOS aesthetic, frosted glass, soft depth, neutral palette with one accent, rounded corners, generous whitespace, NO text in the image" },
-    image_prompt_2: { type: "string", description: "Optional second background image prompt for a crossfade transition. Leave empty if not needed." },
-    overlay_text: { type: "string", description: "Short 1-3 word text to animate over the motion graphic (displayed in a frosted glass pill at bottom)" },
-    accent_color: { type: "string", description: "Hex color for the accent bar (e.g. #0A84FF for Apple blue)" },
-    motion_style: { type: "string", enum: ["ken_burns", "crossfade"], description: "Ken Burns pan+zoom for single image, or crossfade if two images" },
-  },
-  required: ["title", "image_prompt", "overlay_text", "accent_color"],
-};
 
 const SUGGESTIONS = [
   "A macOS dock bouncing animation",
   "An iOS app launch splash with blur",
   "An Apple-style notification slide-in",
-  "A macOS window minimize genie effect",
-  "An iOS control center toggle animation",
   "An Apple Pay button press animation",
+  "https://apple.com — make a motion graphic for this site",
+  "An iOS control center toggle animation",
 ];
-
-const PROMPT_SCHEMA = {
-  type: "object",
-  properties: {
-    prompt: { type: "string" },
-    title: { type: "string" },
-    style_notes: { type: "string" },
-  },
-  required: ["prompt", "title"],
-};
 
 export default function HunterBeat() {
   const navigate = useNavigate();
@@ -48,6 +26,7 @@ export default function HunterBeat() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [memoryOpen, setMemoryOpen] = useState(false);
+  const [duration, setDuration] = useState(6);
   const scrollRef = useRef(null);
   const { skills, notes } = useHunterBeatMemory(user);
 
@@ -59,81 +38,67 @@ export default function HunterBeat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
 
-  const generatePrompt = async (userIdea) => {
-    setBusy(true);
-    const userMsg = { id: Date.now(), role: "user", text: userIdea };
-    setMessages((m) => [...m, userMsg]);
-    setInput("");
-
-    const learnedSkills = skills.map((s) => `### ${s.title}\n${s.content.slice(0, 4000)}`).join("\n\n");
-    const userNotes = notes.map((n) => n.text).join("\n- ");
-
-    try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt:
-          `You are HunterBeat, an AI that crafts premium motion-graphics prompts in the Apple / macOS aesthetic.\n` +
-          `The user wants: "${userIdea}"\n\n` +
-          (learnedSkills ? `The user has ingested these skill references — follow their principles:\n\n${learnedSkills}\n\n` : "") +
-          (userNotes ? `User preferences / notes:\n- ${userNotes}\n\n` : "") +
-          `Write ONE detailed, production-ready image prompt that captures this as a motion-graphic still frame.\n` +
-          `Style rules: Apple Human Interface Guidelines, SF typography, frosted glass, soft depth, neutral palette with one accent, generous whitespace, subtle shadows, rounded corners, NO text in the image.\n` +
-          `Return a title (short, 2-4 words) and the full prompt (detailed, visual, 2-4 sentences).`,
-        response_json_schema: PROMPT_SCHEMA,
-      });
-      setMessages((m) => [
-        ...m,
-        {
-          id: Date.now() + 1,
-          role: "assistant",
-          text: res.prompt,
-          title: res.title,
-          styleNotes: res.style_notes,
-          imageUrl: null,
-          rendering: false,
-        },
-      ]);
-    } catch (e) {
-      setMessages((m) => [
-        ...m,
-        { id: Date.now() + 1, role: "assistant", text: "Couldn't craft that prompt. Try rephrasing.", error: true },
-      ]);
-    } finally {
-      setBusy(false);
+  const getLastSpec = () => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].spec) return messages[i].spec;
     }
+    return null;
   };
 
-  const renderPreview = async (msgId) => {
-    const msg = messages.find((m) => m.id === msgId);
-    if (!msg || msg.rendering || msg.frames) return;
+  const updateMessage = (id, patch) => {
+    setMessages((m) => m.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  };
 
-    setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: true, renderProgress: "Directing motion graphics…" } : x)));
+  const handleSend = async (rawInput) => {
+    if (!rawInput?.trim() || busy) return;
+    setBusy(true);
+
+    const userMsg = { id: Date.now(), role: "user", text: rawInput };
+    const assistantId = Date.now() + 1;
+    const assistantMsg = {
+      id: assistantId,
+      role: "assistant",
+      text: "",
+      thoughts: [],
+      thinking: true,
+      rendering: false,
+    };
+    setMessages((m) => [...m, userMsg, assistantMsg]);
+    setInput("");
+
     try {
-      // 1. LLM generates a motion spec (overlay text, accent color, image prompt)
-      const plan = await base44.integrations.Core.InvokeLLM({
-        prompt:
-          `You are a motion-graphics director. Create a motion-graphic spec for this prompt:\n\n` +
-          `PROMPT: """${msg.text}"""\n\n` +
-          `Design ONE background image (or two for a crossfade). The composition will animate with Ken Burns pan+zoom, a spring-animated title overlay, and an accent bar.\n` +
-          `Style: Apple / macOS aesthetic, frosted glass, soft depth, neutral palette with one accent, rounded corners, generous whitespace.\n` +
-          `The overlay_text should be 1-3 words that capture the motion graphic's theme.\n` +
-          `The accent_color should be a hex color (e.g. #0A84FF for Apple blue).\n` +
-          `Return the full motion spec.`,
-        response_json_schema: MOTION_SCHEMA,
+      const result = await orchestrate({
+        userInput: rawInput,
+        conversation: [...messages, userMsg],
+        skills,
+        notes,
+        durationSeconds: duration,
+        lastSpec: getLastSpec(),
+        onThought: (agent, text) => {
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === assistantId
+                ? { ...x, thoughts: [...(x.thoughts || []), { agent, text, ts: Date.now() }] }
+                : x
+            )
+          );
+        },
       });
 
-      const spec = {
-        title: plan.title,
-        overlay_text: plan.overlay_text,
-        accent_color: plan.accent_color || "#0A84FF",
-        motion_style: plan.motion_style || "ken_burns",
-        background: "#000000",
-      };
+      // Auto-render images
+      updateMessage(assistantId, {
+        thinking: false,
+        text: result.response,
+        title: result.spec.title,
+        styleNotes: result.styleNotes,
+        spec: result.spec,
+        rendering: true,
+        renderProgress: `Rendering ${result.imagePrompts.length} background image(s)…`,
+      });
 
-      // 2. Generate 1-2 background images in parallel
-      const prompts = [plan.image_prompt, plan.image_prompt_2].filter(Boolean);
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, renderProgress: `Rendering ${prompts.length} background image(s)…` } : x)));
+      const imagePrompts = result.imagePrompts;
       const results = await Promise.all(
-        prompts.map(async (p) => {
+        imagePrompts.map(async (p) => {
           try {
             const r = await base44.integrations.Core.GenerateImage({ prompt: p + NO_TEXT });
             return r?.url || null;
@@ -145,22 +110,34 @@ export default function HunterBeat() {
       const images = results.filter(Boolean);
       if (images.length < 1) throw new Error("Image generation failed");
 
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, frames: images, images, spec, renderProgress: undefined } : x)));
+      updateMessage(assistantId, {
+        rendering: false,
+        frames: images,
+        images,
+        renderProgress: undefined,
+      });
     } catch (e) {
-      setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, rendering: false, renderError: true, renderProgress: undefined } : x)));
+      updateMessage(assistantId, {
+        thinking: false,
+        rendering: false,
+        text: "Something went wrong. Try again or rephrase.",
+        error: true,
+        renderProgress: undefined,
+      });
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!input.trim() || busy) return;
-    generatePrompt(input.trim());
+    handleSend(input);
   };
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-zinc-900 flex flex-col">
       {/* macOS window chrome */}
-      <div className="flex items-center gap-2 px-4 h-11 bg-white/70 backdrop-blur-xl border-b border-zinc-200/60">
+      <div className="flex items-center gap-2 px-4 h-11 bg-white/70 backdrop-blur-xl border-b border-zinc-200/60 sticky top-0 z-20">
         <div className="flex gap-2">
           <button
             onClick={() => navigate("/AppStoreV2")}
@@ -174,7 +151,6 @@ export default function HunterBeat() {
         <button
           onClick={() => setMemoryOpen(true)}
           className="flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-[11px] font-semibold transition-colors"
-          title="Memory & Skills"
         >
           <Brain className="w-3.5 h-3.5" />
           {(skills.length + notes.length) > 0 && (
@@ -184,27 +160,17 @@ export default function HunterBeat() {
       </div>
 
       {/* Hero */}
-      <div className="px-6 pt-8 pb-4 text-center">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 text-white text-[10px] font-bold tracking-widest uppercase mb-3">
-          <Wand2 className="w-3 h-3" /> Motion Prompt Studio
+      {messages.length === 0 && (
+        <div className="px-6 pt-8 pb-4 text-center">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 text-white text-[10px] font-bold tracking-widest uppercase mb-3">
+            <Wand2 className="w-3 h-3" /> Motion Prompt Studio
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-[800] tracking-tight">Apple-style motion graphics, on prompt</h1>
+          <p className="text-zinc-500 text-sm mt-2 max-w-md mx-auto">
+            Describe a motion graphic, paste a URL, or ask for edits. Parallel agents research, design, and render — you just talk.
+          </p>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-[800] tracking-tight">Apple-style motion graphics, on prompt</h1>
-        <p className="text-zinc-500 text-sm mt-2 max-w-md mx-auto">
-          Describe a motion graphic. HunterBeat crafts a refined Apple / macOS aesthetic prompt and renders a preview you can save.
-        </p>
-        <button
-          onClick={() => setMemoryOpen(true)}
-          className="mt-4 inline-flex items-center gap-2 px-5 h-10 rounded-full bg-zinc-900 text-white text-[13px] font-semibold hover:bg-zinc-800 transition-colors"
-        >
-          <Brain className="w-4 h-4" />
-          Skills & Memory
-          {(skills.length + notes.length) > 0 && (
-            <span className="ml-1 min-w-5 h-5 px-1.5 rounded-full bg-white/20 text-[11px] font-bold flex items-center justify-center">
-              {skills.length + notes.length}
-            </span>
-          )}
-        </button>
-      </div>
+      )}
 
       {/* Suggestions */}
       {messages.length === 0 && (
@@ -212,10 +178,11 @@ export default function HunterBeat() {
           {SUGGESTIONS.map((s) => (
             <button
               key={s}
-              onClick={() => generatePrompt(s)}
+              onClick={() => handleSend(s)}
               disabled={busy}
               className="px-3 py-2 rounded-full bg-white text-[12px] font-medium text-zinc-600 ring-1 ring-zinc-200 hover:bg-zinc-50 hover:ring-zinc-300 transition-colors disabled:opacity-40"
             >
+              {s.startsWith("http") && <Link2 className="w-3 h-3 inline mr-1" />}
               {s}
             </button>
           ))}
@@ -223,7 +190,7 @@ export default function HunterBeat() {
       )}
 
       {/* Chat */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 max-w-2xl w-full mx-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3 max-w-2xl w-full mx-auto">
         {messages.map((msg) => (
           <motion.div
             key={msg.id}
@@ -232,21 +199,69 @@ export default function HunterBeat() {
             className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
           >
             {msg.role === "user" ? (
-              <div className="max-w-[80%] px-4 py-2.5 rounded-2xl bg-blue-500 text-white text-sm">{msg.text}</div>
+              /* Apple pill user bubble */
+              <div className="max-w-[80%] px-4 py-2.5 rounded-[20px] bg-[#007AFF] text-white text-sm rounded-br-[6px] shadow-sm">
+                {msg.text}
+              </div>
             ) : (
-              <div className="max-w-[88%] w-full rounded-2xl bg-white ring-1 ring-zinc-200/70 shadow-sm overflow-hidden">
-                {msg.title && (
-                  <div className="px-4 pt-3 pb-1 text-[11px] font-bold tracking-widest uppercase text-zinc-400">
-                    {msg.title}
+              /* Apple pill assistant bubble */
+              <div className="max-w-[90%] w-full rounded-[20px] bg-white/80 backdrop-blur-xl ring-1 ring-zinc-200/60 shadow-sm overflow-hidden rounded-bl-[6px]">
+                {/* Thoughts stream */}
+                {msg.thinking && msg.thoughts && msg.thoughts.length > 0 && (
+                  <div className="px-4 pt-3 pb-2 space-y-1.5">
+                    <AnimatePresence>
+                      {msg.thoughts.map((th, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-2"
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 min-w-[70px]">
+                            {th.agent}
+                          </span>
+                          <span className="text-[11px] text-zinc-500 leading-snug">{th.text}</span>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
-                <div className="px-4 pb-3 text-sm text-zinc-700 leading-relaxed">{msg.text}</div>
 
-                {msg.styleNotes && (
-                  <div className="px-4 pb-3 text-[11px] text-zinc-400">
-                    <Sparkles className="w-3 h-3 inline mr-1" />
-                    {msg.styleNotes}
+                {/* Thinking indicator */}
+                {msg.thinking && (
+                  <div className="px-4 pb-3 flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-[11px] text-zinc-400">
+                      {msg.thoughts?.length > 0 ? "Agents working…" : "Thinking…"}
+                    </span>
                   </div>
+                )}
+
+                {/* Response text */}
+                {msg.text && !msg.thinking && (
+                  <>
+                    {msg.title && (
+                      <div className="px-4 pt-3 pb-1 text-[11px] font-bold tracking-widest uppercase text-zinc-400">
+                        {msg.title}
+                      </div>
+                    )}
+                    <div className="px-4 pb-2 text-sm text-zinc-700 leading-relaxed">{msg.text}</div>
+                    {msg.styleNotes && (
+                      <div className="px-4 pb-2 text-[11px] text-zinc-400 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        {msg.styleNotes}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Error */}
+                {msg.error && (
+                  <div className="px-4 py-3 text-sm text-red-500">{msg.text}</div>
                 )}
 
                 {/* Preview */}
@@ -266,7 +281,12 @@ export default function HunterBeat() {
                         </div>
                       )}
                       {msg.frames && (
-                        <FramePreview images={msg.images || msg.frames} spec={msg.spec} title={msg.title} />
+                        <FramePreview
+                          images={msg.images || msg.frames}
+                          spec={msg.spec}
+                          title={msg.title}
+                          durationSeconds={msg.spec?.durationSeconds || duration}
+                        />
                       )}
                       {msg.renderError && (
                         <div className="aspect-video rounded-xl bg-red-50 flex items-center justify-center text-[12px] text-red-500">
@@ -276,49 +296,52 @@ export default function HunterBeat() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-
-                {/* Actions */}
-                {!msg.error && !msg.frames && !msg.rendering && (
-                  <div className="px-4 pb-4">
-                    <button
-                      onClick={() => renderPreview(msg.id)}
-                      className="flex items-center gap-1.5 px-4 h-9 rounded-full bg-zinc-900 text-white text-[12px] font-semibold hover:bg-zinc-800 transition-colors"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" /> Render motion graphic
-                    </button>
-                  </div>
-                )}
               </div>
             )}
           </motion.div>
         ))}
 
-        {busy && (
-          <div className="flex justify-start">
-            <div className="rounded-2xl bg-white ring-1 ring-zinc-200/70 px-4 py-3 flex items-center gap-2 text-sm text-zinc-500">
-              <Loader2 className="w-4 h-4 animate-spin" /> Crafting prompt…
-            </div>
-          </div>
-        )}
+        {busy && messages[messages.length - 1]?.thinking && null}
       </div>
 
-      {/* Input */}
+      {/* Input bar with duration slider */}
       <form onSubmit={handleSubmit} className="sticky bottom-0 bg-[#f5f5f7]/80 backdrop-blur-xl border-t border-zinc-200/60 px-4 sm:px-6 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-2">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Describe a motion graphic…"
-            disabled={busy}
-            className="flex-1 h-11 px-4 rounded-full bg-white ring-1 ring-zinc-200 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || busy}
-            className="flex items-center justify-center w-11 h-11 rounded-full bg-zinc-900 text-white disabled:opacity-30 hover:bg-zinc-800 transition-colors"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+        <div className="max-w-2xl mx-auto">
+          {/* Duration slider */}
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-1.5 text-zinc-400">
+              <Clock className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-medium">Duration</span>
+            </div>
+            <input
+              type="range"
+              min={3}
+              max={30}
+              step={1}
+              value={duration}
+              onChange={(e) => setDuration(Number(e.target.value))}
+              className="flex-1 h-1 accent-[#007AFF] cursor-pointer"
+            />
+            <span className="text-[11px] font-bold text-zinc-600 min-w-[35px] text-right">{duration}s</span>
+          </div>
+
+          {/* Input + send */}
+          <div className="flex items-center gap-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Describe a motion graphic, paste a URL, or ask for edits…"
+              disabled={busy}
+              className="flex-1 h-11 px-4 rounded-full bg-white ring-1 ring-zinc-200 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#007AFF] disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || busy}
+              className="flex items-center justify-center w-11 h-11 rounded-full bg-[#007AFF] text-white disabled:opacity-30 hover:bg-[#0066D6] transition-colors"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </form>
 
