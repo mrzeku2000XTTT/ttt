@@ -18,7 +18,7 @@ const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },
   { id: "TTT", label: "TTT", icon: Sparkles },
   { id: "Kaspa", label: "Kaspa", icon: Shield },
-  { id: "Builder", label: "Builder", icon: Wrench, to: "/TTTBuilder" },
+  { id: "Builder", label: "Builder", icon: Wrench },
   { id: "AI", label: "AI", icon: Sparkles },
   { id: "Finance", label: "Finance", icon: Wallet },
   { id: "Games", label: "Games", icon: Gamepad2 },

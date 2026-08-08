@@ -530,6 +530,21 @@ Return the file operations only.`,
         repo: publishForm.repo.trim() || OUR_REPO,
       });
       setPublishResult({ success: true, ...res.data });
+      // Auto-list the built app in the App Store grid under "Builder"
+      try {
+        const me = await base44.auth.me().catch(() => null);
+        const siteUrl = res.data?.pagesUrl || res.data?.htmlUrl || "";
+        await base44.entities.AppProposal.create({
+          app_name: publishForm.siteName.trim(),
+          app_link: siteUrl,
+          icon_url: "",
+          description: prompt?.slice(0, 200) || "Built with TTT Builder",
+          category: "Builder",
+          submitter_email: me?.email || "anonymous",
+          submitter_name: me?.username || me?.email?.split("@")[0] || "TTT Builder",
+          status: "pending",
+        });
+      } catch {}
     } catch (err) {
       setPublishResult({ success: false, error: err.message });
     } finally {

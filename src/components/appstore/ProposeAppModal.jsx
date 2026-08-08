@@ -167,6 +167,7 @@ export default function ProposeAppModal({ onClose, user }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectItem value="Builder" className="text-white">Builder</SelectItem>
                 <SelectItem value="Tools" className="text-white">Tools</SelectItem>
                 <SelectItem value="Games" className="text-white">Games</SelectItem>
                 <SelectItem value="Social" className="text-white">Social</SelectItem>
