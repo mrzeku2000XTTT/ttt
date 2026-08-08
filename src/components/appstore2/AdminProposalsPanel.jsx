@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, XCircle, ExternalLink, Loader2, ChevronDown, ChevronUp, Eye, ShieldCheck, ShieldAlert, Bot } from "lucide-react";
+import { CheckCircle2, XCircle, ExternalLink, Loader2, ChevronDown, ChevronUp, Eye, ShieldCheck, ShieldAlert, Bot, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const VERDICT_STYLES = {
