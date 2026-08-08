@@ -564,30 +564,30 @@ Return the file operations only.`,
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white overflow-x-hidden">
+    <div className={`min-h-screen overflow-x-hidden ${phase === "hero" ? "bg-[#f5f5f7] text-zinc-900" : "bg-[#0d1117] text-white"}`}>
 
       {/* Top nav */}
       <nav
-        className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 bg-[#0d1117]/80 backdrop-blur-xl border-b border-white/5"
+        className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 backdrop-blur-xl border-b transition-colors ${phase === "hero" ? "bg-white/70 border-zinc-200/60" : "bg-[#0d1117]/80 border-white/5"}`}
         style={{ paddingTop: "env(safe-area-inset-top, 0px)", minHeight: "calc(3rem + env(safe-area-inset-top, 0px))" }}
       >
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate("/AppStoreV2")}
-            className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-white/5"
+            className={`flex items-center gap-1.5 transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-white/5 ${phase === "hero" ? "text-zinc-500 hover:text-zinc-900" : "text-white/60 hover:text-white"}`}
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm font-medium">Back</span>
           </button>
-          <span className="font-black text-lg tracking-tight">TTT</span>
-          <span className="text-[10px] font-bold bg-[#70C7BA] text-black px-1.5 py-0.5 rounded">BUILDER</span>
+          <span className={`font-black text-lg tracking-tight ${phase === "hero" ? "text-zinc-900" : "text-white"}`}>TTT</span>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${phase === "hero" ? "bg-zinc-900 text-white" : "bg-[#70C7BA] text-black"}`}>BUILDER</span>
         </div>
-        <div className="hidden sm:flex items-center gap-4 text-xs text-white/50">
+        <div className={`hidden sm:flex items-center gap-4 text-xs ${phase === "hero" ? "text-zinc-400" : "text-white/50"}`}>
           <span>Built on Kaspa</span>
         </div>
         <button
           onClick={() => setShowProjects(true)}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/5 border border-white/10 text-white/70 text-xs font-bold hover:bg-white/10 hover:text-white transition-colors"
+          className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
           title="Saved projects"
         >
           <FolderOpen className="w-3.5 h-3.5" /> Projects
@@ -609,24 +609,18 @@ Return the file operations only.`,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
-            className="min-h-screen flex flex-col items-center justify-center px-5"
+            className="min-h-screen flex flex-col items-center justify-center px-5 bg-[#f5f5f7]"
             style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
-            {/* Glow bg */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#70C7BA]/10 rounded-full blur-[100px]" />
-              <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[300px] bg-purple-500/8 rounded-full blur-[100px]" />
-            </div>
-
             <div className="relative max-w-3xl mx-auto text-center">
               {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#70C7BA]/30 bg-[#70C7BA]/10 text-[#70C7BA] text-xs font-bold mb-6"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/5 text-zinc-500 text-xs font-semibold mb-8"
               >
-                <Zap className="w-3 h-3" />
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
                 AI Site Builder for Kaspa
               </motion.div>
 
@@ -635,20 +629,19 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.02] mb-5"
+                className="text-5xl sm:text-7xl font-bold tracking-tight leading-[1.02] mb-5 text-zinc-900"
+                style={{ fontFamily: '-apple-system, "SF Pro Display", "Inter", system-ui, sans-serif' }}
               >
                 Build your site.
                 <br />
-                <span className="bg-gradient-to-r from-[#70C7BA] to-cyan-300 bg-clip-text text-transparent">
-                  Ship it now.
-                </span>
+                <span className="text-zinc-400">Ship it now.</span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-white/50 text-lg max-w-xl mx-auto mb-10"
+                className="text-zinc-500 text-lg max-w-xl mx-auto mb-10"
               >
                 Describe what you want. TTT Builder generates a complete, beautiful landing page — no code needed.
               </motion.p>
@@ -660,18 +653,18 @@ Return the file operations only.`,
                 transition={{ delay: 0.25 }}
                 className="relative max-w-2xl mx-auto"
               >
-                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/10 focus-within:border-[#70C7BA]/50 rounded-2xl p-2 transition-colors shadow-2xl">
+                <div className="flex items-center gap-2 bg-white border border-zinc-200 focus-within:border-zinc-400 rounded-2xl p-2 transition-colors shadow-sm">
                   <input
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate(prompt)}
                     placeholder="Describe your app — e.g. 'Kaspa staking dashboard with live stats and wallet connect'"
-                    className="flex-1 bg-transparent outline-none text-white placeholder:text-white/30 text-sm px-3 py-3"
+                    className="flex-1 bg-transparent outline-none text-zinc-900 placeholder:text-zinc-400 text-sm px-3 py-3"
                   />
                   <button
                     onClick={() => generate(prompt)}
                     disabled={!prompt.trim() || loading}
-                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#70C7BA] text-black font-bold text-sm hover:bg-[#70C7BA]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-zinc-900 text-white font-semibold text-sm hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Build</>}
                   </button>
@@ -703,7 +696,7 @@ Return the file operations only.`,
                   <button
                     key={ex}
                     onClick={() => handleExampleClick(ex)}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-400 transition-colors bg-white"
                   >
                     <ChevronRight className="w-3 h-3" />
                     {ex.slice(0, 40)}…
@@ -727,8 +720,8 @@ Return the file operations only.`,
                   { label: "Output", value: "Pure HTML" },
                 ].map(s => (
                   <div key={s.label}>
-                    <div className="text-2xl font-black text-[#70C7BA]">{s.value}</div>
-                    <div className="text-xs text-white/40 mt-0.5">{s.label}</div>
+                    <div className="text-2xl font-bold text-zinc-900">{s.value}</div>
+                    <div className="text-xs text-zinc-400 mt-0.5">{s.label}</div>
                   </div>
                 ))}
               </motion.div>

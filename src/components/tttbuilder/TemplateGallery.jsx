@@ -5,7 +5,7 @@ export default function TemplateGallery({ onPick, disabled }) {
   return (
     <div className="mt-14 max-w-5xl mx-auto">
       <div className="flex items-center justify-center gap-2 mb-5">
-        <span className="text-xs font-black tracking-widest text-white/40 uppercase">
+        <span className="text-xs font-semibold tracking-widest text-zinc-400 uppercase">
           Kaspa app templates
         </span>
       </div>
@@ -16,12 +16,11 @@ export default function TemplateGallery({ onPick, disabled }) {
             key={t.id}
             onClick={() => onPick(t)}
             disabled={disabled}
-            className="group text-left p-3 rounded-xl bg-white/[0.03] border border-white/10 hover:border-[#70C7BA]/50 hover:bg-[#70C7BA]/[0.06] disabled:opacity-40 transition-colors"
+            className="group text-left p-3 rounded-xl bg-white border border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50 disabled:opacity-40 transition-colors"
           >
-            <div className="text-xl mb-1.5">{t.emoji}</div>
-            <div className="text-[13px] font-bold text-white leading-tight">{t.name}</div>
-            <div className="text-[10px] text-white/40 mt-1 leading-snug">{t.blurb}</div>
-            <div className="mt-2 inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/5 text-white/40 group-hover:text-[#70C7BA]">
+            <div className="text-[13px] font-bold text-zinc-900 leading-tight">{t.name}</div>
+            <div className="text-[10px] text-zinc-500 mt-1 leading-snug">{t.blurb}</div>
+            <div className="mt-2 inline-block text-[9px] font-semibold px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 group-hover:text-zinc-900">
               {t.tag}
             </div>
           </button>

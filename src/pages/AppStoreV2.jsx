@@ -16,8 +16,9 @@ import AppStoreAISearch from "@/components/appstore2/AppStoreAISearch";
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },
-  { id: "TTT", label: "TTT Apps", icon: Sparkles },
+  { id: "TTT", label: "TTT", icon: Sparkles },
   { id: "Kaspa", label: "Kaspa", icon: Shield },
+  { id: "Builder", label: "Builder", icon: Wrench, to: "/TTTBuilder" },
   { id: "AI", label: "AI", icon: Sparkles },
   { id: "Finance", label: "Finance", icon: Wallet },
   { id: "Games", label: "Games", icon: Gamepad2 },
@@ -183,6 +184,19 @@ export default function AppStoreV2Page() {
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const active = view === "all" && category === cat.id;
+            const cls = `flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all ${
+              active
+                ? "bg-zinc-900 text-white shadow-md"
+                : "bg-white text-zinc-500 ring-1 ring-zinc-200/60 hover:bg-zinc-50"
+            }`;
+            if (cat.to) {
+              return (
+                <Link key={cat.id} to={cat.to} className={cls}>
+                  <Icon className="w-4 h-4" />
+                  {cat.label}
+                </Link>
+              );
+            }
             return (
               <button
                 key={cat.id}
@@ -197,11 +211,7 @@ export default function AppStoreV2Page() {
                     }
                   });
                 }}
-                className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all ${
-                  active
-                    ? "bg-zinc-900 text-white shadow-md"
-                    : "bg-white text-zinc-500 ring-1 ring-zinc-200/60 hover:bg-zinc-50"
-                }`}
+                className={cls}
               >
                 <Icon className="w-4 h-4" />
                 {cat.label}
