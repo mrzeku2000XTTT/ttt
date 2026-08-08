@@ -2,11 +2,15 @@ import React, { useState, useEffect, useRef } from "react";
 import { Loader2, Play, Square, ExternalLink, Server, Terminal, RefreshCw, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function E2BLivePanel({ files, autoStart = false }) {
+export default function E2BLivePanel({ files, autoStart = false, onUrlChange }) {
   const [state, setState] = useState({ status: "idle", url: null, sandboxId: null, logs: [], error: null });
   const [showLogs, setShowLogs] = useState(false);
   const [frameKey, setFrameKey] = useState(0);
   const started = useRef(false);
+
+  // Report the live URL up so the parent (Push to Store, Fullscreen) can use
+  // the REAL running app instead of a fake srcDoc HTML bundle.
+  useEffect(() => { onUrlChange?.(state.url); }, [state.url]);
 
   // Vite often finishes compiling a second or two after the port opens —
   // re-load the frame a few times so the app doesn't stay blank.

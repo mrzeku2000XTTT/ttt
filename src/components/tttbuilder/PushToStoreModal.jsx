@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Store, Loader2, CheckCircle, Upload, X, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function PushToStoreModal({ open, onClose, html, defaultName, defaultDesc }) {
+export default function PushToStoreModal({ open, onClose, html, liveUrl, defaultName, defaultDesc }) {
   const [appName, setAppName] = useState(defaultName || "");
   const [description, setDescription] = useState(defaultDesc || "");
   const [iconFile, setIconFile] = useState(null);
@@ -33,26 +33,30 @@ export default function PushToStoreModal({ open, onClose, html, defaultName, def
   };
 
   const publish = async () => {
-    if (!appName.trim() || !html) return;
+    if (!appName.trim() || (!liveUrl && !html)) return;
     setPublishing(true);
     try {
-      // 1. Upload the built HTML so it's viewable as a live app
-      const htmlBlob = new Blob([html], { type: "text/html" });
-      const htmlFile = new File([htmlBlob], `${appName.trim().toLowerCase().replace(/\s+/g, "-")}.html`, { type: "text/html" });
-      const uploadRes = await base44.integrations.Core.UploadFile({ file: htmlFile });
-      const appUrl = uploadRes.file_url;
+      // Prefer the REAL live URL from the E2B sandbox — it's a genuinely
+      // running app the App Store can iframe, not a fake static HTML bundle.
+      let appUrl = liveUrl || "";
+      let isLive = !!liveUrl;
+      if (!appUrl) {
+        const htmlBlob = new Blob([html], { type: "text/html" });
+        const htmlFile = new File([htmlBlob], `${appName.trim().toLowerCase().replace(/\s+/g, "-")}.html`, { type: "text/html" });
+        const uploadRes = await base44.integrations.Core.UploadFile({ file: htmlFile });
+        appUrl = uploadRes.file_url;
+      }
 
-      // 2. Upload icon if provided
+      // Upload icon if provided
       let iconUrl = "";
       if (iconFile) {
         const iconRes = await base44.integrations.Core.UploadFile({ file: iconFile });
         iconUrl = iconRes.file_url;
       }
 
-      // 3. Get current user
+      // Get current user
       const me = await base44.auth.me().catch(() => null);
 
-      // 4. Create the AppProposal with pending status
       await base44.entities.AppProposal.create({
         app_name: appName.trim(),
         app_link: appUrl,
@@ -64,7 +68,7 @@ export default function PushToStoreModal({ open, onClose, html, defaultName, def
         status: "pending",
       });
 
-      setResult({ success: true, url: appUrl });
+      setResult({ success: true, url: appUrl, isLive });
     } catch (err) {
       setResult({ success: false, error: err.message || "Failed to publish" });
     } finally {
@@ -100,6 +104,15 @@ export default function PushToStoreModal({ open, onClose, html, defaultName, def
 
             {!result ? (
               <div className="space-y-4">
+                {liveUrl ? (
+                  <div className="rounded-xl bg-[#70C7BA]/10 border border-[#70C7BA]/30 px-3 py-2.5">
+                    <p className="text-[11px] font-bold text-[#70C7BA] mb-0.5">Live URL detected</p>
+                    <p className="text-[10px] text-white/50 break-all">{liveUrl}</p>
+                    <p className="text-[10px] text-white/40 mt-1">This real running app will be iframed on the App Store — not a static HTML upload.</p>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-white/30">No live sandbox running — a static HTML copy will be uploaded. Hit <span className="text-[#70C7BA]">Run Live</span> in the preview first to list the real app.</p>
+                )}
                 {/* Icon upload */}
                 <div className="flex items-center gap-3">
                   <label className="cursor-pointer flex-shrink-0">
@@ -165,7 +178,7 @@ export default function PushToStoreModal({ open, onClose, html, defaultName, def
                   </button>
                   <button
                     onClick={publish}
-                    disabled={publishing || !appName.trim() || !html}
+                    disabled={publishing || !appName.trim() || (!liveUrl && !html)}
                     className="flex-1 h-10 rounded-xl bg-[#70C7BA] text-black text-sm font-bold hover:bg-[#70C7BA]/90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                   >
                     {publishing ? <><Loader2 className="w-4 h-4 animate-spin" /> Publishing…</> : <><Store className="w-4 h-4" /> Push to Store</>}
@@ -177,8 +190,9 @@ export default function PushToStoreModal({ open, onClose, html, defaultName, def
                 <CheckCircle className="w-10 h-10 text-[#70C7BA] mx-auto mb-3" />
                 <p className="font-bold text-white mb-1">Submitted for Review!</p>
                 <p className="text-xs text-white/40 mb-4">Your app is now visible to you and admins. Once approved, it'll appear for all TTT users.</p>
-                <a href={result.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-[#70C7BA] hover:underline mb-4">
-                  <Upload className="w-3.5 h-3.5" /> View your app
+                {result.isLive && <p className="text-[11px] text-[#70C7BA] mb-3 font-bold">✓ Listed your live running URL — the App Store iframes the real app.</p>}
+                <a href={result.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-[#70C7BA] hover:underline mb-4 break-all">
+                  <Upload className="w-3.5 h-3.5 flex-shrink-0" /> <span className="truncate max-w-[260px]">{result.url}</span>
                 </a>
                 <button onClick={onClose} className="w-full h-9 rounded-xl bg-white/5 text-white/60 hover:text-white text-sm font-bold transition-colors">
                   Close

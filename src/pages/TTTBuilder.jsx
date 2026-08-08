@@ -276,6 +276,7 @@ function TTTBuilderStudio() {
   };
   const [attachments, setAttachments] = useState([]);
   const [mobileView, setMobileView] = useState("preview"); // chat | preview (mobile only)
+  const [liveUrl, setLiveUrl] = useState(null); // real running URL from the E2B sandbox (npm projects)
   const [chatCollapsed, setChatCollapsed] = useState(() => {
     try { return localStorage.getItem("ttt_builder_chat_collapsed") === "1"; } catch { return false; }
   });
@@ -836,7 +837,7 @@ Return the file operations only.`,
                   <button
                     onClick={() => {
                       runIdRef.current++; // abort any in-flight generate() — it will bail out before touching state
-                      setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html"); setLoading(false); setAnalyzing(null);
+                      setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html"); setLoading(false); setAnalyzing(null); setLiveUrl(null);
                       try { localStorage.removeItem("ttt_builder_files"); localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); localStorage.removeItem("ttt_builder_project_id"); } catch {}
                       setProjectId("");
                     }}
@@ -923,18 +924,17 @@ Return the file operations only.`,
 
               {/* Right: Preview / Dashboard */}
               <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#080c10] relative ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}>
-                {/* Expand-chat button — only visible when chat is collapsed */}
-                {chatCollapsed && (
-                  <button
-                    onClick={() => setChatCollapsed(false)}
-                    className="hidden lg:flex absolute left-2 top-2 z-40 items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors"
-                    title="Show chat"
-                  >
-                    <PanelLeftOpen className="w-3.5 h-3.5" /> Chat
-                  </button>
-                )}
                 {/* Top-level toggle: Preview | Dashboard */}
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-hide">
+                  {/* Chat collapse/expand toggle — always visible in the preview toolbar */}
+                  <button
+                    onClick={() => setChatCollapsed(v => !v)}
+                    className="hidden lg:flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0"
+                    title={chatCollapsed ? "Show chat" : "Hide chat — expand preview"}
+                  >
+                    {chatCollapsed ? <PanelLeftOpen className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
+                    <span className="hidden xl:inline">{chatCollapsed ? "Chat" : "Hide chat"}</span>
+                  </button>
                   <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
                     <button
                       onClick={() => setTopTab("preview")}
@@ -1049,7 +1049,7 @@ Return the file operations only.`,
                             </div>
                           )}
                           <div className="flex-1 min-h-0 relative">
-                            <E2BLivePanel files={files} autoStart />
+                            <E2BLivePanel files={files} autoStart onUrlChange={setLiveUrl} />
                           </div>
                         </div>
                       )}
@@ -1128,7 +1128,7 @@ Return the file operations only.`,
                         {dashSection === "code" && loading && (
                           <div className="flex items-center justify-center h-full text-white/30 text-xs">Loading files…</div>
                         )}
-                        {dashSection === "live" && <E2BLivePanel files={files} />}
+                        {dashSection === "live" && <E2BLivePanel files={files} onUrlChange={setLiveUrl} />}
                         {dashSection === "agents" && (
                           <div className="h-full overflow-y-auto">
                             <AgentsPanel onGenerate={generate} loading={loading} files={files} />
@@ -1276,12 +1276,17 @@ Return the file operations only.`,
         open={showPushStoreModal}
         onClose={() => setShowPushStoreModal(false)}
         html={html}
+        liveUrl={liveUrl}
         defaultName={prompt || (messages.find(m => m.role === "user")?.content?.slice(0, 40))}
         defaultDesc={prompt}
       />
 
-      {showFullscreen && html && (
-        <FullscreenPreview html={html} onClose={() => setShowFullscreen(false)} />
+      {showFullscreen && (html || liveUrl) && (
+        <FullscreenPreview
+          html={html}
+          url={isRealProject ? liveUrl : null}
+          onClose={() => setShowFullscreen(false)}
+        />
       )}
     </div>
   );
