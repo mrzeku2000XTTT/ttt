@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Store, Loader2, CheckCircle, Upload, X, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -12,7 +12,7 @@ export default function PushToStoreModal({ open, onClose, html, defaultName, def
   const [publishing, setPublishing] = useState(false);
   const [result, setResult] = useState(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       setAppName(defaultName || "");
       setDescription(defaultDesc || "");

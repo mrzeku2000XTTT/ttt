@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle2, XCircle, ExternalLink, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, XCircle, ExternalLink, Loader2, ChevronDown, ChevronUp, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminProposalsPanel({ onChange }) {
@@ -122,24 +122,44 @@ function ProposalRow({ p, act, acting }) {
           <span>{p.submitter_name || p.submitter_email}</span>
         </div>
       </div>
-      {isPending && (
-        <div className="flex flex-col gap-1 flex-shrink-0">
-          <button
-            onClick={() => act(p.id, "approved")}
-            disabled={acting}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500 text-white text-[10px] font-bold hover:bg-emerald-600 disabled:opacity-50"
+      <div className="flex flex-col gap-1 flex-shrink-0">
+        {isPending && (
+          <>
+            <a
+              href={p.app_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md bg-cyan-500 text-white text-[10px] font-bold hover:bg-cyan-600"
+            >
+              <Eye className="w-3 h-3" /> View
+            </a>
+            <button
+              onClick={() => act(p.id, "approved")}
+              disabled={acting}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500 text-white text-[10px] font-bold hover:bg-emerald-600 disabled:opacity-50"
+            >
+              <CheckCircle2 className="w-3 h-3" /> Approve
+            </button>
+            <button
+              onClick={() => act(p.id, "rejected")}
+              disabled={acting}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-500 text-white text-[10px] font-bold hover:bg-red-600 disabled:opacity-50"
+            >
+              <XCircle className="w-3 h-3" /> Reject
+            </button>
+          </>
+        )}
+        {!isPending && (
+          <a
+            href={p.app_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md bg-zinc-200 text-zinc-600 text-[10px] font-bold hover:bg-zinc-300"
           >
-            <CheckCircle2 className="w-3 h-3" /> Approve
-          </button>
-          <button
-            onClick={() => act(p.id, "rejected")}
-            disabled={acting}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-500 text-white text-[10px] font-bold hover:bg-red-600 disabled:opacity-50"
-          >
-            <XCircle className="w-3 h-3" /> Reject
-          </button>
-        </div>
-      )}
+            <Eye className="w-3 h-3" /> View
+          </a>
+        )}
+      </div>
     </div>
   );
 }

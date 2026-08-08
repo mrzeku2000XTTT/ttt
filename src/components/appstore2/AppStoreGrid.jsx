@@ -54,7 +54,8 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
   const [communityApps, setCommunityApps] = useState([]);
 
   useEffect(() => {
-    base44.entities.AppProposal.filter({ status: "approved" }, "-created_date", 200)
+    // RLS ensures: approved apps visible to everyone; pending/rejected only to owner + admin
+    base44.entities.AppProposal.list("-created_date", 200)
       .then((list) => {
         setCommunityApps(
           list.map((p) => ({
@@ -65,6 +66,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
             logo: p.icon_url,
             desc: p.description?.slice(0, 60) || "Community app",
             community: true,
+            review: p.status === "pending",
           }))
         );
       })
@@ -198,9 +200,14 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
                     <Crown className="w-2.5 h-2.5 text-yellow-900" />
                   </motion.div>
                 )}
-                {app.community && (
+                {app.community && !app.review && (
                   <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center shadow-sm" title="Community submission">
                     <ExternalLink className="w-2.5 h-2.5 text-white" />
+                  </div>
+                )}
+                {app.review && (
+                  <div className="absolute -top-0.5 -right-0.5 px-1 h-4 bg-amber-400 rounded-full flex items-center justify-center shadow-sm" title="In Review">
+                    <span className="text-[7px] font-bold text-amber-900 uppercase">Review</span>
                   </div>
                 )}
               </motion.div>

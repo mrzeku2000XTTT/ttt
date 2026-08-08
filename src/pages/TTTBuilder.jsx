@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -22,6 +22,7 @@ import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestra
 import ProjectsPanel, { upsertProject } from "@/components/tttbuilder/ProjectsPanel";
 import DashboardSidebar from "@/components/tttbuilder/DashboardSidebar";
 import { OverviewPanel, AgentsPanel, DatabasePanel, MemoryPanel, SettingsPanel } from "@/components/tttbuilder/DashboardPanels";
+import PushToStoreModal from "@/components/tttbuilder/PushToStoreModal";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -223,6 +224,7 @@ function TTTBuilderStudio() {
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showPushStoreModal, setShowPushStoreModal] = useState(false);
   const [publishForm, setPublishForm] = useState({ siteName: "", repo: OUR_REPO });
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -744,8 +746,9 @@ Return the file operations only.`,
                   <span className="font-bold text-sm">TTT Builder</span>
                   <button
                     onClick={() => {
-                      setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html");
-                      try { localStorage.removeItem("ttt_builder_files"); localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); } catch {}
+                      setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html"); setLoading(false);
+                      try { localStorage.removeItem("ttt_builder_files"); localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); localStorage.removeItem("ttt_builder_project_id"); } catch {}
+                      setProjectId("");
                     }}
                     className="ml-auto text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
                   >
@@ -874,9 +877,15 @@ Return the file operations only.`,
                         </button>
                         <button
                           onClick={() => { setShowPublishModal(true); setPublishResult(null); }}
+                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
+                        >
+                          <GitBranch className="w-3 h-3" /> GitHub
+                        </button>
+                        <button
+                          onClick={() => setShowPushStoreModal(true)}
                           className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors flex-shrink-0 whitespace-nowrap"
                         >
-                          <GitBranch className="w-3 h-3" /> Publish
+                          <Store className="w-3 h-3" /> Push to Store
                         </button>
                       </>
                     )}
@@ -1150,6 +1159,14 @@ Return the file operations only.`,
         onClose={() => setShowProjects(false)}
         current={{ id: projectId, name: prompt, files, messages, phase, buildMode, model, walletKit }}
         onLoad={loadProject}
+      />
+
+      <PushToStoreModal
+        open={showPushStoreModal}
+        onClose={() => setShowPushStoreModal(false)}
+        html={html}
+        defaultName={prompt || (messages.find(m => m.role === "user")?.content?.slice(0, 40))}
+        defaultDesc={prompt}
       />
     </div>
   );
