@@ -7,11 +7,11 @@ import { getLocalProviders, saveLocalProvider, removeLocalProvider, PROVIDER_PRE
  * Model-first: paste any model string (e.g. nvidia/nemotron-3-super-120b-a12b:free)
  * and the provider is auto-detected. Keys are stored only in the browser.
  */
-export default function OpenModelsTab({ open, onClose }) {
+export default function OpenModelsTab({ open, onClose, onAdded }) {
   const [list, setList] = useState(() => getLocalProviders());
   const [model, setModel] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [label, setLabel] = useState("");
+  const [nickname, setNickname] = useState("");
   const [provider, setProvider] = useState("openrouter");
   const [baseUrl, setBaseUrl] = useState(PROVIDER_PRESETS[0].baseUrl);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -50,15 +50,16 @@ export default function OpenModelsTab({ open, onClose }) {
     if (!model.trim()) { setErr("Enter a model name."); return; }
     if (!baseUrl.trim()) { setErr("Enter a base URL."); return; }
     const preset = PROVIDER_PRESETS.find((p) => p.provider === provider) || PROVIDER_PRESETS[0];
-    saveLocalProvider({
+    const entry = saveLocalProvider({
       provider,
-      label: label.trim() || model.trim(),
+      label: nickname.trim() || model.trim(),
       model: model.trim(),
       baseUrl: baseUrl.trim(),
       apiKey: apiKey.trim(),
     });
-    setLabel(""); setModel(""); setApiKey("");
+    setNickname(""); setModel(""); setApiKey("");
     refresh();
+    onAdded?.(entry);
   };
 
   const preset = PROVIDER_PRESETS.find((p) => p.provider === provider) || PROVIDER_PRESETS[0];
@@ -106,6 +107,12 @@ export default function OpenModelsTab({ open, onClose }) {
             autoFocus
           />
           <input
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="Nickname (e.g. Free Key, Paid Key, Work)"
+            className="w-full bg-white/5 border border-[#70C7BA]/30 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
+          />
+          <input
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             type="password"
@@ -123,12 +130,6 @@ export default function OpenModelsTab({ open, onClose }) {
 
           {showAdvanced && (
             <div className="space-y-2 pt-1">
-              <input
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                placeholder="Label (optional, defaults to model name)"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs text-white placeholder:text-white/30 outline-none"
-              />
               <div className="grid grid-cols-2 gap-2">
                 <select
                   value={provider}

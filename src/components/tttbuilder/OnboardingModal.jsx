@@ -39,6 +39,7 @@ export default function OnboardingModal() {
   const [step, setStep] = useState(0); // 0=model, 1=e2b, 2=done
   const [model, setModel] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [nickname, setNickname] = useState("");
   const [e2bKey, setE2bKey] = useState(() => getE2BKey());
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -72,7 +73,7 @@ export default function OnboardingModal() {
     const preset = PROVIDER_PRESETS.find((p) => p.provider === provider) || PROVIDER_PRESETS[0];
     const entry = saveLocalProvider({
       provider,
-      label: model.trim(),
+      label: nickname.trim() || model.trim(),
       model: model.trim(),
       baseUrl: preset.baseUrl,
       apiKey: apiKey.trim(),
@@ -161,6 +162,16 @@ export default function OnboardingModal() {
                         autoFocus
                       />
                       <p className="text-[10px] text-white/30 mt-1">Paste any model. Models with a "/" are auto-detected as OpenRouter. Get a free key at openrouter.ai/keys.</p>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-white/50 mb-1 block uppercase tracking-wide">Nickname</label>
+                      <input
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        placeholder="e.g. Free Key, Paid Key, Work"
+                        className="w-full bg-white/5 border border-[#70C7BA]/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
+                      />
+                      <p className="text-[10px] text-white/30 mt-1">Give this key a name so you can tell multiple keys apart.</p>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-white/50 mb-1 block uppercase tracking-wide">API key</label>

@@ -61,6 +61,7 @@ export default function ModelSelector({ value, onChange, disabled }) {
       <OpenModelsTab
         open={mgrOpen}
         onClose={() => { setMgrOpen(false); forceTick((t) => t + 1); }}
+        onAdded={(entry) => { onChange(`${LOCAL_MODEL_PREFIX}${entry.id}`); setMgrOpen(false); forceTick((t) => t + 1); }}
       />
     </>
   );
