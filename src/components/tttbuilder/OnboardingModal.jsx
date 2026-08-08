@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, KeyRound, Server, CheckCircle, Sparkles, ArrowRight, Github, Copy, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { getLocalProviders, saveLocalProvider, PROVIDER_PRESETS } from "./localLlm";
+import { getLocalProviders, saveLocalProvider, PROVIDER_PRESETS, LOCAL_MODEL_PREFIX } from "./localLlm";
 
 const E2B_KEY_STORAGE = "ttt_builder_e2b_key";
 const ONBOARDING_DONE = "ttt_builder_onboarded";
@@ -70,13 +70,15 @@ export default function OnboardingModal() {
     }
     const provider = autoDetectProvider(model);
     const preset = PROVIDER_PRESETS.find((p) => p.provider === provider) || PROVIDER_PRESETS[0];
-    saveLocalProvider({
+    const entry = saveLocalProvider({
       provider,
       label: model.trim(),
       model: model.trim(),
       baseUrl: preset.baseUrl,
       apiKey: apiKey.trim(),
     });
+    // Make this the active model so the selector defaults to it, not a hosted model.
+    try { localStorage.setItem("ttt_builder_model", `${LOCAL_MODEL_PREFIX}${entry.id}`); } catch {}
     setStep(1);
   };
 

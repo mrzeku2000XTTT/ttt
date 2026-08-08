@@ -39,6 +39,7 @@ import AnchorsPanel from "@/components/tttbuilder/AnchorsPanel";
 import { analyzeAttachments } from "@/components/tttbuilder/fileAnalyzer";
 import CloneBuilderRepoModal from "@/components/tttbuilder/CloneBuilderRepoModal";
 import OnboardingModal, { isStandalone } from "@/components/tttbuilder/OnboardingModal";
+import { getLocalProviders, LOCAL_MODEL_PREFIX, isLocalModelId } from "@/components/tttbuilder/localLlm";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 const STANDALONE = isStandalone();
@@ -271,7 +272,20 @@ function TTTBuilderStudio() {
   const [iframeKey, setIframeKey] = useState(0);
   const [device, setDevice] = useState("desktop"); // desktop | mobile
   const [model, setModel] = useState(() => {
-    try { return localStorage.getItem("ttt_builder_model") || "ttt_agent_1"; } catch { return "ttt_agent_1"; }
+    try {
+      const saved = localStorage.getItem("ttt_builder_model");
+      // Standalone builds have no hosted models — if the saved model is a hosted
+      // one (or none exists), default to the user's first local/open model instead.
+      if (STANDALONE) {
+        const locals = getLocalProviders();
+        if (locals.length > 0) {
+          if (!saved || (!isLocalModelId(saved) && saved !== "automatic")) {
+            return `${LOCAL_MODEL_PREFIX}${locals[0].id}`;
+          }
+        }
+      }
+      return saved || "ttt_agent_1";
+    } catch { return "ttt_agent_1"; }
   });
 
   const [buildMode, setBuildMode] = useState(() => {
