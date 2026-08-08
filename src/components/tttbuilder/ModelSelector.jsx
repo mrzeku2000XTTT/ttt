@@ -2,7 +2,7 @@ import React from "react";
 import { Cpu } from "lucide-react";
 
 export const BUILDER_MODELS = [
-  { id: "ttt_agent_1", label: "TTT Agent 1" },
+  { id: "ttt_agent_1", label: "TTT Agent 1 ⚡" },
   { id: "automatic", label: "Auto (best available)" },
   { id: "claude_opus_4_8", label: "Claude Opus 4.8" },
   { id: "claude-sonnet-5", label: "Claude Sonnet 5" },
@@ -16,16 +16,16 @@ export const BUILDER_MODELS = [
 
 export default function ModelSelector({ value, onChange, disabled }) {
   return (
-    <label className="flex items-center gap-1.5 h-8 pl-2.5 pr-1 rounded-lg bg-white border border-black/[0.08] text-[#6B7280] hover:border-[#007AFF]/40 transition-colors cursor-pointer">
-      <Cpu className="w-3.5 h-3.5 flex-shrink-0 text-[#007AFF]" />
+    <label className="flex items-center gap-1.5 h-8 pl-2 pr-1 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white transition-colors cursor-pointer">
+      <Cpu className="w-3.5 h-3.5 flex-shrink-0" />
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="bg-transparent outline-none text-[11px] font-bold text-[#1D1D1F] cursor-pointer disabled:opacity-40 max-w-[140px]"
+        className="bg-transparent outline-none text-[11px] font-bold text-white/70 cursor-pointer disabled:opacity-40 max-w-[140px]"
       >
         {BUILDER_MODELS.map((m) => (
-          <option key={m.id} value={m.id} className="bg-white text-[#1D1D1F]">
+          <option key={m.id} value={m.id} className="bg-[#161b22] text-white">
             {m.label}
           </option>
         ))}

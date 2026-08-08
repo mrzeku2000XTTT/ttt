@@ -50,7 +50,7 @@ function AppIcon({ app, hovered }) {
   );
 }
 
-export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0, view = "all", onViewChange, aiResults, onOpenExternal }) {
+export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0, view = "all", onViewChange, aiResults }) {
   const [communityApps, setCommunityApps] = useState([]);
   const [builderApps, setBuilderApps] = useState([]);
 
@@ -234,20 +234,9 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
 
           if (app.externalUrl) {
             return (
-              <button
-                key={app.name + (app.path || app.externalUrl) + i}
-                onClick={() => onOpenExternal ? onOpenExternal(app) : window.open(app.externalUrl, "_blank", "noopener,noreferrer")}
-                className="contents"
-              >
+              <a key={app.name + (app.path || app.externalUrl) + i} href={app.externalUrl} target="_blank" rel="noopener noreferrer">
                 {inner}
-              </button>
-            );
-          }
-          if (!app.path) {
-            return (
-              <div key={app.name + i} className="opacity-60 pointer-events-none">
-                {inner}
-              </div>
+              </a>
             );
           }
           return (

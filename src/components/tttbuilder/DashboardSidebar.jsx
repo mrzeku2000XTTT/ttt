@@ -13,14 +13,14 @@ const ITEMS = [
 
 export default function DashboardSidebar({ active, onChange, fileCount = 0 }) {
   return (
-    <div className="h-full flex flex-col bg-[#F0F0F2] border-r border-black/[0.06]">
+    <div className="h-full flex flex-col bg-[#0f1419] border-r border-white/[0.06]">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-black/[0.06]">
+      <div className="px-4 py-4 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#007AFF] to-[#0051D5] flex items-center justify-center">
-            <span className="text-white font-black text-xs">D</span>
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#70C7BA] to-[#5a9d92] flex items-center justify-center">
+            <span className="text-black font-black text-xs">D</span>
           </div>
-          <span className="font-semibold text-sm text-[#1D1D1F] tracking-tight">Dashboard</span>
+          <span className="font-semibold text-sm text-white/90 tracking-tight">Dashboard</span>
         </div>
       </div>
 
@@ -35,24 +35,24 @@ export default function DashboardSidebar({ active, onChange, fileCount = 0 }) {
               onClick={() => onChange(item.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
                 isActive
-                  ? "bg-[#007AFF] text-white shadow-[0_1px_3px_rgba(0,122,255,0.3)]"
-                  : "text-[#6B7280] hover:text-[#1D1D1F] hover:bg-black/[0.04]"
+                  ? "bg-white/[0.08] text-white"
+                  : "text-white/50 hover:text-white/80 hover:bg-white/[0.03]"
               }`}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
+              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#70C7BA]" : ""}`} />
               <span className="flex-1 text-left">{item.label}</span>
               {item.id === "code" && fileCount > 0 && (
-                <span className={`text-[10px] font-bold ${isActive ? "text-white/60" : "text-[#86868B]"}`}>{fileCount}</span>
+                <span className="text-[10px] text-white/30 font-bold">{fileCount}</span>
               )}
-              {isActive && <ChevronRight className="w-3 h-3 text-white/60" />}
+              {isActive && <ChevronRight className="w-3 h-3 text-white/30" />}
             </button>
           );
         })}
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-3 border-t border-black/[0.06]">
-        <div className="text-[10px] text-[#86868B] leading-relaxed">
+      <div className="px-3 py-3 border-t border-white/[0.06]">
+        <div className="text-[10px] text-white/30 leading-relaxed">
           Keys generated locally.
           <br />
           Never sent to any server.

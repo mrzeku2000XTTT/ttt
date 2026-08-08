@@ -8,7 +8,7 @@ const MODES = [
 
 export default function BuildModeToggle({ value, onChange, disabled }) {
   return (
-    <div className="flex gap-1 bg-[#F0F0F2] rounded-lg p-0.5 border border-black/[0.06]">
+    <div className="flex gap-1 bg-white/5 rounded-lg p-0.5">
       {MODES.map(m => {
         const Icon = m.icon;
         const active = value === m.id;
@@ -20,7 +20,7 @@ export default function BuildModeToggle({ value, onChange, disabled }) {
             disabled={disabled}
             onClick={() => onChange(m.id)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors disabled:opacity-40 ${
-              active ? "bg-white text-[#007AFF] shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#86868B] hover:text-[#1D1D1F]"
+              active ? "bg-[#70C7BA] text-black" : "text-white/50 hover:text-white"
             }`}
           >
             <Icon className="w-3 h-3" /> {m.label}
