@@ -28,47 +28,79 @@ export default function KronTokensPanel({ onGenerateIdea }) {
   const [tokens, setTokens] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [fast, setFast] = useState(false);
+
+  const schema = {
+    type: "object",
+    properties: {
+      tokens: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            ticker: { type: "string" },
+            name: { type: "string" },
+            description: { type: "string" },
+            market_cap_kas: { type: "number" },
+            graduation_pct: { type: "number" },
+            holders: { type: "number" },
+            age_hours: { type: "number" },
+            kron_url: { type: "string" },
+            kascov_url: { type: "string" },
+            potential_utility: { type: "string" },
+          },
+        },
+      },
+    },
+  };
 
   const loadTokens = async () => {
     setLoading(true);
     setError(false);
     setTokens(null);
+    setFast(false);
+
+    // Live web scan (kron.technology + kascov.io) — can take 40-60s, so we race
+    // it against a 28s cap and fall back to a fast model-knowledge call that has
+    // been running in parallel since t=0. Total time is therefore ≤ ~28s.
+    const webPrompt =
+      `Search the live web (kron.technology, kascov.io, kaspa.news, X.com) for REAL Kaspa KCC-20 covenant tokens on KRON's bonding curve still graduating (not yet at the locked AMM). KCC-20 = Kaspa Covenant Contract standard (SilverScript), NOT KRC-20. kascov.io is the KCC explorer — include its covenant page URL per token. Return: ticker, name, description, market_cap_kas, graduation_pct, holders, age_hours, kron_url, kascov_url, potential_utility. Only real tokens with web evidence. Sort by graduation_pct desc.`;
+
+    const fastPrompt =
+      `List up to 4 Kaspa KCC-20 covenant tokens that have been launched on KRON (kron.technology) bonding curves. KCC-20 = Kaspa Covenant Contract token standard (SilverScript), NOT KRC-20. Return your best knowledge of: ticker, name, description, market_cap_kas, graduation_pct, holders, age_hours, kron_url, kascov_url, potential_utility. Sort by graduation_pct desc. Data may be approximate.`;
+
+    const fastPromise = base44.integrations.Core.InvokeLLM({
+      prompt: fastPrompt, model: "gemini_3_flash", response_json_schema: schema,
+    }).catch(() => null);
+
+    const webPromise = base44.integrations.Core.InvokeLLM({
+      prompt: webPrompt, add_context_from_internet: true, model: "gemini_3_flash", response_json_schema: schema,
+    }).catch(() => null);
+
+    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve("__timeout__"), 28000));
+
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt:
-          `Search the live web (kron.technology, kascov.io, kaspa.news, X.com, Kaspa block explorers) for REAL Kaspa KCC-20 covenant tokens currently launched on KRON (kron.technology) that are STILL GRADUATING — i.e. still on the bonding curve and NOT yet graduated to the locked AMM pool.\n\n` +
-          `KCC-20 is Kaspa's Covenant Contract token standard (smart-contract covenants written in SilverScript), NOT the simpler KRC-20. KRON launches KCC-20 covenant tokens on bonding curves. kascov.io is the KCC covenant explorer — find each token's covenant/contract page there too.\n\n` +
-          `For each token return: ticker, name, a one-sentence description, market_cap_kas (estimated number), graduation_pct (0-100 number), holders (number), age_hours (number), kron_url (the real kron.technology token URL if found), kascov_url (the real kascov.io covenant/token page URL if found), and potential_utility (a short, specific idea for how a proof-of-work / real on-chain-activity app could give this token sustainable utility beyond speculation).\n\n` +
-          `Only return tokens you found actual evidence of on the live web. Do NOT fabricate tokens or tickers. If you can only confirm a few, return those few. Sort by graduation_pct descending (closest to graduating first).`,
-        add_context_from_internet: true,
-        model: "gemini_3_flash",
-        response_json_schema: {
-          type: "object",
-          properties: {
-            tokens: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  ticker: { type: "string" },
-                  name: { type: "string" },
-                  description: { type: "string" },
-                  market_cap_kas: { type: "number" },
-                  graduation_pct: { type: "number" },
-                  holders: { type: "number" },
-                  age_hours: { type: "number" },
-                  kron_url: { type: "string" },
-                  kascov_url: { type: "string" },
-                  potential_utility: { type: "string" },
-                },
-              },
-            },
-          },
-        },
-      });
-      setTokens(Array.isArray(res?.tokens) ? res.tokens : []);
+      const winner = await Promise.race([webPromise, timeoutPromise]);
+      if (winner && winner !== "__timeout__" && Array.isArray(winner.tokens) && winner.tokens.length) {
+        setTokens(winner.tokens);
+      } else {
+        // Live scan timed out (or empty) — use the parallel fast result.
+        const fastRes = await fastPromise;
+        if (fastRes && Array.isArray(fastRes.tokens) && fastRes.tokens.length) {
+          setTokens(fastRes.tokens);
+          setFast(true);
+        } else {
+          setError(true);
+        }
+      }
     } catch {
-      setError(true);
+      const fastRes = await fastPromise;
+      if (fastRes && Array.isArray(fastRes.tokens) && fastRes.tokens.length) {
+        setTokens(fastRes.tokens);
+        setFast(true);
+      } else {
+        setError(true);
+      }
     }
     setLoading(false);
   };
@@ -107,6 +139,12 @@ export default function KronTokensPanel({ onGenerateIdea }) {
       <p className="text-[13px] leading-relaxed mb-6 max-w-md" style={{ color: GREY, fontFamily: SERIF }}>
         Live KCC-20 covenant tokens still on KRON's bonding curve, sourced from kron.technology & cross-referenced on kascov.io. Tap any token to generate a proof-of-work utility app idea for it.
       </p>
+
+      {fast && !loading && tokens && (
+        <p className="text-[12px] mb-4 italic" style={{ color: GREY, fontFamily: SERIF }}>
+          Live scan timed out — showing model-knowledge tokens. Tap Refresh to retry the live scan.
+        </p>
+      )}
 
       {loading && (
         <div className="py-16 text-center">
