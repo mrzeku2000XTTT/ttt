@@ -1,0 +1,63 @@
+{
+  "name": "BuilderApiKey",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email (linked to user)"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "openai",
+        "anthropic",
+        "openrouter",
+        "groq",
+        "together",
+        "custom"
+      ],
+      "description": "Which API provider this key is for"
+    },
+    "encrypted_key": {
+      "type": "string",
+      "description": "AES-GCM encrypted API key (ciphertext only \u2014 never the plaintext)"
+    },
+    "base_url": {
+      "type": "string",
+      "description": "Optional custom base URL for the provider"
+    },
+    "label": {
+      "type": "string",
+      "description": "User-facing label for this key"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this key is active"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "user_email",
+    "provider",
+    "encrypted_key"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
