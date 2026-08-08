@@ -18,7 +18,7 @@ export default function ProposeAppModal({ onClose, user }) {
     app_name: "",
     app_link: "",
     description: "",
-    category: "Tools"
+    category: "Builder"
   });
   const [iconFile, setIconFile] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
@@ -151,10 +151,19 @@ export default function ProposeAppModal({ onClose, user }) {
             <Input
               value={formData.app_link}
               onChange={(e) => setFormData({ ...formData, app_link: e.target.value })}
-              placeholder="https://myapp.base44.app"
+              placeholder="https://myapp.vercel.app"
               className="bg-white/5 border-white/20 text-white placeholder:text-white/40"
               required
             />
+            <p className="text-[11px] text-white/40 mt-1.5">
+              Paste your live URL — your app gets embedded right here in the store so people can try it instantly.
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/20 px-4 py-3">
+            <p className="text-[12px] text-cyan-200/90 font-medium leading-relaxed">
+              <span className="font-bold text-cyan-300">Heads up:</span> your app is shown inside an in-store preview window. That means sign-in should use <span className="font-semibold">Kaspa wallet auth</span> (Kasware, etc.) — Google and most social logins block being embedded, so they won't work here. A one-tap <span className="font-semibold">“Open in new tab”</span> button is always available as a fallback.
+            </p>
           </div>
 
           <div>

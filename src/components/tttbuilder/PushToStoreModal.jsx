@@ -169,6 +169,12 @@ export default function PushToStoreModal({ open, onClose, html, liveUrl, default
                   Your app will be submitted for <span className="text-[#70C7BA]">Review</span>. You can view it anytime. An admin will verify and approve it to make it visible to all TTT users.
                 </p>
 
+                <div className="rounded-xl bg-[#70C7BA]/8 border border-[#70C7BA]/25 px-3 py-2.5">
+                  <p className="text-[11px] text-[#70C7BA]/90 leading-relaxed">
+                    <span className="font-bold">Heads up:</span> your app is embedded in an in-store preview. Use <span className="font-semibold">Kaspa wallet auth</span> (Kasware, etc.) — Google and most social logins block embedding and won't work here. A one-tap <span className="font-semibold">“Open in new tab”</span> fallback is always available.
+                  </p>
+                </div>
+
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={onClose}

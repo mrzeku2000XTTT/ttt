@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Crown, ExternalLink, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { APPS, KASPA_APPS_ORDER } from "./appCatalog";
+import AppPreviewModal from "./AppPreviewModal";
 
 function AppIcon({ app, hovered }) {
   const videoRef = React.useRef(null);
@@ -52,6 +53,7 @@ function AppIcon({ app, hovered }) {
 
 export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0, view = "all", onViewChange, aiResults }) {
   const [communityApps, setCommunityApps] = useState([]);
+  const [previewApp, setPreviewApp] = useState(null);
 
   useEffect(() => {
     // RLS ensures: approved apps visible to everyone; pending/rejected only to owner + admin
@@ -221,9 +223,14 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
 
           if (app.externalUrl) {
             return (
-              <a key={app.name + (app.path || app.externalUrl) + i} href={app.externalUrl} target="_blank" rel="noopener noreferrer">
+              <button
+                key={app.name + (app.path || app.externalUrl) + i}
+                type="button"
+                onClick={() => setPreviewApp(app)}
+                className="appearance-none p-0 border-0 bg-transparent w-full"
+              >
                 {inner}
-              </a>
+              </button>
             );
           }
           return (
@@ -237,6 +244,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
           );
         })}
       </motion.div>
+      <AppPreviewModal app={previewApp} onClose={() => setPreviewApp(null)} />
     </div>
   );
 }
