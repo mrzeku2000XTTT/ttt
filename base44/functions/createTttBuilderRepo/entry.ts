@@ -141,17 +141,38 @@ export default async function (req) {
 
       let body = {};
   try { body = await req.json(); } catch {}
-  const sourceRepo = (body.sourceRepo || "").trim();
+  let sourceRepo = (body.sourceRepo || "").trim();
   const targetRepo = (body.targetRepo || "ttt-builder").trim();
   const isPrivate = !!body.isPrivate;
-  if (!sourceRepo.includes("/") || sourceRepo.split("/").length !== 2) {
-    return Response.json({ error: "sourceRepo must be owner/repo" }, { status: 400 });
-  }
   if (!/^[a-zA-Z0-9._-]+$/.test(targetRepo)) {
     return Response.json({ error: "Invalid target repo name" }, { status: 400 });
   }
 
   const H = { "Content-Type": "application/json" };
+
+  // Resolve the authenticated user (target owner) — needed for auto-detect too
+  const meRes = await gh(token, `https://api.github.com/user`);
+  if (!meRes.ok) return Response.json({ error: "Could not resolve GitHub user (token invalid)." }, { status: 401 });
+  const me = await meRes.json();
+  const targetOwner = me.login;
+
+  // Auto-detect the source repo if not provided or invalid
+  if (!sourceRepo || !sourceRepo.includes("/") || sourceRepo.split("/").length !== 2) {
+    const reposRes = await gh(token, `https://api.github.com/user/repos?sort=updated&per_page=100`);
+    if (!reposRes.ok) return Response.json({ error: "Could not list your repos to auto-detect source." }, { status: 502 });
+    const repos = await reposRes.json();
+    let found = null;
+    for (const r of repos) {
+      if (r.archived) continue;
+      const full = r.full_name;
+      const checkRes = await gh(token, `https://api.github.com/repos/${full}/contents/src/pages/TTTBuilder.jsx`);
+      if (checkRes.ok) { found = full; break; }
+    }
+    if (!found) {
+      return Response.json({ error: "Could not auto-detect your app's repo (no repo contains src/pages/TTTBuilder.jsx). Enter it manually as owner/repo." }, { status: 404 });
+    }
+    sourceRepo = found;
+  }
 
   // 1. Source repo default branch + recursive tree
   const srcInfoRes = await gh(token, `https://api.github.com/repos/${sourceRepo}`);
@@ -177,10 +198,7 @@ export default async function (req) {
 
   if (!paths.length) return Response.json({ error: "No TTT Builder files found in the source repo." }, { status: 404 });
 
-  // 2. Resolve the authenticated user (target owner)
-  const meRes = await gh(token, `https://api.github.com/user`);
-  const me = await meRes.json();
-  const targetOwner = me.login;
+  // 2. Target repo full name
   const fullTarget = `${targetOwner}/${targetRepo}`;
 
   // 3. Create the target repo (422 = already exists, fine)
