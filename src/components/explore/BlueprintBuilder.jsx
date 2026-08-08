@@ -42,6 +42,7 @@ export default function BlueprintBuilder({ idea, concept }) {
   const [landingMode, setLandingMode] = useState(false);
   const [landingHtml, setLandingHtml] = useState('');
   const [landingLoading, setLandingLoading] = useState(false);
+  const [selectedContext, setSelectedContext] = useState(null);
 
   const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
   const elements = currentPage?.elements || [];
@@ -125,10 +126,39 @@ export default function BlueprintBuilder({ idea, concept }) {
     setSidebarOpen(false);
   };
 
-  const handleAgentGenerate = async ({ prompt, imageUrl }) => {
+  const handleAgentGenerate = async ({ prompt, imageUrl, selectedContext: ctx }) => {
     setLandingLoading(true);
     setLandingMode(true);
     try {
+      // SURGICAL EDIT — an element is selected: edit ONLY that element in the
+      // existing landing HTML, leaving every other section byte-for-byte intact.
+      if (ctx && landingHtml) {
+        const res = await base44.integrations.Core.InvokeLLM({
+          prompt: `${PREMIUM_DESIGN_SPEC}
+
+You are editing ONE element in an existing landing page. Edit ONLY that element; every other part of the page MUST stay byte-for-byte identical.
+
+CURRENT LANDING PAGE HTML (the body content):
+${landingHtml}
+
+SELECTED ELEMENT — the only element you may change:
+Tag: ${ctx.tag}
+Current text: ${ctx.text || ''}
+Current HTML:
+${ctx.html || ''}
+
+${imageUrl ? 'A reference image is attached — use it to guide the edit of the selected element.' : ''}
+User's edit request: ${prompt}
+
+Return the COMPLETE updated landing page HTML (inside <body> only; no <html>, <head>, <body>, or <script> tags) with ONLY the selected element changed to satisfy the request. Keep all other sections, classes, copy, and structure identical. Do not add or remove other elements. Return ONLY the HTML.`,
+          file_urls: imageUrl ? [imageUrl] : undefined,
+          model: 'gemini_3_flash',
+        });
+        const htmlContent = typeof res === 'string' ? res : (res.html || res.content || JSON.stringify(res));
+        setLandingHtml(htmlContent);
+        return;
+      }
+
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `${PREMIUM_DESIGN_SPEC}
 
@@ -171,8 +201,9 @@ Return ONLY the HTML. No markdown, no backticks, no explanation.`,
     } catch (err) {
       console.error('Landing generation failed:', err);
       setLandingHtml(`<div class="p-8 text-center text-red-500">Generation failed: ${err.message || 'unknown error'}</div>`);
+    } finally {
+      setLandingLoading(false);
     }
-    setLandingLoading(false);
   };
 
   const codeOutput = React.useMemo(() => {
@@ -217,7 +248,7 @@ Return ONLY the HTML. No markdown, no backticks, no explanation.`,
       <div className="flex-1 relative overflow-hidden flex flex-col">
         {agentMode && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-full px-4 max-w-md">
-            <BlueprintAgent onGenerate={handleAgentGenerate} loading={landingLoading} onClose={() => setAgentMode(false)} />
+            <BlueprintAgent onGenerate={handleAgentGenerate} loading={landingLoading} onClose={() => setAgentMode(false)} selectedContext={selectedContext} />
           </div>
         )}
 
@@ -230,6 +261,8 @@ Return ONLY the HTML. No markdown, no backticks, no explanation.`,
             html={landingHtml}
             onUpdateHtml={setLandingHtml}
             loading={landingLoading}
+            onSelectContext={setSelectedContext}
+            onClearContext={() => setSelectedContext(null)}
           />
         ) : (
           <BlueprintCanvas

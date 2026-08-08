@@ -36,12 +36,14 @@ const IFRAME_SCRIPT = `
       parent.postMessage({ type: 'bp-deselect' }, '*');
       return;
     }
+    var outerHTML = selectedEl.outerHTML.slice(0, 2000);
     selectedEl.style.outline = '2px solid #5a3fff';
     selectedEl.style.cursor = 'pointer';
     var cs = window.getComputedStyle(selectedEl);
     parent.postMessage({ type: 'bp-select', data: {
       tag: selectedEl.tagName,
       text: selectedEl.innerText || '',
+      outerHTML: outerHTML,
       styles: {
         color: cs.color,
         backgroundColor: cs.backgroundColor,
@@ -59,7 +61,12 @@ const IFRAME_SCRIPT = `
     if (!msg || !msg.type) return;
     if (msg.type === 'bp-update' && selectedEl) {
       if (msg.prop === 'text') { selectedEl.innerText = msg.value; }
-      else { selectedEl.style[msg.prop] = msg.value; }
+      else {
+        selectedEl.style[msg.prop] = msg.value;
+        // Tailwind gradient buttons paint via background-image, which sits on
+        // top of background-color — clear it so the picked color is visible.
+        if (msg.prop === 'backgroundColor') { selectedEl.style.backgroundImage = 'none'; }
+      }
       parent.postMessage({ type: 'bp-html', html: document.body.innerHTML }, '*');
     }
     if (msg.type === 'bp-delete' && selectedEl) {
@@ -91,13 +98,14 @@ function pxToNum(val) {
   return m ? parseFloat(m[0]) : 0;
 }
 
-export default function BlueprintLandingPreview({ html, onUpdateHtml, loading }) {
+export default function BlueprintLandingPreview({ html, onUpdateHtml, loading, onSelectContext, onClearContext }) {
   const [device, setDevice] = useState('desktop');
   const [showCode, setShowCode] = useState(false);
   const [editMode, setEditMode] = useState(true);
   const [copied, setCopied] = useState(false);
   const [selectedEl, setSelectedEl] = useState(null);
   const iframeRef = useRef(null);
+  const skipRewriteRef = useRef(false);
 
   const fullHtml = React.useMemo(() => {
     if (!html) return '';
@@ -125,6 +133,14 @@ ${html}
   }, [html, editMode]);
 
   useEffect(() => {
+    // When the html update came from the iframe's own bp-html round-trip (a
+    // live property edit), DON'T rewrite the iframe — that would destroy the
+    // live DOM mutation, flash the preview, and reset the selected element so
+    // every edit after the first is silently dropped. Skip and keep the DOM.
+    if (skipRewriteRef.current) {
+      skipRewriteRef.current = false;
+      return;
+    }
     if (iframeRef.current && fullHtml) {
       const doc = iframeRef.current.contentDocument;
       if (doc) {
@@ -143,6 +159,7 @@ ${html}
         setSelectedEl({
           tag: msg.data.tag,
           text: msg.data.text,
+          html: msg.data.outerHTML,
           color: rgbToHex(msg.data.styles.color),
           backgroundColor: rgbToHex(msg.data.styles.backgroundColor),
           fontSize: pxToNum(msg.data.styles.fontSize),
@@ -151,15 +168,20 @@ ${html}
           borderRadius: pxToNum(msg.data.styles.borderRadius),
           textAlign: msg.data.styles.textAlign,
         });
+        onSelectContext && onSelectContext({ tag: msg.data.tag, text: msg.data.text, html: msg.data.outerHTML });
       } else if (msg.type === 'bp-deselect') {
         setSelectedEl(null);
+        onClearContext && onClearContext();
       } else if (msg.type === 'bp-html') {
+        // Live edit from the iframe — persist to html (for Code view / export)
+        // but skip the destructive iframe rewrite (see the useEffect above).
+        skipRewriteRef.current = true;
         onUpdateHtml && onUpdateHtml(msg.html);
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [onUpdateHtml]);
+  }, [onUpdateHtml, onSelectContext, onClearContext]);
 
   const sendToIframe = useCallback((msg) => {
     const win = iframeRef.current?.contentWindow;

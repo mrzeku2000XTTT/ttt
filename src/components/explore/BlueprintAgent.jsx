@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
-import { Bot, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { Bot, X, Loader2, Image as ImageIcon, MousePointer2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { COLORS } from "./blueprintConstants";
 
-export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onClose }) {
+export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onClose, selectedContext }) {
   const [prompt, setPrompt] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -29,7 +29,7 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
     }
     setError('');
     try {
-      await onGenerate({ prompt: prompt.trim(), imageUrl });
+      await onGenerate({ prompt: prompt.trim(), imageUrl, selectedContext });
     } catch (err) {
       setError(err.message || 'Generation failed');
     }
@@ -58,6 +58,19 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
           </button>
         </div>
       </div>
+
+      {/* Attached element context — the agent will edit only this element */}
+      {selectedContext && (
+        <div className="mb-3 flex items-center gap-2 px-2.5 py-2 rounded-lg" style={{ background: '#eef2ff', border: '1px solid #c7d2fe' }}>
+          <MousePointer2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: COLORS.BLUE }} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: COLORS.TEXT_MED }}>Attached element</p>
+            <p className="text-[11px] truncate" style={{ color: COLORS.TEXT_DARK }}>
+              &lt;{selectedContext.tag.toLowerCase()}&gt; {selectedContext.text ? `"${selectedContext.text.slice(0, 40)}"` : 'selected'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Image upload zone */}
       <div className="mb-3">
@@ -97,7 +110,7 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
       <textarea
         value={prompt}
         onChange={e => setPrompt(e.target.value)}
-        placeholder="Describe the site you want, or say 'recreate the uploaded image as a landing page'..."
+        placeholder={selectedContext ? "Describe how to edit the attached element (only it will change)…" : "Describe the site you want, or say 'recreate the uploaded image as a landing page'..."}
         rows={3}
         className="w-full text-[13px] p-2.5 rounded-lg outline-none resize-none mb-3"
         style={{ border: `1px solid ${COLORS.BORDER}`, color: COLORS.TEXT_DARK, fontFamily: "'Inter', system-ui, sans-serif" }}
@@ -111,7 +124,7 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-[13px] font-semibold transition-opacity"
         style={{ background: COLORS.BLUE, color: '#fff', opacity: loading ? 0.6 : 1 }}
       >
-        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating landing page…</> : <><Bot className="w-4 h-4" /> Generate site</>}
+        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> {selectedContext ? 'Editing element…' : 'Generating landing page…'}</> : <><Bot className="w-4 h-4" /> {selectedContext ? 'Edit element' : 'Generate site'}</>}
       </button>
     </div>
   );
