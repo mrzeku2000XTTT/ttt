@@ -10,7 +10,7 @@ export default function GitHubSyncIndicator({ autosync, disabled }) {
   const [connecting, setConnecting] = useState(false);
   const {
     enabled, connected, ghLogin, syncState, repo, branch, setRepo, setBranch,
-    enable, disable, syncNow, checkConnection, error, lastSyncAt,
+    enable, disable, syncNow, checkConnection, error, lastSyncAt, repoUrl,
   } = autosync;
 
   const handleConnect = async () => {
@@ -169,6 +169,20 @@ export default function GitHubSyncIndicator({ autosync, disabled }) {
                         <RefreshCw className="w-3 h-3" /> Sync now
                       </button>
                     </div>
+
+                    {/* Repo link — visible once the first sync creates/pushes the repo */}
+                    {repoUrl && (
+                      <a
+                        href={repoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-[#70C7BA]/10 border border-[#70C7BA]/30 p-3 text-sm text-white hover:bg-[#70C7BA]/15 transition-colors"
+                      >
+                        <Github className="w-4 h-4 text-[#70C7BA] flex-shrink-0" />
+                        <span className="flex-1 truncate font-medium">View repo on GitHub</span>
+                        <span className="text-[10px] text-white/40 truncate">{repoUrl.replace("https://github.com/", "")}</span>
+                      </a>
+                    )}
 
                     {error && (
                       <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-3">

@@ -37,6 +37,7 @@ export function useGitHubAutoSync(files, { loading = false, defaultName = "" } =
   const [syncState, setSyncState] = useState("idle"); // idle | syncing | synced | error
   const [lastSyncAt, setLastSyncAt] = useState(null);
   const [error, setError] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
 
   const debounceRef = useRef(null);
   const filesRef = useRef(files);
@@ -89,13 +90,14 @@ export function useGitHubAutoSync(files, { loading = false, defaultName = "" } =
     setSyncState("syncing");
     setError("");
     try {
-      await base44.functions.invoke("pushAppToUserGitHubOAuth", {
+      const res = await base44.functions.invoke("pushAppToUserGitHubOAuth", {
         repo: r.trim(),
         branch: (branchRef.current || "main").trim(),
         commitMessage: `Auto-sync from TTT Builder · ${new Date().toLocaleTimeString()}`,
         isPrivate: isPrivateRef.current,
         files: f.map(x => ({ path: x.path, content: x.content || "" })),
       });
+      if (res?.data?.repoUrl) setRepoUrl(res.data.repoUrl);
       setSyncState("synced");
       setLastSyncAt(Date.now());
     } catch (err) {
@@ -133,7 +135,9 @@ export function useGitHubAutoSync(files, { loading = false, defaultName = "" } =
     if (repoName) setRepo(repoName);
     else if (!repo) setRepo(defaultSlug());
     setEnabled(true);
-  }, [repo, defaultSlug]);
+    // Publish immediately — don't wait for the debounce so the repo is created now
+    setTimeout(() => doPush(), 300);
+  }, [repo, defaultSlug, doPush]);
 
   const disable = useCallback(() => {
     setEnabled(false);
@@ -148,7 +152,7 @@ export function useGitHubAutoSync(files, { loading = false, defaultName = "" } =
 
   return {
     enabled, repo, branch, isPrivate, connected, ghLogin,
-    syncState, lastSyncAt, error,
+    syncState, lastSyncAt, error, repoUrl,
     setRepo, setBranch, setIsPrivate,
     enable, disable, syncNow, checkConnection,
   };
