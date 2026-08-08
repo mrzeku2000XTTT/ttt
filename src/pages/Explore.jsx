@@ -4,9 +4,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   ArrowLeft, ArrowUpRight, Sparkles, Lightbulb, Twitter,
-  Loader2, RefreshCw, Copy, Check, Settings, Share2, Info, Layout, Globe, X
+  Loader2, RefreshCw, Copy, Check, Settings, Share2, Info, Layout, Globe, X, Coins
 } from "lucide-react";
 import BlueprintBuilder from "@/components/explore/BlueprintBuilder";
+import KronTokensPanel from "@/components/explore/KronTokensPanel";
 
 const PROMPTS = [
   "A decentralized voting platform for DAOs",
@@ -137,14 +138,17 @@ export default function ExplorePage() {
     setIdea(p);
   };
 
-  const generate = async () => {
-    if (!idea.trim() || generating) return;
+  const generate = async (overrideIdea) => {
+    const seed = (overrideIdea ?? idea).trim();
+    if (!seed || generating) return;
+    if (overrideIdea) setIdea(overrideIdea);
     setGenerating(true);
     setResult(null);
+    setView('idea');
     try {
       // Detect URLs — fetch REAL page content so the agent doesn't hallucinate
       const urlRegex = /(https?:\/\/[^\s]+)/g;
-      const urls = idea.match(urlRegex);
+      const urls = seed.match(urlRegex);
       const hasUrl = urls && urls.length > 0;
 
       let urlContext = '';
@@ -188,7 +192,7 @@ ${KASPA_PRIMER}
 LATEST KASPA DEVELOPMENTS (scraped from kaspa.news & official sources — treat as REAL grounding data, do not guess):
 ${kaspaContext || "(live fetch unavailable — use your own web search for KCC-20 and kaspa.news)"}
 
-Their idea seed: "${idea.trim()}"${urlContext}
+Their idea seed: "${seed}"${urlContext}
 
 SEARCH THE WEB for real, current information about:
 - **KCC-20** — the Kaspa Covenant Contract token standard (programmable covenant-based smart coins native to Kaspa L1). Find the latest spec, launches, and projects. If the idea could use KCC-20, reference it accurately.
@@ -237,7 +241,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         },
       });
       setResult(res);
-      setHistory(prev => [{ idea: idea.trim(), result: res, time: new Date() }, ...prev].slice(0, 5));
+      setHistory(prev => [{ idea: seed, result: res, time: new Date() }, ...prev].slice(0, 5));
     } catch {
       setResult({ error: true });
     }
@@ -285,19 +289,19 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         style={{ background: WHITE, borderBottom: `1px solid ${LINE}` }}
       >
         <button
-          onClick={() => view === 'blueprint' ? setView('idea') : navigate(-1)}
+          onClick={() => (view === 'blueprint' || view === 'kron') ? setView('idea') : navigate(-1)}
           className="flex items-center gap-1.5 h-full -ml-2 transition-colors duration-150 cursor-pointer"
           style={{ touchAction: 'manipulation', minHeight: '44px', minWidth: '44px', WebkitTapHighlightColor: 'transparent', color: INK }}
           aria-label="Go back"
         >
           <ArrowLeft className="w-4 h-4 flex-shrink-0" />
-          <span className="text-[14px] font-medium select-none" style={{ fontFamily: SERIF }}>{view === 'blueprint' ? 'Idea Lab' : 'Back'}</span>
+          <span className="text-[14px] font-medium select-none" style={{ fontFamily: SERIF }}>{(view === 'blueprint' || view === 'kron') ? 'Idea Lab' : 'Back'}</span>
         </button>
         <span
           className="text-[15px] font-semibold tracking-tight"
           style={{ color: INK, fontFamily: SERIF }}
         >
-          {view === 'blueprint' ? 'Blueprint' : 'Idea Lab'}
+          {view === 'blueprint' ? 'Blueprint' : view === 'kron' ? 'KRON Tokens' : 'Idea Lab'}
         </span>
         <div className="flex items-center gap-4">
           {view === 'idea' && (
@@ -307,6 +311,15 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
               style={{ color: INK, minHeight: '44px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
               <Layout className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Blueprint</span>
+            </button>
+          )}
+          {view === 'idea' && (
+            <button
+              onClick={() => setView('kron')}
+              className="flex items-center gap-1.5 text-[13px] font-medium transition-opacity hover:opacity-60"
+              style={{ color: INK, minHeight: '44px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            >
+              <Coins className="w-3.5 h-3.5" /> <span className="hidden sm:inline">KRON</span>
             </button>
           )}
           <button
@@ -329,6 +342,10 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
       {view === 'blueprint' ? (
         <div className="px-3 lg:px-5 pt-16 pb-4 relative z-10">
           <BlueprintBuilder idea={idea} concept={result} />
+        </div>
+      ) : view === 'kron' ? (
+        <div className="max-w-2xl mx-auto px-5 sm:px-8 pt-20 pb-24 relative z-10">
+          <KronTokensPanel onGenerateIdea={(prompt) => generate(prompt)} />
         </div>
       ) : (
       <div className="max-w-2xl mx-auto px-5 sm:px-8 pt-20 pb-24 relative z-10">
