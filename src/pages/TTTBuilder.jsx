@@ -947,16 +947,9 @@ Return the file operations only.`,
                       )}
 
                       {loading && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="relative w-16 h-16 mx-auto mb-4">
-                              <div className="absolute inset-0 rounded-full border-2 border-[#70C7BA]/20 animate-ping" />
-                              <div className="absolute inset-2 rounded-full border-2 border-t-[#70C7BA] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                              <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-[#70C7BA]" />
-                            </div>
-                            <p className="text-white/50 text-sm font-medium">Building your site…</p>
-                            <p className="text-white/25 text-xs mt-1">TTT Agent 1 is writing the code</p>
-                          </div>
+                        <div className="absolute top-3 right-3 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0d1117]/90 backdrop-blur-xl border border-[#70C7BA]/30 shadow-lg">
+                          <div className="w-3 h-3 rounded-full border-2 border-t-[#70C7BA] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                          <span className="text-[11px] font-bold text-[#70C7BA]">Editing…</span>
                         </div>
                       )}
 
@@ -990,11 +983,10 @@ Return the file operations only.`,
                             srcDoc={html}
                             sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                             className="w-full h-full border-0"
-                            style={{ display: loading ? "none" : "block" }}
                             title="Site Preview"
                           />
                         ) : (
-                          <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden" style={{ display: loading ? "none" : "flex" }}>
+                          <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
                             <div className="relative h-full max-h-full aspect-[9/19] max-w-full mx-auto">
                               <div className="absolute inset-0 rounded-[2rem] bg-white/5 border border-white/15 pointer-events-none" />
                               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-4 bg-white/10 rounded-b-xl z-10 pointer-events-none" />

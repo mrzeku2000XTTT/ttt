@@ -257,6 +257,63 @@ ${context}`,
     }
   }
 
+  // 4. FILE REVIEWER — an extra agent that views every touched file and
+  // REVERTS any file the user did not actually ask to change. This enforces
+  // surgical editing: only files the user's request targets should change.
+  const originalPaths = new Set(files.map(f => f.path));
+  const modifiedExisting = touched.filter(p => originalPaths.has(p));
+  if (modifiedExisting.length) {
+    const tReview = Date.now();
+    onProgress?.({ type: "activity", item: { kind: "thought", seconds: 1, text: `File Reviewer: checking ${modifiedExisting.length} modified file(s) for unwanted changes…` } });
+    try {
+      const reviewRaw = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are the FILE REVIEWER. Your job is to protect files the user did NOT ask to change.
+
+USER REQUEST: ${userPrompt}
+
+The builder modified these EXISTING files:
+${modifiedExisting.map(p => {
+  const before = files.find(f => f.path === p);
+  const after = working.find(f => f.path === p);
+  return `--- ${p} ---\nBEFORE (${before?.content?.length || 0} chars):\n${(before?.content || "").slice(0, 1500)}\n\nAFTER (${after?.content?.length || 0} chars):\n${(after?.content || "").slice(0, 1500)}`;
+}).join("\n\n")}
+
+Based on the user's request, which of these files should be REVERTED to their original content because the user did not ask to change them? Only revert files where the change is clearly unrelated to the request. If a file's change is related to the request (even indirectly), keep it.
+
+Return JSON: { "revert": ["path1", "path2"], "reasoning": "one sentence" }`,
+        model,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            revert: { type: "array", items: { type: "string" }, description: "File paths to revert to original content" },
+            reasoning: { type: "string" },
+          },
+        },
+      });
+      const review = parseResult(reviewRaw);
+      const revertPaths = (review?.revert || []).map(norm).filter(p => originalPaths.has(p));
+      if (revertPaths.length) {
+        const reverted = [];
+        working = working.map(f => {
+          if (revertPaths.includes(f.path)) {
+            const orig = files.find(o => o.path === f.path);
+            if (orig) { reverted.push(f.path); return orig; }
+          }
+          return f;
+        });
+        // Remove reverted paths from touched so the UI doesn't claim they changed
+        revertPaths.forEach(p => { const idx = touched.indexOf(p); if (idx >= 0) touched.splice(idx, 1); });
+        log.push(`File Reviewer: reverted ${reverted.length} file(s) — ${review?.reasoning || ""}`);
+        onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(tReview), text: `File Reviewer: reverted ${reverted.join(", ")} — ${review?.reasoning || ""}` } });
+      } else {
+        log.push("File Reviewer: all changes are relevant to the request — nothing reverted");
+        onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(tReview), text: `File Reviewer: all changes are relevant — nothing reverted` } });
+      }
+    } catch (err) {
+      log.push(`File Reviewer: skipped (${err.message})`);
+    }
+  }
+
   return {
     files: working,
     touched,
