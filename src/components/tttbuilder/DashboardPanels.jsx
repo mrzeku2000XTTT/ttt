@@ -46,25 +46,52 @@ export function OverviewPanel({ files, messages, buildMode, model, walletKit, on
 }
 
 /* ---------- Agents ---------- */
-export function AgentsPanel({ onGenerate, loading }) {
+export function AgentsPanel({ onGenerate, loading, files = [] }) {
   const [agentPrompt, setAgentPrompt] = useState("");
-  const presets = [
-    "Build me an agentic app with a proper workflow: a research agent that gathers data, a planner agent that creates a task list, and an executor agent that runs each task and reports results.",
-    "Add an AI agent to this app that can answer user questions, search the web, and save notes to a local database.",
-    "Add a multi-agent workflow: one agent monitors crypto prices and alerts, another auto-creates a summary, and a third posts it to a feed.",
-  ];
+  const hasProject = files.length > 0;
+
+  // When a project already exists, presets are ADDITIVE — they tell the
+  // builder to add the agent to the existing app, not rebuild it.
+  const presets = hasProject
+    ? [
+        "Add an AI image-generation agent to this app — a panel where the user types a prompt and the agent calls a real image API and shows the generated image inline.",
+        "Add a research agent to this app that fetches live data from a public API, summarizes it with an LLM call, and displays the summary in a new panel.",
+        "Add a multi-agent workflow to this app: one agent monitors a live data source and alerts, another creates a summary, and a third displays it in a feed — all wired into the existing UI without rebuilding it.",
+      ]
+    : [
+        "Build me an agentic app with a proper workflow: a research agent that gathers data, a planner agent that creates a task list, and an executor agent that runs each task and reports results.",
+        "Build an app with an AI agent that can answer user questions, search the web, and save notes to a local database.",
+        "Build a multi-agent workflow app: one agent monitors crypto prices and alerts, another auto-creates a summary, and a third posts it to a feed.",
+      ];
+
   return (
     <div className="p-5 space-y-5">
       <div>
         <h2 className="text-lg font-bold text-white mb-1">Agents</h2>
-        <p className="text-xs text-white/40">Add real AI agents and workflows to your build.</p>
+        <p className="text-xs text-white/40">
+          {hasProject
+            ? "Add a real AI agent to your existing project — it will be wired in without rebuilding."
+            : "Add real AI agents and workflows to your build."}
+        </p>
       </div>
+
+      {hasProject && (
+        <div className="bg-[#70C7BA]/10 border border-[#70C7BA]/25 rounded-xl p-3 flex items-start gap-2">
+          <Zap className="w-3.5 h-3.5 text-[#70C7BA] flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-white/60 leading-relaxed">
+            Your project has {files.length} file{files.length > 1 ? "s" : ""}. The agent will be <span className="text-[#70C7BA] font-bold">added</span> to it — existing files are kept and only the minimum needed is edited.
+          </p>
+        </div>
+      )}
+
       <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
-        <label className="text-xs text-white/50 mb-2 block font-medium">Describe the agentic app you want</label>
+        <label className="text-xs text-white/50 mb-2 block font-medium">
+          {hasProject ? "Describe the agent to add" : "Describe the agentic app you want"}
+        </label>
         <textarea
           value={agentPrompt}
           onChange={e => setAgentPrompt(e.target.value)}
-          placeholder="Build me an agentic app with a proper workflow..."
+          placeholder={hasProject ? "Add an AI agent that generates images from a text prompt and shows them in a new panel…" : "Build me an agentic app with a proper workflow..."}
           rows={4}
           className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50 resize-none"
         />
@@ -74,7 +101,7 @@ export function AgentsPanel({ onGenerate, loading }) {
           className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg bg-[#70C7BA] text-black text-sm font-bold hover:bg-[#70C7BA]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? <Sparkles className="w-4 h-4 animate-pulse" /> : <Zap className="w-4 h-4" />}
-          Build Agentic App
+          {hasProject ? "Add Agent to Project" : "Build Agentic App"}
         </button>
       </div>
       <div>

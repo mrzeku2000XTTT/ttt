@@ -99,7 +99,14 @@ AGENTIC APPS — when the user asks for "an agentic app", "AI agents", "a workfl
 - Agents communicate through a shared message bus / event emitter or a simple queue in localStorage. Each agent runs its step, posts its result, and triggers the next.
 - Give the user a visible workflow UI: a panel that shows each agent, its current status (idle / running / done), its latest output, and a "Run workflow" button. Show the step-by-step progress as it happens.
 - Use window.TTTWallet or fetch() to public APIs as agent tools. An agent that "researches" should fetch real data; an agent that "plans" should produce a real task list; an agent that "executes" should call the tools and show results.
-- The workflow must be deterministic and replayable: the user can run it again and see fresh results. Persist the last run in localStorage so it survives refreshes.`;
+- The workflow must be deterministic and replayable: the user can run it again and see fresh results. Persist the last run in localStorage so it survives refreshes.
+
+ADDITIVE AGENT INSTALL — when the user asks to "add an agent", "add AI", or "add a workflow" to a project that ALREADY HAS FILES:
+- This is an EXTENSION of the existing app, NOT a rebuild. Do NOT return files you are not changing. Do NOT restructure or rename existing files.
+- Add the agent as NEW files only: a new module under src/agents/ (or scripts/agents/), a new workflow panel component, and a small mount point that wires the agent panel into the EXISTING app shell (e.g. add one <AgentPanel /> import + render to the existing App.jsx or main page — edit that one file surgically, return only the changed lines plus the new files).
+- The agent must actually DO something real: an image-generation agent calls a real image API and shows the result; a research agent fetches live data; a video agent calls a real video endpoint. No stub agents that just log "running…".
+- If the existing app already has an agent system, EXTEND it (add the new agent to its registry) rather than creating a parallel one.
+- Return ONLY: the new agent files + the one or two existing files you surgically edited to mount them. Never return the whole project.`;
 
 // TTT Agent 1 = strongest available model + elite engineering directive
 const TTT_AGENT_1 = "claude_opus_4_8";
@@ -407,7 +414,14 @@ function TTTBuilderStudio() {
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
-      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${IMAGE_RULE}${KASPA_PROTOCOLS_RULE}${ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+      let baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${IMAGE_RULE}${KASPA_PROTOCOLS_RULE}${ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+
+      // If the user is adding an agent/AI/workflow to a project that already has
+      // files, make it crystal clear: this is an EXTENSION, not a rebuild.
+      const isAddAgentIntent = /\b(add|include|insert|install)\b.*\b(agent|ai|workflow|assistant|bot)\b/i.test(userPrompt);
+      if (files.length > 0 && isAddAgentIntent) {
+        baseRules += `\n\nCRITICAL — ADD TO EXISTING PROJECT: The user is adding an agent to a project that already has ${files.length} file(s). Do NOT rebuild the app. Do NOT return files you are not changing. Add the agent as NEW files and surgically edit only the one or two existing files needed to mount the agent panel (e.g. add an import + render the <AgentPanel/> in the existing App.jsx). Every existing file you were not asked to change must be left exactly as it is. The agent must actually work — a real API call that produces a real result (image, data, summary), not a stub.`;
+      }
 
       // Analyze attached files of ANY type (images, text, PDFs, videos) so the
       // LLM can actually use their content. Shows a per-file analyzing state.
@@ -987,8 +1001,10 @@ Return the file operations only.`,
                         </div>
                       )}
 
-                      {/* Real npm projects run in the cloud sandbox, streamed straight into Preview */}
-                      {isRealProject && !loading && (
+                      {/* Real npm projects run in the cloud sandbox, streamed straight into Preview.
+                          The panel stays MOUNTED during edits so the preview never disappears —
+                          only the "Editing…" badge overlays on top while a build runs. */}
+                      {isRealProject && (
                         <div className="absolute inset-0 flex flex-col">
                           {missingImports.length > 0 && (
                             <div className="flex-shrink-0 px-3 py-2 bg-red-500/10 border-b border-red-500/30 text-[11px] text-red-300 flex items-center justify-between gap-3">
@@ -1086,7 +1102,7 @@ Return the file operations only.`,
                         {dashSection === "live" && <E2BLivePanel files={files} />}
                         {dashSection === "agents" && (
                           <div className="h-full overflow-y-auto">
-                            <AgentsPanel onGenerate={generate} loading={loading} />
+                            <AgentsPanel onGenerate={generate} loading={loading} files={files} />
                           </div>
                         )}
                         {dashSection === "database" && (
