@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Settings as SettingsIcon } from "lucide-react";
+import { Lock, Settings as SettingsIcon, LayoutGrid } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
 import PowerConsole from "@/components/agentinternet/PowerConsole";
@@ -12,6 +12,7 @@ import GuestAgentPreview from "@/components/agentinternet/GuestAgentPreview";
 import OnboardingModal, { hasOnboarded } from "@/components/agentinternet/OnboardingModal";
 import { APPS } from "@/components/appstore2/appCatalog";
 import { AGENT_CARDS } from "@/components/agentinternet/agentCards";
+import LivePagesBrowser from "@/components/agentinternet/LivePagesBrowser";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -31,6 +32,7 @@ export default function AgentInternetLanding() {
   const [guestOpen, setGuestOpen] = useState(false);
   const [onboard, setOnboard] = useState(null); // null | "agent" | "ttt"
   const [viewAsGuest, setViewAsGuest] = useState(false); // admin-only preview toggle
+  const [showBrowser, setShowBrowser] = useState(false); // browse-all-live-pages directory
 
   const openChat = (command) => {
     setChatCommand(command);
@@ -221,6 +223,16 @@ export default function AgentInternetLanding() {
                   </button>
                 </div>
 
+                {/* Browse all live pages — guest discovery */}
+                <div className="mt-5 flex items-center justify-center">
+                  <button
+                    onClick={() => setShowBrowser(true)}
+                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" /> Browse all live pages
+                  </button>
+                </div>
+
                 {/* Footer status */}
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -272,6 +284,8 @@ export default function AgentInternetLanding() {
         onClose={() => setOnboard(null)}
         onFinish={finishOnboard}
       />
+
+      <LivePagesBrowser open={showBrowser} onClose={() => setShowBrowser(false)} />
 
       <GuestAgentPreview
         open={guestOpen}

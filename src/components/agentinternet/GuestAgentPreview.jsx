@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { APPS } from "@/components/appstore2/appCatalog";
+import { LIVE_PAGES } from "@/components/agentinternet/livePages";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 
 /**
@@ -12,7 +12,7 @@ import OrganicOrb from "@/components/agentinternet/OrganicOrb";
  * "building in real time" log, detects the user's intent via LLM, and
  * recommends the correct TTT app to route to — like how KAI opens apps.
  */
-const CATALOG_TEXT = APPS.map((a) => `- ${a.name}: ${a.desc}`).join("\n");
+const CATALOG_TEXT = LIVE_PAGES.map((a) => `- ${a.name}: ${a.desc}`).join("\n");
 
 export default function GuestAgentPreview({ open, command, onClose }) {
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ export default function GuestAgentPreview({ open, command, onClose }) {
       });
       const names = Array.isArray(res?.matches) ? res.matches : [];
       const found = names
-        .map((n) => APPS.find((a) => a.name.toLowerCase() === n.toLowerCase()))
+        .map((n) => LIVE_PAGES.find((a) => a.name.toLowerCase() === n.toLowerCase()))
         .filter(Boolean);
       setLines((p) => [...p, `> ${found.length ? `matched · ${found.length} app${found.length > 1 ? "s" : ""}` : "no direct match · explore the store"}`]);
       setMatches(found);
