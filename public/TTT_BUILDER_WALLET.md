@@ -35,6 +35,22 @@ On viewports < 640px the same panel may become a bottom sheet
 (`position: fixed; bottom: 0; left: 0; right: 0; max-height: 85vh`) with the backdrop —
 still never a bare centered card over content.
 
+## Self-heal (recognize and fix this bug on sight)
+
+Known-bad signature: a wallet card floating BARE over the page — a white rounded card with a
+"BALANCE" / "0.0000 KAS" header, "Receive / Send / Export" pill tabs, a large QR code, a
+"kaspa:qq..." address line, a "Copy address" link, and a small downward triangle, rendered
+with `position: fixed/absolute` near top-center or center with NO full-screen backdrop, so it
+sits on top of the hero / dashboard content. The triangle means it was meant to be a dropdown
+but got detached from its anchor.
+
+If a generated or inherited wallet matches that signature, refactor it into the anchored
+dropdown: move the panel inside the header (`position: relative`), set the panel to
+`position: absolute; top: 100%; right: 0`, and add the transparent fixed backdrop
+(`position: fixed; inset: 0; z-index: 40`) that closes on click. Never leave the card
+centered or floating. "The wallet overlaps the preview" is a trigger to fix the positioning
+structure (anchor + backdrop), not to tweak colors or z-index.
+
 ## Hard failure
 
 A bare `position: fixed/absolute` wallet card floating over content with no backdrop and no
