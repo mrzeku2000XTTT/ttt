@@ -22,10 +22,13 @@ export default function OpenModelsTab({ open, onClose, onAdded }) {
   const refresh = () => setList(getLocalProviders());
 
   // Auto-detect provider from the model string.
-  // Models with a "/" (e.g. nvidia/nemotron-3-super-120b-a12b:free) are OpenRouter.
   const autoDetectProvider = (modelStr) => {
-    if (modelStr.includes("/")) return "openrouter";
-    if (modelStr.startsWith("deepseek")) return "deepseek";
+    const s = modelStr.toLowerCase();
+    if (s.startsWith("gemini") || s.startsWith("gemma")) return "google";
+    if (s.startsWith("llama-") || s.startsWith("meta-llama") || s.startsWith("mixtral") || s.includes("groq")) return "groq";
+    if (s.includes("/")) return "openrouter";
+    if (s.startsWith("deepseek")) return "deepseek";
+    if (s.startsWith("mistral") || s.startsWith("codestral") || s.startsWith("pixtral")) return "mistral";
     return provider; // keep current (custom/ollama) otherwise
   };
 
