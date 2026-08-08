@@ -24,6 +24,8 @@ import DashboardSidebar from "@/components/tttbuilder/DashboardSidebar";
 import { OverviewPanel, AgentsPanel, DatabasePanel, MemoryPanel, SettingsPanel } from "@/components/tttbuilder/DashboardPanels";
 import PushToStoreModal from "@/components/tttbuilder/PushToStoreModal";
 import PushToGitHubModal from "@/components/tttbuilder/PushToGitHubModal";
+import GitHubSyncIndicator from "@/components/tttbuilder/GitHubSyncIndicator";
+import { useGitHubAutoSync } from "@/components/tttbuilder/useGitHubAutoSync";
 import ChatDropZone from "@/components/tttbuilder/ChatDropZone";
 import CloneUrlButton from "@/components/tttbuilder/CloneUrlButton";
 import DesignOptionsButton from "@/components/tttbuilder/DesignOptionsButton";
@@ -286,6 +288,12 @@ function TTTBuilderStudio() {
   const [showProjects, setShowProjects] = useState(false);
   const [projectId, setProjectId] = useState(() => {
     try { return localStorage.getItem("ttt_builder_project_id") || ""; } catch { return ""; }
+  });
+
+  // Auto-sync every file change to the user's connected GitHub repo (debounced)
+  const autosync = useGitHubAutoSync(files, {
+    loading,
+    defaultName: prompt || (messages.find(m => m.role === "user")?.content) || "my-kaspa-app",
   });
 
   useEffect(() => {
@@ -989,6 +997,7 @@ Return the file operations only.`,
                         >
                           <Globe className="w-3 h-3" /> Export
                         </button>
+                        <GitHubSyncIndicator autosync={autosync} disabled={loading} />
                         <button
                           onClick={() => setShowPushGithubModal(true)}
                           className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
