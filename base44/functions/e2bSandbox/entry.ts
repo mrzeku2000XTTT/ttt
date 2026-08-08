@@ -77,6 +77,20 @@ export default async function (req) {
       const scripts = pkg.scripts || {};
       const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
 
+      // Validate the project actually compiles before serving it. A Vite compile
+      // error otherwise shows as a black screen (Vite's dark error overlay) with
+      // no clue what went wrong. Surfacing the real build error lets the builder
+      // auto-repair it.
+      if (deps.vite) {
+        const build = await sandbox.commands.run('npx vite build', { cwd: APP_DIR, timeoutMs: 90 * 1000 });
+        logs.push(`$ npx vite build → exit ${build.exitCode}`);
+        if (build.stdout) logs.push(build.stdout.slice(-3000));
+        if (build.stderr) logs.push(build.stderr.slice(-3000));
+        if (build.exitCode && build.exitCode !== 0) {
+          return Response.json({ sandboxId: sandbox.sandboxId, url: null, logs, error: 'Vite build failed — the generated project has a compile error. Open the logs and tap "Fix build error" to auto-repair.' });
+        }
+      }
+
       if (!startCmd) {
         if (deps.vite) {
           // Vite rejects the sandbox hostname by default — start it through a wrapper

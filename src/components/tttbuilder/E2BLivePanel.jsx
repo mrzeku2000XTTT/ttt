@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, Play, Square, ExternalLink, Server, Terminal, RefreshCw, X } from "lucide-react";
+import { Loader2, Play, Square, ExternalLink, Server, Terminal, RefreshCw, X, Wrench } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function E2BLivePanel({ files, autoStart = false, onUrlChange }) {
+export default function E2BLivePanel({ files, autoStart = false, onUrlChange, onFixBuild }) {
   const [state, setState] = useState({ status: "idle", url: null, sandboxId: null, logs: [], error: null });
   const [showLogs, setShowLogs] = useState(false);
   const [frameKey, setFrameKey] = useState(0);
@@ -132,7 +132,16 @@ export default function E2BLivePanel({ files, autoStart = false, onUrlChange }) 
         {state.status === "error" && (
           <div className="absolute inset-0 overflow-auto p-4">
             <p className="text-red-400 text-sm font-bold mb-2">Runtime failed to start</p>
-            <p className="text-white/40 text-xs mb-4">{state.error}</p>
+            <p className="text-white/40 text-xs mb-3">{state.error}</p>
+            {state.logs.length > 0 && (
+              <pre className="text-[10px] font-mono text-red-300/80 whitespace-pre-wrap break-all bg-black/40 rounded-lg p-2 mb-3 max-h-48 overflow-auto">{state.logs.join("\n")}</pre>
+            )}
+            {onFixBuild && state.logs.length > 0 && (
+              <button onClick={() => onFixBuild(state.logs.join("\n"))}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#70C7BA] text-black text-xs font-bold hover:bg-[#70C7BA]/90 transition-colors">
+                <Wrench className="w-3.5 h-3.5" /> Fix build error
+              </button>
+            )}
           </div>
         )}
       </div>

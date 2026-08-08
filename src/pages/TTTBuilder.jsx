@@ -599,6 +599,13 @@ function TTTBuilderStudio() {
     }
   };
 
+  // Self-heal: when the E2B sandbox reports a Vite build error (a black screen
+  // is Vite's dark error overlay), feed the real build logs to the builder so it
+  // fixes only the broken file(s) instead of leaving a dead preview.
+  const fixBuild = (logs) => {
+    generate(`The live preview is a black screen because the React project failed to compile. Here are the Vite build logs:\n\n${logs}\n\nFind the compile error in the logs, identify the exact file and the broken line, and fix it by returning ONLY the corrected file(s) with their FULL content. Do not rewrite files that have no errors.`);
+  };
+
   // Paste raw HTML → rebuild it as a real React + Vite project
   const convertHtmlToReact = (rawHtml) => {
     changeBuildMode("react");
@@ -1086,7 +1093,7 @@ function TTTBuilderStudio() {
                             </div>
                           )}
                           <div className="flex-1 min-h-0 relative">
-                            <E2BLivePanel files={files} autoStart onUrlChange={setLiveUrl} />
+                            <E2BLivePanel files={files} autoStart onUrlChange={setLiveUrl} onFixBuild={fixBuild} />
                           </div>
                         </div>
                       )}
@@ -1165,7 +1172,7 @@ function TTTBuilderStudio() {
                         {dashSection === "code" && loading && (
                           <div className="flex items-center justify-center h-full text-white/30 text-xs">Loading files…</div>
                         )}
-                        {dashSection === "live" && <E2BLivePanel files={files} onUrlChange={setLiveUrl} />}
+                        {dashSection === "live" && <E2BLivePanel files={files} onUrlChange={setLiveUrl} onFixBuild={fixBuild} />}
                         {dashSection === "agents" && (
                           <div className="h-full overflow-y-auto">
                             <AgentsPanel onGenerate={generate} loading={loading} files={files} />
