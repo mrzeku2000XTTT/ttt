@@ -245,6 +245,7 @@ function TTTBuilderStudio() {
   const [publishForm, setPublishForm] = useState({ siteName: "", repo: OUR_REPO });
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
+  const runIdRef = useRef(0); // bumped on New Chat to abort any in-flight generate()
   const [iframeKey, setIframeKey] = useState(0);
   const [device, setDevice] = useState("desktop"); // desktop | mobile
   const [model, setModel] = useState(() => {
@@ -397,6 +398,7 @@ function TTTBuilderStudio() {
   const generate = async (userPrompt, opts = {}) => {
     if (!userPrompt.trim() || loading) return;
     const runMode = opts.mode || buildMode;
+    const myRunId = ++runIdRef.current;
     setLoading(true);
     setPhase("studio");
 
@@ -449,6 +451,7 @@ function TTTBuilderStudio() {
           file_urls: fileUrls.length ? fileUrls : undefined,
         });
         const text = typeof raw === "string" ? raw : (raw?.response || JSON.stringify(raw));
+        if (runIdRef.current !== myRunId) return; // stale — New Chat already reset
         setMessages(prev => [...prev, { role: "assistant", content: text, mode: chatMode }]);
         return;
       }
@@ -471,6 +474,7 @@ function TTTBuilderStudio() {
           fileUrls,
           attachmentNote,
           onProgress: (ev) => {
+            if (runIdRef.current !== myRunId) return; // stale — ignore progress
             if (ev.type === "activity") {
               activityLog = [...activityLog, ev.item];
               patchLast({ activity: activityLog });
@@ -527,6 +531,9 @@ Return the file operations only.`,
         throw new Error("The build didn't produce an index.html. Try again.");
       }
 
+      // Stale run (user hit New Chat mid-build) — drop everything, don't touch state.
+      if (runIdRef.current !== myRunId) return;
+
       setFiles(nextFiles);
       setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
@@ -555,12 +562,13 @@ Return the file operations only.`,
         });
       } catch {}
     } catch (err) {
+      if (runIdRef.current !== myRunId) return; // stale — New Chat already reset
       setMessages(prev => [...prev, {
         role: "assistant",
         content: `⚠️ Generation failed: ${err?.message || "unknown error"}\n\nTip: big multi-file projects work best with a shorter, more specific prompt.`,
       }]);
     } finally {
-      setLoading(false);
+      if (runIdRef.current === myRunId) setLoading(false);
     }
   };
 
@@ -827,7 +835,8 @@ Return the file operations only.`,
                   </button>
                   <button
                     onClick={() => {
-                      setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html"); setLoading(false);
+                      runIdRef.current++; // abort any in-flight generate() — it will bail out before touching state
+                      setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html"); setLoading(false); setAnalyzing(null);
                       try { localStorage.removeItem("ttt_builder_files"); localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); localStorage.removeItem("ttt_builder_project_id"); } catch {}
                       setProjectId("");
                     }}
