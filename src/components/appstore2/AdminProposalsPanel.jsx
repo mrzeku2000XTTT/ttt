@@ -63,6 +63,19 @@ export default function AdminProposalsPanel({ onChange }) {
     setAuditingId(null);
   };
 
+  const remove = async (id) => {
+    if (!confirm("Permanently remove this app from the store?")) return;
+    setActingId(id);
+    try {
+      await base44.entities.AppProposal.delete(id);
+      await load();
+      onChange?.();
+    } catch (e) {
+      alert("Failed: " + e.message);
+    }
+    setActingId(null);
+  };
+
   const pending = proposals.filter(p => p.status === "pending");
   const reviewed = proposals.filter(p => p.status !== "pending");
 
@@ -101,11 +114,11 @@ export default function AdminProposalsPanel({ onChange }) {
                 <p className="text-xs text-zinc-400">No proposals yet.</p>
               ) : (
                 <>
-                  {pending.map(p => <ProposalRow key={p.id} p={p} act={act} acting={actingId === p.id} runAudit={runAudit} auditing={auditingId === p.id} />)}
+                  {pending.map(p => <ProposalRow key={p.id} p={p} act={act} acting={actingId === p.id} runAudit={runAudit} auditing={auditingId === p.id} remove={remove} />)}
                   {reviewed.length > 0 && (
                     <div className="pt-2 border-t border-zinc-100">
                       <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Reviewed</p>
-                      {reviewed.map(p => <ProposalRow key={p.id} p={p} act={act} acting={actingId === p.id} runAudit={runAudit} auditing={auditingId === p.id} />)}
+                      {reviewed.map(p => <ProposalRow key={p.id} p={p} act={act} acting={actingId === p.id} runAudit={runAudit} auditing={auditingId === p.id} remove={remove} />)}
                     </div>
                   )}
                 </>
@@ -118,7 +131,7 @@ export default function AdminProposalsPanel({ onChange }) {
   );
 }
 
-function ProposalRow({ p, act, acting, runAudit, auditing }) {
+function ProposalRow({ p, act, acting, runAudit, auditing, remove }) {
   const isPending = p.status === "pending";
   const badgeColor = {
     pending: "bg-amber-100 text-amber-700",
@@ -216,18 +229,26 @@ function ProposalRow({ p, act, acting, runAudit, auditing }) {
               >
                 <XCircle className="w-3 h-3" /> Reject
               </button>
-            </>
-          )}
-          {!isPending && (
-            <a
+              </>
+              )}
+              {!isPending && (
+              <a
               href={p.app_link}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md bg-zinc-200 text-zinc-600 text-[10px] font-bold hover:bg-zinc-300"
-            >
+              >
               <Eye className="w-3 h-3" /> View
-            </a>
-          )}
+              </a>
+              )}
+              <button
+              onClick={() => remove(p.id)}
+              disabled={acting}
+              className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md bg-zinc-900 text-white text-[10px] font-bold hover:bg-zinc-800 disabled:opacity-50"
+              title="Permanently remove from store"
+              >
+              <Trash2 className="w-3 h-3" /> Remove
+              </button>
         </div>
       </div>
     </div>
