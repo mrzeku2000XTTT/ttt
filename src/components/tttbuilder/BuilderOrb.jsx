@@ -15,8 +15,8 @@ export default function BuilderOrb({ size = 34 }) {
       style={{
         width: size,
         height: size,
-        mixBlendMode: "screen",
-        filter: "drop-shadow(0 6px 14px rgba(112,199,186,0.35))",
+        mixBlendMode: "multiply",
+        filter: "drop-shadow(0 2px 8px rgba(0,122,255,0.25))",
       }}
     />
   );

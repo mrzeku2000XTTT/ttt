@@ -8,10 +8,10 @@ export default function WalletKitToggle({ value, onChange, disabled }) {
       onClick={() => onChange(!value)}
       disabled={disabled}
       title="Ship every generated app with the Kaspa wallet protocol (connect, balance, send, receive)"
-      className={`flex items-center gap-1.5 h-7 px-3 rounded-lg border text-[11px] font-bold transition-colors disabled:opacity-40 ${
+      className={`flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[11px] font-bold transition-colors disabled:opacity-40 ${
         value
-          ? "bg-[#70C7BA]/20 border-[#70C7BA]/40 text-[#70C7BA]"
-          : "bg-white/5 border-white/10 text-white/50 hover:text-white"
+          ? "bg-[#34C759]/10 border-[#34C759]/30 text-[#248A3D]"
+          : "bg-white border-black/[0.08] text-[#86868B] hover:text-[#1D1D1F] hover:border-black/[0.12]"
       }`}
     >
       <Wallet className="w-3 h-3" />

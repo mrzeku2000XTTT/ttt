@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Rocket } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Rocket, Lock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -195,18 +195,18 @@ export default function TTTBuilderPage() {
   }, []);
 
   if (authLoading) {
-    return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#70C7BA]/40 border-t-[#70C7BA] rounded-full animate-spin" /></div>;
+    return <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#007AFF]/30 border-t-[#007AFF] rounded-full animate-spin" /></div>;
   }
 
   if (!user || user.role !== "admin") {
     return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-center px-5">
+      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center text-center px-5">
         <div>
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-            <span className="text-2xl">🔒</span>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#FF3B30]/10 border border-[#FF3B30]/20 flex items-center justify-center">
+            <Lock className="w-7 h-7 text-[#FF3B30]" />
           </div>
-          <h2 className="text-white font-bold text-xl mb-2">Admin Only</h2>
-          <p className="text-white/40 text-sm">TTT Builder is restricted to admins.</p>
+          <h2 className="text-[#1D1D1F] font-bold text-xl mb-2">Admin Only</h2>
+          <p className="text-[#86868B] text-sm">TTT Builder is restricted to admins.</p>
         </div>
       </div>
     );
@@ -566,50 +566,52 @@ Return the file operations only.`,
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] overflow-x-hidden" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', sans-serif" }}>
 
-      {/* Top nav */}
+      {/* Top nav — macOS menu bar */}
       <nav
-        className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 bg-[#0d1117]/80 backdrop-blur-xl border-b border-white/5"
+        className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 bg-white/70 backdrop-blur-xl border-b border-black/[0.06]"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)", minHeight: "calc(3rem + env(safe-area-inset-top, 0px))" }}
       >
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate("/AppStoreV2")}
-            className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-white/5"
+            className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#1D1D1F] transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-black/[0.04]"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm font-medium">Back</span>
           </button>
-          <span className="font-black text-lg tracking-tight">TTT</span>
-          <span className="text-[10px] font-bold bg-[#70C7BA] text-black px-1.5 py-0.5 rounded">BUILDER</span>
+          <span className="font-black text-lg tracking-tight text-[#1D1D1F]">TTT</span>
+          <span className="text-[10px] font-bold bg-[#007AFF] text-white px-1.5 py-0.5 rounded">BUILDER</span>
         </div>
-        <div className="hidden sm:flex items-center gap-4 text-xs text-white/50">
+        <div className="hidden sm:flex items-center gap-4 text-xs text-[#86868B]">
           <span>Built on Kaspa</span>
         </div>
-        <button
-          onClick={() => setShowProjects(true)}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/5 border border-white/10 text-white/70 text-xs font-bold hover:bg-white/10 hover:text-white transition-colors"
-          title="Saved projects"
-        >
-          <FolderOpen className="w-3.5 h-3.5" /> Projects
-        </button>
-        {html && (
-          <>
-            <button
-              onClick={() => setShowPushModal(true)}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-gradient-to-r from-[#70C7BA] to-cyan-400 text-black text-xs font-bold hover:opacity-90 transition-opacity"
-            >
-              <Rocket className="w-3 h-3" /> Push to TTT
-            </button>
-            <button
-              onClick={downloadHtml}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors"
-            >
-              <ExternalLink className="w-3 h-3" /> Export
-            </button>
-          </>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowProjects(true)}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white border border-black/[0.08] text-[#6B7280] text-xs font-bold hover:border-[#007AFF]/40 hover:text-[#007AFF] transition-colors"
+            title="Saved projects"
+          >
+            <FolderOpen className="w-3.5 h-3.5" /> Projects
+          </button>
+          {html && (
+            <>
+              <button
+                onClick={() => setShowPushModal(true)}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#007AFF] text-white text-xs font-bold hover:bg-[#0051D5] transition-colors"
+              >
+                <Rocket className="w-3 h-3" /> Push to TTT
+              </button>
+              <button
+                onClick={downloadHtml}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white border border-black/[0.08] text-[#6B7280] text-xs font-bold hover:border-[#007AFF]/40 hover:text-[#007AFF] transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" /> Export
+              </button>
+            </>
+          )}
+        </div>
       </nav>
 
       <AnimatePresence mode="wait">
@@ -622,10 +624,10 @@ Return the file operations only.`,
             className="min-h-screen flex flex-col items-center justify-center px-5"
             style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
-            {/* Glow bg */}
+            {/* Soft glow bg */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#70C7BA]/10 rounded-full blur-[100px]" />
-              <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[300px] bg-purple-500/8 rounded-full blur-[100px]" />
+              <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#007AFF]/8 rounded-full blur-[120px]" />
+              <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[300px] bg-[#AF52DE]/6 rounded-full blur-[120px]" />
             </div>
 
             <div className="relative max-w-3xl mx-auto text-center">
@@ -634,7 +636,7 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#70C7BA]/30 bg-[#70C7BA]/10 text-[#70C7BA] text-xs font-bold mb-6"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#007AFF]/20 bg-[#007AFF]/10 text-[#007AFF] text-xs font-bold mb-6"
               >
                 <Zap className="w-3 h-3" />
                 AI Site Builder for Kaspa
@@ -645,11 +647,12 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.02] mb-5"
+                className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.02] mb-5 text-[#1D1D1F]"
+                style={{ letterSpacing: "-0.03em" }}
               >
                 Build your site.
                 <br />
-                <span className="bg-gradient-to-r from-[#70C7BA] to-cyan-300 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#007AFF] to-[#5AC8FA] bg-clip-text text-transparent">
                   Ship it now.
                 </span>
               </motion.h1>
@@ -658,7 +661,7 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-white/50 text-lg max-w-xl mx-auto mb-10"
+                className="text-[#86868B] text-lg max-w-xl mx-auto mb-10"
               >
                 Describe what you want. TTT Builder generates a complete, beautiful landing page — no code needed.
               </motion.p>
@@ -670,18 +673,18 @@ Return the file operations only.`,
                 transition={{ delay: 0.25 }}
                 className="relative max-w-2xl mx-auto"
               >
-                <div className="flex items-center gap-2 bg-white/[0.04] border border-white/10 focus-within:border-[#70C7BA]/50 rounded-2xl p-2 transition-colors shadow-2xl">
+                <div className="flex items-center gap-2 bg-white border border-black/[0.08] focus-within:border-[#007AFF]/50 focus-within:shadow-[0_4px_24px_rgba(0,122,255,0.12)] rounded-2xl p-2 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
                   <input
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate(prompt)}
                     placeholder="Describe your app — e.g. 'Kaspa staking dashboard with live stats and wallet connect'"
-                    className="flex-1 bg-transparent outline-none text-white placeholder:text-white/30 text-sm px-3 py-3"
+                    className="flex-1 bg-transparent outline-none text-[#1D1D1F] placeholder:text-[#86868B] text-sm px-3 py-3"
                   />
                   <button
                     onClick={() => generate(prompt)}
                     disabled={!prompt.trim() || loading}
-                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#70C7BA] text-black font-bold text-sm hover:bg-[#70C7BA]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#007AFF] text-white font-bold text-sm hover:bg-[#0051D5] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Build</>}
                   </button>
@@ -713,7 +716,7 @@ Return the file operations only.`,
                   <button
                     key={ex}
                     onClick={() => handleExampleClick(ex)}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-black/[0.08] bg-white text-[#6B7280] hover:text-[#007AFF] hover:border-[#007AFF]/30 transition-colors"
                   >
                     <ChevronRight className="w-3 h-3" />
                     {ex.slice(0, 40)}…
@@ -737,8 +740,8 @@ Return the file operations only.`,
                   { label: "Output", value: "Pure HTML" },
                 ].map(s => (
                   <div key={s.label}>
-                    <div className="text-2xl font-black text-[#70C7BA]">{s.value}</div>
-                    <div className="text-xs text-white/40 mt-0.5">{s.label}</div>
+                    <div className="text-2xl font-black text-[#007AFF]">{s.value}</div>
+                    <div className="text-xs text-[#86868B] mt-0.5">{s.label}</div>
                   </div>
                 ))}
               </motion.div>
@@ -753,17 +756,17 @@ Return the file operations only.`,
             style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
             {/* Mobile view toggle */}
-            <div className="lg:hidden flex items-center gap-1 px-3 py-2 border-b border-white/5 bg-[#0d1117] flex-shrink-0">
-              <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 w-full">
+            <div className="lg:hidden flex items-center gap-1 px-3 py-2 border-b border-black/[0.06] bg-white flex-shrink-0">
+              <div className="flex gap-1 bg-[#F0F0F2] rounded-lg p-0.5 w-full">
                 <button
                   onClick={() => setMobileView("chat")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold transition-colors ${mobileView === "chat" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold transition-colors ${mobileView === "chat" ? "bg-white text-[#007AFF] shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#86868B] hover:text-[#1D1D1F]"}`}
                 >
                   <Sparkles className="w-3.5 h-3.5" /> Chat
                 </button>
                 <button
                   onClick={() => setMobileView("preview")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold transition-colors ${mobileView === "preview" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold transition-colors ${mobileView === "preview" ? "bg-white text-[#007AFF] shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#86868B] hover:text-[#1D1D1F]"}`}
                 >
                   <Eye className="w-3.5 h-3.5" /> Preview
                 </button>
@@ -773,17 +776,17 @@ Return the file operations only.`,
             {/* Studio layout */}
             <div className="flex-1 grid lg:grid-cols-[380px_1fr] min-h-0 w-full max-w-full overflow-hidden">
 
-              {/* Left: Chat */}
-              <div className={`flex flex-col border-r border-white/5 min-h-0 min-w-0 overflow-hidden bg-[#0d1117] ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
-                <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
+              {/* Left: Chat — macOS sidebar panel */}
+              <div className={`flex flex-col border-r border-black/[0.06] min-h-0 min-w-0 overflow-hidden bg-[#F0F0F2] ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
+                <div className="px-4 py-3 border-b border-black/[0.06] flex items-center gap-2 bg-white/50">
                   <BuilderOrb size={30} />
-                  <span className="font-bold text-sm">TTT Builder</span>
+                  <span className="font-bold text-sm text-[#1D1D1F]">TTT Builder</span>
                   <button
                     onClick={() => {
                       setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html");
                       try { localStorage.removeItem("ttt_builder_files"); localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); } catch {}
                     }}
-                    className="ml-auto text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                    className="ml-auto text-[10px] text-[#86868B] hover:text-[#007AFF] px-2 py-1 rounded hover:bg-black/[0.04] transition-colors"
                   >
                     + New
                   </button>
@@ -791,7 +794,7 @@ Return the file operations only.`,
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
                   {messages.length === 0 && (
-                    <div className="text-center py-8 text-white/30 text-xs">
+                    <div className="text-center py-8 text-[#86868B] text-xs">
                       Generating your site…
                     </div>
                   )}
@@ -799,30 +802,30 @@ Return the file operations only.`,
                     <ChatMessage key={i} message={m} />
                   ))}
                   {loading && (
-                    <div className="flex items-center gap-2 text-white/40 text-xs">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <div className="flex items-center gap-2 text-[#86868B] text-xs">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#007AFF]" />
                       Building your site…
                     </div>
                   )}
                   <div ref={chatEndRef} />
                 </div>
 
-                <div className="p-3 border-t border-white/5">
+                <div className="p-3 border-t border-black/[0.06] bg-white/50">
                   <form
                     onSubmit={e => { e.preventDefault(); generate(prompt); }}
-                    className="flex items-center gap-2 bg-white/[0.04] border border-white/10 focus-within:border-[#70C7BA]/40 rounded-xl pl-3 pr-1.5 py-1.5"
+                    className="flex items-center gap-2 bg-white border border-black/[0.08] focus-within:border-[#007AFF]/50 rounded-xl pl-3 pr-1.5 py-1.5 transition-colors"
                   >
                     <input
                       value={prompt}
                       onChange={e => setPrompt(e.target.value)}
                       placeholder="Modify or rebuild…"
                       disabled={loading}
-                      className="flex-1 bg-transparent outline-none text-white placeholder:text-white/30 text-sm py-1.5"
+                      className="flex-1 bg-transparent outline-none text-[#1D1D1F] placeholder:text-[#86868B] text-sm py-1.5"
                     />
                     <button
                       type="submit"
                       disabled={loading || !prompt.trim()}
-                      className="w-8 h-8 rounded-lg bg-[#70C7BA] text-black flex items-center justify-center disabled:opacity-30 hover:bg-[#70C7BA]/90 transition-colors"
+                      className="w-8 h-8 rounded-lg bg-[#007AFF] text-white flex items-center justify-center disabled:opacity-30 hover:bg-[#0051D5] transition-colors"
                     >
                       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                     </button>
@@ -850,7 +853,7 @@ Return the file operations only.`,
                         key={action}
                         onClick={() => generate(action)}
                         disabled={loading || !html}
-                        className="text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/50 hover:text-white hover:border-white/30 disabled:opacity-30 transition-colors"
+                        className="text-[10px] px-2 py-1 rounded-full border border-black/[0.08] bg-white text-[#86868B] hover:text-[#007AFF] hover:border-[#007AFF]/30 disabled:opacity-30 transition-colors"
                       >
                         {action}
                       </button>
@@ -859,20 +862,27 @@ Return the file operations only.`,
                 </div>
               </div>
 
-              {/* Right: Preview / Dashboard */}
-              <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#080c10] ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}>
-                {/* Top-level toggle: Preview | Dashboard */}
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-hide">
-                  <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
+              {/* Right: Preview / Dashboard — macOS window */}
+              <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#F5F5F7] ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}>
+                {/* macOS-style window title bar with traffic lights */}
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-black/[0.06] flex-shrink-0 overflow-x-auto scrollbar-hide bg-[#E8E8EC]">
+                  {/* Traffic lights */}
+                  <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0 pr-2">
+                    <span className="w-3 h-3 rounded-full bg-[#FF5F57] border border-black/10" />
+                    <span className="w-3 h-3 rounded-full bg-[#FEBC2E] border border-black/10" />
+                    <span className="w-3 h-3 rounded-full bg-[#28C840] border border-black/10" />
+                  </div>
+
+                  <div className="flex gap-1 bg-white rounded-lg p-0.5 flex-shrink-0 border border-black/[0.06]">
                     <button
                       onClick={() => setTopTab("preview")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${topTab === "preview" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${topTab === "preview" ? "bg-[#007AFF] text-white" : "text-[#86868B] hover:text-[#1D1D1F]"}`}
                     >
                       <Eye className="w-3 h-3" /> Preview
                     </button>
                     <button
                       onClick={() => setTopTab("dashboard")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${topTab === "dashboard" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${topTab === "dashboard" ? "bg-[#007AFF] text-white" : "text-[#86868B] hover:text-[#1D1D1F]"}`}
                     >
                       <Code2 className="w-3 h-3" /> Dashboard
                     </button>
@@ -880,17 +890,17 @@ Return the file operations only.`,
                   <div className="ml-auto flex items-center gap-2 flex-shrink-0">
                     {html && topTab === "preview" && (
                       <>
-                        <div className="hidden lg:flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
+                        <div className="hidden lg:flex gap-1 bg-white rounded-lg p-0.5 border border-black/[0.06] flex-shrink-0">
                           <button
                             onClick={() => setDevice("desktop")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "desktop" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "desktop" ? "bg-[#007AFF] text-white" : "text-[#86868B] hover:text-[#1D1D1F]"}`}
                             title="Desktop preview"
                           >
                             <Monitor className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => setDevice("mobile")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "mobile" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors ${device === "mobile" ? "bg-[#007AFF] text-white" : "text-[#86868B] hover:text-[#1D1D1F]"}`}
                             title="Mobile preview"
                           >
                             <Smartphone className="w-3 h-3" />
@@ -898,19 +908,19 @@ Return the file operations only.`,
                         </div>
                         <button
                           onClick={() => generate("Regenerate with the same concept but different design")}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
+                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white border border-black/[0.08] hover:border-[#007AFF]/30 text-[#6B7280] hover:text-[#007AFF] text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
                         >
                           <RefreshCw className="w-3 h-3" /> Remix
                         </button>
                         <button
                           onClick={downloadHtml}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
+                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white border border-black/[0.08] hover:border-[#007AFF]/30 text-[#6B7280] hover:text-[#007AFF] text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
                         >
                           <Globe className="w-3 h-3" /> Export
                         </button>
                         <button
                           onClick={() => { setShowPublishModal(true); setPublishResult(null); }}
-                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors flex-shrink-0 whitespace-nowrap"
+                          className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#007AFF] text-white text-xs font-bold hover:bg-[#0051D5] transition-colors flex-shrink-0 whitespace-nowrap"
                         >
                           <GitBranch className="w-3 h-3" /> Publish
                         </button>
@@ -926,10 +936,10 @@ Return the file operations only.`,
                       {!html && !loading && !isRealProject && (
                         <div className="absolute inset-0 flex items-center justify-center text-center p-8">
                           <div>
-                            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#70C7BA]/10 border border-[#70C7BA]/20 flex items-center justify-center">
-                              <Globe className="w-8 h-8 text-[#70C7BA]/60" />
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center">
+                              <Globe className="w-8 h-8 text-[#007AFF]/60" />
                             </div>
-                            <p className="text-white/30 text-sm">
+                            <p className="text-[#86868B] text-sm">
                               {isRealProject
                                 ? "This npm project needs a server — open Dashboard > Live to run it."
                                 : "Your site preview will appear here"}
@@ -939,15 +949,15 @@ Return the file operations only.`,
                       )}
 
                       {loading && (
-                        <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#F5F5F7]">
                           <div className="text-center">
                             <div className="relative w-16 h-16 mx-auto mb-4">
-                              <div className="absolute inset-0 rounded-full border-2 border-[#70C7BA]/20 animate-ping" />
-                              <div className="absolute inset-2 rounded-full border-2 border-t-[#70C7BA] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                              <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-[#70C7BA]" />
+                              <div className="absolute inset-0 rounded-full border-2 border-[#007AFF]/20 animate-ping" />
+                              <div className="absolute inset-2 rounded-full border-2 border-t-[#007AFF] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                              <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-[#007AFF]" />
                             </div>
-                            <p className="text-white/50 text-sm font-medium">Building your site…</p>
-                            <p className="text-white/25 text-xs mt-1">TTT Agent 1 is writing the code</p>
+                            <p className="text-[#1D1D1F] text-sm font-medium">Building your site…</p>
+                            <p className="text-[#86868B] text-xs mt-1">TTT Agent 1 is writing the code</p>
                           </div>
                         </div>
                       )}
@@ -956,13 +966,13 @@ Return the file operations only.`,
                       {isRealProject && !loading && (
                         <div className="absolute inset-0 flex flex-col">
                           {missingImports.length > 0 && (
-                            <div className="flex-shrink-0 px-3 py-2 bg-red-500/10 border-b border-red-500/30 text-[11px] text-red-300 flex items-center justify-between gap-3">
+                            <div className="flex-shrink-0 px-3 py-2 bg-[#FF3B30]/10 border-b border-[#FF3B30]/20 text-[11px] text-[#FF3B30] flex items-center justify-between gap-3">
                               <span className="truncate">
                                 Missing file{missingImports.length > 1 ? "s" : ""}: {missingImports.map(m => m.path).join(", ")} — the app can't render without {missingImports.length > 1 ? "them" : "it"}.
                               </span>
                               <button
                                 onClick={() => generate(`Create the missing files that are imported but do not exist: ${missingImports.map(m => `${m.path} (imported by ${m.importer})`).join(", ")}. Write their full real implementation.`, { mode: "react" })}
-                                className="flex-shrink-0 px-2 py-1 rounded bg-red-500/20 border border-red-500/40 font-bold hover:bg-red-500/30"
+                                className="flex-shrink-0 px-2 py-1 rounded bg-[#FF3B30]/20 border border-[#FF3B30]/40 font-bold hover:bg-[#FF3B30]/30"
                               >
                                 Fix now
                               </button>
@@ -981,21 +991,21 @@ Return the file operations only.`,
                             ref={iframeRef}
                             srcDoc={html}
                             sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                            className="w-full h-full border-0"
+                            className="w-full h-full border-0 bg-white"
                             style={{ display: loading ? "none" : "block" }}
                             title="Site Preview"
                           />
                         ) : (
-                          <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden" style={{ display: loading ? "none" : "flex" }}>
+                          <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden bg-[#F5F5F7]" style={{ display: loading ? "none" : "flex" }}>
                             <div className="relative h-full max-h-full aspect-[9/19] max-w-full mx-auto">
-                              <div className="absolute inset-0 rounded-[2rem] bg-white/5 border border-white/15 pointer-events-none" />
-                              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-4 bg-white/10 rounded-b-xl z-10 pointer-events-none" />
+                              <div className="absolute inset-0 rounded-[2rem] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.15)] border border-black/[0.08] pointer-events-none" />
+                              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-[#1D1D1F] rounded-b-xl z-10 pointer-events-none" />
                               <iframe
                                 key={iframeKey}
                                 ref={iframeRef}
                                 srcDoc={html}
                                 sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                                className="relative w-full h-full rounded-[1.6rem] border border-white/15 overflow-hidden bg-black"
+                                className="relative w-full h-full rounded-[1.8rem] border border-black/[0.08] overflow-hidden bg-white"
                                 title="Site Preview (Mobile)"
                               />
                             </div>
@@ -1013,13 +1023,13 @@ Return the file operations only.`,
                       </div>
 
                       {/* Mobile section pills */}
-                      <div className="sm:hidden absolute top-0 left-0 right-0 z-10 bg-[#0f1419] border-b border-white/[0.06] px-2 py-2 flex gap-1 overflow-x-auto scrollbar-hide">
+                      <div className="sm:hidden absolute top-0 left-0 right-0 z-10 bg-[#F0F0F2] border-b border-black/[0.06] px-2 py-2 flex gap-1 overflow-x-auto scrollbar-hide">
                         {["overview", "code", "live", "agents", "database", "memory", "settings"].map(s => (
                           <button
                             key={s}
                             onClick={() => setDashSection(s)}
                             className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold capitalize transition-colors ${
-                              dashSection === s ? "bg-white/10 text-white" : "text-white/40"
+                              dashSection === s ? "bg-[#007AFF] text-white" : "text-[#86868B]"
                             }`}
                           >
                             {s}
@@ -1028,7 +1038,7 @@ Return the file operations only.`,
                       </div>
 
                       {/* Panel content */}
-                      <div className="flex-1 min-w-0 bg-[#0d1117] pt-12 sm:pt-0">
+                      <div className="flex-1 min-w-0 bg-white pt-12 sm:pt-0">
                         {dashSection === "overview" && (
                           <div className="h-full overflow-y-auto">
                             <OverviewPanel files={files} messages={messages} buildMode={buildMode} model={model} walletKit={walletKit} onJump={(s) => { setDashSection(s); }} />
@@ -1047,7 +1057,7 @@ Return the file operations only.`,
                           </div>
                         )}
                         {dashSection === "code" && loading && (
-                          <div className="flex items-center justify-center h-full text-white/30 text-xs">Loading files…</div>
+                          <div className="flex items-center justify-center h-full text-[#86868B] text-xs">Loading files…</div>
                         )}
                         {dashSection === "live" && <E2BLivePanel files={files} />}
                         {dashSection === "agents" && (
@@ -1095,54 +1105,54 @@ Return the file operations only.`,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
             onClick={(e) => e.target === e.currentTarget && setShowPublishModal(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#161b22] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+              className="bg-white border border-black/[0.08] rounded-2xl p-6 w-full max-w-md shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
             >
               <div className="flex items-center gap-2 mb-5">
-                <GitBranch className="w-5 h-5 text-[#70C7BA]" />
-                <h2 className="font-bold text-white text-base">Publish to GitHub</h2>
+                <GitBranch className="w-5 h-5 text-[#007AFF]" />
+                <h2 className="font-bold text-[#1D1D1F] text-base">Publish to GitHub</h2>
               </div>
 
               {!publishResult ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-white/50 mb-1.5 block">Site name <span className="text-white/30">(used as folder name)</span></label>
+                    <label className="text-xs text-[#6B7280] mb-1.5 block">Site name <span className="text-[#86868B]">(used as folder name)</span></label>
                     <input
                       value={publishForm.siteName}
                       onChange={e => setPublishForm(f => ({ ...f, siteName: e.target.value }))}
                       placeholder="my-kaspa-site"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50"
+                      className="w-full bg-[#F5F5F7] border border-black/[0.08] rounded-xl px-3 py-2.5 text-sm text-[#1D1D1F] placeholder:text-[#86868B] outline-none focus:border-[#007AFF]/50 focus:bg-white transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-white/50 mb-1.5 block">GitHub repo <span className="text-white/30">(owner/repo-name)</span></label>
+                    <label className="text-xs text-[#6B7280] mb-1.5 block">GitHub repo <span className="text-[#86868B]">(owner/repo-name)</span></label>
                     <input
                       value={publishForm.repo || OUR_REPO}
                       onChange={e => setPublishForm(f => ({ ...f, repo: e.target.value }))}
                       placeholder={OUR_REPO}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50"
+                      className="w-full bg-[#F5F5F7] border border-black/[0.08] rounded-xl px-3 py-2.5 text-sm text-[#1D1D1F] placeholder:text-[#86868B] outline-none focus:border-[#007AFF]/50 focus:bg-white transition-colors"
                     />
                   </div>
-                  <p className="text-[11px] text-white/30">
-                    The HTML will be pushed to <code className="text-[#70C7BA]/70">sites/[sitename]/index.html</code> in <code className="text-[#70C7BA]/70">{OUR_REPO}</code>. Enable GitHub Pages to get a live URL.
+                  <p className="text-[11px] text-[#86868B]">
+                    The HTML will be pushed to <code className="text-[#007AFF] bg-[#007AFF]/10 px-1 rounded">sites/[sitename]/index.html</code> in <code className="text-[#007AFF] bg-[#007AFF]/10 px-1 rounded">{OUR_REPO}</code>. Enable GitHub Pages to get a live URL.
                   </p>
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => setShowPublishModal(false)}
-                      className="flex-1 h-10 rounded-xl bg-white/5 text-white/60 hover:text-white text-sm font-bold transition-colors"
+                      className="flex-1 h-10 rounded-xl bg-[#F0F0F2] text-[#6B7280] hover:text-[#1D1D1F] text-sm font-bold transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={publishToGitHub}
                       disabled={publishing || !publishForm.siteName.trim()}
-                      className="flex-1 h-10 rounded-xl bg-[#70C7BA] text-black text-sm font-bold hover:bg-[#70C7BA]/90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                      className="flex-1 h-10 rounded-xl bg-[#007AFF] text-white text-sm font-bold hover:bg-[#0051D5] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                     >
                       {publishing ? <><Loader2 className="w-4 h-4 animate-spin" /> Pushing…</> : <><GitBranch className="w-4 h-4" /> Push to GitHub</>}
                     </button>
@@ -1150,28 +1160,28 @@ Return the file operations only.`,
                 </div>
               ) : publishResult.success ? (
                 <div className="text-center py-4">
-                  <CheckCircle className="w-10 h-10 text-[#70C7BA] mx-auto mb-3" />
-                  <p className="font-bold text-white mb-1">Published successfully!</p>
-                  <p className="text-xs text-white/40 mb-4">Your site has been pushed to GitHub.</p>
+                  <CheckCircle className="w-10 h-10 text-[#34C759] mx-auto mb-3" />
+                  <p className="font-bold text-[#1D1D1F] mb-1">Published successfully!</p>
+                  <p className="text-xs text-[#86868B] mb-4">Your site has been pushed to GitHub.</p>
                   <div className="space-y-2 text-left">
                     <a href={publishResult.htmlUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-xs text-[#70C7BA] hover:underline">
+                      className="flex items-center gap-2 text-xs text-[#007AFF] hover:underline">
                       <GitBranch className="w-3.5 h-3.5" /> View on GitHub
                     </a>
                     <a href={publishResult.pagesUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-xs text-[#70C7BA] hover:underline">
+                      className="flex items-center gap-2 text-xs text-[#007AFF] hover:underline">
                       <Globe className="w-3.5 h-3.5" /> GitHub Pages URL
                     </a>
                   </div>
-                  <button onClick={() => setShowPublishModal(false)} className="mt-5 w-full h-9 rounded-xl bg-white/5 text-white/60 hover:text-white text-sm font-bold transition-colors">
+                  <button onClick={() => setShowPublishModal(false)} className="mt-5 w-full h-9 rounded-xl bg-[#F0F0F2] text-[#6B7280] hover:text-[#1D1D1F] text-sm font-bold transition-colors">
                     Close
                   </button>
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-red-400 font-bold mb-2">Push failed</p>
-                  <p className="text-xs text-white/40 mb-4">{publishResult.error}</p>
-                  <button onClick={() => setPublishResult(null)} className="w-full h-9 rounded-xl bg-white/5 text-white/60 hover:text-white text-sm font-bold transition-colors">
+                  <p className="text-[#FF3B30] font-bold mb-2">Push failed</p>
+                  <p className="text-xs text-[#86868B] mb-4">{publishResult.error}</p>
+                  <button onClick={() => setPublishResult(null)} className="w-full h-9 rounded-xl bg-[#F0F0F2] text-[#6B7280] hover:text-[#1D1D1F] text-sm font-bold transition-colors">
                     Try again
                   </button>
                 </div>

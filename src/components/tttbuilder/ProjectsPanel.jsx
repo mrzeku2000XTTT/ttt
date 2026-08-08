@@ -83,43 +83,43 @@ export default function ProjectsPanel({ open, onClose, current, onLoad, onSave }
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
           onClick={(e) => e.target === e.currentTarget && onClose()}
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-[#161b22] border border-white/10 rounded-2xl p-5 w-full max-w-lg max-h-[80vh] flex flex-col"
+            className="bg-white border border-black/[0.08] rounded-2xl p-5 w-full max-w-lg max-h-[80vh] flex flex-col shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <FolderOpen className="w-5 h-5 text-[#70C7BA]" />
-                <h2 className="font-bold text-white text-base">Projects</h2>
-                <span className="text-[10px] text-white/30 font-bold bg-white/5 px-1.5 py-0.5 rounded">
+                <FolderOpen className="w-5 h-5 text-[#007AFF]" />
+                <h2 className="font-bold text-[#1D1D1F] text-base">Projects</h2>
+                <span className="text-[10px] text-[#86868B] font-bold bg-[#F0F0F2] px-1.5 py-0.5 rounded">
                   {projects.length}
                 </span>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Save current */}
-            <div className="flex items-center gap-2 mb-4 pb-4 border-b border-white/5">
+            <div className="flex items-center gap-2 mb-4 pb-4 border-b border-black/[0.06]">
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Project name…"
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50"
+                className="flex-1 bg-[#F5F5F7] border border-black/[0.08] rounded-xl px-3 py-2 text-sm text-[#1D1D1F] placeholder:text-[#86868B] outline-none focus:border-[#007AFF]/50 focus:bg-white transition-colors"
               />
               <button
                 onClick={handleSave}
                 disabled={!current?.files?.length}
-                className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#70C7BA] text-black text-xs font-bold hover:bg-[#70C7BA]/90 disabled:opacity-40 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#007AFF] text-white text-xs font-bold hover:bg-[#0051D5] disabled:opacity-40 transition-colors whitespace-nowrap"
               >
                 <Save className="w-3.5 h-3.5" /> Save current
               </button>
@@ -128,7 +128,7 @@ export default function ProjectsPanel({ open, onClose, current, onLoad, onSave }
             {/* List */}
             <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-2 min-h-0">
               {projects.length === 0 ? (
-                <div className="text-center py-10 text-white/30 text-sm">
+                <div className="text-center py-10 text-[#86868B] text-sm">
                   <FolderOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
                   No saved projects yet.
                   <br />
@@ -138,19 +138,19 @@ export default function ProjectsPanel({ open, onClose, current, onLoad, onSave }
                 projects.map((p) => (
                   <div
                     key={p.id}
-                    className="group flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-[#70C7BA]/30 transition-colors"
+                    className="group flex items-center gap-3 p-3 rounded-xl bg-white border border-black/[0.06] hover:border-[#007AFF]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-[#70C7BA]/10 border border-[#70C7BA]/20 flex items-center justify-center flex-shrink-0">
-                      <FileCode2 className="w-4 h-4 text-[#70C7BA]" />
+                    <div className="w-9 h-9 rounded-lg bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center flex-shrink-0">
+                      <FileCode2 className="w-4 h-4 text-[#007AFF]" />
                     </div>
                     <button
                       onClick={() => onLoad(p)}
                       className="flex-1 text-left min-w-0"
                     >
-                      <div className="text-sm font-semibold text-white truncate">
+                      <div className="text-sm font-semibold text-[#1D1D1F] truncate">
                         {p.name}
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-white/40 mt-0.5">
+                      <div className="flex items-center gap-2 text-[10px] text-[#86868B] mt-0.5">
                         <span className="flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           {timeAgo(p.savedAt)}
@@ -163,7 +163,7 @@ export default function ProjectsPanel({ open, onClose, current, onLoad, onSave }
                     </button>
                     <button
                       onClick={() => handleDelete(p.id)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-[#86868B] hover:text-[#FF3B30] hover:bg-[#FF3B30]/10 transition-colors flex-shrink-0"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
