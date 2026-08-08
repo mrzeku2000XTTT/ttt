@@ -290,12 +290,6 @@ function TTTBuilderStudio() {
     try { return localStorage.getItem("ttt_builder_project_id") || ""; } catch { return ""; }
   });
 
-  // Auto-sync every file change to the user's connected GitHub repo (debounced)
-  const autosync = useGitHubAutoSync(files, {
-    loading,
-    defaultName: prompt || (messages.find(m => m.role === "user")?.content) || "my-kaspa-app",
-  });
-
   useEffect(() => {
     const onResize = () => setIsNarrow(window.innerWidth < 1024);
     window.addEventListener("resize", onResize);
@@ -322,6 +316,12 @@ function TTTBuilderStudio() {
   const missingImports = useMemo(() => findMissingImports(files), [files]);
   const [messages, setMessages] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ttt_builder_messages") || "[]"); } catch { return []; }
+  });
+
+  // Auto-sync every file change to the user's connected GitHub repo (debounced)
+  const autosync = useGitHubAutoSync(files, {
+    loading,
+    defaultName: prompt || (messages.find(m => m.role === "user")?.content) || "my-kaspa-app",
   });
   const [phase, setPhase] = useState(() => {
     try { return localStorage.getItem("ttt_builder_phase") || "hero"; } catch { return "hero"; }
