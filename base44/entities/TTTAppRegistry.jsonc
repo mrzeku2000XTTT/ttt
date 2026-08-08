@@ -6,17 +6,21 @@
       "type": "string",
       "description": "Display name of the app"
     },
+    "slug": {
+      "type": "string",
+      "description": "URL-safe slug for the app (e.g. 'my-cool-app')"
+    },
     "path": {
       "type": "string",
       "description": "Internal route path (e.g. 'Feed', 'AgentZK')"
     },
     "external_url": {
       "type": "string",
-      "description": "External URL if app is external"
+      "description": "External URL if app is external (e.g. E2B live URL)"
     },
     "category": {
       "type": "string",
-      "description": "App category (AI, Finance, Games, etc.)"
+      "description": "App category (AI, Finance, Games, Tools, etc.)"
     },
     "description": {
       "type": "string",
@@ -25,6 +29,18 @@
     "logo_url": {
       "type": "string",
       "description": "App icon URL"
+    },
+    "submitter_email": {
+      "type": "string",
+      "description": "Email of the user who published this app"
+    },
+    "submitter_name": {
+      "type": "string",
+      "description": "Display name of the publisher"
+    },
+    "e2b_sandbox_id": {
+      "type": "string",
+      "description": "E2B sandbox ID for the live instance"
     },
     "is_premium": {
       "type": "boolean",
@@ -57,10 +73,28 @@
     "create": true,
     "read": true,
     "update": {
-      "user.role": "admin"
+      "$or": [
+        {
+          "data.submitter_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
-      "user.role": "admin"
+      "$or": [
+        {
+          "data.submitter_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
