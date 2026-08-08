@@ -43,6 +43,7 @@ function unavailable(name, hint) {
 }
 
 export const base44 = {
+  __standalone: true,
   auth: {
     me: async () => LOCAL_ADMIN,
     isAuthenticated: async () => true,
@@ -293,9 +294,19 @@ npm run dev
 
 Open **http://localhost:3000** — the studio loads in your browser. No login, no config.
 
+### First run: onboarding wizard
+
+On first launch, a **step-by-step onboarding wizard** appears automatically (standalone build only). It walks you through:
+
+1. **Add your model** — paste any model string (e.g. \`nvidia/nemotron-3-super-120b-a12b:free\`) + your API key. Provider is auto-detected.
+2. **Add E2B key** *(optional)* — for live React/npm sandbox previews. Skip if you only build static HTML apps.
+3. **Ready** — start building. Every app ships with a Kaspa wallet built in.
+
+> Everything you enter is stored **locally in your browser only** (localStorage). Keys never touch any server. Re-open the wizard anytime with the **"Setup model & keys"** button on the home screen.
+
 ### Add your model
 
-Open the builder → model selector (top-right of the chat) → **+ Add open model**. Pick a provider:
+Prefer to skip the wizard? Open the builder → model selector (top-right of the chat) → **+ Add open model**. Pick a provider:
 
 | Provider | Where to get a key | Example model | Notes |
 |---|---|---|---|
