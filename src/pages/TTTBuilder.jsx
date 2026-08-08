@@ -20,6 +20,8 @@ import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit"
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm, findMissingImports } from "@/components/tttbuilder/projectFiles";
 import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
 import ProjectsPanel, { upsertProject } from "@/components/tttbuilder/ProjectsPanel";
+import DashboardSidebar from "@/components/tttbuilder/DashboardSidebar";
+import { OverviewPanel, AgentsPanel, DatabasePanel, MemoryPanel, SettingsPanel } from "@/components/tttbuilder/DashboardPanels";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -60,6 +62,34 @@ TROUBLESHOOTING PROTOCOL — when the user reports something broken (an error, a
 5. If the same bug was "fixed" before and came back, the previous fix missed — search WIDER in the project for other code paths producing the same symptom.
 6. STATE THE ROOT CAUSE in your summary in one plain sentence so the user learns what was actually wrong.
 7. Everything you build must surface failures visibly: failed fetches show the real error message and a Retry button — never a silent blank screen.`;
+
+const SURGICAL_EDIT_RULE = `
+
+SURGICAL EDITING — TOUCH ONLY WHAT THE USER ASKED FOR:
+- When the user asks to change ONE thing (a color, a section, a button, a fix), edit ONLY the file(s) that contain that thing. Return ONLY those files with their FULL updated content. Do NOT return files you did not touch.
+- Never rewrite or rename files the user did not ask you to change. If a file is not related to the request, leave it out of the response entirely.
+- If the user says "fix the send button", open the file with the send button, fix that button, and return only that file. Do not restructure the app, do not rename components, do not "improve" unrelated code.
+- Accuracy over creativity: the user's intent is a scalpel, not a sledgehammer. A precise 2-line fix beats a full rewrite every time.
+- The only exception is when the user explicitly asks to "rebuild", "redesign", "restructure" or "start over" — then a full rewrite is the intent.`;
+
+const APPLE_DESIGN_RULE = `
+
+APPLE / macOS PREMIUM DESIGN LANGUAGE — the default aesthetic:
+- Typography is the hero: use a crisp system font stack (-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif). Large, tight headline tracking (letter-spacing -0.02em to -0.03em), generous line-height (1.4 body, 1.05 headlines). Never use generic serif or decorative fonts unless the user asks.
+- Frosted glass: use backdrop-filter: blur(20px) saturate(180%) on overlays, nav bars, and cards over rich backgrounds. Semi-transparent backgrounds (rgba(255,255,255,0.7) light / rgba(20,20,22,0.7) dark).
+- Depth and layering: soft shadows (0 8px 32px rgba(0,0,0,0.12)), rounded corners (12-20px on cards, 8-10px on buttons, 999px on pills). Subtle 1px borders (rgba(0,0,0,0.06) light / rgba(255,255,255,0.08) dark).
+- Motion: spring-based easing (cubic-bezier(0.34, 1.56, 0.64, 1) for playful, cubic-bezier(0.4, 0, 0.2, 1) for UI). 200-400ms transitions. Hover states lift slightly (translateY(-2px)) with a shadow increase.
+- Color: muted, desaturated backgrounds. One vibrant accent. Generous whitespace. No neon, no harsh gradients. Light mode: #f5f5f7 bg, #1d1d1f text. Dark mode: #0b1216 bg, #ffffff text, #70C7BA accent.
+- Components feel native: segmented controls, rounded toggle switches, sheet-style modals that slide up, list rows with chevron disclosure indicators. Every interactive element has a clear tap target (min 44px).`;
+
+const AGENT_RULE = `
+
+AGENTIC APPS — when the user asks for "an agentic app", "AI agents", "a workflow", or "multi-agent":
+- Build a real multi-agent system inside the app: each agent is a self-contained module (e.g. scripts/agents/researcher.js, scripts/agents/planner.js, scripts/agents/executor.js) with a clear role, input, and output.
+- Agents communicate through a shared message bus / event emitter or a simple queue in localStorage. Each agent runs its step, posts its result, and triggers the next.
+- Give the user a visible workflow UI: a panel that shows each agent, its current status (idle / running / done), its latest output, and a "Run workflow" button. Show the step-by-step progress as it happens.
+- Use window.TTTWallet or fetch() to public APIs as agent tools. An agent that "researches" should fetch real data; an agent that "plans" should produce a real task list; an agent that "executes" should call the tools and show results.
+- The workflow must be deterministic and replayable: the user can run it again and see fresh results. Persist the last run in localStorage so it survives refreshes.`;
 
 // TTT Agent 1 = strongest available model + elite engineering directive
 const TTT_AGENT_1 = "claude_opus_4_8";
@@ -188,7 +218,8 @@ function TTTBuilderStudio() {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState("preview");
+  const [topTab, setTopTab] = useState("preview"); // "preview" | "dashboard"
+  const [dashSection, setDashSection] = useState("overview"); // dashboard sidebar section
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -266,6 +297,45 @@ function TTTBuilderStudio() {
     try { localStorage.setItem("ttt_builder_files", JSON.stringify(files)); } catch {}
   }, [files]);
 
+  // RESUME ON MOUNT — if the user comes back with an existing project, jump
+  // straight to the studio (never the hero, never a blank refresh).
+  useEffect(() => {
+    try {
+      const savedFiles = JSON.parse(localStorage.getItem("ttt_builder_files") || "[]");
+      const savedMsgs = JSON.parse(localStorage.getItem("ttt_builder_messages") || "[]");
+      if (Array.isArray(savedFiles) && savedFiles.length > 0 && savedMsgs.length > 0) {
+        setPhase("studio");
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-snapshot the session right before the user closes the tab / navigates away,
+  // so "resume" always has the freshest state.
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      try {
+        if (files.length > 0) {
+          const id = projectId || `proj_${Date.now()}`;
+          upsertProject({
+            id,
+            name: (prompt || "Untitled").slice(0, 60),
+            files,
+            messages,
+            phase,
+            buildMode,
+            model,
+            walletKit,
+            savedAt: new Date().toISOString(),
+          });
+        }
+      } catch {}
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, messages, phase, buildMode, model, walletKit, projectId, prompt]);
+
   const updateFile = (path, content) => {
     setFiles(prev => prev.map(f => (f.path === path ? { ...f, content } : f)));
     setIframeKey(k => k + 1);
@@ -317,7 +387,7 @@ function TTTBuilderStudio() {
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
-      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${IMAGE_RULE}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${IMAGE_RULE}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
       const fileUrls = attached.map(a => a.url);
       const attachmentNote = attached.length
@@ -402,7 +472,7 @@ Return the file operations only.`,
       setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
       // npm projects auto-run their real sandbox right inside the Preview tab
-      setTab("preview");
+      setTopTab("preview");
 
       const finalMsg = { role: "assistant", content: summary, thinking, files: touched, agents: agentList || undefined, plan: planText || undefined, activity: activityLog.length ? activityLog : undefined };
       if (isAgent1) patchLast(finalMsg);
@@ -484,6 +554,8 @@ Return the file operations only.`,
     setMessages(p.messages || []);
     setPhase(p.phase || "studio");
     setActivePath("index.html");
+    setTopTab("preview");
+    setDashSection("overview");
     if (p.buildMode) changeBuildMode(p.buildMode);
     if (p.model) changeModel(p.model);
     if (typeof p.walletKit === "boolean") changeWalletKit(p.walletKit);
@@ -777,32 +849,26 @@ Return the file operations only.`,
                 </div>
               </div>
 
-              {/* Right: Preview / Code */}
+              {/* Right: Preview / Dashboard */}
               <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#080c10] ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}>
-                {/* Tab bar */}
+                {/* Top-level toggle: Preview | Dashboard */}
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-hide">
                   <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
                     <button
-                      onClick={() => setTab("preview")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === "preview" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                      onClick={() => setTopTab("preview")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${topTab === "preview" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
                     >
                       <Eye className="w-3 h-3" /> Preview
                     </button>
                     <button
-                      onClick={() => setTab("code")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === "code" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                      onClick={() => setTopTab("dashboard")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${topTab === "dashboard" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
                     >
-                      <Code2 className="w-3 h-3" /> Files{files.length ? ` (${files.length})` : ""}
-                    </button>
-                    <button
-                      onClick={() => setTab("live")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap ${tab === "live" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
-                    >
-                      <Server className="w-3 h-3" /> Live
+                      <Code2 className="w-3 h-3" /> Dashboard
                     </button>
                   </div>
                   <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-                    {html && (
+                    {html && topTab === "preview" && (
                       <>
                         <div className="hidden lg:flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
                           <button
@@ -845,100 +911,166 @@ Return the file operations only.`,
 
                 {/* Content */}
                 <div className="flex-1 min-h-0 relative">
-                  {!html && !loading && tab !== "live" && !isRealProject && (
-                    <div className="absolute inset-0 flex items-center justify-center text-center p-8">
-                      <div>
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#70C7BA]/10 border border-[#70C7BA]/20 flex items-center justify-center">
-                          <Globe className="w-8 h-8 text-[#70C7BA]/60" />
-                        </div>
-                        <p className="text-white/30 text-sm">
-                          {isRealProject
-                            ? "This npm project needs a server — open the Live tab to run it."
-                            : "Your site preview will appear here"}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {loading && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="relative w-16 h-16 mx-auto mb-4">
-                          <div className="absolute inset-0 rounded-full border-2 border-[#70C7BA]/20 animate-ping" />
-                          <div className="absolute inset-2 rounded-full border-2 border-t-[#70C7BA] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                          <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-[#70C7BA]" />
-                        </div>
-                        <p className="text-white/50 text-sm font-medium">Building your site…</p>
-                        <p className="text-white/25 text-xs mt-1">TTT Agent 1 is writing the code</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Real npm projects run in the cloud sandbox, streamed straight into Preview */}
-                  {tab === "preview" && isRealProject && !loading && (
-                    <div className="absolute inset-0 flex flex-col">
-                      {missingImports.length > 0 && (
-                        <div className="flex-shrink-0 px-3 py-2 bg-red-500/10 border-b border-red-500/30 text-[11px] text-red-300 flex items-center justify-between gap-3">
-                          <span className="truncate">
-                            Missing file{missingImports.length > 1 ? "s" : ""}: {missingImports.map(m => m.path).join(", ")} — the app can't render without {missingImports.length > 1 ? "them" : "it"}.
-                          </span>
-                          <button
-                            onClick={() => generate(`Create the missing files that are imported but do not exist: ${missingImports.map(m => `${m.path} (imported by ${m.importer})`).join(", ")}. Write their full real implementation.`, { mode: "react" })}
-                            className="flex-shrink-0 px-2 py-1 rounded bg-red-500/20 border border-red-500/40 font-bold hover:bg-red-500/30"
-                          >
-                            Fix now
-                          </button>
+                  {topTab === "preview" && (
+                    <>
+                      {!html && !loading && !isRealProject && (
+                        <div className="absolute inset-0 flex items-center justify-center text-center p-8">
+                          <div>
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#70C7BA]/10 border border-[#70C7BA]/20 flex items-center justify-center">
+                              <Globe className="w-8 h-8 text-[#70C7BA]/60" />
+                            </div>
+                            <p className="text-white/30 text-sm">
+                              {isRealProject
+                                ? "This npm project needs a server — open Dashboard > Live to run it."
+                                : "Your site preview will appear here"}
+                            </p>
+                          </div>
                         </div>
                       )}
-                      <div className="flex-1 min-h-0 relative">
-                        <E2BLivePanel files={files} autoStart />
-                      </div>
-                    </div>
-                  )}
 
-                  {html && tab === "preview" && !isRealProject && (
-                    effectiveDevice === "desktop" ? (
-                      <iframe
-                        key={iframeKey}
-                        ref={iframeRef}
-                        srcDoc={html}
-                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                        className="w-full h-full border-0"
-                        style={{ display: loading ? "none" : "block" }}
-                        title="Site Preview"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden" style={{ display: loading ? "none" : "flex" }}>
-                        <div className="relative h-full max-h-full aspect-[9/19] max-w-full mx-auto">
-                          <div className="absolute inset-0 rounded-[2rem] bg-white/5 border border-white/15 pointer-events-none" />
-                          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-4 bg-white/10 rounded-b-xl z-10 pointer-events-none" />
+                      {loading && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="relative w-16 h-16 mx-auto mb-4">
+                              <div className="absolute inset-0 rounded-full border-2 border-[#70C7BA]/20 animate-ping" />
+                              <div className="absolute inset-2 rounded-full border-2 border-t-[#70C7BA] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                              <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-[#70C7BA]" />
+                            </div>
+                            <p className="text-white/50 text-sm font-medium">Building your site…</p>
+                            <p className="text-white/25 text-xs mt-1">TTT Agent 1 is writing the code</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Real npm projects run in the cloud sandbox, streamed straight into Preview */}
+                      {isRealProject && !loading && (
+                        <div className="absolute inset-0 flex flex-col">
+                          {missingImports.length > 0 && (
+                            <div className="flex-shrink-0 px-3 py-2 bg-red-500/10 border-b border-red-500/30 text-[11px] text-red-300 flex items-center justify-between gap-3">
+                              <span className="truncate">
+                                Missing file{missingImports.length > 1 ? "s" : ""}: {missingImports.map(m => m.path).join(", ")} — the app can't render without {missingImports.length > 1 ? "them" : "it"}.
+                              </span>
+                              <button
+                                onClick={() => generate(`Create the missing files that are imported but do not exist: ${missingImports.map(m => `${m.path} (imported by ${m.importer})`).join(", ")}. Write their full real implementation.`, { mode: "react" })}
+                                className="flex-shrink-0 px-2 py-1 rounded bg-red-500/20 border border-red-500/40 font-bold hover:bg-red-500/30"
+                              >
+                                Fix now
+                              </button>
+                            </div>
+                          )}
+                          <div className="flex-1 min-h-0 relative">
+                            <E2BLivePanel files={files} autoStart />
+                          </div>
+                        </div>
+                      )}
+
+                      {html && !isRealProject && (
+                        effectiveDevice === "desktop" ? (
                           <iframe
                             key={iframeKey}
                             ref={iframeRef}
                             srcDoc={html}
                             sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                            className="relative w-full h-full rounded-[1.6rem] border border-white/15 overflow-hidden bg-black"
-                            title="Site Preview (Mobile)"
+                            className="w-full h-full border-0"
+                            style={{ display: loading ? "none" : "block" }}
+                            title="Site Preview"
                           />
-                        </div>
-                      </div>
-                    )
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden" style={{ display: loading ? "none" : "flex" }}>
+                            <div className="relative h-full max-h-full aspect-[9/19] max-w-full mx-auto">
+                              <div className="absolute inset-0 rounded-[2rem] bg-white/5 border border-white/15 pointer-events-none" />
+                              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-4 bg-white/10 rounded-b-xl z-10 pointer-events-none" />
+                              <iframe
+                                key={iframeKey}
+                                ref={iframeRef}
+                                srcDoc={html}
+                                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                                className="relative w-full h-full rounded-[1.6rem] border border-white/15 overflow-hidden bg-black"
+                                title="Site Preview (Mobile)"
+                              />
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </>
                   )}
 
-                  {tab === "code" && !loading && (
+                  {topTab === "dashboard" && (
                     <div className="absolute inset-0 flex min-h-0">
-                      <FileExplorer
-                        files={files}
-                        activePath={activeFile?.path}
-                        onSelect={setActivePath}
-                        onCreate={createFile}
-                        onDelete={deleteFile}
-                      />
-                      <FileEditor file={activeFile} onChange={updateFile} />
+                      {/* Sidebar — desktop */}
+                      <div className="w-56 flex-shrink-0 hidden sm:block">
+                        <DashboardSidebar active={dashSection} onChange={setDashSection} fileCount={files.length} />
+                      </div>
+
+                      {/* Mobile section pills */}
+                      <div className="sm:hidden absolute top-0 left-0 right-0 z-10 bg-[#0f1419] border-b border-white/[0.06] px-2 py-2 flex gap-1 overflow-x-auto scrollbar-hide">
+                        {["overview", "code", "live", "agents", "database", "memory", "settings"].map(s => (
+                          <button
+                            key={s}
+                            onClick={() => setDashSection(s)}
+                            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold capitalize transition-colors ${
+                              dashSection === s ? "bg-white/10 text-white" : "text-white/40"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Panel content */}
+                      <div className="flex-1 min-w-0 bg-[#0d1117] pt-12 sm:pt-0">
+                        {dashSection === "overview" && (
+                          <div className="h-full overflow-y-auto">
+                            <OverviewPanel files={files} messages={messages} buildMode={buildMode} model={model} walletKit={walletKit} onJump={(s) => { setDashSection(s); }} />
+                          </div>
+                        )}
+                        {dashSection === "code" && !loading && (
+                          <div className="flex h-full min-h-0">
+                            <FileExplorer
+                              files={files}
+                              activePath={activeFile?.path}
+                              onSelect={setActivePath}
+                              onCreate={createFile}
+                              onDelete={deleteFile}
+                            />
+                            <FileEditor file={activeFile} onChange={updateFile} />
+                          </div>
+                        )}
+                        {dashSection === "code" && loading && (
+                          <div className="flex items-center justify-center h-full text-white/30 text-xs">Loading files…</div>
+                        )}
+                        {dashSection === "live" && <E2BLivePanel files={files} />}
+                        {dashSection === "agents" && (
+                          <div className="h-full overflow-y-auto">
+                            <AgentsPanel onGenerate={generate} loading={loading} />
+                          </div>
+                        )}
+                        {dashSection === "database" && (
+                          <div className="h-full overflow-y-auto">
+                            <DatabasePanel files={files} />
+                          </div>
+                        )}
+                        {dashSection === "memory" && (
+                          <div className="h-full overflow-y-auto">
+                            <MemoryPanel />
+                          </div>
+                        )}
+                        {dashSection === "settings" && (
+                          <div className="h-full overflow-y-auto">
+                            <SettingsPanel
+                              buildMode={buildMode}
+                              onChangeBuildMode={changeBuildMode}
+                              model={model}
+                              onChangeModel={changeModel}
+                              walletKit={walletKit}
+                              onChangeWalletKit={changeWalletKit}
+                              loading={loading}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-
-                  {tab === "live" && <E2BLivePanel files={files} />}
                 </div>
               </div>
             </div>

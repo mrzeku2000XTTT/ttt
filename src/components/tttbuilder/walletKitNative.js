@@ -180,6 +180,7 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) KIT v2 —
     },
 
     exportMnemonic: function () { return secret ? secret.mnemonic : null; },
+    exportPrivateKey: function () { return secret ? secret.privateKeyHex : null; },
 
     watch: function (address) {
       if (!isValid(address)) throw new Error('That is not a valid Kaspa address.');
@@ -353,7 +354,10 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) KIT v2 —
           '<div style="font-weight:800;margin-bottom:6px">TTT Kaspa</div>' +
           '<div style="word-break:break-all;opacity:.7;margin-bottom:10px">' + s.address + '</div>' +
           '<img src="' + TTTWallet.receiveQR(null, 180) + '" alt="QR" style="width:100%;border-radius:10px;background:#fff;padding:6px;box-sizing:border-box" />' +
+          '<div style="margin-top:8px;padding:7px;border-radius:8px;background:rgba(112,199,186,.08);border:1px solid rgba(112,199,186,.2);font-size:10px;color:#70C7BA;text-align:center">Keys generated locally in this browser. Never sent to any server.</div>' +
           '<button id="ttt-copy" style="width:100%;margin-top:8px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#fff;cursor:pointer">Copy address</button>' +
+          '<button id="ttt-exp-seed" style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#fff;cursor:pointer">Export seed phrase</button>' +
+          '<button id="ttt-exp-key" style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#fff;cursor:pointer">Export private key</button>' +
           '<input id="ttt-to" placeholder="Send to kaspa:qz..." style="' + inp + ';margin-top:10px" />' +
           '<input id="ttt-amt" placeholder="Amount KAS" style="' + inp + ';margin-top:6px" />' +
           '<button id="ttt-send" style="width:100%;margin-top:8px;padding:9px;border-radius:10px;border:0;background:#70C7BA;color:#000;font-weight:800;cursor:pointer">Send KAS</button>' +
@@ -361,6 +365,8 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) KIT v2 —
           '<div id="ttt-err" style="margin-top:8px;color:#f87171;word-break:break-all"></div>';
         var e2 = panel.querySelector('#ttt-err');
         panel.querySelector('#ttt-copy').onclick = function () { navigator.clipboard.writeText(s.address); };
+        panel.querySelector('#ttt-exp-seed').onclick = function () { var seed = TTTWallet.exportMnemonic(); if (seed) alert('Your seed phrase (keep secret, never share):\\n\\n' + seed); else alert('No seed phrase available (watch-only wallet).'); };
+        panel.querySelector('#ttt-exp-key').onclick = function () { var key = TTTWallet.exportPrivateKey(); if (key) alert('Your private key (keep secret, never share):\\n\\n' + key); else alert('No private key available (watch-only wallet).'); };
         panel.querySelector('#ttt-dc').onclick = function () { TTTWallet.disconnect(); };
         panel.querySelector('#ttt-send').onclick = function () {
           e2.style.color = '#f87171'; e2.textContent = 'Signing...';
