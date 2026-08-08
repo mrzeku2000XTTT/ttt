@@ -847,7 +847,7 @@ Return the file operations only.`,
             </div>
 
             {/* Studio layout — chat column collapses to 0 so preview goes full-width */}
-            <div className={`flex-1 grid min-h-0 w-full max-w-full overflow-hidden ${chatCollapsed ? "lg:grid-cols-[0px_1fr]" : "lg:grid-cols-[380px_1fr]"}`}>
+            <div className={`flex-1 grid min-h-0 w-full max-w-full overflow-hidden ${chatCollapsed ? "lg:grid-cols-[1fr]" : "lg:grid-cols-[380px_1fr]"}`}>
 
               {/* Left: Chat */}
               <div className={`flex flex-col border-r border-white/5 min-h-0 min-w-0 overflow-hidden bg-[#0d1117] ${chatCollapsed ? "lg:hidden" : ""} ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
@@ -855,20 +855,13 @@ Return the file operations only.`,
                   <BuilderOrb size={30} />
                   <span className="font-bold text-sm">TTT Builder</span>
                   <button
-                    onClick={() => setChatCollapsed(true)}
-                    className="ml-auto flex items-center gap-1 text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
-                    title="Collapse chat — expand preview"
-                  >
-                    <PanelLeftClose className="w-3.5 h-3.5" />
-                  </button>
-                  <button
                     onClick={() => {
                       runIdRef.current++; // abort any in-flight generate() — it will bail out before touching state
                       setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html"); setLoading(false); setAnalyzing(null); setLiveUrl(null);
                       try { localStorage.removeItem("ttt_builder_files"); localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); localStorage.removeItem("ttt_builder_project_id"); } catch {}
                       setProjectId("");
                     }}
-                    className="text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                    className="ml-auto text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
                   >
                     + New
                   </button>
