@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Monitor, Smartphone, Code, Eye, Copy, Check, Download, MousePointer2, Trash2, Type as TypeIcon } from "lucide-react";
 import { COLORS } from "./blueprintConstants";
+import { MOTION_RUNTIME_CSS, MOTION_RUNTIME_JS } from "./designSystem";
 
 const IFRAME_SCRIPT = `
 (function() {
@@ -113,13 +114,14 @@ export default function BlueprintLandingPreview({ html, onUpdateHtml, loading })
   body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+  ${MOTION_RUNTIME_CSS}
 </style>
 </head>
 <body>
 ${html}
 </body>
 </html>`;
-    return base.replace('</body>', `<script>${IFRAME_SCRIPT}<\/script></body>`);
+    return base.replace('</body>', `<script>${MOTION_RUNTIME_JS}<\/script><script>${IFRAME_SCRIPT}<\/script></body>`);
   }, [html, editMode]);
 
   useEffect(() => {

@@ -9,6 +9,8 @@ import BlueprintRightPanel from "./BlueprintRightPanel";
 import BlueprintAgent from "./BlueprintAgent";
 import BlueprintHtmlImport from "./BlueprintHtmlImport";
 import BlueprintLandingPreview from "./BlueprintLandingPreview";
+import { PREMIUM_DESIGN_SPEC } from "./designSystem";
+import { enhancePrompt } from "./promptEnhancer";
 import { FileCode } from "lucide-react";
 
 export default function BlueprintBuilder({ idea, concept }) {
@@ -128,7 +130,11 @@ export default function BlueprintBuilder({ idea, concept }) {
     setLandingMode(true);
     try {
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an elite front-end engineer and product designer. Generate a complete, production-quality marketing landing page as a single HTML document using Tailwind CSS classes (loaded via CDN).
+        prompt: `${PREMIUM_DESIGN_SPEC}
+
+You are an elite front-end engineer and motion-design specialist. Generate a complete, world-class premium landing page as a single HTML document using Tailwind CSS classes (loaded via CDN).
+
+${enhancePrompt(prompt, { concept })}
 
 ${imageUrl ? 'Analyze the uploaded reference image and recreate its layout, sections, and visual style faithfully.' : 'Create a modern, visually stunning landing page.'}
 ${prompt ? `The user wants: ${prompt}` : 'Create a complete SaaS landing page.'}
@@ -157,7 +163,7 @@ REQUIREMENTS:
 
 Return ONLY the HTML. No markdown, no backticks, no explanation.`,
         file_urls: imageUrl ? [imageUrl] : undefined,
-        model: 'claude_sonnet_4_6',
+        model: 'gemini_3_flash',
       });
 
       const htmlContent = typeof res === 'string' ? res : (res.html || res.content || JSON.stringify(res));

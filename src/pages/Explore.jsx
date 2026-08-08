@@ -162,6 +162,8 @@ SEARCH THE WEB for real, current information about:
 - Current best practices, tools, and technologies
 - Real data that grounds this concept in reality
 
+Frame this as a premium, design-forward product (the kind that would win an Awwward) — world-class UX, motion-rich "motionsites" aesthetic, production-grade polish.
+
 Then generate a concise, inspiring product concept that includes:
 1. **Name** — a catchy, memorable product name
 2. **One-liner** — a single sentence pitch
