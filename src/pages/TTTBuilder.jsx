@@ -579,7 +579,7 @@ Return the file operations only.`,
   };
 
   return (
-    <div className={`min-h-screen overflow-x-hidden ${phase === "hero" ? "bg-[#f5f5f7] text-zinc-900" : "bg-[#0d1117] text-white"}`}>
+    <div className={`min-h-screen overflow-x-hidden ${phase === "hero" ? "bg-[#fbfbfd] text-zinc-900" : "bg-[#0d1117] text-white"}`}>
 
       {/* Top nav */}
       <nav
@@ -624,7 +624,7 @@ Return the file operations only.`,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
-            className="min-h-screen flex flex-col items-center justify-center px-5 bg-[#f5f5f7]"
+            className="min-h-screen flex flex-col items-center justify-center px-5 bg-[#fbfbfd]"
             style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
             <div className="relative max-w-3xl mx-auto text-center">
@@ -633,9 +633,9 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/5 text-zinc-500 text-xs font-semibold mb-8"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/[0.04] text-zinc-500 text-xs font-medium mb-10"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
                 AI Site Builder for Kaspa
               </motion.div>
 
@@ -644,8 +644,8 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-5xl sm:text-7xl font-bold tracking-tight leading-[1.02] mb-5 text-zinc-900"
-                style={{ fontFamily: '-apple-system, "SF Pro Display", "Inter", system-ui, sans-serif' }}
+                className="text-5xl sm:text-7xl font-semibold tracking-tight leading-[1.05] mb-5 text-zinc-900"
+                style={{ fontFamily: '-apple-system, "SF Pro Display", "Inter", system-ui, sans-serif', letterSpacing: "-0.022em" }}
               >
                 Build your site.
                 <br />
@@ -656,7 +656,7 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-zinc-500 text-lg max-w-xl mx-auto mb-10"
+                className="text-zinc-500 text-lg max-w-xl mx-auto mb-12 font-normal"
               >
                 Describe what you want. TTT Builder generates a complete, beautiful landing page — no code needed.
               </motion.p>
@@ -668,7 +668,7 @@ Return the file operations only.`,
                 transition={{ delay: 0.25 }}
                 className="relative max-w-2xl mx-auto"
               >
-                <div className="flex items-center gap-2 bg-white border border-zinc-200 focus-within:border-zinc-400 rounded-2xl p-2 transition-colors shadow-sm">
+                <div className="flex items-center gap-2 bg-white border border-zinc-200/80 focus-within:border-zinc-300 focus-within:shadow-[0_0_0_4px_rgba(0,0,0,0.05)] rounded-2xl p-2 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.02)]">
                   <input
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
@@ -679,24 +679,10 @@ Return the file operations only.`,
                   <button
                     onClick={() => generate(prompt)}
                     disabled={!prompt.trim() || loading}
-                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-zinc-900 text-white font-semibold text-sm hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-zinc-900 text-white font-medium text-sm hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Build</>}
                   </button>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                  <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
-                  <ModelSelector value={model} onChange={changeModel} disabled={loading} />
-                  <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
-                  <AttachButton attachments={attachments} onChange={setAttachments} disabled={loading} />
-                  <PasteHtmlButton onConvert={convertHtmlToReact} disabled={loading} />
-                  <EnhanceButton
-                    prompt={prompt}
-                    onEnhanced={setPrompt}
-                    buildMode={buildMode}
-                    hasProject={files.length > 0}
-                    disabled={loading}
-                  />
                 </div>
               </motion.div>
 
@@ -705,13 +691,13 @@ Return the file operations only.`,
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.35 }}
-                className="mt-6 flex flex-wrap gap-2 justify-center"
+                className="mt-5 flex flex-wrap gap-2 justify-center"
               >
                 {EXAMPLES.map((ex) => (
                   <button
                     key={ex}
                     onClick={() => handleExampleClick(ex)}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-400 transition-colors bg-white"
+                    className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-full border border-zinc-200/70 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 hover:bg-white transition-all bg-transparent"
                   >
                     <ChevronRight className="w-3 h-3" />
                     {ex.slice(0, 40)}…
@@ -721,25 +707,6 @@ Return the file operations only.`,
 
               {/* Kaspa app templates */}
               <TemplateGallery onPick={(t) => generate(t.prompt)} disabled={loading} />
-
-              {/* Stats row */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.45 }}
-                className="mt-16 flex items-center justify-center gap-8 text-center"
-              >
-                {[
-                  { label: "Generation time", value: "~15s" },
-                  { label: "AI model", value: "TTT Agent 1" },
-                  { label: "Output", value: "Pure HTML" },
-                ].map(s => (
-                  <div key={s.label}>
-                    <div className="text-2xl font-bold text-zinc-900">{s.value}</div>
-                    <div className="text-xs text-zinc-400 mt-0.5">{s.label}</div>
-                  </div>
-                ))}
-              </motion.div>
             </div>
           </motion.div>
         ) : (
