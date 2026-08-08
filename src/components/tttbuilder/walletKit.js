@@ -47,14 +47,25 @@ KASPA WALLET PROTOCOL — ALWAYS AVAILABLE:
 - MANDATORY IN EVERY APP, NO EXCEPTIONS (even if the app has nothing to do with crypto): render a wallet widget INSIDE the app's own header/top bar, aligned to the TOP RIGHT, labelled "TTT Kaspa". Disconnected state = a compact "TTT Kaspa · Connect" button; connected state = the same pill showing the truncated address (kaspa:qz...abcd) and the live KAS balance, and clicking it opens an in-app panel/modal with Receive (QR + copy address) and Send. It must be part of the generated app's markup — never a separate page, never omitted, never placed only at the bottom.
 
 WALLET POSITIONING — NEVER OVERLAP CONTENT (violating this is a failed build):
-- The wallet pill (the "TTT Kaspa · Connect" / address button) MUST live in normal document flow INSIDE the app's header bar. Use flexbox or grid to place it in the header row. NEVER use position:absolute or position:fixed on the pill itself — that pulls it out of flow and causes overlaps.
-- The wallet PANEL (the Receive/Send/Export card that opens when you click the pill) must use ONE of these two patterns, never a third:
-  (A) DROPDOWN anchored to the pill: the header is position:relative; the panel is position:absolute; top:100%; right:0; so it drops down directly below the pill, sized to a fixed width (~320px), with a max-height and overflow-y:auto. Add a click-outside listener (or a full-screen transparent backdrop div with position:fixed; inset:0; z-index just below the panel) to close it.
-  (B) CENTERED MODAL: a position:fixed; inset:0; backdrop with rgba(0,0,0,0.5) that dims the whole page, and the panel centered with transform. Clicking the backdrop closes it.
-- NEVER render the wallet panel as a bare position:fixed/absolute card floating over the page content with NO backdrop and NO close trigger — that overlaps the app beneath it, blocks interaction, and is the exact bug you must avoid. The panel must always have either a backdrop (modal) or a click-outside handler (dropdown).
-- The panel must have a visible close control: an X button in its header AND either backdrop-click or click-outside closing. It must never be stuck open over the content.
-- On mobile (viewport < 640px) prefer the centered MODAL pattern so the panel never overflows the narrow screen.
-- Always ship: create/import wallet, live balance in KAS + USD, a Receive panel with the QR and copyable address, a Send form that validates the address/amount and links the returned txId to the explorer, AND an Export panel with two buttons: "Export seed phrase" (calls TTTWallet.exportMnemonic()) and "Export private key" (calls TTTWallet.exportPrivateKey()). Both must show the value in a secure alert/modal with a "keep this secret, never share it" warning. Watch-only wallets show "not available" for export.
+- The wallet pill (the "TTT Kaspa · Connect" / address button) MUST live in normal document flow INSIDE the app's header bar (flex/grid in the header row). NEVER position:absolute/fixed on the pill itself.
+- The wallet PANEL (the Receive/Send/Export card that opens on click) MUST be a DROPDOWN anchored to the pill, full stop:
+    * The header element that contains the pill is position:relative.
+    * The panel is position:absolute; top:100%; right:0; width:320px; max-height:80vh; overflow-y:auto; z-index:50. It drops down DIRECTLY below the pill, never centered over the page.
+    * A transparent full-screen backdrop div (position:fixed; inset:0; z-index:40) sits behind the panel and closes it on click. This is mandatory — it captures click-outside AND guarantees the panel never sits bare over content.
+- POSITION LOCK — never auto-move the panel: its default position is the anchored dropdown above. It must NEVER be repositioned by the app's layout, scroll, route changes, or any component mounting/unmounting. The ONLY way it may move is an EXPLICIT user drag (and only if you implement a drag handle); on close/reopen it snaps back to the anchored default. Do NOT center it, do NOT float it over the dashboard, do NOT "place it wherever looks nice" — anchor it to the pill.
+- The panel must have a visible X close button in its header AND backdrop-click closing. It must never be stuck open over content.
+- On mobile (viewport < 640px) you MAY switch the SAME panel to a bottom sheet (position:fixed; bottom:0; left:0; right:0; max-height:85vh) with the backdrop — still never a bare centered card over content.
+- REQUIRED STRUCTURE (mirror this exactly in your WalletWidget):
+    <header style="position:relative"> ... <button data-ttt-wallet onClick={toggle}>TTT Kaspa · {connected ? shortAddr : "Connect"}</button>
+      {open && <>
+        <div style={{position:'fixed',inset:0,zIndex:40}} onClick={close} />
+        <div style={{position:'absolute',top:'100%',right:0,width:320,maxHeight:'80vh',overflowY:'auto',zIndex:50}} data-ttt-wallet>
+          <button onClick={close}>X</button> ... Receive / Send / Export tabs ... "Keys generated locally in this browser." ...
+        </div>
+      </>}
+    </header>
+- NEVER render the wallet panel as a bare position:fixed/absolute card with NO backdrop and NO anchor (a floating card over the dashboard). That overlap is the exact bug this rule exists to kill — it is a hard build failure.
+- Always ship: create/import wallet, live balance in KAS + USD, a Receive panel with the QR and copyable address, a Send form that validates address/amount and links the returned txId to the explorer, and an Export panel with "Export seed phrase" (TTTWallet.exportMnemonic()) and "Export private key" (TTTWallet.exportPrivateKey()), each shown in a secure modal with a "keep this secret, never share it" warning. Watch-only wallets show "not available" for export.
 - LOCAL ONLY: always display a visible note near the wallet: "Keys generated locally in this browser. Never sent to any server." The seed phrase and private key NEVER leave the browser — no fetch(), no API call, no telemetry. Only the signed transaction broadcast goes to api.kaspa.org.
 
 TEXT OUTPUT RULE: write real characters in file content — never emit literal escape sequences like \\u2014, \\u00b7 or \\u21bb inside strings/JSX. Use plain ASCII punctuation (a hyphen "-" instead of an em dash) so nothing renders as gibberish.`;
