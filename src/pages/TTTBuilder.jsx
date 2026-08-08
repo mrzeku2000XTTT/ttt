@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -768,15 +768,32 @@ Return the file operations only.`,
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate(prompt)}
-                    placeholder="Describe your app — e.g. 'Kaspa staking dashboard with live stats and wallet connect'"
-                    className="flex-1 bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3"
+                    placeholder={chatMode === "plan" ? "Tell the builder your idea — it'll plan it out, no code yet" : "Describe your app — e.g. 'Kaspa staking dashboard with live stats and wallet connect'"}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3"
                   />
+                  {/* Plan mode toggle — talk through the idea before building */}
+                  <button
+                    type="button"
+                    onClick={() => setChatMode(chatMode === "plan" ? "build" : "plan")}
+                    disabled={loading}
+                    title="Plan mode — talk through your idea before building"
+                    className={`flex items-center gap-1.5 h-10 px-3 rounded-xl text-xs font-bold transition-all disabled:opacity-40 flex-shrink-0 ${
+                      chatMode === "plan"
+                        ? "bg-[#1a1614] text-white"
+                        : "bg-[#f5f2ed] text-[#5a554f] hover:bg-[#ece9e4] border border-[#e0dcd7]"
+                    }`}
+                  >
+                    <ClipboardList className="w-3.5 h-3.5" />
+                    <span>Plan</span>
+                  </button>
+                  {/* Build orb — white background, icon only */}
                   <button
                     onClick={() => generate(prompt)}
                     disabled={!prompt.trim() || loading}
-                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#1a1614] text-white font-medium text-sm hover:bg-[#2e2520] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-white border border-[#e0dcd7] text-[#1a1614] hover:bg-[#f5f2ed] disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0"
+                    title={chatMode === "plan" ? "Send plan" : "Build"}
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Build</>}
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   </button>
                 </div>
               </motion.div>
