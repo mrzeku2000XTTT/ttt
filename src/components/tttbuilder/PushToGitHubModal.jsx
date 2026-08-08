@@ -1,11 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Github, Loader2, CheckCircle, X, ExternalLink, Rocket, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { Github, Loader2, CheckCircle, X, ExternalLink, Rocket, ShieldCheck, Eye, EyeOff, Link2, Unlink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const STORAGE_KEY = "ttt_github_pat";
+const CONNECTOR_ID = "6a76c96c1625886d0f70a701";
 
 export default function PushToGitHubModal({ open, onClose, files, defaultName }) {
+  const [mode, setMode] = useState("oauth"); // "oauth" | "pat"
+
+  // OAuth state
+  const [ghConnected, setGhConnected] = useState(false);
+  const [ghLogin, setGhLogin] = useState("");
+  const [ghAvatar, setGhAvatar] = useState("");
+  const [checkingConn, setCheckingConn] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+
+  // PAT state
   const [token, setToken] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) || ""; } catch { return ""; }
   });
@@ -13,6 +24,8 @@ export default function PushToGitHubModal({ open, onClose, files, defaultName })
     try { return !!localStorage.getItem(STORAGE_KEY); } catch { return false; }
   });
   const [showToken, setShowToken] = useState(false);
+
+  // Shared form state
   const [repo, setRepo] = useState("");
   const [branch, setBranch] = useState("main");
   const [isPrivate, setIsPrivate] = useState(false);
@@ -20,43 +33,96 @@ export default function PushToGitHubModal({ open, onClose, files, defaultName })
   const [pushing, setPushing] = useState(false);
   const [result, setResult] = useState(null);
 
+  const defaultSlug = () => {
+    const slug = (defaultName || "my-kaspa-app")
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, "-")
+      .replace(/^[-.]+|[-.]+$/g, "");
+    return slug || "my-kaspa-app";
+  };
+
+  const checkConnection = useCallback(async () => {
+    setCheckingConn(true);
+    try {
+      const res = await base44.functions.invoke("getUserGitHubConnection", {});
+      const d = res.data || {};
+      setGhConnected(!!d.connected);
+      setGhLogin(d.login || "");
+      setGhAvatar(d.avatar || "");
+    } catch {
+      setGhConnected(false);
+      setGhLogin("");
+      setGhAvatar("");
+    } finally {
+      setCheckingConn(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (open) {
-      const slug = (defaultName || "my-kaspa-app")
-        .toLowerCase()
-        .replace(/[^a-z0-9._-]+/g, "-")
-        .replace(/^[-.]+|[-.]+$/g, "");
-      setRepo(slug || "my-kaspa-app");
+      setRepo(defaultSlug());
       setBranch("main");
       setIsPrivate(false);
       setResult(null);
       setCommitMessage("Initial commit from TTT Builder");
       try { setToken(localStorage.getItem(STORAGE_KEY) || ""); } catch {}
+      checkConnection();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultName]);
 
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      const url = await base44.connectors.connectAppUser(CONNECTOR_ID);
+      const popup = window.open(url, "_blank");
+      const timer = setInterval(() => {
+        if (!popup || popup.closed) {
+          clearInterval(timer);
+          checkConnection();
+          setConnecting(false);
+        }
+      }, 500);
+    } catch (err) {
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      await base44.connectors.disconnectAppUser(CONNECTOR_ID);
+    } catch {}
+    setGhConnected(false);
+    setGhLogin("");
+    setGhAvatar("");
+  };
+
   const push = async () => {
-    if (!token.trim() || !repo.trim() || !files.length) return;
+    if (!repo.trim() || !files.length) return;
+    if (mode === "pat" && !token.trim()) return;
+    if (mode === "oauth" && !ghConnected) return;
     setPushing(true);
     setResult(null);
     try {
-      if (remember) {
+      if (mode === "pat" && remember) {
         try { localStorage.setItem(STORAGE_KEY, token.trim()); } catch {}
-      } else {
+      } else if (mode === "pat") {
         try { localStorage.removeItem(STORAGE_KEY); } catch {}
       }
-      const res = await base44.functions.invoke("pushAppToUserGitHub", {
-        token: token.trim(),
+      const fnName = mode === "oauth" ? "pushAppToUserGitHubOAuth" : "pushAppToUserGitHub";
+      const payload = {
         repo: repo.trim(),
         branch: branch.trim() || "main",
         commitMessage: commitMessage.trim() || "Initial commit from TTT Builder",
         isPrivate,
         files: files.map((f) => ({ path: f.path, content: f.content || "" })),
-      });
+      };
+      if (mode === "pat") payload.token = token.trim();
+      const res = await base44.functions.invoke(fnName, payload);
       setResult({ success: true, ...res.data });
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || "Push failed";
-      setResult({ success: false, error: msg });
+      setResult({ success: false, error: typeof msg === "string" ? msg : JSON.stringify(msg) });
     } finally {
       setPushing(false);
     }
@@ -67,6 +133,10 @@ export default function PushToGitHubModal({ open, onClose, files, defaultName })
     setRemember(false);
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
+
+  const canPush = mode === "oauth"
+    ? (ghConnected && !!repo.trim() && !!files.length && !pushing)
+    : (!!token.trim() && !!repo.trim() && !!files.length && !pushing);
 
   return (
     <AnimatePresence>
@@ -99,41 +169,86 @@ export default function PushToGitHubModal({ open, onClose, files, defaultName })
                 <div className="rounded-xl bg-[#70C7BA]/8 border border-[#70C7BA]/25 px-3 py-2.5 flex items-start gap-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#70C7BA] mt-0.5 flex-shrink-0" />
                   <p className="text-[10px] text-white/55 leading-relaxed">
-                    This pushes to <span className="text-white font-bold">your own GitHub</span> — not TTT's. Your token stays in this browser and is sent only for this push. We never store it.
+                    This pushes to <span className="text-white font-bold">your own GitHub</span> — not TTT's. Connect once with OAuth (recommended) or paste a Personal Access Token.
                   </p>
                 </div>
 
-                <div>
-                  <label className="text-xs text-white/50 mb-1.5 block">GitHub Personal Access Token</label>
-                  <div className="relative">
-                    <input
-                      type={showToken ? "text" : "password"}
-                      value={token}
-                      onChange={(e) => setToken(e.target.value)}
-                      placeholder="ghp_... (classic, repo scope)"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 pr-9 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50 font-mono"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowToken((v) => !v)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
-                    >
-                      {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <label className="flex items-center gap-1.5 text-[10px] text-white/50 cursor-pointer">
-                      <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-[#70C7BA]" />
-                      Remember on this device
-                    </label>
-                    {token && (
-                      <button onClick={forgetToken} className="text-[10px] text-white/30 hover:text-red-400">Forget token</button>
+                {/* Mode tabs */}
+                <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+                  <button
+                    onClick={() => setMode("oauth")}
+                    className={`flex-1 h-8 rounded-lg text-xs font-bold transition-colors ${mode === "oauth" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                  >
+                    OAuth connect
+                  </button>
+                  <button
+                    onClick={() => setMode("pat")}
+                    className={`flex-1 h-8 rounded-lg text-xs font-bold transition-colors ${mode === "pat" ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+                  >
+                    Access token
+                  </button>
+                </div>
+
+                {mode === "oauth" ? (
+                  <div>
+                    {checkingConn ? (
+                      <div className="flex items-center justify-center py-4 text-white/40 text-xs gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Checking your GitHub connection…
+                      </div>
+                    ) : ghConnected ? (
+                      <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex items-center gap-3">
+                        {ghAvatar && <img src={ghAvatar} alt="" className="w-9 h-9 rounded-full" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-white/50">Connected as</p>
+                          <p className="text-sm font-bold text-white truncate">{ghLogin}</p>
+                        </div>
+                        <button onClick={handleDisconnect} title="Disconnect" className="text-white/30 hover:text-red-400 p-1.5">
+                          <Unlink className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleConnect}
+                        disabled={connecting}
+                        className="w-full h-11 rounded-xl bg-white text-black text-sm font-bold hover:bg-white/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                      >
+                        {connecting ? <><Loader2 className="w-4 h-4 animate-spin" /> Waiting for GitHub…</> : <><Link2 className="w-4 h-4" /> Connect your GitHub</>}
+                      </button>
                     )}
                   </div>
-                  <a href="https://github.com/settings/tokens/new?scopes=repo&description=TTT%20Builder" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-[#70C7BA] hover:underline mt-1.5">
-                    <ExternalLink className="w-3 h-3" /> Create a token (repo scope)
-                  </a>
-                </div>
+                ) : (
+                  <div>
+                    <label className="text-xs text-white/50 mb-1.5 block">GitHub Personal Access Token</label>
+                    <div className="relative">
+                      <input
+                        type={showToken ? "text" : "password"}
+                        value={token}
+                        onChange={(e) => setToken(e.target.value)}
+                        placeholder="ghp_... (classic, repo scope)"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 pr-9 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50 font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowToken((v) => !v)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
+                      >
+                        {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <label className="flex items-center gap-1.5 text-[10px] text-white/50 cursor-pointer">
+                        <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="accent-[#70C7BA]" />
+                        Remember on this device
+                      </label>
+                      {token && (
+                        <button onClick={forgetToken} className="text-[10px] text-white/30 hover:text-red-400">Forget token</button>
+                      )}
+                    </div>
+                    <a href="https://github.com/settings/tokens/new?scopes=repo&description=TTT%20Builder" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-[#70C7BA] hover:underline mt-1.5">
+                      <ExternalLink className="w-3 h-3" /> Create a token (repo scope)
+                    </a>
+                  </div>
+                )}
 
                 <div>
                   <label className="text-xs text-white/50 mb-1.5 block">Repo <span className="text-white/30">(owner/name or just name → your account)</span></label>
@@ -173,7 +288,7 @@ export default function PushToGitHubModal({ open, onClose, files, defaultName })
                   <input
                     value={commitMessage}
                     onChange={(e) => setCommitMessage(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#70C7BA]/50"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50"
                   />
                 </div>
 
@@ -190,7 +305,7 @@ export default function PushToGitHubModal({ open, onClose, files, defaultName })
                   </button>
                   <button
                     onClick={push}
-                    disabled={pushing || !token.trim() || !repo.trim() || !files.length}
+                    disabled={!canPush}
                     className="flex-1 h-10 rounded-xl bg-white text-black text-sm font-bold hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                   >
                     {pushing ? <><Loader2 className="w-4 h-4 animate-spin" /> Pushing…</> : <><Github className="w-4 h-4" /> Push to GitHub</>}
