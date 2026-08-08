@@ -75,7 +75,7 @@ export default function ChatDropZone({ attachments, onChange, disabled, children
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0d1117]/80 backdrop-blur-sm rounded-xl pointer-events-none">
             <div className="text-center">
               <Maximize2 className="w-6 h-6 mx-auto mb-1 text-[#70C7BA]" />
-              <p className="text-xs font-bold text-[#70C7BA]">Drop images to attach</p>
+              <p className="text-xs font-bold text-[#70C7BA]">Drop files to attach</p>
             </div>
           </div>
         )}

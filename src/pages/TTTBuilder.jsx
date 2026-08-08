@@ -29,6 +29,9 @@ import DesignOptionsButton from "@/components/tttbuilder/DesignOptionsButton";
 import FullscreenPreview from "@/components/tttbuilder/FullscreenPreview";
 import { KASPA_PROTOCOLS_RULE } from "@/components/tttbuilder/kaspaProtocols";
 import { ARGENT_SKILL } from "@/components/tttbuilder/argentSkill";
+import ChatModeToggle from "@/components/tttbuilder/ChatModeToggle";
+import SecurityPanel from "@/components/tttbuilder/SecurityPanel";
+import { analyzeAttachments } from "@/components/tttbuilder/fileAnalyzer";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -301,6 +304,14 @@ function TTTBuilderStudio() {
   const [phase, setPhase] = useState(() => {
     try { return localStorage.getItem("ttt_builder_phase") || "hero"; } catch { return "hero"; }
   });
+  const [chatMode, setChatMode] = useState(() => {
+    try { return localStorage.getItem("ttt_builder_chat_mode") || "build"; } catch { return "build"; }
+  });
+  const [analyzing, setAnalyzing] = useState(null); // {name, status} while a file is being analyzed
+
+  useEffect(() => {
+    try { localStorage.setItem("ttt_builder_chat_mode", chatMode); } catch {}
+  }, [chatMode]);
 
   useEffect(() => {
     try { localStorage.setItem("ttt_builder_files", JSON.stringify(files)); } catch {}
@@ -380,7 +391,7 @@ function TTTBuilderStudio() {
     setPhase("studio");
 
     const attached = opts.attachments !== undefined ? opts.attachments : attachments;
-    const newMsg = { role: "user", content: userPrompt };
+    const newMsg = { role: "user", content: userPrompt, attachments: attached.length ? attached.map(a => ({ name: a.name, image: a.image })) : undefined };
     setMessages(prev => [...prev, newMsg]);
     setPrompt("");
     setAttachments([]);
@@ -398,10 +409,32 @@ function TTTBuilderStudio() {
       const isAgent1 = model === "ttt_agent_1";
       const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${IMAGE_RULE}${KASPA_PROTOCOLS_RULE}${ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
-      const fileUrls = attached.map(a => a.url);
-      const attachmentNote = attached.length
-        ? `\nATTACHED REFERENCE${attached.length > 1 ? "S" : ""} (${attached.length}): the user's file${attached.length > 1 ? "s are" : " is"} attached DIRECTLY to this message and you can already see ${attached.length > 1 ? "them" : "it"} — do NOT try to open, download or fetch any URL, and never say you couldn't open it. Look at the attached image and reproduce its layout, structure, spacing, typography and colour palette faithfully in the build.\n`
-        : "";
+      // Analyze attached files of ANY type (images, text, PDFs, videos) so the
+      // LLM can actually use their content. Shows a per-file analyzing state.
+      let fileUrls = [];
+      let attachmentNote = "";
+      if (attached.length) {
+        setAnalyzing({ name: attached[0].name, status: "analyzing" });
+        const analyzed = await analyzeAttachments(attached, (s) => setAnalyzing(s));
+        fileUrls = analyzed.fileUrls;
+        attachmentNote = analyzed.note;
+        setAnalyzing(null);
+      }
+
+      // PLAN / DISCUSS modes — no code is written, just a text response.
+      if (chatMode !== "build") {
+        const modeDirective = chatMode === "plan"
+          ? "You are in PLAN MODE. Do NOT write or modify any code. Read the user's request and the current project, then produce a clear, structured plan: what files to create/edit, what each will contain, the data model, the UI sections, and the order of work. End with a one-line summary. The user will review this plan before building."
+          : "You are in DISCUSS MODE. Do NOT write or modify any code. Answer the user's question about the project, architecture, design, or approach in plain language. Be concise and helpful.";
+        const raw = await base44.integrations.Core.InvokeLLM({
+          prompt: `${baseRules}\n\n${modeDirective}\n\n${projectDump}\n${attachmentNote}\n${history ? `Conversation so far:\n${history}\n` : ""}\nUser: ${userPrompt}`,
+          model,
+          file_urls: fileUrls.length ? fileUrls : undefined,
+        });
+        const text = typeof raw === "string" ? raw : (raw?.response || JSON.stringify(raw));
+        setMessages(prev => [...prev, { role: "assistant", content: text, mode: chatMode }]);
+        return;
+      }
 
       const patchLast = (patch) =>
         setMessages(prev => prev.map((m, i) => (i === prev.length - 1 ? { ...m, ...patch } : m)));
@@ -792,7 +825,7 @@ Return the file operations only.`,
                   {loading && (
                     <div className="flex items-center gap-2 text-white/40 text-xs">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Building your site…
+                      {analyzing ? `Analyzing ${analyzing.name}…` : chatMode === "plan" ? "Planning…" : chatMode === "discuss" ? "Thinking…" : "Building your site…"}
                     </div>
                   )}
                   <div ref={chatEndRef} />
@@ -821,6 +854,7 @@ Return the file operations only.`,
                   </form>
 
                   <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <ChatModeToggle value={chatMode} onChange={setChatMode} disabled={loading} />
                     <BuildModeToggle value={buildMode} onChange={changeBuildMode} disabled={loading} />
                     <ModelSelector value={model} onChange={changeModel} disabled={loading} />
                     <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
@@ -1014,7 +1048,7 @@ Return the file operations only.`,
 
                       {/* Mobile section pills */}
                       <div className="sm:hidden absolute top-0 left-0 right-0 z-10 bg-[#0f1419] border-b border-white/[0.06] px-2 py-2 flex gap-1 overflow-x-auto scrollbar-hide">
-                        {["overview", "code", "live", "agents", "database", "memory", "settings"].map(s => (
+                        {["overview", "code", "live", "agents", "database", "memory", "security", "settings"].map(s => (
                           <button
                             key={s}
                             onClick={() => setDashSection(s)}
@@ -1063,6 +1097,11 @@ Return the file operations only.`,
                         {dashSection === "memory" && (
                           <div className="h-full overflow-y-auto">
                             <MemoryPanel />
+                          </div>
+                        )}
+                        {dashSection === "security" && (
+                          <div className="h-full overflow-y-auto">
+                            <SecurityPanel files={files} onFix={(p) => generate(p)} loading={loading} />
                           </div>
                         )}
                         {dashSection === "settings" && (
