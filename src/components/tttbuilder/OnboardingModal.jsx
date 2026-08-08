@@ -58,9 +58,13 @@ export default function OnboardingModal() {
   if (!isStandalone()) return null;
 
   const autoDetectProvider = (modelStr) => {
-    if (modelStr.includes("/")) return "openrouter";
-    if (modelStr.startsWith("deepseek")) return "deepseek";
-    return "openrouter";
+    const s = modelStr.toLowerCase();
+    if (s.startsWith("gemini") || s.startsWith("gemma")) return "google";
+    if (s.startsWith("llama-") || s.startsWith("meta-llama") || s.startsWith("mixtral")) return "groq";
+    if (s.includes("/")) return "openrouter";
+    if (s.startsWith("deepseek")) return "deepseek";
+    if (s.startsWith("mistral") || s.startsWith("codestral")) return "mistral";
+    return "groq"; // default to Groq (fast + free + CORS-friendly)
   };
 
   const addModel = () => {
