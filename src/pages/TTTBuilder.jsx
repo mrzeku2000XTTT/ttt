@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -37,6 +37,7 @@ import ChatModeToggle from "@/components/tttbuilder/ChatModeToggle";
 import SecurityPanel from "@/components/tttbuilder/SecurityPanel";
 import AnchorsPanel from "@/components/tttbuilder/AnchorsPanel";
 import { analyzeAttachments } from "@/components/tttbuilder/fileAnalyzer";
+import CloneBuilderRepoModal from "@/components/tttbuilder/CloneBuilderRepoModal";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -260,6 +261,7 @@ function TTTBuilderStudio() {
   const [showPushStoreModal, setShowPushStoreModal] = useState(false);
   const [showPushGithubModal, setShowPushGithubModal] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [showCloneModal, setShowCloneModal] = useState(false);
   const [publishForm, setPublishForm] = useState({ siteName: "", repo: OUR_REPO });
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -841,8 +843,20 @@ function TTTBuilderStudio() {
 
               {/* Kaspa app templates */}
               <TemplateGallery onPick={(t) => generate(t.prompt)} disabled={loading} />
-            </div>
-          </motion.div>
+
+              {/* Open-source: clone a standalone TTT Builder repo */}
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.45 }}
+                onClick={() => setShowCloneModal(true)}
+                className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1614] text-white text-xs font-bold hover:bg-[#2a2622] transition-colors"
+              >
+                <Github className="w-3.5 h-3.5" />
+                Clone TTT Builder repo
+              </motion.button>
+              </div>
+              </motion.div>
         ) : (
           <motion.div
             key="studio"
@@ -1344,6 +1358,8 @@ function TTTBuilderStudio() {
         files={files}
         defaultName={prompt || (messages.find(m => m.role === "user")?.content?.slice(0, 40))}
       />
+
+      <CloneBuilderRepoModal open={showCloneModal} onClose={() => setShowCloneModal(false)} />
 
       {showFullscreen && (html || liveUrl) && (
         <FullscreenPreview
