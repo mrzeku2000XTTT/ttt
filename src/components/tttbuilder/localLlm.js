@@ -87,6 +87,13 @@ export async function callLocalLlm(args) {
     headers["X-Title"] = "TTT Builder";
   }
 
+  // Free / queued models (e.g. OpenRouter free tier) can take a long time or hang
+  // silently. Cap the wait so the build fails fast with a clear message instead of
+  // spinning "Building your site..." forever.
+  const TIMEOUT_MS = 120000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
   let res;
   try {
     res = await fetch(`${baseUrl}/chat/completions`, {
@@ -97,9 +104,15 @@ export async function callLocalLlm(args) {
         messages: [{ role: "user", content: parts }],
         temperature: 0.3,
       }),
+      signal: controller.signal,
     });
   } catch (err) {
+    if (err?.name === "AbortError") {
+      throw new Error(`${provider.label} timed out after ${TIMEOUT_MS / 1000}s. Free models can queue — try again, pick a faster/paid model, or use Google AI Studio / Ollama.`);
+    }
     throw new Error(`Could not reach ${provider.label} (${baseUrl}). ${err.message || "network error"}. For browser CORS issues, use OpenRouter or a local Ollama server.`);
+  } finally {
+    clearTimeout(timer);
   }
 
   if (!res.ok) {
