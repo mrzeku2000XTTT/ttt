@@ -34,7 +34,8 @@ export default function CloneBuilderRepoModal({ open, onClose }) {
         setError(res.data?.error || "Failed to generate repo");
       }
     } catch (err) {
-      setError(err.message || "Failed to generate repo");
+      const msg = err?.response?.data?.error || err?.data?.error || err?.message || "Failed to generate repo";
+      setError(msg);
     } finally { setLoading(false); }
   };
 
@@ -53,14 +54,14 @@ export default function CloneBuilderRepoModal({ open, onClose }) {
         {!result ? (
           <div className="space-y-4">
             <p className="text-[11px] text-white/50 leading-relaxed">
-              Generates a new public GitHub repo containing just the TTT Builder (copied from your app's repo) plus a README, LICENSE and standalone package.json. Anyone can clone it and bring their own keys.
+              Generates the canonical open-source TTT Builder repo — the platform code itself, copied from your app's GitHub repo. Anyone can clone it locally and bring their own keys. This is for the TTT Builder platform, not for individual apps you build.
             </p>
             <div>
-              <label className="text-xs text-white/50 mb-1.5 block">Source app repo <span className="text-white/30">(owner/repo)</span></label>
+              <label className="text-xs text-white/50 mb-1.5 block">Your app's GitHub repo <span className="text-white/30">(owner/repo — where the TTT Builder files live)</span></label>
               <input
                 value={sourceRepo}
                 onChange={(e) => setSourceRepo(e.target.value)}
-                placeholder="your-org/tttz"
+                placeholder="your-org/your-app-repo"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/50"
               />
             </div>
