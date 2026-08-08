@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -19,6 +19,7 @@ import { IMAGE_RULE, resolveImages } from "@/components/tttbuilder/imageGen";
 import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm, findMissingImports } from "@/components/tttbuilder/projectFiles";
 import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
+import ProjectsPanel, { upsertProject } from "@/components/tttbuilder/ProjectsPanel";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -225,6 +226,10 @@ function TTTBuilderStudio() {
   const [attachments, setAttachments] = useState([]);
   const [mobileView, setMobileView] = useState("preview"); // chat | preview (mobile only)
   const [isNarrow, setIsNarrow] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
+  const [showProjects, setShowProjects] = useState(false);
+  const [projectId, setProjectId] = useState(() => {
+    try { return localStorage.getItem("ttt_builder_project_id") || ""; } catch { return ""; }
+  });
 
   useEffect(() => {
     const onResize = () => setIsNarrow(window.innerWidth < 1024);
@@ -402,6 +407,24 @@ Return the file operations only.`,
       const finalMsg = { role: "assistant", content: summary, thinking, files: touched, agents: agentList || undefined, plan: planText || undefined, activity: activityLog.length ? activityLog : undefined };
       if (isAgent1) patchLast(finalMsg);
       else setMessages(prev => [...prev, finalMsg]);
+
+      // Auto-snapshot this build so it shows up in Projects and can be restored later
+      try {
+        const id = projectId || `proj_${Date.now()}`;
+        if (!projectId) { setProjectId(id); localStorage.setItem("ttt_builder_project_id", id); }
+        const firstUser = [...messages, newMsg].find(m => m.role === "user")?.content || "Untitled";
+        upsertProject({
+          id,
+          name: (userPrompt || firstUser).slice(0, 60),
+          files: nextFiles,
+          messages: [...messages, newMsg, finalMsg],
+          phase: "studio",
+          buildMode: runMode,
+          model,
+          walletKit,
+          savedAt: new Date().toISOString(),
+        });
+      } catch {}
     } catch (err) {
       setMessages(prev => [...prev, {
         role: "assistant",
@@ -455,6 +478,19 @@ Return the file operations only.`,
     URL.revokeObjectURL(url);
   };
 
+  const loadProject = (p) => {
+    if (!p) return;
+    setFiles(p.files || []);
+    setMessages(p.messages || []);
+    setPhase(p.phase || "studio");
+    setActivePath("index.html");
+    if (p.buildMode) changeBuildMode(p.buildMode);
+    if (p.model) changeModel(p.model);
+    if (typeof p.walletKit === "boolean") changeWalletKit(p.walletKit);
+    if (p.id) { setProjectId(p.id); try { localStorage.setItem("ttt_builder_project_id", p.id); } catch {} }
+    setIframeKey(k => k + 1);
+  };
+
   return (
     <div className="min-h-screen bg-[#0d1117] text-white overflow-x-hidden">
 
@@ -477,6 +513,13 @@ Return the file operations only.`,
         <div className="hidden sm:flex items-center gap-4 text-xs text-white/50">
           <span>Built on Kaspa</span>
         </div>
+        <button
+          onClick={() => setShowProjects(true)}
+          className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/5 border border-white/10 text-white/70 text-xs font-bold hover:bg-white/10 hover:text-white transition-colors"
+          title="Saved projects"
+        >
+          <FolderOpen className="w-3.5 h-3.5" /> Projects
+        </button>
         {html && (
           <button
             onClick={downloadHtml}
@@ -995,6 +1038,13 @@ Return the file operations only.`,
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ProjectsPanel
+        open={showProjects}
+        onClose={() => setShowProjects(false)}
+        current={{ id: projectId, name: prompt, files, messages, phase, buildMode, model, walletKit }}
+        onLoad={loadProject}
+      />
     </div>
   );
 }
