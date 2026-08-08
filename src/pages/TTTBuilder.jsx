@@ -23,6 +23,7 @@ import ProjectsPanel, { upsertProject } from "@/components/tttbuilder/ProjectsPa
 import DashboardSidebar from "@/components/tttbuilder/DashboardSidebar";
 import { OverviewPanel, AgentsPanel, DatabasePanel, MemoryPanel, SettingsPanel } from "@/components/tttbuilder/DashboardPanels";
 import PushToStoreModal from "@/components/tttbuilder/PushToStoreModal";
+import PushToGitHubModal from "@/components/tttbuilder/PushToGitHubModal";
 import ChatDropZone from "@/components/tttbuilder/ChatDropZone";
 import CloneUrlButton from "@/components/tttbuilder/CloneUrlButton";
 import DesignOptionsButton from "@/components/tttbuilder/DesignOptionsButton";
@@ -241,6 +242,7 @@ function TTTBuilderStudio() {
   const [publishResult, setPublishResult] = useState(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showPushStoreModal, setShowPushStoreModal] = useState(false);
+  const [showPushGithubModal, setShowPushGithubModal] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [publishForm, setPublishForm] = useState({ siteName: "", repo: OUR_REPO });
   const iframeRef = useRef(null);
@@ -988,7 +990,7 @@ Return the file operations only.`,
                           <Globe className="w-3 h-3" /> Export
                         </button>
                         <button
-                          onClick={() => { setShowPublishModal(true); setPublishResult(null); }}
+                          onClick={() => setShowPushGithubModal(true)}
                           className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
                         >
                           <GitBranch className="w-3 h-3" /> GitHub
@@ -1279,6 +1281,13 @@ Return the file operations only.`,
         liveUrl={liveUrl}
         defaultName={prompt || (messages.find(m => m.role === "user")?.content?.slice(0, 40))}
         defaultDesc={prompt}
+      />
+
+      <PushToGitHubModal
+        open={showPushGithubModal}
+        onClose={() => setShowPushGithubModal(false)}
+        files={files}
+        defaultName={prompt || (messages.find(m => m.role === "user")?.content?.slice(0, 40))}
       />
 
       {showFullscreen && (html || liveUrl) && (
