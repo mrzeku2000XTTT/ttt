@@ -75,17 +75,37 @@ export default function PushToGitHubModal({ open, onClose, files, defaultName })
     setConnecting(true);
     try {
       const url = await base44.connectors.connectAppUser(CONNECTOR_ID);
-      const popup = window.open(url, "_blank");
-      const timer = setInterval(() => {
-        if (!popup || popup.closed) {
+      window.open(url, "_blank");
+      // The OAuth tab usually stays open on the callback success page,
+      // so we can't rely on popup.closed. Poll the connection instead.
+      let ticks = 0;
+      const timer = setInterval(async () => {
+        ticks += 1;
+        try {
+          const res = await base44.functions.invoke("getUserGitHubConnection", {});
+          if (res.data?.connected) {
+            clearInterval(timer);
+            setGhConnected(true);
+            setGhLogin(res.data.login || "");
+            setGhAvatar(res.data.avatar || "");
+            setConnecting(false);
+            return;
+          }
+        } catch {}
+        if (ticks >= 48) { // ~2 min
           clearInterval(timer);
-          checkConnection();
           setConnecting(false);
         }
-      }, 500);
+      }, 2500);
     } catch (err) {
       setConnecting(false);
     }
+  };
+
+  const manualRecheck = async () => {
+    setCheckingConn(true);
+    await checkConnection();
+    setCheckingConn(false);
   };
 
   const handleDisconnect = async () => {
@@ -207,13 +227,23 @@ export default function PushToGitHubModal({ open, onClose, files, defaultName })
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={handleConnect}
-                        disabled={connecting}
-                        className="w-full h-11 rounded-xl bg-white text-black text-sm font-bold hover:bg-white/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
-                      >
-                        {connecting ? <><Loader2 className="w-4 h-4 animate-spin" /> Waiting for GitHub…</> : <><Link2 className="w-4 h-4" /> Connect your GitHub</>}
-                      </button>
+                      <>
+                        <button
+                          onClick={handleConnect}
+                          disabled={connecting}
+                          className="w-full h-11 rounded-xl bg-white text-black text-sm font-bold hover:bg-white/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                        >
+                          {connecting ? <><Loader2 className="w-4 h-4 animate-spin" /> Waiting for GitHub…</> : <><Link2 className="w-4 h-4" /> Connect your GitHub</>}
+                        </button>
+                        {connecting && (
+                          <button
+                            onClick={manualRecheck}
+                            className="w-full mt-2 text-[11px] text-[#70C7BA] hover:underline"
+                          >
+                            I've authorized — check again
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 ) : (
