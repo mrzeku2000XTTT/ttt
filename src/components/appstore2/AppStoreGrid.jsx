@@ -243,6 +243,13 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
               </button>
             );
           }
+          if (!app.path) {
+            return (
+              <div key={app.name + i} className="opacity-60 pointer-events-none">
+                {inner}
+              </div>
+            );
+          }
           return (
             <Link
               key={app.name + app.path + i}
