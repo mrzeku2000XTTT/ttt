@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Rocket } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -20,6 +20,7 @@ import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit"
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm, findMissingImports } from "@/components/tttbuilder/projectFiles";
 import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
 import ProjectsPanel, { upsertProject } from "@/components/tttbuilder/ProjectsPanel";
+import PushToTTTModal from "@/components/tttbuilder/PushToTTTModal";
 import DashboardSidebar from "@/components/tttbuilder/DashboardSidebar";
 import { OverviewPanel, AgentsPanel, DatabasePanel, MemoryPanel, SettingsPanel } from "@/components/tttbuilder/DashboardPanels";
 
@@ -211,10 +212,10 @@ export default function TTTBuilderPage() {
     );
   }
 
-  return <TTTBuilderStudio />;
+  return <TTTBuilderStudio user={user} />;
 }
 
-function TTTBuilderStudio() {
+function TTTBuilderStudio({ user }) {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -224,6 +225,7 @@ function TTTBuilderStudio() {
   const [publishResult, setPublishResult] = useState(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishForm, setPublishForm] = useState({ siteName: "", repo: OUR_REPO });
+  const [showPushModal, setShowPushModal] = useState(false);
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
   const [iframeKey, setIframeKey] = useState(0);
@@ -593,12 +595,20 @@ Return the file operations only.`,
           <FolderOpen className="w-3.5 h-3.5" /> Projects
         </button>
         {html && (
-          <button
-            onClick={downloadHtml}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors"
-          >
-            <ExternalLink className="w-3 h-3" /> Export HTML
-          </button>
+          <>
+            <button
+              onClick={() => setShowPushModal(true)}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-gradient-to-r from-[#70C7BA] to-cyan-400 text-black text-xs font-bold hover:opacity-90 transition-opacity"
+            >
+              <Rocket className="w-3 h-3" /> Push to TTT
+            </button>
+            <button
+              onClick={downloadHtml}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" /> Export
+            </button>
+          </>
         )}
       </nav>
 
@@ -1176,6 +1186,14 @@ Return the file operations only.`,
         onClose={() => setShowProjects(false)}
         current={{ id: projectId, name: prompt, files, messages, phase, buildMode, model, walletKit }}
         onLoad={loadProject}
+      />
+
+      <PushToTTTModal
+        open={showPushModal}
+        onClose={() => setShowPushModal(false)}
+        files={files}
+        projectName={prompt}
+        user={user}
       />
     </div>
   );

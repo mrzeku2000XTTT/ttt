@@ -52,6 +52,7 @@ function AppIcon({ app, hovered }) {
 
 export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0, view = "all", onViewChange, aiResults }) {
   const [communityApps, setCommunityApps] = useState([]);
+  const [builderApps, setBuilderApps] = useState([]);
 
   useEffect(() => {
     base44.entities.AppProposal.filter({ status: "approved" }, "-created_date", 200)
@@ -71,7 +72,26 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
       .catch(() => setCommunityApps([]));
   }, [refreshKey]);
 
-  const allApps = [...APPS, ...communityApps];
+  useEffect(() => {
+    base44.entities.TTTAppRegistry.filter({ is_active: true }, "-created_date", 200)
+      .then((list) => {
+        setBuilderApps(
+          list.map((p) => ({
+            name: p.app_name,
+            path: null,
+            externalUrl: p.external_url,
+            cat: p.category || "Tools",
+            logo: p.logo_url,
+            desc: p.description?.slice(0, 60) || "Built with TTT Builder",
+            community: true,
+            builder: true,
+          }))
+        );
+      })
+      .catch(() => setBuilderApps([]));
+  }, [refreshKey]);
+
+  const allApps = [...APPS, ...builderApps, ...communityApps];
 
   const isKaspaApp = (app) => {
     const text = `${app.name} ${app.desc} ${app.path || ""}`.toLowerCase();
