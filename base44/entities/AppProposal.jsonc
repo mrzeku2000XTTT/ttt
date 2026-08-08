@@ -55,18 +55,27 @@
     "read": {
       "$or": [
         {
-          "submitter_email": "{{user.email}}"
+          "data.status": "approved"
         },
         {
-          "user.role": "admin"
+          "data.submitter_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "update": {
-      "user.role": "admin"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "user.role": "admin"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
