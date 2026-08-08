@@ -17,9 +17,10 @@ const SERIF = "'Fraunces', Georgia, serif";
 const fmt = (n) => (typeof n === "number" ? n.toLocaleString() : "—");
 
 /**
- * KronTokensPanel — indexes KRON.technology KRC-20 tokens that are still
- * graduating (on the bonding curve, not yet migrated to the locked AMM).
- * Data is sourced live via Gemini web search (kron.technology, kaspa.news, X,
+ * KronTokensPanel — indexes KRON.technology KCC-20 covenant tokens that are
+ * still graduating (on the bonding curve, not yet migrated to the locked AMM),
+ * cross-referenced on kascov.io (the KCC covenant explorer). Data is sourced
+ * live via Gemini web search (kron.technology, kascov.io, kaspa.news, X,
  * explorers) — KRON has no documented public API. Each token card can launch a
  * "proof-of-work utility app" idea into Idea Lab.
  */
@@ -35,10 +36,10 @@ export default function KronTokensPanel({ onGenerateIdea }) {
     try {
       const res = await base44.integrations.Core.InvokeLLM({
         prompt:
-          `Search the live web (kron.technology, kaspa.news, X.com, Kaspa block explorers) for REAL Kaspa KRC-20 tokens currently launched on KRON (kron.technology) that are STILL GRADUATING — i.e. still on the bonding curve and NOT yet graduated to the locked AMM pool.\n\n` +
-          `For each token return: ticker, name, a one-sentence description, market_cap_kas (estimated number), graduation_pct (0-100 number), holders (number), age_hours (number), kron_url (the real kron.technology token URL if found), and potential_utility (a short, specific idea for how a proof-of-work / real on-chain-activity app could give this token sustainable utility beyond speculation).\n\n` +
-          `Only return tokens you found actual evidence of on the live web. Do NOT fabricate tokens or tickers. If you can only confirm a few, return those few. Sort by graduation_pct descending (closest to graduating first).\n\n` +
-          `Context: KRC-20 is Kaspa's fungible token standard; KRON uses covenant bonding curves; "graduating" means a token reaches the market-cap threshold that migrates it to a permanently-locked AMM.`,
+          `Search the live web (kron.technology, kascov.io, kaspa.news, X.com, Kaspa block explorers) for REAL Kaspa KCC-20 covenant tokens currently launched on KRON (kron.technology) that are STILL GRADUATING — i.e. still on the bonding curve and NOT yet graduated to the locked AMM pool.\n\n` +
+          `KCC-20 is Kaspa's Covenant Contract token standard (smart-contract covenants written in SilverScript), NOT the simpler KRC-20. KRON launches KCC-20 covenant tokens on bonding curves. kascov.io is the KCC covenant explorer — find each token's covenant/contract page there too.\n\n` +
+          `For each token return: ticker, name, a one-sentence description, market_cap_kas (estimated number), graduation_pct (0-100 number), holders (number), age_hours (number), kron_url (the real kron.technology token URL if found), kascov_url (the real kascov.io covenant/token page URL if found), and potential_utility (a short, specific idea for how a proof-of-work / real on-chain-activity app could give this token sustainable utility beyond speculation).\n\n` +
+          `Only return tokens you found actual evidence of on the live web. Do NOT fabricate tokens or tickers. If you can only confirm a few, return those few. Sort by graduation_pct descending (closest to graduating first).`,
         add_context_from_internet: true,
         model: "gemini_3_flash",
         response_json_schema: {
@@ -57,6 +58,7 @@ export default function KronTokensPanel({ onGenerateIdea }) {
                   holders: { type: "number" },
                   age_hours: { type: "number" },
                   kron_url: { type: "string" },
+                  kascov_url: { type: "string" },
                   potential_utility: { type: "string" },
                 },
               },
@@ -78,9 +80,9 @@ export default function KronTokensPanel({ onGenerateIdea }) {
 
   const genIdea = (t) => {
     const prompt =
-      `Build a proof-of-work app on Kaspa that gives real utility and sustainable value to the KRC-20 token "${t.ticker}" (${t.name}). ` +
+      `Build a proof-of-work app on Kaspa that gives real utility and sustainable value to the KCC-20 covenant token "${t.ticker}" (${t.name}). ` +
       `Token context: ${t.description || ""} Currently on KRON's bonding curve — market cap ~${fmt(t.market_cap_kas)} KAS, graduation ${t.graduation_pct ?? "?"}%, ${fmt(t.holders)} holders, ~${Math.round(t.age_hours || 0)}h old. ` +
-      `Design an app where users perform real Proof-of-Work / on-chain activity to earn, burn, or stake this token, creating genuine demand and utility beyond speculation.`;
+      `Design an app where users perform real Proof-of-Work / on-chain activity to earn, burn, or stake this covenant token, creating genuine demand and utility beyond speculation.`;
     onGenerateIdea?.(prompt);
   };
 
@@ -88,7 +90,7 @@ export default function KronTokensPanel({ onGenerateIdea }) {
     <div>
       <div className="flex items-end justify-between gap-4 mb-2">
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>KRON · Kaspa Launchpad</p>
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>KCC-20 · KRON · kascov.io</p>
           <h1 className="text-[clamp(1.7rem,5vw,2.4rem)] font-bold leading-[1.05] mt-1" style={{ color: INK, fontFamily: SERIF }}>
             Graduating Tokens
           </h1>
@@ -103,13 +105,13 @@ export default function KronTokensPanel({ onGenerateIdea }) {
         </button>
       </div>
       <p className="text-[13px] leading-relaxed mb-6 max-w-md" style={{ color: GREY, fontFamily: SERIF }}>
-        Live KRC-20 tokens still on KRON's bonding curve, sourced from kron.technology & kaspa.news. Tap any token to generate a proof-of-work utility app idea for it.
+        Live KCC-20 covenant tokens still on KRON's bonding curve, sourced from kron.technology & cross-referenced on kascov.io. Tap any token to generate a proof-of-work utility app idea for it.
       </p>
 
       {loading && (
         <div className="py-16 text-center">
           <Loader2 className="w-5 h-5 animate-spin mx-auto mb-3" style={{ color: INK }} />
-          <p className="text-[14px]" style={{ color: INK_SOFT, fontFamily: SERIF }}>Scanning kron.technology for graduating tokens…</p>
+          <p className="text-[14px]" style={{ color: INK_SOFT, fontFamily: SERIF }}>Scanning kron.technology & kascov.io for graduating KCC-20 covenants…</p>
         </div>
       )}
 
@@ -191,11 +193,23 @@ export default function KronTokensPanel({ onGenerateIdea }) {
                       href={t.kron_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center h-10 w-10 rounded-full flex-shrink-0 transition-opacity hover:opacity-60"
-                      style={{ color: INK, border: `1px solid ${INK}` }}
                       title="View on KRON"
+                      className="flex items-center justify-center h-10 px-3 rounded-full flex-shrink-0 text-[11px] font-semibold transition-opacity hover:opacity-60"
+                      style={{ color: INK, border: `1px solid ${INK}`, fontFamily: SERIF }}
                     >
-                      <ArrowUpRight className="w-4 h-4" />
+                      KRON <ArrowUpRight className="w-3 h-3 ml-1" />
+                    </a>
+                  )}
+                  {t.kascov_url && (
+                    <a
+                      href={t.kascov_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="View on kascov.io"
+                      className="flex items-center justify-center h-10 px-3 rounded-full flex-shrink-0 text-[11px] font-semibold transition-opacity hover:opacity-60"
+                      style={{ color: INK, border: `1px solid ${INK}`, fontFamily: SERIF }}
+                    >
+                      kascov <ArrowUpRight className="w-3 h-3 ml-1" />
                     </a>
                   )}
                 </div>
