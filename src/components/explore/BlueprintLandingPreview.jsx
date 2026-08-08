@@ -192,24 +192,22 @@ ${html}
     URL.revokeObjectURL(url);
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center" style={{ background: COLORS.CANVAS_BG }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-          <p className="text-[13px] font-medium" style={{ color: COLORS.TEXT_MED }}>Generating your landing page…</p>
-          <p className="text-[11px]" style={{ color: COLORS.TEXT_LIGHT }}>Crafting sections, copy, and styling</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!html) {
     return (
       <div className="flex-1 flex items-center justify-center p-8" style={{ background: COLORS.CANVAS_BG }}>
-        <p className="text-[13px] text-center" style={{ color: COLORS.TEXT_MED }}>
-          Open the <span className="font-semibold" style={{ color: COLORS.BLUE }}>Ask to Edit</span> panel and describe the site you want to generate.
-        </p>
+        <div className="flex flex-col items-center gap-3">
+          {loading ? (
+            <>
+              <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+              <p className="text-[13px] font-medium" style={{ color: COLORS.TEXT_MED }}>Generating your landing page…</p>
+              <p className="text-[11px]" style={{ color: COLORS.TEXT_LIGHT }}>Crafting sections, copy, and styling</p>
+            </>
+          ) : (
+            <p className="text-[13px] text-center" style={{ color: COLORS.TEXT_MED }}>
+              Open the <span className="font-semibold" style={{ color: COLORS.BLUE }}>Ask to Edit</span> panel and describe the site you want to generate.
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -276,7 +274,15 @@ ${html}
       </div>
 
       {/* Content area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {loading && (
+          <div className="absolute inset-0 z-20 pointer-events-none flex items-start justify-center pt-3">
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.95)', boxShadow: '0 4px 24px rgba(0,0,0,0.12)', border: '1px solid rgba(0,0,0,0.06)' }}>
+              <div className="w-3.5 h-3.5 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+              <span className="text-[12px] font-medium" style={{ color: COLORS.TEXT_DARK }}>Editing your page…</span>
+            </div>
+          </div>
+        )}
         {showCode ? (
           <div className="flex-1 overflow-hidden flex flex-col">
             <textarea
