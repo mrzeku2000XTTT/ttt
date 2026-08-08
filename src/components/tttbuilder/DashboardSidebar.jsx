@@ -1,5 +1,5 @@
 import React from "react";
-import { Home, Code2, Server, Bot, Database, Brain, Settings, Shield, Anchor, ChevronRight } from "lucide-react";
+import { Home, Code2, Server, Bot, Database, Brain, Settings, Shield, Anchor, ChevronRight, ChevronLeft } from "lucide-react";
 
 const ITEMS = [
   { id: "overview", label: "Overview", icon: Home },
@@ -23,6 +23,14 @@ export default function DashboardSidebar({ active, onChange, fileCount = 0 }) {
             <span className="text-black font-black text-xs">D</span>
           </div>
           <span className="font-semibold text-sm text-white/90 tracking-tight">Dashboard</span>
+          {active !== "overview" && (
+            <button
+              onClick={() => onChange("overview")}
+              className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Back
+            </button>
+          )}
         </div>
       </div>
 

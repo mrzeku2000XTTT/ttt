@@ -1136,7 +1136,15 @@ function TTTBuilderStudio() {
                       </div>
 
                       {/* Mobile section pills */}
-                      <div className="sm:hidden absolute top-0 left-0 right-0 z-10 bg-[#0f1419] border-b border-white/[0.06] px-2 py-2 flex gap-1 overflow-x-auto scrollbar-hide">
+                      <div className="sm:hidden absolute top-0 left-0 right-0 z-10 bg-[#0f1419] border-b border-white/[0.06] px-2 py-2 flex items-center gap-1 overflow-x-auto scrollbar-hide">
+                        {dashSection !== "overview" && (
+                          <button
+                            onClick={() => setDashSection("overview")}
+                            className="flex items-center gap-1 flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                          >
+                            <ArrowLeft className="w-3.5 h-3.5" /> Back
+                          </button>
+                        )}
                         {["overview", "code", "live", "agents", "database", "memory", "security", "anchors", "settings"].map(s => (
                           <button
                             key={s}
