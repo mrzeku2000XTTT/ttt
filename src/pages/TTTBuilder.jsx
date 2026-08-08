@@ -691,16 +691,15 @@ Return the file operations only.`,
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.35 }}
-                className="mt-5 flex flex-wrap gap-2 justify-center"
+                className="mt-4 flex flex-wrap gap-x-5 gap-y-2 justify-center"
               >
                 {EXAMPLES.map((ex) => (
                   <button
                     key={ex}
                     onClick={() => handleExampleClick(ex)}
-                    className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-full border border-zinc-200/70 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 hover:bg-white transition-all bg-transparent"
+                    className="text-xs text-zinc-400 hover:text-zinc-900 transition-colors"
                   >
-                    <ChevronRight className="w-3 h-3" />
-                    {ex.slice(0, 40)}…
+                    {ex.slice(0, 38)}…
                   </button>
                 ))}
               </motion.div>

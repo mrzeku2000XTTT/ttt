@@ -3,11 +3,11 @@ import { KASPA_TEMPLATES } from "@/components/tttbuilder/kaspaTemplates";
 
 export default function TemplateGallery({ onPick, disabled }) {
   return (
-    <div className="mt-14 max-w-5xl mx-auto">
-      <div className="flex items-center justify-center gap-2 mb-5">
-        <span className="text-xs font-semibold tracking-widest text-zinc-400 uppercase">
-          Kaspa app templates
-        </span>
+    <div className="mt-20 max-w-5xl mx-auto">
+      <div className="mb-6">
+        <p className="text-xs font-medium tracking-wide text-zinc-400 text-center">
+          Or start from a template
+        </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -16,13 +16,13 @@ export default function TemplateGallery({ onPick, disabled }) {
             key={t.id}
             onClick={() => onPick(t)}
             disabled={disabled}
-            className="group text-left p-3 rounded-xl bg-white border border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50 disabled:opacity-40 transition-colors"
+            className="group text-left p-4 rounded-2xl bg-white border border-zinc-200/60 hover:border-zinc-300 hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)] disabled:opacity-40 transition-all duration-200"
           >
-            <div className="text-[13px] font-bold text-zinc-900 leading-tight">{t.name}</div>
-            <div className="text-[10px] text-zinc-500 mt-1 leading-snug">{t.blurb}</div>
-            <div className="mt-2 inline-block text-[9px] font-semibold px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 group-hover:text-zinc-900">
-              {t.tag}
+            <div className="w-9 h-9 rounded-xl bg-zinc-100 group-hover:bg-zinc-900 group-hover:text-white flex items-center justify-center text-lg mb-3 transition-colors duration-200">
+              {t.emoji}
             </div>
+            <div className="text-[13px] font-semibold text-zinc-900 leading-tight">{t.name}</div>
+            <div className="text-[11px] text-zinc-400 mt-1 leading-snug">{t.blurb}</div>
           </button>
         ))}
       </div>
