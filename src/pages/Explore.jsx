@@ -23,6 +23,18 @@ const PROMPTS = [
   "A blockchain-verified credential platform",
 ];
 
+// Real Kaspa ecosystem sources scraped at generate-time so the agent grounds
+// concepts in current developments (esp. KCC-20) instead of guessing.
+const KASPA_SOURCES = [
+  "https://kaspa.news",
+  "https://kaspa.org",
+];
+const KASPA_PRIMER = `KASPA ECOSYSTEM PRIMER (ground truth — use this AND verify/extend with the live data below):
+- Kaspa is a Proof-of-Work blockDAG cryptocurrency using the GHOSTDAG consensus protocol, ~1 block/second, sub-second finality.
+- KRC-20 is Kaspa's fungible token standard (minted/transferred on Kaspa L1, indexed by Kasplex), analogous to ERC-20.
+- KCC-20 ("Kaspa Covenant Contract-20") is Kaspa's covenant-based smart-contract / token standard. Covenants let Kaspa scripts enforce spending conditions on UTXOs, enabling programmable tokens, NFTs, and contracts NATIVELY on Kaspa L1 — without a virtual machine or external smart-contract layer. KCC-20 is the emerging standard for covenant-secured coins/contracts on Kaspa.
+- Confirm the latest protocol upgrades, KCC-20 launches, KRC-20 activity, and tooling news from kaspa.news and official Kaspa sources.`;
+
 // Editorial Light palette — clean white, black ink, hairline rules
 const WHITE = "#ffffff";
 const INK = "#000000";
@@ -150,12 +162,38 @@ export default function ExplorePage() {
         }
       }
 
+      // Fetch REAL Kaspa ecosystem news (kaspa.news + official) so the agent
+      // grounds the concept in current developments — especially KCC-20.
+      let kaspaContext = '';
+      try {
+        const sources = await Promise.allSettled(
+          KASPA_SOURCES.map((u) => base44.functions.invoke('fetchUrlContent', { url: u }))
+        );
+        const blocks = sources
+          .map((r, i) => {
+            if (r.status !== 'fulfilled') return null;
+            const d = r.value?.data;
+            if (!d || d.error || !d.textContent) return null;
+            return `--- ${KASPA_SOURCES[i]} ---\nTitle: ${d.title || ''}\n${(d.textContent || '').slice(0, 3500)}`;
+          })
+          .filter(Boolean);
+        if (blocks.length) kaspaContext = blocks.join('\n\n');
+      } catch {}
+
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert Web3 product designer and startup advisor with real-time web search. The user wants to build something on the Kaspa blockchain ecosystem (blockDAG, KRC-20, GHOSTDAG, PoW).
+        prompt: `You are an expert Web3 product designer and startup advisor with real-time web search. The user wants to build something on the Kaspa blockchain ecosystem (blockDAG, GHOSTDAG, PoW, KRC-20, KCC-20).
+
+${KASPA_PRIMER}
+
+LATEST KASPA DEVELOPMENTS (scraped from kaspa.news & official sources — treat as REAL grounding data, do not guess):
+${kaspaContext || "(live fetch unavailable — use your own web search for KCC-20 and kaspa.news)"}
 
 Their idea seed: "${idea.trim()}"${urlContext}
 
 SEARCH THE WEB for real, current information about:
+- **KCC-20** — the Kaspa Covenant Contract token standard (programmable covenant-based smart coins native to Kaspa L1). Find the latest spec, launches, and projects. If the idea could use KCC-20, reference it accurately.
+- **KRC-20** — Kaspa's fungible token standard; current tokens, launches, and activity.
+- **kaspa.news** — the latest Kaspa headlines, protocol upgrades, and ecosystem developments.
 - **X.com (Twitter)** — search for REAL posts, threads, and discussions about this type of product or idea. What are people actually saying on X.com? What's the social sentiment? Quote real takes if possible.
 - Market size and trends for this type of product
 - Existing competitors and similar projects (especially on Kaspa and other blockchains)
@@ -189,6 +227,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
             solution: { type: "string" },
             features: { type: "array", items: { type: "string" } },
             why_kaspa: { type: "string" },
+            kaspa_dev: { type: "string", description: "Latest Kaspa developments and KCC-20/KRC-20 findings grounded in kaspa.news & web search" },
             market_research: { type: "string" },
             social_buzz: { type: "string", description: "Real findings from X.com/Twitter — what people are saying" },
             competitors: { type: "array", items: { type: "string" } },
@@ -207,7 +246,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
 
   const formatResultText = () => {
     if (!result || result.error) return "";
-    return `💡 ${result.name}\n${result.one_liner}\n\n🔴 Problem: ${result.problem}\n\n✅ Solution: ${result.solution}\n\n⚡ Key Features:\n${result.features?.map(f => `• ${f}`).join("\n")}\n\n🔷 Why Kaspa: ${result.why_kaspa}\n\n📊 Market Research: ${result.market_research || "N/A"}\n\n🏢 Competitors: ${(result.competitors || []).join(", ") || "N/A"}\n\n🚀 Next Step: ${result.next_step}\n\n🔗 Sources:\n${(result.source_urls || []).map(u => `• ${u}`).join("\n")}\n\n— Generated with TTT Idea Lab (Web-Powered)`;
+    return `💡 ${result.name}\n${result.one_liner}\n\n🔴 Problem: ${result.problem}\n\n✅ Solution: ${result.solution}\n\n⚡ Key Features:\n${result.features?.map(f => `• ${f}`).join("\n")}\n\n🔷 Why Kaspa: ${result.why_kaspa}\n\n⛓️ Latest Kaspa Dev (KCC-20): ${result.kaspa_dev || "N/A"}\n\n📊 Market Research: ${result.market_research || "N/A"}\n\n🏢 Competitors: ${(result.competitors || []).join(", ") || "N/A"}\n\n🚀 Next Step: ${result.next_step}\n\n🔗 Sources:\n${(result.source_urls || []).map(u => `• ${u}`).join("\n")}\n\n— Generated with TTT Idea Lab (Web-Powered)`;
   };
 
   const copyResult = () => {
@@ -387,8 +426,8 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
           {generating && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-16 text-center">
               <Loader2 className="w-5 h-5 animate-spin mx-auto mb-3" style={{ color: INK }} />
-              <p className="text-[14px] mb-1" style={{ color: INK_SOFT, fontFamily: SERIF }}>Searching the web, X.com posts & researching competitors…</p>
-              <p className="text-[12px]" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>Gathering real social buzz and market data</p>
+              <p className="text-[14px] mb-1" style={{ color: INK_SOFT, fontFamily: SERIF }}>Researching kaspa.news, KCC-20 & X.com…</p>
+              <p className="text-[12px]" style={{ color: GREY_LIGHT, fontFamily: SERIF }}>Gathering real Kaspa developments, social buzz & market data</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -452,6 +491,14 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
               <Rule />
 
               <OutlineRow n="04" label="Why Kaspa" text={result.why_kaspa} />
+              {result.kaspa_dev && (
+                <div className="py-6 pl-0 sm:pl-[2.4rem] -mt-2">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.18em] mb-2 flex items-center gap-1.5" style={{ color: INK, fontFamily: SERIF }}>
+                    <Globe className="w-3 h-3" /> Latest Kaspa Dev (KCC-20 · kaspa.news)
+                  </p>
+                  <p className="text-[14px] leading-[1.8]" style={{ color: INK_SOFT, fontFamily: SERIF }}>{result.kaspa_dev}</p>
+                </div>
+              )}
               {result.market_research && (
                 <OutlineRow n="05" label="Market Research" text={result.market_research} icon={<Sparkles className="w-3 h-3" />} />
               )}
