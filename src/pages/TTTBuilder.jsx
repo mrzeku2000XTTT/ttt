@@ -443,6 +443,8 @@ function TTTBuilderStudio() {
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
+      // "ttt_agent_1" is a UI alias — resolve it to the real model id before any LLM call.
+      const llmModel = isAgent1 ? TTT_AGENT_1 : model;
       let baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${MULTIPLAYER_RULE}${IMAGE_RULE}${KASPA_PROTOCOLS_RULE}${ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
       // If the user is adding an agent/AI/workflow to a project that already has
@@ -471,7 +473,7 @@ function TTTBuilderStudio() {
           : "You are in DISCUSS MODE. Do NOT write or modify any code. Answer the user's question about the project, architecture, design, or approach in plain language. Be concise and helpful.";
         const raw = await invokeLLMWithRetry({
           prompt: `${baseRules}\n\n${modeDirective}\n\n${projectDump}\n${attachmentNote}\n${history ? `Conversation so far:\n${history}\n` : ""}\nUser: ${userPrompt}`,
-          model,
+          model: llmModel,
           file_urls: fileUrls.length ? fileUrls : undefined,
         });
         const text = typeof raw === "string" ? raw : (raw?.response || JSON.stringify(raw));
@@ -529,7 +531,7 @@ function TTTBuilderStudio() {
           ${userPrompt}
 
           Return the file operations only.`,
-          model,
+          model: llmModel,
           file_urls: fileUrls.length ? fileUrls : undefined,
           response_json_schema: FILE_OPS_SCHEMA,
         });
