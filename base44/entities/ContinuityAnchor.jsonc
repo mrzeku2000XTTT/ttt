@@ -30,7 +30,7 @@
     },
     "block_height": {
       "type": "number",
-      "description": "Kaspa block height"
+      "description": "Kaspa block height (blue score) at which the anchor tx was accepted"
     },
     "anchor_timestamp": {
       "type": "string",
@@ -48,6 +48,41 @@
       "type": "boolean",
       "default": false,
       "description": "Whether Kaspa verification succeeded"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "TTT Builder project this anchor belongs to"
+    },
+    "manifest_hash": {
+      "type": "string",
+      "description": "Deterministic sha256 of the project file manifest at anchor time (Builder extension)"
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "sha256 of the canonicalized anchor payload - the value proven by the Kaspa tx (Builder extension)"
+    },
+    "git_ref": {
+      "type": "string",
+      "description": "Git commit SHA at anchor time, or null"
+    },
+    "deployment_ref": {
+      "type": "string",
+      "description": "Live deployment URL at anchor time, or null"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "intent",
+        "milestone",
+        "open_loop",
+        "commit",
+        "deployment",
+        "kaspa_action",
+        "session_end",
+        "divergence_resolution",
+        "manual"
+      ],
+      "description": "What meaningful event created this anchor (Builder extension)"
     },
     "description": {
       "type": "string",

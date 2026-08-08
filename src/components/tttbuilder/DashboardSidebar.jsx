@@ -1,5 +1,5 @@
 import React from "react";
-import { Home, Code2, Server, Bot, Database, Brain, Settings, Shield, ChevronRight } from "lucide-react";
+import { Home, Code2, Server, Bot, Database, Brain, Settings, Shield, Anchor, ChevronRight } from "lucide-react";
 
 const ITEMS = [
   { id: "overview", label: "Overview", icon: Home },
@@ -9,6 +9,7 @@ const ITEMS = [
   { id: "database", label: "Database", icon: Database },
   { id: "memory", label: "Memory", icon: Brain },
   { id: "security", label: "Security", icon: Shield },
+  { id: "anchors", label: "Anchors", icon: Anchor },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 

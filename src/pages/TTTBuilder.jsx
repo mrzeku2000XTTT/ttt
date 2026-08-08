@@ -35,6 +35,7 @@ import { KASPA_PROTOCOLS_RULE } from "@/components/tttbuilder/kaspaProtocols";
 import { ARGENT_SKILL } from "@/components/tttbuilder/argentSkill";
 import ChatModeToggle from "@/components/tttbuilder/ChatModeToggle";
 import SecurityPanel from "@/components/tttbuilder/SecurityPanel";
+import AnchorsPanel from "@/components/tttbuilder/AnchorsPanel";
 import { analyzeAttachments } from "@/components/tttbuilder/fileAnalyzer";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
@@ -1129,7 +1130,7 @@ function TTTBuilderStudio() {
 
                       {/* Mobile section pills */}
                       <div className="sm:hidden absolute top-0 left-0 right-0 z-10 bg-[#0f1419] border-b border-white/[0.06] px-2 py-2 flex gap-1 overflow-x-auto scrollbar-hide">
-                        {["overview", "code", "live", "agents", "database", "memory", "security", "settings"].map(s => (
+                        {["overview", "code", "live", "agents", "database", "memory", "security", "anchors", "settings"].map(s => (
                           <button
                             key={s}
                             onClick={() => setDashSection(s)}
@@ -1183,6 +1184,11 @@ function TTTBuilderStudio() {
                         {dashSection === "security" && (
                           <div className="h-full overflow-y-auto">
                             <SecurityPanel files={files} onFix={(p) => generate(p)} loading={loading} />
+                          </div>
+                        )}
+                        {dashSection === "anchors" && (
+                          <div className="h-full overflow-y-auto">
+                            <AnchorsPanel files={files} projectId={projectId} />
                           </div>
                         )}
                         {dashSection === "settings" && (
