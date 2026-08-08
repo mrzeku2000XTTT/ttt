@@ -270,7 +270,7 @@ function TTTBuilderStudio() {
   });
 
   const [buildMode, setBuildMode] = useState(() => {
-    try { return localStorage.getItem("ttt_builder_mode") || "html"; } catch { return "html"; }
+    try { return localStorage.getItem("ttt_builder_mode") || "react"; } catch { return "react"; }
   });
 
   const changeBuildMode = (m) => {

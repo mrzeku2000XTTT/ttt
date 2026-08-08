@@ -80,6 +80,8 @@ function stubMissingCssImports(files) {
 }
 
 export async function orchestrateBuild({ baseRules, userPrompt, history, files, model, onProgress, fileUrls = [], attachmentNote = "" }) {
+  // "ttt_agent_1" is a UI alias — resolve to the real model id before any LLM call.
+  if (model === "ttt_agent_1") model = "claude_opus_4_8";
   const projectDump = files.length
     ? `Existing project files (paths only):\n${files.map(f => f.path).join("\n")}`
     : "No existing files — this is a new project.";
