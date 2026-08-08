@@ -93,9 +93,18 @@ export async function pushFilesToGitHub(token, opts) {
     if (commitRes.ok) baseTreeSha = (await commitRes.json()).tree.sha;
   }
 
+  // 4b. Auto-generate a legit README.md if the user didn't include one
+  let filesToPush = files;
+  const hasReadme = files.some((f) => String(f.path || "").toLowerCase().replace(/^\.?\//, "") === "readme.md");
+  if (!hasReadme) {
+    const title = repoName.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const readme = `# ${title}\n\nBuilt with [TTT Builder](https://tttz.xyz) — the first Kaspa Super App Store & AI app builder.\n\n## Overview\n\n${title} is an app generated and pushed from the TTT Builder platform. It is a self-contained web project ready to deploy to your favourite host.\n\n## Getting Started\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\n## Build\n\n\`\`\`bash\nnpm run build\n\`\`\`\n\n## Deploy\n\nImport this repo into [Vercel](https://vercel.com/new), [Netlify](https://app.netlify.com/start), or enable GitHub Pages.\n\n---\n\nGenerated and pushed via **TTT Builder** · [tttz.xyz](https://tttz.xyz)\n`;
+    filesToPush = [...files, { path: "README.md", content: readme }];
+  }
+
   // 5. Create a blob for every file
   const treeEntries = [];
-  for (const f of files) {
+  for (const f of filesToPush) {
     const path = String(f.path || "").replace(/^\.?\//, "");
     if (!path) continue;
     const blobRes = await fetch(`${GH}/repos/${owner}/${repoName}/git/blobs`, {
