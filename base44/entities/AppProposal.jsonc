@@ -8,7 +8,11 @@
     },
     "app_link": {
       "type": "string",
-      "description": "URL/link to the app"
+      "description": "Live deployment URL (e.g. Vercel) \u2014 iframed in the App Store"
+    },
+    "github_url": {
+      "type": "string",
+      "description": "Open-source GitHub repo URL for AI audit / review"
     },
     "icon_url": {
       "type": "string",
@@ -39,6 +43,37 @@
       ],
       "default": "pending",
       "description": "Proposal status"
+    },
+    "audit_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "running",
+        "passed",
+        "flagged"
+      ],
+      "default": "pending",
+      "description": "AI audit status"
+    },
+    "audit_verdict": {
+      "type": "string",
+      "enum": [
+        "safe",
+        "suspicious",
+        "malicious",
+        "unknown"
+      ],
+      "default": "unknown",
+      "description": "AI audit verdict"
+    },
+    "audit_notes": {
+      "type": "string",
+      "description": "AI audit findings / notes"
+    },
+    "audit_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the AI audit was last run"
     },
     "admin_notes": {
       "type": "string",
