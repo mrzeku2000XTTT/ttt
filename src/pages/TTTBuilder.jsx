@@ -124,6 +124,18 @@ YOU ARE TTT AGENT 1 — the highest tier build agent. Work at the level of a sta
 - DESIGN: cohesive design system (spacing scale, type scale, tokens), deliberate motion, hover/focus/active states, perfect mobile layout at 375px, no horizontal scroll.
 - Ship something a user could put in front of customers today.`;
 
+const MULTIPLAYER_RULE = `
+
+MULTIPLAYER APPS - when the user asks for "multiplayer", "play with friends", "online", "real-time", or "shared state between players":
+- Build a REAL networked multiplayer experience, NOT a local pass-and-play fake. Use a public real-time backend that works with zero setup:
+  - PRIMARY: PeerJS (free, no server needed). In STATIC MODE add <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script> in index.html; in REAL PROJECT MODE run npm install peerjs. One peer creates a room and gets a shareable room code (the PeerJS id), others join with that code. Use the DataConnection to sync game state (moves, scores, turns) in real time.
+  - FALLBACK: a public WebSocket relay (e.g. wss://ws.postman-echo.com/raw) if PeerJS signalling fails.
+- AUTHORITATIVE HOST: the room creator owns the game state. Clients send their moves to the host; the host validates them, applies the rules (win/lose/turn), and broadcasts the new state to every client. Never let a client declare a win locally.
+- LOBBY UI: a "Create Room" button (generates a room code, shows it with a Copy button), a "Join Room" input (enter the code), and a live player list with connection status. Handle disconnects gracefully - mark the player "left" and let the host continue or end the round.
+- SYNC every state-changing action over the wire: moves, turn changes, score updates, game-over, and restart. Add a small connection-quality/latency badge so players see the link is live.
+- The TTT Kaspa wallet kit still ships in the header as normal.
+- If the user ONLY wants local two-player (same device, pass-and-play), build that instead. But the words "multiplayer", "online", or "with friends" mean the NETWORKED version above.`;
+
 const EXAMPLES = [
   "Kaspa staking dashboard with live price ticker and animated stats",
   "NFT marketplace with gallery, filters, and wallet connect UI",
@@ -430,7 +442,7 @@ function TTTBuilderStudio() {
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
-      let baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${IMAGE_RULE}${KASPA_PROTOCOLS_RULE}${ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+      let baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${MULTIPLAYER_RULE}${IMAGE_RULE}${KASPA_PROTOCOLS_RULE}${ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
       // If the user is adding an agent/AI/workflow to a project that already has
       // files, make it crystal clear: this is an EXTENSION, not a rebuild.

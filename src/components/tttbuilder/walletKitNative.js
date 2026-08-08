@@ -4,7 +4,7 @@
 // reads balances from api.kaspa.org and signs + submits real transactions.
 // No browser extension required.
 
-export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) KIT v2 — create, import, live balance, receive, send.
+export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) KIT v3 — create, import, live balance, receive, send.
    await TTTWallet.connect();                  // load or create the native wallet
    await TTTWallet.createWallet();             // new seed phrase
    await TTTWallet.importWallet(mnemonic);
@@ -315,13 +315,28 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) KIT v2 —
     host.style.cssText = 'position:fixed;top:12px;right:12px;z-index:2147483000;font-family:system-ui,sans-serif;';
     host.innerHTML =
       '<button id="ttt-kaspa-pill" style="display:flex;align-items:center;gap:8px;background:rgba(112,199,186,.15);border:1px solid rgba(112,199,186,.45);color:#70C7BA;font-size:12px;font-weight:700;padding:7px 12px;border-radius:999px;cursor:pointer;backdrop-filter:blur(8px)">' +
-      '<span style="width:7px;height:7px;border-radius:999px;background:#70C7BA;display:inline-block"></span><span id="ttt-kaspa-label">TTT Kaspa - Connect</span></button>' +
-      '<div id="ttt-kaspa-panel" style="display:none;margin-top:8px;width:270px;background:#0d1117;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;color:#fff;font-size:12px;box-shadow:0 20px 50px rgba(0,0,0,.6)"></div>';
+      '<span style="width:7px;height:7px;border-radius:999px;background:#70C7BA;display:inline-block"></span><span id="ttt-kaspa-label">TTT Kaspa - Connect</span></button>';
     document.body.appendChild(host);
+
+    // Centered modal overlay - always centered on any device, never overlaps the top toolbars.
+    var modal = document.createElement('div');
+    modal.id = 'ttt-kaspa-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:2147483001;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);font-family:system-ui,sans-serif;padding:16px;';
+    modal.innerHTML =
+      '<div id="ttt-kaspa-panel" style="width:min(360px,92vw);max-height:90vh;overflow-y:auto;background:#0d1117;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px;color:#fff;font-size:12px;box-shadow:0 20px 60px rgba(0,0,0,.7);position:relative;box-sizing:border-box">' +
+      '<button id="ttt-kaspa-close" style="position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#fff;font-size:20px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">×</button>' +
+      '</div>';
+    document.body.appendChild(modal);
 
     var pill = host.querySelector('#ttt-kaspa-pill');
     var label = host.querySelector('#ttt-kaspa-label');
-    var panel = host.querySelector('#ttt-kaspa-panel');
+    var panel = modal.querySelector('#ttt-kaspa-panel');
+    var closeBtn = modal.querySelector('#ttt-kaspa-close');
+    var isOpen = function () { return modal.style.display === 'flex'; };
+    var openModal = function () { modal.style.display = 'flex'; render(); };
+    var closeModal = function () { modal.style.display = 'none'; };
+    closeBtn.onclick = closeModal;
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
     var inp = 'width:100%;box-sizing:border-box;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff';
 
     function render() {
@@ -383,11 +398,8 @@ export const NATIVE_WALLET_SOURCE = `/* TTT Kaspa Wallet Kit (native) KIT v2 —
       label.textContent = 'TTT Kaspa - ' + short(s.address) + (s.balance != null ? ' - ' + s.balance.toFixed(2) + ' KAS' : '');
     }
 
-    pill.onclick = function () {
-      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-      if (panel.style.display === 'block') render();
-    };
-    TTTWallet.onChange(function () { refreshPill(); if (panel.style.display === 'block') render(); });
+    pill.onclick = function () { isOpen() ? closeModal() : openModal(); };
+    TTTWallet.onChange(function () { refreshPill(); if (isOpen()) render(); });
     refreshPill();
   }
 
