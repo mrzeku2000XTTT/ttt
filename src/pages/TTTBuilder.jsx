@@ -579,30 +579,30 @@ Return the file operations only.`,
   };
 
   return (
-    <div className={`min-h-screen overflow-x-hidden ${phase === "hero" ? "bg-[#fbfbfd] text-zinc-900" : "bg-[#0d1117] text-white"}`}>
+    <div className={`min-h-screen overflow-x-hidden ${phase === "hero" ? "bg-[#f5f2ed] text-[#1a1614]" : "bg-[#0d1117] text-white"}`}>
 
       {/* Top nav */}
       <nav
-        className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 backdrop-blur-xl border-b transition-colors ${phase === "hero" ? "bg-white/70 border-zinc-200/60" : "bg-[#0d1117]/80 border-white/5"}`}
+        className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 backdrop-blur-xl border-b transition-colors ${phase === "hero" ? "bg-[#f5f2ed]/80 border-[#e0dcd7]" : "bg-[#0d1117]/80 border-white/5"}`}
         style={{ paddingTop: "env(safe-area-inset-top, 0px)", minHeight: "calc(3rem + env(safe-area-inset-top, 0px))" }}
       >
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate("/AppStoreV2")}
-            className={`flex items-center gap-1.5 transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-white/5 ${phase === "hero" ? "text-zinc-500 hover:text-zinc-900" : "text-white/60 hover:text-white"}`}
+            className={`flex items-center gap-1.5 transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-black/5 ${phase === "hero" ? "text-[#8a8580] hover:text-[#1a1614]" : "text-white/60 hover:text-white"}`}
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm font-medium">Back</span>
           </button>
-          <span className={`font-black text-lg tracking-tight ${phase === "hero" ? "text-zinc-900" : "text-white"}`}>TTT</span>
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${phase === "hero" ? "bg-zinc-900 text-white" : "bg-[#70C7BA] text-black"}`}>BUILDER</span>
+          <span className={`font-black text-lg tracking-tight ${phase === "hero" ? "text-[#1a1614]" : "text-white"}`}>TTT</span>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${phase === "hero" ? "bg-[#1a1614] text-white" : "bg-[#70C7BA] text-black"}`}>BUILDER</span>
         </div>
-        <div className={`hidden sm:flex items-center gap-4 text-xs ${phase === "hero" ? "text-zinc-400" : "text-white/50"}`}>
+        <div className={`hidden sm:flex items-center gap-4 text-xs ${phase === "hero" ? "text-[#8a8580]" : "text-white/50"}`}>
           <span>Built on Kaspa</span>
         </div>
         <button
           onClick={() => setShowProjects(true)}
-          className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+          className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
           title="Saved projects"
         >
           <FolderOpen className="w-3.5 h-3.5" /> Projects
@@ -624,7 +624,7 @@ Return the file operations only.`,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
-            className="min-h-screen flex flex-col items-center justify-center px-5 bg-[#fbfbfd]"
+            className="min-h-screen flex flex-col items-center justify-center px-5 bg-[#f5f2ed]"
             style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
             <div className="relative max-w-3xl mx-auto text-center">
@@ -633,9 +633,9 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/[0.04] text-zinc-500 text-xs font-medium mb-10"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#e8e4df] text-[#5a554f] text-xs font-medium mb-10"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#8a8076]" />
                 AI Site Builder for Kaspa
               </motion.div>
 
@@ -644,19 +644,19 @@ Return the file operations only.`,
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-5xl sm:text-7xl font-semibold tracking-tight leading-[1.05] mb-5 text-zinc-900"
-                style={{ fontFamily: '-apple-system, "SF Pro Display", "Inter", system-ui, sans-serif', letterSpacing: "-0.022em" }}
+                className="text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05] mb-5 text-[#1a1614] font-heading"
+                style={{ letterSpacing: "-0.02em" }}
               >
                 Build your site.
                 <br />
-                <span className="text-zinc-400">Ship it now.</span>
+                <span className="text-[#a8a29a]">Ship it now.</span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-zinc-500 text-lg max-w-xl mx-auto mb-12 font-normal"
+                className="text-[#6a655f] text-lg max-w-xl mx-auto mb-12 font-normal"
               >
                 Describe what you want. TTT Builder generates a complete, beautiful landing page — no code needed.
               </motion.p>
@@ -668,18 +668,18 @@ Return the file operations only.`,
                 transition={{ delay: 0.25 }}
                 className="relative max-w-2xl mx-auto"
               >
-                <div className="flex items-center gap-2 bg-white border border-zinc-200/80 focus-within:border-zinc-300 focus-within:shadow-[0_0_0_4px_rgba(0,0,0,0.05)] rounded-2xl p-2 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center gap-2 bg-white border border-[#e0dcd7] focus-within:border-[#c8c4be] focus-within:shadow-[0_0_0_4px_rgba(26,22,20,0.04)] rounded-2xl p-2 transition-all shadow-[0_2px_8px_rgba(26,22,20,0.04)]">
                   <input
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate(prompt)}
                     placeholder="Describe your app — e.g. 'Kaspa staking dashboard with live stats and wallet connect'"
-                    className="flex-1 bg-transparent outline-none text-zinc-900 placeholder:text-zinc-400 text-sm px-3 py-3"
+                    className="flex-1 bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3"
                   />
                   <button
                     onClick={() => generate(prompt)}
                     disabled={!prompt.trim() || loading}
-                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-zinc-900 text-white font-medium text-sm hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#1a1614] text-white font-medium text-sm hover:bg-[#2e2520] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Build</>}
                   </button>
@@ -691,13 +691,13 @@ Return the file operations only.`,
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.35 }}
-                className="mt-4 flex flex-wrap gap-x-5 gap-y-2 justify-center"
+                className="mt-5 flex flex-wrap gap-x-5 gap-y-2 justify-center"
               >
                 {EXAMPLES.map((ex) => (
                   <button
                     key={ex}
                     onClick={() => handleExampleClick(ex)}
-                    className="text-xs text-zinc-400 hover:text-zinc-900 transition-colors"
+                    className="text-xs text-[#8a8580] hover:text-[#1a1614] transition-colors"
                   >
                     {ex.slice(0, 38)}…
                   </button>
