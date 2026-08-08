@@ -19,6 +19,7 @@ import { IMAGE_RULE, resolveImages } from "@/components/tttbuilder/imageGen";
 import { WALLET_RULE, ensureWalletKit } from "@/components/tttbuilder/walletKit";
 import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm, findMissingImports } from "@/components/tttbuilder/projectFiles";
 import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
+import { invokeLLMWithRetry } from "@/components/tttbuilder/llmRetry";
 import ProjectsPanel, { upsertProject } from "@/components/tttbuilder/ProjectsPanel";
 import DashboardSidebar from "@/components/tttbuilder/DashboardSidebar";
 import { OverviewPanel, AgentsPanel, DatabasePanel, MemoryPanel, SettingsPanel } from "@/components/tttbuilder/DashboardPanels";
@@ -468,7 +469,7 @@ function TTTBuilderStudio() {
         const modeDirective = chatMode === "plan"
           ? "You are in PLAN MODE. Do NOT write or modify any code. Read the user's request and the current project, then produce a clear, structured plan: what files to create/edit, what each will contain, the data model, the UI sections, and the order of work. End with a one-line summary. The user will review this plan before building."
           : "You are in DISCUSS MODE. Do NOT write or modify any code. Answer the user's question about the project, architecture, design, or approach in plain language. Be concise and helpful.";
-        const raw = await base44.integrations.Core.InvokeLLM({
+        const raw = await invokeLLMWithRetry({
           prompt: `${baseRules}\n\n${modeDirective}\n\n${projectDump}\n${attachmentNote}\n${history ? `Conversation so far:\n${history}\n` : ""}\nUser: ${userPrompt}`,
           model,
           file_urls: fileUrls.length ? fileUrls : undefined,
@@ -520,14 +521,14 @@ function TTTBuilderStudio() {
         agentList = live.length ? live : run.agents;
         planText = run.summary;
       } else {
-        const raw = await base44.integrations.Core.InvokeLLM({
+        const raw = await invokeLLMWithRetry({
           prompt: `${baseRules}
 
-${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
-${attachmentNote}
-${userPrompt}
+        ${files.length > 0 ? `Previous conversation:\n${history}\n\n${projectDump}\n\nUser wants to MODIFY this project:` : "User wants to BUILD a new project:"}
+          ${attachmentNote}
+          ${userPrompt}
 
-Return the file operations only.`,
+          Return the file operations only.`,
           model,
           file_urls: fileUrls.length ? fileUrls : undefined,
           response_json_schema: FILE_OPS_SCHEMA,

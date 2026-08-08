@@ -2,6 +2,7 @@
 // specialist subagents as the job needs, one file-group each.
 import { base44 } from "@/api/base44Client";
 import { applyFileOps, FILE_OPS_SCHEMA, norm, findMissingImports } from "./projectFiles";
+import { invokeLLMWithRetry } from "./llmRetry";
 
 /** Models sometimes wrap structured output in `response`, or return JSON with trailing junk. */
 export function parseResult(raw) {
@@ -89,7 +90,7 @@ export async function orchestrateBuild({ baseRules, userPrompt, history, files, 
   // 1. PLAN
   onProgress?.({ type: "plan" });
   files.forEach(f => onProgress?.({ type: "activity", item: { kind: "read", path: f.path } }));
-  const planRaw = await base44.integrations.Core.InvokeLLM({
+  const planRaw = await invokeLLMWithRetry({
     prompt: `${baseRules}
 
 You are TTT Agent 1, the ORCHESTRATOR. Do NOT write code now. Break this build into specialist subagents that each own a small set of files.
@@ -164,7 +165,7 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
     let ops = null, lastErr = null;
     for (let attempt = 0; attempt < 2 && !ops; attempt++) {
       try {
-        const raw = await base44.integrations.Core.InvokeLLM({
+        const raw = await invokeLLMWithRetry({
           prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
           model,
           file_urls: fileUrls.length ? fileUrls : undefined,
@@ -216,7 +217,7 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
       .join("\n\n");
 
     try {
-      const raw = await base44.integrations.Core.InvokeLLM({
+      const raw = await invokeLLMWithRetry({
         prompt: `${baseRules}
 
 You are the REPAIR AGENT. The build team imported files that were never written, so the app currently fails to render.
@@ -266,7 +267,7 @@ ${context}`,
     const tReview = Date.now();
     onProgress?.({ type: "activity", item: { kind: "thought", seconds: 1, text: `File Reviewer: checking ${modifiedExisting.length} modified file(s) for unwanted changes…` } });
     try {
-      const reviewRaw = await base44.integrations.Core.InvokeLLM({
+      const reviewRaw = await invokeLLMWithRetry({
         prompt: `You are the FILE REVIEWER. Your job is to protect files the user did NOT ask to change.
 
 USER REQUEST: ${userPrompt}
