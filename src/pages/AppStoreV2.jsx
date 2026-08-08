@@ -13,6 +13,7 @@ import ListAppButton from "@/components/appstore2/ListAppButton";
 import AdminProposalsPanel from "@/components/appstore2/AdminProposalsPanel";
 import BlueprintModal from "@/components/appstore2/BlueprintModal";
 import AppStoreAISearch from "@/components/appstore2/AppStoreAISearch";
+import AppFrameViewer from "@/components/appstore2/AppFrameViewer";
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },
@@ -42,6 +43,7 @@ export default function AppStoreV2Page() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [blueprintOpen, setBlueprintOpen] = useState(false);
   const [view, setView] = useState("kaspa");
+  const [openApp, setOpenApp] = useState(null);
   const filtersRef = useRef(null);
   const gridRef = useRef(null);
 
@@ -212,7 +214,7 @@ export default function AppStoreV2Page() {
 
         {/* Grid */}
         <div ref={gridRef}>
-          <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} view={view} onViewChange={setView} aiResults={aiResults} />
+          <AppStoreGrid search={search} category={category} isAdmin={isAdmin} refreshKey={refreshKey} view={view} onViewChange={setView} aiResults={aiResults} onOpenExternal={setOpenApp} />
         </div>
 
         {/* Footer */}
@@ -222,6 +224,8 @@ export default function AppStoreV2Page() {
           </p>
         </div>
       </div>
+
+      <AppFrameViewer app={openApp} onClose={() => setOpenApp(null)} />
     </div>
   );
 }
