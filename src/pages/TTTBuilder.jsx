@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2 } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -275,6 +275,9 @@ function TTTBuilderStudio() {
   };
   const [attachments, setAttachments] = useState([]);
   const [mobileView, setMobileView] = useState("preview"); // chat | preview (mobile only)
+  const [chatCollapsed, setChatCollapsed] = useState(() => {
+    try { return localStorage.getItem("ttt_builder_chat_collapsed") === "1"; } catch { return false; }
+  });
   const [isNarrow, setIsNarrow] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
   const [showProjects, setShowProjects] = useState(false);
   const [projectId, setProjectId] = useState(() => {
@@ -317,8 +320,8 @@ function TTTBuilderStudio() {
   const [analyzing, setAnalyzing] = useState(null); // {name, status} while a file is being analyzed
 
   useEffect(() => {
-    try { localStorage.setItem("ttt_builder_chat_mode", chatMode); } catch {}
-  }, [chatMode]);
+    try { localStorage.setItem("ttt_builder_chat_collapsed", chatCollapsed ? "1" : "0"); } catch {}
+  }, [chatCollapsed]);
 
   useEffect(() => {
     try { localStorage.setItem("ttt_builder_files", JSON.stringify(files)); } catch {}
@@ -807,21 +810,28 @@ Return the file operations only.`,
               </div>
             </div>
 
-            {/* Studio layout */}
-            <div className="flex-1 grid lg:grid-cols-[380px_1fr] min-h-0 w-full max-w-full overflow-hidden">
+            {/* Studio layout — chat column collapses to 0 so preview goes full-width */}
+            <div className={`flex-1 grid min-h-0 w-full max-w-full overflow-hidden ${chatCollapsed ? "lg:grid-cols-[0px_1fr]" : "lg:grid-cols-[380px_1fr]"}`}>
 
               {/* Left: Chat */}
-              <div className={`flex flex-col border-r border-white/5 min-h-0 min-w-0 overflow-hidden bg-[#0d1117] ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
+              <div className={`flex flex-col border-r border-white/5 min-h-0 min-w-0 overflow-hidden bg-[#0d1117] ${chatCollapsed ? "lg:hidden" : ""} ${mobileView === "chat" ? "flex" : "hidden"} lg:flex`}>
                 <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
                   <BuilderOrb size={30} />
                   <span className="font-bold text-sm">TTT Builder</span>
+                  <button
+                    onClick={() => setChatCollapsed(true)}
+                    className="ml-auto flex items-center gap-1 text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                    title="Collapse chat — expand preview"
+                  >
+                    <PanelLeftClose className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={() => {
                       setFiles([]); setMessages([]); setPhase("hero"); setActivePath("index.html"); setLoading(false);
                       try { localStorage.removeItem("ttt_builder_files"); localStorage.removeItem("ttt_builder_html"); localStorage.removeItem("ttt_builder_messages"); localStorage.removeItem("ttt_builder_phase"); localStorage.removeItem("ttt_builder_project_id"); } catch {}
                       setProjectId("");
                     }}
-                    className="ml-auto text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                    className="text-[10px] text-white/30 hover:text-white/70 px-2 py-1 rounded hover:bg-white/5 transition-colors"
                   >
                     + New
                   </button>
@@ -903,7 +913,17 @@ Return the file operations only.`,
               </div>
 
               {/* Right: Preview / Dashboard */}
-              <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#080c10] ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}>
+              <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#080c10] relative ${mobileView === "preview" ? "flex" : "hidden"} lg:flex`}>
+                {/* Expand-chat button — only visible when chat is collapsed */}
+                {chatCollapsed && (
+                  <button
+                    onClick={() => setChatCollapsed(false)}
+                    className="hidden lg:flex absolute left-2 top-2 z-40 items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors"
+                    title="Show chat"
+                  >
+                    <PanelLeftOpen className="w-3.5 h-3.5" /> Chat
+                  </button>
+                )}
                 {/* Top-level toggle: Preview | Dashboard */}
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-hide">
                   <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 flex-shrink-0">
