@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -23,6 +23,12 @@ import ProjectsPanel, { upsertProject } from "@/components/tttbuilder/ProjectsPa
 import DashboardSidebar from "@/components/tttbuilder/DashboardSidebar";
 import { OverviewPanel, AgentsPanel, DatabasePanel, MemoryPanel, SettingsPanel } from "@/components/tttbuilder/DashboardPanels";
 import PushToStoreModal from "@/components/tttbuilder/PushToStoreModal";
+import ChatDropZone from "@/components/tttbuilder/ChatDropZone";
+import CloneUrlButton from "@/components/tttbuilder/CloneUrlButton";
+import DesignOptionsButton from "@/components/tttbuilder/DesignOptionsButton";
+import FullscreenPreview from "@/components/tttbuilder/FullscreenPreview";
+import { KASPA_PROTOCOLS_RULE } from "@/components/tttbuilder/kaspaProtocols";
+import { ARGENT_SKILL } from "@/components/tttbuilder/argentSkill";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 
@@ -225,6 +231,7 @@ function TTTBuilderStudio() {
   const [publishResult, setPublishResult] = useState(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showPushStoreModal, setShowPushStoreModal] = useState(false);
+  const [showFullscreen, setShowFullscreen] = useState(false);
   const [publishForm, setPublishForm] = useState({ siteName: "", repo: OUR_REPO });
   const iframeRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -372,7 +379,7 @@ function TTTBuilderStudio() {
     setLoading(true);
     setPhase("studio");
 
-    const attached = attachments;
+    const attached = opts.attachments !== undefined ? opts.attachments : attachments;
     const newMsg = { role: "user", content: userPrompt };
     setMessages(prev => [...prev, newMsg]);
     setPrompt("");
@@ -389,7 +396,7 @@ function TTTBuilderStudio() {
         : "";
 
       const isAgent1 = model === "ttt_agent_1";
-      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${IMAGE_RULE}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
+      const baseRules = `${SYSTEM_PROMPT}${SCOPE_RULE}${LIVE_DATA_RULE}${TROUBLESHOOT_RULE}${SURGICAL_EDIT_RULE}${APPLE_DESIGN_RULE}${AGENT_RULE}${IMAGE_RULE}${KASPA_PROTOCOLS_RULE}${ARGENT_SKILL}${MODE_DIRECTIVE[runMode] || ""}${walletKit ? WALLET_RULE : ""}${isAgent1 ? AGENT_1_DIRECTIVE : ""}`;
 
       const fileUrls = attached.map(a => a.url);
       const attachmentNote = attached.length
@@ -519,6 +526,23 @@ Return the file operations only.`,
   const handleExampleClick = (ex) => {
     setPrompt(ex);
     generate(ex);
+  };
+
+  // Clone any website URL → backend scrapes it → we feed the screenshot + structure
+  // to the builder as a clone request with the reference image attached.
+  const cloneWebsite = (scraped) => {
+    const refAttachments = scraped.screenshot
+      ? [{ name: `${scraped.title || "cloned-site"}.png`, url: scraped.screenshot, image: true }]
+      : [];
+    setAttachments(refAttachments);
+    const navNote = scraped.navLinks?.length
+      ? `\nNav pages to build as routes: ${scraped.navLinks.map(l => `${l.label} (${l.href})`).join(", ")}`
+      : "";
+    const colorNote = scraped.colors?.length ? `\nDetected palette: ${scraped.colors.join(", ")}` : "";
+    const fontNote = scraped.fonts?.length ? `\nDetected fonts: ${scraped.fonts.join(", ")}` : "";
+    const clonePrompt = `Clone this website faithfully — same layout, sections, copy, spacing, and visual style. The screenshot is attached as a reference image; reproduce it closely. Source URL: ${scraped.url}. Title: ${scraped.title}.${colorNote}${fontNote}${navNote}\n\nMake it a fully working Kaspa-ready app with the TTT wallet widget in the header.`;
+    setPrompt(clonePrompt.slice(0, 500));
+    generate(clonePrompt, { attachments: refAttachments });
   };
 
   const publishToGitHub = async () => {
@@ -775,6 +799,7 @@ Return the file operations only.`,
                 </div>
 
                 <div className="p-3 border-t border-white/5">
+                  <ChatDropZone attachments={attachments} onChange={setAttachments} disabled={loading}>
                   <form
                     onSubmit={e => { e.preventDefault(); generate(prompt); }}
                     className="flex items-center gap-2 bg-white/[0.04] border border-white/10 focus-within:border-[#70C7BA]/40 rounded-xl pl-3 pr-1.5 py-1.5"
@@ -782,7 +807,7 @@ Return the file operations only.`,
                     <input
                       value={prompt}
                       onChange={e => setPrompt(e.target.value)}
-                      placeholder="Modify or rebuild…"
+                      placeholder="Describe, drop images, or paste…"
                       disabled={loading}
                       className="flex-1 bg-transparent outline-none text-white placeholder:text-white/30 text-sm py-1.5"
                     />
@@ -800,6 +825,8 @@ Return the file operations only.`,
                     <ModelSelector value={model} onChange={changeModel} disabled={loading} />
                     <WalletKitToggle value={walletKit} onChange={changeWalletKit} disabled={loading} />
                     <AttachButton attachments={attachments} onChange={setAttachments} disabled={loading} />
+                    <CloneUrlButton onClone={cloneWebsite} disabled={loading} />
+                    <DesignOptionsButton prompt={prompt} onPick={(hint) => generate(`${hint}\n\n${prompt}`)} disabled={loading} />
                     <PasteHtmlButton onConvert={convertHtmlToReact} disabled={loading} />
                     <EnhanceButton
                       prompt={prompt}
@@ -809,10 +836,11 @@ Return the file operations only.`,
                       disabled={loading}
                     />
                   </div>
+                  </ChatDropZone>
 
                   {/* Quick actions */}
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {["Make it darker", "Add pricing section", "More animations", "Add contact form"].map(action => (
+                    {["Make it darker", "Add pricing section", "More animations", "Add contact form", "Make it mobile-perfect"].map(action => (
                       <button
                         key={action}
                         onClick={() => generate(action)}
@@ -862,7 +890,14 @@ Return the file operations only.`,
                           >
                             <Smartphone className="w-3 h-3" />
                           </button>
-                        </div>
+                          </div>
+                          <button
+                            onClick={() => setShowFullscreen(true)}
+                            className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
+                            title="Open fullscreen preview"
+                          >
+                            <Maximize2 className="w-3 h-3" /> Fullscreen
+                          </button>
                         <button
                           onClick={() => generate("Regenerate with the same concept but different design")}
                           className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors flex-shrink-0 whitespace-nowrap"
@@ -1168,6 +1203,10 @@ Return the file operations only.`,
         defaultName={prompt || (messages.find(m => m.role === "user")?.content?.slice(0, 40))}
         defaultDesc={prompt}
       />
+
+      {showFullscreen && html && (
+        <FullscreenPreview html={html} onClose={() => setShowFullscreen(false)} />
+      )}
     </div>
   );
 }
