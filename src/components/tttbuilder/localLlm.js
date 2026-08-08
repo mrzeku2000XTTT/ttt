@@ -10,7 +10,11 @@ export const LOCAL_MODEL_PREFIX = "local:";
 
 // Presets a cloner can pick from, or they can add a custom OpenAI-compatible endpoint.
 export const PROVIDER_PRESETS = [
-  { provider: "openrouter", label: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", note: "Free + paid models (DeepSeek, Llama, Qwen, MiMo...). Get a key at openrouter.ai/keys. Browser-friendly CORS.", placeholderModel: "deepseek/deepseek-chat-v3.1:free" },
+  { provider: "groq", label: "Groq (fast + free)", baseUrl: "https://api.groq.com/openai/v1", note: "Very fast, free tier, browser CORS-friendly. Get a key at console.groq.com/keys.", placeholderModel: "llama-3.3-70b-versatile" },
+  { provider: "google", label: "Google Gemini (AI Studio)", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", note: "Free tier, browser CORS-friendly. Get a key at aistudio.google.com/apikey.", placeholderModel: "gemini-2.0-flash" },
+  { provider: "openrouter", label: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", note: "Free + paid models. Get a key at openrouter.ai/keys. Browser-friendly CORS.", placeholderModel: "deepseek/deepseek-chat-v3.1:free" },
+  { provider: "together", label: "Together AI", baseUrl: "https://api.together.xyz/v1", note: "Free credits, browser CORS-friendly. Get a key at api.together.xyz/settings/api-keys.", placeholderModel: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free" },
+  { provider: "mistral", label: "Mistral", baseUrl: "https://api.mistral.ai/v1", note: "Browser CORS-friendly. Get a key at console.mistral.ai/api-keys.", placeholderModel: "mistral-small-latest" },
   { provider: "deepseek", label: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", note: "Get a key at platform.deepseek.com. (May need a CORS proxy when called from the browser.)", placeholderModel: "deepseek-chat" },
   { provider: "ollama", label: "Ollama (local)", baseUrl: "http://localhost:11434/v1", note: "Run models locally with Ollama (ollama.com). No key needed. Runs `ollama serve`.", placeholderModel: "llama3.1" },
   { provider: "custom", label: "Custom (OpenAI-compatible)", baseUrl: "", note: "Any OpenAI-compatible endpoint (LM Studio, vLLM, llama.cpp server, etc.)", placeholderModel: "my-model" },
