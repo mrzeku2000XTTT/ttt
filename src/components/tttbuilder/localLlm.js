@@ -114,7 +114,7 @@ export async function callLocalLlm(args) {
     if (err?.name === "AbortError") {
       throw new Error(`${provider.label} timed out after ${TIMEOUT_MS / 1000}s. Free models can queue — try again, pick a faster/paid model, or use Google AI Studio / Ollama.`);
     }
-    throw new Error(`Could not reach ${provider.label} (${baseUrl}). ${err.message || "network error"}. For browser CORS issues, use OpenRouter or a local Ollama server.`);
+    throw new Error(`Could not reach ${provider.label} (${baseUrl}). ${err.message || "network error"}. This provider likely blocks browser requests (CORS). Use a browser-friendly provider instead: Groq (console.groq.com — free, fast), Google Gemini (aistudio.google.com — free), or OpenRouter (openrouter.ai). TokenRouter, DeepSeek, and most direct APIs do NOT work from the browser.`);
   } finally {
     clearTimeout(timer);
   }
