@@ -3,6 +3,7 @@
 import { base44 } from "@/api/base44Client";
 import { applyFileOps, FILE_OPS_SCHEMA, norm, findMissingImports } from "./projectFiles";
 import { invokeLLMWithRetry } from "./llmRetry";
+import { isChainableLocal, chainedAgentCall } from "./chainLocal";
 
 /** Models sometimes wrap structured output in `response`, or return JSON with trailing junk. */
 export function parseResult(raw) {
@@ -168,13 +169,29 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
       let ops = null, lastErr = null;
       for (let attempt = 0; attempt < 2 && !ops; attempt++) {
         try {
-          const raw = await invokeLLMWithRetry({
-            system: baseRules,
-            prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
-            model,
-            file_urls: fileUrls.length ? fileUrls : undefined,
-            response_json_schema: FILE_OPS_SCHEMA,
-          });
+          let raw;
+          // Local models (Qwen, Llama, etc.) chain 3-4 calls to reach ~128K
+          // effective context — each link digests and hands off to the next.
+          // Hosted models (Agent 1, GPT, Gemini) have 200K ctx and skip the chain.
+          if (isChainableLocal(model)) {
+            raw = await chainedAgentCall({
+              system: baseRules,
+              agentPrompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
+              model,
+              fileUrls,
+              responseJsonSchema: FILE_OPS_SCHEMA,
+              files: working,
+              onProgress,
+            });
+          } else {
+            raw = await invokeLLMWithRetry({
+              system: baseRules,
+              prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
+              model,
+              file_urls: fileUrls.length ? fileUrls : undefined,
+              response_json_schema: FILE_OPS_SCHEMA,
+            });
+          }
           ops = parseResult(raw);
         } catch (err) {
           lastErr = err;
