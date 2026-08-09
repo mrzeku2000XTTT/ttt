@@ -21,7 +21,7 @@ export const BUILDER_MODELS = [
 const ADD_VALUE = "__add_local__";
 const GEMINI_QUICK = "__gemini_quick__";
 
-export default function ModelSelector({ value, onChange, disabled }) {
+export default function ModelSelector({ value, onChange, disabled, variant = "dark", onOpenSettings }) {
   const standalone = isStandalone();
   const [mgrOpen, setMgrOpen] = useState(false);
   const [geminiOpen, setGeminiOpen] = useState(false);
@@ -32,25 +32,36 @@ export default function ModelSelector({ value, onChange, disabled }) {
 
   const handleChange = (v) => {
     if (v === ADD_VALUE) {
+      // Models other than TTT Agent 1 need an API key — route to Settings to configure.
+      if (onOpenSettings) { onOpenSettings(); return; }
       setMgrOpen(true);
       return; // keep current selection
     }
     if (v === GEMINI_QUICK) {
+      if (onOpenSettings) { onOpenSettings(); return; }
       setGeminiOpen(true);
       return; // keep current selection
     }
     onChange(v);
   };
 
+  const isLight = variant === "light";
+
   return (
     <>
-      <label className="flex items-center gap-1.5 h-8 pl-2 pr-1 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white transition-colors cursor-pointer">
+      <label className={`flex items-center gap-1.5 h-8 pl-2 pr-1 rounded-lg transition-colors cursor-pointer ${
+        isLight
+          ? "bg-transparent border border-transparent text-[#5a554f] hover:text-[#1a1614]"
+          : "bg-white/5 border border-white/10 text-white/60 hover:text-white"
+      }`}>
         <Cpu className="w-3.5 h-3.5 flex-shrink-0" />
         <select
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           disabled={disabled}
-          className="bg-transparent outline-none text-[11px] font-bold text-white/70 cursor-pointer disabled:opacity-40 max-w-[150px]"
+          className={`bg-transparent outline-none text-[11px] font-bold cursor-pointer disabled:opacity-40 max-w-[150px] ${
+            isLight ? "text-[#1a1614]" : "text-white/70"
+          }`}
         >
           {/* Hosted models only exist on the Base44 platform — hidden in standalone */}
           {!standalone && (

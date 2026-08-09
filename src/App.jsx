@@ -98,6 +98,7 @@ import PingguoPage from './pages/Pingguo';
 import ORBTPage from './pages/ORBT';
 import VideoStudioPage from './pages/VideoStudio';
 import TTTBuilderPage from './pages/TTTBuilder';
+import BuilderSettingsPage from './pages/BuilderSettings';
 import TTTOSPage from './pages/TTTOS';
 import GhostFrameLandingPage from './pages/GhostFrameLanding';
 import GhostFrameStudioPage from './pages/GhostFrameStudio';
@@ -308,6 +309,7 @@ const AuthenticatedApp = () => {
       <Route path="/ORBT" element={<ORBTPage />} />
       <Route path="/VideoStudio" element={<VideoStudioPage />} />
       <Route path="/TTTBuilder" element={<TTTBuilderPage />} />
+      <Route path="/BuilderSettings" element={<BuilderSettingsPage />} />
       <Route path="/TTTOS" element={<TTTOSPage />} />
       <Route path="/GhostFrame" element={<GhostFrameLandingPage />} />
       <Route path="/GhostFrameStudio" element={<GhostFrameStudioPage />} />

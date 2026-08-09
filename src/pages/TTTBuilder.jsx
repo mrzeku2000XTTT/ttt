@@ -745,6 +745,13 @@ function TTTBuilderStudio() {
             <FolderOpen className="w-3.5 h-3.5" /> Projects
           </button>
           <button
+            onClick={() => navigate('/BuilderSettings')}
+            className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            title="Builder settings"
+          >
+            <Settings className="w-3.5 h-3.5" /> Settings
+          </button>
+          <button
             onClick={() => setShowCloneModal(true)}
             className={`flex items-center justify-center h-8 w-8 rounded-full border transition-colors ${phase === "hero" ? "bg-[#1a1614] border-[#1a1614] text-white hover:bg-[#2a2622]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
             title="Clone TTT Builder repo"
@@ -814,6 +821,7 @@ function TTTBuilderStudio() {
                 className="relative max-w-2xl mx-auto"
               >
                 <div className="flex items-center gap-2 bg-white border border-[#e0dcd7] focus-within:border-[#c8c4be] focus-within:shadow-[0_0_0_4px_rgba(26,22,20,0.04)] rounded-2xl p-2 transition-all shadow-[0_2px_8px_rgba(26,22,20,0.04)]">
+                  <ModelSelector variant="light" value={model} onChange={changeModel} disabled={loading} onOpenSettings={() => navigate('/BuilderSettings')} />
                   <input
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
@@ -848,31 +856,22 @@ function TTTBuilderStudio() {
                 </div>
               </motion.div>
 
-              {/* Model picker + Settings — choose your model and configure before building */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="mt-3 flex flex-wrap items-center justify-center gap-2"
-              >
-                <div className="flex items-center rounded-full bg-[#1a1614] pl-2 pr-1 py-0.5">
-                  <ModelSelector value={model} onChange={changeModel} disabled={loading} />
-                </div>
-                <button
-                  onClick={() => { setDashSection("settings"); setPhase("studio"); }}
-                  className="inline-flex items-center gap-2 h-8 px-3 rounded-full bg-white border border-[#e0dcd7] text-[#5a554f] text-xs font-bold hover:bg-[#f5f2ed] transition-colors"
+              {/* Standalone only: setup wizard */}
+              {STANDALONE && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-3 flex items-center justify-center gap-2"
                 >
-                  <Settings className="w-3.5 h-3.5" /> Settings
-                </button>
-                {STANDALONE && (
                   <button
                     onClick={() => window.dispatchEvent(new Event("ttt-open-onboarding"))}
                     className="inline-flex items-center gap-2 h-8 px-3 rounded-full bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/25 transition-colors"
                   >
                     <KeyRound className="w-3.5 h-3.5" /> Setup wizard
                   </button>
-                )}
-              </motion.div>
+                </motion.div>
+              )}
 
               {/* Examples */}
               <motion.div
