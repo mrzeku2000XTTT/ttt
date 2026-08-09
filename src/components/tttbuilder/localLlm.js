@@ -189,6 +189,9 @@ export async function callLocalLlm(args) {
 
   const messages = [];
   if (systemContent) messages.push({ role: "system", content: systemContent });
+  if (jsonSchema) {
+    messages.push({ role: "system", content: "CRITICAL: Return ONLY a single valid JSON object. No markdown fences, no explanation before or after. Start with { and end with }." });
+  }
   messages.push({ role: "user", content: parts });
 
   // Route through the backend proxy when the provider blocks browser CORS
@@ -271,7 +274,7 @@ export async function callLocalLlm(args) {
     }
     const jsonStr = end > start ? cleaned.slice(start, end) : cleaned;
     try { return JSON.parse(jsonStr); }
-    catch { throw new Error(`${provider.label} did not return valid JSON. Try a stronger model.`); }
+    catch { return String(text); /* let orchestrator's parseResult retry */ }
   }
   return text;
 }
