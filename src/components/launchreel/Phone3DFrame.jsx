@@ -25,12 +25,12 @@ export default function Phone3DFrame({
 
   return (
     <div
-      className="relative w-full h-full flex items-center justify-center overflow-hidden"
+      className="absolute inset-0 flex items-center justify-center overflow-hidden"
       style={{ background: "transparent" }}
     >
       <Canvas
         camera={{ position: [0, 0, 8], fov: 35 }}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", height: "100%", display: "block" }}
         dpr={[1, 2]}
       >
         <ambientLight intensity={0.6} />

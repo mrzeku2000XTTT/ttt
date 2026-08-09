@@ -361,7 +361,7 @@ const AuthenticatedApp = () => {
       <Route path="/BullChart" element={<BullChartPage />} />
       <Route path="/SectorVI" element={<AdminRoute><SectorVIPage /></AdminRoute>} />
       <Route path="/Sector6" element={<Sector6Page />} />
-      <Route path="/LaunchReel" element={<LaunchReelPage />} />
+      <Route path="/LaunchReel" element={<AdminRoute><LaunchReelPage /></AdminRoute>} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
       <Route path="/KaspaNations/:slug" element={<KaspaNationPage />} />

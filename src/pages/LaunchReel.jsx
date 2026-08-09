@@ -8,6 +8,7 @@ import TextTemplates from "@/components/launchreel/TextTemplates";
 import DevicePicker, { DEVICES } from "@/components/launchreel/DevicePicker";
 import Timeline from "@/components/launchreel/Timeline";
 import ExportBar from "@/components/launchreel/ExportBar";
+import CaptionOverlay from "@/components/launchreel/CaptionOverlay";
 
 export default function LaunchReel() {
   const [videoUrl, setVideoUrl] = useState(null);
@@ -16,6 +17,7 @@ export default function LaunchReel() {
   const [textTemplate, setTextTemplate] = useState(null);
   const [device, setDevice] = useState(DEVICES[0]);
   const [fullscreen, setFullscreen] = useState(false);
+  const [currentCaption, setCurrentCaption] = useState("");
   const videoElRef = useRef(null);
   const stageRef = useRef(null);
 
@@ -101,6 +103,14 @@ export default function LaunchReel() {
                   device={device}
                   videoElRef={videoElRef}
                 />
+                {/* Live caption overlay */}
+                {currentCaption && (
+                  <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                    <span className="text-white text-sm font-semibold bg-black/75 px-3 py-1.5 rounded-lg whitespace-nowrap max-w-[280px] block text-center">
+                      {currentCaption}
+                    </span>
+                  </div>
+                )}
               </div>
               {/* Timeline below stage */}
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
@@ -149,6 +159,15 @@ export default function LaunchReel() {
                   selected={textTemplate}
                   onSelect={setTextTemplate}
                   onEditText={setTextTemplate}
+                />
+              </div>
+
+              {/* Auto-captions */}
+              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                <CaptionOverlay
+                  videoUrl={videoUrl}
+                  videoRef={videoElRef}
+                  onCurrentCaption={setCurrentCaption}
                 />
               </div>
 
