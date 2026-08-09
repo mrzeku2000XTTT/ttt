@@ -736,13 +736,22 @@ function TTTBuilderStudio() {
         <div className={`hidden sm:flex items-center gap-4 text-xs ${phase === "hero" ? "text-[#8a8580]" : "text-white/50"}`}>
           <span>Built on Kaspa</span>
         </div>
-        <button
-          onClick={() => setShowProjects(true)}
-          className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
-          title="Saved projects"
-        >
-          <FolderOpen className="w-3.5 h-3.5" /> Projects
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowProjects(true)}
+            className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            title="Saved projects"
+          >
+            <FolderOpen className="w-3.5 h-3.5" /> Projects
+          </button>
+          <button
+            onClick={() => setShowCloneModal(true)}
+            className={`flex items-center justify-center h-8 w-8 rounded-full border transition-colors ${phase === "hero" ? "bg-[#1a1614] border-[#1a1614] text-white hover:bg-[#2a2622]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            title="Clone TTT Builder repo"
+          >
+            <Github className="w-4 h-4" />
+          </button>
+        </div>
         {html && (
           <button
             onClick={downloadHtml}
@@ -764,18 +773,6 @@ function TTTBuilderStudio() {
             style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
             <div className="relative max-w-3xl mx-auto text-center">
-              {/* Open-source: clone a standalone TTT Builder repo */}
-              <motion.button
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                onClick={() => setShowCloneModal(true)}
-                className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1614] text-white text-xs font-bold hover:bg-[#2a2622] transition-colors"
-              >
-                <Github className="w-3.5 h-3.5" />
-                Clone TTT Builder repo
-              </motion.button>
-
               {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
