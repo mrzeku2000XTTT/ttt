@@ -93,9 +93,8 @@ export async function orchestrateBuild({ baseRules, userPrompt, history, files, 
   onProgress?.({ type: "plan" });
   files.forEach(f => onProgress?.({ type: "activity", item: { kind: "read", path: f.path } }));
   const planRaw = await invokeLLMWithRetry({
-    prompt: `${baseRules}
-
-You are TTT Agent 1, the ORCHESTRATOR. Do NOT write code now. Break this build into specialist subagents that each own a small set of files.
+    system: baseRules,
+    prompt: `You are TTT Agent 1, the ORCHESTRATOR. Do NOT write code now. Break this build into specialist subagents that each own a small set of files.
 
 Rules for the plan:
 - FEWEST AGENTS POSSIBLE. Hard cap: 5. A simple app (a game, a small dashboard, a landing page) is 1-2 agents total; do not split a small build into many tiny agents — it is slower and produces worse code. Each agent can own 4-6 files.
@@ -140,8 +139,7 @@ User request: ${userPrompt}`,
       .map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, f.path.includes("kaspa-wallet.js") ? 30000 : 3500)}`)
       .join("\n\n");
 
-    const agentPrompt = (retryNote) => `${baseRules}
-${retryNote}
+    const agentPrompt = (retryNote) => `${retryNote}
 You are "${agent.name}", a specialist subagent inside TTT Agent 1's build team.
 
 OVERALL BUILD: ${plan.plan}
@@ -168,6 +166,7 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
     for (let attempt = 0; attempt < 2 && !ops; attempt++) {
       try {
         const raw = await invokeLLMWithRetry({
+          system: baseRules,
           prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
           model,
           file_urls: fileUrls.length ? fileUrls : undefined,
@@ -220,9 +219,8 @@ Return the file operations for YOUR files only. Complete, production-ready, no p
 
     try {
       const raw = await invokeLLMWithRetry({
-        prompt: `${baseRules}
-
-You are the REPAIR AGENT. The build team imported files that were never written, so the app currently fails to render.
+        system: baseRules,
+        prompt: `You are the REPAIR AGENT. The build team imported files that were never written, so the app currently fails to render.
 
 OVERALL BUILD: ${plan.plan}
 USER REQUEST: ${userPrompt}
@@ -270,6 +268,7 @@ ${context}`,
     onProgress?.({ type: "activity", item: { kind: "thought", seconds: 1, text: `File Reviewer: checking ${modifiedExisting.length} modified file(s) for unwanted changes…` } });
     try {
       const reviewRaw = await invokeLLMWithRetry({
+        system: baseRules,
         prompt: `You are the FILE REVIEWER. Your job is to protect files the user did NOT ask to change.
 
 USER REQUEST: ${userPrompt}
