@@ -245,6 +245,26 @@ dist
 *.log
 `;
 
+// .env.example — shipped (committed) so cloners know which keys the builder reads.
+// The real .env is gitignored above. Edit .env and restart \`npm run dev\` to apply.
+const ENV_EXAMPLE = `# TTT Builder — environment variables (safer than localStorage)
+# Copy this file to ".env" and fill in your keys, then restart: npm run dev
+# .env is gitignored — your keys never get committed.
+
+# Option A: Google Gemini (free tier, recommended) — get one at https://aistudio.google.com/apikey
+VITE_GEMINI_API_KEY=
+
+# Option B: any OpenAI-compatible provider (Groq, OpenRouter, Together, Mistral, etc.)
+# VITE_LLM_API_KEY=
+# VITE_LLM_MODEL=llama-3.3-70b-versatile
+# VITE_LLM_BASE_URL=https://api.groq.com/openai/v1
+# VITE_LLM_PROVIDER=groq
+# VITE_LLM_LABEL=Groq (free)
+
+# Optional: E2B sandbox for live React/npm previews
+# VITE_E2B_API_KEY=
+`;
+
 const README = `<div align="center">
 
 # ⚡ TTT Builder
@@ -535,6 +555,7 @@ export default async function (req) {
       { path: "README.md", content: README },
       { path: "LICENSE", content: LICENSE },
       { path: ".gitignore", content: GITIGNORE },
+      { path: ".env.example", content: ENV_EXAMPLE },
     ];
 
     const allFiles = [...copied, ...authored];
