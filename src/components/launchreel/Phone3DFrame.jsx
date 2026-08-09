@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { OrbitControls, RoundedBox, Html } from "@react-three/drei";
+import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 
 /**
@@ -145,10 +145,11 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
 
   return (
     <group ref={groupRef} rotation={[0.1, -0.3, 0]}>
-      {/* Phone body — solid rounded box with real thickness */}
-      <RoundedBox args={[W, H, T]} radius={0.08} smoothness={8} castShadow receiveShadow>
+      {/* Phone body — solid box with real thickness */}
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[W, H, T]} />
         <meshStandardMaterial color="#1a1a1e" roughness={0.4} metalness={0.6} />
-      </RoundedBox>
+      </mesh>
 
       {/* Screen bezel frame (dark border around screen) */}
       <mesh position={[0, 0, T / 2 + 0.0005]}>
@@ -160,7 +161,7 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
       <mesh position={[0, 0, T / 2 + 0.001]}>
         <planeGeometry args={[W * 0.92, H * 0.94]} />
         {videoTexture ? (
-          <meshBasicMaterial map={videoTexture} toneMapped={false} />
+          <meshBasicMaterial map={videoTexture} />
         ) : (
           <meshBasicMaterial color="#000000" />
         )}
