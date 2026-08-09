@@ -1,221 +1,223 @@
-import React, { useRef, useState, useCallback, useEffect } from "react";
+import React, { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { OrbitControls, RoundedBox, Html } from "@react-three/drei";
+import * as THREE from "three";
 
 /**
- * Real 3D phone with physical thickness and a back casing.
- * Uses CSS 3D transforms (preserve-3d) with a front face, back face,
- * and four side walls to give real depth. Drag to orbit.
+ * Real 3D phone using three.js — solid rounded box body with
+ * real thickness, a back face with camera module, and a video
+ * texture on the front screen.
  */
 export default function Phone3DFrame({
   videoUrl,
   autoRotate,
-  rotX,
-  rotY,
-  setRotX,
-  setRotY,
-  zoom,
-  setZoom,
   isPlaying,
   onPlayPause,
   textTemplate,
   device,
+  videoElRef,
 }) {
-  const dragging = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const videoRef = useRef(null);
-  const thickness = device?.thickness || 18;
+  const controlsRef = useRef(null);
 
-  useEffect(() => {
-    if (!videoRef.current) return;
-    if (isPlaying) videoRef.current.play();
-    else videoRef.current.pause();
-  }, [isPlaying]);
-
-  const onPointerDown = (e) => {
-    e.preventDefault();
-    const p = e.touches ? e.touches[0] : e;
-    dragging.current = { x: p.clientX, y: p.clientY, rx: rotX, ry: rotY };
-    setIsDragging(true);
-  };
-
-  const onPointerMove = useCallback((e) => {
-    if (!dragging.current) return;
-    const p = e.touches ? e.touches[0] : e;
-    setRotY(dragging.current.ry + (p.clientX - dragging.current.x) * 0.4);
-    setRotX(dragging.current.rx - (p.clientY - dragging.current.y) * 0.4);
-  }, [setRotX, setRotY]);
-
-  const onPointerUp = useCallback(() => { dragging.current = null; setIsDragging(false); }, []);
-
-  useEffect(() => {
-    if (!isDragging) return;
-    window.addEventListener("mousemove", onPointerMove);
-    window.addEventListener("mouseup", onPointerUp);
-    window.addEventListener("touchmove", onPointerMove, { passive: false });
-    window.addEventListener("touchend", onPointerUp);
-    return () => {
-      window.removeEventListener("mousemove", onPointerMove);
-      window.removeEventListener("mouseup", onPointerUp);
-      window.removeEventListener("touchmove", onPointerMove);
-      window.removeEventListener("touchend", onPointerUp);
-    };
-  }, [isDragging, onPointerMove, onPointerUp]);
-
-  const W = device?.width || 300;
-  const H = device?.height || 620;
-  const scale = zoom / 100;
+  const W = (device?.width || 300) / 100;
+  const H = (device?.height || 620) / 100;
+  const T = (device?.thickness || 18) / 100;
 
   return (
     <div
       className="relative w-full h-full flex items-center justify-center overflow-hidden"
-      style={{ perspective: "1800px" }}
-      onWheel={(e) => {
-        e.preventDefault();
-        setZoom(Math.max(40, Math.min(160, zoom - e.deltaY * 0.05)));
-      }}
+      style={{ background: "transparent" }}
     >
-      <style>{`
-        @keyframes okml-autorot { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
-      `}</style>
-
-      <div
-        onPointerDown={onPointerDown}
-        className="relative cursor-grab active:cursor-grabbing"
-        style={{
-          transformStyle: "preserve-3d",
-          transform: `rotateX(${rotX}deg) rotateY(${autoRotate && !isDragging ? 0 : rotY}deg) scale(${scale})`,
-          transition: isDragging ? "none" : "transform 0.15s ease-out",
-          animation: autoRotate && !isDragging ? "okml-autorot 14s linear infinite" : "none",
-        }}
+      <Canvas
+        camera={{ position: [0, 0, 8], fov: 35 }}
+        style={{ width: "100%", height: "100%" }}
+        dpr={[1, 2]}
       >
-        {/* === FRONT FACE (screen) === */}
-        <div
-          className="absolute"
-          style={{
-            width: W, height: H,
-            transform: `translateZ(${thickness / 2}px)`,
-            transformStyle: "preserve-3d",
-          }}
-        >
-          <PhoneBody W={W} H={H} />
-          <PhoneScreen W={W} H={H} videoUrl={videoUrl} videoRef={videoRef} textTemplate={textTemplate} isPlaying={isPlaying} onPlayPause={onPlayPause} />
-        </div>
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[3, 4, 5]} intensity={1.2} />
+        <directionalLight position={[-3, -2, -4]} intensity={0.3} />
+        <spotLight position={[0, 5, 3]} angle={0.3} penumbra={0.5} intensity={0.5} />
 
-        {/* === BACK FACE === */}
-        <div
-          className="absolute rounded-[2.5rem]"
-          style={{
-            width: W, height: H,
-            transform: `translateZ(${-thickness / 2}px) rotateY(180deg)`,
-            background: "linear-gradient(145deg, #2a2a2e 0%, #18181b 50%, #0a0a0c 100%)",
-            boxShadow: "inset 0 0 4px rgba(255,255,255,0.05)",
-          }}
-        >
-          {/* Camera module */}
-          <div className="absolute top-5 left-5 w-20 h-20 rounded-2xl bg-black/80 border border-zinc-700 flex items-center justify-center">
-            <div className="grid grid-cols-2 gap-1.5">
-              <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-600" />
-              <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-600" />
-              <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-600" />
-              <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-600" />
-            </div>
-          </div>
-          {/* Logo area (subtle) */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-zinc-700 text-[10px] font-bold tracking-widest">
-            {device?.brand || "DEVICE"}
-          </div>
-        </div>
+        <PhoneModel
+          videoUrl={videoUrl}
+          W={W}
+          H={H}
+          T={T}
+          device={device}
+          autoRotate={autoRotate}
+          textTemplate={textTemplate}
+          videoElRef={videoElRef}
+          isPlaying={isPlaying}
+        />
 
-        {/* === SIDE WALLS (thickness) === */}
-        {/* Top */}
-        <div className="absolute bg-zinc-800" style={{ width: W, height: thickness, transform: `rotateX(90deg) translateZ(${H / 2}px)`, top: 0, left: 0 }} />
-        {/* Bottom */}
-        <div className="absolute bg-zinc-800" style={{ width: W, height: thickness, transform: `rotateX(-90deg) translateZ(${H / 2}px)`, bottom: 0, left: 0 }} />
-        {/* Left */}
-        <div className="absolute bg-zinc-800" style={{ width: thickness, height: H, transform: `rotateY(-90deg) translateZ(${W / 2}px)`, top: 0, left: 0 }} />
-        {/* Right */}
-        <div className="absolute bg-zinc-800" style={{ width: thickness, height: H, transform: `rotateY(90deg) translateZ(${W / 2}px)`, top: 0, right: 0 }} />
+        <OrbitControls
+          ref={controlsRef}
+          enablePan={false}
+          minDistance={4}
+          maxDistance={14}
+          enableZoom={true}
+          target={[0, 0, 0]}
+        />
+      </Canvas>
 
-        {/* Physical buttons */}
-        <div className="absolute bg-zinc-700" style={{ width: 3, height: 48, right: -2, top: 140, transform: "rotateY(90deg)" }} />
-        <div className="absolute bg-zinc-700" style={{ width: 3, height: 80, right: -2, top: 200, transform: "rotateY(90deg)" }} />
+      {/* Hint */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-white/25 flex items-center gap-3 pointer-events-none">
+        <span>Drag to orbit</span>
+        <span>·</span>
+        <span>Scroll to zoom</span>
       </div>
     </div>
   );
 }
 
-function PhoneBody({ W, H }) {
-  return (
-    <div
-      className="absolute inset-0 rounded-[2.5rem] bg-zinc-900"
-      style={{ boxShadow: "0 0 60px rgba(0,0,0,0.7), inset 0 0 2px rgba(255,255,255,0.08)" }}
-    />
+function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, videoElRef, isPlaying }) {
+  const groupRef = useRef(null);
+  const videoTexture = useRef(null);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    if (!videoUrl) return;
+    // Create or reuse a shared video element
+    let v = videoElRef?.current;
+    if (!v) {
+      v = document.createElement("video");
+      v.crossOrigin = "anonymous";
+      v.loop = true;
+      v.muted = true;
+      v.playsInline = true;
+      if (videoElRef) videoElRef.current = v;
+    }
+    v.src = videoUrl;
+    v.play();
+
+    const tex = new THREE.VideoTexture(v);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    videoTexture.current = tex;
+    setVideoReady(true);
+
+    return () => {
+      if (v) { v.pause(); }
+      tex.dispose();
+    };
+  }, [videoUrl, videoElRef]);
+
+  // Play/pause control
+  useEffect(() => {
+    const v = videoElRef?.current;
+    if (!v) return;
+    if (isPlaying) v.play();
+    else v.pause();
+  }, [isPlaying, videoElRef]);
+
+  // Auto-rotate
+  useFrame((_, delta) => {
+    if (autoRotate && groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.4;
+    }
+  });
+
+  const screenMaterial = useMemo(() => {
+    if (!videoTexture.current) return new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.2 });
+    return new THREE.MeshStandardMaterial({
+      map: videoTexture.current,
+      roughness: 0.1,
+      metalness: 0.1,
+    });
+  }, [videoReady]);
+
+  const bodyMaterial = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.4, metalness: 0.6 }),
+    []
   );
-}
 
-function PhoneScreen({ W, H, videoUrl, videoRef, textTemplate, isPlaying, onPlayPause }) {
+  const backMaterial = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.5, metalness: 0.4 }),
+    []
+  );
+
   return (
-    <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden" style={{ padding: 12 }}>
-      <div className="relative w-full h-full rounded-[2rem] overflow-hidden bg-black">
-        {videoUrl ? (
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            className="w-full h-full object-cover"
-            loop
-            muted
-            playsInline
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">No video</div>
-        )}
+    <group ref={groupRef} rotation={[0.1, -0.3, 0]}>
+      {/* Phone body — solid rounded box with real thickness */}
+      <RoundedBox args={[W, H, T]} radius={0.08} smoothness={8} material={bodyMaterial} castShadow receiveShadow />
 
-        {/* Notch */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-zinc-900 rounded-b-2xl z-30" />
+      {/* Front screen — slightly inset, video textured */}
+      <mesh position={[0, 0, T / 2 + 0.001]}>
+        <planeGeometry args={[W * 0.92, H * 0.94]} />
+        <primitive object={screenMaterial} attach="material" />
+      </mesh>
 
-        {/* Text template overlay ON the screen */}
-        {textTemplate && <TextOverlay template={textTemplate} />}
-      </div>
+      {/* Screen bezel frame (dark border around screen) */}
+      <mesh position={[0, 0, T / 2 + 0.0005]}>
+        <planeGeometry args={[W, H]} />
+        <meshBasicMaterial color={0x000000} />
+      </mesh>
 
-      {/* Glass reflection */}
-      <div
-        className="absolute inset-0 rounded-[2.5rem] pointer-events-none"
-        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.03) 100%)" }}
-      />
-    </div>
+      {/* Back face */}
+      <mesh position={[0, 0, -T / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
+        <planeGeometry args={[W * 0.98, H * 0.98]} />
+        <primitive object={backMaterial} attach="material" />
+      </mesh>
+
+      {/* Camera module on back */}
+      <mesh position={[-W * 0.22, H * 0.32, -T / 2 - 0.01]}>
+        <boxGeometry args={[W * 0.3, W * 0.3, 0.02]} />
+        <meshStandardMaterial color={0x111111} roughness={0.3} metalness={0.7} />
+      </mesh>
+      {/* Camera lenses */}
+      {[
+        [-W * 0.28, H * 0.38],
+        [-W * 0.16, H * 0.38],
+        [-W * 0.28, H * 0.26],
+        [-W * 0.16, H * 0.26],
+      ].map((pos, i) => (
+        <mesh key={i} position={[pos[0], pos[1], -T / 2 - 0.02]}>
+          <cylinderGeometry args={[W * 0.05, W * 0.05, 0.01, 16]} />
+          <meshStandardMaterial color={0x333333} roughness={0.1} metalness={0.9} />
+        </mesh>
+      ))}
+
+      {/* Side buttons */}
+      <mesh position={[W / 2 + 0.005, H * 0.15, 0]}>
+        <boxGeometry args={[0.01, H * 0.12, T * 0.6]} />
+        <meshStandardMaterial color={0x333333} metalness={0.6} roughness={0.4} />
+      </mesh>
+      <mesh position={[W / 2 + 0.005, -H * 0.05, 0]}>
+        <boxGeometry args={[0.01, H * 0.2, T * 0.6]} />
+        <meshStandardMaterial color={0x333333} metalness={0.6} roughness={0.4} />
+      </mesh>
+      <mesh position={[-W / 2 - 0.005, H * 0.2, 0]}>
+        <boxGeometry args={[0.01, H * 0.1, T * 0.6]} />
+        <meshStandardMaterial color={0x333333} metalness={0.6} roughness={0.4} />
+      </mesh>
+
+      {/* Text overlay on screen (HTML overlay positioned in 3D) */}
+      {textTemplate && (
+        <Html
+          position={[0, textTemplate.position === "top" ? H * 0.35 : textTemplate.position === "center" ? 0 : -H * 0.35, T / 2 + 0.01]}
+          center
+          distanceFactor={3}
+          style={{ pointerEvents: "none" }}
+        >
+          <TextOverlay template={textTemplate} />
+        </Html>
+      )}
+    </group>
   );
 }
 
 function TextOverlay({ template }) {
   if (!template) return null;
-  const pos = template.position || "bottom";
-  const posClass = {
-    bottom: "bottom-8",
-    top: "top-12",
-    center: "top-1/2 -translate-y-1/2",
-  }[pos] || "bottom-8";
-
+  const styleMap = {
+    title: { fontSize: "28px", fontWeight: 900, color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.9)" },
+    subtitle: { fontSize: "16px", fontWeight: 600, color: "rgba(255,255,255,0.9)", textShadow: "0 2px 6px rgba(0,0,0,0.8)" },
+    caption: { fontSize: "14px", fontWeight: 600, color: "#fff", background: "rgba(0,0,0,0.75)", padding: "6px 12px", borderRadius: "6px" },
+    badge: { fontSize: "12px", fontWeight: 900, color: "#000", background: "#fff", padding: "4px 10px", borderRadius: "999px" },
+  };
+  const s = styleMap[template.style] || styleMap.caption;
   return (
-    <div className={`absolute ${posClass} left-0 right-0 px-6 text-center z-20`}>
-      {template.style === "title" && (
-        <h2 className="text-white text-2xl font-black tracking-tight drop-shadow-lg" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
-          {template.text}
-        </h2>
-      )}
-      {template.style === "subtitle" && (
-        <p className="text-white/90 text-sm font-semibold tracking-wide" style={{ textShadow: "0 2px 6px rgba(0,0,0,0.8)" }}>
-          {template.text}
-        </p>
-      )}
-      {template.style === "caption" && (
-        <span className="inline-block bg-black/75 text-white text-[13px] font-semibold px-3 py-1.5 rounded-md">
-          {template.text}
-        </span>
-      )}
-      {template.style === "badge" && (
-        <span className="inline-block bg-white text-black text-[11px] font-black px-3 py-1 rounded-full">
-          {template.text}
-        </span>
-      )}
+    <div style={{ textAlign: "center", maxWidth: "240px", ...s }}>
+      {template.text}
     </div>
   );
 }

@@ -1,10 +1,19 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Play, Pause } from "lucide-react";
 
 export default function Timeline({ videoRef, isPlaying, onPlayPause, onTimeUpdate }) {
-  const [progress, setProgress] = React.useState(0);
-  const [duration, setDuration] = React.useState(0);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
   const barRef = useRef(null);
+
+  const [tick, setTick] = useState(0);
+
+  // Retry until video element is ready (three.js creates it async)
+  useEffect(() => {
+    if (videoRef?.current) return;
+    const interval = setInterval(() => setTick((t) => t + 1), 300);
+    return () => clearInterval(interval);
+  }, [videoRef, tick]);
 
   useEffect(() => {
     const v = videoRef?.current;
@@ -16,11 +25,14 @@ export default function Timeline({ videoRef, isPlaying, onPlayPause, onTimeUpdat
     };
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("timeupdate", onTime);
+    // Set initial duration if already loaded
+    if (v.duration) setDuration(v.duration);
+    if (v.currentTime) setProgress(v.currentTime);
     return () => {
       v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("timeupdate", onTime);
     };
-  }, [videoRef, onTimeUpdate]);
+  }, [videoRef, onTimeUpdate, tick]);
 
   const seek = (e) => {
     const v = videoRef?.current;

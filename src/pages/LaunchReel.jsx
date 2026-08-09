@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Maximize2, Minimize2, Rotate3D, ZoomIn } from "lucide-react";
+import { ArrowLeft, Maximize2, Minimize2, Rotate3D } from "lucide-react";
 import UploadZone from "@/components/launchreel/UploadZone";
 import Phone3DFrame from "@/components/launchreel/Phone3DFrame";
 import OriginKitBackground from "@/components/launchreel/OriginKitBackground";
@@ -12,14 +12,11 @@ import ExportBar from "@/components/launchreel/ExportBar";
 export default function LaunchReel() {
   const [videoUrl, setVideoUrl] = useState(null);
   const [autoRotate, setAutoRotate] = useState(false);
-  const [rotX, setRotX] = useState(-8);
-  const [rotY, setRotY] = useState(-15);
-  const [zoom, setZoom] = useState(80);
   const [isPlaying, setIsPlaying] = useState(true);
   const [textTemplate, setTextTemplate] = useState(null);
   const [device, setDevice] = useState(DEVICES[0]);
   const [fullscreen, setFullscreen] = useState(false);
-  const videoRef = useRef(null);
+  const videoElRef = useRef(null);
   const stageRef = useRef(null);
 
   const handleNewRecording = () => {
@@ -36,16 +33,11 @@ export default function LaunchReel() {
         <Phone3DFrame
           videoUrl={videoUrl}
           autoRotate={autoRotate}
-          rotX={rotX}
-          rotY={rotY}
-          setRotX={setRotX}
-          setRotY={setRotY}
-          zoom={zoom}
-          setZoom={setZoom}
           isPlaying={isPlaying}
           onPlayPause={() => setIsPlaying((p) => !p)}
           textTemplate={textTemplate}
           device={device}
+          videoElRef={videoElRef}
         />
         <button
           onClick={toggleFullscreen}
@@ -103,22 +95,17 @@ export default function LaunchReel() {
                 <Phone3DFrame
                   videoUrl={videoUrl}
                   autoRotate={autoRotate}
-                  rotX={rotX}
-                  rotY={rotY}
-                  setRotX={setRotX}
-                  setRotY={setRotY}
-                  zoom={zoom}
-                  setZoom={setZoom}
                   isPlaying={isPlaying}
                   onPlayPause={() => setIsPlaying((p) => !p)}
                   textTemplate={textTemplate}
                   device={device}
+                  videoElRef={videoElRef}
                 />
               </div>
               {/* Timeline below stage */}
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                 <Timeline
-                  videoRef={videoRef}
+                  videoRef={videoElRef}
                   isPlaying={isPlaying}
                   onPlayPause={() => setIsPlaying((p) => !p)}
                 />
@@ -135,25 +122,20 @@ export default function LaunchReel() {
               </button>
 
               {/* Quick toggles */}
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-4">
-                <ToggleRow
-                  icon={<Rotate3D className="w-4 h-4 text-purple-400" />}
-                  label="Auto-Rotate"
-                  on={autoRotate}
-                  onToggle={() => setAutoRotate((a) => !a)}
-                />
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <ZoomIn className="w-4 h-4 text-cyan-400" />
-                    <span className="text-white font-semibold text-sm">Zoom</span>
-                    <span className="ml-auto text-white/40 text-xs">{zoom}%</span>
+              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Rotate3D className="w-4 h-4 text-purple-400" />
+                    <span className="text-white font-semibold text-sm">Auto-Rotate</span>
                   </div>
-                  <input
-                    type="range" min={40} max={160} value={zoom}
-                    onChange={(e) => setZoom(Number(e.target.value))}
-                    className="w-full accent-cyan-500"
-                  />
+                  <button
+                    onClick={() => setAutoRotate((a) => !a)}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${autoRotate ? "bg-cyan-500" : "bg-white/10"}`}
+                  >
+                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${autoRotate ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </button>
                 </div>
+                <p className="text-[10px] text-white/30 mt-2">Drag the phone to orbit · scroll to zoom</p>
               </div>
 
               {/* Device picker */}
@@ -172,29 +154,12 @@ export default function LaunchReel() {
 
               {/* Export */}
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                <ExportBar stageRef={stageRef} videoRef={videoRef} duration={15} />
+                <ExportBar stageRef={stageRef} videoRef={videoElRef} duration={15} />
               </div>
             </div>
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function ToggleRow({ icon, label, on, onToggle }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        {icon}
-        <span className="text-white font-semibold text-sm">{label}</span>
-      </div>
-      <button
-        onClick={onToggle}
-        className={`relative w-11 h-6 rounded-full transition-colors ${on ? "bg-cyan-500" : "bg-white/10"}`}
-      >
-        <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${on ? "translate-x-5" : "translate-x-0.5"}`} />
-      </button>
     </div>
   );
 }
