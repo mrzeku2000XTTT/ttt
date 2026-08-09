@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github, KeyRound } from "lucide-react";
+import { Sparkles, Send, Loader2, ExternalLink, RefreshCw, Code2, Eye, Zap, Globe, ArrowRight, ChevronRight, GitBranch, CheckCircle, ArrowLeft, Monitor, Smartphone, Server, FolderOpen, Store, Maximize2, PanelLeftClose, PanelLeftOpen, ClipboardList, Github, KeyRound, Settings } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import FileExplorer from "@/components/tttbuilder/FileExplorer";
@@ -872,18 +872,29 @@ function TTTBuilderStudio() {
                 Clone TTT Builder repo
               </motion.button>
 
-              {/* Standalone only: re-open the setup/onboarding wizard */}
+              {/* Standalone only: open Settings (add/manage models & keys) */}
               {STANDALONE && (
-                <motion.button
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  onClick={() => window.dispatchEvent(new Event("ttt-open-onboarding"))}
-                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/25 transition-colors"
+                  className="mt-3 flex flex-wrap items-center justify-center gap-2"
                 >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  Setup model & keys
-                </motion.button>
+                  <button
+                    onClick={() => { setDashSection("settings"); setPhase("studio"); }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/25 transition-colors"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                    Settings
+                  </button>
+                  <button
+                    onClick={() => window.dispatchEvent(new Event("ttt-open-onboarding"))}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#e0dcd7] text-[#5a554f] text-xs font-bold hover:bg-[#f5f2ed] transition-colors"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    Setup wizard
+                  </button>
+                </motion.div>
               )}
               </div>
               </motion.div>
