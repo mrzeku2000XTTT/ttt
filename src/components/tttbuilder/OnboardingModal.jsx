@@ -161,11 +161,11 @@ export default function OnboardingModal() {
                       <input
                         value={model}
                         onChange={(e) => setModel(e.target.value)}
-                        placeholder="nvidia/nemotron-3-super-120b-a12b:free"
+                        placeholder="llama-3.3-70b-versatile"
                         className="w-full bg-white/5 border border-[#70C7BA]/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
                         autoFocus
                       />
-                      <p className="text-[10px] text-white/30 mt-1">Paste any model. Models with a "/" are auto-detected as OpenRouter. Get a free key at openrouter.ai/keys.</p>
+                      <p className="text-[10px] text-white/30 mt-1">Recommended free providers that work from the browser: <b className="text-[#70C7BA]">Groq</b> (console.groq.com/keys — fast, free) or <b className="text-[#70C7BA]">Google Gemini</b> (aistudio.google.com/apikey — free). TokenRouter, DeepSeek direct, and most others block browser requests (CORS).</p>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-white/50 mb-1 block uppercase tracking-wide">Nickname</label>
