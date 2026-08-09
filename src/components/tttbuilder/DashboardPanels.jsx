@@ -4,6 +4,7 @@ import { getLocalProviders, getAllProviders, getEnvProviders, removeLocalProvide
 import { isStandalone } from "./OnboardingModal";
 import OpenModelsTab from "./OpenModelsTab";
 import GeminiKeyModal from "./GeminiKeyModal";
+import ModelKeySettings from "./ModelKeySettings";
 
 /* ---------- Overview ---------- */
 export function OverviewPanel({ files, messages, buildMode, model, walletKit, onJump }) {
@@ -362,28 +363,14 @@ VITE_LLM_PROVIDER=groq`}</pre>
         </div>
       </div>
 
-      {/* Model — hosted model picker (hidden in standalone: those models need the Base44 platform) */}
+      {/* Model — full model list with per-model API key inputs (hosted app only) */}
       {!standalone && (
         <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
-          <div className="text-xs text-white/50 font-medium mb-3">AI model</div>
-          <div className="flex gap-2">
-            {[
-              { id: "ttt_agent_1", label: "TTT Agent 1" },
-              { id: "claude_opus_4_8", label: "Claude Opus" },
-              { id: "claude_sonnet_4_6", label: "Claude Sonnet" },
-            ].map(m => (
-              <button
-                key={m.id}
-                onClick={() => onChangeModel(m.id)}
-                disabled={loading}
-                className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
-                  model === m.id ? "bg-[#70C7BA] text-black" : "bg-white/5 text-white/60 hover:text-white"
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 mb-3">
+            <Cpu className="w-4 h-4 text-[#70C7BA]" />
+            <div className="text-xs text-white/50 font-medium">AI model &amp; API keys</div>
           </div>
+          <ModelKeySettings model={model} onChangeModel={onChangeModel} loading={loading} />
         </div>
       )}
 
@@ -395,11 +382,16 @@ VITE_LLM_PROVIDER=groq`}</pre>
             <div className="text-[11px] text-white/30 mt-0.5">Inject the native Kaspa wallet into every build</div>
           </div>
           <button
+            type="button"
             onClick={() => onChangeWalletKit(!walletKit)}
             disabled={loading}
-            className={`relative w-11 h-6 rounded-full transition-colors ${walletKit ? "bg-[#70C7BA]" : "bg-white/10"}`}
+            aria-pressed={walletKit}
+            className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${walletKit ? "bg-[#70C7BA]" : "bg-white/15"}`}
           >
-            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${walletKit ? "translate-x-5" : "translate-x-0.5"}`} />
+            <span
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+              style={{ left: walletKit ? "22px" : "2px" }}
+            />
           </button>
         </div>
       </div>
