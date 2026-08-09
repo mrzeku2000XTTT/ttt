@@ -76,7 +76,8 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
 
   useEffect(() => {
     if (!videoUrl) return;
-    // Create or reuse a shared video element
+
+    // Create or reuse a shared video element — must be in the DOM to decode frames
     let v = videoElRef?.current;
     if (!v) {
       v = document.createElement("video");
@@ -84,20 +85,46 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
       v.loop = true;
       v.muted = true;
       v.playsInline = true;
+      v.setAttribute("webkit-playsinline", "true");
       if (videoElRef) videoElRef.current = v;
     }
-    v.src = videoUrl;
-    v.play();
 
-    const tex = new THREE.VideoTexture(v);
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    setVideoTexture(tex);
+    // Append to document body (hidden) so the browser decodes frames
+    if (!v.parentNode) {
+      v.style.position = "absolute";
+      v.style.left = "-9999px";
+      v.style.width = "1px";
+      v.style.height = "1px";
+      v.style.opacity = "0";
+      v.style.pointerEvents = "none";
+      document.body.appendChild(v);
+    }
+
+    v.src = videoUrl;
+    v.load();
+
+    const onLoaded = () => {
+      v.play().catch(() => {});
+      const tex = new THREE.VideoTexture(v);
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      setVideoTexture(tex);
+    };
+
+    if (v.readyState >= 2) {
+      onLoaded();
+    } else {
+      v.addEventListener("loadeddata", onLoaded);
+    }
 
     return () => {
+      v.removeEventListener("loadeddata", onLoaded);
       if (v) { v.pause(); }
-      tex.dispose();
-      setVideoTexture(null);
+      setVideoTexture((prev) => {
+        if (prev) prev.dispose();
+        return null;
+      });
     };
   }, [videoUrl, videoElRef]);
 
@@ -105,7 +132,7 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
   useEffect(() => {
     const v = videoElRef?.current;
     if (!v) return;
-    if (isPlaying) v.play();
+    if (isPlaying) v.play().catch(() => {});
     else v.pause();
   }, [isPlaying, videoElRef]);
 
@@ -129,13 +156,13 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
         <meshBasicMaterial color="#000000" />
       </mesh>
 
-      {/* Front screen — slightly inset, video textured */}
+      {/* Front screen — video textured (basic material = true colors, no lighting) */}
       <mesh position={[0, 0, T / 2 + 0.001]}>
         <planeGeometry args={[W * 0.92, H * 0.94]} />
         {videoTexture ? (
-          <meshStandardMaterial map={videoTexture} roughness={0.1} metalness={0.1} />
+          <meshBasicMaterial map={videoTexture} toneMapped={false} />
         ) : (
-          <meshStandardMaterial color="#000000" roughness={0.2} />
+          <meshBasicMaterial color="#000000" />
         )}
       </mesh>
 
