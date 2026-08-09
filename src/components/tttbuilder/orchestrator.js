@@ -126,20 +126,25 @@ User request: ${userPrompt}`,
   const log = [];
   const failedFiles = []; // files owed by agents that failed — handed to the Repair Agent
 
-  for (let i = 0; i < agents.length; i++) {
-    const agent = agents[i];
-    const tAgent = Date.now();
-    const existing = new Set(working.map(f => f.path));
-    onProgress?.({ type: "agent_start", index: i, name: agent.name });
+  // 2. DISPATCH — run ALL subagents in PARALLEL for speed. Each agent gets the
+  // ORIGINAL project files as context (they run concurrently, so they can't see
+  // each other's output) and writes only its own files per the shared contract.
+  // The Repair Agent fixes any cross-agent import gaps afterward. This lets
+  // local models (Ollama, Groq, etc.) "join forces" — multiple inferences fly
+  // at once instead of waiting in a queue.
+  const existingPaths = new Set(files.map(f => f.path));
+  const wantsWallet = /wallet|balance|seed|send kas|receive|transaction/i.test(userPrompt);
+  const sharedContext = files
+    .filter(f => wantsWallet || !f.path.includes("kaspa-wallet.js"))
+    .map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, f.path.includes("kaspa-wallet.js") ? 30000 : 3500)}`)
+    .join("\n\n");
 
-    // Wallet-related requests get the FULL kit source so agents can actually edit it.
-    const wantsWallet = /wallet|balance|seed|send kas|receive|transaction/i.test(userPrompt);
-    const context = working
-      .filter(f => wantsWallet || !f.path.includes("kaspa-wallet.js"))
-      .map(f => `--- FILE: ${f.path} ---\n${f.content.slice(0, f.path.includes("kaspa-wallet.js") ? 30000 : 3500)}`)
-      .join("\n\n");
+  const agentResults = await Promise.allSettled(
+    agents.map(async (agent, i) => {
+      const tAgent = Date.now();
+      onProgress?.({ type: "agent_start", index: i, name: agent.name });
 
-    const agentPrompt = (retryNote) => `${retryNote}
+      const agentPrompt = (retryNote) => `${retryNote}
 You are "${agent.name}", a specialist subagent inside TTT Agent 1's build team.
 
 OVERALL BUILD: ${plan.plan}
@@ -156,39 +161,48 @@ ${agent.files.join("\n")}
 INSTRUCTIONS:
 ${agent.instructions}
 
-${context ? `Files written so far by the team (reference only — do NOT rewrite them):\n${context}` : ""}
+${sharedContext ? `Existing project files (reference only — do NOT rewrite them):\n${sharedContext}` : ""}
 
 Return the file operations for YOUR files only. Complete, production-ready, no placeholders, no TODOs.`;
 
-    // A malformed response must not kill the build — retry once, then hand the
-    // agent's files to the Repair Agent instead of silently skipping them.
-    let ops = null, lastErr = null;
-    for (let attempt = 0; attempt < 2 && !ops; attempt++) {
-      try {
-        const raw = await invokeLLMWithRetry({
-          system: baseRules,
-          prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
-          model,
-          file_urls: fileUrls.length ? fileUrls : undefined,
-          response_json_schema: FILE_OPS_SCHEMA,
-        });
-        ops = parseResult(raw);
-      } catch (err) {
-        lastErr = err;
+      let ops = null, lastErr = null;
+      for (let attempt = 0; attempt < 2 && !ops; attempt++) {
+        try {
+          const raw = await invokeLLMWithRetry({
+            system: baseRules,
+            prompt: agentPrompt(attempt === 0 ? "" : "\nIMPORTANT: your previous response was malformed JSON. Return ONLY the structured file operations — valid JSON, no markdown fences, no commentary.\n"),
+            model,
+            file_urls: fileUrls.length ? fileUrls : undefined,
+            response_json_schema: FILE_OPS_SCHEMA,
+          });
+          ops = parseResult(raw);
+        } catch (err) {
+          lastErr = err;
+        }
       }
-    }
+      return { index: i, agent, ops, lastErr, tAgent };
+    })
+  );
+
+  // Merge all agent results in order — apply file ops sequentially so the
+  // final file set is deterministic regardless of which agent finished first.
+  for (const settled of agentResults) {
+    const { index: i, agent, ops, lastErr, tAgent } = settled.status === "fulfilled"
+      ? settled.value
+      : { index: -1, agent: null, ops: null, lastErr: settled.reason, tAgent: Date.now() };
+
     if (!ops) {
       onProgress?.({ type: "agent_done", index: i, status: "failed", files: [] });
-      onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(tAgent), text: `${agent.name} failed twice (${lastErr?.message}). Repair Agent will write its files: ${agent.files.join(", ")}` } });
-      log.push(`${agent.name}: failed (${lastErr?.message}) — files handed to Repair Agent`);
-      agent.files.forEach(p => failedFiles.push(norm(p)));
+      onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(tAgent), text: `${agent?.name || `Agent ${i}`} failed (${lastErr?.message}). Repair Agent will write its files: ${(agent?.files || []).join(", ")}` } });
+      log.push(`${agent?.name || `Agent ${i}`}: failed (${lastErr?.message}) — files handed to Repair Agent`);
+      (agent?.files || []).forEach(p => failedFiles.push(norm(p)));
       continue;
     }
 
     working = applyFileOps(working, ops);
     const wrote = (ops?.files || []).map(f => norm(f.path));
     onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(tAgent), text: `${agent.name}: ${ops?.summary || agent.goal}` } });
-    wrote.forEach(p => onProgress?.({ type: "activity", item: { kind: existing.has(p) ? "edited" : "wrote", path: p } }));
+    wrote.forEach(p => onProgress?.({ type: "activity", item: { kind: existingPaths.has(p) ? "edited" : "wrote", path: p } }));
     wrote.forEach(p => { if (!touched.includes(p)) touched.push(p); });
     log.push(`${agent.name}: ${ops?.summary || "done"}`);
     onProgress?.({ type: "agent_done", index: i, status: "done", files: wrote });
