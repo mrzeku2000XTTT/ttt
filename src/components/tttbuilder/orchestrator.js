@@ -112,9 +112,11 @@ export async function orchestrateBuild({ baseRules, userPrompt, history, files, 
   // 1. PLAN
   onProgress?.({ type: "plan" });
   files.forEach(f => onProgress?.({ type: "activity", item: { kind: "read", path: f.path } }));
-  const planRaw = await invokeLLMWithRetry({
-    system: baseRules,
-    prompt: `You are TTT Agent 1, the ORCHESTRATOR. Do NOT write code now. Break this build into specialist subagents that each own a small set of files.
+  let planRaw;
+  try {
+    planRaw = await invokeLLMWithRetry({
+      system: baseRules,
+      prompt: `You are TTT Agent 1, the ORCHESTRATOR. Do NOT write code now. Break this build into specialist subagents that each own a small set of files.
 
 Rules for the plan:
 - FEWEST AGENTS POSSIBLE for the scope — but use MORE agents for parallelism on large builds. Hard cap: 10 agents. A simple app (a game, a small dashboard, a landing page) is 1-2 agents; a medium app is 3-4; a large multi-feature app can use up to 10, each owning a non-overlapping file set. More agents = more parallel LLM calls = faster build.
@@ -129,10 +131,13 @@ ${projectDump}
 ${history ? `Conversation so far:\n${history}\n` : ""}
 ${attachmentNote}
 User request: ${userPrompt}`,
-    model,
-    file_urls: fileUrls.length ? fileUrls : undefined,
-    response_json_schema: PLAN_SCHEMA,
-  });
+      model,
+      file_urls: fileUrls.length ? fileUrls : undefined,
+      response_json_schema: PLAN_SCHEMA,
+    });
+  } catch (err) {
+    throw new Error(`Planning failed: ${err?.message || "unknown error"}. If using DeepSeek, make sure your API key is valid in Settings → Models & API Keys.`);
+  }
 
   const plan = parseResult(planRaw);
   const agents = (plan?.agents || []).filter(a => a?.name && Array.isArray(a.files)).slice(0, MAX_PARALLEL_AGENTS);
