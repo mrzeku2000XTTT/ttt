@@ -142,9 +142,8 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
       <RoundedBox args={[W, H, T]} radius={0.08} smoothness={8} material={bodyMaterial} castShadow receiveShadow />
 
       {/* Front screen — slightly inset, video textured */}
-      <mesh position={[0, 0, T / 2 + 0.001]}>
+      <mesh position={[0, 0, T / 2 + 0.001]} material={screenMaterial}>
         <planeGeometry args={[W * 0.92, H * 0.94]} />
-        <primitive object={screenMaterial} attach="material" />
       </mesh>
 
       {/* Screen bezel frame (dark border around screen) */}
@@ -154,9 +153,8 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
       </mesh>
 
       {/* Back face */}
-      <mesh position={[0, 0, -T / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
+      <mesh position={[0, 0, -T / 2 - 0.001]} rotation={[0, Math.PI, 0]} material={backMaterial}>
         <planeGeometry args={[W * 0.98, H * 0.98]} />
-        <primitive object={backMaterial} attach="material" />
       </mesh>
 
       {/* Camera module on back */}
