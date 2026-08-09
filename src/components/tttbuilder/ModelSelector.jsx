@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Cpu } from "lucide-react";
-import { getLocalProviders, LOCAL_MODEL_PREFIX } from "./localLlm";
+import { getLocalProviders, getAllProviders, LOCAL_MODEL_PREFIX } from "./localLlm";
+import { isStandalone } from "./OnboardingModal";
 import OpenModelsTab from "./OpenModelsTab";
 import GeminiKeyModal from "./GeminiKeyModal";
 
@@ -21,10 +22,13 @@ const ADD_VALUE = "__add_local__";
 const GEMINI_QUICK = "__gemini_quick__";
 
 export default function ModelSelector({ value, onChange, disabled }) {
+  const standalone = isStandalone();
   const [mgrOpen, setMgrOpen] = useState(false);
   const [geminiOpen, setGeminiOpen] = useState(false);
   const [, forceTick] = useState(0);
-  const local = getLocalProviders();
+  // In standalone, the picker lists every configured provider (localStorage + .env).
+  // Hosted keeps the localStorage-only list (add flows live there too).
+  const local = standalone ? getAllProviders() : getLocalProviders();
 
   const handleChange = (v) => {
     if (v === ADD_VALUE) {
@@ -48,22 +52,33 @@ export default function ModelSelector({ value, onChange, disabled }) {
           disabled={disabled}
           className="bg-transparent outline-none text-[11px] font-bold text-white/70 cursor-pointer disabled:opacity-40 max-w-[150px]"
         >
-          <optgroup label="Hosted">
-            {BUILDER_MODELS.map((m) => (
-              <option key={m.id} value={m.id} className="bg-[#161b22] text-white">{m.label}</option>
-            ))}
-          </optgroup>
-          <option value={GEMINI_QUICK} className="bg-[#161b22] text-[#4285F4]">★ Gemini Flash (free — add key)</option>
+          {/* Hosted models only exist on the Base44 platform — hidden in standalone */}
+          {!standalone && (
+            <optgroup label="Hosted">
+              {BUILDER_MODELS.map((m) => (
+                <option key={m.id} value={m.id} className="bg-[#161b22] text-white">{m.label}</option>
+              ))}
+            </optgroup>
+          )}
+          {standalone && local.length === 0 && (
+            <option value="" disabled className="bg-[#161b22] text-white/50">No model — add one in Settings</option>
+          )}
           {local.length > 0 && (
-            <optgroup label="Open / Local">
+            <optgroup label={standalone ? "Open / Local" : "Open / Local"}>
               {local.map((p) => (
                 <option key={p.id} value={`${LOCAL_MODEL_PREFIX}${p.id}`} className="bg-[#161b22] text-white">
-                  {p.label}
+                  {p.label}{p._env ? " 🔒" : ""}
                 </option>
               ))}
             </optgroup>
           )}
-          <option value={ADD_VALUE} className="bg-[#161b22] text-white">+ Add open model...</option>
+          {/* Add flows: hosted app keeps them in the picker; standalone moves setup to Settings */}
+          {!standalone && (
+            <>
+              <option value={GEMINI_QUICK} className="bg-[#161b22] text-[#4285F4]">★ Gemini Flash (free — add key)</option>
+              <option value={ADD_VALUE} className="bg-[#161b22] text-white">+ Add open model...</option>
+            </>
+          )}
         </select>
       </label>
       <OpenModelsTab
