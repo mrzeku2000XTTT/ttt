@@ -28,6 +28,53 @@ export function getLocalProviders() {
   } catch { return []; }
 }
 
+// ENV-BASED PROVIDERS (safer than localStorage).
+// Cloners can put keys in a .env file at the repo root (gitignored) and they are
+// baked into the build via Vite's import.meta.env. These are read-only from the
+// UI — you edit .env and restart `npm run dev` to change them.
+//
+// Supported .env keys:
+//   VITE_GEMINI_API_KEY            → auto-creates a Google Gemini 2.0 Flash entry
+//   VITE_LLM_API_KEY               → creates a generic entry (pair with below)
+//   VITE_LLM_MODEL, VITE_LLM_BASE_URL, VITE_LLM_PROVIDER, VITE_LLM_LABEL
+//
+// Env entries get stable ids prefixed `env_` so they never collide with
+// localStorage entries (ids like `m_<ts>_<rand>`).
+export function getEnvProviders() {
+  const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
+  const out = [];
+  const gKey = (env.VITE_GEMINI_API_KEY || "").trim();
+  if (gKey) {
+    out.push({
+      id: "env_gemini",
+      provider: "google",
+      label: "Gemini (.env)",
+      model: "gemini-2.0-flash",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+      apiKey: gKey,
+      _env: true,
+    });
+  }
+  const llmKey = (env.VITE_LLM_API_KEY || "").trim();
+  if (llmKey) {
+    out.push({
+      id: "env_custom",
+      provider: (env.VITE_LLM_PROVIDER || "custom").trim(),
+      label: (env.VITE_LLM_LABEL || env.VITE_LLM_MODEL || "Custom (.env)").trim(),
+      model: (env.VITE_LLM_MODEL || "").trim(),
+      baseUrl: (env.VITE_LLM_BASE_URL || "").trim(),
+      apiKey: llmKey,
+      _env: true,
+    });
+  }
+  return out;
+}
+
+// All usable providers: localStorage (editable) + env (read-only).
+export function getAllProviders() {
+  return [...getLocalProviders(), ...getEnvProviders()];
+}
+
 function persist(list) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch {}
 }
@@ -58,14 +105,14 @@ export function isLocalModelId(model) {
 export function resolveLocalModel(modelId) {
   if (!isLocalModelId(modelId)) return null;
   const id = modelId.slice(LOCAL_MODEL_PREFIX.length);
-  return getLocalProviders().find(p => p.id === id) || null;
+  return getAllProviders().find(p => p.id === id) || null;
 }
 
 // Build an OpenAI-compatible chat-completions request and call the provider directly
 // from the browser. Returns a string, or a parsed object when response_json_schema is set.
 export async function callLocalLlm(args) {
   const provider = resolveLocalModel(args.model);
-  if (!provider) throw new Error("Open model not found. Add it in the model selector's Open Models tab.");
+  if (!provider) throw new Error("Open model not found. Add one in Settings → Models & API keys (or set VITE_LLM_API_KEY / VITE_GEMINI_API_KEY in your .env).");
   const baseUrl = (provider.baseUrl || "").replace(/\/$/, "");
   if (!baseUrl) throw new Error(`"${provider.label}" has no base URL. Edit it in Open Models.`);
 
