@@ -206,7 +206,8 @@ export async function callLocalLlm(args) {
       messages,
       apiKey: provider.apiKey,
       temperature: 0.3,
-      maxTokens: 8192,
+      maxTokens: 16384,
+      jsonMode: !!jsonSchema,
     });
     const pd = proxyRes?.data || proxyRes || {};
     if (pd.error) throw new Error(`${provider.label} (proxy): ${pd.error}`);

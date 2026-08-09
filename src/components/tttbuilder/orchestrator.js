@@ -47,8 +47,24 @@ export function parseResult(raw) {
         if (c === "{") depth++;
         else if (c === "}") { depth--; if (depth === 0) { end = i + 1; break; } }
       }
-      if (end === -1) throw new Error("The model returned malformed JSON. Try again with a shorter prompt.");
-      result = JSON.parse(cleaned.slice(start, end));
+      if (end === -1) {
+        // Truncated JSON — model hit max_tokens before closing all braces.
+        // Try to repair by appending the missing closing braces.
+        const fragment = cleaned.slice(start);
+        let open = 0;
+        for (const ch of fragment) {
+          if (ch === "{") open++;
+          else if (ch === "}") open--;
+        }
+        if (open > 0) {
+          try { result = JSON.parse(fragment + "}".repeat(open)); }
+          catch { throw new Error("The model returned malformed JSON. Try again with a shorter prompt."); }
+        } else {
+          throw new Error("The model returned malformed JSON. Try again with a shorter prompt.");
+        }
+      } else {
+        result = JSON.parse(cleaned.slice(start, end));
+      }
     }
   }
   return result;
