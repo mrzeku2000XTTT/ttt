@@ -126,14 +126,17 @@ export default defineConfig(async (env) => {
       } else {
         // Hosted: use the backend function with the server-side E2B key.
         const res = await base44.functions.invoke("e2bSandbox", { action: "run", files });
-        const d = res.data || {};
-        setState({
-          status: d.url ? "live" : "error",
-          url: d.url || null,
-          sandboxId: d.sandboxId || null,
-          logs: d.logs || [],
-          error: d.error || null,
-        });
+        const d = res?.data || res || {};
+        if (d.error) {
+          setState({ status: "error", url: null, sandboxId: d.sandboxId || null, logs: d.logs || [], error: d.error });
+        } else if (d.url && d.ready) {
+          setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: d.logs || [], error: null });
+        } else if (d.url && d.ready === false) {
+          // Server started but didn't respond in time — show it anyway with a warning
+          setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: [...(d.logs || []), "⚠️ server still warming up — reload in a few seconds if blank"], error: null });
+        } else {
+          setState({ status: "error", url: null, sandboxId: null, logs: d.logs || [], error: "No preview URL returned from the sandbox." });
+        }
       }
     } catch (err) {
       setState({ status: "error", url: null, sandboxId: null, logs: [], error: err.message });
@@ -240,7 +243,7 @@ export default defineConfig(async (env) => {
           </div>
         )}
         {state.status === "live" && state.url && (
-          <iframe key={frameKey} src={state.url} className="w-full h-full border-0" title="Live Sandbox" />
+          <iframe key={frameKey} src={state.url} className="w-full h-full border-0 bg-white" title="Live Sandbox" />
         )}
         {state.status === "error" && (
           <div className="absolute inset-0 overflow-auto p-4">
