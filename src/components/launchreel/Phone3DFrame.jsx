@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { OrbitControls, RoundedBox, Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -72,8 +72,7 @@ export default function Phone3DFrame({
 
 function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, videoElRef, isPlaying }) {
   const groupRef = useRef(null);
-  const videoTexture = useRef(null);
-  const [videoReady, setVideoReady] = useState(false);
+  const [videoTexture, setVideoTexture] = useState(null);
 
   useEffect(() => {
     if (!videoUrl) return;
@@ -93,12 +92,12 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
     const tex = new THREE.VideoTexture(v);
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
-    videoTexture.current = tex;
-    setVideoReady(true);
+    setVideoTexture(tex);
 
     return () => {
       if (v) { v.pause(); }
       tex.dispose();
+      setVideoTexture(null);
     };
   }, [videoUrl, videoElRef]);
 
@@ -117,50 +116,39 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
     }
   });
 
-  const screenMaterial = useMemo(() => {
-    if (!videoTexture.current) return new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.2 });
-    return new THREE.MeshStandardMaterial({
-      map: videoTexture.current,
-      roughness: 0.1,
-      metalness: 0.1,
-    });
-  }, [videoReady]);
-
-  const bodyMaterial = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.4, metalness: 0.6 }),
-    []
-  );
-
-  const backMaterial = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.5, metalness: 0.4 }),
-    []
-  );
-
   return (
     <group ref={groupRef} rotation={[0.1, -0.3, 0]}>
       {/* Phone body — solid rounded box with real thickness */}
-      <RoundedBox args={[W, H, T]} radius={0.08} smoothness={8} material={bodyMaterial} castShadow receiveShadow />
-
-      {/* Front screen — slightly inset, video textured */}
-      <mesh position={[0, 0, T / 2 + 0.001]} material={screenMaterial}>
-        <planeGeometry args={[W * 0.92, H * 0.94]} />
-      </mesh>
+      <RoundedBox args={[W, H, T]} radius={0.08} smoothness={8} castShadow receiveShadow>
+        <meshStandardMaterial color="#1a1a1e" roughness={0.4} metalness={0.6} />
+      </RoundedBox>
 
       {/* Screen bezel frame (dark border around screen) */}
       <mesh position={[0, 0, T / 2 + 0.0005]}>
         <planeGeometry args={[W, H]} />
-        <meshBasicMaterial color={0x000000} />
+        <meshBasicMaterial color="#000000" />
+      </mesh>
+
+      {/* Front screen — slightly inset, video textured */}
+      <mesh position={[0, 0, T / 2 + 0.001]}>
+        <planeGeometry args={[W * 0.92, H * 0.94]} />
+        {videoTexture ? (
+          <meshStandardMaterial map={videoTexture} roughness={0.1} metalness={0.1} />
+        ) : (
+          <meshStandardMaterial color="#000000" roughness={0.2} />
+        )}
       </mesh>
 
       {/* Back face */}
-      <mesh position={[0, 0, -T / 2 - 0.001]} rotation={[0, Math.PI, 0]} material={backMaterial}>
+      <mesh position={[0, 0, -T / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
         <planeGeometry args={[W * 0.98, H * 0.98]} />
+        <meshStandardMaterial color="#2a2a2e" roughness={0.5} metalness={0.4} />
       </mesh>
 
       {/* Camera module on back */}
       <mesh position={[-W * 0.22, H * 0.32, -T / 2 - 0.01]}>
         <boxGeometry args={[W * 0.3, W * 0.3, 0.02]} />
-        <meshStandardMaterial color={0x111111} roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color="#111111" roughness={0.3} metalness={0.7} />
       </mesh>
       {/* Camera lenses */}
       {[
@@ -171,22 +159,22 @@ function PhoneModel({ videoUrl, W, H, T, device, autoRotate, textTemplate, video
       ].map((pos, i) => (
         <mesh key={i} position={[pos[0], pos[1], -T / 2 - 0.02]}>
           <cylinderGeometry args={[W * 0.05, W * 0.05, 0.01, 16]} />
-          <meshStandardMaterial color={0x333333} roughness={0.1} metalness={0.9} />
+          <meshStandardMaterial color="#333333" roughness={0.1} metalness={0.9} />
         </mesh>
       ))}
 
       {/* Side buttons */}
       <mesh position={[W / 2 + 0.005, H * 0.15, 0]}>
         <boxGeometry args={[0.01, H * 0.12, T * 0.6]} />
-        <meshStandardMaterial color={0x333333} metalness={0.6} roughness={0.4} />
+        <meshStandardMaterial color="#333333" metalness={0.6} roughness={0.4} />
       </mesh>
       <mesh position={[W / 2 + 0.005, -H * 0.05, 0]}>
         <boxGeometry args={[0.01, H * 0.2, T * 0.6]} />
-        <meshStandardMaterial color={0x333333} metalness={0.6} roughness={0.4} />
+        <meshStandardMaterial color="#333333" metalness={0.6} roughness={0.4} />
       </mesh>
       <mesh position={[-W / 2 - 0.005, H * 0.2, 0]}>
         <boxGeometry args={[0.01, H * 0.1, T * 0.6]} />
-        <meshStandardMaterial color={0x333333} metalness={0.6} roughness={0.4} />
+        <meshStandardMaterial color="#333333" metalness={0.6} roughness={0.4} />
       </mesh>
 
       {/* Text overlay on screen (HTML overlay positioned in 3D) */}
