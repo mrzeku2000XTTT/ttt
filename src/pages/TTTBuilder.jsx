@@ -764,6 +764,18 @@ function TTTBuilderStudio() {
             style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
           >
             <div className="relative max-w-3xl mx-auto text-center">
+              {/* Open-source: clone a standalone TTT Builder repo */}
+              <motion.button
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                onClick={() => setShowCloneModal(true)}
+                className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1614] text-white text-xs font-bold hover:bg-[#2a2622] transition-colors"
+              >
+                <Github className="w-3.5 h-3.5" />
+                Clone TTT Builder repo
+              </motion.button>
+
               {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -859,18 +871,6 @@ function TTTBuilderStudio() {
 
               {/* Kaspa app templates */}
               <TemplateGallery onPick={(t) => generate(t.prompt)} disabled={loading} />
-
-              {/* Open-source: clone a standalone TTT Builder repo */}
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.45 }}
-                onClick={() => setShowCloneModal(true)}
-                className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1614] text-white text-xs font-bold hover:bg-[#2a2622] transition-colors"
-              >
-                <Github className="w-3.5 h-3.5" />
-                Clone TTT Builder repo
-              </motion.button>
 
               {/* Standalone only: open Settings (add/manage models & keys) */}
               {STANDALONE && (
