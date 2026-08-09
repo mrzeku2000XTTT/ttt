@@ -115,8 +115,9 @@ export default async function (req) {
     await sandbox.commands.run(startCmd, { cwd: APP_DIR, background: true, timeoutMs: 15 * 60 * 1000 });
     logs.push(`$ ${startCmd} (background, port ${port})`);
 
-    const host = await sandbox.getHost(port);
-    const url = `https://${host}`;
+    const url = typeof sandbox.getUrl === 'function'
+      ? await sandbox.getUrl(port)
+      : `https://${port}-${sandbox.sandboxId}.e2b.dev`;
 
     // Wait until the server actually answers — otherwise the iframe loads a dead page
     let ready = false;

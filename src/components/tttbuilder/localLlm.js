@@ -161,6 +161,12 @@ export async function callLocalLlm(args) {
   const baseUrl = (provider.baseUrl || "").replace(/\/$/, "");
   if (!baseUrl) throw new Error(`"${provider.label}" has no base URL. Edit it in Open Models.`);
 
+  // Check if this provider supports CORS (browser-direct) or needs a server proxy.
+  // DeepSeek, OpenAI (direct), Anthropic (direct) all block browser CORS — route
+  // them through the backend proxyLlmCall function so they actually work.
+  const preset = PROVIDER_PRESETS.find(p => p.provider === provider.provider);
+  const needsProxy = preset ? !preset.cors : true; // unknown providers default to proxy
+
   // Split system prompt (TTT Agent skills / base rules) from the task prompt.
   // Smaller local models (Ollama qwen, llama, etc.) follow instructions far
   // better when the agent skills are in a dedicated system role message —
@@ -185,51 +191,69 @@ export async function callLocalLlm(args) {
   if (systemContent) messages.push({ role: "system", content: systemContent });
   messages.push({ role: "user", content: parts });
 
-  const headers = { "Content-Type": "application/json" };
-  if (provider.apiKey) headers["Authorization"] = `Bearer ${provider.apiKey}`;
-  if (provider.provider === "openrouter") {
-    headers["HTTP-Referer"] = "https://ttt.builder";
-    headers["X-Title"] = "TTT Builder";
-  }
-
-  // Free / queued models (e.g. OpenRouter free tier) can take a long time or hang
-  // silently. Cap the wait so the build fails fast with a clear message instead of
-  // spinning "Building your site..." forever.
-  const TIMEOUT_MS = 120000;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-  let res;
-  try {
-    res = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: provider.model,
-        messages,
-        temperature: 0.3,
-        max_tokens: 8192,
-      }),
-      signal: controller.signal,
+  // Route through the backend proxy when the provider blocks browser CORS
+  // (DeepSeek, OpenAI direct, Anthropic direct, most Chinese providers).
+  // CORS-friendly providers (Groq, Google, OpenRouter, Ollama) call directly.
+  let text;
+  if (needsProxy) {
+    const { base44 } = await import("@/api/base44Client");
+    const proxyRes = await base44.functions.invoke("proxyLlmCall", {
+      baseUrl,
+      model: provider.model,
+      messages,
+      apiKey: provider.apiKey,
+      temperature: 0.3,
+      maxTokens: 8192,
+      jsonSchema: jsonSchema || null,
     });
-  } catch (err) {
-    if (err?.name === "AbortError") {
-      throw new Error(`${provider.label} timed out after ${TIMEOUT_MS / 1000}s. Free models can queue — try again, pick a faster/paid model, or use Google AI Studio / Ollama.`);
+    const pd = proxyRes?.data || proxyRes || {};
+    if (pd.error) throw new Error(`${provider.label} (proxy): ${pd.error}`);
+    text = pd.content;
+    if (text == null) throw new Error(`${provider.label} (proxy) returned no content`);
+  } else {
+    const headers = { "Content-Type": "application/json" };
+    if (provider.apiKey) headers["Authorization"] = `Bearer ${provider.apiKey}`;
+    if (provider.provider === "openrouter") {
+      headers["HTTP-Referer"] = "https://ttt.builder";
+      headers["X-Title"] = "TTT Builder";
     }
-    throw new Error(`Could not reach ${provider.label} (${baseUrl}). ${err.message || "network error"}. This provider likely blocks browser requests (CORS). Use a browser-friendly provider instead: Groq (console.groq.com — free, fast), Google Gemini (aistudio.google.com — free), or OpenRouter (openrouter.ai). TokenRouter, DeepSeek, and most direct APIs do NOT work from the browser.`);
-  } finally {
-    clearTimeout(timer);
-  }
 
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`${provider.label} error ${res.status}: ${txt.slice(0, 300)}`);
-  }
+    const TIMEOUT_MS = 120000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-  const data = await res.json();
-  const out = data?.choices?.[0]?.message?.content;
-  const text = Array.isArray(out) ? out.map((p) => p.text || "").join("") : out;
-  if (text == null) throw new Error(`${provider.label} returned no content`);
+    let res;
+    try {
+      res = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: provider.model,
+          messages,
+          temperature: 0.3,
+          max_tokens: 8192,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        throw new Error(`${provider.label} timed out after ${TIMEOUT_MS / 1000}s. Free models can queue — try again, pick a faster/paid model, or use Google AI Studio / Ollama.`);
+      }
+      throw new Error(`Could not reach ${provider.label} (${baseUrl}). ${err.message || "network error"}. This provider likely blocks browser requests (CORS). Use a browser-friendly provider instead: Groq (console.groq.com — free, fast), Google Gemini (aistudio.google.com — free), or OpenRouter (openrouter.ai).`);
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`${provider.label} error ${res.status}: ${txt.slice(0, 300)}`);
+    }
+
+    const data = await res.json();
+    const out = data?.choices?.[0]?.message?.content;
+    text = Array.isArray(out) ? out.map((p) => p.text || "").join("") : out;
+    if (text == null) throw new Error(`${provider.label} returned no content`);
+  }
 
   if (jsonSchema) {
     const cleaned = String(text).replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
