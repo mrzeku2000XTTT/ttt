@@ -739,21 +739,21 @@ function TTTBuilderStudio() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowProjects(true)}
-            className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            className={`flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
             title="Saved projects"
           >
-            <FolderOpen className="w-3.5 h-3.5" /> Projects
+            <FolderOpen className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Projects</span>
           </button>
           <button
             onClick={() => navigate('/BuilderSettings')}
-            className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            className={`flex items-center justify-center h-8 w-8 sm:w-auto sm:px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
             title="Builder settings"
           >
-            <Settings className="w-3.5 h-3.5" /> Settings
+            <Settings className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Settings</span>
           </button>
           <button
             onClick={() => setShowCloneModal(true)}
-            className={`flex items-center justify-center h-8 w-8 rounded-full border transition-colors ${phase === "hero" ? "bg-[#1a1614] border-[#1a1614] text-white hover:bg-[#2a2622]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            className={`flex items-center justify-center h-8 w-8 rounded-full border transition-colors flex-shrink-0 ${phase === "hero" ? "bg-[#1a1614] border-[#1a1614] text-white hover:bg-[#2a2622]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
             title="Clone TTT Builder repo"
           >
             <Github className="w-4 h-4" />
@@ -776,16 +776,16 @@ function TTTBuilderStudio() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
-            className="min-h-screen flex flex-col items-center justify-center px-5 bg-[#f5f2ed]"
-            style={{ paddingTop: "calc(3rem + env(safe-area-inset-top, 0px))" }}
+            className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-5 bg-[#f5f2ed]"
+            style={{ paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}
           >
-            <div className="relative max-w-3xl mx-auto text-center">
+            <div className="relative max-w-3xl mx-auto text-center w-full">
               {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#e8e4df] text-[#5a554f] text-xs font-medium mb-10"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#e8e4df] text-[#5a554f] text-xs font-medium mb-6 sm:mb-10"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#8a8076]" />
                 AI Site Builder for Kaspa
@@ -796,7 +796,7 @@ function TTTBuilderStudio() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05] mb-5 text-[#1a1614] font-heading"
+                className="text-4xl sm:text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05] mb-4 sm:mb-5 text-[#1a1614] font-heading"
                 style={{ letterSpacing: "-0.02em" }}
               >
                 Build your site.
@@ -808,7 +808,7 @@ function TTTBuilderStudio() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-[#6a655f] text-lg max-w-xl mx-auto mb-12 font-normal"
+                className="text-[#6a655f] text-base sm:text-lg max-w-xl mx-auto mb-8 sm:mb-12 font-normal px-2"
               >
                 Describe what you want. TTT Builder generates a complete, beautiful landing page — no code needed.
               </motion.p>
@@ -820,14 +820,14 @@ function TTTBuilderStudio() {
                 transition={{ delay: 0.25 }}
                 className="relative max-w-2xl mx-auto"
               >
-                <div className="flex items-center gap-2 bg-white border border-[#e0dcd7] focus-within:border-[#c8c4be] focus-within:shadow-[0_0_0_4px_rgba(26,22,20,0.04)] rounded-2xl p-2 transition-all shadow-[0_2px_8px_rgba(26,22,20,0.04)]">
+                <div className="flex flex-wrap items-center gap-2 bg-white border border-[#e0dcd7] focus-within:border-[#c8c4be] focus-within:shadow-[0_0_0_4px_rgba(26,22,20,0.04)] rounded-2xl p-2 transition-all shadow-[0_2px_8px_rgba(26,22,20,0.04)]">
                   <ModelSelector variant="light" value={model} onChange={changeModel} disabled={loading} onOpenSettings={() => navigate('/BuilderSettings')} />
                   <input
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate(prompt)}
-                    placeholder={chatMode === "plan" ? "Tell the builder your idea — it'll plan it out, no code yet" : "Describe your app — e.g. 'Kaspa staking dashboard with live stats and wallet connect'"}
-                    className="flex-1 min-w-0 bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3"
+                    placeholder={chatMode === "plan" ? "Tell the builder your idea…" : "Describe your app — e.g. 'Kaspa staking dashboard'"}
+                    className="flex-1 min-w-0 w-full sm:w-auto bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3 order-3 sm:order-none"
                   />
                   {/* Plan mode toggle — talk through the idea before building */}
                   <button
