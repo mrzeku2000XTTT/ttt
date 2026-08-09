@@ -12,7 +12,15 @@ export function isStandalone() {
 }
 
 export function getE2BKey() {
-  try { return localStorage.getItem(E2B_KEY_STORAGE) || ""; } catch { return ""; }
+  try {
+    const ls = localStorage.getItem(E2B_KEY_STORAGE) || "";
+    if (ls) return ls;
+  } catch {}
+  // Safer fallback: read from .env (VITE_E2B_API_KEY) — see .env.example
+  try {
+    const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
+    return (env.VITE_E2B_API_KEY || "").trim();
+  } catch { return ""; }
 }
 
 export function setE2BKey(key) {
