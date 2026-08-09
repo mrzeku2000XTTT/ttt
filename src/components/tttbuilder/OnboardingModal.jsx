@@ -37,9 +37,9 @@ function needsOnboarding() {
 export default function OnboardingModal() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0); // 0=model, 1=e2b, 2=done
-  const [model, setModel] = useState("");
+  const [model, setModel] = useState("gemini-2.0-flash");
   const [apiKey, setApiKey] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState("Gemini Flash (free)");
   const [e2bKey, setE2bKey] = useState(() => getE2BKey());
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(false);
@@ -64,7 +64,7 @@ export default function OnboardingModal() {
     if (s.includes("/")) return "openrouter";
     if (s.startsWith("deepseek")) return "deepseek";
     if (s.startsWith("mistral") || s.startsWith("codestral")) return "mistral";
-    return "groq"; // default to Groq (fast + free + CORS-friendly)
+    return "google"; // default to Google Gemini (free + CORS-friendly)
   };
 
   const addModel = () => {
@@ -161,11 +161,11 @@ export default function OnboardingModal() {
                       <input
                         value={model}
                         onChange={(e) => setModel(e.target.value)}
-                        placeholder="llama-3.3-70b-versatile"
+                        placeholder="gemini-2.0-flash"
                         className="w-full bg-white/5 border border-[#70C7BA]/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
                         autoFocus
                       />
-                      <p className="text-[10px] text-white/30 mt-1">Recommended free providers that work from the browser: <b className="text-[#70C7BA]">Groq</b> (console.groq.com/keys — fast, free) or <b className="text-[#70C7BA]">Google Gemini</b> (aistudio.google.com/apikey — free). TokenRouter, DeepSeek direct, and most others block browser requests (CORS).</p>
+                      <p className="text-[10px] text-white/30 mt-1">Default: <b className="text-[#4285F4]">Google Gemini 2.0 Flash</b> — free tier, works from the browser. Get a key at <b className="text-[#4285F4]">aistudio.google.com/apikey</b>. You can also use <b className="text-[#70C7BA]">Groq</b> (console.groq.com/keys — fast, free) or any OpenAI-compatible provider.</p>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-white/50 mb-1 block uppercase tracking-wide">Nickname</label>
@@ -183,7 +183,7 @@ export default function OnboardingModal() {
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                         type="password"
-                        placeholder="sk-or-v1-..."
+                        placeholder="AIza..."
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#70C7BA]/60"
                       />
                     </div>

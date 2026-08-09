@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Cpu } from "lucide-react";
 import { getLocalProviders, LOCAL_MODEL_PREFIX } from "./localLlm";
 import OpenModelsTab from "./OpenModelsTab";
+import GeminiKeyModal from "./GeminiKeyModal";
 
 export const BUILDER_MODELS = [
   { id: "ttt_agent_1", label: "TTT Agent 1 ⚡" },
@@ -17,15 +18,21 @@ export const BUILDER_MODELS = [
 ];
 
 const ADD_VALUE = "__add_local__";
+const GEMINI_QUICK = "__gemini_quick__";
 
 export default function ModelSelector({ value, onChange, disabled }) {
   const [mgrOpen, setMgrOpen] = useState(false);
+  const [geminiOpen, setGeminiOpen] = useState(false);
   const [, forceTick] = useState(0);
   const local = getLocalProviders();
 
   const handleChange = (v) => {
     if (v === ADD_VALUE) {
       setMgrOpen(true);
+      return; // keep current selection
+    }
+    if (v === GEMINI_QUICK) {
+      setGeminiOpen(true);
       return; // keep current selection
     }
     onChange(v);
@@ -46,6 +53,7 @@ export default function ModelSelector({ value, onChange, disabled }) {
               <option key={m.id} value={m.id} className="bg-[#161b22] text-white">{m.label}</option>
             ))}
           </optgroup>
+          <option value={GEMINI_QUICK} className="bg-[#161b22] text-[#4285F4]">★ Gemini Flash (free — add key)</option>
           {local.length > 0 && (
             <optgroup label="Open / Local">
               {local.map((p) => (
@@ -62,6 +70,11 @@ export default function ModelSelector({ value, onChange, disabled }) {
         open={mgrOpen}
         onClose={() => { setMgrOpen(false); forceTick((t) => t + 1); }}
         onAdded={(entry) => { onChange(`${LOCAL_MODEL_PREFIX}${entry.id}`); setMgrOpen(false); forceTick((t) => t + 1); }}
+      />
+      <GeminiKeyModal
+        open={geminiOpen}
+        onClose={() => { setGeminiOpen(false); forceTick((t) => t + 1); }}
+        onSaved={(entry) => { onChange(`${LOCAL_MODEL_PREFIX}${entry.id}`); setGeminiOpen(false); forceTick((t) => t + 1); }}
       />
     </>
   );
