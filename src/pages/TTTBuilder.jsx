@@ -848,6 +848,32 @@ function TTTBuilderStudio() {
                 </div>
               </motion.div>
 
+              {/* Model picker + Settings — choose your model and configure before building */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mt-3 flex flex-wrap items-center justify-center gap-2"
+              >
+                <div className="flex items-center rounded-full bg-[#1a1614] pl-2 pr-1 py-0.5">
+                  <ModelSelector value={model} onChange={changeModel} disabled={loading} />
+                </div>
+                <button
+                  onClick={() => { setDashSection("settings"); setPhase("studio"); }}
+                  className="inline-flex items-center gap-2 h-8 px-3 rounded-full bg-white border border-[#e0dcd7] text-[#5a554f] text-xs font-bold hover:bg-[#f5f2ed] transition-colors"
+                >
+                  <Settings className="w-3.5 h-3.5" /> Settings
+                </button>
+                {STANDALONE && (
+                  <button
+                    onClick={() => window.dispatchEvent(new Event("ttt-open-onboarding"))}
+                    className="inline-flex items-center gap-2 h-8 px-3 rounded-full bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/25 transition-colors"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" /> Setup wizard
+                  </button>
+                )}
+              </motion.div>
+
               {/* Examples */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -868,31 +894,6 @@ function TTTBuilderStudio() {
 
               {/* Kaspa app templates */}
               <TemplateGallery onPick={(t) => generate(t.prompt)} disabled={loading} />
-
-              {/* Standalone only: open Settings (add/manage models & keys) */}
-              {STANDALONE && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="mt-3 flex flex-wrap items-center justify-center gap-2"
-                >
-                  <button
-                    onClick={() => { setDashSection("settings"); setPhase("studio"); }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/25 transition-colors"
-                  >
-                    <Settings className="w-3.5 h-3.5" />
-                    Settings
-                  </button>
-                  <button
-                    onClick={() => window.dispatchEvent(new Event("ttt-open-onboarding"))}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#e0dcd7] text-[#5a554f] text-xs font-bold hover:bg-[#f5f2ed] transition-colors"
-                  >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    Setup wizard
-                  </button>
-                </motion.div>
-              )}
               </div>
               </motion.div>
         ) : (
