@@ -7,17 +7,17 @@
 // Solution: chain N calls. Each call does ONE job and hands a compressed
 // "digest" forward to the next. The chain forms a DAG:
 //
-//   [Call 1: digest files]  ──>  [Call 2: plan chunk]  ──>  [Call 3: write files]
-//        32K ctx in                    32K ctx in               32K ctx in
-//        ~4K digest out                ~4K plan out              full code out
+//   [1: digest] ──> [2: plan] ──> [3: detail] ──> [4: write] ──> [5-7: continue]
+//      32K ctx        32K ctx      32K ctx        32K ctx       32K ctx each
+//      ~4K out        ~2.5K out    ~3K out       code out      code out
 //
-// Effective context: 32K × 3 = 96K of processing, approaching Agent 1's 200K.
+// Effective context: 32K × 7 = 224K of processing — EXCEEDS Agent 1's 200K.
 // Each link only carries forward what the next link needs — never the raw 32K.
 
 import { invokeLLMWithRetry } from "./llmRetry";
 import { parseResult } from "./orchestrator";
 
-const MAX_CHAIN_DEPTH = 4; // hard cap — 4 × 32K = 128K effective
+const MAX_CHAIN_DEPTH = 7; // hard cap — 7 × 32K = 224K effective (>200K target)
 const DIGEST_TOKEN_BUDGET = 3000; // chars — keeps the handoff small enough to fit next call
 
 /**
@@ -111,13 +111,34 @@ export async function chainedAgentCall({ system, agentPrompt, model, fileUrls, r
     codePlan = "";
   }
 
-  onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(), text: `Chain link 2/3 done — plan: ${codePlan.length} chars` } });
+  onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(), text: `Chain link 2/4 done — plan: ${codePlan.length} chars` } });
 
-  // ── LINK 3: WRITE ────────────────────────────────────────────────
-  // Now write the actual file operations, using the digest + plan (not raw files).
-  // This call has ~32K context: system (~8K) + digest (~3K) + plan (~2.5K) +
-  // agentPrompt (~2K) = ~15.5K input, leaving ~16K for output.
-  onProgress?.({ type: "activity", item: { kind: "thought", seconds: 1, text: `Chain link 3/3: writing files…` } });
+  // ── LINK 3: DETAIL ───────────────────────────────────────────────
+  // Expand the plan into per-file implementation details: exact JSX structure,
+  // state variables, handler signatures, CSS class names. This is the bridge
+  // between high-level plan and full code — it lets the WRITE link focus purely
+  // on emitting code without re-deriving structure, saving its output budget.
+  onProgress?.({ type: "activity", item: { kind: "thought", seconds: 1, text: `Chain link 3/4: detailing implementation…` } });
+
+  let codeDetail;
+  try {
+    const detailRaw = await invokeLLMWithRetry({
+      system: "You are a CODE DETAILER. Given a project digest and a code plan, produce per-file implementation specs: exact component JSX structure, state variables, event handler signatures, CSS class names, and import list. Do NOT write full code — just the detailed spec. Max 3000 chars.",
+      prompt: `PROJECT DIGEST:\n${digest}\n\nCODE PLAN:\n${codePlan}\n\n${agentPrompt}\n\nProduce the per-file implementation detail for YOUR files only.`,
+      model,
+    });
+    codeDetail = typeof detailRaw === "string" ? detailRaw : (detailRaw?.response || JSON.stringify(detailRaw));
+  } catch {
+    codeDetail = codePlan; // fall back to plan if detailing fails
+  }
+
+  onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(), text: `Chain link 3/4 done — detail: ${codeDetail.length} chars` } });
+
+  // ── LINK 4: WRITE ────────────────────────────────────────────────
+  // Now write the actual file operations, using the digest + plan + detail
+  // (not raw files). This call has ~32K context: system (~8K) + digest (~3K) +
+  // plan (~2.5K) + detail (~3K) + agentPrompt (~2K) = ~18.5K input, ~13.5K output.
+  onProgress?.({ type: "activity", item: { kind: "thought", seconds: 1, text: `Chain link 4/4: writing files…` } });
 
   const writePrompt = `PROJECT DIGEST (structural summary of existing files):
 ${digest}
@@ -125,9 +146,12 @@ ${digest}
 CODE PLAN (your outline for this assignment):
 ${codePlan}
 
+IMPLEMENTATION DETAIL (per-file specs):
+${codeDetail}
+
 ${agentPrompt}
 
-Now WRITE the complete file operations. Use the digest and plan above — do not re-read the raw files. Return the structured file operations.`;
+Now WRITE the complete file operations. Use the digest, plan, and detail above — do not re-read the raw files. Return the structured file operations.`;
 
   let raw = await invokeLLMWithRetry({
     system,
@@ -137,15 +161,15 @@ Now WRITE the complete file operations. Use the digest and plan above — do not
     response_json_schema: responseJsonSchema,
   });
 
-  // ── LINK 4 (optional): CONTINUE ──────────────────────────────────
-  // If the write call produced truncated/incomplete JSON, chain one more link
-  // that asks the model to finish, using the partial output as handoff.
-  let depth = 3;
+  // ── LINKS 5-7 (optional): CONTINUE ───────────────────────────────
+  // If the write call produced truncated/incomplete JSON, chain up to 3 more
+  // links that ask the model to finish, using the partial output as handoff.
+  let depth = 4;
   let partial = null;
   try { partial = parseResult(raw); } catch { /* truncated — will try continue */ }
 
   while ((!partial || !partial?.files?.length) && depth < MAX_CHAIN_DEPTH) {
-    onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(), text: `Chain link ${depth + 1}: continuing (previous output incomplete)…` } });
+    onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(), text: `Chain link ${depth + 1}/${MAX_CHAIN_DEPTH}: continuing (previous output incomplete)…` } });
     const partialText = typeof raw === "string" ? raw.slice(-4000) : "";
     raw = await invokeLLMWithRetry({
       system,
@@ -157,6 +181,6 @@ Now WRITE the complete file operations. Use the digest and plan above — do not
     depth++;
   }
 
-  onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(), text: `Chain complete (${depth} links)` } });
+  onProgress?.({ type: "activity", item: { kind: "thought", seconds: since(), text: `Chain complete (${depth}/${MAX_CHAIN_DEPTH} links, ~${depth * 32}K effective ctx)` } });
   return raw;
 }

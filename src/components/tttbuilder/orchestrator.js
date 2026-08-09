@@ -1,7 +1,8 @@
 // TTT Agent 1 orchestration — plans a build, then dispatches specialist
 // subagents in a PARALLEL DAG. Up to 10 agents fire at once; each local-model
-// agent chains 3-4 calls (digest→plan→write→continue), so a 10-agent build
-// can have 10 Qwen inferences in flight simultaneously — "10 Qwens per second."
+// agent chains up to 7 calls (digest→plan→detail→write→continue×3), giving
+// 224K effective context (>200K target) per agent, with 10 Qwen inferences
+// in flight simultaneously — "10 Qwens per second."
 //
 // Principles (per https://x.com/0xheycat/status/2078687584872796383):
 //  - Durable handoff:  each chain link passes a compressed digest forward,
