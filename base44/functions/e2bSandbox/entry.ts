@@ -117,7 +117,7 @@ export default async function (req) {
 
     const url = typeof sandbox.getUrl === 'function'
       ? await sandbox.getUrl(port)
-      : `https://${port}-${sandbox.sandboxId}.e2b.dev`;
+      : `https://${sandbox.sandboxId}-${port}.e2b.dev`;
 
     // Wait until the server actually answers — otherwise the iframe loads a dead page
     let ready = false;

@@ -104,7 +104,7 @@ export default defineConfig(async (env) => {
         // Build the preview URL
         const hostname = typeof sbx.getUrl === "function"
           ? sbx.getUrl(devPort)
-          : `https://${devPort}-${sbx.sandboxId}.e2b.dev`;
+          : `https://${sbx.sandboxId}-${devPort}.e2b.dev`;
 
         // Poll until the server actually responds — otherwise the iframe loads a dead page
         let ready = false;
