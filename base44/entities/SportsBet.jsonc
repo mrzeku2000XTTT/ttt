@@ -134,19 +134,23 @@
     "create": {
       "created_by": "{{user.email}}"
     },
-    "read": true,
+    "read": null,
     "update": {
       "$or": [
         {
           "created_by": "{{user.email}}"
         },
         {
-          "user.role": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "delete": {
-      "user.role": "admin"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

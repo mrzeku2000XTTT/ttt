@@ -61,13 +61,13 @@
     "price_kas"
   ],
   "rls": {
-    "create": true,
-    "read": true,
+    "create": null,
+    "read": null,
     "update": {
-      "creator_email": "{{user.email}}"
+      "data.creator_email": "{{user.email}}"
     },
     "delete": {
-      "creator_email": "{{user.email}}"
+      "data.creator_email": "{{user.email}}"
     }
   }
 }
