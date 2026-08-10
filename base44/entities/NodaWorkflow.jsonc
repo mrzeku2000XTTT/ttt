@@ -66,37 +66,43 @@
     "nodes"
   ],
   "rls": {
-    "create": true,
+    "create": null,
     "read": {
       "$or": [
         {
-          "owner_email": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
-          "is_public": true
+          "data.is_public": true
         },
         {
-          "user.role": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "update": {
       "$or": [
         {
-          "owner_email": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
-          "user.role": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "delete": {
       "$or": [
         {
-          "owner_email": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
-          "user.role": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     }

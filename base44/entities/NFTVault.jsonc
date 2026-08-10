@@ -62,11 +62,11 @@
     "wallet_address"
   ],
   "rls": {
-    "create": true,
+    "create": null,
     "read": {
       "$or": [
         {
-          "user_email": "{{user.email}}"
+          "data.user_email": "{{user.email}}"
         },
         {
           "created_by": "{{user.email}}"
@@ -76,7 +76,7 @@
     "update": {
       "$or": [
         {
-          "user_email": "{{user.email}}"
+          "data.user_email": "{{user.email}}"
         },
         {
           "created_by": "{{user.email}}"
@@ -86,7 +86,7 @@
     "delete": {
       "$or": [
         {
-          "user_email": "{{user.email}}"
+          "data.user_email": "{{user.email}}"
         },
         {
           "created_by": "{{user.email}}"

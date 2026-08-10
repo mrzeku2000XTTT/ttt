@@ -75,20 +75,20 @@
     "hirer_email"
   ],
   "rls": {
-    "create": true,
-    "read": true,
+    "create": null,
+    "read": null,
     "update": {
       "$or": [
         {
-          "hirer_email": "{{user.email}}"
+          "data.hirer_email": "{{user.email}}"
         },
         {
-          "target_agent_email": "{{user.email}}"
+          "data.target_agent_email": "{{user.email}}"
         }
       ]
     },
     "delete": {
-      "hirer_email": "{{user.email}}"
+      "data.hirer_email": "{{user.email}}"
     }
   }
 }

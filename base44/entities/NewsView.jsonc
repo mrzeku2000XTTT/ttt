@@ -47,20 +47,28 @@
     "viewed_at"
   ],
   "rls": {
-    "create": true,
+    "create": null,
     "read": {
       "$or": [
         {
-          "viewer_email": "{{user.email}}"
+          "data.viewer_email": "{{user.email}}"
         },
         {
-          "user.role": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
-    "update": false,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "delete": {
-      "user.role": "admin"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

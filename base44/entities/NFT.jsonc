@@ -156,19 +156,21 @@
     "truncated_address"
   ],
   "rls": {
-    "create": true,
-    "read": true,
-    "update": true,
+    "create": null,
+    "read": null,
+    "update": null,
     "delete": {
       "$or": [
         {
-          "owner_email": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
           "created_by": "{{user.email}}"
         },
         {
-          "user.role": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     }
