@@ -86,7 +86,7 @@
           "created_by": "{{user.email}}"
         },
         {
-          "is_active": true
+          "data.is_active": true
         }
       ]
     },

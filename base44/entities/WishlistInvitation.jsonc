@@ -51,24 +51,34 @@
     "invitee_email"
   ],
   "rls": {
-    "create": true,
+    "create": null,
     "read": {
       "$or": [
         {
-          "owner_email": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
-          "invitee_email": "{{user.email}}"
+          "data.invitee_email": "{{user.email}}"
         }
       ]
     },
     "update": {
       "$or": [
         {
-          "owner_email": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
-          "invitee_email": "{{user.email}}"
+          "data.invitee_email": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "data.invitee_email": "{{user.email}}"
         }
       ]
     }
