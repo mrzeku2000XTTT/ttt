@@ -6,6 +6,7 @@ import { Crown, ExternalLink, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { APPS, KASPA_APPS_ORDER } from "./appCatalog";
 import AppPreviewModal from "./AppPreviewModal";
+import AppGridItem from "./AppGridItem";
 
 function AppIcon({ app, hovered }) {
   const videoRef = React.useRef(null);
@@ -160,64 +161,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
         className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3 gap-y-5"
       >
         {filtered.map((app, i) => {
-          const Wrapper = ({ children }) => {
-            const [hovered, setHovered] = React.useState(false);
-            return (
-              <motion.div
-                variants={itemVariants}
-                whileHover={{ y: -5, scale: 1.06, transition: { type: "spring", stiffness: 400, damping: 18 } }}
-                whileTap={{ scale: 0.92 }}
-                onHoverStart={() => setHovered(true)}
-                onHoverEnd={() => setHovered(false)}
-                className="flex flex-col items-center gap-1.5 cursor-pointer group"
-              >
-                {typeof children === "function" ? children(hovered) : children}
-              </motion.div>
-            );
-          };
-          const inner = (
-            <Wrapper>
-              {(hovered) => (<>
-              <motion.div
-                className="relative w-[60px] h-[60px] sm:w-[64px] sm:h-[64px] rounded-2xl overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow"
-                animate={{ y: [0, -1.5, 0] }}
-                transition={{
-                  duration: 3 + (i % 5) * 0.4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: (i % 7) * 0.15,
-                }}
-              >
-                <AppIcon app={app} hovered={hovered} />
-                {/* Glossy hover sheen */}
-                <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-white/30 via-transparent to-transparent" />
-                {app.premium && (
-                  <motion.div
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm"
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <Crown className="w-2.5 h-2.5 text-yellow-900" />
-                  </motion.div>
-                )}
-                {app.community && !app.review && (
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center shadow-sm" title="Community submission">
-                    <ExternalLink className="w-2.5 h-2.5 text-white" />
-                  </div>
-                )}
-                {app.review && (
-                  <div className="absolute -top-0.5 -right-0.5 px-1 h-4 bg-amber-400 rounded-full flex items-center justify-center shadow-sm" title="In Review">
-                    <span className="text-[7px] font-bold text-amber-900 uppercase">Review</span>
-                  </div>
-                )}
-              </motion.div>
-              <div className="text-center max-w-[72px]">
-                <p className="text-[11px] font-semibold text-zinc-800 truncate leading-tight group-hover:text-zinc-950 transition-colors">{app.name}</p>
-                <p className="text-[9px] text-zinc-400 truncate">{app.desc}</p>
-              </div>
-              </>)}
-            </Wrapper>
-          );
+          const inner = <AppGridItem app={app} />;
 
           if (app.externalUrl) {
             return (
