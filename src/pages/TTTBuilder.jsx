@@ -21,6 +21,7 @@ import { bundleProject, applyFileOps, sortFiles, FILE_OPS_SCHEMA, norm, findMiss
 import { orchestrateBuild, parseResult } from "@/components/tttbuilder/orchestrator";
 import { invokeLLMWithRetry } from "@/components/tttbuilder/llmRetry";
 import ProjectsPanel, { upsertProject } from "@/components/tttbuilder/ProjectsPanel";
+import RecentProjects from "@/components/tttbuilder/RecentProjects";
 import DashboardSidebar from "@/components/tttbuilder/DashboardSidebar";
 import { OverviewPanel, AgentsPanel, DatabasePanel, MemoryPanel, SettingsPanel } from "@/components/tttbuilder/DashboardPanels";
 import PushToStoreModal from "@/components/tttbuilder/PushToStoreModal";
@@ -372,16 +373,10 @@ function TTTBuilderStudio() {
     try { localStorage.setItem("ttt_builder_files", JSON.stringify(files)); } catch {}
   }, [files]);
 
-  // RESUME ON MOUNT — if the user comes back with an existing project, jump
-  // straight to the studio (never the hero, never a blank refresh).
+  // Always open on the landing page. Previous work is never lost — it's listed
+  // under "Recent projects" right on the landing, one tap to resume.
   useEffect(() => {
-    try {
-      const savedFiles = JSON.parse(localStorage.getItem("ttt_builder_files") || "[]");
-      const savedMsgs = JSON.parse(localStorage.getItem("ttt_builder_messages") || "[]");
-      if (Array.isArray(savedFiles) && savedFiles.length > 0 && savedMsgs.length > 0) {
-        setPhase("studio");
-      }
-    } catch {}
+    setPhase("hero");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -916,6 +911,9 @@ function TTTBuilderStudio() {
                   </button>
                 ))}
               </motion.div>
+
+              {/* Recent projects — above the templates */}
+              <RecentProjects onOpen={loadProject} onSeeAll={() => setShowProjects(true)} />
 
               {/* Kaspa app templates */}
               <TemplateGallery onPick={(t) => generate(t.prompt)} disabled={loading} />

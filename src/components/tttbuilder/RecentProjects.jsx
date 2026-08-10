@@ -1,0 +1,54 @@
+import React, { useEffect, useState } from "react";
+import { Clock, FileCode2 } from "lucide-react";
+import { loadProjects } from "@/components/tttbuilder/ProjectsPanel";
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+export default function RecentProjects({ onOpen, onSeeAll }) {
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    setProjects(loadProjects().slice(0, 6));
+  }, []);
+
+  if (!projects.length) return null;
+
+  return (
+    <div className="mt-10 text-left">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#8a8580]">Recent projects</h3>
+        <button onClick={onSeeAll} className="text-xs font-semibold text-[#5a554f] hover:text-[#1a1614]">
+          See all
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        {projects.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => onOpen(p)}
+            className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[#e0dcd7] hover:border-[#c8c4be] text-left transition-colors"
+          >
+            <div className="w-9 h-9 rounded-lg bg-[#f0ede8] flex items-center justify-center flex-shrink-0">
+              <FileCode2 className="w-4 h-4 text-[#5a554f]" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-[#1a1614] truncate">{p.name}</div>
+              <div className="flex items-center gap-1.5 text-[10px] text-[#8a8580] mt-0.5">
+                <Clock className="w-2.5 h-2.5" />
+                {timeAgo(p.savedAt)} · {p.files?.length || 0} files
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
