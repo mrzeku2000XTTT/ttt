@@ -1,9 +1,10 @@
 import React from "react";
-import { Home, Code2, Bot, Database, Brain, Settings, Shield, Anchor, ChevronRight, ChevronLeft } from "lucide-react";
+import { Home, Code2, Server, Bot, Database, Brain, Settings, Shield, Anchor, ChevronRight, ChevronLeft } from "lucide-react";
 
 const ITEMS = [
   { id: "overview", label: "Overview", icon: Home },
   { id: "code", label: "Code", icon: Code2 },
+  { id: "live", label: "Live", icon: Server },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "database", label: "Database", icon: Database },
   { id: "memory", label: "Memory", icon: Brain },

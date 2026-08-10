@@ -12,60 +12,37 @@ import BlueprintLandingPreview from "./BlueprintLandingPreview";
 import { PREMIUM_DESIGN_SPEC } from "./designSystem";
 import { enhancePrompt } from "./promptEnhancer";
 import { FileCode } from "lucide-react";
-import {
-  listProjects, saveProject, deleteProject, getActiveProjectId,
-  setActiveProjectId, genProjectId, deriveProjectName,
-} from "./blueprintProjects";
-
-function buildInitialPages(concept, idea) {
-  const page = createPage('Page 1');
-  if (concept?.name) {
-    page.elements.push(
-      createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: concept.name, width: 320, fontSize: 30, fontWeight: 700 }),
-      createElement('text', ELEMENT_TYPES[1], { x: 20, y: 70, content: concept.one_liner || idea || '', width: 320, fontSize: 14, color: `${COLORS.CHARCOAL}aa` }),
-    );
-    if (concept.features) {
-      page.elements.push(createElement('text', ELEMENT_TYPES[1], { x: 20, y: 130, content: concept.features.map(f => `• ${f}`).join('\n'), width: 320, fontSize: 13, color: `${COLORS.CHARCOAL}cc` }));
-    }
-  } else if (idea) {
-    page.elements.push(createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: idea.slice(0, 60), width: 320, fontSize: 26, fontWeight: 700 }));
-  }
-  return [page];
-}
 
 export default function BlueprintBuilder({ idea, concept }) {
-  // On mount, restore the most recent project from localStorage so sites survive refresh.
-  const [restored] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    const activeId = getActiveProjectId();
-    const projects = listProjects();
-    if (activeId) {
-      const p = projects.find(pr => pr.id === activeId);
-      if (p) return p;
+  const [pages, setPages] = useState(() => {
+    const page = createPage('Page 1');
+    if (concept?.name) {
+      page.elements.push(
+        createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: concept.name, width: 320, fontSize: 30, fontWeight: 700 }),
+        createElement('text', ELEMENT_TYPES[1], { x: 20, y: 70, content: concept.one_liner || idea || '', width: 320, fontSize: 14, color: `${COLORS.CHARCOAL}aa` }),
+      );
+      if (concept.features) {
+        page.elements.push(createElement('text', ELEMENT_TYPES[1], { x: 20, y: 130, content: concept.features.map(f => `• ${f}`).join('\n'), width: 320, fontSize: 13, color: `${COLORS.CHARCOAL}cc` }));
+      }
+    } else if (idea) {
+      page.elements.push(createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: idea.slice(0, 60), width: 320, fontSize: 26, fontWeight: 700 }));
     }
-    return projects[0] || null;
+    return [page];
   });
-
-  const [projectId, setProjectId] = useState(() => restored?.id || genProjectId());
-  const [projectName, setProjectName] = useState(() => restored?.name || deriveProjectName(concept, idea));
-  const [pages, setPages] = useState(() => restored?.pages || buildInitialPages(concept, idea));
-  const [currentPageId, setCurrentPageId] = useState(() => restored?.currentPageId || (restored?.pages && restored.pages[0]?.id) || pages[0].id);
+  const [currentPageId, setCurrentPageId] = useState(pages[0].id);
   const [selectedId, setSelectedId] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 20, y: 20 });
   const [tool, setTool] = useState('select');
   const [previewMode, setPreviewMode] = useState(false);
-  const [agentMode, setAgentMode] = useState(() => !restored?.landingHtml);
+  const [agentMode, setAgentMode] = useState(true);
   const [codeMode, setCodeMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [htmlImportOpen, setHtmlImportOpen] = useState(false);
-  const [landingMode, setLandingMode] = useState(() => !!restored?.landingMode);
-  const [landingHtml, setLandingHtml] = useState(() => restored?.landingHtml || '');
+  const [landingMode, setLandingMode] = useState(false);
+  const [landingHtml, setLandingHtml] = useState('');
   const [landingLoading, setLandingLoading] = useState(false);
   const [selectedContext, setSelectedContext] = useState(null);
-  const [autoStarted, setAutoStarted] = useState(() => !!restored?.landingHtml);
-  const [projectsList, setProjectsList] = useState(() => listProjects());
-  const [projectsOpen, setProjectsOpen] = useState(false);
 
   const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
   const elements = currentPage?.elements || [];
@@ -76,72 +53,6 @@ export default function BlueprintBuilder({ idea, concept }) {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-
-  // Auto-save project to localStorage (debounced) so it survives refresh.
-  const saveTimer = React.useRef(null);
-  React.useEffect(() => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveProject({
-        id: projectId,
-        name: projectName,
-        pages,
-        currentPageId,
-        landingHtml,
-        landingMode,
-        concept,
-        idea,
-      });
-      setActiveProjectId(projectId);
-      setProjectsList(listProjects());
-    }, 600);
-    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-  }, [projectId, projectName, pages, currentPageId, landingHtml, landingMode, concept, idea]);
-
-  const handleNewProject = () => {
-    const id = genProjectId();
-    setProjectId(id);
-    setProjectName(deriveProjectName(concept, idea));
-    const fresh = buildInitialPages(concept, idea);
-    setPages(fresh);
-    setCurrentPageId(fresh[0].id);
-    setLandingHtml('');
-    setLandingMode(false);
-    setAutoStarted(false);
-    setAgentMode(true);
-    setSelectedId(null);
-    setActiveProjectId(id);
-    setProjectsOpen(false);
-  };
-
-  const handleOpenProject = (proj) => {
-    setProjectId(proj.id);
-    setProjectName(proj.name || 'Untitled site');
-    setPages(proj.pages || buildInitialPages(proj.concept, proj.idea));
-    const firstPage = (proj.pages || [])[0];
-    setCurrentPageId(proj.currentPageId || (firstPage?.id) || (proj.pages || buildInitialPages(proj.concept, proj.idea))[0].id);
-    setLandingHtml(proj.landingHtml || '');
-    setLandingMode(!!proj.landingMode);
-    setAutoStarted(!!proj.landingHtml);
-    setAgentMode(!proj.landingHtml);
-    setSelectedId(null);
-    setActiveProjectId(proj.id);
-    setProjectsOpen(false);
-  };
-
-  const handleDeleteProject = (id) => {
-    deleteProject(id);
-    setProjectsList(listProjects());
-    if (id === projectId) {
-      const remaining = listProjects();
-      if (remaining.length) handleOpenProject(remaining[0]);
-      else handleNewProject();
-    }
-  };
-
-  const handleRenameProject = (name) => {
-    setProjectName(name);
-  };
 
   const updatePageElements = (pageId, updater) => {
     setPages(prev => prev.map(p => p.id === pageId ? { ...p, elements: updater(p.elements) } : p));
@@ -215,130 +126,81 @@ export default function BlueprintBuilder({ idea, concept }) {
     setSidebarOpen(false);
   };
 
-  // Build a prompt from the Explore concept so the agent starts working immediately
-  const conceptToPrompt = (c) => {
-    if (!c) return '';
-    const parts = [];
-    if (c.name) parts.push(`Product name: ${c.name}`);
-    if (c.one_liner) parts.push(`Tagline: ${c.one_liner}`);
-    if (c.problem) parts.push(`Problem: ${c.problem}`);
-    if (c.solution) parts.push(`Solution: ${c.solution}`);
-    if (c.features?.length) parts.push(`Key features:\n${c.features.map(f => `- ${f}`).join('\n')}`);
-    if (c.why_kaspa) parts.push(`Why Kaspa: ${c.why_kaspa}`);
-    if (c.kaspa_dev) parts.push(`Latest Kaspa dev: ${c.kaspa_dev}`);
-    if (c.market_research) parts.push(`Market research: ${c.market_research}`);
-    if (c.competitors?.length) parts.push(`Competitors: ${c.competitors.join(', ')}`);
-    if (c.next_step) parts.push(`Next step: ${c.next_step}`);
-    return `Build a premium, world-class landing page for this product concept:\n\n${parts.join('\n\n')}`;
-  };
-
-  // Auto-start the agent when a concept is available and nothing has been generated yet
-  React.useEffect(() => {
-    if (concept && !autoStarted && !landingHtml && !landingLoading) {
-      setAutoStarted(true);
-      handleAgentGenerate({ prompt: conceptToPrompt(concept) });
-    }
-  }, [concept, autoStarted, landingHtml, landingLoading]);
-
-  const handleAgentGenerate = async ({ prompt, imageUrl, selectedContext: ctx, addContextFromInternet }) => {
+  const handleAgentGenerate = async ({ prompt, imageUrl, selectedContext: ctx }) => {
     setLandingLoading(true);
     setLandingMode(true);
-    const useWeb = !!addContextFromInternet;
     try {
       // SURGICAL EDIT — an element is selected: edit ONLY that element in the
       // existing landing HTML, leaving every other section byte-for-byte intact.
       if (ctx && landingHtml) {
-        // If the selected element is an image and the user wants a new image,
-        // generate one with AI and inject it directly into that element's src.
-        const wantsImage = /\b(image|img|picture|photo|logo|icon|graphic|illustration)\b/i.test(prompt);
-        if (ctx.tag === 'IMG' && (imageUrl || wantsImage)) {
-          const imgPrompt = imageUrl
-            ? 'Recreate this uploaded image as a web-ready product visual: ' + prompt
-            : 'Generate a high-quality image for this section. Context: ' + (ctx.text || prompt) + '. Style: premium, modern, on-brand.';
-          try {
-            const genRes = await base44.integrations.Core.GenerateImage({ prompt: imgPrompt });
-            if (genRes?.url) {
-              const escaped = ctx.html.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').slice(0, 120);
-              const re = new RegExp(escaped, 'i');
-              const updated = ctx.html.replace(/src="[^"]*"/i, 'src="' + genRes.url + '"').replace(/src='[^']*'/i, 'src="' + genRes.url + '"');
-              setLandingHtml(landingHtml.replace(re, updated));
-              return;
-            }
-          } catch (e) {
-            console.error('Image gen for element failed:', e);
-          }
-        }
-
         const res = await base44.integrations.Core.InvokeLLM({
-          prompt: PREMIUM_DESIGN_SPEC + '\n\n' +
-            'You are an elite front-end engineer performing a SURGICAL edit on a landing page. Your job is to edit ONLY the selected element. Every other part of the page MUST stay byte-for-byte identical.\n\n' +
-            'CURRENT LANDING PAGE HTML (the body content):\n' + landingHtml + '\n\n' +
-            'SELECTED ELEMENT — the ONLY element you may change:\n' +
-            'Tag: ' + ctx.tag + '\n' +
-            (ctx.text ? 'Current text: "' + ctx.text + '"\n' : '') +
-            (ctx.src ? 'Current image src: ' + ctx.src + '\n' : '') +
-            'Current HTML:\n' + (ctx.html || '') + '\n\n' +
-            (imageUrl ? 'A reference image is attached — use it to guide the edit of the selected element.\n' : '') +
-            (useWeb ? 'Web search is enabled — research real data if the edit requires it.\n' : '') +
-            'User edit request: ' + prompt + '\n\n' +
-            'CRITICAL RULES:\n' +
-            '1. Change ONLY the selected element. Do NOT touch any other element, section, class, or text.\n' +
-            '2. If the user asks to change text, update ONLY the selected element text content.\n' +
-            '3. If the user asks to change a color/style, update ONLY the selected element styles or classes.\n' +
-            '4. If the user asks to replace an image, set the selected element src to a new Unsplash URL (https://images.unsplash.com/photo-XXXX) that matches the request.\n' +
-            '5. Preserve the overall page structure, layout, and all other sections exactly as they are.\n\n' +
-            'Return the COMPLETE updated landing page HTML (inside <body> only; no html, head, body, or script tags) with ONLY the selected element changed. Return ONLY the HTML.',
+          prompt: `${PREMIUM_DESIGN_SPEC}
+
+You are editing ONE element in an existing landing page. Edit ONLY that element; every other part of the page MUST stay byte-for-byte identical.
+
+CURRENT LANDING PAGE HTML (the body content):
+${landingHtml}
+
+SELECTED ELEMENT — the only element you may change:
+Tag: ${ctx.tag}
+Current text: ${ctx.text || ''}
+Current HTML:
+${ctx.html || ''}
+
+${imageUrl ? 'A reference image is attached — use it to guide the edit of the selected element.' : ''}
+User's edit request: ${prompt}
+
+Return the COMPLETE updated landing page HTML (inside <body> only; no <html>, <head>, <body>, or <script> tags) with ONLY the selected element changed to satisfy the request. Keep all other sections, classes, copy, and structure identical. Do not add or remove other elements. Return ONLY the HTML.`,
           file_urls: imageUrl ? [imageUrl] : undefined,
           model: 'gemini_3_flash',
-          add_context_from_internet: useWeb,
         });
         const htmlContent = typeof res === 'string' ? res : (res.html || res.content || JSON.stringify(res));
         setLandingHtml(htmlContent);
         return;
       }
 
-      // Full page generation — generate a hero image so the page has a real visual asset baked in.
-      let generatedImageUrl = null;
-      if (concept?.name) {
-        try {
-          const genRes = await base44.integrations.Core.GenerateImage({
-            prompt: 'A premium, modern hero image for "' + concept.name + '": ' + (concept.one_liner || prompt) + '. Clean, professional, brand-ready.',
-          });
-          if (genRes?.url) generatedImageUrl = genRes.url;
-        } catch (e) { /* non-fatal */ }
-      }
-
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: PREMIUM_DESIGN_SPEC + '\n\n' +
-          'You are an elite front-end engineer and motion-design specialist. Generate a complete, world-class premium landing page as a single HTML document using Tailwind CSS classes (loaded via CDN).\n\n' +
-          enhancePrompt(prompt, { concept }) + '\n\n' +
-          (imageUrl ? 'Analyze the uploaded reference image and recreate its layout, sections, and visual style faithfully.\n' : 'Create a modern, visually stunning landing page.\n') +
-          (generatedImageUrl ? 'A hero image has been generated for this page — use this URL as the hero image src: ' + generatedImageUrl + '\n' : '') +
-          (prompt ? 'The user wants: ' + prompt + '\n' : 'Create a complete SaaS landing page.\n') +
-          (concept?.name ? 'Product/brand context: ' + concept.name + (concept.one_liner ? ' — ' + concept.one_liner : '') + '\n' : '') +
-          (useWeb ? 'Web search is enabled — research real competitors, trends, and data to ground the copy and features in reality.\n' : '') +
-          '\nREQUIREMENTS:\n' +
-          '1. Output ONLY the inner HTML (everything inside <body>). No <html>, <head>, <body>, or <script> tags.\n' +
-          '2. Use Tailwind CSS utility classes ONLY. No <style> tags.\n' +
-          '3. Use Google Fonts classes: font-light, font-normal, font-medium, font-semibold, font-bold, font-extrabold.\n' +
-          '4. Include these sections (skip any that do not fit): navbar with logo + nav links + CTA; hero (full viewport) with headline, subheadline, 2 CTA buttons, gradient/image background; logos/social proof strip; features grid (3-4 cards with inline SVG icons); how it works (3 steps); testimonial/quote; pricing (2-3 tiers) if applicable; final CTA with gradient; footer with link columns.\n' +
-          '5. Use real, compelling marketing copy — no lorem ipsum.' + (useWeb ? ' Ground claims in real data from web search.' : '') + '\n' +
-          '6. Modern aesthetics: generous spacing, rounded-xl/2xl corners, subtle shadows, hover transitions, gradient accents.\n' +
-          '7. Inline SVG icons (lucide-style) directly in the HTML — do not reference external icon libraries.\n' +
-          '8. For images, use https://images.unsplash.com/photo-XXXX URLs that actually exist (use well-known photo IDs)' + (generatedImageUrl ? ' or the generated hero image URL provided above' : '') + '.\n' +
-          '9. Make it fully responsive: mobile-first, with sm:/md:/lg: breakpoints.\n' +
-          '10. Add subtle hover effects with transition classes.\n\n' +
-          'Return ONLY the HTML. No markdown, no backticks, no explanation.',
+        prompt: `${PREMIUM_DESIGN_SPEC}
+
+You are an elite front-end engineer and motion-design specialist. Generate a complete, world-class premium landing page as a single HTML document using Tailwind CSS classes (loaded via CDN).
+
+${enhancePrompt(prompt, { concept })}
+
+${imageUrl ? 'Analyze the uploaded reference image and recreate its layout, sections, and visual style faithfully.' : 'Create a modern, visually stunning landing page.'}
+${prompt ? `The user wants: ${prompt}` : 'Create a complete SaaS landing page.'}
+${concept?.name ? `Product/brand context: ${concept.name}${concept.one_liner ? ` — ${concept.one_liner}` : ''}` : ''}
+
+REQUIREMENTS:
+1. Output ONLY the inner HTML (everything inside <body>). Do NOT include <html>, <head>, <body>, or <script> tags — those are provided by the host.
+2. Use Tailwind CSS utility classes ONLY. No <style> tags.
+3. Use Google Fonts classes: font-light, font-normal, font-medium, font-semibold, font-bold, font-extrabold.
+4. Include these sections (skip any that don't fit):
+   - Sticky/fixed navbar with logo text, nav links, and a CTA button
+   - Hero section (full viewport): bold headline, subheadline, 2 CTA buttons, background gradient or image
+   - Logos/social proof strip (trusted by...)
+   - Features grid (3-4 cards with lucide-style SVG icons)
+   - How it works (3 steps)
+   - Testimonial / quote section
+   - Pricing (2-3 tiers) if applicable
+   - Final CTA section with gradient background
+   - Footer with columns of links
+5. Use real, compelling marketing copy — no lorem ipsum.
+6. Modern aesthetics: generous spacing, rounded-xl/2xl corners, subtle shadows, hover transitions, gradient accents.
+7. Inline SVG icons (lucide-style) directly in the HTML — do not reference external icon libraries.
+8. For images, use https://images.unsplash.com/photo-XXXX URLs that actually exist (use well-known photo IDs).
+9. Make it fully responsive: mobile-first, with sm:/md:/lg: breakpoints.
+10. Add subtle hover effects with transition classes.
+
+Return ONLY the HTML. No markdown, no backticks, no explanation.`,
         file_urls: imageUrl ? [imageUrl] : undefined,
         model: 'gemini_3_flash',
-        add_context_from_internet: useWeb,
       });
 
       const htmlContent = typeof res === 'string' ? res : (res.html || res.content || JSON.stringify(res));
       setLandingHtml(htmlContent);
     } catch (err) {
       console.error('Landing generation failed:', err);
-      setLandingHtml('<div class="p-8 text-center text-red-500">Generation failed: ' + (err.message || 'unknown error') + '</div>');
+      setLandingHtml(`<div class="p-8 text-center text-red-500">Generation failed: ${err.message || 'unknown error'}</div>`);
     } finally {
       setLandingLoading(false);
     }
@@ -379,15 +241,6 @@ export default function BlueprintBuilder({ idea, concept }) {
           onDeletePage={handleDeletePage}
           onRenamePage={handleRenamePage}
           onSelectElement={(id) => { setSelectedId(id); setSidebarOpen(false); }}
-          projectName={projectName}
-          onRenameProject={handleRenameProject}
-          projectsList={projectsList}
-          currentProjectId={projectId}
-          onOpenProject={handleOpenProject}
-          onDeleteProject={handleDeleteProject}
-          onNewProject={handleNewProject}
-          projectsOpen={projectsOpen}
-          setProjectsOpen={setProjectsOpen}
         />
       </div>
 

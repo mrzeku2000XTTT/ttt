@@ -139,10 +139,9 @@ export default function ExplorePage() {
   };
 
   const generate = async (overrideIdea) => {
-    const override = typeof overrideIdea === 'string' ? overrideIdea : null;
-    const seed = (override ?? idea).trim();
+    const seed = (overrideIdea ?? idea).trim();
     if (!seed || generating) return;
-    if (override) setIdea(override);
+    if (overrideIdea) setIdea(overrideIdea);
     setGenerating(true);
     setResult(null);
     setView('idea');
@@ -398,7 +397,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         <div className="mt-10">
           <Section n="03">
             <div
-              className="rounded-lg p-5 relative z-20"
+              className="rounded-lg p-5 relative"
               style={{ background: WHITE, border: `1px solid ${INK}` }}
             >
               <textarea
@@ -412,30 +411,20 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
               />
               <div className="flex items-center justify-between mt-3">
                 <button
-                  type="button"
                   onClick={randomPrompt}
-                  className="inline-flex items-center gap-1.5 text-[12px] font-medium transition-opacity hover:opacity-60 cursor-pointer"
-                  style={{ color: GREY, fontFamily: SERIF, touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', minHeight: '44px', cursor: 'pointer', userSelect: 'auto', WebkitUserSelect: 'auto' }}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium transition-opacity hover:opacity-60"
+                  style={{ color: GREY, fontFamily: SERIF }}
                 >
                   <RefreshCw className="w-3 h-3" /> Surprise me
                 </button>
                 <button
-                  type="button"
-                  onClick={() => generate()}
+                  onClick={generate}
                   disabled={!idea.trim() || generating}
-                  className="flex items-center gap-2 h-11 px-6 text-[13px] font-semibold rounded-full transition-colors cursor-pointer"
+                  className="flex items-center gap-2 h-10 px-6 text-[13px] font-semibold rounded-full transition-all"
                   style={{
                     background: (!idea.trim() || generating) ? LINE : INK,
                     color: (!idea.trim() || generating) ? GREY : WHITE,
                     fontFamily: SERIF,
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent',
-                    minHeight: '44px',
-                    cursor: 'pointer',
-                    userSelect: 'auto',
-                    WebkitUserSelect: 'auto',
-                    position: 'relative',
-                    zIndex: 30,
                   }}
                 >
                   {generating ? (

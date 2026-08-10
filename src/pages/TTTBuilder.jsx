@@ -1211,7 +1211,7 @@ function TTTBuilderStudio() {
                             <ArrowLeft className="w-3.5 h-3.5" /> Back
                           </button>
                         )}
-                        {["overview", "code", "agents", "database", "memory", "security", "anchors", "settings"].map(s => (
+                        {["overview", "code", "live", "agents", "database", "memory", "security", "anchors", "settings"].map(s => (
                           <button
                             key={s}
                             onClick={() => setDashSection(s)}
@@ -1246,6 +1246,7 @@ function TTTBuilderStudio() {
                         {dashSection === "code" && loading && (
                           <div className="flex items-center justify-center h-full text-white/30 text-xs">Loading files…</div>
                         )}
+                        {dashSection === "live" && <E2BLivePanel files={files} onUrlChange={setLiveUrl} onFixBuild={fixBuild} onOpenOnboarding={() => window.dispatchEvent(new Event("ttt-open-onboarding"))} />}
                         {dashSection === "agents" && (
                           <div className="h-full overflow-y-auto">
                             <AgentsPanel onGenerate={generate} loading={loading} files={files} />
