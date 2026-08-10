@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Crown, ArrowLeft, Maximize2 } from "lucide-react";
 
@@ -48,6 +48,7 @@ const FEATURED = [
 
 export default function AppStoreFeatured() {
   const [iframeApp, setIframeApp] = useState(null);
+  const navigate = useNavigate();
 
   return (
     <>
@@ -63,7 +64,7 @@ export default function AppStoreFeatured() {
             const card = (
               <div
                 style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-                className={`relative rounded-2xl bg-gradient-to-br ${app.color} p-4 h-40 flex flex-col justify-between overflow-hidden shadow-lg group cursor-pointer transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98]`}
+                className={`relative rounded-2xl bg-gradient-to-br ${app.color} p-4 h-40 flex flex-col justify-between overflow-hidden shadow-lg group cursor-pointer active:scale-[0.98] transition-transform duration-150`}
               >
 ...
                 <ArrowUpRight className="absolute bottom-3 right-3 w-4 h-4 text-white/60 group-hover:text-white transition-colors z-10" />
@@ -73,9 +74,25 @@ export default function AppStoreFeatured() {
             if (app.iframe) {
               return <div key={app.name} onClick={() => setIframeApp(app)}>{card}</div>;
             }
-            return app.external
-              ? <a key={app.name} href={app.external} target="_blank" rel="noopener noreferrer">{card}</a>
-              : <Link key={app.name} to={app.path} onClick={() => { try { localStorage.setItem('came_from_categories', 'true'); } catch {} }}>{card}</Link>;
+            if (app.external) {
+              return <a key={app.name} href={app.external} target="_blank" rel="noopener noreferrer">{card}</a>;
+            }
+            // Native pointerup navigation — fires on the FIRST tap on touch devices
+            const open = () => {
+              try { localStorage.setItem('came_from_categories', 'true'); } catch {}
+              navigate(app.path);
+            };
+            return (
+              <div
+                key={app.name}
+                role="link"
+                onPointerUp={open}
+                onClick={(e) => { if (e.detail === 0) open(); }}
+                style={{ touchAction: 'manipulation' }}
+              >
+                {card}
+              </div>
+            );
           })}
         </div>
       </motion.div>
