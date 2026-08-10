@@ -76,7 +76,8 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
       .catch(() => setCommunityApps([]));
   }, [refreshKey]);
 
-  const allApps = [...APPS, ...communityApps];
+  // TTT Builder lives in the Featured row, not the grid.
+  const allApps = [...APPS, ...communityApps].filter((a) => a.name !== "TTT Builder");
 
   const isKaspaApp = (app) => {
     const text = `${app.name} ${app.desc} ${app.path || ""}`.toLowerCase();

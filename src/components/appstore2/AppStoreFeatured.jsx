@@ -5,6 +5,14 @@ import { ArrowUpRight, Crown, ArrowLeft, Maximize2 } from "lucide-react";
 
 const FEATURED = [
   {
+    name: "TTT Builder",
+    desc: "AI site builder — prompt to live site",
+    path: "/TTTBuilder",
+    color: "from-teal-500 to-emerald-700",
+    logo: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=200&h=200&fit=crop",
+    bg: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&q=70",
+  },
+  {
     name: "oK Motion Lab",
     desc: "3D studio for rendering & animating brand logos",
     iframe: "https://ok-motion-lab.base44.app/",
