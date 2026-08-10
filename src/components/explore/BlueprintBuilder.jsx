@@ -43,6 +43,7 @@ export default function BlueprintBuilder({ idea, concept }) {
   const [landingHtml, setLandingHtml] = useState('');
   const [landingLoading, setLandingLoading] = useState(false);
   const [selectedContext, setSelectedContext] = useState(null);
+  const [autoStarted, setAutoStarted] = useState(false);
 
   const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
   const elements = currentPage?.elements || [];
@@ -125,6 +126,31 @@ export default function BlueprintBuilder({ idea, concept }) {
     setSelectedId(null);
     setSidebarOpen(false);
   };
+
+  // Build a prompt from the Explore concept so the agent starts working immediately
+  const conceptToPrompt = (c) => {
+    if (!c) return '';
+    const parts = [];
+    if (c.name) parts.push(`Product name: ${c.name}`);
+    if (c.one_liner) parts.push(`Tagline: ${c.one_liner}`);
+    if (c.problem) parts.push(`Problem: ${c.problem}`);
+    if (c.solution) parts.push(`Solution: ${c.solution}`);
+    if (c.features?.length) parts.push(`Key features:\n${c.features.map(f => `- ${f}`).join('\n')}`);
+    if (c.why_kaspa) parts.push(`Why Kaspa: ${c.why_kaspa}`);
+    if (c.kaspa_dev) parts.push(`Latest Kaspa dev: ${c.kaspa_dev}`);
+    if (c.market_research) parts.push(`Market research: ${c.market_research}`);
+    if (c.competitors?.length) parts.push(`Competitors: ${c.competitors.join(', ')}`);
+    if (c.next_step) parts.push(`Next step: ${c.next_step}`);
+    return `Build a premium, world-class landing page for this product concept:\n\n${parts.join('\n\n')}`;
+  };
+
+  // Auto-start the agent when a concept is available and nothing has been generated yet
+  React.useEffect(() => {
+    if (concept && !autoStarted && !landingHtml && !landingLoading) {
+      setAutoStarted(true);
+      handleAgentGenerate({ prompt: conceptToPrompt(concept) });
+    }
+  }, [concept, autoStarted, landingHtml, landingLoading]);
 
   const handleAgentGenerate = async ({ prompt, imageUrl, selectedContext: ctx }) => {
     setLandingLoading(true);
