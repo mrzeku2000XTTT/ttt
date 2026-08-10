@@ -152,81 +152,105 @@ export default function BlueprintBuilder({ idea, concept }) {
     }
   }, [concept, autoStarted, landingHtml, landingLoading]);
 
-  const handleAgentGenerate = async ({ prompt, imageUrl, selectedContext: ctx }) => {
+  const handleAgentGenerate = async ({ prompt, imageUrl, selectedContext: ctx, addContextFromInternet }) => {
     setLandingLoading(true);
     setLandingMode(true);
+    const useWeb = !!addContextFromInternet;
     try {
       // SURGICAL EDIT — an element is selected: edit ONLY that element in the
       // existing landing HTML, leaving every other section byte-for-byte intact.
       if (ctx && landingHtml) {
+        // If the selected element is an image and the user wants a new image,
+        // generate one with AI and inject it directly into that element's src.
+        const wantsImage = /\b(image|img|picture|photo|logo|icon|graphic|illustration)\b/i.test(prompt);
+        if (ctx.tag === 'IMG' && (imageUrl || wantsImage)) {
+          const imgPrompt = imageUrl
+            ? 'Recreate this uploaded image as a web-ready product visual: ' + prompt
+            : 'Generate a high-quality image for this section. Context: ' + (ctx.text || prompt) + '. Style: premium, modern, on-brand.';
+          try {
+            const genRes = await base44.integrations.Core.GenerateImage({ prompt: imgPrompt });
+            if (genRes?.url) {
+              const escaped = ctx.html.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').slice(0, 120);
+              const re = new RegExp(escaped, 'i');
+              const updated = ctx.html.replace(/src="[^"]*"/i, 'src="' + genRes.url + '"').replace(/src='[^']*'/i, 'src="' + genRes.url + '"');
+              setLandingHtml(landingHtml.replace(re, updated));
+              return;
+            }
+          } catch (e) {
+            console.error('Image gen for element failed:', e);
+          }
+        }
+
         const res = await base44.integrations.Core.InvokeLLM({
-          prompt: `${PREMIUM_DESIGN_SPEC}
-
-You are editing ONE element in an existing landing page. Edit ONLY that element; every other part of the page MUST stay byte-for-byte identical.
-
-CURRENT LANDING PAGE HTML (the body content):
-${landingHtml}
-
-SELECTED ELEMENT — the only element you may change:
-Tag: ${ctx.tag}
-Current text: ${ctx.text || ''}
-Current HTML:
-${ctx.html || ''}
-
-${imageUrl ? 'A reference image is attached — use it to guide the edit of the selected element.' : ''}
-User's edit request: ${prompt}
-
-Return the COMPLETE updated landing page HTML (inside <body> only; no <html>, <head>, <body>, or <script> tags) with ONLY the selected element changed to satisfy the request. Keep all other sections, classes, copy, and structure identical. Do not add or remove other elements. Return ONLY the HTML.`,
+          prompt: PREMIUM_DESIGN_SPEC + '\n\n' +
+            'You are an elite front-end engineer performing a SURGICAL edit on a landing page. Your job is to edit ONLY the selected element. Every other part of the page MUST stay byte-for-byte identical.\n\n' +
+            'CURRENT LANDING PAGE HTML (the body content):\n' + landingHtml + '\n\n' +
+            'SELECTED ELEMENT — the ONLY element you may change:\n' +
+            'Tag: ' + ctx.tag + '\n' +
+            (ctx.text ? 'Current text: "' + ctx.text + '"\n' : '') +
+            (ctx.src ? 'Current image src: ' + ctx.src + '\n' : '') +
+            'Current HTML:\n' + (ctx.html || '') + '\n\n' +
+            (imageUrl ? 'A reference image is attached — use it to guide the edit of the selected element.\n' : '') +
+            (useWeb ? 'Web search is enabled — research real data if the edit requires it.\n' : '') +
+            'User edit request: ' + prompt + '\n\n' +
+            'CRITICAL RULES:\n' +
+            '1. Change ONLY the selected element. Do NOT touch any other element, section, class, or text.\n' +
+            '2. If the user asks to change text, update ONLY the selected element text content.\n' +
+            '3. If the user asks to change a color/style, update ONLY the selected element styles or classes.\n' +
+            '4. If the user asks to replace an image, set the selected element src to a new Unsplash URL (https://images.unsplash.com/photo-XXXX) that matches the request.\n' +
+            '5. Preserve the overall page structure, layout, and all other sections exactly as they are.\n\n' +
+            'Return the COMPLETE updated landing page HTML (inside <body> only; no html, head, body, or script tags) with ONLY the selected element changed. Return ONLY the HTML.',
           file_urls: imageUrl ? [imageUrl] : undefined,
           model: 'gemini_3_flash',
+          add_context_from_internet: useWeb,
         });
         const htmlContent = typeof res === 'string' ? res : (res.html || res.content || JSON.stringify(res));
         setLandingHtml(htmlContent);
         return;
       }
 
+      // Full page generation — generate a hero image so the page has a real visual asset baked in.
+      let generatedImageUrl = null;
+      if (concept?.name) {
+        try {
+          const genRes = await base44.integrations.Core.GenerateImage({
+            prompt: 'A premium, modern hero image for "' + concept.name + '": ' + (concept.one_liner || prompt) + '. Clean, professional, brand-ready.',
+          });
+          if (genRes?.url) generatedImageUrl = genRes.url;
+        } catch (e) { /* non-fatal */ }
+      }
+
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${PREMIUM_DESIGN_SPEC}
-
-You are an elite front-end engineer and motion-design specialist. Generate a complete, world-class premium landing page as a single HTML document using Tailwind CSS classes (loaded via CDN).
-
-${enhancePrompt(prompt, { concept })}
-
-${imageUrl ? 'Analyze the uploaded reference image and recreate its layout, sections, and visual style faithfully.' : 'Create a modern, visually stunning landing page.'}
-${prompt ? `The user wants: ${prompt}` : 'Create a complete SaaS landing page.'}
-${concept?.name ? `Product/brand context: ${concept.name}${concept.one_liner ? ` — ${concept.one_liner}` : ''}` : ''}
-
-REQUIREMENTS:
-1. Output ONLY the inner HTML (everything inside <body>). Do NOT include <html>, <head>, <body>, or <script> tags — those are provided by the host.
-2. Use Tailwind CSS utility classes ONLY. No <style> tags.
-3. Use Google Fonts classes: font-light, font-normal, font-medium, font-semibold, font-bold, font-extrabold.
-4. Include these sections (skip any that don't fit):
-   - Sticky/fixed navbar with logo text, nav links, and a CTA button
-   - Hero section (full viewport): bold headline, subheadline, 2 CTA buttons, background gradient or image
-   - Logos/social proof strip (trusted by...)
-   - Features grid (3-4 cards with lucide-style SVG icons)
-   - How it works (3 steps)
-   - Testimonial / quote section
-   - Pricing (2-3 tiers) if applicable
-   - Final CTA section with gradient background
-   - Footer with columns of links
-5. Use real, compelling marketing copy — no lorem ipsum.
-6. Modern aesthetics: generous spacing, rounded-xl/2xl corners, subtle shadows, hover transitions, gradient accents.
-7. Inline SVG icons (lucide-style) directly in the HTML — do not reference external icon libraries.
-8. For images, use https://images.unsplash.com/photo-XXXX URLs that actually exist (use well-known photo IDs).
-9. Make it fully responsive: mobile-first, with sm:/md:/lg: breakpoints.
-10. Add subtle hover effects with transition classes.
-
-Return ONLY the HTML. No markdown, no backticks, no explanation.`,
+        prompt: PREMIUM_DESIGN_SPEC + '\n\n' +
+          'You are an elite front-end engineer and motion-design specialist. Generate a complete, world-class premium landing page as a single HTML document using Tailwind CSS classes (loaded via CDN).\n\n' +
+          enhancePrompt(prompt, { concept }) + '\n\n' +
+          (imageUrl ? 'Analyze the uploaded reference image and recreate its layout, sections, and visual style faithfully.\n' : 'Create a modern, visually stunning landing page.\n') +
+          (generatedImageUrl ? 'A hero image has been generated for this page — use this URL as the hero image src: ' + generatedImageUrl + '\n' : '') +
+          (prompt ? 'The user wants: ' + prompt + '\n' : 'Create a complete SaaS landing page.\n') +
+          (concept?.name ? 'Product/brand context: ' + concept.name + (concept.one_liner ? ' — ' + concept.one_liner : '') + '\n' : '') +
+          (useWeb ? 'Web search is enabled — research real competitors, trends, and data to ground the copy and features in reality.\n' : '') +
+          '\nREQUIREMENTS:\n' +
+          '1. Output ONLY the inner HTML (everything inside <body>). No <html>, <head>, <body>, or <script> tags.\n' +
+          '2. Use Tailwind CSS utility classes ONLY. No <style> tags.\n' +
+          '3. Use Google Fonts classes: font-light, font-normal, font-medium, font-semibold, font-bold, font-extrabold.\n' +
+          '4. Include these sections (skip any that do not fit): navbar with logo + nav links + CTA; hero (full viewport) with headline, subheadline, 2 CTA buttons, gradient/image background; logos/social proof strip; features grid (3-4 cards with inline SVG icons); how it works (3 steps); testimonial/quote; pricing (2-3 tiers) if applicable; final CTA with gradient; footer with link columns.\n' +
+          '5. Use real, compelling marketing copy — no lorem ipsum.' + (useWeb ? ' Ground claims in real data from web search.' : '') + '\n' +
+          '6. Modern aesthetics: generous spacing, rounded-xl/2xl corners, subtle shadows, hover transitions, gradient accents.\n' +
+          '7. Inline SVG icons (lucide-style) directly in the HTML — do not reference external icon libraries.\n' +
+          '8. For images, use https://images.unsplash.com/photo-XXXX URLs that actually exist (use well-known photo IDs)' + (generatedImageUrl ? ' or the generated hero image URL provided above' : '') + '.\n' +
+          '9. Make it fully responsive: mobile-first, with sm:/md:/lg: breakpoints.\n' +
+          '10. Add subtle hover effects with transition classes.\n\n' +
+          'Return ONLY the HTML. No markdown, no backticks, no explanation.',
         file_urls: imageUrl ? [imageUrl] : undefined,
         model: 'gemini_3_flash',
+        add_context_from_internet: useWeb,
       });
 
       const htmlContent = typeof res === 'string' ? res : (res.html || res.content || JSON.stringify(res));
       setLandingHtml(htmlContent);
     } catch (err) {
       console.error('Landing generation failed:', err);
-      setLandingHtml(`<div class="p-8 text-center text-red-500">Generation failed: ${err.message || 'unknown error'}</div>`);
+      setLandingHtml('<div class="p-8 text-center text-red-500">Generation failed: ' + (err.message || 'unknown error') + '</div>');
     } finally {
       setLandingLoading(false);
     }

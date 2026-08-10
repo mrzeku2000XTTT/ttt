@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Bot, X, Loader2, Image as ImageIcon, MousePointer2 } from "lucide-react";
+import { Bot, X, Loader2, Image as ImageIcon, MousePointer2, Wand2, Globe, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { COLORS } from "./blueprintConstants";
 
@@ -8,6 +8,10 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [webSearch, setWebSearch] = useState(false);
+  const [genImageOpen, setGenImageOpen] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [generatingImage, setGeneratingImage] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleImageUpload = async (file) => {
@@ -22,14 +26,36 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
     setUploading(false);
   };
 
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) {
+      setError('Describe the image you want to generate');
+      return;
+    }
+    setGeneratingImage(true);
+    setError('');
+    try {
+      const res = await base44.integrations.Core.GenerateImage({ prompt: imagePrompt.trim() });
+      if (res?.url) {
+        setImageUrl(res.url);
+        setGenImageOpen(false);
+        setImagePrompt('');
+      } else {
+        setError('Image generation returned no URL');
+      }
+    } catch (err) {
+      setError(err.message || 'Image generation failed');
+    }
+    setGeneratingImage(false);
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim() && !imageUrl) {
-      setError('Enter a prompt or upload an image');
+      setError('Enter a prompt or upload/generate an image');
       return;
     }
     setError('');
     try {
-      await onGenerate({ prompt: prompt.trim(), imageUrl, selectedContext });
+      await onGenerate({ prompt: prompt.trim(), imageUrl, selectedContext, addContextFromInternet: webSearch });
     } catch (err) {
       setError(err.message || 'Generation failed');
     }
@@ -66,13 +92,13 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: COLORS.TEXT_MED }}>Attached element</p>
             <p className="text-[11px] truncate" style={{ color: COLORS.TEXT_DARK }}>
-              &lt;{selectedContext.tag.toLowerCase()}&gt; {selectedContext.text ? `"${selectedContext.text.slice(0, 40)}"` : 'selected'}
+              &lt;{selectedContext.tag.toLowerCase()}&gt; {selectedContext.text ? `"${selectedContext.text.slice(0, 40)}"` : selectedContext.src ? 'image' : 'selected'}
             </p>
           </div>
         </div>
       )}
 
-      {/* Image upload zone */}
+      {/* Image upload / generate zone */}
       <div className="mb-3">
         {imageUrl ? (
           <div className="relative rounded-lg overflow-hidden" style={{ border: `1px solid ${COLORS.BORDER}` }}>
@@ -85,17 +111,62 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
               <X className="w-3 h-3 text-white" />
             </button>
           </div>
+        ) : genImageOpen ? (
+          <div className="rounded-lg p-3" style={{ border: `2px dashed ${COLORS.BLUE}`, background: '#f5f3ff' }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles className="w-3.5 h-3.5" style={{ color: COLORS.BLUE }} />
+              <span className="text-[11px] font-semibold" style={{ color: COLORS.TEXT_DARK }}>Generate image with AI</span>
+            </div>
+            <input
+              type="text"
+              value={imagePrompt}
+              onChange={e => setImagePrompt(e.target.value)}
+              placeholder="Describe the image — e.g. 'friendly robot mascot, 3D render, purple accents'"
+              className="w-full text-[12px] p-2 rounded-md outline-none mb-2"
+              style={{ border: `1px solid ${COLORS.BORDER}`, color: COLORS.TEXT_DARK }}
+              onKeyDown={e => { if (e.key === 'Enter') handleGenerateImage(); }}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleGenerateImage}
+                disabled={generatingImage}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-semibold transition-opacity"
+                style={{ background: COLORS.BLUE, color: '#fff', opacity: generatingImage ? 0.6 : 1 }}
+              >
+                {generatingImage ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</> : <><Wand2 className="w-3 h-3" /> Generate</>}
+              </button>
+              <button
+                onClick={() => { setGenImageOpen(false); setImagePrompt(''); }}
+                className="px-3 py-2 rounded-md text-[11px] font-medium"
+                style={{ background: '#f3f4f6', color: COLORS.TEXT_MED }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         ) : (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full py-6 rounded-lg flex flex-col items-center gap-2 transition-colors hover:bg-gray-50"
-            style={{ border: `2px dashed ${COLORS.BORDER}`, background: '#f9fafb' }}
-          >
-            <ImageIcon className="w-6 h-6" style={{ color: COLORS.TEXT_MED }} />
-            <span className="text-[12px]" style={{ color: COLORS.TEXT_MED }}>
-              {uploading ? 'Uploading...' : 'Upload a screenshot or mockup'}
-            </span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 py-5 rounded-lg flex flex-col items-center gap-1.5 transition-colors hover:bg-gray-50"
+              style={{ border: `2px dashed ${COLORS.BORDER}`, background: '#f9fafb' }}
+            >
+              <ImageIcon className="w-5 h-5" style={{ color: COLORS.TEXT_MED }} />
+              <span className="text-[11px]" style={{ color: COLORS.TEXT_MED }}>
+                {uploading ? 'Uploading...' : 'Upload'}
+              </span>
+            </button>
+            <button
+              onClick={() => setGenImageOpen(true)}
+              className="flex-1 py-5 rounded-lg flex flex-col items-center gap-1.5 transition-colors hover:bg-purple-50"
+              style={{ border: `2px dashed ${COLORS.BLUE}`, background: '#f5f3ff' }}
+            >
+              <Wand2 className="w-5 h-5" style={{ color: COLORS.BLUE }} />
+              <span className="text-[11px] font-medium" style={{ color: COLORS.BLUE }}>
+                Generate image
+              </span>
+            </button>
+          </div>
         )}
         <input
           ref={fileInputRef}
@@ -112,9 +183,23 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
         onChange={e => setPrompt(e.target.value)}
         placeholder={selectedContext ? "Describe how to edit the attached element (only it will change)…" : "Describe the site you want, or say 'recreate the uploaded image as a landing page'..."}
         rows={3}
-        className="w-full text-[13px] p-2.5 rounded-lg outline-none resize-none mb-3"
+        className="w-full text-[13px] p-2.5 rounded-lg outline-none resize-none mb-2"
         style={{ border: `1px solid ${COLORS.BORDER}`, color: COLORS.TEXT_DARK, fontFamily: "'Inter', system-ui, sans-serif" }}
       />
+
+      {/* Web search toggle */}
+      <button
+        onClick={() => setWebSearch(!webSearch)}
+        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg mb-3 transition-colors text-[11px] font-medium"
+        style={{
+          background: webSearch ? '#f5f3ff' : '#f9fafb',
+          border: `1px solid ${webSearch ? COLORS.BLUE : COLORS.BORDER}`,
+          color: webSearch ? COLORS.BLUE : COLORS.TEXT_MED,
+        }}
+      >
+        <Globe className="w-3.5 h-3.5 flex-shrink-0" />
+        <span>{webSearch ? 'Web search ON — agent will research live data' : 'Search the web for real data (competitors, trends, facts)'}</span>
+      </button>
 
       {error && <p className="text-[11px] mb-2" style={{ color: '#dc2626' }}>{error}</p>}
 

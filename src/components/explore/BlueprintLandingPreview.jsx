@@ -44,6 +44,9 @@ const IFRAME_SCRIPT = `
       tag: selectedEl.tagName,
       text: selectedEl.innerText || '',
       outerHTML: outerHTML,
+      src: selectedEl.src || selectedEl.getAttribute('src') || '',
+      href: selectedEl.href || selectedEl.getAttribute('href') || '',
+      alt: selectedEl.alt || selectedEl.getAttribute('alt') || '',
       styles: {
         color: cs.color,
         backgroundColor: cs.backgroundColor,
@@ -61,6 +64,9 @@ const IFRAME_SCRIPT = `
     if (!msg || !msg.type) return;
     if (msg.type === 'bp-update' && selectedEl) {
       if (msg.prop === 'text') { selectedEl.innerText = msg.value; }
+      else if (msg.prop === 'src') { selectedEl.src = msg.value; selectedEl.setAttribute('src', msg.value); }
+      else if (msg.prop === 'href') { selectedEl.href = msg.value; selectedEl.setAttribute('href', msg.value); }
+      else if (msg.prop === 'alt') { selectedEl.setAttribute('alt', msg.value); }
       else {
         selectedEl.style[msg.prop] = msg.value;
         // Tailwind gradient buttons paint via background-image, which sits on
@@ -160,6 +166,9 @@ ${html}
           tag: msg.data.tag,
           text: msg.data.text,
           html: msg.data.outerHTML,
+          src: msg.data.src || '',
+          href: msg.data.href || '',
+          alt: msg.data.alt || '',
           color: rgbToHex(msg.data.styles.color),
           backgroundColor: rgbToHex(msg.data.styles.backgroundColor),
           fontSize: pxToNum(msg.data.styles.fontSize),
@@ -168,7 +177,7 @@ ${html}
           borderRadius: pxToNum(msg.data.styles.borderRadius),
           textAlign: msg.data.styles.textAlign,
         });
-        onSelectContext && onSelectContext({ tag: msg.data.tag, text: msg.data.text, html: msg.data.outerHTML });
+        onSelectContext && onSelectContext({ tag: msg.data.tag, text: msg.data.text, html: msg.data.outerHTML, src: msg.data.src, href: msg.data.href });
       } else if (msg.type === 'bp-deselect') {
         setSelectedEl(null);
         onClearContext && onClearContext();
@@ -368,29 +377,68 @@ function ComponentEditPanel({ selected, onPropChange, onDelete, onClose }) {
       </div>
 
       <div className="p-3 space-y-3">
-        <div>
-          <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Text Content</label>
-          <textarea
-            value={selected.text}
-            onChange={e => onPropChange('text', e.target.value)}
-            rows={3}
-            className={`${inputCls} mt-1 resize-none`}
-            style={borderStyle}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Text Color</label>
-            <input type="color" value={selected.color} onChange={e => onPropChange('color', e.target.value)}
-              className="w-full h-8 mt-1 rounded-md cursor-pointer border" style={borderStyle} />
-          </div>
-          <div>
-            <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Background</label>
-            <input type="color" value={selected.backgroundColor} onChange={e => onPropChange('backgroundColor', e.target.value)}
-              className="w-full h-8 mt-1 rounded-md cursor-pointer border" style={borderStyle} />
-          </div>
-        </div>
+        {selected.tag === 'IMG' ? (
+          <>
+            <div>
+              <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Image Preview</label>
+              {selected.src ? (
+                <div className="mt-1 rounded-lg overflow-hidden border" style={borderStyle}>
+                  <img src={selected.src} alt={selected.alt || ''} className="w-full max-h-40 object-contain" style={{ background: '#f9fafb' }} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                  <div style={{ display: 'none' }} className="w-full h-24 flex-col items-center justify-center text-[11px]" >
+                    <span style={{ color: '#dc2626' }}>Image didn't load</span>
+                    <span style={{ color: COLORS.TEXT_MED }}>Use "Generate image" in the agent panel</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-1 rounded-lg border flex items-center justify-center h-24 text-[11px]" style={{ ...borderStyle, color: COLORS.TEXT_MED, background: '#f9fafb' }}>
+                  No image source
+                </div>
+              )}
+            </div>
+            <div>
+              <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Image URL (src)</label>
+              <input type="text" value={selected.src} onChange={e => onPropChange('src', e.target.value)}
+                className={`${inputCls} mt-1`} style={borderStyle} placeholder="https://..." />
+            </div>
+            <div>
+              <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Alt Text</label>
+              <input type="text" value={selected.alt} onChange={e => onPropChange('alt', e.target.value)}
+                className={`${inputCls} mt-1`} style={borderStyle} placeholder="Describe the image" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Text Content</label>
+              <textarea
+                value={selected.text}
+                onChange={e => onPropChange('text', e.target.value)}
+                rows={3}
+                className={`${inputCls} mt-1 resize-none`}
+                style={borderStyle}
+              />
+            </div>
+            {selected.tag === 'A' && (
+              <div>
+                <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Link URL (href)</label>
+                <input type="text" value={selected.href} onChange={e => onPropChange('href', e.target.value)}
+                  className={`${inputCls} mt-1`} style={borderStyle} placeholder="https://..." />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Text Color</label>
+                <input type="color" value={selected.color} onChange={e => onPropChange('color', e.target.value)}
+                  className="w-full h-8 mt-1 rounded-md cursor-pointer border" style={borderStyle} />
+              </div>
+              <div>
+                <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Background</label>
+                <input type="color" value={selected.backgroundColor} onChange={e => onPropChange('backgroundColor', e.target.value)}
+                  className="w-full h-8 mt-1 rounded-md cursor-pointer border" style={borderStyle} />
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <div>
