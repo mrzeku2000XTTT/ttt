@@ -40,9 +40,13 @@ const IFRAME_SCRIPT = `
     selectedEl.style.outline = '2px solid #5a3fff';
     selectedEl.style.cursor = 'pointer';
     var cs = window.getComputedStyle(selectedEl);
+    var imgSrc = '';
+    if (selectedEl.tagName === 'IMG') { imgSrc = selectedEl.src; }
+    else if (selectedEl.querySelector) { var innerImg = selectedEl.querySelector('img'); if (innerImg) imgSrc = innerImg.src; }
     parent.postMessage({ type: 'bp-select', data: {
       tag: selectedEl.tagName,
       text: selectedEl.innerText || '',
+      src: imgSrc,
       outerHTML: outerHTML,
       styles: {
         color: cs.color,
@@ -61,6 +65,10 @@ const IFRAME_SCRIPT = `
     if (!msg || !msg.type) return;
     if (msg.type === 'bp-update' && selectedEl) {
       if (msg.prop === 'text') { selectedEl.innerText = msg.value; }
+      else if (msg.prop === 'src') {
+        if (selectedEl.tagName === 'IMG') { selectedEl.src = msg.value; }
+        else if (selectedEl.querySelector) { var im = selectedEl.querySelector('img'); if (im) im.src = msg.value; }
+      }
       else {
         selectedEl.style[msg.prop] = msg.value;
         // Tailwind gradient buttons paint via background-image, which sits on
@@ -159,6 +167,7 @@ ${html}
         setSelectedEl({
           tag: msg.data.tag,
           text: msg.data.text,
+          src: msg.data.src || '',
           html: msg.data.outerHTML,
           color: rgbToHex(msg.data.styles.color),
           backgroundColor: rgbToHex(msg.data.styles.backgroundColor),
@@ -168,7 +177,7 @@ ${html}
           borderRadius: pxToNum(msg.data.styles.borderRadius),
           textAlign: msg.data.styles.textAlign,
         });
-        onSelectContext && onSelectContext({ tag: msg.data.tag, text: msg.data.text, html: msg.data.outerHTML });
+        onSelectContext && onSelectContext({ tag: msg.data.tag, text: msg.data.text, src: msg.data.src || '', html: msg.data.outerHTML });
       } else if (msg.type === 'bp-deselect') {
         setSelectedEl(null);
         onClearContext && onClearContext();
@@ -368,6 +377,25 @@ function ComponentEditPanel({ selected, onPropChange, onDelete, onClose }) {
       </div>
 
       <div className="p-3 space-y-3">
+        {selected.src && (
+          <div>
+            <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Image</label>
+            <img
+              src={selected.src}
+              alt="Selected element"
+              className="w-full rounded-md border mt-1 mb-1.5"
+              style={{ ...borderStyle, maxHeight: 120, objectFit: 'contain', background: '#f9fafb' }}
+            />
+            <input
+              type="text"
+              value={selected.src}
+              onChange={e => onPropChange('src', e.target.value)}
+              placeholder="Image URL"
+              className={inputCls}
+              style={borderStyle}
+            />
+          </div>
+        )}
         <div>
           <label className={labelCls} style={{ color: COLORS.TEXT_MED }}>Text Content</label>
           <textarea

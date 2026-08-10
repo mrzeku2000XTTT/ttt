@@ -418,7 +418,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
                   <RefreshCw className="w-3 h-3" /> Surprise me
                 </button>
                 <button
-                  onClick={generate}
+                  onClick={() => generate()}
                   disabled={!idea.trim() || generating}
                   className="flex items-center gap-2 h-10 px-6 text-[13px] font-semibold rounded-full transition-all"
                   style={{
@@ -606,7 +606,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         {result?.error && !generating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-10">
             <p className="text-[14px] mb-3" style={{ color: GREY, fontFamily: SERIF }}>Something went wrong.</p>
-            <button onClick={generate} className="text-[13px] font-semibold underline underline-offset-2" style={{ color: INK, fontFamily: SERIF }}>
+            <button onClick={() => generate()} className="text-[13px] font-semibold underline underline-offset-2" style={{ color: INK, fontFamily: SERIF }}>
               Try again
             </button>
           </motion.div>

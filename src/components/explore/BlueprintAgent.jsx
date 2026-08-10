@@ -62,7 +62,11 @@ export default function BlueprintAgent({ onGenerate, onUploadImage, loading, onC
       {/* Attached element context — the agent will edit only this element */}
       {selectedContext && (
         <div className="mb-3 flex items-center gap-2 px-2.5 py-2 rounded-lg" style={{ background: '#eef2ff', border: '1px solid #c7d2fe' }}>
-          <MousePointer2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: COLORS.BLUE }} />
+          {selectedContext.src ? (
+            <img src={selectedContext.src} alt="" className="w-9 h-9 rounded object-cover flex-shrink-0" style={{ border: '1px solid #c7d2fe' }} />
+          ) : (
+            <MousePointer2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: COLORS.BLUE }} />
+          )}
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: COLORS.TEXT_MED }}>Attached element</p>
             <p className="text-[11px] truncate" style={{ color: COLORS.TEXT_DARK }}>

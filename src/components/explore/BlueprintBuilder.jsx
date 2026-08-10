@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Folder } from "lucide-react";
+import BlueprintProjects, { saveProject, loadProjects } from "./BlueprintProjects";
 import { COLORS, ELEMENT_TYPES, createElement, createPage } from "./blueprintConstants";
 import BlueprintCanvas from "./BlueprintCanvas";
 import BlueprintSidebar from "./BlueprintSidebar";
@@ -43,6 +44,61 @@ export default function BlueprintBuilder({ idea, concept }) {
   const [landingHtml, setLandingHtml] = useState('');
   const [landingLoading, setLandingLoading] = useState(false);
   const [selectedContext, setSelectedContext] = useState(null);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [projectId, setProjectId] = useState(() => {
+    // New concept from Idea Lab → start a fresh project; otherwise resume the last one.
+    if (concept?.name) return `bp_${Date.now()}`;
+    try { return localStorage.getItem('blueprint_current_project') || `bp_${Date.now()}`; } catch { return `bp_${Date.now()}`; }
+  });
+
+  // Restore the last project on mount (survive refresh)
+  React.useEffect(() => {
+    if (concept?.name) return;
+    const saved = loadProjects().find(p => p.id === projectId);
+    if (saved) {
+      if (saved.pages?.length) { setPages(saved.pages); setCurrentPageId(saved.pages[0].id); }
+      if (saved.landingHtml) { setLandingHtml(saved.landingHtml); setLandingMode(true); }
+    }
+  }, []);
+
+  // Auto-save the project as the user works (debounced)
+  React.useEffect(() => {
+    const t = setTimeout(() => {
+      const hasContent = landingHtml || pages.some(p => p.elements.length > 0);
+      if (!hasContent) return;
+      const htmlTitle = (landingHtml.match(/<h1[^>]*>\s*([^<]{3,60})/) || [])[1];
+      saveProject({
+        id: projectId,
+        name: concept?.name || (htmlTitle ? htmlTitle.trim() : '') || pages[0]?.elements?.[0]?.content?.slice(0, 40) || 'Untitled project',
+        pages,
+        landingHtml,
+        updated: Date.now(),
+      });
+      try { localStorage.setItem('blueprint_current_project', projectId); } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [pages, landingHtml, projectId]);
+
+  // Coming from Idea Lab with a concept → auto-start building the site from it
+  const autoGenRef = React.useRef(false);
+  React.useEffect(() => {
+    if (concept?.name && !landingHtml && !autoGenRef.current) {
+      autoGenRef.current = true;
+      handleAgentGenerate({
+        prompt: `Build a premium landing page for "${concept.name}" — ${concept.one_liner || idea || ''}. The problem it solves: ${concept.problem || ''} The solution: ${concept.solution || ''} Key features to showcase: ${(concept.features || []).join('; ')}. Why Kaspa: ${concept.why_kaspa || ''}`,
+      });
+    }
+  }, []);
+
+  const handleLoadProject = (p) => {
+    setProjectId(p.id);
+    if (p.pages?.length) { setPages(p.pages); setCurrentPageId(p.pages[0].id); }
+    setLandingHtml(p.landingHtml || '');
+    setLandingMode(!!p.landingHtml);
+    setSelectedId(null);
+    setProjectsOpen(false);
+    try { localStorage.setItem('blueprint_current_project', p.id); } catch {}
+  };
 
   const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
   const elements = currentPage?.elements || [];
@@ -130,6 +186,23 @@ export default function BlueprintBuilder({ idea, concept }) {
     setLandingLoading(true);
     setLandingMode(true);
     try {
+      // INTENT: does the user want a brand-new AI-generated image?
+      const wantsGenImage =
+        /\b(generate|create|make|draw|design|add)\b[^.]{0,60}\b(image|photo|picture|illustration|hero|logo|background|banner|graphic)\b/i.test(prompt) ||
+        /\b(image|photo|picture)s?\b[^.]{0,50}\b(broken|didn'?t load|not load|missing|fix|replace)\b/i.test(prompt);
+      // INTENT: does the user want live web research?
+      const wantsWeb = /\b(search|research|look up|find out|latest|current|news|real data|competitor|trending)\b/i.test(prompt);
+
+      let genImageUrl = '';
+      if (wantsGenImage) {
+        try {
+          const img = await base44.integrations.Core.GenerateImage({
+            prompt: `High-quality website image for: ${prompt}. ${concept?.name ? `Brand context: ${concept.name} — ${concept.one_liner || ''}.` : ''} Professional, modern, premium web aesthetic, cinematic lighting, no text overlays.`,
+          });
+          genImageUrl = img?.url || '';
+        } catch {}
+      }
+
       // SURGICAL EDIT — an element is selected: edit ONLY that element in the
       // existing landing HTML, leaving every other section byte-for-byte intact.
       if (ctx && landingHtml) {
@@ -144,14 +217,22 @@ ${landingHtml}
 SELECTED ELEMENT — the only element you may change:
 Tag: ${ctx.tag}
 Current text: ${ctx.text || ''}
+${ctx.src ? `Current image src: ${ctx.src}` : ''}
 Current HTML:
 ${ctx.html || ''}
 
 ${imageUrl ? 'A reference image is attached — use it to guide the edit of the selected element.' : ''}
+${genImageUrl ? `A brand-new AI-generated image was created for this request. Use this EXACT URL where the image is needed: ${genImageUrl}` : ''}
 User's edit request: ${prompt}
 
-Return the COMPLETE updated landing page HTML (inside <body> only; no <html>, <head>, <body>, or <script> tags) with ONLY the selected element changed to satisfy the request. Keep all other sections, classes, copy, and structure identical. Do not add or remove other elements. Return ONLY the HTML.`,
+INTENT RULES:
+- If the request clearly targets the selected element, change ONLY it.
+- If the request clearly refers to something BROADER (e.g. "make the whole page darker", "change all buttons"), apply it to the parts the user actually means — do not refuse.
+- Understand the user's intent precisely; make the exact change they describe, nothing more.
+
+Return the COMPLETE updated landing page HTML (inside <body> only; no <html>, <head>, <body>, or <script> tags). Keep every untouched section, class, and copy identical. Return ONLY the HTML.`,
           file_urls: imageUrl ? [imageUrl] : undefined,
+          add_context_from_internet: wantsWeb || undefined,
           model: 'gemini_3_flash',
         });
         const htmlContent = typeof res === 'string' ? res : (res.html || res.content || JSON.stringify(res));
@@ -187,12 +268,13 @@ REQUIREMENTS:
 5. Use real, compelling marketing copy — no lorem ipsum.
 6. Modern aesthetics: generous spacing, rounded-xl/2xl corners, subtle shadows, hover transitions, gradient accents.
 7. Inline SVG icons (lucide-style) directly in the HTML — do not reference external icon libraries.
-8. For images, use https://images.unsplash.com/photo-XXXX URLs that actually exist (use well-known photo IDs).
+8. For images, use https://picsum.photos/seed/<descriptive-keyword>/1200/800 URLs (they ALWAYS load) or well-known Unsplash photo IDs you are CERTAIN exist. NEVER invent Unsplash photo IDs — broken images are unacceptable.${genImageUrl ? `\n   An AI-generated image was created for this site — use this EXACT URL for the hero or most prominent image: ${genImageUrl}` : ''}
 9. Make it fully responsive: mobile-first, with sm:/md:/lg: breakpoints.
 10. Add subtle hover effects with transition classes.
 
 Return ONLY the HTML. No markdown, no backticks, no explanation.`,
         file_urls: imageUrl ? [imageUrl] : undefined,
+        add_context_from_internet: wantsWeb || undefined,
         model: 'gemini_3_flash',
       });
 
@@ -246,6 +328,14 @@ Return ONLY the HTML. No markdown, no backticks, no explanation.`,
 
       {/* Canvas area */}
       <div className="flex-1 relative overflow-hidden flex flex-col">
+        <button
+          onClick={() => setProjectsOpen(true)}
+          className="absolute top-2 right-2 z-40 flex items-center gap-1.5 px-3 h-9 rounded-lg text-[12px] font-semibold transition-colors hover:bg-gray-50"
+          style={{ background: '#fff', border: `1px solid ${COLORS.BORDER}`, color: COLORS.TEXT_DARK, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+          title="My saved projects"
+        >
+          <Folder className="w-3.5 h-3.5" /> Projects
+        </button>
         {agentMode && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-full px-4 max-w-md">
             <BlueprintAgent onGenerate={handleAgentGenerate} loading={landingLoading} onClose={() => setAgentMode(false)} selectedContext={selectedContext} />
@@ -298,6 +388,14 @@ Return ONLY the HTML. No markdown, no backticks, no explanation.`,
           setLandingMode={setLandingMode}
         />
       </div>
+
+      {projectsOpen && (
+        <BlueprintProjects
+          currentId={projectId}
+          onLoad={handleLoadProject}
+          onClose={() => setProjectsOpen(false)}
+        />
+      )}
 
       {htmlImportOpen && (
         <BlueprintHtmlImport
