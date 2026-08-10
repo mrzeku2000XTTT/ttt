@@ -40,6 +40,7 @@ import { analyzeAttachments } from "@/components/tttbuilder/fileAnalyzer";
 import CloneBuilderRepoModal from "@/components/tttbuilder/CloneBuilderRepoModal";
 import OnboardingModal, { isStandalone } from "@/components/tttbuilder/OnboardingModal";
 import { getLocalProviders, LOCAL_MODEL_PREFIX, isLocalModelId } from "@/components/tttbuilder/localLlm";
+import { persistBuild, guardUnload } from "@/components/tttbuilder/buildKeepAlive";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 const STANDALONE = isStandalone();
@@ -442,6 +443,8 @@ function TTTBuilderStudio() {
     if (!userPrompt.trim() || loading) return;
     const runMode = opts.mode || buildMode;
     const myRunId = ++runIdRef.current;
+    // Keep the build alive: block accidental refresh/close until it finishes.
+    const releaseGuard = guardUnload();
     setLoading(true);
     setPhase("studio");
 
@@ -593,6 +596,10 @@ function TTTBuilderStudio() {
       // Stale run (user hit New Chat mid-build) — drop everything, don't touch state.
       if (runIdRef.current !== myRunId) return;
 
+      // Persist immediately — if the builder was unmounted (user navigated away
+      // inside the app) the finished build is still saved and restored on return.
+      persistBuild({ files: nextFiles, messages: [...messages, newMsg], phase: "studio" });
+
       setFiles(nextFiles);
       setActivePath(touched.includes("index.html") ? "index.html" : touched[0] || "index.html");
       setIframeKey(k => k + 1);
@@ -602,6 +609,7 @@ function TTTBuilderStudio() {
       const finalMsg = { role: "assistant", content: summary, thinking, files: touched, agents: agentList || undefined, plan: planText || undefined, activity: activityLog.length ? activityLog : undefined };
       if (isAgent1) patchLast(finalMsg);
       else setMessages(prev => [...prev, finalMsg]);
+      persistBuild({ files: nextFiles, messages: [...messages, newMsg, finalMsg], phase: "studio" });
 
       // Auto-snapshot this build so it shows up in Projects and can be restored later
       try {
@@ -627,6 +635,7 @@ function TTTBuilderStudio() {
         content: `⚠️ Generation failed: ${err?.message || "unknown error"}\n\nTip: big multi-file projects work best with a shorter, more specific prompt.`,
       }]);
     } finally {
+      releaseGuard();
       if (runIdRef.current === myRunId) setLoading(false);
     }
   };
