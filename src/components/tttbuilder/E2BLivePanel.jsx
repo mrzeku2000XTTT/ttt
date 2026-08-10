@@ -132,8 +132,16 @@ export default defineConfig(async (env) => {
         } else if (d.url && d.ready) {
           setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: d.logs || [], error: null });
         } else if (d.url && d.ready === false) {
-          // Server started but didn't respond in time — show it anyway with a warning
-          setState({ status: "live", url: d.url, sandboxId: d.sandboxId || null, logs: [...(d.logs || []), "⚠️ server still warming up — reload in a few seconds if blank"], error: null });
+          // Server never confirmed listening on the port — loading the iframe would
+          // hit E2B's edge with a dead port ("invalid sandbox port"). Surface the
+          // logs so the build error is visible instead.
+          setState({
+            status: "error",
+            url: null,
+            sandboxId: d.sandboxId || null,
+            logs: d.logs || [],
+            error: "The dev server didn't start in time. Open the logs — if it's a Vite build error, tap \"Fix build error\".",
+          });
         } else {
           setState({ status: "error", url: null, sandboxId: null, logs: d.logs || [], error: "No preview URL returned from the sandbox." });
         }

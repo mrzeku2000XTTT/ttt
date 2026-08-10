@@ -115,19 +115,39 @@ export default async function (req) {
     await sandbox.commands.run(startCmd, { cwd: APP_DIR, background: true, timeoutMs: 15 * 60 * 1000 });
     logs.push(`$ ${startCmd} (background, port ${port})`);
 
+    // Give the process a moment to bind before probing.
+    await new Promise((r) => setTimeout(r, 3000));
+
+    // Verify the server is actually listening INSIDE the sandbox. The base44
+    // backend runtime often cannot reach *.e2b.dev directly, so an external
+    // fetch is an unreliable readiness signal and a false negative here would
+    // point the iframe at a port nothing is listening on → E2B returns
+    // "invalid sandbox port". Checking localhost from within the sandbox is
+    // the authoritative test.
+    let ready = false;
+    for (let i = 0; i < 20; i++) {
+      try {
+        const probe = await sandbox.commands.run(
+          `curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://localhost:${port}/`,
+          { timeoutMs: 8000 }
+        );
+        const code = (probe.stdout || '').trim();
+        if (code && Number(code) > 0 && Number(code) < 500) {
+          ready = true;
+          logs.push(`● localhost:${port} responded ${code}`);
+          break;
+        }
+        logs.push(`… probe ${i + 1}: localhost:${port} → "${code || 'no response'}"`);
+      } catch (e) {
+        logs.push(`… probe ${i + 1}: ${e.message}`);
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+
     const url = typeof sandbox.getUrl === 'function'
       ? await sandbox.getUrl(port)
       : `https://${sandbox.sandboxId}-${port}.e2b.dev`;
 
-    // Wait until the server actually answers — otherwise the iframe loads a dead page
-    let ready = false;
-    for (let i = 0; i < 30; i++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      try {
-        const probe = await fetch(url, { redirect: 'follow' });
-        if (probe.status < 500) { ready = true; break; }
-      } catch { /* not up yet */ }
-    }
     logs.push(ready ? `● live at ${url}` : `⚠️ server did not respond yet at ${url}`);
 
     return Response.json({ sandboxId: sandbox.sandboxId, url, port, startCmd, ready, logs });
