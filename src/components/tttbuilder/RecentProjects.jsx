@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Clock, FileCode2 } from "lucide-react";
 import { loadProjects } from "@/components/tttbuilder/ProjectsPanel";
+import BuilderOrb from "@/components/tttbuilder/BuilderOrb";
 
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -12,6 +13,11 @@ function timeAgo(iso) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+function thumbOf(p) {
+  const idx = p.files?.find((f) => f.path === "index.html");
+  return idx?.content || null;
+}
+
 export default function RecentProjects({ onOpen, onSeeAll }) {
   const [projects, setProjects] = useState([]);
 
@@ -19,7 +25,17 @@ export default function RecentProjects({ onOpen, onSeeAll }) {
     setProjects(loadProjects().slice(0, 6));
   }, []);
 
-  if (!projects.length) return null;
+  if (!projects.length) {
+    return (
+      <div className="mt-10 text-center">
+        <div className="inline-flex flex-col items-center gap-2 px-6 py-5 rounded-2xl bg-white border border-[#e0dcd7]">
+          <BuilderOrb size={36} />
+          <div className="text-sm font-semibold text-[#1a1614]">No builds yet</div>
+          <div className="text-xs text-[#8a8580]">Pick a template below to start your first project.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-10 text-left">
@@ -36,8 +52,19 @@ export default function RecentProjects({ onOpen, onSeeAll }) {
             onClick={() => onOpen(p)}
             className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[#e0dcd7] hover:border-[#c8c4be] text-left transition-colors"
           >
-            <div className="w-9 h-9 rounded-lg bg-[#f0ede8] flex items-center justify-center flex-shrink-0">
-              <FileCode2 className="w-4 h-4 text-[#5a554f]" />
+            <div className="w-14 h-11 rounded-lg bg-[#f0ede8] overflow-hidden flex items-center justify-center flex-shrink-0 relative">
+              {thumbOf(p) ? (
+                <iframe
+                  srcDoc={thumbOf(p)}
+                  title={p.name}
+                  sandbox=""
+                  scrolling="no"
+                  className="w-[400px] h-[300px] origin-top-left border-0 pointer-events-none"
+                  style={{ transform: "scale(0.14)", position: "absolute", top: 0, left: 0 }}
+                />
+              ) : (
+                <FileCode2 className="w-4 h-4 text-[#5a554f]" />
+              )}
             </div>
             <div className="min-w-0">
               <div className="text-sm font-semibold text-[#1a1614] truncate">{p.name}</div>

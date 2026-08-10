@@ -58,7 +58,24 @@ export default function AppStoreFeatured() {
                 style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                 className={`relative rounded-2xl bg-gradient-to-br ${app.color} p-4 h-40 flex flex-col justify-between overflow-hidden shadow-lg group cursor-pointer active:scale-[0.98] transition-transform duration-150`}
               >
-...
+                {app.bg && (
+                  <img
+                    src={app.bg}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="relative z-10 flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-black/40 backdrop-blur border border-white/20 overflow-hidden flex-shrink-0">
+                    <img src={app.logo} alt={app.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                  </div>
+                </div>
+                <div className="relative z-10">
+                  <div className="text-white font-bold text-sm leading-tight">{app.name}</div>
+                  <div className="text-white/70 text-[11px] leading-snug mt-0.5 line-clamp-2">{app.desc}</div>
+                </div>
                 <ArrowUpRight className="absolute bottom-3 right-3 w-4 h-4 text-white/60 group-hover:text-white transition-colors z-10" />
               </div>
             );
