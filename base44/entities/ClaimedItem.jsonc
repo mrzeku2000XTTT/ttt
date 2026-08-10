@@ -34,22 +34,24 @@
     "claimer_email"
   ],
   "rls": {
-    "create": true,
+    "create": null,
     "read": {
       "$or": [
         {
-          "claimer_email": "{{user.email}}"
+          "data.claimer_email": "{{user.email}}"
         },
         {
-          "user.role": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "update": {
-      "claimer_email": "{{user.email}}"
+      "data.claimer_email": "{{user.email}}"
     },
     "delete": {
-      "claimer_email": "{{user.email}}"
+      "data.claimer_email": "{{user.email}}"
     }
   }
 }

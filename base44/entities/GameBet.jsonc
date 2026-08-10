@@ -144,12 +144,14 @@
     "amount_kas"
   ],
   "rls": {
-    "create": true,
-    "read": true,
+    "create": null,
+    "read": null,
     "update": {
       "$or": [
         {
-          "user.role": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         },
         {
           "created_by": "{{user.email}}"
@@ -157,7 +159,9 @@
       ]
     },
     "delete": {
-      "user.role": "admin"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

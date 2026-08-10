@@ -67,15 +67,15 @@
     "order_amount"
   ],
   "rls": {
-    "create": true,
+    "create": null,
     "read": {
-      "creator_email": "{{user.email}}"
+      "data.creator_email": "{{user.email}}"
     },
     "update": {
-      "creator_email": "{{user.email}}"
+      "data.creator_email": "{{user.email}}"
     },
     "delete": {
-      "creator_email": "{{user.email}}"
+      "data.creator_email": "{{user.email}}"
     }
   }
 }
