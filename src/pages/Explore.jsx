@@ -139,9 +139,10 @@ export default function ExplorePage() {
   };
 
   const generate = async (overrideIdea) => {
-    const seed = (overrideIdea ?? idea).trim();
+    const override = typeof overrideIdea === 'string' ? overrideIdea : null;
+    const seed = (override ?? idea).trim();
     if (!seed || generating) return;
-    if (overrideIdea) setIdea(overrideIdea);
+    if (override) setIdea(override);
     setGenerating(true);
     setResult(null);
     setView('idea');
@@ -420,7 +421,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
                 </button>
                 <button
                   type="button"
-                  onClick={generate}
+                  onClick={() => generate()}
                   disabled={!idea.trim() || generating}
                   className="flex items-center gap-2 h-11 px-6 text-[13px] font-semibold rounded-full transition-colors cursor-pointer"
                   style={{
