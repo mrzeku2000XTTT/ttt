@@ -12,38 +12,60 @@ import BlueprintLandingPreview from "./BlueprintLandingPreview";
 import { PREMIUM_DESIGN_SPEC } from "./designSystem";
 import { enhancePrompt } from "./promptEnhancer";
 import { FileCode } from "lucide-react";
+import {
+  listProjects, saveProject, deleteProject, getActiveProjectId,
+  setActiveProjectId, genProjectId, deriveProjectName,
+} from "./blueprintProjects";
+
+function buildInitialPages(concept, idea) {
+  const page = createPage('Page 1');
+  if (concept?.name) {
+    page.elements.push(
+      createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: concept.name, width: 320, fontSize: 30, fontWeight: 700 }),
+      createElement('text', ELEMENT_TYPES[1], { x: 20, y: 70, content: concept.one_liner || idea || '', width: 320, fontSize: 14, color: `${COLORS.CHARCOAL}aa` }),
+    );
+    if (concept.features) {
+      page.elements.push(createElement('text', ELEMENT_TYPES[1], { x: 20, y: 130, content: concept.features.map(f => `• ${f}`).join('\n'), width: 320, fontSize: 13, color: `${COLORS.CHARCOAL}cc` }));
+    }
+  } else if (idea) {
+    page.elements.push(createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: idea.slice(0, 60), width: 320, fontSize: 26, fontWeight: 700 }));
+  }
+  return [page];
+}
 
 export default function BlueprintBuilder({ idea, concept }) {
-  const [pages, setPages] = useState(() => {
-    const page = createPage('Page 1');
-    if (concept?.name) {
-      page.elements.push(
-        createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: concept.name, width: 320, fontSize: 30, fontWeight: 700 }),
-        createElement('text', ELEMENT_TYPES[1], { x: 20, y: 70, content: concept.one_liner || idea || '', width: 320, fontSize: 14, color: `${COLORS.CHARCOAL}aa` }),
-      );
-      if (concept.features) {
-        page.elements.push(createElement('text', ELEMENT_TYPES[1], { x: 20, y: 130, content: concept.features.map(f => `• ${f}`).join('\n'), width: 320, fontSize: 13, color: `${COLORS.CHARCOAL}cc` }));
-      }
-    } else if (idea) {
-      page.elements.push(createElement('heading', ELEMENT_TYPES[0], { x: 20, y: 20, content: idea.slice(0, 60), width: 320, fontSize: 26, fontWeight: 700 }));
+  // On mount, restore the most recent project from localStorage so sites survive refresh.
+  const [restored] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    const activeId = getActiveProjectId();
+    const projects = listProjects();
+    if (activeId) {
+      const p = projects.find(pr => pr.id === activeId);
+      if (p) return p;
     }
-    return [page];
+    return projects[0] || null;
   });
-  const [currentPageId, setCurrentPageId] = useState(pages[0].id);
+
+  const [projectId, setProjectId] = useState(() => restored?.id || genProjectId());
+  const [projectName, setProjectName] = useState(() => restored?.name || deriveProjectName(concept, idea));
+  const [pages, setPages] = useState(() => restored?.pages || buildInitialPages(concept, idea));
+  const [currentPageId, setCurrentPageId] = useState(() => restored?.currentPageId || (restored?.pages && restored.pages[0]?.id) || pages[0].id);
   const [selectedId, setSelectedId] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 20, y: 20 });
   const [tool, setTool] = useState('select');
   const [previewMode, setPreviewMode] = useState(false);
-  const [agentMode, setAgentMode] = useState(true);
+  const [agentMode, setAgentMode] = useState(() => !restored?.landingHtml);
   const [codeMode, setCodeMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [htmlImportOpen, setHtmlImportOpen] = useState(false);
-  const [landingMode, setLandingMode] = useState(false);
-  const [landingHtml, setLandingHtml] = useState('');
+  const [landingMode, setLandingMode] = useState(() => !!restored?.landingMode);
+  const [landingHtml, setLandingHtml] = useState(() => restored?.landingHtml || '');
   const [landingLoading, setLandingLoading] = useState(false);
   const [selectedContext, setSelectedContext] = useState(null);
-  const [autoStarted, setAutoStarted] = useState(false);
+  const [autoStarted, setAutoStarted] = useState(() => !!restored?.landingHtml);
+  const [projectsList, setProjectsList] = useState(() => listProjects());
+  const [projectsOpen, setProjectsOpen] = useState(false);
 
   const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
   const elements = currentPage?.elements || [];
@@ -54,6 +76,72 @@ export default function BlueprintBuilder({ idea, concept }) {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  // Auto-save project to localStorage (debounced) so it survives refresh.
+  const saveTimer = React.useRef(null);
+  React.useEffect(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveProject({
+        id: projectId,
+        name: projectName,
+        pages,
+        currentPageId,
+        landingHtml,
+        landingMode,
+        concept,
+        idea,
+      });
+      setActiveProjectId(projectId);
+      setProjectsList(listProjects());
+    }, 600);
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  }, [projectId, projectName, pages, currentPageId, landingHtml, landingMode, concept, idea]);
+
+  const handleNewProject = () => {
+    const id = genProjectId();
+    setProjectId(id);
+    setProjectName(deriveProjectName(concept, idea));
+    const fresh = buildInitialPages(concept, idea);
+    setPages(fresh);
+    setCurrentPageId(fresh[0].id);
+    setLandingHtml('');
+    setLandingMode(false);
+    setAutoStarted(false);
+    setAgentMode(true);
+    setSelectedId(null);
+    setActiveProjectId(id);
+    setProjectsOpen(false);
+  };
+
+  const handleOpenProject = (proj) => {
+    setProjectId(proj.id);
+    setProjectName(proj.name || 'Untitled site');
+    setPages(proj.pages || buildInitialPages(proj.concept, proj.idea));
+    const firstPage = (proj.pages || [])[0];
+    setCurrentPageId(proj.currentPageId || (firstPage?.id) || (proj.pages || buildInitialPages(proj.concept, proj.idea))[0].id);
+    setLandingHtml(proj.landingHtml || '');
+    setLandingMode(!!proj.landingMode);
+    setAutoStarted(!!proj.landingHtml);
+    setAgentMode(!proj.landingHtml);
+    setSelectedId(null);
+    setActiveProjectId(proj.id);
+    setProjectsOpen(false);
+  };
+
+  const handleDeleteProject = (id) => {
+    deleteProject(id);
+    setProjectsList(listProjects());
+    if (id === projectId) {
+      const remaining = listProjects();
+      if (remaining.length) handleOpenProject(remaining[0]);
+      else handleNewProject();
+    }
+  };
+
+  const handleRenameProject = (name) => {
+    setProjectName(name);
+  };
 
   const updatePageElements = (pageId, updater) => {
     setPages(prev => prev.map(p => p.id === pageId ? { ...p, elements: updater(p.elements) } : p));
@@ -291,6 +379,15 @@ export default function BlueprintBuilder({ idea, concept }) {
           onDeletePage={handleDeletePage}
           onRenamePage={handleRenamePage}
           onSelectElement={(id) => { setSelectedId(id); setSidebarOpen(false); }}
+          projectName={projectName}
+          onRenameProject={handleRenameProject}
+          projectsList={projectsList}
+          currentProjectId={projectId}
+          onOpenProject={handleOpenProject}
+          onDeleteProject={handleDeleteProject}
+          onNewProject={handleNewProject}
+          projectsOpen={projectsOpen}
+          setProjectsOpen={setProjectsOpen}
         />
       </div>
 
