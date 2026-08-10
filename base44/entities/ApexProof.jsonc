@@ -44,11 +44,15 @@
     "completed_at"
   ],
   "rls": {
-    "create": true,
-    "read": true,
-    "update": false,
+    "create": null,
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "delete": {
-      "owner_email": "{{user.email}}"
+      "data.owner_email": "{{user.email}}"
     }
   }
 }

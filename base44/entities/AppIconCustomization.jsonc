@@ -39,22 +39,20 @@
   ],
   "rls": {
     "create": {
-      "$or": [
-        {
-          "user.role": "admin"
-        },
-        {
-          "created_by": "{{user.email}}",
-          "user.role": "admin"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
-    "read": true,
+    "read": null,
     "update": {
-      "user.role": "admin"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "user.role": "admin"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

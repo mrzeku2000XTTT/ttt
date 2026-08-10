@@ -103,15 +103,15 @@
     "owner_email"
   ],
   "rls": {
-    "create": true,
+    "create": null,
     "read": {
-      "owner_email": "{{user.email}}"
+      "data.owner_email": "{{user.email}}"
     },
     "update": {
-      "owner_email": "{{user.email}}"
+      "data.owner_email": "{{user.email}}"
     },
     "delete": {
-      "owner_email": "{{user.email}}"
+      "data.owner_email": "{{user.email}}"
     }
   }
 }
