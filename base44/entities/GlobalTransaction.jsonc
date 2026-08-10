@@ -57,7 +57,7 @@
       "created_by": "{{user.email}}"
     },
     "read": {
-      "is_public": true
+      "data.is_public": true
     },
     "update": {
       "created_by": "{{user.email}}"

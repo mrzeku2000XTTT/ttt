@@ -78,23 +78,23 @@
   ],
   "rls": {
     "create": {
-      "user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}"
     },
     "read": {
       "$or": [
         {
-          "user_email": "{{user.email}}"
+          "data.user_email": "{{user.email}}"
         },
         {
-          "is_shared": true
+          "data.is_shared": true
         }
       ]
     },
     "update": {
-      "user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}"
     },
     "delete": {
-      "user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}"
     }
   }
 }
