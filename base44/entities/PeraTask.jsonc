@@ -111,33 +111,33 @@
   ],
   "rls": {
     "create": {
-      "employer_id": "{{user.email}}"
+      "data.employer_id": "{{user.email}}"
     },
     "read": {
       "$or": [
         {
-          "employer_id": "{{user.email}}"
+          "data.employer_id": "{{user.email}}"
         },
         {
-          "worker_id": "{{user.email}}"
+          "data.worker_id": "{{user.email}}"
         },
         {
-          "status": "active"
+          "data.status": "active"
         }
       ]
     },
     "update": {
       "$or": [
         {
-          "employer_id": "{{user.email}}"
+          "data.employer_id": "{{user.email}}"
         },
         {
-          "worker_id": "{{user.email}}"
+          "data.worker_id": "{{user.email}}"
         }
       ]
     },
     "delete": {
-      "employer_id": "{{user.email}}"
+      "data.employer_id": "{{user.email}}"
     }
   }
 }

@@ -101,16 +101,16 @@
   ],
   "rls": {
     "create": {
-      "user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}"
     },
     "read": {
-      "is_active": true
+      "data.is_active": true
     },
     "update": {
-      "user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}"
     },
     "delete": {
-      "user_email": "{{user.email}}"
+      "data.user_email": "{{user.email}}"
     }
   }
 }
