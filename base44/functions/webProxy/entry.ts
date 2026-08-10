@@ -15,6 +15,39 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'URL required', success: false }, { status: 400 });
         }
 
+        // SSRF protection: validate URL scheme and block private/internal targets
+        let parsedUrl: URL;
+        try {
+            parsedUrl = new URL(url);
+        } catch {
+            return Response.json({ error: 'Invalid URL', success: false }, { status: 400 });
+        }
+
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+            return Response.json({ error: 'Only http/https URLs are allowed', success: false }, { status: 400 });
+        }
+
+        const hostname = parsedUrl.hostname.toLowerCase();
+        // Block loopback, private, link-local, and metadata hostnames
+        const blockedPatterns = [
+            /^localhost$/i,
+            /^127\./,
+            /^0\./,
+            /^10\./,
+            /^192\.168\./,
+            /^172\.(1[6-9]|2[0-9]|3[01])\./,
+            /^169\.254\./,
+            /^::1$/,
+            /^fc00:/i,
+            /^fe80:/i,
+            /^fd/i,
+            /^0\.0\.0\.0$/,
+            /^\[?::1\]?$/i,
+        ];
+        if (blockedPatterns.some((re) => re.test(hostname))) {
+            return Response.json({ error: 'Access to internal/private addresses is blocked', success: false }, { status: 400 });
+        }
+
         console.log('🌐 Fetching:', url);
 
         // Strategy 1: Try with full browser headers
