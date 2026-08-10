@@ -28,7 +28,7 @@ export default function ChatMessage({ message }) {
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap bg-[#70C7BA]/20 text-white">
+        <div className="max-w-[85%] min-w-0 overflow-hidden break-words [overflow-wrap:anywhere] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap bg-[#70C7BA]/20 text-white">
           {message.content}
         </div>
       </div>
@@ -36,9 +36,9 @@ export default function ChatMessage({ message }) {
   }
 
   return (
-    <div className="flex justify-start">
-      <div className="max-w-[92%] w-full rounded-2xl px-4 py-3 text-sm bg-white/[0.04] border border-white/5 text-white/80">
-        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+    <div className="flex justify-start w-full min-w-0">
+      <div className="max-w-[92%] w-full min-w-0 overflow-hidden rounded-2xl px-4 py-3 text-sm bg-white/[0.04] border border-white/5 text-white/80">
+        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed">{message.content}</p>
 
         {message.activity?.length > 0 && <ActivityTimeline items={message.activity} />}
 

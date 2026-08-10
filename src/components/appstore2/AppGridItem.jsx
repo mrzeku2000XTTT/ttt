@@ -57,11 +57,9 @@ export default function AppGridItem({ app }) {
   return (
     <motion.div
       variants={itemVariants}
-      whileHover={{ y: -5, scale: 1.06, transition: { type: "spring", stiffness: 400, damping: 18 } }}
-      whileTap={{ scale: 0.92 }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      className="flex flex-col items-center gap-1.5 cursor-pointer group"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex flex-col items-center gap-1.5 cursor-pointer group transition-transform duration-200 hover:-translate-y-1 active:scale-95"
     >
       <div className="relative w-[60px] h-[60px] sm:w-[64px] sm:h-[64px] rounded-2xl overflow-hidden shadow-sm group-hover:shadow-xl transition-shadow">
         <AppIcon app={app} hovered={hovered} />
