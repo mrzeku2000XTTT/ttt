@@ -835,13 +835,16 @@ function TTTBuilderStudio() {
                 className="relative max-w-2xl mx-auto"
               >
                 <div className="flex flex-wrap items-center gap-2 bg-white border border-[#e0dcd7] focus-within:border-[#c8c4be] focus-within:shadow-[0_0_0_4px_rgba(26,22,20,0.04)] rounded-2xl p-2 transition-all shadow-[0_2px_8px_rgba(26,22,20,0.04)]">
-                  <ModelSelector variant="light" value={model} onChange={changeModel} disabled={loading} onOpenSettings={() => navigate('/BuilderSettings')} />
-                  <input
+                  <div className="min-w-0 max-w-[48%] sm:max-w-none overflow-hidden flex-shrink">
+                    <ModelSelector variant="light" value={model} onChange={changeModel} disabled={loading} onOpenSettings={() => navigate('/BuilderSettings')} />
+                  </div>
+                  <textarea
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && generate(prompt)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(prompt); } }}
                     placeholder={chatMode === "plan" ? "Tell the builder your idea…" : "Describe your app — e.g. 'Kaspa staking dashboard'"}
-                    className="flex-1 min-w-0 w-full sm:w-auto bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3 order-3 sm:order-none"
+                    rows={3}
+                    className="flex-1 min-w-0 basis-full sm:basis-0 order-first sm:order-none bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3 resize-none sm:[field-sizing:content]"
                   />
                   {/* Plan mode toggle — talk through the idea before building */}
                   <button
@@ -1211,7 +1214,7 @@ function TTTBuilderStudio() {
                             <ArrowLeft className="w-3.5 h-3.5" /> Back
                           </button>
                         )}
-                        {["overview", "code", "live", "agents", "database", "memory", "security", "anchors", "settings"].map(s => (
+                        {["overview", "code", "agents", "database", "memory", "security", "anchors", "settings"].map(s => (
                           <button
                             key={s}
                             onClick={() => setDashSection(s)}

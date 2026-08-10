@@ -169,8 +169,6 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
                 whileTap={{ scale: 0.92 }}
                 onHoverStart={() => setHovered(true)}
                 onHoverEnd={() => setHovered(false)}
-                onTouchStart={() => setHovered(true)}
-                onTouchEnd={() => setHovered(false)}
                 className="flex flex-col items-center gap-1.5 cursor-pointer group"
               >
                 {typeof children === "function" ? children(hovered) : children}

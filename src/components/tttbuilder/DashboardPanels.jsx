@@ -39,9 +39,6 @@ export function OverviewPanel({ files, messages, buildMode, model, walletKit, on
         <button onClick={() => onJump("code")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-bold transition-colors">
           <FileCode className="w-3.5 h-3.5" /> Open Code
         </button>
-        <button onClick={() => onJump("live")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-bold transition-colors">
-          <Server className="w-3.5 h-3.5" /> Open Live
-        </button>
         <button onClick={() => onJump("agents")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-bold transition-colors">
           <Bot className="w-3.5 h-3.5" /> Configure Agents
         </button>

@@ -182,6 +182,18 @@ export default function BlueprintBuilder({ idea, concept }) {
     setSidebarOpen(false);
   };
 
+  // Retry once on transient network failures (mobile connections drop mid-call)
+  const invokeLLM = async (args) => {
+    try {
+      return await base44.integrations.Core.InvokeLLM(args);
+    } catch (e) {
+      if (/network|fetch|timeout|load failed|connection/i.test(e?.message || '')) {
+        return await base44.integrations.Core.InvokeLLM(args);
+      }
+      throw e;
+    }
+  };
+
   const handleAgentGenerate = async ({ prompt, imageUrl, selectedContext: ctx }) => {
     setLandingLoading(true);
     setLandingMode(true);
@@ -206,7 +218,7 @@ export default function BlueprintBuilder({ idea, concept }) {
       // SURGICAL EDIT — an element is selected: edit ONLY that element in the
       // existing landing HTML, leaving every other section byte-for-byte intact.
       if (ctx && landingHtml) {
-        const res = await base44.integrations.Core.InvokeLLM({
+        const res = await invokeLLM({
           prompt: `${PREMIUM_DESIGN_SPEC}
 
 You are editing ONE element in an existing landing page. Edit ONLY that element; every other part of the page MUST stay byte-for-byte identical.
@@ -240,7 +252,7 @@ Return the COMPLETE updated landing page HTML (inside <body> only; no <html>, <h
         return;
       }
 
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt: `${PREMIUM_DESIGN_SPEC}
 
 You are an elite front-end engineer and motion-design specialist. Generate a complete, world-class premium landing page as a single HTML document using Tailwind CSS classes (loaded via CDN).
