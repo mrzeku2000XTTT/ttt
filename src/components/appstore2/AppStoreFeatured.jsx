@@ -61,34 +61,13 @@ export default function AppStoreFeatured() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {FEATURED.map((app, i) => {
             const card = (
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.05 }}
-                whileHover={{ y: -4 }}
-                className={`relative rounded-2xl bg-gradient-to-br ${app.color} p-4 h-40 flex flex-col justify-between overflow-hidden shadow-lg group cursor-pointer`}
+              <div
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                className={`relative rounded-2xl bg-gradient-to-br ${app.color} p-4 h-40 flex flex-col justify-between overflow-hidden shadow-lg group cursor-pointer transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98]`}
               >
-                {app.bg && (
-                  <div
-                    className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500"
-                    style={{ backgroundImage: `url(${app.bg})` }}
-                  />
-                )}
-                <div className={`absolute inset-0 bg-gradient-to-br ${app.color} opacity-60 mix-blend-multiply`} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute top-3 right-3 w-14 h-14 rounded-xl overflow-hidden shadow-lg opacity-95 group-hover:scale-110 transition-transform z-10 bg-black flex items-center justify-center">
-                  <img src={app.logo} alt={app.name} className="w-full h-full object-contain" onError={e => { e.target.style.display='none'; e.target.parentElement.innerHTML = `<span class="text-white font-bold text-lg">${app.name[0]}</span>`; }} />
-                </div>
-                {app.premium && (
-                  <Crown className="absolute top-3 left-3 w-4 h-4 text-yellow-300 z-10 drop-shadow-lg" />
-                )}
-                <div />
-                <div className="relative z-10">
-                  <h3 className="text-white font-bold text-sm mb-0.5 drop-shadow-md">{app.name}</h3>
-                  <p className="text-white/85 text-[11px] leading-tight drop-shadow">{app.desc}</p>
-                </div>
+...
                 <ArrowUpRight className="absolute bottom-3 right-3 w-4 h-4 text-white/60 group-hover:text-white transition-colors z-10" />
-              </motion.div>
+              </div>
             );
 
             if (app.iframe) {
