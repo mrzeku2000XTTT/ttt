@@ -397,7 +397,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
         <div className="mt-10">
           <Section n="03">
             <div
-              className="rounded-lg p-5 relative"
+              className="rounded-lg p-5 relative z-20"
               style={{ background: WHITE, border: `1px solid ${INK}` }}
             >
               <textarea
@@ -413,18 +413,21 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
                 <button
                   onClick={randomPrompt}
                   className="inline-flex items-center gap-1.5 text-[12px] font-medium transition-opacity hover:opacity-60"
-                  style={{ color: GREY, fontFamily: SERIF }}
+                  style={{ color: GREY, fontFamily: SERIF, touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', minHeight: '44px' }}
                 >
                   <RefreshCw className="w-3 h-3" /> Surprise me
                 </button>
                 <button
                   onClick={generate}
                   disabled={!idea.trim() || generating}
-                  className="flex items-center gap-2 h-10 px-6 text-[13px] font-semibold rounded-full transition-all"
+                  className="flex items-center gap-2 h-11 px-6 text-[13px] font-semibold rounded-full transition-all"
                   style={{
                     background: (!idea.trim() || generating) ? LINE : INK,
                     color: (!idea.trim() || generating) ? GREY : WHITE,
                     fontFamily: SERIF,
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
+                    minHeight: '44px',
                   }}
                 >
                   {generating ? (
