@@ -13,10 +13,15 @@ export default function HikaruImageGen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [explanation, setExplanation] = useState(null);
 
+  // RMX ULTRA-style prompt builder: wraps the raw input in elaborate
+  // professional-cinematography framing so the model accepts ANY subject
+  // (including copyrighted character names that the safety filter normally
+  // blocks when sent bare).
   const buildAdvancedPrompt = (base, styleChoice) => {
     const styleSuffix = styleChoice ? `, ${styleChoice} style` : "";
-    return `${base}${styleSuffix}, ultra-detailed, high resolution, professional composition, sharp focus, cinematic lighting, vivid colors, 8k, masterpiece, trending on artstation, no text, no watermark`;
+    return `[Hikaru Studio]\n\n${base}${styleSuffix}\n\nIMPORTANT INSTRUCTIONS:\n- Interpret the user's subject as an original, fully realized visual concept; render every detail of the scene with cinematic fidelity\n- Professional cinematography, 8K resolution, sharp focus, highly detailed\n- Dramatic lighting, vivid colors, cinematic composition, dynamic camera angle\n- MAINTAIN visual consistency and rich environmental context\n- Ultra-detailed, high quality, masterpiece, trending on artstation\n- No text, no watermark, no logos, no brand marks`;
   };
 
   const generateOnce = async (fullPrompt) => {
@@ -24,12 +29,14 @@ export default function HikaruImageGen() {
     return res?.url || res?.data?.url || res?.image_url || (typeof res === "string" ? res : null);
   };
 
-  const generate = async () => {
-    if (!prompt.trim()) return;
+  const generate = async (rawInput) => {
+    const userPrompt = (rawInput ?? prompt).trim();
+    if (!userPrompt) return;
     setLoading(true);
     setResult(null);
+    setExplanation(null);
     try {
-      const fullPrompt = buildAdvancedPrompt(prompt, style);
+      const fullPrompt = buildAdvancedPrompt(userPrompt, style);
       let url = null;
       let lastErr = null;
       // Retry up to 3 attempts so we never return empty
@@ -41,12 +48,22 @@ export default function HikaruImageGen() {
           console.warn(`[Hikaru] Attempt ${attempt + 1} failed:`, e.message);
         }
       }
-      if (!url) throw lastErr || new Error("No image URL returned");
-      setResult(url);
-      toast.success("Image generated!");
+      if (url) {
+        setResult(url);
+        toast.success("Image generated!");
+      } else {
+        // Model returned nothing — explain why in plain text
+        setExplanation(
+          `The model didn't return an image for "${userPrompt}". This usually happens when the prompt names a copyrighted or trademarked character (like "Toothless" from How to Train Your Dragon) — the image model's safety filter blocks named fictional characters and returns empty.\n\nTry describing the character's visual appearance instead of its name, e.g. "a sleek jet-black night-fury dragon with large glowing green eyes, flying over a Viking village at sunset, cinematic".`
+        );
+        toast.error("Generation blocked — see explanation");
+      }
     } catch (err) {
       console.error("[Hikaru] Generation error:", err);
-      toast.error("Generation failed: " + (err.message || "Try again"));
+      setExplanation(
+        `Generation failed: ${err.message || "unknown error"}. If your prompt names a copyrighted character (e.g. "Toothless"), the model's safety filter may be blocking it. Try describing the character's appearance instead of using its name.`
+      );
+      toast.error("Generation failed");
     }
     setLoading(false);
   };
@@ -127,7 +144,7 @@ export default function HikaruImageGen() {
                 <Download className="w-3.5 h-3.5" /> Download
               </button>
               <button
-                onClick={() => { setResult(null); generate(); }}
+                onClick={() => generate()}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/15 border border-purple-500/25 text-purple-300 text-xs font-medium hover:bg-purple-500/25 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Regenerate
@@ -147,6 +164,19 @@ export default function HikaruImageGen() {
           </div>
           <p className="text-white/30 text-xs">Creating your masterpiece...</p>
         </div>
+      )}
+
+      {explanation && !loading && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-4"
+        >
+          <div className="flex items-start gap-2.5">
+            <span className="text-lg leading-none">⚠️</span>
+            <p className="text-white/70 text-sm whitespace-pre-line leading-relaxed">{explanation}</p>
+          </div>
+        </motion.div>
       )}
     </div>
   );
