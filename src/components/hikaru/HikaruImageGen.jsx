@@ -14,16 +14,34 @@ export default function HikaruImageGen() {
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  const buildAdvancedPrompt = (base, styleChoice) => {
+    const styleSuffix = styleChoice ? `, ${styleChoice} style` : "";
+    return `${base}${styleSuffix}, ultra-detailed, high resolution, professional composition, sharp focus, cinematic lighting, vivid colors, 8k, masterpiece, trending on artstation, no text, no watermark`;
+  };
+
+  const generateOnce = async (fullPrompt) => {
+    const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+    return res?.url || res?.data?.url || res?.image_url || (typeof res === "string" ? res : null);
+  };
+
   const generate = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
     setResult(null);
     try {
-      const fullPrompt = style ? `${prompt}, ${style} style, high quality, detailed` : `${prompt}, high quality, detailed`;
-      const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
-      console.log("[Hikaru] GenerateImage response:", res);
-      const url = res?.url || res?.data?.url || res?.image_url || (typeof res === "string" ? res : null);
-      if (!url) throw new Error("No image URL returned");
+      const fullPrompt = buildAdvancedPrompt(prompt, style);
+      let url = null;
+      let lastErr = null;
+      // Retry up to 3 attempts so we never return empty
+      for (let attempt = 0; attempt < 3 && !url; attempt++) {
+        try {
+          url = await generateOnce(fullPrompt);
+        } catch (e) {
+          lastErr = e;
+          console.warn(`[Hikaru] Attempt ${attempt + 1} failed:`, e.message);
+        }
+      }
+      if (!url) throw lastErr || new Error("No image URL returned");
       setResult(url);
       toast.success("Image generated!");
     } catch (err) {

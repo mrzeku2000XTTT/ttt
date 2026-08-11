@@ -75,7 +75,7 @@ export default function HikaruPage() {
 
         {/* Tool content */}
         <div className="flex-1 overflow-y-auto">
-          <ActiveComponent />
+          <ActiveComponent onToolChange={setActiveTool} />
         </div>
       </div>
     </div>

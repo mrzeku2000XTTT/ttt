@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ImagePlus, ZoomIn, Sun, Paintbrush, Sparkles, ArrowRight, Film } from "lucide-react";
+import { ImagePlus, ZoomIn, Sun, Paintbrush, Sparkles, ArrowRight, Film, Download } from "lucide-react";
+import { downloadImage } from "@/components/hikaru/hikaruDownload";
+import { toast } from "sonner";
 
 const TOOLS = [
   { id: "generate", label: "Generate Image", desc: "Create stunning AI images from text prompts", icon: ImagePlus, color: "from-purple-500 to-indigo-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
@@ -19,7 +21,16 @@ const GALLERY_IMAGES = [
   "https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&q=80",
 ];
 
-export default function HikaruGallery() {
+export default function HikaruGallery({ onToolChange }) {
+  const handleImageDownload = async (url, i) => {
+    try {
+      await downloadImage(url, `hikaru-gallery-${i + 1}.png`);
+      toast.success("Image downloaded");
+    } catch {
+      toast.error("Download failed");
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-10">
       {/* Hero */}
@@ -55,6 +66,7 @@ export default function HikaruGallery() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08 }}
+                onClick={() => onToolChange?.(tool.id)}
                 className={`group relative p-5 rounded-2xl ${tool.bg} border ${tool.border} hover:border-white/20 cursor-pointer transition-all duration-300`}
               >
                 <div className="flex items-start justify-between mb-3">
@@ -81,13 +93,19 @@ export default function HikaruGallery() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 + i * 0.06 }}
-              className="aspect-square rounded-2xl overflow-hidden border border-white/[0.06] group cursor-pointer"
+              onClick={() => handleImageDownload(url, i)}
+              className="aspect-square rounded-2xl overflow-hidden border border-white/[0.06] group cursor-pointer relative"
             >
               <img
                 src={url}
                 alt=""
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-white text-xs font-semibold">
+                  <Download className="w-3.5 h-3.5" /> Download
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>

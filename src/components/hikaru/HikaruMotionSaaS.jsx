@@ -54,13 +54,23 @@ export default function HikaruMotionSaaS() {
         }
       });
 
-      const imagePrompt = `Premium SaaS product UI hero frame, ${animationPlan.ui_prompt}. ${style}. Polished dashboard/app interface, cinematic lighting, clean composition, no text, no watermark, high-end product launch visual.`;
-      const imageRes = await base44.integrations.Core.GenerateImage({ prompt: imagePrompt });
-      const imageUrl = imageRes?.url || imageRes?.data?.url || imageRes?.image_url || null;
+      const imagePrompt = `Premium SaaS product UI hero frame, ${animationPlan.ui_prompt}. ${style}. Polished dashboard/app interface, cinematic lighting, clean composition, no text, no watermark, high-end product launch visual, ultra-detailed, 8k, masterpiece`;
+      let imageUrl = null;
+      let lastImgErr = null;
+      for (let attempt = 0; attempt < 3 && !imageUrl; attempt++) {
+        try {
+          const imageRes = await base44.integrations.Core.GenerateImage({ prompt: imagePrompt });
+          imageUrl = imageRes?.url || imageRes?.data?.url || imageRes?.image_url || null;
+        } catch (e) {
+          lastImgErr = e;
+          console.warn(`[Hikaru Motion] image attempt ${attempt + 1} failed:`, e.message);
+        }
+      }
+      if (!imageUrl && lastImgErr) console.error("[Hikaru Motion] image generation failed:", lastImgErr);
 
       setPlan(animationPlan);
       setPreviewUrl(imageUrl);
-      toast.success("Motion SaaS animation plan ready");
+      toast.success(imageUrl ? "Motion SaaS animation plan ready" : "Plan ready (image retrying)");
     } catch (err) {
       console.error("[Hikaru Motion SaaS] error:", err);
       toast.error("Motion generation failed: " + (err.message || "Try again"));
