@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Settings as SettingsIcon, LayoutGrid, Search } from "lucide-react";
+import { Lock, Settings as SettingsIcon, LayoutGrid, Search, Database } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
 import PowerConsole from "@/components/agentinternet/PowerConsole";
@@ -14,6 +14,7 @@ import { APPS } from "@/components/appstore2/appCatalog";
 import { AGENT_CARDS } from "@/components/agentinternet/agentCards";
 import LivePagesBrowser from "@/components/agentinternet/LivePagesBrowser";
 import WebSearchBrowser from "@/components/agentinternet/WebSearchBrowser";
+import KaspaSearchBrowser from "@/components/agentinternet/KaspaSearchBrowser";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -35,6 +36,7 @@ export default function AgentInternetLanding() {
   const [viewAsGuest, setViewAsGuest] = useState(false); // admin-only preview toggle
   const [showBrowser, setShowBrowser] = useState(false); // browse-all-live-pages directory
   const [showWebSearch, setShowWebSearch] = useState(false); // search-any-site iframe
+  const [showKaspaSearch, setShowKaspaSearch] = useState(false); // search kaspahub index
 
   const openChat = (command) => {
     setChatCommand(command);
@@ -235,9 +237,15 @@ export default function AgentInternetLanding() {
                   </button>
                   <button
                     onClick={() => setShowWebSearch(true)}
-                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-cyan-200 hover:text-white hover:border-cyan-400/60 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors"
                   >
                     <Search className="w-3.5 h-3.5" /> Search the web
+                  </button>
+                  <button
+                    onClick={() => setShowKaspaSearch(true)}
+                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-cyan-200 hover:text-white hover:border-cyan-400/60 transition-colors"
+                  >
+                    <Database className="w-3.5 h-3.5" /> Search Kaspa
                   </button>
                 </div>
 
@@ -296,6 +304,8 @@ export default function AgentInternetLanding() {
       <LivePagesBrowser open={showBrowser} onClose={() => setShowBrowser(false)} />
 
       <WebSearchBrowser open={showWebSearch} onClose={() => setShowWebSearch(false)} />
+
+      <KaspaSearchBrowser open={showKaspaSearch} onClose={() => setShowKaspaSearch(false)} />
 
       <GuestAgentPreview
         open={guestOpen}

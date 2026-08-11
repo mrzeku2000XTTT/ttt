@@ -1,0 +1,60 @@
+{
+  "name": "KaspaHubApp",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "App / project name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of the app"
+    },
+    "url": {
+      "type": "string",
+      "description": "External URL of the app"
+    },
+    "category": {
+      "type": "string",
+      "description": "KaspaHub section this app belongs to (Resources, Ecosystem, Wallets, Developer Tools, etc.)"
+    },
+    "logo": {
+      "type": "string",
+      "description": "Logo image URL from KaspaHub (if available)"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Feature tags from KaspaHub (reviewed, development, etc.)"
+    },
+    "indexed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this record was last indexed"
+    }
+  },
+  "required": [
+    "name",
+    "url"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
