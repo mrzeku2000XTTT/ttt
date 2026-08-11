@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import CinekasOnboarding from "@/components/cinekas/CinekasOnboarding";
 
 function CinekasLogo({ size = 40 }) {
   const canvasRef = useRef(null);
@@ -45,11 +46,37 @@ function CinekasLogo({ size = 40 }) {
 
 export default function CinekasPage() {
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(null);
+  const [ready, setReady] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    checkAdmin();
+    let mounted = true;
+    (async () => {
+      let admin = false;
+      try {
+        const user = await base44.auth.me();
+        admin = !!user && user.role === 'admin';
+      } catch {
+        admin = false;
+      }
+      const seen = localStorage.getItem('cinekas_onboarded') === '1';
+      if (!mounted) return;
+      // Admins skip onboarding; everyone else sees it once per device
+      if (admin || seen) {
+        setShowOnboarding(false);
+        setReady(true);
+      } else {
+        setShowOnboarding(true);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
+
+  const handleEnter = () => {
+    localStorage.setItem('cinekas_onboarded', '1');
+    setShowOnboarding(false);
+    setReady(true);
+  };
 
   useEffect(() => {
     const handleMessage = (e) => {
@@ -61,20 +88,16 @@ export default function CinekasPage() {
     return () => window.removeEventListener('message', handleMessage);
   }, [navigate]);
 
-  const checkAdmin = async () => {
-    try {
-      const user = await base44.auth.me();
-      if (!user || user.role !== 'admin') {
-        navigate(-1);
-        return;
-      }
-      setIsAdmin(true);
-    } catch {
-      navigate(-1);
-    }
-  };
+  if (showOnboarding) {
+    return (
+      <CinekasOnboarding
+        onEnter={handleEnter}
+        logo={<CinekasLogo size={32} />}
+      />
+    );
+  }
 
-  if (isAdmin === null) {
+  if (ready === null) {
     return (
       <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black">
         <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
