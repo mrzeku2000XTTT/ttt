@@ -30,7 +30,7 @@ export default function HikaruImageGen() {
   };
 
   const generate = async (rawInput) => {
-    const userPrompt = (rawInput ?? prompt).trim();
+    const userPrompt = (typeof rawInput === "string" ? rawInput : prompt).trim();
     if (!userPrompt) return;
     setLoading(true);
     setResult(null);
@@ -117,7 +117,7 @@ export default function HikaruImageGen() {
         </div>
 
         <button
-          onClick={generate}
+          onClick={() => generate()}
           disabled={loading || !prompt.trim()}
           className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
         >
