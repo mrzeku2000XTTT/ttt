@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import CinekasOnboarding from "@/components/cinekas/CinekasOnboarding";
 
 function CinekasLogo({ size = 40 }) {
@@ -46,31 +46,23 @@ function CinekasLogo({ size = 40 }) {
 
 export default function CinekasPage() {
   const navigate = useNavigate();
+  const { user, isLoadingAuth } = useAuth();
   const [ready, setReady] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      let admin = false;
-      try {
-        const user = await base44.auth.me();
-        admin = !!user && user.role === 'admin';
-      } catch {
-        admin = false;
-      }
-      const seen = localStorage.getItem('cinekas_onboarded') === '1';
-      if (!mounted) return;
-      // Admins skip onboarding; everyone else sees it once per device
-      if (admin || seen) {
-        setShowOnboarding(false);
-        setReady(true);
-      } else {
-        setShowOnboarding(true);
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
+    // Wait for the global auth check to finish so we know the user's role
+    // (if any) before deciding to show onboarding.
+    if (isLoadingAuth) return;
+    const admin = !!user && user.role === 'admin';
+    const seen = localStorage.getItem('cinekas_onboarded') === '1';
+    if (admin || seen) {
+      setShowOnboarding(false);
+      setReady(true);
+    } else {
+      setShowOnboarding(true);
+    }
+  }, [user, isLoadingAuth]);
 
   const handleEnter = () => {
     localStorage.setItem('cinekas_onboarded', '1');
