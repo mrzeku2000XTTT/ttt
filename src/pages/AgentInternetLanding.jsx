@@ -228,7 +228,7 @@ export default function AgentInternetLanding() {
                 </div>
 
                 {/* Browse all live pages + Search the web — guest discovery */}
-                <div className="mt-5 flex items-center justify-center gap-2">
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                   <button
                     onClick={() => setShowBrowser(true)}
                     className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors"
