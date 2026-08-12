@@ -53,7 +53,8 @@ export default function WebSearchBrowser({ open, onClose }) {
     setContent(null);
 
     try {
-      const res = await base44.functions.publicWebProxy({ url: target });
+      const raw = await base44.functions.invoke("publicWebProxy", { url: target });
+      const res = raw?.data ?? raw;
       if (token.cancelled) return;
       if (res?.success && res.content) {
         setContent(res.content);

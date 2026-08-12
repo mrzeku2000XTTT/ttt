@@ -27,7 +27,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     setError(null);
     setNotIndexed(false);
     try {
-      const res = await base44.functions.searchKaspaApps({ query: q, category: cat, limit: 60 });
+      const raw = await base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 60 });
+      const res = raw?.data ?? raw;
       if (reqId.current !== myId) return;
       if (res?.success) {
         setResults(res.results || []);
