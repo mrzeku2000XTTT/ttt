@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus } from "lucide-react";
+import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
+import SiteAgentChat from "./SiteAgentChat";
 
 const CATEGORIES = ["All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
 
@@ -26,6 +27,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [aiLoading, setAiLoading] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [listOpen, setListOpen] = useState(false);
+  const [agentApp, setAgentApp] = useState(null);
   const inputRef = useRef(null);
   const reqId = useRef(0);
 
@@ -236,14 +238,22 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                             ))}
                           </div>
                         )}
-                        <a
-                          href={app.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 mt-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors"
-                        >
-                          <ExternalLink className="w-3 h-3" /> Open app
-                        </a>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <a
+                            href={app.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors"
+                          >
+                            <ExternalLink className="w-3 h-3" /> Open app
+                          </a>
+                          <button
+                            onClick={() => setAgentApp(app)}
+                            className="inline-flex items-center gap-1 text-[11px] text-cyan-300/70 hover:text-cyan-200 transition-colors"
+                          >
+                            <Bot className="w-3 h-3" /> Ask its AI
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -266,6 +276,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             <Sparkles className="w-3 h-3 text-cyan-400/60" />
             <span className="text-[10px] text-white/40 font-mono">Powered by KaspaHub.org ecosystem index</span>
           </div>
+
+          <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
         </motion.div>
       )}
     </AnimatePresence>
