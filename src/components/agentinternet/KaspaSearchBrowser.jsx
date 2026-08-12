@@ -7,7 +7,7 @@ import ListSiteModal from "./ListSiteModal";
 import SiteAgentChat from "./SiteAgentChat";
 import SiteLogo from "./SiteLogo";
 
-const CATEGORIES = ["All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
+const CATEGORIES = ["All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources", "X Profiles"];
 
 const PAGE_SIZE = 50;
 

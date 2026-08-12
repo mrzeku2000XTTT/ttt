@@ -80,7 +80,7 @@ export default async function(req) {
           name: (p.name || handle).slice(0, 80),
           description: p.description || `Kaspa community member on X (@${handle}).`,
           url: `https://x.com/${handle}`,
-          category: 'News Sources',
+          category: 'X Profiles',
           logo: X_LOGO,
           features: ['reviewed', 'x'],
           indexed_at: new Date().toISOString(),
