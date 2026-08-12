@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-const CATEGORIES = ["All", "Resources", "Exchanges", "Ecosystem", "Wallets", "Merchants", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
+const CATEGORIES = ["All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
+
+const PAGE_SIZE = 50;
 
 function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
@@ -18,6 +20,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notIndexed, setNotIndexed] = useState(false);
+  const [visible, setVisible] = useState(PAGE_SIZE);
   const inputRef = useRef(null);
   const reqId = useRef(0);
 
@@ -26,8 +29,9 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     setLoading(true);
     setError(null);
     setNotIndexed(false);
+    setVisible(PAGE_SIZE);
     try {
-      const raw = await base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 60 });
+      const raw = await base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000 });
       const res = raw?.data ?? raw;
       if (reqId.current !== myId) return;
       if (res?.success) {
@@ -126,7 +130,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           <div className="px-4 py-1.5 text-[11px] text-white/40 font-mono border-b border-white/5">
             {loading ? "Searching…" : notIndexed
               ? "Index not built yet — run the indexer"
-              : `About ${total} Kaspa apps indexed${submitted ? ` · results for "${submitted}"` : ""}`}
+              : `${results.length} of ${total} apps in ${activeCategory}${submitted ? ` · results for "${submitted}"` : ""}`}
           </div>
 
           {/* Results — Google-style */}
@@ -152,7 +156,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               </div>
             ) : (
               <div className="max-w-2xl mx-auto space-y-5">
-                {results.map((app, i) => (
+                {results.slice(0, visible).map((app, i) => (
                   <div key={app.id || i} className="group">
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
@@ -201,6 +205,15 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                     </div>
                   </div>
                 ))}
+
+                {visible < results.length && (
+                  <button
+                    onClick={() => setVisible(v => v + PAGE_SIZE)}
+                    className="w-full py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-xs font-medium transition-colors"
+                  >
+                    Show more ({results.length - visible} remaining)
+                  </button>
+                )}
               </div>
             )}
           </div>

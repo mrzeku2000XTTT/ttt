@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       results = results.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 
-    const max = Math.min(parseInt(limit || 60, 10), 200);
+    const max = Math.min(parseInt(limit || 2000, 10), 2000);
     const finalResults = results.slice(0, max).map(({ _s, ...rest }) => rest);
 
     return Response.json({
