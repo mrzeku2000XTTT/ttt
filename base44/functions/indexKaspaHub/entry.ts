@@ -153,7 +153,9 @@ Deno.serve(async (req) => {
         perSection[section.name] = items.length;
         for (const it of items) {
           if (!it || !it.name || !it.link) continue;
-          all.set(it.link, {
+          // dedupe within a section only — an app can legitimately appear in
+          // several sections (e.g. Ecosystem + Wallets) and each list must stay complete
+          all.set(`${section.name}|${it.link}`, {
             name: String(it.name).trim(),
             description: String(it.description || '').trim(),
             url: String(it.link).trim(),
