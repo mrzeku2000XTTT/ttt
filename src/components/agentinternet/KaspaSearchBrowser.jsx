@@ -116,10 +116,11 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             </button>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-cyan-300 via-cyan-500 to-blue-700 flex items-center justify-center ring-1 ring-cyan-300/40 shadow-[0_0_18px_rgba(6,182,212,0.35)]">
-                <span className="absolute inset-0 rounded-full opacity-40" style={{ background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,0.9), transparent 60%)" }} />
-                <span className="relative text-white font-black text-[13px] leading-none tracking-tight">K</span>
-              </div>
+              <img
+                src="https://assets.coingecko.com/coins/images/25751/large/kaspa-icon-exchanges.png"
+                alt="Kaspa"
+                className="w-8 h-8 rounded-full flex-shrink-0"
+              />
               <span className="text-white font-bold text-sm tracking-tight hidden sm:inline">Search <span className="text-cyan-300">Kaspa</span></span>
             </div>
 
