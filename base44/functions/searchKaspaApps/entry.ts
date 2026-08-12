@@ -86,6 +86,18 @@ Deno.serve(async (req) => {
       results = results.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 
+    // Dedupe: the same app can be indexed under multiple categories.
+    // Keep the highest-ranked record per domain (or per name when URL is odd).
+    const seen = new Set();
+    results = results.filter(r => {
+      let key;
+      try { key = new URL(r.url).hostname.replace(/^www\./, '').toLowerCase(); }
+      catch { key = squash(r.name) || squash(r.url); }
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
     const max = Math.min(parseInt(limit || 2000, 10), 2000);
     const finalResults = results.slice(0, max).map(({ _s, ...rest }) => rest);
 
