@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getWallet } from "@/lib/localKaspaWallet";
 import { getAiWallet, generateAiWallet } from "@/lib/aiSpendWallet";
+import { AI_WALLET_RULES, assertSelfSendOnly } from "@/lib/aiWalletRules";
 
 export default function AiSpendWallet() {
   const [wallet, setWallet] = useState(() => getAiWallet());
@@ -52,6 +53,28 @@ export default function AiSpendWallet() {
       setTimeout(() => loadBalance(wallet.address), 4000);
     } catch (e) {
       setError(e?.message || "Transfer failed");
+    }
+    setSending(false);
+  };
+
+  // Rule-enforced: the AI wallet may only send KAS to its own address.
+  const selfSend = async () => {
+    setError(""); setMsg("");
+    setSending(true);
+    try {
+      assertSelfSendOnly(wallet.address, wallet.address);
+      const raw = await base44.functions.invoke("sendKaspaTransaction", {
+        privateKey: wallet.privateKey,
+        fromAddress: wallet.address,
+        toAddress: wallet.address,
+        amountKas: amount,
+      });
+      const res = raw?.data ?? raw;
+      if (res?.error) throw new Error(res.error);
+      setMsg(`AI usage paid — self-sent ${res.amountKas} KAS`);
+      setTimeout(() => loadBalance(wallet.address), 4000);
+    } catch (e) {
+      setError(e?.message || "Self-send failed");
     }
     setSending(false);
   };
@@ -139,6 +162,19 @@ export default function AiSpendWallet() {
             </button>
           </div>
           <p className="text-[10px] text-white/30">Moves KAS from your TTT wallet into this AI spending wallet.</p>
+          <button
+            onClick={selfSend}
+            disabled={sending || !parseFloat(amount)}
+            className="w-full h-8 rounded-lg bg-emerald-500/15 border border-emerald-400/40 text-[11px] text-emerald-200 disabled:opacity-40 flex items-center justify-center gap-1"
+          >
+            {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
+            Pay AI usage (self-send {amount || 0} KAS)
+          </button>
+          <ul className="space-y-0.5">
+            {AI_WALLET_RULES.map(rule => (
+              <li key={rule} className="text-[10px] text-white/30">• {rule}</li>
+            ))}
+          </ul>
         </div>
       )}
 
