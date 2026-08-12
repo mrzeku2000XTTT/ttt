@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Bot } from "lucide-react";
+import { X, Send, Loader2, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import SiteLogo from "./SiteLogo";
+import AgentWalletBar from "./AgentWalletBar";
 
 function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
@@ -11,6 +13,7 @@ export default function SiteAgentChat({ app, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [fast, setFast] = useState(true);
   const endRef = useRef(null);
   const knowledgeRef = useRef(null);
 
@@ -33,6 +36,7 @@ export default function SiteAgentChat({ app, onClose }) {
         category: app.category,
         messages: next,
         knowledge: knowledgeRef.current,
+        fast,
       });
       const res = raw?.data ?? raw;
       if (res?.knowledge) knowledgeRef.current = res.knowledge;
@@ -57,15 +61,28 @@ export default function SiteAgentChat({ app, onClose }) {
           className="fixed top-0 right-0 bottom-0 z-[220] w-full sm:w-[420px] bg-[#050505] border-l border-white/10 flex flex-col"
         >
           <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center flex-shrink-0">
-              <Bot className="w-4 h-4 text-white" />
-            </div>
+            <SiteLogo app={app} size={32} />
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-semibold truncate">{app.name} agent</p>
               <p className="text-[11px] text-emerald-400/70 font-mono truncate">{hostOf(app.url)}</p>
             </div>
             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/10">
               <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <AgentWalletBar />
+
+          <div className="flex items-center gap-2 px-4 py-1.5 border-b border-white/5">
+            <button
+              onClick={() => setFast(f => !f)}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-medium flex items-center gap-1 transition-colors ${
+                fast
+                  ? "bg-cyan-500/20 border border-cyan-400/40 text-cyan-200"
+                  : "bg-white/[0.05] border border-white/10 text-white/50 hover:text-white"
+              }`}
+            >
+              <Zap className="w-3 h-3" /> {fast ? "Quick replies on" : "Quick replies off"}
             </button>
           </div>
 

@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
-    const { url, name, description, category, messages, knowledge: cached } = await req.json();
+    const { url, name, description, category, messages, knowledge: cached, fast } = await req.json();
     if (!url) return Response.json({ success: false, error: 'url required' }, { status: 400, headers: CORS });
 
     // Reuse knowledge the client already has — skips all scraping on follow-ups.
@@ -73,9 +73,9 @@ ${knowledge || '(no readable text — the site may be a JS app; rely on web know
 CONVERSATION SO FAR:
 ${history || '(new conversation)'}
 
-Answer the user's latest message about this site. Be concrete and helpful: what it does, how to use it, tokens, fees, safety, how it relates to Kaspa. Prefer the scraped content; say when you are unsure. Answer in 2-4 short plain sentences. No markdown headings, no bullet lists.`,
-      // Web search only when the site itself gave us nothing — it's the slow path.
-      add_context_from_internet: !knowledge,
+Answer the user's latest message about this site. Be concrete and helpful: what it does, how to use it, tokens, fees, safety, how it relates to Kaspa. Prefer the scraped content; say when you are unsure. ${fast ? 'Answer in ONE short sentence, max 25 words.' : 'Answer in 2-4 short plain sentences.'} No markdown headings, no bullet lists.`,
+      // Web search only when the site itself gave us nothing — it's the slow path (skipped in fast mode).
+      add_context_from_internet: !knowledge && !fast,
       model: 'gemini_3_flash',
     });
 

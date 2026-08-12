@@ -116,10 +116,11 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             </button>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                <Database className="w-3.5 h-3.5 text-white" />
+              <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-cyan-300 via-cyan-500 to-blue-700 flex items-center justify-center ring-1 ring-cyan-300/40 shadow-[0_0_18px_rgba(6,182,212,0.35)]">
+                <span className="absolute inset-0 rounded-full opacity-40" style={{ background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,0.9), transparent 60%)" }} />
+                <span className="relative text-white font-black text-[13px] leading-none tracking-tight">K</span>
               </div>
-              <span className="text-white font-bold text-sm hidden sm:inline">Search Kaspa</span>
+              <span className="text-white font-bold text-sm tracking-tight hidden sm:inline">Search <span className="text-cyan-300">Kaspa</span></span>
             </div>
 
             <form onSubmit={submit} className="flex-1 flex items-center gap-2 px-4 h-11 rounded-full bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50 focus-within:shadow-[0_0_0_4px_rgba(6,182,212,0.1)] transition-all max-w-2xl">

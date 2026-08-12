@@ -22,13 +22,18 @@ function hash(str) {
 }
 
 export default function SiteLogo({ app, size = 36 }) {
-  const [failed, setFailed] = useState(false);
+  const [step, setStep] = useState(0); // 0 = provided logo, 1 = site favicon, 2 = glyph
   const host = hostOf(app?.url);
   const h = hash(host || app?.name || "ttt");
   const [from, to] = PALETTES[h % PALETTES.length];
   const glyph = (app?.name || host || "?").trim().charAt(0).toUpperCase();
 
-  const showImg = app?.logo && !failed;
+  const sources = [
+    app?.logo,
+    host ? `https://www.google.com/s2/favicons?sz=128&domain=${host}` : null,
+  ].filter(Boolean);
+  const src = sources[step];
+  const showImg = !!src;
 
   return (
     <div
@@ -41,11 +46,11 @@ export default function SiteLogo({ app, size = 36 }) {
     >
       {showImg ? (
         <img
-          src={app.logo}
+          src={src}
           alt=""
           loading="lazy"
           className="w-full h-full object-cover"
-          onError={() => setFailed(true)}
+          onError={() => setStep(s => s + 1)}
         />
       ) : (
         <>
