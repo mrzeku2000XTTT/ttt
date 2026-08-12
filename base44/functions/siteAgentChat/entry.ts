@@ -25,23 +25,22 @@ async function grab(url: string) {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TTTAgent/1.0)' },
-      signal: AbortSignal.timeout(7000),
+      signal: AbortSignal.timeout(3500),
     });
     if (!res.ok) return '';
     const text = stripHtml(await res.text());
-    return text.slice(0, 6000);
+    return text.slice(0, 4000);
   } catch {
     return '';
   }
 }
 
-// Home page + likely docs/about pages
+// Home + about/docs, fetched in parallel. Cached client-side after the first turn.
 async function buildKnowledge(url: string) {
   let origin = url;
   try { origin = new URL(url).origin; } catch { /* keep */ }
-  const paths = ['', '/about', '/docs', '/faq'];
-  const chunks = await Promise.all(paths.map((p) => grab(p ? origin + p : url)));
-  return chunks.filter(Boolean).join('\n\n---\n\n').slice(0, 18000);
+  const chunks = await Promise.all([grab(url), grab(origin + '/about'), grab(origin + '/docs')]);
+  return chunks.filter(Boolean).join('\n\n---\n\n').slice(0, 9000);
 }
 
 Deno.serve(async (req) => {
@@ -49,10 +48,11 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
-    const { url, name, description, category, messages } = await req.json();
+    const { url, name, description, category, messages, knowledge: cached } = await req.json();
     if (!url) return Response.json({ success: false, error: 'url required' }, { status: 400, headers: CORS });
 
-    const knowledge = await buildKnowledge(url);
+    // Reuse knowledge the client already has — skips all scraping on follow-ups.
+    const knowledge = cached || (await buildKnowledge(url));
     const history = (messages || [])
       .slice(-10)
       .map((m: any) => `${m.role === 'user' ? 'User' : 'Agent'}: ${m.content}`)
@@ -73,13 +73,14 @@ ${knowledge || '(no readable text — the site may be a JS app; rely on web know
 CONVERSATION SO FAR:
 ${history || '(new conversation)'}
 
-Answer the user's latest message about this site. Be concrete and helpful: what it does, how to use it, tokens, fees, safety, how it relates to Kaspa. Prefer the scraped content; use web knowledge to fill gaps and say when you are unsure. Answer in 2-5 short plain sentences. No markdown headings, no bullet lists.`,
-      add_context_from_internet: true,
+Answer the user's latest message about this site. Be concrete and helpful: what it does, how to use it, tokens, fees, safety, how it relates to Kaspa. Prefer the scraped content; say when you are unsure. Answer in 2-4 short plain sentences. No markdown headings, no bullet lists.`,
+      // Web search only when the site itself gave us nothing — it's the slow path.
+      add_context_from_internet: !knowledge,
       model: 'gemini_3_flash',
     });
 
     return Response.json(
-      { success: true, answer: typeof answer === 'string' ? answer.trim() : '', grounded: !!knowledge },
+      { success: true, answer: typeof answer === 'string' ? answer.trim() : '', knowledge, grounded: !!knowledge },
       { headers: CORS },
     );
   } catch (error) {

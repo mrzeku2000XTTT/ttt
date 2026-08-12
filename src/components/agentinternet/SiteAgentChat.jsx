@@ -12,8 +12,9 @@ export default function SiteAgentChat({ app, onClose }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
+  const knowledgeRef = useRef(null);
 
-  useEffect(() => { setMessages([]); setInput(""); }, [app?.id]);
+  useEffect(() => { setMessages([]); setInput(""); knowledgeRef.current = null; }, [app?.id]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, busy]);
 
   const send = async (e) => {
@@ -31,8 +32,10 @@ export default function SiteAgentChat({ app, onClose }) {
         description: app.description,
         category: app.category,
         messages: next,
+        knowledge: knowledgeRef.current,
       });
       const res = raw?.data ?? raw;
+      if (res?.knowledge) knowledgeRef.current = res.knowledge;
       setMessages([...next, { role: "assistant", content: res?.answer || "I couldn't read that site right now." }]);
     } catch (err) {
       setMessages([...next, { role: "assistant", content: "Something went wrong reaching that site." }]);
