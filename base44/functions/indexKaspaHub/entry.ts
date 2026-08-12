@@ -13,7 +13,6 @@ const SECTIONS = [
   { name: 'Exchanges', path: 'exchanges' },
   { name: 'Ecosystem', path: 'ecosystem' },
   { name: 'Wallets', path: 'wallets' },
-  { name: 'Merchants', path: 'merchants' },
   { name: 'Merchant Solutions', path: 'solutions' },
   { name: 'Developer Tools', path: 'developers' },
   { name: 'Community Chats', path: 'communities' },
@@ -48,6 +47,42 @@ function extractItems(html) {
     console.log('JSON.parse failed:', e.message, 'head:', arrStr.slice(0, 200));
     return null;
   }
+}
+
+// KaspaHub renders every section's grid as server-side HTML anchor "cards".
+// This is the authoritative source (the ecosystem page shows 311 of 311 here),
+// so parse the cards directly out of the markup.
+function extractCards(html) {
+  const grid = html.match(/<div class="filter-grid"[^>]*>([\s\S]*?)<\/div>\s*<\/section>/);
+  const scope = grid ? grid[1] : html;
+  const cards = scope.match(/<a\s[^>]*class="[^"]*filter-card[^"]*"[\s\S]*?<\/a>/g) || [];
+  const out = [];
+  for (const card of cards) {
+    const href = card.match(/href="([^"]+)"/);
+    if (!href) continue;
+    const h3 = card.match(/<h3[^>]*>([\s\S]*?)<\/h3>/);
+    const name = h3 ? decode(h3[1].replace(/<[^>]+>/g, ' ')).trim() : '';
+    if (!name) continue;
+    const desc = card.match(/class="filter-description"[^>]*>([\s\S]*?)<\/p>/);
+    const logo = card.match(/<img[^>]+src="([^"]+)"/);
+    const tags = [...card.matchAll(/class="feature-tag ([^"]+)"/g)].map(m => m[1].trim());
+    out.push({
+      name,
+      description: desc ? decode(desc[1].replace(/<[^>]+>/g, ' ')).trim() : '',
+      link: href[1].trim(),
+      logo: logo ? logo[1] : '',
+      features: tags
+    });
+  }
+  return out.length ? out : null;
+}
+
+function decode(s) {
+  return s
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
+    .replace(/&rsquo;|&#8217;/g, '\u2019')
+    .replace(/\s+/g, ' ');
 }
 
 // Some sections (ecosystem) load their data from a JSON file under
@@ -86,9 +121,11 @@ Deno.serve(async (req) => {
         }
         const html = await res.text();
 
-        // 1) Prefer a JSON data file if the page references one
-        let items = null;
-        const dataFile = findDataFile(html) || `/assets/data/${section.path}.json`;
+        // 1) Prefer the rendered HTML cards (complete + authoritative)
+        let items = extractCards(html);
+
+        // 2) Fall back to a JSON data file if the page references one
+        const dataFile = items ? null : (findDataFile(html) || `/assets/data/${section.path}.json`);
         if (dataFile) {
           try {
             const jres = await fetch(`https://kaspahub.org${dataFile}`, { headers, redirect: 'follow' });
