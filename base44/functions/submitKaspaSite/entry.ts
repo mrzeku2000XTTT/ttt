@@ -2,6 +2,36 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const CATEGORIES = ["Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
 
+// Pull the best available brand image from the site's HTML head
+async function extractLogo(url: string, domain: string): Promise<string> {
+  const fallback = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TTTIndexer/1.0)' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return fallback;
+    const html = (await res.text()).slice(0, 300000);
+
+    const grab = (re: RegExp) => {
+      const m = html.match(re);
+      return m ? m[1] : null;
+    };
+
+    const candidate =
+      grab(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+      grab(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+      grab(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i) ||
+      grab(/<link[^>]+rel=["'][^"']*apple-touch-icon[^"']*["'][^>]+href=["']([^"']+)["']/i) ||
+      grab(/<link[^>]+rel=["'][^"']*icon[^"']*["'][^>]+href=["']([^"']+)["']/i);
+
+    if (!candidate) return fallback;
+    return new URL(candidate, url).href;
+  } catch {
+    return fallback;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -93,12 +123,13 @@ Return a clean product name (no marketing tagline), a 1-2 sentence factual descr
     });
 
     const category = CATEGORIES.includes(meta?.category) ? meta.category : 'Ecosystem';
+    const logo = await extractLogo(url, domain);
     const app = await base44.asServiceRole.entities.KaspaHubApp.create({
       name: (meta?.name || domain).slice(0, 120),
       description: meta?.description || '',
       url,
       category,
-      logo: `https://www.google.com/s2/favicons?sz=128&domain=${domain}`,
+      logo,
       features: ['community-listed', 'security-verified', ...(meta?.features || []).slice(0, 4)],
       indexed_at: new Date().toISOString(),
     });

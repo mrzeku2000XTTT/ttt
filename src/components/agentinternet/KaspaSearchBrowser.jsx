@@ -203,11 +203,10 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                 {results.slice(0, visible).map((app, i) => (
                   <div key={app.id || i} className="group">
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
-                        {app.logo ? (
-                          <img src={app.logo} alt="" className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        ) : (
-                          <span className="text-white/60 text-xs font-bold">{(app.name || "?").charAt(0).toUpperCase()}</span>
+                      <div className="relative w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
+                        <span className="text-white/60 text-xs font-bold absolute">{(app.name || "?").charAt(0).toUpperCase()}</span>
+                        {app.logo && (
+                          <img src={app.logo} alt="" className="w-full h-full object-cover relative" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
