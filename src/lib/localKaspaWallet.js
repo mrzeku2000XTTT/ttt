@@ -153,6 +153,21 @@ export function getWallet() {
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
+/** Wallet from this lib, or fall back to the TTT Wallet page's stored wallet. */
+export function getAnyWallet() {
+  const local = getWallet();
+  if (local?.address) return local;
+  try {
+    const address = localStorage.getItem("ttt_wallet_address");
+    if (!address) return null;
+    return {
+      address,
+      privateKey: localStorage.getItem("ttt_wallet_pk") || "",
+      source: "ttt_wallet",
+    };
+  } catch { return null; }
+}
+
 export function clearWallet() {
   try { localStorage.removeItem(STORAGE_KEY); } catch {}
   unlinkWallet();

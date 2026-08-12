@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Wallet, Loader2, KeyRound, Copy, Check, Download, Upload } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { getWallet, generateWallet, importFromPrivateKey } from "@/lib/localKaspaWallet";
+import { getAnyWallet, generateWallet, importFromPrivateKey } from "@/lib/localKaspaWallet";
 
 export default function AgentWalletBar() {
-  const [wallet, setWallet] = useState(() => getWallet());
+  const [wallet, setWallet] = useState(() => getAnyWallet());
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [panel, setPanel] = useState(false);
@@ -97,7 +97,7 @@ export default function AgentWalletBar() {
 
       {panel && (
         <div className="px-4 pb-3 space-y-2">
-          {wallet && (
+          {wallet?.privateKey && (
             <button
               onClick={() => copy(wallet.privateKey, "key")}
               className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-white/[0.05] border border-white/10 text-[11px] text-white/70 hover:text-white"
