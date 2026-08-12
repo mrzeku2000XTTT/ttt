@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles } from "lucide-react";
+import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AiOverviewCard from "./AiOverviewCard";
+import ListSiteModal from "./ListSiteModal";
 
 const CATEGORIES = ["All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
 
@@ -24,6 +25,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [ai, setAi] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const [listOpen, setListOpen] = useState(false);
   const inputRef = useRef(null);
   const reqId = useRef(0);
 
@@ -123,7 +125,29 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               />
               {loading && <Loader2 className="w-4 h-4 text-cyan-400 animate-spin flex-shrink-0" />}
             </form>
+
+            <button
+              onClick={() => setListOpen(true)}
+              title="List your site"
+              className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/25 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
           </div>
+
+          <ListSiteModal
+            open={listOpen}
+            onClose={() => setListOpen(false)}
+            onListed={(res) => {
+              const cat = res?.app?.category;
+              if (cat) {
+                setActiveCategory(cat);
+                runSearch(submitted, cat);
+              } else {
+                runSearch(submitted, activeCategory);
+              }
+            }}
+          />
 
           {/* Category chips */}
           <div className="flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto scrollbar-hide border-b border-white/5">
