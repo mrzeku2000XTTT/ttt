@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
 import SiteAgentChat from "./SiteAgentChat";
+import SiteLogo from "./SiteLogo";
 
 const CATEGORIES = ["All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
 
@@ -80,6 +81,13 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     }
   }, [open, runSearch]);
 
+  // Nothing is persisted — wipe the in-memory search trail when the user leaves.
+  const closeAndWipe = () => {
+    reqId.current++;
+    setQuery(""); setSubmitted(""); setResults([]); setTotal(0); setAi(null); setAgentApp(null);
+    onClose?.();
+  };
+
   const submit = (e) => {
     e?.preventDefault();
     setSubmitted(query.trim());
@@ -102,7 +110,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
         >
           {/* Header — Google-style */}
           <div className="flex items-center gap-3 px-4 pt-6 pb-3 border-b border-white/10" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0">
+            <button onClick={closeAndWipe} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0">
               <X className="w-4 h-4" />
             </button>
 
@@ -203,14 +211,9 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               <div className="max-w-2xl mx-auto space-y-5">
                 <AiOverviewCard text={ai} loading={aiLoading} />
                 {results.slice(0, visible).map((app, i) => (
-                  <div key={app.id || i} className="group">
+                  <div key={app.id || i} className="group rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/15 transition-colors p-3.5">
                     <div className="flex items-start gap-3">
-                      <div className="relative w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
-                        <span className="text-white/60 text-xs font-bold absolute">{(app.name || "?").charAt(0).toUpperCase()}</span>
-                        {app.logo && (
-                          <img src={app.logo} alt="" className="w-full h-full object-cover relative" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        )}
-                      </div>
+                      <SiteLogo app={app} size={36} />
                       <div className="flex-1 min-w-0">
                         <a
                           href={app.url}
@@ -275,6 +278,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-center gap-2">
             <Sparkles className="w-3 h-3 text-cyan-400/60" />
             <span className="text-[10px] text-white/40 font-mono">Powered by KaspaHub.org ecosystem index</span>
+            <span className="text-[10px] text-white/25 font-mono hidden sm:inline">·</span>
+            <span className="text-[10px] text-emerald-400/50 font-mono">Searches cached on device only · wiped on close · never stored</span>
           </div>
 
           <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />

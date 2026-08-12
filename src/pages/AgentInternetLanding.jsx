@@ -235,7 +235,6 @@ export default function AgentInternetLanding() {
                   >
                     <LayoutGrid className="w-3.5 h-3.5" /> Browse live pages
                   </button>
-                  {isAdmin && (<>
                   <button
                     onClick={() => setShowWebSearch(true)}
                     className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors"
@@ -248,7 +247,6 @@ export default function AgentInternetLanding() {
                   >
                     <Database className="w-3.5 h-3.5" /> Search Kaspa
                   </button>
-                  </>)}
                 </div>
 
                 {/* Footer status */}
