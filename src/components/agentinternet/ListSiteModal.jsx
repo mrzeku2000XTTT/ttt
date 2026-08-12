@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, ShieldAlert, Loader2, Globe, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import ScanSteps from "./ScanSteps";
+import XProfileForm from "./XProfileForm";
 
 export default function ListSiteModal({ open, onClose, onListed }) {
+  const [tab, setTab] = useState("site");
   const [url, setUrl] = useState("");
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
@@ -49,7 +51,7 @@ export default function ListSiteModal({ open, onClose, onListed }) {
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
                   <Plus className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-white font-bold text-sm">List your site</span>
+                <span className="text-white font-bold text-sm">Get listed</span>
               </div>
               <button onClick={() => { if (!scanning) { reset(); onClose?.(); } }} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/10">
                 <X className="w-4 h-4" />
@@ -57,6 +59,22 @@ export default function ListSiteModal({ open, onClose, onListed }) {
             </div>
 
             <div className="p-4 space-y-4">
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.05] border border-white/10">
+                {[{ id: "site", label: "Website" }, { id: "x", label: "X Profile" }].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => { if (!scanning) setTab(t.id); }}
+                    className={`flex-1 h-8 rounded-lg text-[12px] font-semibold transition-colors ${
+                      tab === t.id ? "bg-cyan-500 text-black" : "text-white/55 hover:text-white"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {tab === "x" ? <XProfileForm onListed={onListed} /> : (
+              <>
               <form onSubmit={submit} className="space-y-3">
                 <div className="flex items-center gap-2 px-3 h-11 rounded-xl bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50">
                   <Globe className="w-4 h-4 text-white/40 flex-shrink-0" />
@@ -114,6 +132,8 @@ export default function ListSiteModal({ open, onClose, onListed }) {
                     </div>
                   )}
                 </div>
+              )}
+              </>
               )}
             </div>
           </motion.div>
