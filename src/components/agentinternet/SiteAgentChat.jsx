@@ -4,6 +4,7 @@ import { X, Send, Loader2, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import SiteLogo from "./SiteLogo";
 import AgentWalletBar from "./AgentWalletBar";
+import AiSpendWallet from "./AiSpendWallet";
 
 function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
@@ -72,6 +73,7 @@ export default function SiteAgentChat({ app, onClose }) {
           </div>
 
           <AgentWalletBar />
+          <AiSpendWallet />
 
           <div className="flex items-center gap-2 px-4 py-1.5 border-b border-white/5">
             <button

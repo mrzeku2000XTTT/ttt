@@ -55,7 +55,8 @@ export default function AgentWalletBar() {
   return (
     <div className="border-b border-white/10 bg-white/[0.02]">
       <div className="flex items-center gap-2 px-4 py-2">
-        <Wallet className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+        <Wallet className="w-3.5 h-3.5 text-white/50 flex-shrink-0" />
+        <span className="text-[10px] uppercase tracking-wide text-white/40 flex-shrink-0">TTT wallet</span>
         {wallet ? (
           <>
             <button
