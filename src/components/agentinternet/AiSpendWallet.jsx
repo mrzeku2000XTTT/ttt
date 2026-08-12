@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Bot, Loader2, Copy, Check, ArrowDownToLine, Sparkles } from "lucide-react";
+import { Bot, Loader2, Copy, Check, ArrowDownToLine, Sparkles, KeyRound, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getWallet } from "@/lib/localKaspaWallet";
@@ -15,6 +15,8 @@ export default function AiSpendWallet() {
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [keysOpen, setKeysOpen] = useState(false);
+  const [keyCopied, setKeyCopied] = useState(false);
 
   const ttt = getWallet();
 
@@ -79,6 +81,12 @@ export default function AiSpendWallet() {
             >
               <ArrowDownToLine className="w-3 h-3" /> Fund
             </button>
+            <button
+              onClick={() => setKeysOpen(o => !o)}
+              className="flex-shrink-0 px-2 py-1 rounded-full bg-white/[0.06] border border-white/10 text-[10px] text-white/60 hover:text-white flex items-center gap-1"
+            >
+              <KeyRound className="w-3 h-3" /> Keys
+            </button>
           </>
         ) : (
           <>
@@ -97,6 +105,19 @@ export default function AiSpendWallet() {
           </span>
         </Link>
       </div>
+
+      {keysOpen && wallet && (
+        <div className="px-4 pb-3 space-y-2">
+          <button
+            onClick={() => { navigator.clipboard?.writeText(wallet.privateKey); setKeyCopied(true); setTimeout(() => setKeyCopied(false), 1500); }}
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-white/[0.05] border border-white/10 text-[11px] text-white/70 hover:text-white"
+          >
+            {keyCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Download className="w-3 h-3" />}
+            {keyCopied ? "AI wallet private key copied" : "Export AI wallet private key"}
+          </button>
+          <p className="text-[10px] text-white/30">Keys stay on this device — never sent to any server.</p>
+        </div>
+      )}
 
       {fundOpen && wallet && (
         <div className="px-4 pb-3 space-y-2">
