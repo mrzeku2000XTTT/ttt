@@ -18,6 +18,11 @@ export default function AiSpendWallet() {
   const [copied, setCopied] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
   const [keyCopied, setKeyCopied] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setIsAdmin(u?.role === "admin")).catch(() => setIsAdmin(false));
+  }, []);
 
   const ttt = getWallet();
 
@@ -122,11 +127,13 @@ export default function AiSpendWallet() {
             </button>
           </>
         )}
-        <Link to="/AWA" className="flex-shrink-0">
-          <span className="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-[10px] text-purple-200 hover:bg-purple-500/30 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> Claim AI
-          </span>
-        </Link>
+        {isAdmin && (
+          <Link to="/AWA" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+            <span className="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-[10px] text-purple-200 hover:bg-purple-500/30 flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> Claim AI
+            </span>
+          </Link>
+        )}
       </div>
 
       {keysOpen && wallet && (

@@ -49,7 +49,10 @@ export default function SiteAgentChat({ app, onClose }) {
     }
   };
 
-  const suggestions = ["What is this site?", "How do I use it?", "Is it safe?"];
+  const isXProfile = app?.category === "X Profiles";
+  const suggestions = isXProfile
+    ? ["Who is this account?", "What do they post about?", "Latest updates from them?"]
+    : ["What is this site?", "How do I use it?", "Is it safe?"];
 
   return (
     <AnimatePresence>
@@ -92,7 +95,9 @@ export default function SiteAgentChat({ app, onClose }) {
             {messages.length === 0 && (
               <div className="space-y-3">
                 <p className="text-white/50 text-[13px] leading-relaxed">
-                  Ask anything about <span className="text-white">{app.name}</span> — I read its site, docs and FAQ.
+                  {isXProfile
+                    ? <>Ask anything about <span className="text-white">{app.name}</span> — I read their X profile and posts.</>
+                    : <>Ask anything about <span className="text-white">{app.name}</span> — I read its site, docs and FAQ.</>}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {suggestions.map(s => (
