@@ -22,6 +22,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [error, setError] = useState(null);
   const [notIndexed, setNotIndexed] = useState(false);
   const [ai, setAi] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const inputRef = useRef(null);
   const reqId = useRef(0);
@@ -32,6 +33,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     setError(null);
     setNotIndexed(false);
     setAi(null);
+    setAiLoading(false);
     setVisible(PAGE_SIZE);
     try {
       const raw = await base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000 });
@@ -40,8 +42,18 @@ export default function KaspaSearchBrowser({ open, onClose }) {
       if (res?.success) {
         setResults(res.results || []);
         setTotal(res.total || 0);
-        setAi(res.ai || null);
         if (res.message) setNotIndexed(true);
+        // AI overview runs after results are on screen so the list never waits
+        if (q) {
+          setAiLoading(true);
+          base44.functions.invoke("searchKaspaApps", { query: q, category: cat, aiOnly: true })
+            .then(r => {
+              const d = r?.data ?? r;
+              if (reqId.current === myId) setAi(d?.ai || null);
+            })
+            .catch(() => {})
+            .finally(() => { if (reqId.current === myId) setAiLoading(false); });
+        }
       } else {
         setError(res?.error || "Search failed");
       }
@@ -154,7 +166,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               </div>
             ) : results.length === 0 && !loading ? (
               <div className="px-2">
-                <AiOverviewCard text={ai} />
+                <AiOverviewCard text={ai} loading={aiLoading} />
                 <div className="flex flex-col items-center justify-center text-center px-6 py-10">
                   <Globe className="w-8 h-8 text-white/20 mb-3" />
                   <p className="text-white/50 text-sm mb-1">No matching apps</p>
@@ -163,7 +175,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               </div>
             ) : (
               <div className="max-w-2xl mx-auto space-y-5">
-                <AiOverviewCard text={ai} />
+                <AiOverviewCard text={ai} loading={aiLoading} />
                 {results.slice(0, visible).map((app, i) => (
                   <div key={app.id || i} className="group">
                     <div className="flex items-start gap-3">

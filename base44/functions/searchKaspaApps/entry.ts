@@ -57,7 +57,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { query, category, limit } = await req.json();
+    // aiOnly: skip returning results, just produce the AI overview (called
+    // separately by the UI so the app list renders instantly)
+    const { query, category, limit, aiOnly, withAi } = await req.json();
     const base44 = createClientFromRequest(req);
 
     // Load the full index (small dataset — ~600 records)
@@ -90,7 +92,7 @@ Deno.serve(async (req) => {
     // AI overview — explains what the searched thing is, using indexed matches
     // when we have them, otherwise live web knowledge.
     let ai = null;
-    if (q) {
+    if (q && (aiOnly || withAi)) {
       try {
         const top = finalResults.slice(0, 6).map(r => `- ${r.name} (${r.url}) [${r.category}]: ${(r.description || '').slice(0, 200)}`).join('\n');
         const prompt = top
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      results: finalResults,
+      results: aiOnly ? [] : finalResults,
       total: apps.length,
       shown: finalResults.length,
       ai
