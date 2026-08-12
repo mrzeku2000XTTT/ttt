@@ -91,7 +91,12 @@ Deno.serve(async (req) => {
     const seen = new Set();
     results = results.filter(r => {
       let key;
-      try { key = new URL(r.url).hostname.replace(/^www\./, '').toLowerCase(); }
+      try {
+        const u = new URL(r.url);
+        // include the path so distinct profiles on a shared host (e.g. x.com/handle)
+        // are not collapsed into one result
+        key = (u.hostname.replace(/^www\./, '') + u.pathname.replace(/\/+$/, '')).toLowerCase();
+      }
       catch { key = squash(r.name) || squash(r.url); }
       if (!key || seen.has(key)) return false;
       seen.add(key);
