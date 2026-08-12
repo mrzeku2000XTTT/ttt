@@ -109,7 +109,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col"
         >
           {/* Header — Google-style */}
-          <div className="flex items-center gap-3 px-4 pt-6 pb-3 border-b border-white/10" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
+          <div className="px-4 pt-6 pb-3 border-b border-white/10" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
+          <div className="flex items-center gap-3 w-full max-w-4xl mx-auto">
             <button onClick={closeAndWipe} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0">
               <X className="w-4 h-4" />
             </button>
@@ -144,6 +145,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               <Plus className="w-4 h-4" />
             </button>
           </div>
+          </div>
 
           <ListSiteModal
             open={listOpen}
@@ -160,7 +162,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           />
 
           {/* Category chips */}
-          <div className="flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto scrollbar-hide border-b border-white/5">
+          <div className="flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto scrollbar-hide border-b border-white/5 w-full max-w-4xl mx-auto">
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
@@ -177,7 +179,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           </div>
 
           {/* Results meta */}
-          <div className="px-4 py-1.5 text-[11px] text-white/40 font-mono border-b border-white/5">
+          <div className="px-4 py-1.5 text-[11px] text-white/40 font-mono border-b border-white/5 w-full max-w-4xl mx-auto">
             {loading ? "Searching…" : notIndexed
               ? "Index not built yet — run the indexer"
               : `${results.length} of ${total} apps in ${activeCategory}${submitted ? ` · results for "${submitted}"` : ""}`}
