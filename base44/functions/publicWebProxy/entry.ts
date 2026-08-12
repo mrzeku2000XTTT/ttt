@@ -110,10 +110,12 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Remove frame-busting scripts
-      content = content.replace(/if\s*\(\s*(?:window\.)?top\s*!==?\s*(?:window\.)?self\s*\)/gi, 'if(false)');
-      content = content.replace(/if\s*\(\s*(?:window\.)?parent\s*!==?\s*(?:window\.)?self\s*\)/gi, 'if(false)');
-      content = content.replace(/if\s*\(\s*top\s*!==?\s*self\s*\)/gi, 'if(false)');
+      // Strip ALL scripts. Framework bundles (Next.js, Vite, …) crash or wipe the
+      // DOM inside a sandboxed srcDoc iframe — the page then shows the browser's
+      // "This page couldn't load" screen. Server-rendered HTML + CSS renders fine.
+      content = content.replace(/<script[\s\S]*?<\/script>/gi, '');
+      content = content.replace(/<script[^>]*\/>/gi, '');
+      content = content.replace(/<noscript[^>]*>|<\/noscript>/gi, '');
 
       // Remove CSP / X-Frame-Options meta tags
       content = content.replace(/<meta\s+http-equiv=["']?Content-Security-Policy["']?[^>]*>/gi, '');
