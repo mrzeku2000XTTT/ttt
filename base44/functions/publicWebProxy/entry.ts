@@ -77,6 +77,31 @@ Deno.serve(async (req) => {
       let content = await response.text();
       const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
 
+      // Page metadata + "is this just a JS shell?" detection, so the client can
+      // show a real preview for SPAs (kaspa.org, tttz.xyz, …) that render blank.
+      const pick = (re: RegExp) => {
+        const m = content.match(re);
+        return m ? m[1].trim() : null;
+      };
+      const meta = {
+        title:
+          pick(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
+          pick(/<title[^>]*>([^<]+)<\/title>/i),
+        description:
+          pick(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ||
+          pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i),
+        image: pick(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i),
+      };
+      if (meta.image && meta.image.startsWith('/')) meta.image = baseUrl + meta.image;
+
+      const visibleText = content
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const isShell = visibleText.length < 250;
+
       // Add base tag so relative resources load
       if (!content.includes('<base')) {
         content = content.replace(
@@ -106,6 +131,8 @@ Deno.serve(async (req) => {
       return Response.json({
         success: true,
         content,
+        meta,
+        isShell,
         finalUrl: response.url || url,
         status: response.status
       }, {

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Globe, ExternalLink, RefreshCw, ArrowLeft, ArrowRight, Home, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import WebResultsList from "./WebResultsList";
+import SitePreviewCard from "./SitePreviewCard";
 
 const QUICK_LINKS = [
   { name: "DuckDuckGo", url: "https://duckduckgo.com" },
@@ -13,15 +15,13 @@ const QUICK_LINKS = [
   { name: "GitHub Trending", url: "https://github.com/trending" },
 ];
 
-function normalizeInput(raw) {
+// Returns a URL for direct navigation, or null when the input is a search query.
+function asUrl(raw) {
   const v = (raw || "").trim();
   if (!v) return null;
   if (/^https?:\/\//i.test(v)) return v;
   if (/^[\w-]+(\.[\w-]+)+(\/.*)?$/.test(v) && !/\s/.test(v)) return `https://${v}`;
-  // Search queries route to DuckDuckGo's HTML endpoint — it renders server-side
-  // without a CAPTCHA (Google blocks server-side fetches), so results actually
-  // display inside the TTT browser.
-  return `https://html.duckduckgo.com/html/?q=${encodeURIComponent(v)}`;
+  return null;
 }
 
 function displayUrl(u) {
@@ -35,8 +35,13 @@ export default function WebSearchBrowser({ open, onClose }) {
   const [idx, setIdx] = useState(-1);
   const [loadKey, setLoadKey] = useState(0);
   const [content, setContent] = useState(null);
+  const [meta, setMeta] = useState(null);
+  const [isShell, setIsShell] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mode, setMode] = useState("home"); // home | results | page
+  const [results, setResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const cancelRef = useRef(null);
 
   const canBack = idx >= 0 && idx < history.length - 1;
@@ -51,6 +56,8 @@ export default function WebSearchBrowser({ open, onClose }) {
     setLoading(true);
     setError(null);
     setContent(null);
+    setMeta(null);
+    setIsShell(false);
 
     try {
       const raw = await base44.functions.invoke("publicWebProxy", { url: target });
@@ -58,6 +65,8 @@ export default function WebSearchBrowser({ open, onClose }) {
       if (token.cancelled) return;
       if (res?.success && res.content) {
         setContent(res.content);
+        setMeta(res.meta || null);
+        setIsShell(!!res.isShell);
       } else {
         setError(res?.error || "Failed to load page");
       }
@@ -69,9 +78,38 @@ export default function WebSearchBrowser({ open, onClose }) {
     }
   }, []);
 
+  const runSearch = useCallback(async (q) => {
+    if (cancelRef.current) cancelRef.current.cancelled = true;
+    const token = { cancelled: false };
+    cancelRef.current = token;
+
+    setMode("results");
+    setSearchQuery(q);
+    setResults([]);
+    setError(null);
+    setLoading(true);
+    setUrl(null);
+    try {
+      const raw = await base44.functions.invoke("openWebSearch", { query: q });
+      const res = raw?.data ?? raw;
+      if (token.cancelled) return;
+      if (res?.success) setResults(res.results || []);
+      else setError(res?.error || "Search failed");
+    } catch (e) {
+      if (!token.cancelled) setError(e?.message || "Search failed");
+    } finally {
+      if (!token.cancelled) setLoading(false);
+    }
+  }, []);
+
   const navigate = useCallback((raw, push = true) => {
-    const next = normalizeInput(raw);
-    if (!next) return;
+    const next = asUrl(raw);
+    if (!next) {
+      const q = (raw || "").trim();
+      if (q) runSearch(q);
+      return;
+    }
+    setMode("page");
     setInput(displayUrl(next));
     if (push) {
       const h = [...history];
@@ -82,7 +120,7 @@ export default function WebSearchBrowser({ open, onClose }) {
     setUrl(next);
     setLoadKey(k => k + 1);
     fetchPage(next);
-  }, [history, fetchPage]);
+  }, [history, fetchPage, runSearch]);
 
   const back = () => {
     if (!canBack) return;
@@ -124,6 +162,11 @@ export default function WebSearchBrowser({ open, onClose }) {
       setContent(null);
       setError(null);
       setLoading(false);
+      setMode("home");
+      setResults([]);
+      setSearchQuery("");
+      setMeta(null);
+      setIsShell(false);
     }
   }, [open]);
 
@@ -162,7 +205,7 @@ export default function WebSearchBrowser({ open, onClose }) {
               <input
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                placeholder="Search Google or type any URL"
+                placeholder="Ask anything or type a URL"
                 className="flex-1 bg-transparent text-white text-xs placeholder:text-white/30 focus:outline-none font-mono min-w-0"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -195,7 +238,15 @@ export default function WebSearchBrowser({ open, onClose }) {
 
           {/* Content */}
           <div className="flex-1 relative bg-white overflow-hidden">
-            {!url ? (
+            {mode === "results" ? (
+              <WebResultsList
+                query={searchQuery}
+                results={results}
+                loading={loading}
+                error={error}
+                onOpen={(u) => navigate(u)}
+              />
+            ) : !url ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center px-6 bg-zinc-950">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center mb-4">
                   <Globe className="w-6 h-6 text-cyan-300" />
@@ -229,6 +280,8 @@ export default function WebSearchBrowser({ open, onClose }) {
                   <ExternalLink className="w-3.5 h-3.5" /> Open in new tab
                 </a>
               </div>
+            ) : isShell ? (
+              <SitePreviewCard url={url} meta={meta} />
             ) : content ? (
               <iframe
                 key={loadKey}
