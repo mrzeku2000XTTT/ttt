@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import AiOverviewCard from "./AiOverviewCard";
 
 const CATEGORIES = ["All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
 
@@ -20,6 +21,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notIndexed, setNotIndexed] = useState(false);
+  const [ai, setAi] = useState(null);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const inputRef = useRef(null);
   const reqId = useRef(0);
@@ -29,6 +31,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     setLoading(true);
     setError(null);
     setNotIndexed(false);
+    setAi(null);
     setVisible(PAGE_SIZE);
     try {
       const raw = await base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000 });
@@ -37,6 +40,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
       if (res?.success) {
         setResults(res.results || []);
         setTotal(res.total || 0);
+        setAi(res.ai || null);
         if (res.message) setNotIndexed(true);
       } else {
         setError(res?.error || "Search failed");
@@ -149,13 +153,17 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                 <p className="text-white/30 text-xs max-w-xs">The KaspaHub index needs to be built first. An admin can run the indexer to populate ~600 apps.</p>
               </div>
             ) : results.length === 0 && !loading ? (
-              <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                <Globe className="w-8 h-8 text-white/20 mb-3" />
-                <p className="text-white/50 text-sm mb-1">No matching apps</p>
-                <p className="text-white/30 text-xs">Try a different keyword or category.</p>
+              <div className="px-2">
+                <AiOverviewCard text={ai} />
+                <div className="flex flex-col items-center justify-center text-center px-6 py-10">
+                  <Globe className="w-8 h-8 text-white/20 mb-3" />
+                  <p className="text-white/50 text-sm mb-1">No matching apps</p>
+                  <p className="text-white/30 text-xs">Try a different keyword or category.</p>
+                </div>
               </div>
             ) : (
               <div className="max-w-2xl mx-auto space-y-5">
+                <AiOverviewCard text={ai} />
                 {results.slice(0, visible).map((app, i) => (
                   <div key={app.id || i} className="group">
                     <div className="flex items-start gap-3">
