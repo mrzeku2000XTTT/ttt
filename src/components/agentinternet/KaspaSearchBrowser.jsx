@@ -278,10 +278,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
 
           {/* Footer */}
           <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-center gap-2">
-            <Sparkles className="w-3 h-3 text-cyan-400/60" />
-            <span className="text-[10px] text-white/40 font-mono">Powered by KaspaHub.org ecosystem index</span>
-            <span className="text-[10px] text-white/25 font-mono hidden sm:inline">·</span>
-            <span className="text-[10px] text-emerald-400/50 font-mono">Searches cached on device only · wiped on close · never stored</span>
+            <span className="text-[10px] text-white/40 font-mono">tttz.xyz</span>
           </div>
 
           <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
