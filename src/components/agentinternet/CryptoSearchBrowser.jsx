@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Loader2, TrendingUp } from "lucide-react";
+import { X, Search, Loader2, TrendingUp, Users } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import CryptoProfileGrid from "./CryptoProfileGrid";
 
 const BTC_LOGO = "https://assets.coingecko.com/coins/images/1/large/bitcoin.png";
 
@@ -11,6 +13,8 @@ export default function CryptoSearchBrowser({ open, onClose }) {
   const [trending, setTrending] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [tab, setTab] = useState("coins"); // coins | profiles
+  const [profiles, setProfiles] = useState([]);
 
   // Load trending coins for the home view
   useEffect(() => {
@@ -21,6 +25,12 @@ export default function CryptoSearchBrowser({ open, onClose }) {
         const data = await res.json();
         setTrending((data?.coins || []).map(c => c.item));
       } catch { /* trending is optional */ }
+    })();
+    (async () => {
+      try {
+        const rows = await base44.entities.KaspaHubApp.filter({ category: "Crypto X Profiles" }, "-created_date", 200);
+        setProfiles(rows || []);
+      } catch { /* profiles are optional */ }
     })();
   }, [open]);
 
@@ -54,7 +64,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
   }, []);
 
   useEffect(() => {
-    if (!open) { setInput(""); setQuery(""); setCoins([]); setError(null); setLoading(false); }
+    if (!open) { setInput(""); setQuery(""); setCoins([]); setError(null); setLoading(false); setTab("coins"); }
   }, [open]);
 
   const fmtPrice = (p) => {
@@ -81,7 +91,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
             </button>
             <img src={BTC_LOGO} alt="" className="w-5 h-5 rounded-full" />
             <form
-              onSubmit={(e) => { e.preventDefault(); runSearch(input); }}
+              onSubmit={(e) => { e.preventDefault(); if (tab === "coins") runSearch(input); }}
               className="flex-1 flex items-center gap-2 px-3 h-9 rounded-full bg-white/[0.06] border border-white/10 focus-within:border-amber-500/40 transition-colors"
             >
               <Search className="w-3.5 h-3.5 text-white/40 flex-shrink-0" />
@@ -97,9 +107,32 @@ export default function CryptoSearchBrowser({ open, onClose }) {
             </form>
           </div>
 
+          {/* Tabs */}
+          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-white/5 bg-zinc-950">
+            <button
+              onClick={() => setTab("coins")}
+              className={`px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest border transition-colors ${tab === "coins" ? "bg-amber-500/20 border-amber-400/50 text-amber-200" : "border-white/10 text-white/50 hover:text-white"}`}
+            >
+              Coins
+            </button>
+            <button
+              onClick={() => setTab("profiles")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest border transition-colors ${tab === "profiles" ? "bg-amber-500/20 border-amber-400/50 text-amber-200" : "border-white/10 text-white/50 hover:text-white"}`}
+            >
+              <Users className="w-3 h-3" /> Crypto Profiles
+            </button>
+          </div>
+
           {/* Content */}
           <div className="flex-1 overflow-y-auto scrollbar-hide bg-zinc-950 px-4 py-4">
-            {loading ? (
+            {tab === "profiles" ? (
+              <div className="max-w-md mx-auto">
+                <p className="text-white/40 text-[10px] font-mono uppercase tracking-widest mb-3">
+                  Crypto X profiles · {profiles.length} indexed
+                </p>
+                <CryptoProfileGrid profiles={profiles} filter={input} />
+              </div>
+            ) : loading ? (
               <div className="flex flex-col items-center justify-center py-24">
                 <Loader2 className="w-6 h-6 text-amber-400 animate-spin mb-3" />
                 <span className="text-white/40 text-xs font-mono">Searching crypto…</span>
