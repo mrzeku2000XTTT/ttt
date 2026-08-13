@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { url } = await req.json();
+    const { url, keepScripts } = await req.json();
 
     if (!url) {
       return Response.json({ error: 'URL required', success: false }, { status: 400 });
@@ -110,12 +110,14 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Strip ALL scripts. Framework bundles (Next.js, Vite, …) crash or wipe the
-      // DOM inside a sandboxed srcDoc iframe — the page then shows the browser's
-      // "This page couldn't load" screen. Server-rendered HTML + CSS renders fine.
-      content = content.replace(/<script[\s\S]*?<\/script>/gi, '');
-      content = content.replace(/<script[^>]*\/>/gi, '');
-      content = content.replace(/<noscript[^>]*>|<\/noscript>/gi, '');
+      // Strip ALL scripts unless keepScripts (JS mode) is requested. Framework
+      // bundles (Next.js, Vite, …) can crash or wipe the DOM inside a sandboxed
+      // srcDoc iframe — but some sites need JS to render, so the client can opt in.
+      if (!keepScripts) {
+        content = content.replace(/<script[\s\S]*?<\/script>/gi, '');
+        content = content.replace(/<script[^>]*\/>/gi, '');
+        content = content.replace(/<noscript[^>]*>|<\/noscript>/gi, '');
+      }
 
       // Remove CSP / X-Frame-Options meta tags
       content = content.replace(/<meta\s+http-equiv=["']?Content-Security-Policy["']?[^>]*>/gi, '');

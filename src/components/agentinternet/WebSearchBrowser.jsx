@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Globe, ExternalLink, RefreshCw, ArrowLeft, ArrowRight, Home, Loader2 } from "lucide-react";
+import { X, Search, Globe, ExternalLink, RefreshCw, ArrowLeft, ArrowRight, Home, Loader2, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import WebResultsList from "./WebResultsList";
 import SitePreviewCard from "./SitePreviewCard";
@@ -41,6 +41,8 @@ export default function WebSearchBrowser({ open, onClose }) {
   const [mode, setMode] = useState("home"); // home | results | page
   const [results, setResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [jsOn, setJsOn] = useState(false);
+  const jsOnRef = useRef(false);
   const cancelRef = useRef(null);
 
   const canBack = idx >= 0 && idx < history.length - 1;
@@ -59,7 +61,7 @@ export default function WebSearchBrowser({ open, onClose }) {
     setIsShell(false);
 
     try {
-      const raw = await base44.functions.invoke("publicWebProxy", { url: target });
+      const raw = await base44.functions.invoke("publicWebProxy", { url: target, keepScripts: jsOnRef.current });
       const res = raw?.data ?? raw;
       if (token.cancelled) return;
       if (res?.success && res.content) {
@@ -159,6 +161,16 @@ export default function WebSearchBrowser({ open, onClose }) {
     fetchPage(url);
   };
 
+  const toggleJs = () => {
+    const next = !jsOn;
+    jsOnRef.current = next;
+    setJsOn(next);
+    if (url) {
+      setLoadKey(k => k + 1);
+      fetchPage(url);
+    }
+  };
+
   const submit = (e) => {
     e?.preventDefault();
     navigate(input);
@@ -229,6 +241,14 @@ export default function WebSearchBrowser({ open, onClose }) {
               )}
             </form>
 
+            <button
+              onClick={toggleJs}
+              title={jsOn ? "JavaScript enabled — tap to disable" : "JavaScript disabled — tap to enable"}
+              className={`h-8 px-2 flex items-center gap-1 rounded-lg border transition-colors ${jsOn ? "bg-amber-500/20 border-amber-400/50 text-amber-300" : "border-white/10 text-white/40 hover:text-white hover:bg-white/10"}`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span className="text-[9px] font-mono font-bold">JS</span>
+            </button>
             <button onClick={() => { setMode("home"); setUrl(null); setInput(""); setError(null); setContent(null); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
               <Home className="w-4 h-4" />
             </button>
@@ -291,7 +311,7 @@ export default function WebSearchBrowser({ open, onClose }) {
                   <ExternalLink className="w-3.5 h-3.5" /> Open in new tab
                 </a>
               </div>
-            ) : isShell ? (
+            ) : (isShell && !jsOn) ? (
               <SitePreviewCard url={url} meta={meta} />
             ) : content ? (
               <iframe

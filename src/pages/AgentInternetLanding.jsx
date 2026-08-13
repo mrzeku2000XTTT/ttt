@@ -15,6 +15,7 @@ import { AGENT_CARDS } from "@/components/agentinternet/agentCards";
 import LivePagesBrowser from "@/components/agentinternet/LivePagesBrowser";
 import WebSearchBrowser from "@/components/agentinternet/WebSearchBrowser";
 import KaspaSearchBrowser from "@/components/agentinternet/KaspaSearchBrowser";
+import CryptoSearchBrowser from "@/components/agentinternet/CryptoSearchBrowser";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -37,6 +38,7 @@ export default function AgentInternetLanding() {
   const [showBrowser, setShowBrowser] = useState(false); // browse-all-live-pages directory
   const [showWebSearch, setShowWebSearch] = useState(false); // search-any-site iframe
   const [showKaspaSearch, setShowKaspaSearch] = useState(false); // search kaspahub index
+  const [showCryptoSearch, setShowCryptoSearch] = useState(false); // crypto coin search
 
   const openChat = (command) => {
     setChatCommand(command);
@@ -251,6 +253,16 @@ export default function AgentInternetLanding() {
                       className="w-4 h-4 rounded-full"
                     /> Search Kaspa
                   </button>
+                  <button
+                    onClick={() => setShowCryptoSearch(true)}
+                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-amber-200 hover:text-white hover:border-amber-400/60 transition-colors"
+                  >
+                    <img
+                      src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png"
+                      alt=""
+                      className="w-4 h-4 rounded-full"
+                    /> Search Crypto
+                  </button>
                 </div>
 
                 {/* Footer status */}
@@ -310,6 +322,8 @@ export default function AgentInternetLanding() {
       <WebSearchBrowser open={showWebSearch} onClose={() => setShowWebSearch(false)} />
 
       <KaspaSearchBrowser open={showKaspaSearch} onClose={() => setShowKaspaSearch(false)} />
+
+      <CryptoSearchBrowser open={showCryptoSearch} onClose={() => setShowCryptoSearch(false)} />
 
       <GuestAgentPreview
         open={guestOpen}
