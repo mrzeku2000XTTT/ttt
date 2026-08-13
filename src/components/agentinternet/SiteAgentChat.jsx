@@ -66,7 +66,10 @@ export default function SiteAgentChat({ app, onClose }) {
   };
 
   const isXProfile = app?.category === "X Profiles" || app?.category === "Crypto X Profiles";
-  const suggestions = isXProfile
+  const isCoin = app?.category === "Crypto Coin";
+  const suggestions = isCoin
+    ? ["Analyze the price action right now", "Bullish or bearish today?", "Latest news on this coin?"]
+    : isXProfile
     ? ["Who is this account?", "What do they post about?", "Latest updates from them?"]
     : ["What is this site?", "How do I use it?", "Is it safe?"];
 
@@ -127,7 +130,9 @@ export default function SiteAgentChat({ app, onClose }) {
             {messages.length === 0 && (
               <div className="space-y-3">
                 <p className="text-white/50 text-[13px] leading-relaxed">
-                  {isXProfile
+                  {isCoin
+                    ? <>Ask me to analyze <span className="text-white">{app.name}</span> live — price action, news and market sentiment.</>
+                    : isXProfile
                     ? <>Ask anything about <span className="text-white">{app.name}</span> — I read their X profile and posts.</>
                     : <>Ask anything about <span className="text-white">{app.name}</span> — I read its site, docs and FAQ.</>}
                 </p>

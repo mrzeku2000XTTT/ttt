@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Loader2, TrendingUp, Users } from "lucide-react";
+import { X, Search, Loader2, TrendingUp, Users, Bot } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CryptoProfileGrid from "./CryptoProfileGrid";
 import SiteAgentChat from "./SiteAgentChat";
@@ -77,6 +77,22 @@ export default function CryptoSearchBrowser({ open, onClose }) {
 
   const openCoin = (id) => window.open(`https://www.coingecko.com/en/coins/${id}`, "_blank", "noopener");
 
+  // Turn a coin into an app-shaped object so it gets its own live AI analyst
+  const askCoinAI = (c) => {
+    const m = c.market;
+    const liveBits = m
+      ? ` Live data: price ${fmtPrice(m.current_price)}, 24h change ${m.price_change_percentage_24h?.toFixed(2)}%, market cap rank #${m.market_cap_rank || c.market_cap_rank || "?"}.`
+      : "";
+    setChatApp({
+      id: `coin-${c.id}`,
+      name: `${c.name} (${(c.symbol || "").toUpperCase()})`,
+      url: `https://www.coingecko.com/en/coins/${c.id}`,
+      logo: c.large || c.thumb,
+      category: "Crypto Coin",
+      description: `${c.name} cryptocurrency.${liveBits} Analyze its live market conditions, price action, news and sentiment.`,
+    });
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -151,25 +167,33 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                 <div className="max-w-md mx-auto space-y-2">
                   <p className="text-white/40 text-[10px] font-mono uppercase tracking-widest mb-3">Results for "{query}"</p>
                   {coins.map(c => (
-                    <button
+                    <div
                       key={c.id}
-                      onClick={() => openCoin(c.id)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-amber-500/30 transition-colors text-left"
+                      className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-amber-500/30 transition-colors"
                     >
-                      <img src={c.large || c.thumb} alt="" className="w-8 h-8 rounded-full" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-white text-sm font-semibold truncate">{c.name}</div>
-                        <div className="text-white/40 text-[10px] font-mono uppercase">{c.symbol}{c.market_cap_rank ? ` · #${c.market_cap_rank}` : ""}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white text-xs font-mono">{fmtPrice(c.market?.current_price)}</div>
-                        {c.market?.price_change_percentage_24h != null && (
-                          <div className={`text-[10px] font-mono ${c.market.price_change_percentage_24h >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                            {c.market.price_change_percentage_24h >= 0 ? "+" : ""}{c.market.price_change_percentage_24h.toFixed(2)}%
-                          </div>
-                        )}
-                      </div>
-                    </button>
+                      <button onClick={() => openCoin(c.id)} className="flex-1 flex items-center gap-3 min-w-0 text-left">
+                        <img src={c.large || c.thumb} alt="" className="w-8 h-8 rounded-full" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white text-sm font-semibold truncate">{c.name}</div>
+                          <div className="text-white/40 text-[10px] font-mono uppercase">{c.symbol}{c.market_cap_rank ? ` · #${c.market_cap_rank}` : ""}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-white text-xs font-mono">{fmtPrice(c.market?.current_price)}</div>
+                          {c.market?.price_change_percentage_24h != null && (
+                            <div className={`text-[10px] font-mono ${c.market.price_change_percentage_24h >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                              {c.market.price_change_percentage_24h >= 0 ? "+" : ""}{c.market.price_change_percentage_24h.toFixed(2)}%
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => askCoinAI(c)}
+                        title="Ask AI to analyze this coin"
+                        className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-300 hover:bg-amber-500/25 transition-colors"
+                      >
+                        <Bot className="w-4 h-4" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               )
@@ -191,17 +215,25 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                     </div>
                     <div className="space-y-2">
                       {trending.map(t => (
-                        <button
+                        <div
                           key={t.id}
-                          onClick={() => openCoin(t.id)}
-                          className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-amber-500/30 transition-colors text-left"
+                          className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-amber-500/30 transition-colors"
                         >
-                          <img src={t.large || t.thumb} alt="" className="w-8 h-8 rounded-full" />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-white text-sm font-semibold truncate">{t.name}</div>
-                            <div className="text-white/40 text-[10px] font-mono uppercase">{t.symbol}{t.market_cap_rank ? ` · #${t.market_cap_rank}` : ""}</div>
-                          </div>
-                        </button>
+                          <button onClick={() => openCoin(t.id)} className="flex-1 flex items-center gap-3 min-w-0 text-left">
+                            <img src={t.large || t.thumb} alt="" className="w-8 h-8 rounded-full" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white text-sm font-semibold truncate">{t.name}</div>
+                              <div className="text-white/40 text-[10px] font-mono uppercase">{t.symbol}{t.market_cap_rank ? ` · #${t.market_cap_rank}` : ""}</div>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => askCoinAI(t)}
+                            title="Ask AI to analyze this coin"
+                            className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-300 hover:bg-amber-500/25 transition-colors"
+                          >
+                            <Bot className="w-4 h-4" />
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </>
