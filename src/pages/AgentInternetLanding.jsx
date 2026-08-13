@@ -245,7 +245,11 @@ export default function AgentInternetLanding() {
                     onClick={() => setShowKaspaSearch(true)}
                     className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-cyan-200 hover:text-white hover:border-cyan-400/60 transition-colors"
                   >
-                    <Database className="w-3.5 h-3.5" /> Search Kaspa
+                    <img
+                      src="https://assets.coingecko.com/coins/images/25751/large/kaspa-icon-exchanges.png"
+                      alt=""
+                      className="w-4 h-4 rounded-full"
+                    /> Search Kaspa
                   </button>
                 </div>
 
