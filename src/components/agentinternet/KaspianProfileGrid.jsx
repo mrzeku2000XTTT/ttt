@@ -1,6 +1,6 @@
 import React from "react";
 import { Bot, ExternalLink, Users } from "lucide-react";
-import SiteLogo from "./SiteLogo";
+import XAvatar from "./XAvatar";
 
 function handleOf(url) {
   try { return "@" + new URL(url).pathname.replace(/\/+$/, "").replace(/^\//, ""); }
@@ -31,7 +31,7 @@ export default function KaspianProfileGrid({ profiles, onAskAI }) {
             className="rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-cyan-500/25 transition-colors p-3.5 flex flex-col"
           >
             <div className="flex items-center gap-2.5 mb-2">
-              <SiteLogo app={app} size={38} />
+              <XAvatar url={app.url} size={38} />
               <div className="min-w-0 flex-1">
                 <a
                   href={app.url}
