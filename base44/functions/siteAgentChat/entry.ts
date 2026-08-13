@@ -53,6 +53,9 @@ Deno.serve(async (req) => {
 
     // Reuse knowledge the client already has — skips all scraping on follow-ups.
     const knowledge = cached || (await buildKnowledge(url));
+    // A JS-app shell ("loading…") yields a few useless words — treat that as no content
+    // so we fall back to live web knowledge instead of inventing a status.
+    const thin = (knowledge || '').length < 600;
     const history = (messages || [])
       .slice(-10)
       .map((m: any) => `${m.role === 'user' ? 'User' : 'Agent'}: ${m.content}`)
@@ -73,9 +76,13 @@ ${knowledge || '(no readable text — the site may be a JS app; rely on web know
 CONVERSATION SO FAR:
 ${history || '(new conversation)'}
 
-Answer the user's latest message about this site. Be concrete and helpful: what it does, how to use it, tokens, fees, safety, how it relates to Kaspa. Prefer the scraped content; say when you are unsure. ${fast ? 'Answer in ONE short sentence, max 25 words.' : 'Answer in 2-4 short plain sentences.'} No markdown headings, no bullet lists.`,
-      // Web search only when the site itself gave us nothing — it's the slow path (skipped in fast mode).
-      add_context_from_internet: !knowledge && !fast,
+Answer the user's latest message about this site. Be concrete and helpful: what it does, how to use it, tokens, fees, safety, how it relates to Kaspa. Prefer the scraped content; say when you are unsure.
+
+NEVER guess launch status. Do not call a site "upcoming", "coming soon", "in development" or "not yet launched" unless the scraped content or web results explicitly say so. If the page text is just a loading shell or you have no evidence either way, treat the site as live and describe what it does — or say you could not read the page. Never invent dates or roadmap claims.
+
+${fast ? 'Answer in ONE short sentence, max 25 words.' : 'Answer in 2-4 short plain sentences.'} No markdown headings, no bullet lists, and no citation markers like [1].`,
+      // Fall back to live web knowledge whenever the page itself gave us little or nothing.
+      add_context_from_internet: thin,
       model: 'gemini_3_flash',
     });
 
