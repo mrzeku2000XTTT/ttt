@@ -1,0 +1,77 @@
+{
+  "name": "SiteOwnerClaim",
+  "type": "object",
+  "properties": {
+    "site_url": {
+      "type": "string",
+      "description": "Canonical URL or X profile URL being claimed"
+    },
+    "site_name": {
+      "type": "string",
+      "description": "Display name of the site / profile"
+    },
+    "kns_domain": {
+      "type": "string",
+      "description": "KNS domain used as proof, e.g. name.kas"
+    },
+    "owner_address": {
+      "type": "string",
+      "description": "Kaspa address that owns the KNS domain and signed the challenge"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "App user who completed the claim"
+    },
+    "owner_display": {
+      "type": "string",
+      "description": "Public name the owner wants shown in KACHAT"
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once KNS ownership + signature both checked"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "challenge": {
+      "type": "string",
+      "description": "The exact message that was signed"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Schnorr signature over the challenge"
+    }
+  },
+  "required": [
+    "site_url",
+    "kns_domain",
+    "owner_address"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

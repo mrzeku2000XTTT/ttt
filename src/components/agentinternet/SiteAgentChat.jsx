@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, Zap } from "lucide-react";
+import { X, Send, Loader2, Zap, BadgeCheck, ShieldCheck } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import SiteLogo from "./SiteLogo";
 import AgentWalletBar from "./AgentWalletBar";
 import AiSpendWallet from "./AiSpendWallet";
+import ClaimOwnerModal from "./ClaimOwnerModal";
+import KaChatPanel from "./KaChatPanel";
 
 function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
@@ -15,10 +17,24 @@ export default function SiteAgentChat({ app, onClose }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [fast, setFast] = useState(true);
+  const [claim, setClaim] = useState(null);
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [kaChatOpen, setKaChatOpen] = useState(false);
   const endRef = useRef(null);
   const knowledgeRef = useRef(null);
 
   useEffect(() => { setMessages([]); setInput(""); knowledgeRef.current = null; }, [app?.id]);
+
+  // Is this site / profile claimed by a KNS-verified human?
+  useEffect(() => {
+    if (!app?.url) { setClaim(null); return; }
+    let alive = true;
+    (async () => {
+      const found = await base44.entities.SiteOwnerClaim.filter({ site_url: app.url, verified: true }, "-created_date", 1);
+      if (alive) setClaim(found?.[0] || null);
+    })();
+    return () => { alive = false; };
+  }, [app?.url]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, busy]);
 
   const send = async (e) => {
@@ -89,6 +105,22 @@ export default function SiteAgentChat({ app, onClose }) {
             >
               <Zap className="w-3 h-3" /> {fast ? "Quick replies on" : "Quick replies off"}
             </button>
+
+            {claim ? (
+              <button
+                onClick={() => setKaChatOpen(true)}
+                className="px-2.5 py-1 rounded-full text-[10px] font-medium flex items-center gap-1 bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
+              >
+                <BadgeCheck className="w-3 h-3" /> KACHAT · talk to the real deal
+              </button>
+            ) : (
+              <button
+                onClick={() => setClaimOpen(true)}
+                className="px-2.5 py-1 rounded-full text-[10px] font-medium flex items-center gap-1 bg-white/[0.05] border border-white/10 text-white/50 hover:text-white transition-colors"
+              >
+                <ShieldCheck className="w-3 h-3" /> Claim with KNS
+              </button>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -148,6 +180,20 @@ export default function SiteAgentChat({ app, onClose }) {
               <Send className="w-4 h-4" />
             </button>
           </form>
+
+          <ClaimOwnerModal
+            open={claimOpen}
+            app={app}
+            onClose={() => setClaimOpen(false)}
+            onClaimed={(c) => setClaim(c)}
+          />
+
+          <KaChatPanel
+            open={kaChatOpen}
+            app={app}
+            claim={claim}
+            onClose={() => setKaChatOpen(false)}
+          />
         </motion.div>
       )}
     </AnimatePresence>

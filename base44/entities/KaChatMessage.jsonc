@@ -1,0 +1,56 @@
+{
+  "name": "KaChatMessage",
+  "type": "object",
+  "properties": {
+    "site_url": {
+      "type": "string",
+      "description": "Site / X profile this thread belongs to"
+    },
+    "thread_id": {
+      "type": "string",
+      "description": "site_url + visitor email \u2014 one thread per visitor per site"
+    },
+    "sender_email": {
+      "type": "string"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "sender_role": {
+      "type": "string",
+      "enum": [
+        "visitor",
+        "owner"
+      ],
+      "default": "visitor"
+    },
+    "owner_address": {
+      "type": "string",
+      "description": "Verified KNS owner address of the site"
+    },
+    "content": {
+      "type": "string"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "site_url",
+    "thread_id",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "data.sender_email": "{{user.email}}"
+    },
+    "read": true,
+    "update": {
+      "data.sender_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.sender_email": "{{user.email}}"
+    }
+  }
+}
