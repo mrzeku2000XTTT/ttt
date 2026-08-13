@@ -6,7 +6,6 @@ import WebResultsList from "./WebResultsList";
 import SitePreviewCard from "./SitePreviewCard";
 
 const QUICK_LINKS = [
-  { name: "DuckDuckGo", url: "https://duckduckgo.com" },
   { name: "Wikipedia", url: "https://www.wikipedia.org" },
   { name: "Hacker News", url: "https://news.ycombinator.com" },
   { name: "Kaspa.org", url: "https://kaspa.org" },
@@ -109,6 +108,18 @@ export default function WebSearchBrowser({ open, onClose }) {
       if (q) runSearch(q);
       return;
     }
+    // DuckDuckGo can't be proxied (JS-only shell) — use built-in search instead.
+    try {
+      const u = new URL(next);
+      if (/(^|\.)duckduckgo\.com$/i.test(u.hostname)) {
+        const q = u.searchParams.get("q");
+        if (q) { runSearch(q); }
+        else {
+          setMode("home"); setUrl(null); setInput(""); setError(null); setContent(null);
+        }
+        return;
+      }
+    } catch { /* ignore */ }
     setMode("page");
     setInput(displayUrl(next));
     if (push) {
@@ -218,7 +229,7 @@ export default function WebSearchBrowser({ open, onClose }) {
               )}
             </form>
 
-            <button onClick={() => navigate("https://duckduckgo.com")} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+            <button onClick={() => { setMode("home"); setUrl(null); setInput(""); setError(null); setContent(null); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors">
               <Home className="w-4 h-4" />
             </button>
           </div>
