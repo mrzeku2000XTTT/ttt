@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot } from "lucide-react";
+import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
@@ -32,6 +32,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [listOpen, setListOpen] = useState(false);
   const [agentApp, setAgentApp] = useState(null);
+  const [linkAdd, setLinkAdd] = useState(null); // { status: 'adding'|'added'|'exists'|'error', handle, error }
   const inputRef = useRef(null);
   const reqId = useRef(0);
 
@@ -79,6 +80,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
       setQuery("");
       setSubmitted("");
       setActiveCategory("All");
+      setLinkAdd(null);
       runSearch("", "All");
       setTimeout(() => inputRef.current?.focus(), 300);
     }
@@ -91,10 +93,40 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     onClose?.();
   };
 
+  // Smart bar: a pasted X/Twitter profile link auto-adds the Kaspian and shows them.
+  const RESERVED = ["home", "search", "explore", "i", "intent", "hashtag", "share", "settings", "notifications", "messages"];
+  const extractXHandle = (q) => {
+    const m = (q || "").match(/(?:x|twitter)\.com\/@?([A-Za-z0-9_]{1,15})/i);
+    return m && !RESERVED.includes(m[1].toLowerCase()) ? m[1] : null;
+  };
+
+  const addXProfileFromLink = async (handle) => {
+    setLinkAdd({ status: "adding", handle });
+    try {
+      const raw = await base44.functions.invoke("submitXProfile", { handle });
+      const res = raw?.data ?? raw;
+      if (res?.success) {
+        setLinkAdd({ status: res.already_listed ? "exists" : "added", handle });
+        setActiveCategory(KAS_TAB);
+        setQuery(handle);
+        setSubmitted(handle);
+        runSearch(handle, "X Profiles");
+      } else {
+        setLinkAdd({ status: "error", handle, error: res?.error || "Could not verify this profile" });
+      }
+    } catch (e) {
+      setLinkAdd({ status: "error", handle, error: e?.message || "Failed to add profile" });
+    }
+  };
+
   const submit = (e) => {
     e?.preventDefault();
-    setSubmitted(query.trim());
-    runSearch(query.trim(), activeCategory === KAS_TAB ? "X Profiles" : activeCategory);
+    const q = query.trim();
+    const handle = extractXHandle(q);
+    if (handle) { addXProfileFromLink(handle); return; }
+    setLinkAdd(null);
+    setSubmitted(q);
+    runSearch(q, activeCategory === KAS_TAB ? "X Profiles" : activeCategory);
   };
 
   const selectCategory = (cat) => {
@@ -184,6 +216,33 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               </button>
             ))}
           </div>
+
+          {/* Smart link banner */}
+          {linkAdd && (
+            <div className="px-4 py-2 border-b border-white/5 w-full max-w-4xl mx-auto">
+              {linkAdd.status === "adding" ? (
+                <div className="flex items-center gap-2 text-[11px] text-cyan-300">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+                  <span>Link detected — verifying <span className="font-mono">@{linkAdd.handle}</span> and adding them to the Kaspians wall…</span>
+                </div>
+              ) : linkAdd.status === "added" ? (
+                <div className="flex items-center gap-2 text-[11px] text-emerald-300">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span><span className="font-mono">@{linkAdd.handle}</span> verified as a Kaspian and added to the wall.</span>
+                </div>
+              ) : linkAdd.status === "exists" ? (
+                <div className="flex items-center gap-2 text-[11px] text-cyan-300">
+                  <UserPlus className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span><span className="font-mono">@{linkAdd.handle}</span> is already on the Kaspians wall — here's their profile.</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-[11px] text-red-300">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{linkAdd.error}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Results meta */}
           <div className="px-4 py-1.5 text-[11px] text-white/40 font-mono border-b border-white/5 w-full max-w-4xl mx-auto">

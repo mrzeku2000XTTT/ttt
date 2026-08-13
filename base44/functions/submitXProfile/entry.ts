@@ -50,7 +50,9 @@ Deno.serve(async (req) => {
     const meta = await base44.integrations.Core.InvokeLLM({
       prompt: `Research the X (Twitter) account @${handle}${website ? ` and its website ${website}` : ''} for a Kaspa ecosystem directory.
 
-Return the display name of the account, a 1-2 sentence factual description of who they are and what they do in the Kaspa / crypto space, up to 4 short tags, and whether this account genuinely appears connected to the Kaspa community. If you cannot verify the account exists, set exists to false.`,
+Return the display name of the account, a 1-2 sentence factual description of who they are and what they do in the Kaspa / crypto space, up to 4 short tags, and whether this account genuinely appears connected to the Kaspa community. If you cannot verify the account exists, set exists to false.
+
+The description must be plain text only — never include citation markers, markdown links, brackets or URLs.`,
       add_context_from_internet: true,
       model: 'gemini_3_flash',
       response_json_schema: {
@@ -70,7 +72,7 @@ Return the display name of the account, a 1-2 sentence factual description of wh
 
     const app = await base44.asServiceRole.entities.KaspaHubApp.create({
       name: (meta?.name || `@${handle}`).slice(0, 120),
-      description: meta?.description || '',
+      description: (meta?.description || '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\s{2,}/g, ' ').trim(),
       url,
       category: 'X Profiles',
       logo: X_LOGO,
