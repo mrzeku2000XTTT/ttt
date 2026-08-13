@@ -11,3 +11,15 @@ export const EXTRA_PAGES = [
 ];
 
 export const LIVE_PAGES = [...EXTRA_PAGES, ...APPS];
+
+// Pages that must NEVER be visible to guests / non-admin users.
+export const ADMIN_ONLY_PATHS = [
+  "LaunchReel", "HunterBeat", "TwoTip", "AppStore", "AgentInternet",
+  "SuperZK", "KGigZ", "OuTKasTT", "AWASigner", "KasSigner",
+  "KASDollar", "ArgentStudio", "SectorVI", "IgraAgent",
+];
+
+export function visibleLivePages(isAdmin) {
+  if (isAdmin) return LIVE_PAGES;
+  return LIVE_PAGES.filter((p) => !ADMIN_ONLY_PATHS.includes(p.path));
+}
