@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Loader2, TrendingUp, Users } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CryptoProfileGrid from "./CryptoProfileGrid";
+import SiteAgentChat from "./SiteAgentChat";
 
 const BTC_LOGO = "https://assets.coingecko.com/coins/images/1/large/bitcoin.png";
 
@@ -15,6 +16,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("coins"); // coins | profiles
   const [profiles, setProfiles] = useState([]);
+  const [chatApp, setChatApp] = useState(null); // profile whose AI agent is open
 
   // Load trending coins for the home view
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
   }, []);
 
   useEffect(() => {
-    if (!open) { setInput(""); setQuery(""); setCoins([]); setError(null); setLoading(false); setTab("coins"); }
+    if (!open) { setInput(""); setQuery(""); setCoins([]); setError(null); setLoading(false); setTab("coins"); setChatApp(null); }
   }, [open]);
 
   const fmtPrice = (p) => {
@@ -130,7 +132,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                 <p className="text-white/40 text-[10px] font-mono uppercase tracking-widest mb-3">
                   Crypto X profiles · {profiles.length} indexed
                 </p>
-                <CryptoProfileGrid profiles={profiles} filter={input} />
+                <CryptoProfileGrid profiles={profiles} filter={input} onAskAI={(p) => setChatApp(p)} />
               </div>
             ) : loading ? (
               <div className="flex flex-col items-center justify-center py-24">
@@ -207,6 +209,8 @@ export default function CryptoSearchBrowser({ open, onClose }) {
               </div>
             )}
           </div>
+
+          <SiteAgentChat app={chatApp} onClose={() => setChatApp(null)} />
         </motion.div>
       )}
     </AnimatePresence>

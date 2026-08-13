@@ -65,7 +65,7 @@ export default function SiteAgentChat({ app, onClose }) {
     }
   };
 
-  const isXProfile = app?.category === "X Profiles";
+  const isXProfile = app?.category === "X Profiles" || app?.category === "Crypto X Profiles";
   const suggestions = isXProfile
     ? ["Who is this account?", "What do they post about?", "Latest updates from them?"]
     : ["What is this site?", "How do I use it?", "Is it safe?"];
