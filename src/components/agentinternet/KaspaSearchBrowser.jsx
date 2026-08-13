@@ -6,8 +6,11 @@ import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
 import SiteAgentChat from "./SiteAgentChat";
 import SiteLogo from "./SiteLogo";
+import KaspianProfileGrid from "./KaspianProfileGrid";
 
-const CATEGORIES = ["All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources", "X Profiles"];
+// "$KAS" is the Kaspian wall — same index, rendered as a profile grid.
+const KAS_TAB = "$KAS";
+const CATEGORIES = [KAS_TAB, "All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources", "X Profiles"];
 
 const PAGE_SIZE = 50;
 
@@ -91,13 +94,15 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const submit = (e) => {
     e?.preventDefault();
     setSubmitted(query.trim());
-    runSearch(query.trim(), activeCategory);
+    runSearch(query.trim(), activeCategory === KAS_TAB ? "X Profiles" : activeCategory);
   };
 
   const selectCategory = (cat) => {
     setActiveCategory(cat);
-    runSearch(submitted, cat);
+    runSearch(submitted, cat === KAS_TAB ? "X Profiles" : cat);
   };
+
+  const isKasTab = activeCategory === KAS_TAB;
 
   return (
     <AnimatePresence>
@@ -201,6 +206,18 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                 </div>
                 <p className="text-white/70 text-sm mb-1">No apps indexed yet</p>
                 <p className="text-white/30 text-xs max-w-xs">The KaspaHub index needs to be built first. An admin can run the indexer to populate ~600 apps.</p>
+              </div>
+            ) : isKasTab ? (
+              <div className="space-y-4">
+                <KaspianProfileGrid profiles={results.slice(0, visible)} onAskAI={setAgentApp} />
+                {visible < results.length && (
+                  <button
+                    onClick={() => setVisible(v => v + PAGE_SIZE)}
+                    className="w-full max-w-4xl mx-auto block py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-xs font-medium transition-colors"
+                  >
+                    Show more Kaspians ({results.length - visible} remaining)
+                  </button>
+                )}
               </div>
             ) : results.length === 0 && !loading ? (
               <div className="px-2">
