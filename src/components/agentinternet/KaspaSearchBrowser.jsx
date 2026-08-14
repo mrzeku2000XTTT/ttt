@@ -225,7 +225,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
         >
           {/* Header — Google-style */}
           <div className="px-4 pt-6 pb-3 border-b border-white/10" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)" }}>
-          <div className="flex items-center gap-3 w-full max-w-4xl mx-auto">
+          <div className="flex flex-wrap items-center gap-y-2 gap-x-3 w-full max-w-4xl mx-auto">
             <button onClick={closeAndWipe} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0">
               <X className="w-4 h-4" />
             </button>
@@ -239,7 +239,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               <span className="text-white font-bold text-sm tracking-tight hidden sm:inline">Search <span className="text-cyan-300">Kaspa</span></span>
             </div>
 
-            <form onSubmit={submit} className="flex-1 flex items-center gap-2 px-4 h-11 rounded-full bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50 focus-within:shadow-[0_0_0_4px_rgba(6,182,212,0.1)] transition-all max-w-2xl">
+            <form onSubmit={submit} className="flex-1 min-w-[200px] flex items-center gap-2 px-4 h-11 rounded-full bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50 focus-within:shadow-[0_0_0_4px_rgba(6,182,212,0.1)] transition-all max-w-2xl">
               <Search className="w-4 h-4 text-white/40 flex-shrink-0" />
               <input
                 ref={inputRef}
@@ -254,6 +254,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               {loading && <Loader2 className="w-4 h-4 text-cyan-400 animate-spin flex-shrink-0" />}
             </form>
 
+            <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => setBoardOpen(true)}
               title="Tip leaderboard"
@@ -285,6 +286,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             >
               <Plus className="w-4 h-4" />
             </button>
+            </div>
           </div>
           </div>
 
