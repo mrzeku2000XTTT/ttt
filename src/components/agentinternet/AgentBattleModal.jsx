@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Swords, Loader2, Send } from "lucide-react";
+import { X, Swords, Loader2, Send, Search, BadgeCheck } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import SiteLogo from "./SiteLogo";
 
@@ -8,11 +8,36 @@ import SiteLogo from "./SiteLogo";
  * Agent battle — ask one question to up to 3 site agents at once and compare
  * their answers side by side.
  */
-export default function AgentBattleModal({ open, onClose, pool }) {
+export default function AgentBattleModal({ open, onClose, pool, verifiedUrls }) {
   const [picked, setPicked] = useState([]);
   const [question, setQuestion] = useState("");
   const [answers, setAnswers] = useState(null);
   const [running, setRunning] = useState(false);
+  const [all, setAll] = useState(null); // full index — every indexed site + person
+  const [filter, setFilter] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+
+  // Load the entire index so any Kaspian or app can enter the battle.
+  useEffect(() => {
+    if (!open) return;
+    setAll(null);
+    base44.functions.invoke("searchKaspaApps", { query: "", category: "All", limit: 2000 })
+      .then(raw => {
+        const res = raw?.data ?? raw;
+        setAll(res?.results || []);
+      })
+      .catch(() => setAll([]));
+  }, [open]);
+
+  const isVerified = (url) => verifiedUrls?.has((url || "").toLowerCase().replace(/\/+$/, ""));
+
+  const base = all?.length ? all : (pool || []);
+  const q = filter.trim().toLowerCase();
+  const list = base.filter(a => {
+    if (verifiedOnly && !isVerified(a.url)) return false;
+    if (!q) return true;
+    return `${a.name} ${a.description} ${a.url} ${a.category}`.toLowerCase().includes(q);
+  });
 
   const toggle = (app) => {
     setPicked(prev => {
@@ -70,9 +95,31 @@ export default function AgentBattleModal({ open, onClose, pool }) {
 
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <div className="max-w-4xl mx-auto">
-              <p className="text-white/40 text-[10px] font-mono uppercase tracking-widest mb-2">Pick up to 3 agents</p>
-              <div className="flex flex-wrap gap-2 mb-5">
-                {(pool || []).slice(0, 40).map((app, i) => {
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex-1 flex items-center gap-2 px-3 h-9 rounded-full bg-white/[0.05] border border-white/10">
+                  <Search className="w-3.5 h-3.5 text-white/40 flex-shrink-0" />
+                  <input
+                    value={filter}
+                    onChange={e => setFilter(e.target.value)}
+                    placeholder="Filter every indexed Kaspian & app…"
+                    className="flex-1 bg-transparent text-white text-[12px] placeholder:text-white/30 focus:outline-none min-w-0"
+                  />
+                </div>
+                <button
+                  onClick={() => setVerifiedOnly(v => !v)}
+                  className={`inline-flex items-center gap-1 px-3 h-9 rounded-full border text-[11px] transition-colors ${
+                    verifiedOnly ? "bg-emerald-500/20 border-emerald-400/50 text-emerald-200" : "bg-white/[0.05] border-white/10 text-white/50 hover:text-white"
+                  }`}
+                >
+                  <BadgeCheck className="w-3.5 h-3.5" /> KNS verified
+                </button>
+              </div>
+
+              <p className="text-white/40 text-[10px] font-mono uppercase tracking-widest mb-2">
+                {all === null ? "Loading full index…" : `Pick up to 3 of ${list.length} agents`}
+              </p>
+              <div className="flex flex-wrap gap-2 mb-5 max-h-[38vh] overflow-y-auto">
+                {list.slice(0, 300).map((app, i) => {
                   const on = picked.find(p => (p.id || p.url) === (app.id || app.url));
                   return (
                     <button
@@ -84,6 +131,7 @@ export default function AgentBattleModal({ open, onClose, pool }) {
                     >
                       <SiteLogo app={app} size={16} />
                       <span className="max-w-[140px] truncate">{app.name}</span>
+                      {isVerified(app.url) && <BadgeCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
                     </button>
                   );
                 })}

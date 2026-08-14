@@ -497,7 +497,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
 
           <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
           <ShareCardModal card={shareCard} onClose={() => setShareCard(null)} />
-          <AgentBattleModal open={battleOpen} onClose={() => setBattleOpen(false)} pool={results} />
+          <AgentBattleModal open={battleOpen} onClose={() => setBattleOpen(false)} pool={results} verifiedUrls={verifiedUrls} />
           <TipListingModal target={tipTarget} onClose={() => setTipTarget(null)} />
           <TipLeaderboardModal open={boardOpen} onClose={() => setBoardOpen(false)} />
         </motion.div>

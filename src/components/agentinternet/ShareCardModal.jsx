@@ -7,6 +7,11 @@ import html2canvas from "html2canvas";
  * Branded shareable card — turns any listing / coin into a downloadable image
  * for posting on X. card = { title, subtitle, description, logo, accent }
  */
+const clamp = (s, n) => {
+  const t = (s || "").trim();
+  return t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
+};
+
 export default function ShareCardModal({ card, onClose }) {
   const ref = useRef(null);
   const [saving, setSaving] = useState(false);
@@ -38,20 +43,41 @@ export default function ShareCardModal({ card, onClose }) {
             <X className="w-4 h-4" />
           </button>
 
-          <div ref={ref} className="w-[340px] rounded-3xl p-6 bg-gradient-to-br from-zinc-900 via-black to-zinc-900 border border-white/10">
-            <div className="flex items-center gap-3 mb-4">
-              {card.logo && <img src={card.logo} alt="" crossOrigin="anonymous" className="w-12 h-12 rounded-full" />}
-              <div className="min-w-0">
-                <div className="text-white font-bold text-base leading-tight truncate">{card.title}</div>
-                {card.subtitle && <div className="text-cyan-300/70 text-[11px] font-mono truncate">{card.subtitle}</div>}
+          {/* Inline styles + JS-clamped text — html2canvas mis-renders truncate/line-clamp */}
+          <div
+            ref={ref}
+            style={{
+              width: 360,
+              padding: 28,
+              borderRadius: 24,
+              background: "#0a0a0a",
+              border: "1px solid rgba(255,255,255,0.1)",
+              fontFamily: "Arial, Helvetica, sans-serif",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+              {card.logo && (
+                <img src={card.logo} alt="" crossOrigin="anonymous" style={{ width: 48, height: 48, borderRadius: 999, flexShrink: 0 }} />
+              )}
+              <div style={{ overflow: "hidden" }}>
+                <div style={{ color: "#ffffff", fontWeight: 700, fontSize: 17, lineHeight: "24px", whiteSpace: "nowrap", overflow: "hidden" }}>
+                  {clamp(card.title, 24)}
+                </div>
+                {card.subtitle && (
+                  <div style={{ color: "#67e8f9", fontSize: 12, lineHeight: "18px", whiteSpace: "nowrap", overflow: "hidden" }}>
+                    {clamp(card.subtitle, 34)}
+                  </div>
+                )}
               </div>
             </div>
             {card.description && (
-              <p className="text-white/60 text-[12px] leading-relaxed line-clamp-5">{card.description}</p>
+              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, lineHeight: "22px", margin: 0 }}>
+                {clamp(card.description, 220)}
+              </p>
             )}
-            <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between">
-              <span className="text-white font-black text-sm tracking-tight">TTT</span>
-              <span className="text-white/30 text-[10px] font-mono">tttz.xyz</span>
+            <div style={{ marginTop: 22, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ color: "#ffffff", fontWeight: 900, fontSize: 15, lineHeight: "20px" }}>TTT</span>
+              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, lineHeight: "20px" }}>tttz.xyz</span>
             </div>
           </div>
 
