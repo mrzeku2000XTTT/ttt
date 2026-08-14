@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle, Dices, Share2 } from "lucide-react";
+import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle, Dices, Share2, Swords, Wand2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
@@ -9,6 +9,8 @@ import SiteLogo from "./SiteLogo";
 import KaspianProfileGrid from "./KaspianProfileGrid";
 import KaspaPulseBar from "./KaspaPulseBar";
 import ShareCardModal from "./ShareCardModal";
+import AgentBattleModal from "./AgentBattleModal";
+import { translateQuery } from "./nlSearch";
 
 // "$KAS" is the Kaspian wall — same index, rendered as a profile grid.
 const KAS_TAB = "$KAS";
@@ -37,6 +39,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [linkAdd, setLinkAdd] = useState(null); // { status: 'adding'|'added'|'exists'|'error', handle, error }
   const [verifiedUrls, setVerifiedUrls] = useState(new Set()); // KNS-verified owners
   const [shareCard, setShareCard] = useState(null);
+  const [battleOpen, setBattleOpen] = useState(false);
+  const [nlHint, setNlHint] = useState(null); // what the AI understood from a spoken-style query
   const inputRef = useRef(null);
   const reqId = useRef(0);
 
@@ -139,14 +143,51 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     }
   };
 
-  const submit = (e) => {
+  // Any non-X link gets security-scanned and indexed as a Kaspa site.
+  const isLink = (q) => /^(https?:\/\/|www\.)\S+$/i.test(q) || /^[a-z0-9-]+\.[a-z]{2,}(\/\S*)?$/i.test(q);
+
+  const addSiteFromLink = async (url) => {
+    setLinkAdd({ status: "adding", handle: url });
+    try {
+      const raw = await base44.functions.invoke("submitKaspaSite", { url });
+      const res = raw?.data ?? raw;
+      if (res?.success && res.app) {
+        setLinkAdd({ status: res.already_listed ? "exists" : "added", handle: url });
+        const cat = res.app.category || "Ecosystem";
+        setActiveCategory(cat);
+        setQuery(res.app.name);
+        setSubmitted(res.app.name);
+        runSearch(res.app.name, cat);
+      } else if (res?.verified === false) {
+        setLinkAdd({ status: "error", handle: url, error: res?.security?.explanation || "This site failed the security scan." });
+      } else {
+        setLinkAdd({ status: "error", handle: url, error: res?.error || "Could not index this link" });
+      }
+    } catch (e) {
+      setLinkAdd({ status: "error", handle: url, error: e?.message || "Failed to index link" });
+    }
+  };
+
+  const submit = async (e) => {
     e?.preventDefault();
     const q = query.trim();
     const handle = extractXHandle(q);
     if (handle) { addXProfileFromLink(handle); return; }
+    if (isLink(q)) { addSiteFromLink(q); return; }
     setLinkAdd(null);
+    setNlHint(null);
     setSubmitted(q);
-    runSearch(q, activeCategory === KAS_TAB ? "X Profiles" : activeCategory);
+    const cat = activeCategory === KAS_TAB ? "X Profiles" : activeCategory;
+    runSearch(q, cat);
+
+    // Natural-language queries get re-run with AI-extracted keywords
+    const nl = await translateQuery(q);
+    if (nl && nl.keywords.toLowerCase() !== q.toLowerCase()) {
+      setNlHint(nl);
+      const nlCat = nl.category || cat;
+      if (nl.category) setActiveCategory(nl.category);
+      runSearch(nl.keywords, nlCat);
+    }
   };
 
   const selectCategory = (cat) => {
@@ -195,6 +236,14 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               />
               {loading && <Loader2 className="w-4 h-4 text-cyan-400 animate-spin flex-shrink-0" />}
             </form>
+
+            <button
+              onClick={() => setBattleOpen(true)}
+              title="Agent battle — ask 3 agents at once"
+              className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-fuchsia-300 hover:bg-fuchsia-500/25 transition-colors"
+            >
+              <Swords className="w-4 h-4" />
+            </button>
 
             <button
               onClick={feelingLucky}
@@ -253,17 +302,17 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               {linkAdd.status === "adding" ? (
                 <div className="flex items-center gap-2 text-[11px] text-cyan-300">
                   <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
-                  <span>Link detected — verifying <span className="font-mono">@{linkAdd.handle}</span> and adding them to the Kaspians wall…</span>
+                  <span>Link detected — security-scanning <span className="font-mono">{linkAdd.handle.includes(".") ? linkAdd.handle : `@${linkAdd.handle}`}</span> and indexing it…</span>
                 </div>
               ) : linkAdd.status === "added" ? (
                 <div className="flex items-center gap-2 text-[11px] text-emerald-300">
                   <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span><span className="font-mono">@{linkAdd.handle}</span> verified as a Kaspian and added to the wall.</span>
+                  <span><span className="font-mono">{linkAdd.handle.includes(".") ? linkAdd.handle : `@${linkAdd.handle}`}</span> verified and added to the index.</span>
                 </div>
               ) : linkAdd.status === "exists" ? (
                 <div className="flex items-center gap-2 text-[11px] text-cyan-300">
                   <UserPlus className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span><span className="font-mono">@{linkAdd.handle}</span> is already on the Kaspians wall — here's their profile.</span>
+                  <span><span className="font-mono">{linkAdd.handle.includes(".") ? linkAdd.handle : `@${linkAdd.handle}`}</span> is already indexed — here it is.</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-[11px] text-red-300">
@@ -271,6 +320,17 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                   <span>{linkAdd.error}</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Natural-language interpretation */}
+          {nlHint && (
+            <div className="px-4 py-2 border-b border-white/5 w-full max-w-4xl mx-auto flex items-center gap-2 text-[11px] text-fuchsia-300">
+              <Wand2 className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>
+                Understood as <span className="font-mono text-white">{nlHint.keywords}</span>
+                {nlHint.category ? <> in <span className="font-mono text-white">{nlHint.category}</span></> : null}
+              </span>
             </div>
           )}
 
@@ -402,6 +462,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
 
           <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
           <ShareCardModal card={shareCard} onClose={() => setShareCard(null)} />
+          <AgentBattleModal open={battleOpen} onClose={() => setBattleOpen(false)} pool={results} />
         </motion.div>
       )}
     </AnimatePresence>
