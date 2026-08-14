@@ -1,5 +1,5 @@
 import React from "react";
-import { Bot, ExternalLink, Users, BadgeCheck, Share2, Sparkles } from "lucide-react";
+import { Bot, ExternalLink, Users, BadgeCheck, Share2, Sparkles, Coins } from "lucide-react";
 import XAvatar from "./XAvatar";
 
 function handleOf(url) {
@@ -17,7 +17,7 @@ const isFresh = (app) => {
  * each with its own AI agent. KNS-verified owners get a badge, and profiles
  * added in the last 24h are flagged as new.
  */
-export default function KaspianProfileGrid({ profiles, onAskAI, onShare, verifiedUrls }) {
+export default function KaspianProfileGrid({ profiles, onAskAI, onShare, onTip, canTip, verifiedUrls }) {
   if (!profiles?.length) {
     return (
       <div className="flex flex-col items-center justify-center text-center px-6 py-12">
@@ -80,6 +80,15 @@ export default function KaspianProfileGrid({ profiles, onAskAI, onShare, verifie
               >
                 <Share2 className="w-3 h-3" />
               </button>
+              {canTip?.(app) && (
+                <button
+                  onClick={() => onTip?.(app)}
+                  title="Tip this Kaspian in KAS"
+                  className="inline-flex items-center gap-1 text-[11px] text-amber-300/80 hover:text-amber-200 transition-colors"
+                >
+                  <Coins className="w-3 h-3" /> Tip
+                </button>
+              )}
               <a
                 href={app.url}
                 target="_blank"

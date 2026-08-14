@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle, Dices, Share2, Swords, Wand2 } from "lucide-react";
+import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle, Dices, Share2, Swords, Wand2, Coins, Trophy } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
@@ -10,6 +10,8 @@ import KaspianProfileGrid from "./KaspianProfileGrid";
 import KaspaPulseBar from "./KaspaPulseBar";
 import ShareCardModal from "./ShareCardModal";
 import AgentBattleModal from "./AgentBattleModal";
+import TipListingModal from "./TipListingModal";
+import TipLeaderboardModal from "./TipLeaderboardModal";
 import { translateQuery } from "./nlSearch";
 
 // "$KAS" is the Kaspian wall — same index, rendered as a profile grid.
@@ -41,6 +43,9 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [shareCard, setShareCard] = useState(null);
   const [battleOpen, setBattleOpen] = useState(false);
   const [nlHint, setNlHint] = useState(null); // what the AI understood from a spoken-style query
+  const [ownerAddresses, setOwnerAddresses] = useState(new Map()); // verified url -> kaspa address
+  const [tipTarget, setTipTarget] = useState(null);
+  const [boardOpen, setBoardOpen] = useState(false);
   const inputRef = useRef(null);
   const reqId = useRef(0);
 
@@ -92,7 +97,12 @@ export default function KaspaSearchBrowser({ open, onClose }) {
       runSearch("", "All");
       setTimeout(() => inputRef.current?.focus(), 300);
       base44.entities.SiteOwnerClaim.filter({ verified: true }, "-created_date", 500)
-        .then(rows => setVerifiedUrls(new Set((rows || []).map(r => (r.site_url || "").toLowerCase().replace(/\/+$/, "")))))
+        .then(rows => {
+          const list = rows || [];
+          const key = (u) => (u || "").toLowerCase().replace(/\/+$/, "");
+          setVerifiedUrls(new Set(list.map(r => key(r.site_url))));
+          setOwnerAddresses(new Map(list.filter(r => r.owner_address).map(r => [key(r.site_url), r.owner_address])));
+        })
         .catch(() => {});
     }
   }, [open, runSearch]);
@@ -101,6 +111,13 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const feelingLucky = () => {
     if (!results.length) return;
     setAgentApp(results[Math.floor(Math.random() * results.length)]);
+  };
+
+  // Only KNS-verified owners can receive tips — the address comes from their claim.
+  const tipAddressFor = (app) => ownerAddresses.get((app?.url || "").toLowerCase().replace(/\/+$/, ""));
+  const tipApp = (app) => {
+    const address = tipAddressFor(app);
+    if (address) setTipTarget({ name: app.name, url: app.url, address });
   };
 
   const shareApp = (app) => setShareCard({
@@ -238,6 +255,14 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             </form>
 
             <button
+              onClick={() => setBoardOpen(true)}
+              title="Tip leaderboard"
+              className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 hover:bg-amber-500/25 transition-colors"
+            >
+              <Trophy className="w-4 h-4" />
+            </button>
+
+            <button
               onClick={() => setBattleOpen(true)}
               title="Agent battle — ask 3 agents at once"
               className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-fuchsia-300 hover:bg-fuchsia-500/25 transition-colors"
@@ -362,6 +387,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                   profiles={results.slice(0, visible)}
                   onAskAI={setAgentApp}
                   onShare={shareApp}
+                  onTip={tipApp}
+                  canTip={(app) => !!tipAddressFor(app)}
                   verifiedUrls={verifiedUrls}
                 />
                 {visible < results.length && (
@@ -437,6 +464,14 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                           >
                             <Share2 className="w-3 h-3" /> Share card
                           </button>
+                          {tipAddressFor(app) && (
+                            <button
+                              onClick={() => tipApp(app)}
+                              className="inline-flex items-center gap-1 text-[11px] text-amber-300/80 hover:text-amber-200 transition-colors"
+                            >
+                              <Coins className="w-3 h-3" /> Tip KAS
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -463,6 +498,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
           <ShareCardModal card={shareCard} onClose={() => setShareCard(null)} />
           <AgentBattleModal open={battleOpen} onClose={() => setBattleOpen(false)} pool={results} />
+          <TipListingModal target={tipTarget} onClose={() => setTipTarget(null)} />
+          <TipLeaderboardModal open={boardOpen} onClose={() => setBoardOpen(false)} />
         </motion.div>
       )}
     </AnimatePresence>
