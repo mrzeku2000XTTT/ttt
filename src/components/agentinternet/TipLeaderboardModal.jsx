@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trophy, Loader2 } from "lucide-react";
+import { X, Trophy, Loader2, Coins } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import KccLeaderboard from "./KccLeaderboard";
 
-/** Most-tipped listings and Kaspians, ranked by total KAS received. */
+/** Leaderboard — KCC-20 covenant tokens on KRON, plus KAS tips received. */
 export default function TipLeaderboardModal({ open, onClose }) {
+  const [tab, setTab] = useState("kcc");
   const [rows, setRows] = useState(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || tab !== "tips") return;
     setRows(null);
     base44.entities.TipTransaction.list("-created_date", 1000)
       .then(tips => {
@@ -25,7 +27,7 @@ export default function TipLeaderboardModal({ open, onClose }) {
         setRows([...map.values()].sort((a, b) => b.total - a.total).slice(0, 25));
       })
       .catch(() => setRows([]));
-  }, [open]);
+  }, [open, tab]);
 
   return (
     <AnimatePresence>
@@ -41,10 +43,27 @@ export default function TipLeaderboardModal({ open, onClose }) {
               <X className="w-4 h-4" />
             </button>
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span className="text-white font-bold text-sm">Tip Leaderboard</span>
+            <span className="text-white font-bold text-sm">Leaderboard</span>
+
+            <div className="ml-auto flex items-center gap-1.5">
+              {[["kcc", "KCC-20"], ["tips", "Tips"]].map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors ${
+                    tab === key
+                      ? "bg-cyan-500/20 border-cyan-400/50 text-cyan-200"
+                      : "bg-white/[0.05] border-white/10 text-white/50 hover:text-white"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-4">
+            {tab === "kcc" ? <KccLeaderboard /> : (
             <div className="max-w-2xl mx-auto space-y-2">
               {rows === null ? (
                 <div className="flex items-center gap-2 text-white/40 text-xs justify-center py-10">
@@ -68,6 +87,7 @@ export default function TipLeaderboardModal({ open, onClose }) {
                 ))
               )}
             </div>
+            )}
           </div>
         </motion.div>
       )}
