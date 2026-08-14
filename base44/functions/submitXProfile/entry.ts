@@ -36,11 +36,15 @@ Deno.serve(async (req) => {
 
     const url = `https://x.com/${handle}`;
 
-    // Already listed?
-    const existing = await base44.asServiceRole.entities.KaspaHubApp.filter({ category: 'X Profiles' });
+    // Already listed? Check the ENTIRE index (any category, x.com or twitter.com)
+    const existing = await base44.asServiceRole.entities.KaspaHubApp.list(undefined, 5000);
     const dupe = (existing || []).find((a) => {
-      try { return new URL(a.url).pathname.replace(/\/+$/, '').toLowerCase() === `/${handle.toLowerCase()}`; }
-      catch { return false; }
+      try {
+        const u = new URL(a.url);
+        const host = u.host.replace(/^www\./, '').toLowerCase();
+        if (host !== 'x.com' && host !== 'twitter.com') return false;
+        return u.pathname.replace(/\/+$/, '').toLowerCase() === `/${handle.toLowerCase()}`;
+      } catch { return false; }
     });
     if (dupe) {
       return Response.json({ success: true, already_listed: true, app: dupe }, { headers: CORS });
