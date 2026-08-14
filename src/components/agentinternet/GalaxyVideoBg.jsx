@@ -69,8 +69,6 @@ export default function GalaxyVideoBg() {
             playsInline
             webkit-playsinline="true"
             controls={false}
-            controlsList="nodownload noplaybackrate nofullscreen noremoteplayback"
-            disableRemotePlayback
             disablePictureInPicture
             preload="auto"
             onCanPlay={(e) => { markLoaded(idx); e.currentTarget.play().catch(() => {}); }}
