@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Loader2, TrendingUp, Users, Bot } from "lucide-react";
+import { X, Search, Loader2, TrendingUp, Users, Bot, Share2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CryptoProfileGrid from "./CryptoProfileGrid";
 import SiteAgentChat from "./SiteAgentChat";
+import Sparkline from "./Sparkline";
+import FearGreedDial from "./FearGreedDial";
+import ShareCardModal from "./ShareCardModal";
 
 const BTC_LOGO = "https://assets.coingecko.com/coins/images/1/large/bitcoin.png";
 
@@ -17,6 +20,8 @@ export default function CryptoSearchBrowser({ open, onClose }) {
   const [tab, setTab] = useState("coins"); // coins | profiles
   const [profiles, setProfiles] = useState([]);
   const [chatApp, setChatApp] = useState(null); // profile whose AI agent is open
+  const [kasPrice, setKasPrice] = useState(null); // for the "value in KAS" converter
+  const [shareCard, setShareCard] = useState(null);
 
   // Load trending coins for the home view
   useEffect(() => {
@@ -27,6 +32,13 @@ export default function CryptoSearchBrowser({ open, onClose }) {
         const data = await res.json();
         setTrending((data?.coins || []).map(c => c.item));
       } catch { /* trending is optional */ }
+    })();
+    (async () => {
+      try {
+        const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd");
+        const d = await r.json();
+        setKasPrice(d?.kaspa?.usd ?? null);
+      } catch { /* converter is optional */ }
     })();
     (async () => {
       try {
@@ -52,7 +64,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
       const ids = found.map(c => c.id).join(",");
       let markets = [];
       try {
-        const mRes = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${encodeURIComponent(ids)}&order=market_cap_desc&per_page=20`);
+        const mRes = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${encodeURIComponent(ids)}&order=market_cap_desc&per_page=20&sparkline=true`);
         markets = await mRes.json();
       } catch { /* prices optional */ }
       const priceMap = {};
@@ -76,6 +88,24 @@ export default function CryptoSearchBrowser({ open, onClose }) {
   };
 
   const openCoin = (id) => window.open(`https://www.coingecko.com/en/coins/${id}`, "_blank", "noopener");
+
+  // Every price also shown in KAS — the native unit of this ecosystem.
+  const inKas = (usd) => {
+    if (usd == null || !kasPrice) return null;
+    const v = usd / kasPrice;
+    return `${v >= 1 ? v.toLocaleString(undefined, { maximumFractionDigits: 2 }) : v.toPrecision(3)} KAS`;
+  };
+
+  const shareCoin = (c) => setShareCard({
+    title: `${c.name} (${(c.symbol || "").toUpperCase()})`,
+    subtitle: c.market?.current_price != null
+      ? `${fmtPrice(c.market.current_price)}${inKas(c.market.current_price) ? ` · ${inKas(c.market.current_price)}` : ""}`
+      : "coingecko.com",
+    description: c.market?.price_change_percentage_24h != null
+      ? `24h change ${c.market.price_change_percentage_24h.toFixed(2)}% · market cap rank #${c.market.market_cap_rank || c.market_cap_rank || "?"}`
+      : null,
+    logo: c.large || c.thumb,
+  });
 
   // Turn a coin into an app-shaped object so it gets its own live AI analyst
   const askCoinAI = (c) => {
@@ -177,6 +207,12 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                           <div className="text-white text-sm font-semibold truncate">{c.name}</div>
                           <div className="text-white/40 text-[10px] font-mono uppercase">{c.symbol}{c.market_cap_rank ? ` · #${c.market_cap_rank}` : ""}</div>
                         </div>
+                        {c.market?.sparkline_in_7d?.price?.length > 0 && (
+                          <Sparkline
+                            points={c.market.sparkline_in_7d.price}
+                            up={(c.market.price_change_percentage_24h ?? 0) >= 0}
+                          />
+                        )}
                         <div className="text-right">
                           <div className="text-white text-xs font-mono">{fmtPrice(c.market?.current_price)}</div>
                           {c.market?.price_change_percentage_24h != null && (
@@ -184,7 +220,17 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                               {c.market.price_change_percentage_24h >= 0 ? "+" : ""}{c.market.price_change_percentage_24h.toFixed(2)}%
                             </div>
                           )}
+                          {inKas(c.market?.current_price) && (
+                            <div className="text-[9px] font-mono text-cyan-400/60">{inKas(c.market.current_price)}</div>
+                          )}
                         </div>
+                      </button>
+                      <button
+                        onClick={() => shareCoin(c)}
+                        title="Download a shareable card"
+                        className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-white/[0.06] border border-white/10 text-white/50 hover:text-white transition-colors"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => askCoinAI(c)}
@@ -208,6 +254,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                     Live prices, ranks and 24h moves for any coin or token.
                   </p>
                 </div>
+                <FearGreedDial />
                 {trending.length > 0 && (
                   <>
                     <div className="flex items-center gap-1.5 text-white/40 text-[10px] font-mono uppercase tracking-widest mb-3">
@@ -243,6 +290,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
           </div>
 
           <SiteAgentChat app={chatApp} onClose={() => setChatApp(null)} />
+          <ShareCardModal card={shareCard} onClose={() => setShareCard(null)} />
         </motion.div>
       )}
     </AnimatePresence>

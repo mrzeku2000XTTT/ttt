@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle, Dices, Share2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
 import SiteAgentChat from "./SiteAgentChat";
 import SiteLogo from "./SiteLogo";
 import KaspianProfileGrid from "./KaspianProfileGrid";
+import KaspaPulseBar from "./KaspaPulseBar";
+import ShareCardModal from "./ShareCardModal";
 
 // "$KAS" is the Kaspian wall — same index, rendered as a profile grid.
 const KAS_TAB = "$KAS";
@@ -33,6 +35,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [listOpen, setListOpen] = useState(false);
   const [agentApp, setAgentApp] = useState(null);
   const [linkAdd, setLinkAdd] = useState(null); // { status: 'adding'|'added'|'exists'|'error', handle, error }
+  const [verifiedUrls, setVerifiedUrls] = useState(new Set()); // KNS-verified owners
+  const [shareCard, setShareCard] = useState(null);
   const inputRef = useRef(null);
   const reqId = useRef(0);
 
@@ -83,8 +87,24 @@ export default function KaspaSearchBrowser({ open, onClose }) {
       setLinkAdd(null);
       runSearch("", "All");
       setTimeout(() => inputRef.current?.focus(), 300);
+      base44.entities.SiteOwnerClaim.filter({ verified: true }, "-created_date", 500)
+        .then(rows => setVerifiedUrls(new Set((rows || []).map(r => (r.site_url || "").toLowerCase().replace(/\/+$/, "")))))
+        .catch(() => {});
     }
   }, [open, runSearch]);
+
+  // "I'm feeling lucky" — jump to a random listing with its AI agent open.
+  const feelingLucky = () => {
+    if (!results.length) return;
+    setAgentApp(results[Math.floor(Math.random() * results.length)]);
+  };
+
+  const shareApp = (app) => setShareCard({
+    title: app.name,
+    subtitle: hostOf(app.url),
+    description: app.description,
+    logo: app.logo,
+  });
 
   // Nothing is persisted — wipe the in-memory search trail when the user leaves.
   const closeAndWipe = () => {
@@ -177,6 +197,14 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             </form>
 
             <button
+              onClick={feelingLucky}
+              title="I'm feeling lucky — random Kaspa app + its AI"
+              className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-white/[0.06] border border-white/15 text-white/60 hover:text-cyan-300 hover:border-cyan-400/40 transition-colors"
+            >
+              <Dices className="w-4 h-4" />
+            </button>
+
+            <button
               onClick={() => setListOpen(true)}
               title="List your site"
               className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/25 transition-colors"
@@ -199,6 +227,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               }
             }}
           />
+
+          <KaspaPulseBar />
 
           {/* Category chips */}
           <div className="flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto scrollbar-hide border-b border-white/5 w-full max-w-4xl mx-auto">
@@ -268,7 +298,12 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               </div>
             ) : isKasTab ? (
               <div className="space-y-4">
-                <KaspianProfileGrid profiles={results.slice(0, visible)} onAskAI={setAgentApp} />
+                <KaspianProfileGrid
+                  profiles={results.slice(0, visible)}
+                  onAskAI={setAgentApp}
+                  onShare={shareApp}
+                  verifiedUrls={verifiedUrls}
+                />
                 {visible < results.length && (
                   <button
                     onClick={() => setVisible(v => v + PAGE_SIZE)}
@@ -336,6 +371,12 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                           >
                             <Bot className="w-3 h-3" /> Ask its AI
                           </button>
+                          <button
+                            onClick={() => shareApp(app)}
+                            className="inline-flex items-center gap-1 text-[11px] text-white/30 hover:text-white/60 transition-colors"
+                          >
+                            <Share2 className="w-3 h-3" /> Share card
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -360,6 +401,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           </div>
 
           <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
+          <ShareCardModal card={shareCard} onClose={() => setShareCard(null)} />
         </motion.div>
       )}
     </AnimatePresence>
