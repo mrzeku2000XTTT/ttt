@@ -21,11 +21,11 @@ function stripHtml(html: string) {
     .trim();
 }
 
-async function grab(url: string) {
+async function grab(url: string, timeout = 3500) {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TTTAgent/1.0)' },
-      signal: AbortSignal.timeout(3500),
+      signal: AbortSignal.timeout(timeout),
     });
     if (!res.ok) return '';
     const text = stripHtml(await res.text());
@@ -36,7 +36,10 @@ async function grab(url: string) {
 }
 
 // Home + about/docs, fetched in parallel. Cached client-side after the first turn.
-async function buildKnowledge(url: string) {
+// Quick mode reads the home page only with a tight timeout — /about and /docs are
+// usually 404s that just add seconds.
+async function buildKnowledge(url: string, quick = false) {
+  if (quick) return await grab(url, 2500);
   let origin = url;
   try { origin = new URL(url).origin; } catch { /* keep */ }
   const chunks = await Promise.all([grab(url), grab(origin + '/about'), grab(origin + '/docs')]);
@@ -48,16 +51,24 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
-    const { url, name, description, category, messages, knowledge: cached, fast } = await req.json();
+    const { url, name, description, category, messages, knowledge: cached, fast, prefetch } = await req.json();
     if (!url) return Response.json({ success: false, error: 'url required' }, { status: 400, headers: CORS });
 
+    // Warm-up call from the client when the panel opens: read the site, no LLM.
+    if (prefetch) {
+      const warm = await buildKnowledge(url, !!fast);
+      return Response.json({ success: true, knowledge: warm }, { headers: CORS });
+    }
+
     // Reuse knowledge the client already has — skips all scraping on follow-ups.
-    const knowledge = cached || (await buildKnowledge(url));
+    const knowledge = cached || (await buildKnowledge(url, !!fast));
     // A JS-app shell ("loading…") yields a few useless words — treat that as no content
     // so we fall back to live web knowledge instead of inventing a status.
-    const thin = (knowledge || '').length < 600;
+    // Web search is the single slowest step (~60s), so quick replies never use it —
+    // they answer from the page text plus the model's own knowledge.
+    const thin = !fast && (knowledge || '').length < 600;
     const history = (messages || [])
-      .slice(-10)
+      .slice(-6)
       .map((m: any) => `${m.role === 'user' ? 'User' : 'Agent'}: ${m.content}`)
       .join('\n');
 
@@ -71,7 +82,7 @@ Category: ${category || 'Ecosystem'}
 Indexed description: ${description || 'n/a'}
 
 CONTENT SCRAPED FROM THE SITE (home / about / docs / faq):
-${knowledge || '(no readable text — the site may be a JS app; rely on web knowledge)'}
+${(fast ? (knowledge || '').slice(0, 2500) : knowledge) || '(no readable text — the site may be a JS app; rely on web knowledge)'}
 
 CONVERSATION SO FAR:
 ${history || '(new conversation)'}
@@ -83,7 +94,8 @@ NEVER guess launch status. Do not call a site "upcoming", "coming soon", "in dev
 ${fast ? 'Answer in ONE short sentence, max 25 words.' : 'Answer in 2-4 short plain sentences.'} No markdown headings, no bullet lists, and no citation markers like [1].`,
       // Fall back to live web knowledge whenever the page itself gave us little or nothing.
       add_context_from_internet: thin,
-      model: 'gemini_3_flash',
+      // Quick replies use the fastest model; the web-search path needs gemini.
+      model: thin ? 'gemini_3_flash' : fast ? 'gpt_5_mini' : 'gemini_3_flash',
     });
 
     return Response.json(

@@ -25,6 +25,19 @@ export default function SiteAgentChat({ app, onClose }) {
 
   useEffect(() => { setMessages([]); setInput(""); knowledgeRef.current = null; }, [app?.id]);
 
+  // Read the site as soon as the panel opens so the first answer doesn't wait on it.
+  useEffect(() => {
+    if (!app?.url) return;
+    let alive = true;
+    base44.functions.invoke("siteAgentChat", { url: app.url, prefetch: true, fast: true })
+      .then(raw => {
+        const res = raw?.data ?? raw;
+        if (alive && res?.knowledge && !knowledgeRef.current) knowledgeRef.current = res.knowledge;
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [app?.url]);
+
   // Is this site / profile claimed by a KNS-verified human?
   useEffect(() => {
     if (!app?.url) { setClaim(null); return; }
