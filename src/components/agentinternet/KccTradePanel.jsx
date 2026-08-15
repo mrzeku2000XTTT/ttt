@@ -29,9 +29,9 @@ export default function KccTradePanel({ token, onClose }) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full sm:max-w-md bg-zinc-950 border border-white/10 rounded-t-2xl sm:rounded-2xl overflow-hidden"
+            className="w-full sm:max-w-md max-h-[92vh] overflow-y-auto overscroll-contain bg-zinc-950 border border-white/10 rounded-t-2xl sm:rounded-2xl"
           >
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
+            <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-zinc-950">
               <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10">
                 <X className="w-4 h-4" />
               </button>
