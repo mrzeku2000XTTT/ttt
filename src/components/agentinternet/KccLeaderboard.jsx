@@ -2,13 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Loader2, RefreshCw, AlertCircle, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import KccTokenCard from "./KccTokenCard";
+import KccTradePanel from "./KccTradePanel";
 
-/** KCC-20 board — live KRON launch registry only (no AI, no estimates). */
+/** KCC-20 board — live KRON launch registry + Kascov activity. No AI, no estimates. */
 export default function KccLeaderboard() {
   const [tokens, setTokens] = useState(null);
   const [error, setError] = useState(null);
+  const [meta, setMeta] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [q, setQ] = useState("");
+  const [tradeToken, setTradeToken] = useState(null);
 
   const load = () => {
     setTokens(null);
@@ -16,8 +19,16 @@ export default function KccLeaderboard() {
     base44.functions.invoke("kccLeaderboard", {})
       .then(raw => {
         const res = raw?.data ?? raw;
-        if (res?.success) setTokens(res.tokens || []);
-        else setError(res?.error || "Could not load KRON registry");
+        if (res?.success) {
+          setTokens(res.tokens || []);
+          setMeta({
+            fetched_at: res.fetched_at,
+            kascov_ok: res.kascov_ok,
+            kascov_generated_at_ms: res.kascov_generated_at_ms,
+          });
+        } else {
+          setError(res?.error || "Could not load KRON registry");
+        }
       })
       .catch(e => setError(e?.message || "Could not load KRON registry"));
   };
@@ -55,7 +66,7 @@ export default function KccLeaderboard() {
       {tokens === null && !error ? (
         <div className="flex flex-col items-center justify-center py-14 text-center">
           <Loader2 className="w-5 h-5 text-cyan-400 animate-spin mb-3" />
-          <p className="text-white/50 text-xs">Loading the live KRON launch registry…</p>
+          <p className="text-white/50 text-xs">Loading the live KRON + Kascov feed…</p>
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-14 text-center">
@@ -67,7 +78,10 @@ export default function KccLeaderboard() {
         <p className="text-white/40 text-xs text-center py-14">No KCC-20 tokens match that search.</p>
       ) : (
         <>
-          <p className="text-white/30 text-[10px] font-mono mb-2">{list.length} live KCC-20 launches · api.kron.technology</p>
+          <p className="text-white/30 text-[10px] font-mono mb-2">
+            {list.length} live KCC-20 launches · KRON + {meta?.kascov_ok ? "Kascov live" : "Kascov offline"}
+            {meta?.fetched_at ? ` · updated ${new Date(meta.fetched_at).toLocaleTimeString()}` : ""}
+          </p>
           <div className="space-y-2">
             {list.map((t, i) => (
               <KccTokenCard
@@ -76,11 +90,14 @@ export default function KccLeaderboard() {
                 rank={i + 1}
                 expanded={openId === t.tick + i}
                 onToggle={() => setOpenId(openId === t.tick + i ? null : t.tick + i)}
+                onTrade={setTradeToken}
               />
             ))}
           </div>
         </>
       )}
+
+      <KccTradePanel token={tradeToken} onClose={() => setTradeToken(null)} />
     </div>
   );
 }
