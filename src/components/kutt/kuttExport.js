@@ -42,13 +42,14 @@ export async function exportTimeline({ clips, assets, width = 1280, height = 720
 
   // Audio mixing — route every media element into one destination
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  try { await audioCtx.resume(); } catch {}
   const dest = audioCtx.createMediaStreamDestination();
   Object.values(media).forEach((m) => {
     if (m.kind !== "image") {
       try {
         const src = audioCtx.createMediaElementSource(m.el);
         src.connect(dest);
-      } catch { /* element already connected */ }
+      } catch { /* element already connected or tainted cross-origin — skip */ }
     }
   });
 

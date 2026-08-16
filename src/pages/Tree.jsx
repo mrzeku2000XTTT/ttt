@@ -27,9 +27,15 @@ export default function Tree() {
     setCampaign(null);
     setSteps([]);
 
-    const record = await base44.entities.TreeCampaign.create({
-      product, goal, audience, tone, status: "generating", ads: [],
-    });
+    // Entity persistence is optional — guests get an in-memory record
+    let record = { id: `local_${Date.now()}`, product, goal, audience, tone, status: "generating", ads: [] };
+    try {
+      record = await base44.entities.TreeCampaign.create({
+        product, goal, audience, tone, status: "generating", ads: [],
+      });
+    } catch {
+      // Guest or offline — proceed with in-memory record
+    }
 
     try {
       // 1. Strategy + all ad copy in one LLM pass
@@ -104,15 +110,19 @@ Also provide a 2-3 sentence overall campaign strategy.`,
       }
 
       pushStep("💾 Saving campaign…");
-      await base44.entities.TreeCampaign.update(record.id, {
-        strategy: brief.strategy, ads, status: "complete",
-      });
+      try {
+        await base44.entities.TreeCampaign.update(record.id, {
+          strategy: brief.strategy, ads, status: "complete",
+        });
+      } catch {
+        // Guest — skip persistence
+      }
       finishSteps();
       const done = { ...record, strategy: brief.strategy, ads, status: "complete" };
       setCampaign(done);
       setHistory((h) => [done, ...h]);
     } catch (err) {
-      await base44.entities.TreeCampaign.update(record.id, { status: "failed" });
+      try { await base44.entities.TreeCampaign.update(record.id, { status: "failed" }); } catch {}
       pushStep(`❌ Campaign failed: ${err.message}`);
       finishSteps();
     }

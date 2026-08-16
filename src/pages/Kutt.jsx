@@ -55,7 +55,11 @@ export default function KuttPage() {
   };
 
   const handleExport = async () => {
-    if (clips.length === 0 || exporting) return;
+    if (clips.length === 0) {
+      alert("Add clips to the timeline first — ask the Director agent to generate a video, or import media.");
+      return;
+    }
+    if (exporting) return;
     setExporting(true);
     setExportProgress(0);
     setPlaying(false);
@@ -64,7 +68,10 @@ export default function KuttPage() {
       const a = document.createElement("a");
       a.href = url;
       a.download = `kutt-export.${ext || "mp4"}`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
       alert(`Export failed: ${err.message}`);
     }
