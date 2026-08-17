@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
@@ -6,12 +6,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   Monitor, Laptop, LayoutGrid, Search, Settings, 
   User, LogOut, X, Minus, Square, Wifi, WifiOff, Volume2, Battery,
-  MessageSquare, Play, Columns2, Grid2x2, Smartphone
+  MessageSquare, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import GodZK from "@/components/tttos/GodZK";
-import TTTOSResizeHandle, { HANDLES } from "@/components/tttos/TTTOSResizeHandle";
 
 // Custom TTT-branded SVG logos for each app
 const TTTLogos = {
@@ -140,19 +139,9 @@ export default function TTTOS() {
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [windowPositions, setWindowPositions] = useState({});
-  const [windowSizes, setWindowSizes] = useState({});
   const [iframeWindows, setIframeWindows] = useState([]);
   const [activeIframeWindow, setActiveIframeWindow] = useState(null);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
-  const [splitMode, setSplitMode] = useState(null); // null | "2" | "4"
   const zCounterRef = useRef(200);
-  const resizeRef = useRef(null);
-
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -290,80 +279,6 @@ export default function TTTOS() {
     }));
   };
 
-  // ── Resize logic ──
-  const startResize = useCallback((windowId, dir, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const startPos = { ...windowPositions[windowId] };
-    const startSize = { ...windowSizes[windowId] };
-    if (!startSize.width) startSize.width = 900;
-    if (!startSize.height) startSize.height = 600;
-    const startX = e.clientX;
-    const startY = e.clientY;
-
-    const onMove = (ev) => {
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-      let newW = startSize.width;
-      let newH = startSize.height;
-      let newX = startPos.x;
-      let newY = startPos.y;
-
-      if (dir.includes("e")) newW = Math.max(300, startSize.width + dx);
-      if (dir.includes("s")) newH = Math.max(200, startSize.height + dy);
-      if (dir.includes("w")) { newW = Math.max(300, startSize.width - dx); newX = startPos.x + (startSize.width - newW); }
-      if (dir.includes("n")) { newH = Math.max(200, startSize.height - dy); newY = startPos.y + (startSize.height - newH); }
-
-      setWindowSizes((prev) => ({ ...prev, [windowId]: { width: newW, height: newH } }));
-      setWindowPositions((prev) => ({ ...prev, [windowId]: { x: newX, y: newY } }));
-    };
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  }, [windowPositions, windowSizes]);
-
-  // ── Split screen logic ──
-  const applySplit = (mode) => {
-    const wins = iframeWindows.filter((w) => !w.minimized);
-    if (wins.length === 0) return;
-    setSplitMode(mode);
-    zCounterRef.current += 1;
-
-    if (mode === "2") {
-      const visible = wins.slice(0, 2);
-      visible.forEach((w, i) => {
-        setWindowPositions((prev) => ({ ...prev, [w.windowId]: { x: i * (window.innerWidth / 2), y: 0 } }));
-        setWindowSizes((prev) => ({ ...prev, [w.windowId]: { width: window.innerWidth / 2, height: window.innerHeight - 80 } }));
-      });
-      setIframeWindows((prev) => prev.map((w) => visible.find((v) => v.windowId === w.windowId)
-        ? { ...w, maximized: false, minimized: false, z: zCounterRef.current } : w));
-    } else if (mode === "4") {
-      const visible = wins.slice(0, 4);
-      const halfW = window.innerWidth / 2;
-      const halfH = (window.innerHeight - 80) / 2;
-      visible.forEach((w, i) => {
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        setWindowPositions((prev) => ({ ...prev, [w.windowId]: { x: col * halfW, y: row * halfH } }));
-        setWindowSizes((prev) => ({ ...prev, [w.windowId]: { width: halfW, height: halfH } }));
-      });
-      setIframeWindows((prev) => prev.map((w) => visible.find((v) => v.windowId === w.windowId)
-        ? { ...w, maximized: false, minimized: false, z: zCounterRef.current } : w));
-    }
-  };
-
-  const exitSplit = () => {
-    setSplitMode(null);
-    iframeWindows.forEach((w) => {
-      if (!w.maximized) {
-        setWindowSizes((prev) => { const n = { ...prev }; delete n[w.windowId]; return n; });
-      }
-    });
-  };
-
   const handleIframeLoad = (windowId) => {
     setIframeWindows(prev => prev.map(w => 
       w.windowId === windowId ? { ...w, isLoading: false } : w
@@ -450,79 +365,35 @@ export default function TTTOS() {
           })}
         </div>
 
-        {/* Embedded Browser Windows — Mobile: full-screen fixed cards; Desktop: floating resizable */}
-        {isMobile ? (
-          iframeWindows.filter((w) => !w.minimized).length > 0 && (
-          <div className="absolute inset-0 pb-16 pt-12">
-            <AnimatePresence>
-              {iframeWindows.filter((w) => !w.minimized).map((win) => {
-                const Logo = win.logo;
-                const isActive = activeIframeWindow === win.windowId;
-                return (
-                  <motion.div
-                    key={win.windowId}
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    className={`absolute inset-0 overflow-hidden ${isWindows ? "bg-gray-900/95" : "bg-white/95"} ${isActive ? "z-30" : "z-20"}`}
-                  >
-                    <div className={`h-11 flex items-center justify-between px-3 ${isWindows ? "bg-gray-800/80" : "bg-gray-100"}`}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded overflow-hidden"><Logo /></div>
-                        <span className={`text-sm font-bold ${isWindows ? "text-white" : "text-gray-800"}`}>{win.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={(e) => minimizeIframeWindow(win.windowId, e)} className={`w-8 h-8 flex items-center justify-center rounded ${isWindows ? "hover:bg-white/10 text-white" : "hover:bg-gray-200"}`}><Minus className="w-4 h-4" /></button>
-                        <button onClick={(e) => closeIframeWindow(win.windowId, e)} className={`w-8 h-8 flex items-center justify-center rounded ${isWindows ? "hover:bg-red-500 text-white" : "hover:bg-red-400 hover:text-white"}`}><X className="w-4 h-4" /></button>
-                      </div>
-                    </div>
-                    <div className="relative h-[calc(100%-2.75rem)] bg-white">
-                      {win.isLoading && <div className={`absolute inset-0 flex items-center justify-center ${isWindows ? "bg-gray-900" : "bg-gray-100"}`}><div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" /></div>}
-                      {win.loadFailed ? (
-                        <div className={`absolute inset-0 flex flex-col items-center justify-center gap-3 ${isWindows ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"}`}>
-                          <WifiOff className="w-8 h-8 text-red-400" />
-                          <p className="text-sm font-bold">Cannot embed in window</p>
-                          <Button onClick={() => openInNewTab(win)} className="bg-cyan-500 text-white">Open in New Tab</Button>
-                        </div>
-                      ) : (
-                        <iframe src={win.url} className="w-full h-full border-0" onLoad={() => handleIframeLoad(win.windowId)} title={win.name} sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals" />
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-          )
-        ) : (
+        {/* Embedded Browser Windows */}
         <AnimatePresence>
           {iframeWindows.map((win, index) => {
             const Logo = win.logo;
             const isActive = activeIframeWindow === win.windowId;
             const zIndex = win.z || 100 + index;
             const pos = win.maximized ? { x: 0, y: 0 } : (windowPositions[win.windowId] || { x: 50 + index * 30, y: 50 + index * 30 });
-            const size = windowSizes[win.windowId] || {};
-            const wStyle = win.maximized
-              ? { left: 0, top: 0, width: "calc(100vw - 2rem)", height: "calc(100vh - 8rem)" }
-              : { width: size.width || "90vw", maxWidth: size.width ? undefined : "1200px", height: size.height || "75vh", maxHeight: size.height ? undefined : "700px" };
-
+            
             return (
               <motion.div
                 key={win.windowId}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1, x: pos.x, y: pos.y }}
                 exit={{ scale: 0.8, opacity: 0, transition: { duration: 0.2 } }}
-                drag={!win.maximized && !splitMode}
+                drag={!win.maximized}
                 dragMomentum={false}
                 onDragEnd={(e, info) => handleIframeDragEnd(win.windowId, info)}
                 onMouseDown={() => { if (!isActive) focusIframeWindow(win.windowId); }}
-                className={`absolute overflow-hidden ${win.maximized ? "rounded-none" : "rounded-lg"} ${isActive ? "shadow-2xl ring-1 ring-cyan-400/30" : "shadow-lg"} ${isWindows ? "bg-gray-900/95 backdrop-blur-xl border border-white/10" : "bg-white/90 backdrop-blur-xl border border-white/20"}`}
-                style={{ zIndex, display: win.minimized ? "none" : undefined, ...wStyle }}
+                className={`absolute overflow-hidden ${
+                  win.maximized
+                    ? "left-0 top-0 w-[calc(100vw-2rem)] h-[calc(100vh-8rem)] rounded-none"
+                    : "w-[90vw] max-w-[1200px] h-[75vh] max-h-[700px] rounded-lg"
+                } ${isActive ? "shadow-2xl ring-1 ring-cyan-400/30" : "shadow-lg"} ${
+                  isWindows 
+                    ? "bg-gray-900/95 backdrop-blur-xl border border-white/10" 
+                    : "bg-white/90 backdrop-blur-xl border border-white/20"
+                }`}
+                style={{ zIndex, display: win.minimized ? "none" : undefined }}
               >
-                {/* Resize handles — desktop, not maximized, not in split mode */}
-                {!win.maximized && !splitMode && HANDLES.map((h) => (
-                  <TTTOSResizeHandle key={h.dir} dir={h.dir} className={h.className} onResizeStart={(dir, e) => startResize(win.windowId, dir, e)} />
-                ))}
                 {/* Browser Title Bar */}
                 <div 
                   className={`h-10 flex items-center justify-between px-4 cursor-move ${
@@ -654,7 +525,6 @@ export default function TTTOS() {
             );
           })}
         </AnimatePresence>
-        )}
       </div>
 
       {/* OS Type Switcher */}
@@ -684,7 +554,7 @@ export default function TTTOS() {
       </div>
 
       {/* Windows Taskbar */}
-      {isWindows && !isMobile && (
+      {isWindows && (
         <div className="fixed bottom-0 left-0 right-0 h-12 bg-gray-900/90 backdrop-blur-xl border-t border-white/10 flex items-center justify-between px-4 z-40">
           {/* Start Button */}
           <div className="relative">
@@ -771,26 +641,6 @@ export default function TTTOS() {
             </AnimatePresence>
           </div>
 
-          {/* Split screen buttons */}
-          {iframeWindows.length >= 2 && !isMobile && (
-            <div className="flex items-center gap-1 mr-2 pr-2 border-r border-white/10">
-              <button
-                onClick={() => splitMode === "2" ? exitSplit() : applySplit("2")}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-bold transition-all ${splitMode === "2" ? "bg-cyan-500 text-white" : "text-white/60 hover:bg-white/10 hover:text-white"}`}
-                title="Split screen — 2 windows side by side"
-              >
-                <Columns2 className="w-3.5 h-3.5" /> Split 2
-              </button>
-              <button
-                onClick={() => splitMode === "4" ? exitSplit() : applySplit("4")}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-bold transition-all ${splitMode === "4" ? "bg-cyan-500 text-white" : "text-white/60 hover:bg-white/10 hover:text-white"}`}
-                title="Split screen — 4 windows in a 2×2 grid"
-              >
-                <Grid2x2 className="w-3.5 h-3.5" /> Split 4
-              </button>
-            </div>
-          )}
-
           {/* Taskbar Apps */}
           <div className="flex items-center gap-2">
             {iframeWindows.map((win) => {
@@ -833,7 +683,7 @@ export default function TTTOS() {
       )}
 
       {/* macOS Menu Bar */}
-      {!isWindows && !isMobile && (
+      {!isWindows && (
         <>
           {/* Top Menu Bar */}
           <div className="fixed top-0 left-0 right-0 h-8 bg-white/20 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-4 z-40">
@@ -901,41 +751,6 @@ export default function TTTOS() {
             </div>
           </div>
         </>
-      )}
-
-      {/* Mobile bottom tab bar for open windows */}
-      {isMobile && iframeWindows.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-xl border-t border-white/10 flex items-center gap-1 px-2 py-1.5 overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setIframeWindows((prev) => prev.map((w) => ({ ...w, minimized: true })))}
-            className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-white/60 flex-shrink-0"
-            title="Show desktop"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          {iframeWindows.map((win) => {
-            const Logo = win.logo;
-            const isActive = activeIframeWindow === win.windowId && !win.minimized;
-            return (
-              <button
-                key={win.windowId}
-                onClick={() => handleTaskbarClick(win)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-all ${
-                  isActive ? "bg-cyan-500/20 border border-cyan-500/40" : "bg-white/5 border border-transparent"
-                }`}
-              >
-                <div className="w-4 h-4 rounded overflow-hidden flex-shrink-0"><Logo /></div>
-                <span className="text-white/80 text-[10px] font-bold max-w-[60px] truncate">{win.name}</span>
-                <span
-                  onClick={(e) => { e.stopPropagation(); closeIframeWindow(win.windowId, e); }}
-                  className="ml-0.5 w-4 h-4 flex items-center justify-center rounded hover:bg-red-500/30 text-white/40"
-                >
-                  <X className="w-2.5 h-2.5" />
-                </span>
-              </button>
-            );
-          })}
-        </div>
       )}
 
       {/* GodZK — OS navigator assistant */}
