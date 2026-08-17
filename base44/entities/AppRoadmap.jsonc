@@ -4,7 +4,7 @@
   "properties": {
     "user_email": {
       "type": "string",
-      "description": "User who created this roadmap"
+      "description": "User who created this roadmap (empty for guests)"
     },
     "app_idea": {
       "type": "string",
@@ -47,7 +47,15 @@
         "type": "number"
       },
       "default": [],
-      "description": "Indices of completed tasks"
+      "description": "Indices of completed steps (legacy)"
+    },
+    "completed_subtasks": {
+      "type": "object",
+      "description": "Map of 'stepIndex-taskIndex' to boolean for individual sub-task completion",
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "default": {}
     },
     "progress_percentage": {
       "type": "number",
@@ -61,19 +69,48 @@
     }
   },
   "required": [
-    "user_email",
     "app_idea"
   ],
   "rls": {
     "create": null,
     "read": {
-      "data.user_email": "{{user.email}}"
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.user_email": ""
+        },
+        {
+          "data.user_email": null
+        }
+      ]
     },
     "update": {
-      "data.user_email": "{{user.email}}"
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.user_email": ""
+        },
+        {
+          "data.user_email": null
+        }
+      ]
     },
     "delete": {
-      "data.user_email": "{{user.email}}"
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.user_email": ""
+        },
+        {
+          "data.user_email": null
+        }
+      ]
     }
   }
 }
