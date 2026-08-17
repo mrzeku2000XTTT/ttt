@@ -452,6 +452,7 @@ export default function TTTOS() {
 
         {/* Embedded Browser Windows — Mobile: full-screen fixed cards; Desktop: floating resizable */}
         {isMobile ? (
+          iframeWindows.filter((w) => !w.minimized).length > 0 && (
           <div className="absolute inset-0 pb-16 pt-12">
             <AnimatePresence>
               {iframeWindows.filter((w) => !w.minimized).map((win) => {
@@ -492,6 +493,7 @@ export default function TTTOS() {
               })}
             </AnimatePresence>
           </div>
+          )
         ) : (
         <AnimatePresence>
           {iframeWindows.map((win, index) => {
