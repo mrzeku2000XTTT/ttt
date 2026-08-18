@@ -33,9 +33,12 @@ export default function AgentDashboard({ onOpen, onNew }) {
           <p className="text-sm text-zinc-500">Each agent is your own trained model — only visible to you.</p>
         </div>
         <button
-          onClick={onNew}
-          disabled={!authed || !wallet}
-          className="h-10 px-4 rounded-full bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 disabled:opacity-40 flex items-center gap-1.5"
+          onClick={() => {
+            if (!authed) { window.location.href = "/login"; return; }
+            if (!wallet) { alert("Generate an AgentInternet wallet first."); return; }
+            onNew();
+          }}
+          className="h-10 px-4 rounded-full bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 flex items-center gap-1.5"
         >
           <Plus className="w-4 h-4" />
           New agent
