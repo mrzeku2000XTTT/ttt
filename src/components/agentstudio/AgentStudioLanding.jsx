@@ -1,6 +1,15 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Music2, Facebook, Twitter, Youtube, Instagram } from "lucide-react";
+import { Facebook, Twitter, Youtube, Instagram } from "lucide-react";
+
+/* TikTok icon (lucide has none) */
+function TikTok({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16.5 3c.3 2.1 1.5 3.5 3.5 3.8v2.6c-1.3.1-2.5-.3-3.6-1v6.6c0 3.4-2.8 6.5-6.4 6.5-3.7 0-6.5-2.9-6.5-6.5 0-3.5 2.9-6.3 6.4-6.3.3 0 .6 0 .9.1v2.8c-.3-.1-.6-.1-.9-.1-1.9 0-3.5 1.6-3.5 3.5s1.6 3.5 3.5 3.5 3.5-1.5 3.5-3.5V3h3.1z" />
+    </svg>
+  );
+}
 
 /* A single animated robot drone overlay (pointer-events-none, decorative) */
 function Drone({ size = 56, delay = 0, duration = 8, dx = 30, className = "" }) {
@@ -42,20 +51,20 @@ function Drone({ size = 56, delay = 0, duration = 8, dx = 30, className = "" }) 
 
 const FOOTER_LINKS = [
   {
-    header: "Discover",
-    links: ["Labs & Workshops", "Deep Dive Series", "Global Circle", "Resource Vault", "Future Roadmap"],
+    header: "Studio",
+    links: ["Agent Dashboard", "Create Agent", "Agent Wallet", "Consensus Audit", "GitHub Export"],
   },
   {
-    header: "The Mission",
-    links: ["Origin Story", "The Collective", "Newsroom Hub", "Join the Team"],
+    header: "Network",
+    links: ["The Covenant", "Agent Directory", "Newsroom", "Join the Builders"],
   },
   {
-    header: "Concierge",
-    links: ["Get in Touch", "Legal Privacy", "User Agreement", "Report Concern"],
+    header: "Support",
+    links: ["Get in Touch", "Privacy Policy", "Terms of Use", "Report a Bug"],
   },
 ];
 
-const SOCIAL_ICONS = [Music2, Facebook, Twitter, Youtube, Instagram];
+const SOCIAL_ICONS = [TikTok, Facebook, Twitter, Youtube, Instagram];
 
 export default function AgentStudioLanding({ onEnter, onNew }) {
   return (
@@ -128,13 +137,22 @@ export default function AgentStudioLanding({ onEnter, onNew }) {
             {/* Brand */}
             <div className="md:col-span-5">
               <div className="flex items-center gap-2 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256" fill="currentColor" className="text-white">
-                  <path d="M 4.688 136 C 68.373 136 120 187.627 120 251.312 C 120 252.883 119.967 254.445 119.905 256 L 0 256 L 0 136.096 C 1.555 136.034 3.117 136 4.688 136 Z M 251.312 136 C 252.883 136 254.445 136.034 256 136.096 L 256 256 L 136.095 256 C 136.032 254.438 136.001 252.875 136 251.312 C 136 187.627 187.627 136 251.312 136 Z M 119.905 0 C 119.967 1.555 120 3.117 120 4.688 C 120 68.373 68.373 120 4.687 120 C 3.117 120 1.555 119.967 0 119.905 L 0 0 Z M 256 119.905 C 254.445 119.967 252.883 120 251.312 120 C 187.627 120 136 68.373 136 4.687 C 136 3.117 136.033 1.555 136.095 0 L 256 0 Z" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
+                  <rect x="2" y="2" width="20" height="20" rx="6" fill="rgba(255,255,255,0.06)" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.2" />
+                  <circle cx="12" cy="12" r="2.4" fill="currentColor" />
+                  <circle cx="6.5" cy="6.5" r="1.6" fill="currentColor" />
+                  <circle cx="17.5" cy="6.5" r="1.6" fill="currentColor" />
+                  <circle cx="6.5" cy="17.5" r="1.6" fill="currentColor" />
+                  <circle cx="17.5" cy="17.5" r="1.6" fill="currentColor" />
+                  <line x1="12" y1="12" x2="6.5" y2="6.5" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+                  <line x1="12" y1="12" x2="17.5" y2="6.5" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+                  <line x1="12" y1="12" x2="6.5" y2="17.5" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+                  <line x1="12" y1="12" x2="17.5" y2="17.5" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
                 </svg>
-                <span className="text-xl font-medium text-white">LUMINA</span>
+                <span className="text-xl font-medium text-white">AGENT INTERNET</span>
               </div>
               <p className="text-sm leading-relaxed max-w-sm">
-                Lumina provides premium clarity on global events and cosmic wonders - shared with all for free.
+                Agent Internet Studio trains autonomous agents on Kaspa — every epoch anchored by a real on-chain self-send. Provable, non-custodial, yours to export.
               </p>
             </div>
 
@@ -157,7 +175,7 @@ export default function AgentStudioLanding({ onEnter, onNew }) {
 
           {/* Bottom bar */}
           <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
-            <p className="text-[10px] uppercase tracking-widest opacity-50">Curated by @GotInGeorgiG</p>
+            <p className="text-[10px] uppercase tracking-widest opacity-50">Powered by Kaspa · Agent Internet Studio</p>
             <div className="flex items-center gap-3">
               <span className="text-[10px] uppercase tracking-widest opacity-50">Join the Journey:</span>
               <div className="flex items-center gap-4">
