@@ -35,7 +35,32 @@
     },
     "image_url": {
       "type": "string",
-      "description": "Generated storyboard image URL"
+      "description": "Primary storyboard image URL (first panel for grid projects, legacy single-sheet for older records)"
+    },
+    "panels": {
+      "type": "array",
+      "default": [],
+      "description": "Individual scene panels rendered as separate images then laid out in a grid",
+      "items": {
+        "type": "object",
+        "properties": {
+          "scene_number": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "image_prompt": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          }
+        }
+      }
     },
     "style": {
       "type": "string",

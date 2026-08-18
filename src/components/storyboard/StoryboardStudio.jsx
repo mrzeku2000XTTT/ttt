@@ -51,6 +51,8 @@ export default function StoryboardStudio({ onClose }) {
   const [thoughts, setThoughts] = useState(null);
   const [showThoughts, setShowThoughts] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const [panelProgress, setPanelProgress] = useState(0);
+  const [panelCount, setPanelCount] = useState(0);
   const resultRef = useRef(null);
   const thoughtsRef = useRef(null);
 
@@ -110,46 +112,83 @@ Think out loud about how to improve it, then produce a fully restructured, produ
     if (!finalIdea) return;
     setIdea(finalIdea);
     setLoading(true);
+    setPanelProgress(0);
+    setPanelCount(6);
 
+    const kaspaLine = kaspaMode ? " Theme this around the Kaspa ecosystem (DAG, KAS payments, wallets) where it naturally fits." : "";
+
+    // 1) Plan: split the story into individual scene panels (no text baked into images).
     const plan = await base44.integrations.Core.InvokeLLM({
       model: "gpt_5_mini",
       add_context_from_internet: false,
-      prompt: `Transform this rough user idea into a highly detailed, production-ready storyboard / character sheet prompt: "${finalIdea}".
+      prompt: `Transform this rough user idea into a production storyboard plan: "${finalIdea}".
 
-Create: 1) concise research-inspired creative direction, 2) an enhanced professional image prompt for a clean storyboard sheet like animation studio concept art, 3) exactly three agent checks from: Prompt Engineer, Visual Director, Continuity Checker, 4) a copy-ready motion cut video prompt that turns the storyboard into a 16:9 multi-scene cinematic video cut.
+Break the story into exactly 6 sequential scene panels. Each panel gets its own clean illustration prompt for ONE single scene (not a sheet of panels).
 
-The enhanced prompt must add clear scene-by-scene details, believable physics, consistent scale, natural anatomy, accurate perspective, correct shadows, material logic, and readable layout hierarchy. Avoid tiny text, paragraph text, warped text, gibberish lettering, impossible poses, melting objects, inconsistent character designs, and broken hands. If labels are needed, use only 1-3 word simple labels in exact clean English. Avoid copyrighted characters. Make it original, cinematic, family-safe, and commercially usable.`,
+Return:
+1) research_notes — concise creative direction.
+2) motion_cut_prompt — a copy-ready multi-scene cinematic video prompt (16:9) that turns the 6 panels into one continuous cut.
+3) agent_checks — exactly 3 items from: Prompt Engineer, Visual Director, Continuity Checker.
+4) panels — array of 6 objects, each with: scene_number (1-6), title (short 1-4 word scene label), caption (one sentence describing the action), image_prompt (a single-scene cinematic illustration prompt describing characters, setting, action, mood, camera angle, lighting — do NOT request any text, labels, captions, speech bubbles or logos in the image).
+
+Keep visual style consistent across all 6 panels (same characters, palette, lighting). Avoid copyrighted characters. Make it original, cinematic, family-safe, and commercially usable.`,
       response_json_schema: {
         type: "object",
         properties: {
           research_notes: { type: "string" },
-          enhanced_prompt: { type: "string" },
           motion_cut_prompt: { type: "string" },
           agent_checks: {
             type: "array",
             items: { type: "object", properties: { agent: { type: "string" }, feedback: { type: "string" } } },
           },
+          panels: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                scene_number: { type: "number" },
+                title: { type: "string" },
+                caption: { type: "string" },
+                image_prompt: { type: "string" },
+              },
+            },
+          },
         },
-        required: ["research_notes", "enhanced_prompt", "motion_cut_prompt", "agent_checks"],
+        required: ["research_notes", "motion_cut_prompt", "agent_checks", "panels"],
       },
     });
 
-    const kaspaLine = kaspaMode ? " Theme this around the Kaspa ecosystem (DAG, KAS payments, wallets) where it naturally fits." : "";
-    const imagePrompt = `Create a clean 16:9 professional storyboard / character design sheet. Dark cinematic studio sheet, black background, high contrast dividers, premium concept board. Style mode: ${style || "Custom"}.${kaspaLine} ${plan.enhanced_prompt}
+    const plannedPanels = (plan.panels || []).slice(0, 6);
+    setPanelCount(plannedPanels.length || 6);
+    setPanelProgress(0);
 
-STRICT QUALITY RULES: Use real-world physics, believable gravity, consistent scale, correct perspective, natural anatomy, clean hands, grounded shadows, coherent lighting, accurate material behavior, and stable character continuity across every scene. Avoid paragraph text inside the image. If text appears, use only large 1-3 word labels with simple exact English spelling, straight horizontal baseline, sharp letters, and clean label boxes. Never use warped, curved, misspelled, tiny, or gibberish text. Each scene panel must have a clear purpose, readable composition, and enough visual context to understand the action.
+    // 2) Render each panel as its own clean image (no text in image → no garbled hallucinated words).
+    const styleLine = style ? ` Consistent visual style: ${style}.` : "";
+    const rendered = [];
+    for (let i = 0; i < plannedPanels.length; i++) {
+      const p = plannedPanels[i];
+      const imgPrompt = `Single cinematic illustration of ONE scene only, 16:9 widescreen, premium animation concept art. ${p.image_prompt}.${styleLine}${kaspaLine}
 
-Include: main characters, expressions, action poses, key props, color palette, material swatches, scale reference, scene panels, and only short readable labels. Polished animation pitch deck layout, high-end concept art, coherent characters across panels, no watermark, no messy text.`;
+STRICT: Pure visual storytelling only. NO text, NO words, NO letters, NO numbers, NO captions, NO labels, NO speech bubbles, NO signs, NO logos, NO watermark anywhere in the image. Real-world physics, believable gravity, consistent scale, correct perspective, natural anatomy, clean hands, grounded shadows, coherent lighting, accurate material behavior. Family-safe, no copyrighted characters.`;
+      let url = "";
+      try {
+        const res = await base44.integrations.Core.GenerateImage({ prompt: imgPrompt });
+        url = res.url;
+      } catch (e) { /* leave blank, panel shows placeholder */ }
+      rendered.push({ ...p, image_url: url });
+      setPanelProgress(i + 1);
+    }
 
-    const image = await base44.integrations.Core.GenerateImage({ prompt: imagePrompt });
+    // 3) Persist + show grid. image_url (required) kept as first panel for legacy compatibility.
     const created = await base44.entities.StoryboardProject.create({
       idea: finalIdea,
       style: style || "Custom",
       research_notes: plan.research_notes,
-      enhanced_prompt: imagePrompt,
+      enhanced_prompt: plannedPanels.map((p) => `Scene ${p.scene_number}: ${p.image_prompt}`).join("\n\n"),
       motion_cut_prompt: plan.motion_cut_prompt,
       agent_checks: plan.agent_checks,
-      image_url: image.url,
+      image_url: rendered[0]?.image_url || "",
+      panels: rendered,
     });
 
     setProject(created);
@@ -322,23 +361,55 @@ Include: main characters, expressions, action poses, key props, color palette, m
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                <div className="flex min-h-[340px] items-center justify-center overflow-hidden rounded-xl bg-black/40">
-                  {loading && !project?.image_url ? (
-                    <div className="text-center text-white/50">
-                      <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin" />
-                      <p className="text-sm font-semibold">Researching, enhancing &amp; rendering…</p>
-                    </div>
-                  ) : project?.image_url ? (
+                {loading && (!project?.panels?.length) ? (
+                  <div className="flex min-h-[340px] flex-col items-center justify-center text-center text-white/50">
+                    <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin" />
+                    <p className="text-sm font-semibold">
+                      {panelProgress > 0 ? `Rendering panel ${panelProgress} of ${panelCount}…` : "Planning scenes & writing captions…"}
+                    </p>
+                    {panelCount > 0 && (
+                      <div className="mt-3 h-1.5 w-48 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-sky-500 transition-all" style={{ width: `${panelCount ? (panelProgress / panelCount) * 100 : 0}%` }} />
+                      </div>
+                    )}
+                  </div>
+                ) : project?.panels?.length ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {project.panels.map((p, i) => (
+                      <div key={i} className="overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                        <div className="aspect-video w-full overflow-hidden bg-black/50">
+                          {p.image_url ? (
+                            <img src={p.image_url} alt={p.title || `Scene ${i + 1}`} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-white/20"><ImageIcon className="h-8 w-8" /></div>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">Scene {p.scene_number || i + 1}</p>
+                          <p className="text-sm font-bold text-white/90">{p.title || "Untitled scene"}</p>
+                          {p.caption && <p className="mt-1 text-xs leading-relaxed text-white/60">{p.caption}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : project?.image_url ? (
+                  <div className="flex min-h-[340px] items-center justify-center overflow-hidden rounded-xl bg-black/40">
                     <img src={project.image_url} alt={project.idea} className="h-full w-full object-contain" />
-                  ) : (
-                    <ImageIcon className="h-10 w-10 text-white/20" />
-                  )}
-                </div>
-                {project?.image_url && (
+                  </div>
+                ) : (
+                  <div className="flex min-h-[340px] items-center justify-center text-white/20">
+                    <ImageIcon className="h-10 w-10" />
+                  </div>
+                )}
+                {project?.panels?.length ? (
+                  <a href={project.panels[0]?.image_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-black transition hover:bg-white/90">
+                    <Film className="h-4 w-4" /> Open first panel
+                  </a>
+                ) : project?.image_url ? (
                   <a href={project.image_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-black transition hover:bg-white/90">
                     <Film className="h-4 w-4" /> Open / Download
                   </a>
-                )}
+                ) : null}
               </div>
 
               {project && <MotionCutPrompt project={project} isDark />}
