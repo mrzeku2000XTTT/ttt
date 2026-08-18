@@ -1,32 +1,98 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { base44 } from "@/api/base44Client";
+import { getAgentWallet } from "@/lib/agentInternetWallet";
 
-const BOOT_LINES = [
-  "spawning agent runtime · v3",
-  "linking kaspa mainnet · ghostdag",
-  "deriving identity wallet · XMSS",
-  "loading agent registry · 5 agents",
-  "arming skill modules · covenant++",
-  "verifying self-send anchors",
-  "syncing on-chain epochs · 3",
-  "mounting callable tools · 115",
-  "consensus relay online · wss://tttz.xyz",
-];
+function shortAddr(a) {
+  if (!a) return "";
+  return a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a;
+}
+function fmtKas(n) {
+  return (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
 
 export default function AgentStudioLanding({ onEnter, onNew }) {
   const navigate = useNavigate();
+  const [lines, setLines] = useState([]);
   const [visible, setVisible] = useState(0);
   const [bootDone, setBootDone] = useState(false);
 
+  // Gather real facts about the user's wallet + agents, then build terminal lines.
   useEffect(() => {
-    if (visible >= BOOT_LINES.length) {
+    let cancelled = false;
+    (async () => {
+      const wallet = getAgentWallet();
+
+      // Auth + agent registry (real counts)
+      let email = null;
+      let agents = [];
+      let authOk = false;
+      try {
+        const user = await base44.auth.me();
+        email = user?.email || null;
+        authOk = !!email;
+      } catch { authOk = false; }
+      if (authOk) {
+        try { agents = await base44.entities.AgentInternetAgent.filter({ user_email: email }); }
+        catch { agents = []; }
+      }
+
+      // Wallet balance (real on-chain lookup)
+      let balance = null;
+      let balanceErr = false;
+      if (wallet?.address) {
+        try {
+          const res = await base44.functions.invoke("getKaspaBalance", { address: wallet.address });
+          const data = res?.data || res;
+          if (data?.success === false) { balance = 0; balanceErr = true; }
+          else { balance = data?.balanceKAS ?? data?.balance ?? data?.available ?? 0; }
+        } catch { balance = null; balanceErr = true; }
+      }
+
+      const trained = agents.filter((a) => a.is_trained).length;
+      const epochs = agents.reduce((s, a) => s + (Number(a.epochs) || 0), 0);
+
+      const built = [
+        "spawning agent runtime · v3",
+        wallet
+          ? `identity wallet · linked ${shortAddr(wallet.address)}`
+          : "identity wallet · not provisioned",
+        wallet
+          ? (balanceErr
+              ? "wallet balance · network unreachable"
+              : Number(balance) > 0
+                ? `wallet balance · ${fmtKas(balance)} KAS`
+                : "wallet balance · 0 KAS · fund to train")
+          : "wallet balance · n/a · no wallet",
+        authOk
+          ? `agent registry · ${agents.length} agent${agents.length === 1 ? "" : "s"}`
+          : "agent registry · login required",
+        authOk
+          ? `trained agents · ${trained}`
+          : "trained agents · login required",
+        authOk
+          ? `on-chain epochs · ${epochs}`
+          : "on-chain epochs · login required",
+        "kaspa mainnet · ghostdag consensus",
+        "consensus relay online · wss://tttz.xyz",
+      ];
+
+      if (!cancelled) setLines(built);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Reveal lines progressively once they are built.
+  useEffect(() => {
+    if (lines.length === 0) return;
+    if (visible >= lines.length) {
       const t = setTimeout(() => setBootDone(true), 1100);
       return () => clearTimeout(t);
     }
     const t = setTimeout(() => setVisible((v) => v + 1), 420);
     return () => clearTimeout(t);
-  }, [visible]);
+  }, [lines, visible]);
 
   return (
     <main className="relative w-full min-h-screen overflow-hidden bg-black flex flex-col font-sans selection:bg-cyan-400/30 selection:text-white">
@@ -63,16 +129,19 @@ export default function AgentStudioLanding({ onEnter, onNew }) {
           className="w-full max-w-md rounded-xl p-4 sm:p-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-[#00FF41]"
           style={{ background: "rgba(0,0,0,0.45)", textShadow: "0 0 8px rgba(0,255,65,0.55)" }}
         >
-          {BOOT_LINES.slice(0, visible).map((line) => (
-            <div key={line} className="whitespace-nowrap">
+          {lines.length === 0 && (
+            <div><span className="opacity-70">&gt;&gt; </span>establishing relay…</div>
+          )}
+          {lines.slice(0, visible).map((line, i) => (
+            <div key={i} className="whitespace-nowrap">
               <span className="opacity-70">&gt;&gt; </span>
               {line}
             </div>
           ))}
-          {visible < BOOT_LINES.length && (
+          {lines.length > 0 && visible < lines.length && (
             <span className="inline-block w-2 h-4 align-middle bg-[#00FF41] animate-pulse" />
           )}
-          {visible >= BOOT_LINES.length && !bootDone && (
+          {lines.length > 0 && visible >= lines.length && !bootDone && (
             <div className="mt-1 opacity-80">
               <span className="opacity-70">&gt;&gt; </span>relay ready · awaiting operator
               <span className="inline-block w-2 h-4 align-middle ml-0.5 bg-[#00FF41] animate-pulse" />
