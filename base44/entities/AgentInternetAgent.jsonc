@@ -1,0 +1,81 @@
+{
+  "name": "AgentInternetAgent",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner of this agent \u2014 only they can see or train it"
+    },
+    "name": {
+      "type": "string",
+      "description": "Agent display name"
+    },
+    "task": {
+      "type": "string",
+      "description": "What the agent is trained to do"
+    },
+    "system_prompt": {
+      "type": "string",
+      "description": "System prompt that defines the agent's persona"
+    },
+    "training_examples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          },
+          "tx_id": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Few-shot examples; each one anchored by a Kaspa self-send txid"
+    },
+    "epochs": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of on-chain training epochs completed"
+    },
+    "level": {
+      "type": "number",
+      "default": 0,
+      "description": "Derived training level"
+    },
+    "wallet_address": {
+      "type": "string",
+      "description": "AgentInternet wallet address used for self-send epochs"
+    },
+    "is_trained": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the agent has at least one verified epoch"
+    }
+  },
+  "required": [
+    "name",
+    "system_prompt"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
