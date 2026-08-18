@@ -13,7 +13,7 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
   const [systemPrompt, setSystemPrompt] = useState(agent.system_prompt);
   const [saving, setSaving] = useState(false);
   const [pushOpen, setPushOpen] = useState(false);
-  const [editingSetup, setEditingSetup] = useState(!agent.task); // collapse after first save
+  const [editingSetup, setEditingSetup] = useState(false); // profile view by default — Edit to open
 
   const save = async () => {
     setSaving(true);
@@ -90,6 +90,11 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
               <h2 className="text-lg font-[800] text-zinc-900">{name}</h2>
               {task && <p className="text-xs font-semibold text-cyan-600 mt-0.5">{task}</p>}
               <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{systemPrompt}</p>
+              <div className="flex items-center gap-3 text-[11px] text-zinc-400 mt-2">
+                <span>Level {agent.level || 0}</span>
+                <span>·</span>
+                <span>{agent.epochs || 0} verified epochs</span>
+              </div>
             </div>
             <button onClick={() => setEditingSetup(true)} className="shrink-0 h-9 px-3 rounded-full bg-zinc-100 text-zinc-700 text-xs font-bold hover:bg-zinc-200">
               Edit

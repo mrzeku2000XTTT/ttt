@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Bot, Trash2, Zap, ArrowRight, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getAgentWallet } from "@/lib/agentInternetWallet";
+import AgentPairSuggestion from "@/components/agentstudio/AgentPairSuggestion";
 
 export default function AgentDashboard({ onOpen, onNew }) {
   const [agents, setAgents] = useState([]);
@@ -66,6 +67,8 @@ export default function AgentDashboard({ onOpen, onNew }) {
           </p>
         </div>
       ) : (
+        <>
+        <AgentPairSuggestion agents={agents} onCreate={onNew} />
         <div className="grid sm:grid-cols-2 gap-3">
           {agents.map((a) => (
             <button
@@ -91,6 +94,7 @@ export default function AgentDashboard({ onOpen, onNew }) {
             </button>
           ))}
         </div>
+        </>
       )}
     </div>
   );

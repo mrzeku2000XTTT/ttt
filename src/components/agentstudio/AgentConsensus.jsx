@@ -20,6 +20,7 @@ export default function AgentConsensus({ agent, wallet }) {
   const [records, setRecords] = useState([]);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -29,8 +30,12 @@ export default function AgentConsensus({ agent, wallet }) {
         const recs = await base44.entities.AgentAuditRecord.filter({ auditor_agent_id: agent.id }, "-created_date", 20);
         setRecords(recs);
       } catch { /* not signed in */ }
+      setLoaded(true);
     })();
   }, [agent.id]);
+
+  // Consensus needs a second agent to make the claim — stay hidden until one exists.
+  if (!loaded || (!agents.length && !records.length)) return null;
 
   const summarizer = agents.find((a) => a.id === summarizerId);
 
@@ -149,7 +154,6 @@ export default function AgentConsensus({ agent, wallet }) {
           <option key={a.id} value={a.id}>{a.name} — level {a.level || 0}</option>
         ))}
       </select>
-      {!agents.length && <p className="text-xs text-amber-500 -mt-2 mb-3">Create a second agent to act as the summarizer.</p>}
 
       <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Subject transaction</label>
       <div className="flex gap-2 mt-1 mb-3">

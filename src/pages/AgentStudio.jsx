@@ -16,12 +16,12 @@ export default function AgentStudioPage() {
 
   const onWallet = (w) => { saveAgentWallet(w); setWallet(w); };
 
-  const createAgent = async () => {
+  const createAgent = async (preset) => {
     const user = await base44.auth.me();
     const created = await base44.entities.AgentInternetAgent.create({
-      name: "New Agent",
-      task: "",
-      system_prompt: "You are an autonomous agent on the Agent Internet. You reason about on-chain data and act only with verifiable proof.",
+      name: preset?.name || "New Agent",
+      task: preset?.task || "",
+      system_prompt: preset?.system_prompt || "You are an autonomous agent on the Agent Internet. You reason about on-chain data and act only with verifiable proof.",
       user_email: user.email,
       wallet_address: wallet?.address || "",
       training_examples: [],
