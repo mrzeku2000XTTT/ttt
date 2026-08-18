@@ -18,11 +18,11 @@ export default function AgentChat({ agent }) {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const examples = agent?.training_examples || [];
-  const fewShot = examples.slice(-8).map((e) => `User: ${e.input}\nAgent: ${e.output}`).join("\n\n");
 
   const callLLM = async (userText) => {
-    const prompt = `${agent.system_prompt}\n\nYou are ${agent.name}. ${agent.task || ""}\n\nBelow are examples of how you were trained to respond. Follow the same style and substance.\n\n${fewShot}\n\nNow respond to the user. Reply with only your answer, no preamble.\nUser: ${userText}\nAgent:`;
-    const res = await base44.integrations.Core.InvokeLLM({ prompt });
+    const exampleBlock = examples.slice(-8).map((e, i) => `--- EXAMPLE ${i + 1} ---\nUSER: ${e.input}\nAGENT: ${e.output}`).join("\n\n");
+    const prompt = `You are ${agent.name}, an AI agent that was trained on the examples below.\n\nTASK: ${agent.task || "Respond to the user the way you were trained to."}\n\nPERSONA:\n${agent.system_prompt}\n\n${examples.length ? `TRAINING EXAMPLES — match the tone, format, and substance of these exactly:\n${exampleBlock}\n\n` : ""}INSTRUCTIONS:\n- Respond ONLY with your answer to the user. No preamble, no "Agent:" prefix, no meta commentary.\n- Use the same style, voice, and depth shown in the training examples.\n- If the user's message looks like a training input, answer it exactly the way a trained agent would.\n\nUSER MESSAGE:\n${userText}\n\nYOUR ANSWER:`;
+    const res = await base44.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
     return typeof res === "string" ? res : res?.response || res?.text || JSON.stringify(res);
   };
 
