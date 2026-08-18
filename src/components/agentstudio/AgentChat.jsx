@@ -81,7 +81,7 @@ export default function AgentChat({ agent }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-6 flex flex-col">
+    <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-4 sm:p-6 flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Bot className="w-4 h-4 text-zinc-400" />

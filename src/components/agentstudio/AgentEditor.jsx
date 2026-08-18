@@ -53,12 +53,12 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-5 pb-24">
-      <div className="flex items-center justify-between mb-5">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-zinc-500 hover:text-zinc-900">
+    <div className="max-w-5xl mx-auto px-4 sm:px-5 pb-24">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+        <button onClick={onBack} className="self-start flex items-center gap-1.5 text-sm font-semibold text-zinc-500 hover:text-zinc-900">
           <ArrowLeft className="w-4 h-4" /> Dashboard
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={remove} className="h-9 px-3 rounded-full text-zinc-400 hover:text-red-500 text-xs font-semibold flex items-center gap-1.5">
             <Trash2 className="w-3.5 h-3.5" /> Delete
           </button>
@@ -72,7 +72,7 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
       </div>
 
       {editingSetup ? (
-        <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-6 mb-4">
+        <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-4 sm:p-6 mb-4">
           <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Agent name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-10 px-3 mt-1 mb-3 rounded-xl border border-zinc-200 text-sm outline-none focus:border-zinc-400" />
           <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Task / skill</label>
@@ -84,10 +84,10 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-5 mb-4">
+        <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-4 sm:p-5 mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-lg font-[800] text-zinc-900">{name}</h2>
+              <h2 className="text-base sm:text-lg font-[800] text-zinc-900 break-words">{name}</h2>
               {task && <p className="text-xs font-semibold text-cyan-600 mt-0.5">{task}</p>}
               <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{systemPrompt}</p>
               <div className="flex items-center gap-3 text-[11px] text-zinc-400 mt-2">

@@ -27,18 +27,18 @@ export default function AgentDashboard({ onOpen, onNew }) {
   const wallet = getAgentWallet();
 
   return (
-    <div className="max-w-5xl mx-auto px-5 pb-24">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-xl font-[800] text-zinc-900">Your agents</h2>
-          <p className="text-sm text-zinc-500">Each agent is your own trained model — only visible to you.</p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-5 pb-24">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+        <div className="min-w-0">
+          <h2 className="text-lg sm:text-xl font-[800] text-zinc-900">Your agents</h2>
+          <p className="text-xs sm:text-sm text-zinc-500">Each agent is your own trained model — only visible to you.</p>
         </div>
         <button
           onClick={() => {
             if (!authed) { window.location.href = "/login"; return; }
             onNew();
           }}
-          className="h-10 px-4 rounded-full bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 flex items-center gap-1.5"
+          className="h-11 px-4 rounded-full bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0"
         >
           <Plus className="w-4 h-4" />
           New agent
@@ -46,7 +46,7 @@ export default function AgentDashboard({ onOpen, onNew }) {
       </div>
 
       {!authed ? (
-        <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-8 text-center">
+        <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-6 sm:p-8 text-center">
           <Bot className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
           <p className="text-sm font-semibold text-zinc-700 mb-1">Sign in to train your agents</p>
           <p className="text-xs text-zinc-400 mb-4">Your trained models are saved to your account.</p>
@@ -59,7 +59,7 @@ export default function AgentDashboard({ onOpen, onNew }) {
           <Loader2 className="w-4 h-4 animate-spin" /> Loading your agents…
         </div>
       ) : agents.length === 0 ? (
-        <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-8 text-center">
+        <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-6 sm:p-8 text-center">
           <Zap className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
           <p className="text-sm font-semibold text-zinc-700 mb-1">No agents yet</p>
           <p className="text-xs text-zinc-400 mb-4">
@@ -74,7 +74,7 @@ export default function AgentDashboard({ onOpen, onNew }) {
             <button
               key={a.id}
               onClick={() => onOpen(a)}
-              className="text-left bg-white rounded-2xl ring-1 ring-zinc-200 p-5 hover:ring-zinc-300 transition-all"
+              className="text-left bg-white rounded-2xl ring-1 ring-zinc-200 p-4 sm:p-5 hover:ring-zinc-300 transition-all"
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center">

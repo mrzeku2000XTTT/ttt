@@ -134,7 +134,7 @@ export default function AgentConsensus({ agent, wallet }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-6">
+    <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-4 sm:p-6">
       <div className="flex items-center gap-2 mb-1">
         <Gavel className="w-4 h-4 text-zinc-400" />
         <h3 className="font-bold text-zinc-900">Consensus — agent audits agent</h3>

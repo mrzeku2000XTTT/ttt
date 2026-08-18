@@ -56,7 +56,7 @@ export default function AgentWalletCard({ wallet, onWallet, expectedAddress }) {
 
   if (!wallet) {
     return (
-      <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-6">
+      <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-2">
           <Wallet className="w-4 h-4 text-zinc-400" />
           <h3 className="font-bold text-zinc-900">AgentInternet Wallet</h3>
@@ -104,7 +104,7 @@ export default function AgentWalletCard({ wallet, onWallet, expectedAddress }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-6">
+    <div className="bg-white rounded-2xl ring-1 ring-zinc-200 p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Wallet className="w-4 h-4 text-zinc-400" />
