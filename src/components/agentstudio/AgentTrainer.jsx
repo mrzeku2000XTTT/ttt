@@ -1,17 +1,18 @@
 import React, { useState } from "react";
-import { Plus, Trash2, Zap, Loader2, Send, Search, Sparkles } from "lucide-react";
+import { Trash2, Zap, Loader2, Send, Search, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 /**
- * AgentTrainer — REAL training.
+ * AgentTrainer — generic skill training.
  *
- * Instead of typing fake input/output, the user pastes a real Kaspa txid. We
- * fetch the live on-chain transaction, format its key details as the input,
- * and auto-draft a plain-English summary as the expected output (editable).
- * The user then runs a training epoch — a real self-send anchors it on-chain.
+ * The user writes any input (a question, a txid, code, a prompt — anything
+ * matching the agent's task). We auto-draft an expected output using the
+ * agent's task + system prompt, so the agent learns the SKILL the user
+ * defined — not a hardcoded behaviour. Each epoch is anchored by a real
+ * Kaspa self-send.
  *
- * The saved example contains the actual transaction data, so the agent learns
- * from real data, not placeholders.
+ * For transaction-analyst agents, an optional "fetch live tx" helper pulls
+ * real on-chain data into the input.
  */
 function formatTxInput(tx) {
   if (!tx) return "";
@@ -37,7 +38,7 @@ function formatTxInput(tx) {
   return lines.join("\n");
 }
 
-export default function AgentTrainer({ agent, wallet, onChanged }) {
+export default function AgentTrainer({ agent, wallet, onChanged, task, systemPrompt }) {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [txid, setTxid] = useState("");
@@ -45,8 +46,25 @@ export default function AgentTrainer({ agent, wallet, onChanged }) {
   const [fetching, setFetching] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [error, setError] = useState("");
+  const [showTxHelper, setShowTxHelper] = useState(false);
 
   const examples = agent?.training_examples || [];
+  const skill = task || agent?.task || "";
+  const persona = systemPrompt || agent?.system_prompt || "";
+
+  const autoDraft = async () => {
+    if (!input.trim()) return;
+    setDrafting(true);
+    setError("");
+    try {
+      const prompt = `You are training an AI agent. Its skill/task is: "${skill}"\nIts system prompt is: "${persona}"\n\nGiven this input, write the ideal output the agent should produce. Match the skill exactly. Output ONLY the answer, no preamble.\n\nINPUT:\n${input}`;
+      const res = await base44.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
+      setOutput(typeof res === "string" ? res : res?.response || res?.text || "");
+    } catch (e) {
+      setError(e?.message || "Auto-draft failed");
+    }
+    setDrafting(false);
+  };
 
   const fetchTx = async () => {
     const id = txid.trim();
@@ -57,20 +75,7 @@ export default function AgentTrainer({ agent, wallet, onChanged }) {
       const res = await base44.functions.invoke("getKaspaTransactionDetails", { txId: id });
       const tx = res?.data || res;
       if (tx?.error) throw new Error(tx.error);
-      const formatted = formatTxInput(tx);
-      setInput(formatted);
-      // auto-draft a real summary from the actual on-chain data
-      setDrafting(true);
-      try {
-        const draftRes = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are summarizing a real Kaspa transaction for a human. Using ONLY the data below, write a concise plain-English summary with the key details: sender, receiver, amount, status, and time. No preamble.\n\n${formatted}`,
-          model: "claude_sonnet_4_6",
-        });
-        setOutput(typeof draftRes === "string" ? draftRes : draftRes?.response || draftRes?.text || "");
-      } catch {
-        setOutput("");
-      }
-      setDrafting(false);
+      setInput(formatTxInput(tx));
     } catch (e) {
       setError(e?.message || "Could not fetch transaction");
     }
@@ -82,7 +87,6 @@ export default function AgentTrainer({ agent, wallet, onChanged }) {
     setTraining(true);
     setError("");
     try {
-      // 0. pre-flight balance check
       const balRes = await base44.functions.invoke("getKaspaBalance", { address: wallet.address });
       const bal = balRes?.data || balRes;
       const kas = bal?.balanceKAS ?? bal?.balance ?? 0;
@@ -90,7 +94,6 @@ export default function AgentTrainer({ agent, wallet, onChanged }) {
         throw new Error("Insufficient balance — send KAS to your AgentInternet wallet address above to fund a training epoch. Each epoch is a real self-send transaction and needs funds to cover it.");
       }
 
-      // 1. on-chain self-send anchors this epoch
       const txRes = await base44.functions.invoke("sendKaspaTransaction", {
         privateKey: wallet.privateKey,
         fromAddress: wallet.address,
@@ -101,7 +104,6 @@ export default function AgentTrainer({ agent, wallet, onChanged }) {
       if (tx?.error) throw new Error(tx.error);
       const anchorTxId = typeof tx.txId === "string" ? tx.txId : String(tx.txId || "");
 
-      // 2. append the example, anchored by the self-send txid
       const newExample = {
         input: input.trim(),
         output: output.trim(),
@@ -145,8 +147,8 @@ export default function AgentTrainer({ agent, wallet, onChanged }) {
         </div>
         <span className="text-xs font-semibold text-zinc-400">Level {agent?.level || 0}</span>
       </div>
-      <p className="text-sm text-zinc-500 leading-relaxed mb-4">
-        Paste a real Kaspa transaction ID. We fetch the live on-chain data, format it as the input, and auto-draft a plain-English summary you can edit. Each epoch is anchored by a real self-send.
+      <p className="text-sm text-zinc-500 leading-relaxed mb-3">
+        Train this agent on its skill: <span className="font-semibold text-zinc-700">{skill || "any task you defined"}</span>. Write an input, auto-draft the ideal output, then run an epoch — each one is anchored by a real self-send.
       </p>
 
       <div className="grid grid-cols-3 gap-2 mb-4">
@@ -162,48 +164,48 @@ export default function AgentTrainer({ agent, wallet, onChanged }) {
         ))}
       </div>
 
-      {/* Live tx fetch */}
-      <div className="rounded-xl bg-zinc-50 border border-zinc-200/70 p-3 mb-3">
-        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Fetch live transaction</label>
-        <div className="flex gap-2 mt-1">
-          <input
-            value={txid}
-            onChange={(e) => setTxid(e.target.value)}
-            placeholder="e.g. b560adf6ecd20e11c819d82d..."
-            className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-xs font-mono outline-none focus:border-zinc-400"
-          />
-          <button
-            onClick={fetchTx}
-            disabled={!txid.trim() || fetching}
-            className="h-10 px-3 rounded-lg bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800 disabled:opacity-40 flex items-center gap-1.5"
-          >
-            {fetching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-            {fetching ? "Fetching" : "Fetch"}
-          </button>
+      {/* Optional live-tx helper for transaction agents */}
+      <button onClick={() => setShowTxHelper((s) => !s)} className="text-[11px] text-zinc-400 hover:text-zinc-700 font-semibold flex items-center gap-1 mb-2">
+        {showTxHelper ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        Fetch live Kaspa transaction
+      </button>
+      {showTxHelper && (
+        <div className="rounded-xl bg-zinc-50 border border-zinc-200/70 p-3 mb-3">
+          <div className="flex gap-2">
+            <input
+              value={txid}
+              onChange={(e) => setTxid(e.target.value)}
+              placeholder="e.g. b560adf6ecd20e11c819d82d..."
+              className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-xs font-mono outline-none focus:border-zinc-400"
+            />
+            <button onClick={fetchTx} disabled={!txid.trim() || fetching} className="h-10 px-3 rounded-lg bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800 disabled:opacity-40 flex items-center gap-1.5">
+              {fetching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              {fetching ? "Fetching" : "Fetch"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Example input {fetching && "(fetching…)"}</label>
+      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Example input</label>
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
         rows={4}
-        placeholder="Live transaction data will appear here after you fetch a txid…"
-        className="w-full px-3 py-2 mt-1 mb-3 rounded-xl border border-zinc-200 text-xs font-mono outline-none focus:border-zinc-400 resize-y"
+        placeholder={skill ? `An input for: ${skill}` : "Any input your agent should handle…"}
+        className="w-full px-3 py-2 mt-1 mb-2 rounded-xl border border-zinc-200 text-sm outline-none focus:border-zinc-400 resize-y"
       />
       <div className="flex items-center justify-between mb-1">
         <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Expected output {drafting && "(auto-drafting…)"}</label>
-        {input && !output && !drafting && (
-          <button onClick={fetchTx} className="text-[10px] text-cyan-600 font-bold flex items-center gap-1 hover:underline">
-            <Sparkles className="w-3 h-3" /> Re-draft
-          </button>
-        )}
+        <button onClick={autoDraft} disabled={!input.trim() || drafting} className="text-[10px] text-cyan-600 font-bold flex items-center gap-1 hover:underline disabled:opacity-40">
+          {drafting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+          Auto-draft from skill
+        </button>
       </div>
       <textarea
         value={output}
         onChange={(e) => setOutput(e.target.value)}
         rows={3}
-        placeholder="Auto-drafted summary — edit to match how you want the agent to respond."
+        placeholder="The ideal answer — auto-drafted from the agent's task, then editable."
         className="w-full px-3 py-2 mt-1 mb-3 rounded-xl border border-zinc-200 text-sm outline-none focus:border-zinc-400 resize-y"
       />
 
