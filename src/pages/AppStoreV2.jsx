@@ -51,6 +51,14 @@ export default function AppStoreV2Page() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Auto-toggle to the "All" tab whenever a search query is entered.
+  useEffect(() => {
+    if (search.trim()) {
+      setCategory("All");
+      setView("all");
+    }
+  }, [search]);
+
   const isAdmin = user?.role === "admin";
 
   return (
