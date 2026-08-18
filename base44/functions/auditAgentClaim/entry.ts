@@ -34,6 +34,10 @@ export default async function (req) {
       input_count: (tx.inputs || []).length,
       output_count: (tx.outputs || []).length,
       total_output_kas: Number(totalOut.toFixed(8)),
+      outputs: (tx.outputs || []).map((o) => ({
+        amount_kas: Number(Number(o.amount || 0).toFixed(8)),
+        address: o.script_public_key_address || null,
+      })),
       addresses: [...new Set(addresses)],
     };
 
@@ -55,8 +59,19 @@ export default async function (req) {
     if (badAddrs.length) mismatches.push(`Address ${badAddrs[0].slice(0, 24)}… does not appear in this transaction`);
     else if (claimAddrs.length) checks.push('All addresses named in the claim appear on-chain');
 
-    const claimNums = (claim.match(/\d+(?:\.\d+)?/g) || []).map(Number).filter((n) => n > 0);
-    const factNums = [facts.total_output_kas, facts.input_count, facts.output_count, Number(facts.blue_score) || 0];
+    // Strip tx ids and addresses first — their hex/bech32 characters contain digits
+    // that would otherwise be read as claimed amounts.
+    const proseOnly = claim
+      .replace(/\b[0-9a-f]{64}\b/gi, ' ')
+      .replace(/kaspa:[a-z0-9]{20,}/gi, ' ');
+    const claimNums = (proseOnly.match(/\d+(?:\.\d+)?/g) || []).map(Number).filter((n) => n > 0);
+    const factNums = [
+      facts.total_output_kas,
+      facts.input_count,
+      facts.output_count,
+      Number(facts.blue_score) || 0,
+      ...facts.outputs.map((o) => o.amount_kas),
+    ];
     const amountLike = claimNums.filter((n) => n > 1);
     if (amountLike.length) {
       const matched = amountLike.some((n) =>
