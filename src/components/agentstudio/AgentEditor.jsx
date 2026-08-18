@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import AgentWalletCard from "@/components/agentstudio/AgentWalletCard";
 import AgentTrainer from "@/components/agentstudio/AgentTrainer";
 import AgentChat from "@/components/agentstudio/AgentChat";
+import AgentConsensus from "@/components/agentstudio/AgentConsensus";
 import PushToGitHubModal from "@/components/tttbuilder/PushToGitHubModal";
 
 export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged, onDeleted }) {
@@ -102,6 +103,10 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
           <AgentChat agent={{ ...agent, name, task, system_prompt: systemPrompt }} />
         </div>
         <AgentTrainer agent={agent} wallet={wallet} onChanged={onChanged} task={task} systemPrompt={systemPrompt} />
+      </div>
+
+      <div className="mt-4">
+        <AgentConsensus agent={{ ...agent, name, task }} wallet={wallet} />
       </div>
 
       <PushToGitHubModal
