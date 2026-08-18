@@ -13,9 +13,13 @@ export default function AgentChat({ agent }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
-  const endRef = useRef(null);
+  const scrollRef = useRef(null);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Scroll only the chat container — scrollIntoView was dragging the whole page.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
 
   const examples = agent?.training_examples || [];
 
@@ -96,7 +100,7 @@ export default function AgentChat({ agent }) {
         <p className="text-[11px] text-zinc-400 mb-3">Add training examples first, then chat with your agent or replay its training to see how well it learned.</p>
       )}
 
-      <div className="flex-1 min-h-[200px] max-h-[340px] overflow-y-auto space-y-3 mb-3">
+      <div ref={scrollRef} className="flex-1 min-h-[200px] max-h-[340px] overflow-y-auto overscroll-contain space-y-3 mb-3">
         {messages.length === 0 ? (
           <p className="text-xs text-zinc-400 text-center py-8">Chat with your trained agent, or hit “Run training test” to replay every example.</p>
         ) : messages.map((m, i) => (
@@ -119,7 +123,6 @@ export default function AgentChat({ agent }) {
             </div>
           </div>
         ))}
-        <div ref={endRef} />
       </div>
 
       <div className="flex items-center gap-2">
