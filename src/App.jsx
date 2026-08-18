@@ -37,6 +37,7 @@ import ExplorePage from './pages/Explore';
 import AgentInternetPage from './pages/AgentInternet';
 import AgentInternetLandingPage from './pages/AgentInternetLanding';
 import AppStoreV2Page from './pages/AppStoreV2';
+import AgentStudioPage from './pages/AgentStudio';
 import UIClonerPage from './pages/UICloner';
 import KrustPage from './pages/Krust';
 import HaruPage from './pages/Haru';
@@ -255,6 +256,7 @@ const AuthenticatedApp = () => {
       <Route path="/AgentInternetLanding" element={<AgentInternetLandingPage />} />
       <Route path="/AgentInternet" element={<AdminRoute><AgentInternetPage /></AdminRoute>} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
+      <Route path="/AgentStudio" element={<AgentStudioPage />} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="/ValorantRange" element={<ValorantRangePage />} />
       <Route path="/UICloner" element={<UIClonerPage />} />

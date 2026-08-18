@@ -127,7 +127,7 @@ export default function AgentInternetAlphaCard() {
 
         {/* CTA */}
         <Link
-          to="/TTTBuilder"
+          to="/AgentStudio"
           className="mt-auto group flex items-center justify-center gap-2 h-11 px-5 rounded-full bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 transition-all active:scale-[0.98]"
         >
           <Bot className="w-4 h-4" />
