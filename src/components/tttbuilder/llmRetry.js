@@ -47,6 +47,15 @@ export async function invokeLLMWithRetry(args, opts = {}) {
   if (system) {
     rest.prompt = `${system}\n\n${rest.prompt || ""}`;
   }
+  // The platform's structured-output adapter is broken for the newest Claude
+  // models ("output_config.format: Extra inputs are not permitted"). The models
+  // themselves work — so request the JSON via the prompt instead and let the
+  // caller's parseResult handle the string. This is what keeps Opus 4.8 usable.
+  const BROKEN_SCHEMA_MODELS = ["claude_opus_4_8", "claude-sonnet-5"];
+  if (rest.response_json_schema && BROKEN_SCHEMA_MODELS.includes(rest.model)) {
+    rest.prompt += `\n\nCRITICAL OUTPUT FORMAT: Respond with ONLY a single valid JSON object matching this schema — no markdown fences, no commentary before or after, start with { and end with }:\n${JSON.stringify(rest.response_json_schema)}`;
+    delete rest.response_json_schema;
+  }
   let lastErr = null;
   for (let attempt = 0; attempt <= max; attempt++) {
     try {
