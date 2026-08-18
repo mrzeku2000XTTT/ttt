@@ -16,11 +16,20 @@ export default function AgentWalletCard({ wallet, onWallet }) {
   const loadBalance = useCallback(async () => {
     if (!wallet?.address) return;
     setLoading(true);
+    setError("");
     try {
       const res = await base44.functions.invoke("getKaspaBalance", { address: wallet.address });
       const data = res?.data || res;
-      setBalance(data?.balance ?? data?.available ?? 0);
-    } catch {
+      if (data?.success === false && data?.error) {
+        setError(data.error);
+        setBalance(0);
+      } else {
+        // getKaspaBalance returns { balanceKAS, balanceSompi }
+        const kas = data?.balanceKAS ?? data?.balance ?? data?.available ?? 0;
+        setBalance(typeof kas === "number" ? kas : Number(kas) || 0);
+      }
+    } catch (e) {
+      setError(e?.message || "Could not reach Kaspa network");
       setBalance(null);
     }
     setLoading(false);
@@ -101,7 +110,11 @@ export default function AgentWalletCard({ wallet, onWallet }) {
         </span>
         <span className="text-sm font-semibold text-zinc-400">KAS</span>
       </div>
-      <p className="text-xs text-zinc-400 mb-4">Fund this address to run training epochs.</p>
+      <p className="text-xs text-zinc-400 mb-2">Fund this address to run training epochs.</p>
+      {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
+      {!error && (balance === 0 || balance === null) && (
+        <p className="text-xs text-amber-500 mb-3">No balance detected yet — send KAS to the address above to start training.</p>
+      )}
 
       <div className="rounded-xl bg-zinc-50 border border-zinc-200/70 p-3 mb-3">
         <div className="flex items-center justify-between gap-2">
@@ -125,8 +138,13 @@ export default function AgentWalletCard({ wallet, onWallet }) {
 
       {showKey && (
         <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3">
-          <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide mb-1">Private key — never share</p>
-          <p className="text-[10px] font-mono text-amber-900 break-all">{wallet.privateKey}</p>
+          <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide mb-1">Private key — local only, never shared</p>
+          <p className="text-[10px] font-mono text-amber-900 break-all mb-2">{wallet.privateKey}</p>
+          <ul className="text-[10px] text-amber-800 leading-relaxed space-y-0.5">
+            <li>• This key lives only on this device. It is never sent to a server or stored in a database.</li>
+            <li>• Your AI agent is locked out of this key — it can never read it or spend your funds.</li>
+            <li>• Import this key into any standard Kaspa wallet (Zelcore, KasWare, OneKey, etc.) to access the same funds elsewhere.</li>
+          </ul>
         </div>
       )}
     </div>

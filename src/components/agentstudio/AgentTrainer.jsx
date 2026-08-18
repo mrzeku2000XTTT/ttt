@@ -22,7 +22,15 @@ export default function AgentTrainer({ agent, wallet, onChanged }) {
     setTraining(true);
     setError("");
     try {
-      // 1. on-chain self-send anchors this epoch
+      // 0. pre-flight: make sure the wallet actually has funds before we try to sign
+      const balRes = await base44.functions.invoke("getKaspaBalance", { address: wallet.address });
+      const bal = balRes?.data || balRes;
+      const kas = bal?.balanceKAS ?? bal?.balance ?? 0;
+      if (!kas || Number(kas) <= 0) {
+        throw new Error("Insufficient balance — send KAS to your AgentInternet wallet address above to fund a training epoch. Each epoch is a real self-send transaction and needs funds to cover it.");
+      }
+
+      // 1. on-chain self-send anchors this epoch (automatic — one tx per example)
       const txRes = await base44.functions.invoke("sendKaspaTransaction", {
         privateKey: wallet.privateKey,
         fromAddress: wallet.address,
