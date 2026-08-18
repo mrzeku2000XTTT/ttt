@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bot, Anchor, Github } from "lucide-react";
+import { Sparkles, Box } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getAgentWallet } from "@/lib/agentInternetWallet";
 
@@ -13,31 +13,13 @@ function fmtKas(n) {
   return (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
-const FEATURES = [
-  {
-    icon: Bot,
-    title: "Train agents",
-    desc: "Teach your agent a skill with simple input → output examples.",
-  },
-  {
-    icon: Anchor,
-    title: "On-chain proof",
-    desc: "Every training step is locked to a real Kaspa self-send tx.",
-  },
-  {
-    icon: Github,
-    title: "Export anywhere",
-    desc: "Push your trained agent to GitHub as runnable code.",
-  },
-];
-
+/** AgentStudio Landing — clean entry; opens the 3D AGENTINTERNETSTUDIO index. */
 export default function AgentStudioLanding({ onEnter, onNew }) {
   const navigate = useNavigate();
   const [lines, setLines] = useState([]);
   const [visible, setVisible] = useState(0);
   const [bootDone, setBootDone] = useState(false);
 
-  // Gather real facts about the user's wallet + agents, then build terminal lines.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -90,7 +72,6 @@ export default function AgentStudioLanding({ onEnter, onNew }) {
 
   return (
     <main className="relative w-full min-h-screen overflow-hidden bg-black flex flex-col font-sans selection:bg-cyan-400/30 selection:text-white">
-      {/* Cosmic video background */}
       <video
         autoPlay loop muted playsInline
         className="fixed inset-0 w-full h-full object-cover z-0"
@@ -99,13 +80,20 @@ export default function AgentStudioLanding({ onEnter, onNew }) {
       <div className="fixed inset-0 z-[1] bg-gradient-to-b from-black/55 via-black/45 to-black/80" />
 
       {/* Header — TTT back to previous page */}
-      <header className="relative z-10 px-6 sm:px-10 py-6">
+      <header className="relative z-10 px-6 sm:px-10 py-6 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
           className="text-white text-2xl sm:text-3xl font-bold tracking-tight hover:text-cyan-300 transition-colors"
           title="Back"
         >
           TTT
+        </button>
+        <button
+          onClick={() => navigate("/AgentInternetStudio")}
+          className="flex items-center gap-1.5 text-white/80 text-xs font-medium rounded-full px-3 py-1.5 bg-white/5 border border-white/15 hover:bg-white/10 transition-colors"
+          title="Open 3D Studio"
+        >
+          <Box className="w-3.5 h-3.5 text-cyan-300" /> 3D Studio
         </button>
       </header>
 
@@ -129,32 +117,18 @@ export default function AgentStudioLanding({ onEnter, onNew }) {
         </div>
       </motion.div>
 
-      {/* Clear, easy-to-understand hero + features + CTA */}
+      {/* Hero + CTA */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25 }} className="w-full max-w-3xl">
+          <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 bg-white/5 border border-white/15 text-white/80 text-[11px] font-medium mb-5">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-300" /> ALPHA STUDIO
+          </div>
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-medium tracking-tight text-white leading-[1.05] mb-4">
             Agent Studio
           </h1>
           <p className="text-white/80 text-sm sm:text-lg max-w-xl mx-auto leading-relaxed mb-9">
-            Create and train your own AI agent on Kaspa — no code, no custody. Each training step is provably locked to the blockchain.
+            Create and train your own AI agent on Kaspa — provable, non-custodial, yours to export.
           </p>
-
-          {/* Feature cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-9 text-left">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div key={f.title} className="rounded-2xl p-4 backdrop-blur-md bg-white/5 border border-white/10">
-                  <div className="w-9 h-9 rounded-xl bg-cyan-400/15 flex items-center justify-center mb-3">
-                    <Icon className="w-4.5 h-4.5 text-cyan-300" />
-                  </div>
-                  <h3 className="text-white text-sm font-semibold mb-1">{f.title}</h3>
-                  <p className="text-white/60 text-xs leading-relaxed">{f.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={onEnter}
