@@ -24,9 +24,22 @@ export async function invokeLLMWithRetry(args, opts = {}) {
   // Hosted model with a user-provided API key → call the provider directly
   // (bypasses Base44 credits entirely). Falls back to Base44 InvokeLLM when
   // no key is set, so TTT Agent 1 / automatic / keyless models still work.
+  // If the user's key is invalid/expired (401/403), gracefully fall back to
+  // Base44 InvokeLLM so TTT Agent 1 keeps working instead of hard-failing.
   const hostedProvider = resolveHostedModel(args.model);
   if (hostedProvider) {
-    return callLocalLlm({ ...args, _resolvedProvider: hostedProvider });
+    try {
+      return await callLocalLlm({ ...args, _resolvedProvider: hostedProvider });
+    } catch (err) {
+      const msg = String(err?.message || err || "").toLowerCase();
+      const isAuthFailure = /401|403|invalid.*key|unauthorized|missing authentication|authentication header/.test(msg);
+      // Only fall back for auth failures — other errors (network, rate limit)
+      // should surface so the user can fix their endpoint/key.
+      if (!isAuthFailure) throw err;
+      // Auth failed with the user's key → fall through to Base44 InvokeLLM
+      // so TTT Agent 1 still generates. The user can fix their key in Settings.
+      console.warn(`[TTT Builder] Hosted key for ${args.model} failed (${err.message}). Falling back to Base44 InvokeLLM.`);
+    }
   }
   // Base44 InvokeLLM has no separate system role — fold it into the prompt so
   // hosted/keyless models still get the TTT Agent skills in their context.
