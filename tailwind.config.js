@@ -5,6 +5,7 @@ module.exports = {
   theme: {
   	extend: {
   		fontFamily: {
+  			sans: ['"Helvetica Regular"', 'Inter', 'system-ui', 'sans-serif'],
   			heading: ['Fraunces', 'Georgia', 'serif'],
   			body: ['Inter', 'system-ui', 'sans-serif'],
   			display: ['Nunito', 'system-ui', 'sans-serif'],

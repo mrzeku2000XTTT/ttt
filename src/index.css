@@ -116,6 +116,7 @@ button:focus-visible {
     --font-heading: 'Fraunces', Georgia, serif;
     --font-body: 'Inter', system-ui, sans-serif;
     --font-display: 'Nunito', system-ui, sans-serif;
+    --font-sans: "Helvetica Regular", Inter, system-ui, sans-serif;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -154,6 +155,7 @@ button:focus-visible {
     --sidebar-foreground: 240 4.8% 95.9%;
     --font-heading: 'Fraunces', Georgia, serif;
     --font-body: 'Inter', system-ui, sans-serif;
+    --font-sans: "Helvetica Regular", Inter, system-ui, sans-serif;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
