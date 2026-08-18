@@ -256,7 +256,7 @@ const AuthenticatedApp = () => {
       <Route path="/AgentInternetLanding" element={<AgentInternetLandingPage />} />
       <Route path="/AgentInternet" element={<AdminRoute><AgentInternetPage /></AdminRoute>} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
-      <Route path="/AgentStudio" element={<AgentStudioPage />} />
+      <Route path="/AgentStudio" element={<AdminRoute><AgentStudioPage /></AdminRoute>} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
       <Route path="/ValorantRange" element={<ValorantRangePage />} />
       <Route path="/UICloner" element={<UIClonerPage />} />
