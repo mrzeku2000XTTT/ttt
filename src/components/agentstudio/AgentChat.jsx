@@ -20,8 +20,25 @@ export default function AgentChat({ agent }) {
   const examples = agent?.training_examples || [];
 
   const callLLM = async (userText) => {
+    let liveData = "";
+    // If the user pasted a Kaspa txid, fetch the REAL on-chain data so the
+    // agent summarizes actual transaction details — not hallucinated ones.
+    const txMatch = userText.match(/\b([a-f0-9]{64})\b/i);
+    if (txMatch) {
+      try {
+        const txRes = await base44.functions.invoke("getKaspaTransactionDetails", { txId: txMatch[1] });
+        const tx = txRes?.data || txRes;
+        if (tx && !tx.error) {
+          const totalOut = (tx.outputs || []).reduce((s, o) => s + (o.amount || 0), 0);
+          const from = (tx.inputs || []).map((i) => i.previous_outpoint_address).filter(Boolean)[0] || "unknown";
+          const to = (tx.outputs || []).map((o) => o.script_public_key_address).filter(Boolean)[0] || "unknown";
+          liveData = `\n\n--- LIVE TRANSACTION DATA (fetched on-chain) ---\nTransaction ID: ${tx.transaction_id}\nStatus: ${tx.is_accepted === false ? "not accepted" : "accepted"}\nBlock time: ${tx.block_time ? new Date(Number(tx.block_time) * 1000).toISOString() : "unknown"}\nFrom: ${from}\nTo: ${to}\nTotal output: ${totalOut} KAS\nInputs: ${tx.inputs?.length || 0}\nOutputs: ${tx.outputs?.length || 0}\n${(tx.outputs || []).slice(0, 8).map((o, i) => `  [${i}] ${o.script_public_key_address} — ${o.amount} KAS`).join("\n")}\n--- END LIVE DATA ---`;
+        }
+      } catch { /* ignore — fall back to text-only */ }
+    }
+
     const exampleBlock = examples.slice(-8).map((e, i) => `--- EXAMPLE ${i + 1} ---\nUSER: ${e.input}\nAGENT: ${e.output}`).join("\n\n");
-    const prompt = `You are ${agent.name}, an AI agent that was trained on the examples below.\n\nTASK: ${agent.task || "Respond to the user the way you were trained to."}\n\nPERSONA:\n${agent.system_prompt}\n\n${examples.length ? `TRAINING EXAMPLES — match the tone, format, and substance of these exactly:\n${exampleBlock}\n\n` : ""}INSTRUCTIONS:\n- Respond ONLY with your answer to the user. No preamble, no "Agent:" prefix, no meta commentary.\n- Use the same style, voice, and depth shown in the training examples.\n- If the user's message looks like a training input, answer it exactly the way a trained agent would.\n\nUSER MESSAGE:\n${userText}\n\nYOUR ANSWER:`;
+    const prompt = `You are ${agent.name}, an AI agent that was trained on the examples below.\n\nTASK: ${agent.task || "Respond to the user the way you were trained to."}\n\nPERSONA:\n${agent.system_prompt}\n\n${examples.length ? `TRAINING EXAMPLES — match the tone, format, and substance of these exactly:\n${exampleBlock}\n\n` : ""}INSTRUCTIONS:\n- Respond ONLY with your answer to the user. No preamble, no "Agent:" prefix, no meta commentary.\n- Use the same style, voice, and depth shown in the training examples.\n- If live transaction data is provided below, summarize its REAL details — never invent amounts, addresses, or statuses.\n\nUSER MESSAGE:\n${userText}${liveData}\n\nYOUR ANSWER:`;
     const res = await base44.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
     return typeof res === "string" ? res : res?.response || res?.text || JSON.stringify(res);
   };
