@@ -120,7 +120,7 @@ ADDITIVE AGENT INSTALL — when the user asks to "add an agent", "add AI", or "a
 - Return ONLY: the new agent files + the one or two existing files you surgically edited to mount them. Never return the whole project.`;
 
 // TTT Agent 1 = strongest available model + elite engineering directive
-const TTT_AGENT_1 = "claude_opus_4_8";
+const TTT_AGENT_1 = "claude_opus_4_7";
 const AGENT_1_DIRECTIVE = `
 
 YOU ARE TTT AGENT 1 — the highest tier build agent. Work at the level of a staff engineer shipping production software:

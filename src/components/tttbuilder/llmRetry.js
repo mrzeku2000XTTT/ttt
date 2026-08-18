@@ -53,6 +53,16 @@ export async function invokeLLMWithRetry(args, opts = {}) {
       return await base44.integrations.Core.InvokeLLM(rest);
     } catch (err) {
       lastErr = err;
+      // Some model ids are no longer accepted by the platform with structured
+      // output ("output_config.format: Extra inputs are not permitted") or get
+      // retired entirely ("Invalid model"). Fall back to a known-good model
+      // once so builds keep working instead of hard-failing.
+      const emsg = String(err?.message || err || "");
+      if (/output_config\.format|extra inputs are not permitted|invalid model/i.test(emsg) && rest.model !== "claude_opus_4_7") {
+        console.warn(`[TTT Builder] Model "${rest.model}" rejected by platform (${emsg.slice(0, 120)}). Falling back to claude_opus_4_7.`);
+        rest.model = "claude_opus_4_7";
+        continue;
+      }
       if (attempt === max || !isTransientError(err)) throw err;
       // backoff: ~900ms, 1800ms, 3600ms
       await new Promise((r) => setTimeout(r, 900 * Math.pow(2, attempt)));
