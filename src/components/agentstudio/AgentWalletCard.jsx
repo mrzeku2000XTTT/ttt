@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { generateAgentWallet, importAgentWallet } from "@/lib/agentInternetWallet";
 
 /** AgentInternet Wallet — generate on-device, fund it, use it to train. */
-export default function AgentWalletCard({ wallet, onWallet }) {
+export default function AgentWalletCard({ wallet, onWallet, expectedAddress }) {
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -45,7 +45,12 @@ export default function AgentWalletCard({ wallet, onWallet }) {
 
   const doImport = () => {
     try {
-      onWallet(importAgentWallet(pk));
+      const w = importAgentWallet(pk);
+      if (expectedAddress && w.address !== expectedAddress) {
+        setError("That key unlocks a different address than this agent's wallet. Double-check the key you backed up.");
+        return;
+      }
+      onWallet(w);
       setImporting(false);
       setPk("");
       setError("");
@@ -61,15 +66,32 @@ export default function AgentWalletCard({ wallet, onWallet }) {
           <Wallet className="w-4 h-4 text-zinc-400" />
           <h3 className="font-bold text-zinc-900">AgentInternet Wallet</h3>
         </div>
-        <p className="text-sm text-zinc-500 mb-5 leading-relaxed">
-          Create a dedicated wallet for your agent. Keys are generated on this device and never leave it — your main TTT wallet stays untouched.
-        </p>
+        {expectedAddress ? (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 mb-4">
+            <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide mb-1">Wallet key not on this device</p>
+            <p className="text-xs text-amber-800 leading-relaxed mb-2">
+              This agent was trained with the wallet below. Its key lives only on the device you created it on — import that key here to keep using the same funded wallet. Generating a new one will leave the old funds untouched in the old wallet.
+            </p>
+            <p className="text-[10px] font-mono text-amber-900 break-all">{expectedAddress}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-500 mb-5 leading-relaxed">
+            Create a dedicated wallet for your agent. Keys are generated on this device and never leave it — your main TTT wallet stays untouched.
+          </p>
+        )}
         <button
-          onClick={() => onWallet(generateAgentWallet())}
+          onClick={() => setImporting(true)}
           className="w-full h-11 rounded-full bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 transition-colors active:scale-[0.99] flex items-center justify-center gap-2"
         >
+          <Download className="w-4 h-4" />
+          Import wallet key
+        </button>
+        <button
+          onClick={() => onWallet(generateAgentWallet())}
+          className="mt-2 w-full h-10 rounded-full bg-zinc-100 text-zinc-800 text-sm font-semibold hover:bg-zinc-200 flex items-center justify-center gap-2"
+        >
           <Plus className="w-4 h-4" />
-          Generate AgentInternet Wallet
+          Generate a new wallet
         </button>
 
         {importing ? (
@@ -85,11 +107,7 @@ export default function AgentWalletCard({ wallet, onWallet }) {
               Import
             </button>
           </div>
-        ) : (
-          <button onClick={() => setImporting(true)} className="mt-3 w-full text-xs text-zinc-400 hover:text-zinc-700 font-medium">
-            or import an existing key
-          </button>
-        )}
+        ) : null}
       </div>
     );
   }

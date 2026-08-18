@@ -99,7 +99,7 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
 
       <div className="grid lg:grid-cols-2 gap-4 items-start">
         <div className="space-y-4">
-          <AgentWalletCard wallet={wallet} onWallet={onWallet} />
+          <AgentWalletCard wallet={wallet} onWallet={onWallet} expectedAddress={agent.wallet_address || ""} />
           <AgentChat agent={{ ...agent, name, task, system_prompt: systemPrompt }} />
         </div>
         <AgentTrainer agent={agent} wallet={wallet} onChanged={onChanged} task={task} systemPrompt={systemPrompt} />
