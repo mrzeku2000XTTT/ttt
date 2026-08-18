@@ -33,7 +33,7 @@ export default function AgentStudioLanding({ onEnter, onNew }) {
         muted
         playsInline
         className="fixed inset-0 w-full h-full object-cover z-[0]"
-        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_114316_1c7889ad-2885-410e-b493-98119fee0ddb.mp4"
+        src="https://media.base44.com/videos/public/6901295fa9bcfaa0f5ba2c2a/d06ac3978_Agent_Swarm_BG.mp4"
       />
 
       {/* Content wrapper */}
