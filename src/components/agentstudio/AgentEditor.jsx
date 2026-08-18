@@ -20,6 +20,7 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
     try {
       const updated = await base44.entities.AgentInternetAgent.update(agent.id, {
         name, task, system_prompt: systemPrompt,
+        ...(wallet?.address ? { wallet_address: wallet.address } : {}),
       });
       onChanged(updated);
       setEditingSetup(false);

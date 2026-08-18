@@ -35,7 +35,6 @@ export default function AgentDashboard({ onOpen, onNew }) {
         <button
           onClick={() => {
             if (!authed) { window.location.href = "/login"; return; }
-            if (!wallet) { alert("Generate an AgentInternet wallet first."); return; }
             onNew();
           }}
           className="h-10 px-4 rounded-full bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 flex items-center gap-1.5"
@@ -63,7 +62,7 @@ export default function AgentDashboard({ onOpen, onNew }) {
           <Zap className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
           <p className="text-sm font-semibold text-zinc-700 mb-1">No agents yet</p>
           <p className="text-xs text-zinc-400 mb-4">
-            {wallet ? "Create your first agent and start training it." : "Generate an AgentInternet wallet first, then create an agent."}
+            {wallet ? "Create your first agent and start training it." : "Create your first agent — then import or generate your Agent Internet wallet identity to train it."}
           </p>
         </div>
       ) : (

@@ -45,12 +45,7 @@ export default function AgentWalletCard({ wallet, onWallet, expectedAddress }) {
 
   const doImport = () => {
     try {
-      const w = importAgentWallet(pk);
-      if (expectedAddress && w.address !== expectedAddress) {
-        setError("That key unlocks a different address than this agent's wallet. Double-check the key you backed up.");
-        return;
-      }
-      onWallet(w);
+      onWallet(importAgentWallet(pk));
       setImporting(false);
       setPk("");
       setError("");
@@ -66,25 +61,21 @@ export default function AgentWalletCard({ wallet, onWallet, expectedAddress }) {
           <Wallet className="w-4 h-4 text-zinc-400" />
           <h3 className="font-bold text-zinc-900">AgentInternet Wallet</h3>
         </div>
-        {expectedAddress ? (
+        <p className="text-sm text-zinc-500 mb-4 leading-relaxed">
+          This is your <strong className="text-zinc-700">Agent Internet identity</strong> — one wallet for all of your agents. Import the key you already use, or generate one. Keys stay on this device and never reach a server.
+        </p>
+        {expectedAddress && (
           <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 mb-4">
-            <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide mb-1">Wallet key not on this device</p>
-            <p className="text-xs text-amber-800 leading-relaxed mb-2">
-              This agent was trained with the wallet below. Its key lives only on the device you created it on — import that key here to keep using the same funded wallet. Generating a new one will leave the old funds untouched in the old wallet.
-            </p>
+            <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide mb-1">Your key isn't on this device</p>
             <p className="text-[10px] font-mono text-amber-900 break-all">{expectedAddress}</p>
           </div>
-        ) : (
-          <p className="text-sm text-zinc-500 mb-5 leading-relaxed">
-            Create a dedicated wallet for your agent. Keys are generated on this device and never leave it — your main TTT wallet stays untouched.
-          </p>
         )}
         <button
           onClick={() => setImporting(true)}
           className="w-full h-11 rounded-full bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 transition-colors active:scale-[0.99] flex items-center justify-center gap-2"
         >
           <Download className="w-4 h-4" />
-          Import wallet key
+          Import my wallet key
         </button>
         <button
           onClick={() => onWallet(generateAgentWallet())}
@@ -119,7 +110,7 @@ export default function AgentWalletCard({ wallet, onWallet, expectedAddress }) {
           <Wallet className="w-4 h-4 text-zinc-400" />
           <h3 className="font-bold text-zinc-900">AgentInternet Wallet</h3>
         </div>
-        <span className="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full uppercase tracking-wider">Live</span>
+        <span className="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full uppercase tracking-wider">Identity</span>
       </div>
 
       <div className="flex items-baseline gap-1.5 mb-1">
@@ -128,7 +119,7 @@ export default function AgentWalletCard({ wallet, onWallet, expectedAddress }) {
         </span>
         <span className="text-sm font-semibold text-zinc-400">KAS</span>
       </div>
-      <p className="text-xs text-zinc-400 mb-2">Fund this address to run training epochs.</p>
+      <p className="text-xs text-zinc-400 mb-2">Your identity across every agent. Fund this address to run training epochs.</p>
       {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
       {!error && (balance === 0 || balance === null) && (
         <p className="text-xs text-amber-500 mb-3">No balance detected yet — send KAS to the address above to start training.</p>
@@ -153,6 +144,30 @@ export default function AgentWalletCard({ wallet, onWallet, expectedAddress }) {
           {showKey ? "Hide key" : "Backup key"}
         </button>
       </div>
+
+      {importing ? (
+        <div className="mt-3">
+          <input
+            value={pk}
+            onChange={(e) => setPk(e.target.value)}
+            placeholder="64-character private key"
+            className="w-full h-10 px-3 rounded-xl border border-zinc-200 text-sm font-mono outline-none focus:border-zinc-400"
+          />
+          {error && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
+          <div className="flex gap-2 mt-2">
+            <button onClick={doImport} className="flex-1 h-10 rounded-full bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800">
+              Import & use this wallet
+            </button>
+            <button onClick={() => { setImporting(false); setPk(""); setError(""); }} className="h-10 px-4 rounded-full bg-zinc-100 text-zinc-600 text-xs font-semibold hover:bg-zinc-200">
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setImporting(true)} className="mt-3 w-full text-xs text-zinc-400 hover:text-zinc-700 font-medium">
+          import a different key
+        </button>
+      )}
 
       {showKey && (
         <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3">
