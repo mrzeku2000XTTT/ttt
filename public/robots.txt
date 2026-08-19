@@ -1,8 +1,4 @@
 User-agent: *
 Allow: /
 
-# LLM / AI agent discovery
-# A compact, machine-readable summary of this site is available at /llms.txt
-# Human-readable docs: /README.md (source repo) and /Docs (in-app)
-
 Sitemap: https://tttz.xyz/sitemap.xml
