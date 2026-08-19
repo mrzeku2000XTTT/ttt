@@ -1,6 +1,7 @@
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, OrbitControls, Stars, Sparkles, Icosahedron, Torus } from "@react-three/drei";
+import { Float, OrbitControls, Icosahedron, Torus } from "@react-three/drei";
+import * as THREE from "three";
 
 function Core() {
   const ref = useRef();
@@ -24,6 +25,31 @@ function Core() {
   );
 }
 
+function ParticleField({ count = 1200, radius = 60 }) {
+  const positions = useMemo(() => {
+    const arr = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const r = radius * Math.cbrt(Math.random());
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      arr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      arr[i * 3 + 2] = r * Math.cos(phi);
+    }
+    return arr;
+  }, [count, radius]);
+  const ref = useRef();
+  useFrame((_, delta) => { if (ref.current) ref.current.rotation.y += delta * 0.02; });
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" array={positions} count={count} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial size={0.35} color="#67e8f9" sizeAttenuation transparent opacity={0.85} />
+    </points>
+  );
+}
+
 /** 3D WebGL Three.js scene — the "harness" for the AgentInternetStudio index. */
 export default function AgentStudio3DScene() {
   return (
@@ -34,8 +60,7 @@ export default function AgentStudio3DScene() {
       <Float speed={2} rotationIntensity={0.5} floatIntensity={0.9}>
         <Core />
       </Float>
-      <Sparkles count={70} scale={7} size={2.2} speed={0.4} color="#67e8f9" />
-      <Stars radius={60} depth={25} count={1200} factor={2.5} fade speed={1} />
+      <ParticleField />
       <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.5} />
     </Canvas>
   );
