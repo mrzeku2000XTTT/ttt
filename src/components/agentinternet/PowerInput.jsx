@@ -97,25 +97,40 @@ export default function PowerInput({ onSubmit }) {
     inputRef.current?.blur();
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  // auto-resize textarea to fit long-form input
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  }, [userValue]);
+
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center gap-2 px-4 h-14 sm:h-16 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] focus-within:border-white/30 transition-all">
+        <div className="relative flex items-center gap-2 px-4 py-2 min-h-14 sm:min-h-16 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] focus-within:border-white/30 transition-all">
           <span className="text-white/40 font-mono text-sm sm:text-base shrink-0">›</span>
 
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={userValue}
             onChange={(e) => setUserValue(e.target.value)}
+            onKeyDown={handleKeyDown}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            inputMode="text"
+            rows={1}
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="flex-1 h-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-0 leading-none"
-            style={{ height: "100%", caretColor: focused && !caretReady ? "transparent" : "#ffffff" }}
+            className="flex-1 w-full bg-transparent border-0 outline-none text-white text-sm sm:text-base font-mono placeholder-transparent min-w-0 relative z-10 py-1 leading-snug resize-none max-h-40 overflow-y-auto"
+            style={{ caretColor: focused && !caretReady ? "transparent" : "#ffffff" }}
           />
 
           {/* Animated placeholder — only when input empty & not focused */}
