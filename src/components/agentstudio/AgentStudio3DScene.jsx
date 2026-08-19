@@ -1,7 +1,6 @@
 import React, { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, OrbitControls, Icosahedron, Torus } from "@react-three/drei";
-import * as THREE from "three";
 
 function Core() {
   const ref = useRef();
@@ -43,7 +42,7 @@ function ParticleField({ count = 1200, radius = 60 }) {
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" array={positions} count={count} itemSize={3} />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial size={0.35} color="#67e8f9" sizeAttenuation transparent opacity={0.85} />
     </points>
