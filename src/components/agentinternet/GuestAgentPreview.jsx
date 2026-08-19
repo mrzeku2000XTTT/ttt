@@ -230,7 +230,7 @@ export default function GuestAgentPreview({ open, command, onClose }) {
                       )}
 
                       <button
-                        onClick={() => { navigate("/Explore"); onClose?.(); }}
+                        onClick={() => { navigate(`/Explore?idea=${encodeURIComponent(command)}`); onClose?.(); }}
                         className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 transition-colors text-xs font-mono tracking-widest uppercase text-white"
                       >
                         <Sparkles className="w-3.5 h-3.5" /> Explore — make this idea real

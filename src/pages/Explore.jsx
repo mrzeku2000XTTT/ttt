@@ -133,6 +133,20 @@ export default function ExplorePage() {
     try { localStorage.setItem("idea_lab_history", JSON.stringify(history)); } catch {}
   }, [history]);
 
+  // Pre-fill + auto-run from ?idea= query param (routed from Guest Agent Preview)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const seed = params.get("idea");
+      if (seed) {
+        const decoded = decodeURIComponent(seed);
+        setIdea(decoded);
+        generate(decoded);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const randomPrompt = () => {
     const p = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
     setIdea(p);
