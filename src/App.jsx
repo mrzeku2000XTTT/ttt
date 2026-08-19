@@ -34,6 +34,7 @@ import TTTV2Page from './pages/TTTV2';
 import TTTV3Page from './pages/TTTV3';
 import WhatIsKaspaPage from './pages/WhatIsKaspa';
 import ExplorePage from './pages/Explore';
+import KaChingWalletPage from './pages/KaChingWallet';
 import AgentInternetPage from './pages/AgentInternet';
 import AgentInternetLandingPage from './pages/AgentInternetLanding';
 import AppStoreV2Page from './pages/AppStoreV2';
@@ -254,6 +255,7 @@ const AuthenticatedApp = () => {
       <Route path="/TTTV3" element={<TTTV3Page />} />
       <Route path="/WhatIsKaspa" element={<WhatIsKaspaPage />} />
       <Route path="/Explore" element={<ExplorePage />} />
+      <Route path="/KaChingWallet" element={<KaChingWalletPage />} />
       <Route path="/AgentInternetLanding" element={<AgentInternetLandingPage />} />
       <Route path="/AgentInternet" element={<AdminRoute><AgentInternetPage /></AdminRoute>} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
