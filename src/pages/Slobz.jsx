@@ -7,7 +7,7 @@ import SlobzNetworkToggle from "@/components/slobz/SlobzNetworkToggle";
 import SlobzAskButton from "@/components/slobz/SlobzAskButton";
 
 const HERO_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d74177eb0_generated_image.png";
-const CLAY_FACE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff7c5a573_generated_image.png";
+const CLAY_FACE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/34a344f32_image.png";
 const CARD_IMG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2fdf8782e_generated_image.png";
 const ICON_BOLT = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/59b9b3958_generated_image.png";
 const ICON_LOCK = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ff3973122_generated_image.png";
