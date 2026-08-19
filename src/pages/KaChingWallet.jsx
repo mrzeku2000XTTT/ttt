@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Wallet, Download, Loader2, RefreshCw, Shield, Send, ArrowDownToLine, Layers, BookOpen } from "lucide-react";
+import { ArrowLeft, Wallet, Download, Loader2, RefreshCw, Shield, Send, ArrowDownToLine, Layers, BookOpen, KeyRound } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   getKaChingWallet, createKaChingWallet, importKaChingWallet, clearKaChingWallet,
   getAllOwnedAddresses, isValidKaspaAddress,
 } from "@/lib/kachingVault";
+import KaChingWalletManager from "@/components/kaching/KaChingWalletManager";
 
 const KACHING_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8aaa56df8_generated_image.png";
 import KaChingReceive from "@/components/kaching/KaChingReceive";
@@ -23,6 +24,14 @@ export default function KaChingWalletPage() {
   const [importErr, setImportErr] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showManager, setShowManager] = useState(false);
+
+  // Re-sync active wallet + balances after any manager action (switch / new / import / exit).
+  const syncFromManager = () => {
+    setWallet(getKaChingWallet());
+    setRefreshKey((k) => k + 1);
+    loadBalance();
+  };
 
   const loadBalance = useCallback(async () => {
     const addrs = getAllOwnedAddresses();
@@ -54,7 +63,7 @@ export default function KaChingWalletPage() {
   if (!wallet) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col">
-        <Header onBack={() => navigate("/AppStoreV2")} onTutorial={() => setShowTutorial(true)} />
+        <Header onBack={() => navigate("/AppStoreV2")} onTutorial={() => setShowTutorial(true)} onManager={() => setShowManager(true)} />
         <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-md mx-auto w-full">
           <img src={KACHING_LOGO} alt="KaChing Wallet" className="w-20 h-20 rounded-2xl object-cover mb-5 shadow-[0_0_30px_rgba(34,211,238,0.4)]" />
           <h1 className="text-2xl font-black tracking-tight mb-1">KaChing Wallet</h1>
@@ -81,6 +90,7 @@ export default function KaChingWalletPage() {
           </p>
         </div>
         <KaChingTutorial open={showTutorial} onClose={() => setShowTutorial(false)} />
+        <KaChingWalletManager open={showManager} onClose={() => setShowManager(false)} onChanged={syncFromManager} />
       </div>
     );
   }
@@ -93,12 +103,12 @@ export default function KaChingWalletPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      <Header onBack={() => navigate("/AppStoreV2")} balance={balance} loadingBal={loadingBal} onRefresh={() => { setRefreshKey((k) => k + 1); loadBalance(); }} onTutorial={() => setShowTutorial(true)} />
+      <Header onBack={() => navigate("/AppStoreV2")} balance={balance} loadingBal={loadingBal} onRefresh={() => { setRefreshKey((k) => k + 1); loadBalance(); }} onTutorial={() => setShowTutorial(true)} onManager={() => setShowManager(true)} />
 
       <div className="flex-1 max-w-md mx-auto w-full px-4 pb-28 pt-4">
         {tab === "receive" && <KaChingReceive refreshKey={refreshKey} onActivity={() => setRefreshKey((k) => k + 1)} />}
-        {tab === "send" && <KaChingSend onActivity={() => setRefreshKey((k) => k + 1)} />}
-        {tab === "multisig" && <KaChingMultisig onActivity={() => setRefreshKey((k) => k + 1)} />}
+        {tab === "send" && <KaChingSend key={refreshKey} onActivity={() => setRefreshKey((k) => k + 1)} />}
+        {tab === "multisig" && <KaChingMultisig key={refreshKey} onActivity={() => setRefreshKey((k) => k + 1)} />}
       </div>
 
       <div className="fixed bottom-0 inset-x-0 max-w-md mx-auto z-40 bg-black/90 backdrop-blur-xl border-t border-white/10" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
@@ -120,11 +130,12 @@ export default function KaChingWalletPage() {
         </div>
       </div>
       <KaChingTutorial open={showTutorial} onClose={() => setShowTutorial(false)} />
+      <KaChingWalletManager open={showManager} onClose={() => setShowManager(false)} onChanged={syncFromManager} />
     </div>
   );
 }
 
-function Header({ onBack, balance, loadingBal, onRefresh, onTutorial }) {
+function Header({ onBack, balance, loadingBal, onRefresh, onTutorial, onManager }) {
   return (
     <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
@@ -136,6 +147,9 @@ function Header({ onBack, balance, loadingBal, onRefresh, onTutorial }) {
           <span className="text-sm font-bold">KaChing Wallet</span>
         </div>
         <div className="flex items-center gap-1">
+          <button onClick={onManager} title="Keys & Wallets" className="w-8 h-8 flex items-center justify-center text-white/60 hover:text-cyan-300">
+            <KeyRound className="w-4 h-4" />
+          </button>
           <button onClick={onTutorial} title="Tutorial" className="w-8 h-8 flex items-center justify-center text-white/60 hover:text-cyan-300">
             <BookOpen className="w-4 h-4" />
           </button>

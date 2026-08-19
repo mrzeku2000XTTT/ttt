@@ -1,11 +1,20 @@
 // KaChing wallet + multisig vault storage — all client-side, localStorage.
 // Built on top of localKaspaWallet's address derivation so keys/addresses
 // match the rest of TTT byte-for-byte.
+//
+// Multi-wallet model: a collection of wallets under `kaching_wallets`, with
+// `kaching_active_wallet_id` pointing at the one in use. All the original
+// single-wallet helpers (getKaChingWallet, saveWallet, deriveFreshReceiveAddress,
+// getAllOwnedAddresses, getPrivateKeyFor …) operate on the ACTIVE wallet, so
+// existing components keep working unchanged.
 import { addressFromPrivateKey, addressFromPubKey, isValidKaspaAddress } from "@/lib/localKaspaWallet";
 import { schnorr } from "@noble/curves/secp256k1";
 import { secp256k1 } from "@noble/curves/secp256k1";
 
-const WALLET_KEY = "kaching_wallet";
+const WALLETS_KEY = "kaching_wallets";
+const ACTIVE_KEY = "kaching_active_wallet_id";
+// Legacy single-wallet key — migrated on first load.
+const LEGACY_WALLET_KEY = "kaching_wallet";
 const VAULTS_KEY = "kaching_vaults";
 const PROPOSALS_KEY = "kaching_proposals";
 
@@ -35,41 +44,133 @@ export function newCosignerKeypair(label = "Cosigner") {
   return { privateKey, pubKey, address, label };
 }
 
-/* ── Wallet (collection of owned addresses + keys) ─────────────────────── */
-export function createKaChingWallet() {
+/* ── Multi-wallet storage ─────────────────────────────────────────────── */
+function readWallets() {
+  try { return JSON.parse(localStorage.getItem(WALLETS_KEY) || "[]"); } catch { return []; }
+}
+function writeWallets(arr) {
+  try { localStorage.setItem(WALLETS_KEY, JSON.stringify(arr)); } catch {}
+}
+function readActiveId() {
+  try { return localStorage.getItem(ACTIVE_KEY) || null; } catch { return null; }
+}
+function writeActiveId(id) {
+  try { id ? localStorage.setItem(ACTIVE_KEY, id) : localStorage.removeItem(ACTIVE_KEY); } catch {}
+}
+
+// One-time migration of the legacy single-wallet record into the collection.
+function migrateLegacy() {
+  const arr = readWallets();
+  if (arr.length > 0) return;
+  try {
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_WALLET_KEY) || "null");
+    if (legacy && Array.isArray(legacy.addresses) && legacy.addresses.length) {
+      const id = crypto.randomUUID();
+      const w = { id, name: legacy.imported ? "Imported" : "Wallet 1", createdAt: legacy.createdAt || Date.now(), imported: !!legacy.imported, addresses: legacy.addresses };
+      writeWallets([w]);
+      writeActiveId(id);
+      localStorage.removeItem(LEGACY_WALLET_KEY);
+    }
+  } catch {}
+}
+migrateLegacy();
+
+function findWallet(id) { return readWallets().find((w) => w.id === id) || null; }
+
+function defaultName(arr, base) {
+  const taken = new Set(arr.map((w) => w.name));
+  let i = arr.length + 1;
+  let name = `${base} ${i}`;
+  while (taken.has(name)) name = `${base} ${++i}`;
+  return name;
+}
+
+/* ── Active-wallet helpers (backward compatible) ──────────────────────── */
+export function getKaChingWallet() {
+  const id = readActiveId();
+  return id ? findWallet(id) : (readWallets()[0] || null);
+}
+export function saveWallet(w) {
+  if (!w || !w.id) return;
+  const arr = readWallets();
+  const idx = arr.findIndex((x) => x.id === w.id);
+  if (idx >= 0) arr[idx] = w; else arr.push(w);
+  writeWallets(arr);
+  if (!readActiveId()) writeActiveId(w.id);
+}
+export function clearKaChingWallet() {
+  // Remove the active wallet from the collection (legacy "clear" behaviour).
+  const id = readActiveId();
+  if (!id) return;
+  writeWallets(readWallets().filter((w) => w.id !== id));
+  writeActiveId(readWallets()[0]?.id || null);
+}
+
+/* ── New multi-wallet API ─────────────────────────────────────────────── */
+export function listKaChingWallets() { return readWallets(); }
+export function getActiveKaChingWalletId() {
+  return readActiveId() || readWallets()[0]?.id || null;
+}
+export function setActiveKaChingWallet(id) {
+  if (findWallet(id)) writeActiveId(id);
+}
+
+export function createKaChingWalletNamed(name) {
+  const arr = readWallets();
   const privateKey = randPriv();
   const address = addressFromPrivateKey(privateKey);
-  const wallet = {
+  const w = {
+    id: crypto.randomUUID(),
+    name: name || defaultName(arr, "Wallet"),
     createdAt: Date.now(),
     addresses: [{ privateKey, address, label: "Primary", used: false, createdAt: Date.now() }],
   };
-  saveWallet(wallet);
-  return wallet;
+  arr.push(w);
+  writeWallets(arr);
+  writeActiveId(w.id);
+  return w;
 }
-
-export function importKaChingWallet(privateKeyHex) {
+export function importKaChingWalletNamed(privateKeyHex, name) {
   const pk = String(privateKeyHex).trim().toLowerCase().replace(/^0x/, "");
   if (!/^[0-9a-f]{64}$/.test(pk)) throw new Error("Private key must be 64 hex chars");
+  const arr = readWallets();
   const address = addressFromPrivateKey(pk);
-  const wallet = {
+  const w = {
+    id: crypto.randomUUID(),
+    name: name || defaultName(arr, "Imported"),
     createdAt: Date.now(),
     imported: true,
     addresses: [{ privateKey: pk, address, label: "Imported", used: false, createdAt: Date.now() }],
   };
-  saveWallet(wallet);
-  return wallet;
+  arr.push(w);
+  writeWallets(arr);
+  writeActiveId(w.id);
+  return w;
+}
+export function renameKaChingWallet(id, name) {
+  const arr = readWallets();
+  const w = arr.find((x) => x.id === id);
+  if (w) { w.name = String(name || "Wallet").slice(0, 40) || w.name; writeWallets(arr); }
+}
+export function deleteKaChingWallet(id) {
+  let arr = readWallets().filter((w) => w.id !== id);
+  writeWallets(arr);
+  if (readActiveId() === id) writeActiveId(arr[0]?.id || null);
+  return arr;
 }
 
-export function saveWallet(w) {
-  try { localStorage.setItem(WALLET_KEY, JSON.stringify(w)); } catch {}
-}
-export function getKaChingWallet() {
-  try { const r = localStorage.getItem(WALLET_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
-}
-export function clearKaChingWallet() {
-  try { localStorage.removeItem(WALLET_KEY); } catch {}
+/** Exit / log out of the whole wallet session — wipes every stored wallet. */
+export function exitKaChingSession() {
+  writeWallets([]);
+  writeActiveId(null);
+  try { localStorage.removeItem(LEGACY_WALLET_KEY); } catch {}
 }
 
+/* ── Backward-compatible wallet factories (now multi-wallet aware) ─────── */
+export function createKaChingWallet() { return createKaChingWalletNamed(); }
+export function importKaChingWallet(privateKeyHex) { return importKaChingWalletNamed(privateKeyHex); }
+
+/* ── Address derivation / lookup (operate on active wallet) ────────────── */
 export function deriveFreshReceiveAddress(label = "") {
   const w = getKaChingWallet();
   if (!w) return null;
@@ -86,26 +187,22 @@ export function deriveFreshReceiveAddress(label = "") {
   saveWallet(w);
   return entry;
 }
-
 export function markAddressUsed(address) {
   const w = getKaChingWallet();
   if (!w) return;
   const a = w.addresses.find((x) => x.address === address);
   if (a) { a.used = true; saveWallet(w); }
 }
-
 export function getAllOwnedAddresses() {
   const w = getKaChingWallet();
   return w ? w.addresses : [];
 }
-
 export function getPrivateKeyFor(address) {
   const w = getKaChingWallet();
   if (!w) return null;
   const a = w.addresses.find((x) => x.address === address);
   return a ? a.privateKey : null;
 }
-
 export { isValidKaspaAddress };
 
 /* ── Multisig vaults (m-of-n co-signer approval) ────────────────────────── */
