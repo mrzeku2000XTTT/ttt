@@ -6,6 +6,8 @@ import {
   getKaChingWallet, createKaChingWallet, importKaChingWallet, clearKaChingWallet,
   getAllOwnedAddresses, isValidKaspaAddress,
 } from "@/lib/kachingVault";
+
+const KACHING_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8aaa56df8_generated_image.png";
 import KaChingReceive from "@/components/kaching/KaChingReceive";
 import KaChingSend from "@/components/kaching/KaChingSend";
 import KaChingMultisig from "@/components/kaching/KaChingMultisig";
@@ -52,10 +54,8 @@ export default function KaChingWalletPage() {
       <div className="min-h-screen bg-black text-white flex flex-col">
         <Header onBack={() => navigate("/AppStoreV2")} />
         <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-md mx-auto w-full">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center mb-5 shadow-[0_0_30px_rgba(34,211,238,0.4)]">
-            <Wallet className="w-8 h-8 text-black" />
-          </div>
-          <h1 className="text-2xl font-black tracking-tight mb-1">KaChing</h1>
+          <img src={KACHING_LOGO} alt="KaChing Wallet" className="w-20 h-20 rounded-2xl object-cover mb-5 shadow-[0_0_30px_rgba(34,211,238,0.4)]" />
+          <h1 className="text-2xl font-black tracking-tight mb-1">KaChing Wallet</h1>
           <p className="text-sm text-white/50 text-center mb-8 max-w-xs">
             Privacy-first Kaspa wallet — fresh receive addresses, manual UTXO coin control, and m-of-n multisig vaults.
           </p>
@@ -128,10 +128,8 @@ function Header({ onBack, balance, loadingBal, onRefresh }) {
           <ArrowLeft className="w-4 h-4" /> <span className="text-sm">Store</span>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
-            <Wallet className="w-4 h-4 text-black" />
-          </div>
-          <span className="text-sm font-bold">KaChing</span>
+          <img src={KACHING_LOGO} alt="KaChing Wallet" className="w-7 h-7 rounded-lg object-cover" />
+          <span className="text-sm font-bold">KaChing Wallet</span>
         </div>
         <button onClick={onRefresh} className="text-white/60 hover:text-white">
           <RefreshCw className={`w-4 h-4 ${loadingBal ? "animate-spin" : ""}`} />

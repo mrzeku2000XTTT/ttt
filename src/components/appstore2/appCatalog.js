@@ -4,7 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
-  { name: "KaChing", path: "KaChingWallet", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/90ec7400b_generated_image.png", desc: "Privacy Kaspa wallet · fresh receive addresses, manual UTXO coin control & m-of-n multisig" },
+  { name: "KaChing Wallet", path: "KaChingWallet", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8aaa56df8_generated_image.png", desc: "Privacy Kaspa wallet · fresh receive addresses, manual UTXO coin control & m-of-n multisig" },
   { name: "Launch Reel", path: "LaunchReel", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Screen recording → 3D phone launch video with captions, music & effects" },
   { name: "HunterBeat", path: "HunterBeat", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Apple-style motion graphics prompt studio with in-chat preview" },
   { name: "2TIP", path: "TwoTip", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Instant KAS tipping", admin: true },
@@ -154,7 +154,7 @@ export const APPS = [
 
 // Curated Kaspa apps in priority order (KaspaHub first, Ksocial second, etc.)
 export const KASPA_APPS_ORDER = [
-  "KaChing",
+  "KaChing Wallet",
   "KCC NFT",
   "Kascov",
   "KaspaHub",
