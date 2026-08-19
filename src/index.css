@@ -174,6 +174,11 @@ button:focus-visible {
   body {
     @apply bg-background text-foreground;
   }
+  /* Prevent iOS auto-zoom when focusing inputs on mobile (font-size must be >= 16px) */
+  input, select, textarea {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
 }
 
 .liquid-glass {

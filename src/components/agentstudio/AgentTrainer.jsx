@@ -51,6 +51,8 @@ export default function AgentTrainer({ agent, wallet, onChanged, task, systemPro
   const examples = agent?.training_examples || [];
   const skill = task || agent?.task || "";
   const persona = systemPrompt || agent?.system_prompt || "";
+  // Live-tx helper is a skill for transaction-analyst agents only — not every agent.
+  const isTxAgent = /tx|transaction/i.test(skill) || /tx|transaction/i.test(persona);
 
   const autoDraft = async () => {
     if (!input.trim()) return;
@@ -164,26 +166,30 @@ export default function AgentTrainer({ agent, wallet, onChanged, task, systemPro
         ))}
       </div>
 
-      {/* Optional live-tx helper for transaction agents */}
-      <button onClick={() => setShowTxHelper((s) => !s)} className="text-[11px] text-zinc-400 hover:text-zinc-700 font-semibold flex items-center gap-1 mb-2">
-        {showTxHelper ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        Fetch live Kaspa transaction
-      </button>
-      {showTxHelper && (
-        <div className="rounded-xl bg-zinc-50 border border-zinc-200/70 p-3 mb-3">
-          <div className="flex gap-2">
-            <input
-              value={txid}
-              onChange={(e) => setTxid(e.target.value)}
-              placeholder="e.g. b560adf6ecd20e11c819d82d..."
-              className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-xs font-mono outline-none focus:border-zinc-400"
-            />
-            <button onClick={fetchTx} disabled={!txid.trim() || fetching} className="h-10 px-3 rounded-lg bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800 disabled:opacity-40 flex items-center gap-1.5">
-              {fetching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-              {fetching ? "Fetching" : "Fetch"}
-            </button>
+      {/* Optional live-tx helper — transaction-analyst agents only */}
+      {isTxAgent && (
+        <>
+        <button onClick={() => setShowTxHelper((s) => !s)} className="text-[11px] text-zinc-400 hover:text-zinc-700 font-semibold flex items-center gap-1 mb-2">
+          {showTxHelper ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          Fetch live Kaspa transaction
+        </button>
+        {showTxHelper && (
+          <div className="rounded-xl bg-zinc-50 border border-zinc-200/70 p-3 mb-3">
+            <div className="flex gap-2">
+              <input
+                value={txid}
+                onChange={(e) => setTxid(e.target.value)}
+                placeholder="e.g. b560adf6ecd20e11c819d82d..."
+                className="flex-1 h-10 px-3 rounded-lg border border-zinc-200 text-xs font-mono outline-none focus:border-zinc-400"
+              />
+              <button onClick={fetchTx} disabled={!txid.trim() || fetching} className="h-10 px-3 rounded-lg bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800 disabled:opacity-40 flex items-center gap-1.5">
+                {fetching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                {fetching ? "Fetching" : "Fetch"}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+        </>
       )}
 
       <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Example input</label>

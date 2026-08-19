@@ -25,10 +25,11 @@ export default function AgentChat({ agent }) {
 
   const callLLM = async (userText) => {
     let liveData = "";
-    // If the user pasted a Kaspa txid, fetch the REAL on-chain data so the
-    // agent summarizes actual transaction details — not hallucinated ones.
+    // Live on-chain fetch is a skill for transaction-analyst agents only —
+    // not every agent. Detect via the agent's task / system prompt.
+    const isTxAgent = /tx|transaction/i.test(agent.task || "") || /tx|transaction/i.test(agent.system_prompt || "");
     const txMatch = userText.match(/\b([a-f0-9]{64})\b/i);
-    if (txMatch) {
+    if (txMatch && isTxAgent) {
       try {
         const txRes = await base44.functions.invoke("getKaspaTransactionDetails", { txId: txMatch[1] });
         const tx = txRes?.data || txRes;

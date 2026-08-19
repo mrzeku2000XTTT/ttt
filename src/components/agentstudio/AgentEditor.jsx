@@ -14,6 +14,7 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
   const [saving, setSaving] = useState(false);
   const [pushOpen, setPushOpen] = useState(false);
   const [editingSetup, setEditingSetup] = useState(false); // profile view by default — Edit to open
+  const [mobileTab, setMobileTab] = useState("chat"); // split toggle so mobile shows one section at a time
 
   const save = async () => {
     setSaving(true);
@@ -103,16 +104,42 @@ export default function AgentEditor({ agent, wallet, onWallet, onBack, onChanged
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-4 items-start">
+      {/* Mobile split toggle — one section at a time, no scrolling */}
+      <div className="lg:hidden flex gap-1 p-1 rounded-full bg-zinc-100 mb-3 sticky top-0 z-20">
+        {[
+          { id: "chat", label: "Chat" },
+          { id: "train", label: "Train" },
+          { id: "wallet", label: "Wallet" },
+          { id: "consensus", label: "Audit" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setMobileTab(t.id)}
+            className={`flex-1 h-9 rounded-full text-xs font-bold transition-colors ${mobileTab === t.id ? "bg-zinc-900 text-white" : "text-zinc-500"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Desktop: two-column split */}
+      <div className="hidden lg:grid lg:grid-cols-2 gap-4 items-start">
         <div className="space-y-4">
           <AgentWalletCard wallet={wallet} onWallet={onWallet} expectedAddress={agent.wallet_address || ""} />
           <AgentChat agent={{ ...agent, name, task, system_prompt: systemPrompt }} />
         </div>
         <AgentTrainer agent={agent} wallet={wallet} onChanged={onChanged} task={task} systemPrompt={systemPrompt} />
       </div>
-
-      <div className="mt-4">
+      <div className="hidden lg:block mt-4">
         <AgentConsensus agent={{ ...agent, name, task }} wallet={wallet} />
+      </div>
+
+      {/* Mobile: only the active section */}
+      <div className="lg:hidden">
+        {mobileTab === "wallet" && <AgentWalletCard wallet={wallet} onWallet={onWallet} expectedAddress={agent.wallet_address || ""} />}
+        {mobileTab === "chat" && <AgentChat agent={{ ...agent, name, task, system_prompt: systemPrompt }} />}
+        {mobileTab === "train" && <AgentTrainer agent={agent} wallet={wallet} onChanged={onChanged} task={task} systemPrompt={systemPrompt} />}
+        {mobileTab === "consensus" && <AgentConsensus agent={{ ...agent, name, task }} wallet={wallet} />}
       </div>
 
       <PushToGitHubModal
