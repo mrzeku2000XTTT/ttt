@@ -125,7 +125,7 @@ export default function GuestAgentPreview({ open, command, onClose }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-xl flex items-center justify-center px-4"
+          className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-xl flex items-start sm:items-center justify-center px-4 py-6 overflow-y-auto"
         >
           <button
             onClick={onClose}
@@ -134,7 +134,7 @@ export default function GuestAgentPreview({ open, command, onClose }) {
             <X className="w-3.5 h-3.5" /> Close
           </button>
 
-          <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-transparent p-6 overflow-hidden">
+          <div className="relative w-full max-w-md max-h-[88vh] overflow-y-auto rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-transparent p-6">
             {/* header */}
             <div className="flex items-center gap-2 mb-4">
               <OrganicOrb size={22} colors={["#67e8f9", "#22d3ee", "#6366f1"]} />
