@@ -154,6 +154,7 @@ export const APPS = [
 
 // Curated Kaspa apps in priority order (KaspaHub first, Ksocial second, etc.)
 export const KASPA_APPS_ORDER = [
+  "KaChing",
   "KCC NFT",
   "Kascov",
   "KaspaHub",
