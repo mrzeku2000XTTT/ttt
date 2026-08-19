@@ -88,7 +88,7 @@ export default function KaChingWalletPage() {
   const tabs = [
     { id: "receive", label: "Receive", icon: ArrowDownToLine },
     { id: "send", label: "Send", icon: Send },
-    { id: "multisig", label: "Multisig", icon: Shield },
+    { id: "multisig", label: "Approve", icon: Shield },
   ];
 
   return (

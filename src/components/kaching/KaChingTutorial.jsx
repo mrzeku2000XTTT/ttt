@@ -45,14 +45,15 @@ const SECTIONS = [
   {
     id: "multisig",
     icon: Shield,
-    title: "4 · Multisig vault (m-of-n)",
+    title: "4 · Co-signer Approval (m-of-n)",
     body: [
-      "A vault is a group of n cosigners that must produce m approvals before a spend can be broadcast. Example: 2-of-3 — any two of three keys must approve.",
-      "Step 1 — Create vault: open the Multisig tab → New vault. Add cosigners with 'Generate key' (a fresh keypair stored on this device) or 'External' (paste someone else's 64-hex x-only pubkey). Set the threshold m.",
-      "Step 2 — New proposal: pick the vault, pick the source address, enter recipient + amount. This creates an unsigned proposal. No funds move yet.",
-      "Step 3 — Approve: each cosigner signs the proposal with their key. On this device, 'Approve' signs with every locally-held cosigner key at once. The signature count rises toward m.",
-      "Step 4 — Execute: once the count reaches the threshold (m-of-n), the 'Execute' button unlocks. The owner then broadcasts the real on-chain Kaspa transaction.",
-      "Use cases: shared treasury, two-factor spending, escrow, or just forcing yourself to confirm on a second device before big moves.",
+      "The 'Approve' tab lets a group of n co-signers require m approvals before the owner broadcasts a spend. Example: 2-of-3 — any two of three keys must approve.",
+      "Honest scope: approvals are an off-chain gate recorded on this device. The owner's key still signs the real on-chain Kaspa transaction, so this is shared approval — not a lock that strips the owner's control. True on-chain Kaspa multisig (covenant scripts) isn't built here yet.",
+      "Step 1 — Create vault: Approve tab → Vaults → New vault. Add co-signers with 'Generate key' (a fresh keypair on this device) or 'External' (paste someone's 64-hex x-only pubkey). Set how many approvals are needed (m).",
+      "Step 2 — New proposal: pick the vault, pick the source address, enter recipient + amount. An unsigned proposal is created — no funds move yet.",
+      "Step 3 — Approve: each co-signer signs the proposal. On this device, 'Approve' signs with every locally-held co-signer key at once; the count rises toward m.",
+      "Step 4 — Execute: once the count hits the threshold, 'Execute' unlocks and the owner broadcasts the real on-chain Kaspa transaction.",
+      "Use cases: shared treasury, two-device confirmation, escrow, or just forcing yourself to confirm on a second device before big moves.",
     ],
   },
   {
