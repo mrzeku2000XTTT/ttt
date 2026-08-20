@@ -1,0 +1,47 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 15,
+      "interval_unit": "minutes",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Every 15 minutes: verifies worker posts are still live for active AWA campaigns and permissionlessly refunds expired covenants.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "awa_covenant_sweep",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sweep": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "awaCovenant",
+            "args": {
+              "action": "sweep"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "AWA covenant sweep",
+            "description": "Verify posts + refund expired covenants"
+          }
+        }
+      }
+    ]
+  },
+  "name": "AWA Covenant Sweep"
+}

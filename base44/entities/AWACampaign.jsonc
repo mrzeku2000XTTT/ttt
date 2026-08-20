@@ -1,0 +1,205 @@
+{
+  "name": "AWACampaign",
+  "type": "object",
+  "properties": {
+    "marketer_email": {
+      "type": "string",
+      "description": "App user who created the campaign (the payer)"
+    },
+    "marketer_wallet_address": {
+      "type": "string",
+      "description": "Marketer's TTT wallet address \u2014 the covenant refund returns here"
+    },
+    "worker_email": {
+      "type": "string",
+      "description": "App user whose agent claimed the campaign (nullable until claimed)"
+    },
+    "worker_wallet_address": {
+      "type": "string",
+      "description": "Worker agent's wallet address \u2014 increments release here"
+    },
+    "worker_agent_id": {
+      "type": "string",
+      "description": "Reference to the worker's AgentInternetAgent record if opt-in"
+    },
+    "description": {
+      "type": "string",
+      "description": "The campaign brief \u2014 what to post, about which project"
+    },
+    "platform": {
+      "type": "string",
+      "description": "Target platform for the social post (x/twitter, etc.)"
+    },
+    "post_url": {
+      "type": "string",
+      "description": "The submitted social post URL the verify-agent live-tracks"
+    },
+    "total_kas": {
+      "type": "number",
+      "description": "Total KAS locked in the covenant"
+    },
+    "increment_kas": {
+      "type": "number",
+      "description": "KAS released to the worker per check-in period"
+    },
+    "period_seconds": {
+      "type": "number",
+      "description": "Seconds between check-in verifications"
+    },
+    "num_epochs": {
+      "type": "number",
+      "description": "Number of check-in periods (hops) in the covenant chain"
+    },
+    "covenant_address": {
+      "type": "string",
+      "description": "Hop0 P2SH covenant address the marketer funds"
+    },
+    "covenant_redeem_scripts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Per-hop sentinel-x402 redeem script hex (hop0 is funded)"
+    },
+    "covenant_spks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Per-hop scriptPublicKey hex"
+    },
+    "covenant_deadlines": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "default": [],
+      "description": "Per-hop CLTV deadline in Kaspa DAA blue score"
+    },
+    "fund_tx_id": {
+      "type": "string",
+      "description": "Marketer's L1 funding transaction id (pays covenant_address)"
+    },
+    "current_hop": {
+      "type": "number",
+      "default": 0,
+      "description": "Index of the covenant hop currently spendable (advances on each check-in)"
+    },
+    "check_in_tx_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Check-in spend tx ids \u2014 one per released increment"
+    },
+    "refund_tx_id": {
+      "type": "string",
+      "description": "Permissionless refund tx id (after CLTV expiry)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "open_for_workers",
+        "awaiting_fund",
+        "active",
+        "checking_in",
+        "completed",
+        "refundable",
+        "refunded",
+        "expired"
+      ],
+      "default": "draft",
+      "description": "Campaign lifecycle state"
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_verified_alive": {
+      "type": "boolean"
+    },
+    "cltv_base_daa": {
+      "type": "number",
+      "description": "Kaspa DAA score when the covenant was built (base for deadlines)"
+    },
+    "fees_checkin_sompi": {
+      "type": "number"
+    },
+    "fees_refund_sompi": {
+      "type": "number"
+    },
+    "marketer_spk_hex": {
+      "type": "string",
+      "description": "Marketer's P2PK scriptPublicKey hex (for permissionless refund outputs)"
+    },
+    "hop_outpoint_txids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Per-hop outpoint txid (hop0 = fund tx; later hops = previous check-in tx)"
+    },
+    "hop_outpoint_indexes": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "default": [],
+      "description": "Per-hop outpoint index (hop0 = fund output; later hops = 1 for relock output)"
+    }
+  },
+  "required": [
+    "marketer_email",
+    "description",
+    "total_kas",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "data.marketer_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.marketer_email": "{{user.email}}"
+        },
+        {
+          "data.worker_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.status": "open_for_workers"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.marketer_email": "{{user.email}}"
+        },
+        {
+          "data.worker_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
