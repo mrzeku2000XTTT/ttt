@@ -43,7 +43,7 @@ export default function AppStoreV2Page() {
   const [user, setUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [blueprintOpen, setBlueprintOpen] = useState(false);
-  const [view, setView] = useState("kaspa");
+  const [view, setView] = useState("all");
   const filtersRef = useRef(null);
   const gridRef = useRef(null);
 
