@@ -134,6 +134,7 @@ import AporiaDEXPage from './pages/AporiaDEX';
 import KaspaCommandPage from './pages/KaspaCommand';
 import KCCPage from './pages/KCC';
 import KCCNftPage from './pages/KCCNft';
+import KCC20Page from './pages/KCC20';
 import AWAPage from './pages/AWA';
 import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
@@ -336,6 +337,7 @@ const AuthenticatedApp = () => {
       <Route path="/OuTKasTT" element={<AdminRoute>{React.createElement(Pages['OuTKasTT'])}</AdminRoute>} />
       <Route path="/KCC" element={<KCCPage />} />
       <Route path="/KCCNft" element={<KCCNftPage />} />
+      <Route path="/KCC20" element={<KCC20Page />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
       <Route path="/KasSword" element={<KasSwordPage />} />
       <Route path="/Vision" element={<VisionPage />} />
