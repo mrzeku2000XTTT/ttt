@@ -23,7 +23,7 @@ export default function AWAChat({ onCampaignCreated }) {
   const [error, setError] = useState("");
   const scrollRef = useRef(null);
 
-  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, busy]);
+  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages, busy]);
 
   const send = async (text) => {
     const intent = (text ?? input).trim();
@@ -84,7 +84,7 @@ export default function AWAChat({ onCampaignCreated }) {
           <span className="ml-auto flex items-center gap-1 text-[9px] font-bold tracking-widest text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full"><Sparkles className="w-3 h-3" />HTTP 402</span>
         </div>
 
-        <div className="px-5 py-4 space-y-3 max-h-[340px] overflow-y-auto bg-white">
+        <div ref={scrollRef} className="px-5 py-4 space-y-3 max-h-[340px] overflow-y-auto bg-white">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-line ${m.role === "user" ? "bg-zinc-900 text-white rounded-br-sm" : "bg-zinc-100 text-zinc-800 rounded-bl-sm"}`}>
@@ -101,7 +101,6 @@ export default function AWAChat({ onCampaignCreated }) {
             </div>
           ))}
           {busy && <div className="flex justify-start"><div className="bg-zinc-100 rounded-2xl px-3.5 py-2.5 text-[13px] text-zinc-500 flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" /> Encoding covenant terms…</div></div>}
-          <div ref={scrollRef} />
         </div>
 
         {error && <div className="mx-5 mb-2 text-[11px] text-red-600 bg-red-50 rounded-lg px-3 py-1.5">{error}</div>}
