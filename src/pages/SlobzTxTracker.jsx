@@ -4,39 +4,34 @@ import { Search, Loader2 } from "lucide-react";
 import SlobzBlobs from "@/components/slobz/SlobzBlobs";
 import SlobzNav from "@/components/slobz/SlobzNav";
 import TxStoryCard from "@/components/slobz/TxStoryCard";
+import SlobzCovenantCard from "@/components/slobz/SlobzCovenantCard";
 import { explainKaspaTx } from "@/components/slobz/txPlainEnglish";
+import { base44 } from "@/api/base44Client";
 
 const SLOB_DETECTIVE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1466aec26_generated_image.png";
 
 export default function SlobzTxTracker() {
   const [txInput, setTxInput] = useState("");
   const [story, setStory] = useState(null);
+  const [covenant, setCovenant] = useState(null);
+  const [plain, setPlain] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const track = async () => {
-    const txId = txInput.trim().replace(/^https?:\/\/[^/]+\/txs\//, "");
-    if (!/^[a-fA-F0-9]{64}$/.test(txId)) {
-      setError("That doesn't look like a transaction ID. It should be a long code of 64 letters and numbers. You can also paste an explorer link.");
-      return;
-    }
+    if (!txInput.trim()) return;
     setLoading(true);
     setError("");
-    setStory(null);
+    setStory(null); setCovenant(null); setPlain(null);
     try {
-      const res = await fetch(
-        `https://api.kaspa.org/transactions/${txId}?resolve_previous_outpoints=light`,
-        { headers: { Accept: "application/json" } }
-      );
-      if (res.status === 404) {
-        setError("We couldn't find that transaction. Double-check the code — or if you just sent it, wait a few seconds and try again.");
-        return;
-      }
-      if (!res.ok) throw new Error(`Network error (${res.status})`);
-      const tx = await res.json();
-      setStory(explainKaspaTx(tx));
+      const res = await base44.functions.invoke("slobzExplainTx", { txId: txInput.trim() });
+      const data = res && (res.data || res);
+      if (data.error) { setError(data.error); return; }
+      setStory(explainKaspaTx(data.tx));
+      setCovenant(data.covenant);
+      setPlain(data.plain);
     } catch (err) {
-      setError(`Something went wrong looking that up: ${err.message}. Please try again.`);
+      setError(err?.response?.data?.error || err?.message || "Something went wrong looking that up. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -95,8 +90,27 @@ export default function SlobzTxTracker() {
 
         {/* Story result */}
         {story && (
-          <div className="mt-6">
+          <div className="mt-6 space-y-4">
             <TxStoryCard story={story} />
+            <SlobzCovenantCard covenant={covenant} plain={plain} />
+            {plain && plain.story && (
+              <div className="bg-[#FDFBF7] rounded-[24px] shadow-[0_12px_32px_rgba(124,92,252,0.16)] p-5 md:p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={SLOB_DETECTIVE} alt="Slob detective" className="w-8 h-8 rounded-xl object-cover rotate-[-3deg]" />
+                  <h3 className="font-display font-black text-[#4A2FA8]">Slobz explains</h3>
+                </div>
+                <p className="text-sm text-[#2A2150] leading-relaxed">{plain.story}</p>
+                {plain.bullets && plain.bullets.length > 0 && (
+                  <ul className="mt-3 space-y-1">
+                    {plain.bullets.map((b, i) => (
+                      <li key={i} className="text-[13px] text-[#5A4B8A] flex items-start gap-2">
+                        <span className="text-[#7C5CFC] font-bold">•</span> <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         )}
 
