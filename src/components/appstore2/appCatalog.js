@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Tokens", path: "Tokens", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/583744c85_generated_image.png", desc: "Design & launch your own Kaspa tokens — submit a brief, we mint it" },
   { name: "KCC20", path: "KCC20", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f0152b845_image.png", desc: "KCC-20 covenant wallet · mint & manage smart coins on Kaspa L1" },
   { name: "Eve", path: "Eve", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/220ffa959_generated_image.png", desc: "Talk to Eve — a durable AI agent, our take on the eve framework" },
   { name: "Slobz", path: "Slobz", cat: "Community", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/34a344f32_image.png", desc: "Kaspa creator hub · gigs, market, wellness, animations & micro-tasks" },
