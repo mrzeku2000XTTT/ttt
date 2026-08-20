@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Eve", path: "Eve", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/220ffa959_generated_image.png", desc: "Talk to Eve — a durable AI agent, our take on the eve framework" },
   { name: "Slobz", path: "Slobz", cat: "Community", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/34a344f32_image.png", desc: "Kaspa creator hub · gigs, market, wellness, animations & micro-tasks" },
   { name: "KaChing Wallet", path: "KaChingWallet", cat: "Finance", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8aaa56df8_generated_image.png", desc: "Privacy Kaspa wallet · fresh receive addresses, manual UTXO coin control & m-of-n multisig" },
   { name: "Launch Reel", path: "LaunchReel", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Screen recording → 3D phone launch video with captions, music & effects" },
