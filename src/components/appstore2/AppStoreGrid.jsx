@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { Crown, ExternalLink, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { APPS, KASPA_APPS_ORDER } from "./appCatalog";
+import { APPS } from "./appCatalog";
 import AppPreviewModal from "./AppPreviewModal";
 import AppGridItem from "./AppGridItem";
 
@@ -90,16 +90,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
     : null;
   const hasSearch = !!search?.trim();
 
-  const filtered = view === "kaspa"
-    ? KASPA_APPS_ORDER
-        .map((name) => allApps.find((a) => a.name.toLowerCase() === name.toLowerCase()))
-        .filter(Boolean)
-        .filter((app) => {
-          if (app.admin && !isAdmin) return false;
-          if (matchedNames) return matchedNames.has(app.name.toLowerCase());
-          return true;
-        })
-    : allApps.filter((app) => {
+  const filtered = allApps.filter((app) => {
         if (app.admin && !isAdmin) return false;
 
         // Active search: filter by matched names (from LLM or instant substring).
