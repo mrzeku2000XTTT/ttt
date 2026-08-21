@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Loader2, ExternalLink, Trophy, Flame, Search } from "lucide-react";
+import { Loader2, ExternalLink, Trophy, Flame } from "lucide-react";
 
 // Real KRON endpoints (same ones the KCC20-wallet repo calls)
 const REG = "https://api.kron.technology";
