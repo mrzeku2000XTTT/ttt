@@ -29,7 +29,27 @@ export default function ProductivityChat() {
   const [wallets, setWallets] = useState([]);
   const [walletIdx, setWalletIdx] = useState(0);
   const [paying, setPaying] = useState(false);
+  const [balance, setBalance] = useState(null);
+  const [loadingBal, setLoadingBal] = useState(false);
   const scrollRef = useRef(null);
+
+  const loadBalance = async () => {
+    const addrs = getAllOwnedAddresses() || [];
+    if (addrs.length === 0) { setBalance(0); return; }
+    setLoadingBal(true);
+    try {
+      const results = await Promise.all(
+        addrs.map((a) => base44.functions.invoke("getKaspaBalance", { address: a.address }).catch(() => null))
+      );
+      let total = 0;
+      for (const r of results) {
+        const d = r?.data || r;
+        if (d && (d.balanceKAS ?? d.balance) != null) total += Number(d.balanceKAS ?? d.balance);
+      }
+      setBalance(total);
+    } catch { setBalance(0); }
+    finally { setLoadingBal(false); }
+  };
 
   useEffect(() => {
     try {
@@ -37,6 +57,7 @@ export default function ProductivityChat() {
     } catch {
       setWallets([]);
     }
+    loadBalance();
   }, []);
 
   useEffect(() => {
@@ -182,6 +203,18 @@ export default function ProductivityChat() {
           <div className="flex items-center justify-between">
             <span className="text-amber-700 font-mono font-black text-[10px] tracking-widest">HTTP 402 · PAYMENT REQUIRED</span>
             <span className="text-slate-900 font-black text-lg">{pending.amount_kas} KAS</span>
+          </div>
+          <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+            <span className="text-[11px] text-slate-500 flex items-center gap-1"><Wallet className="w-3 h-3" /> KaChing balance</span>
+            {loadingBal ? (
+              <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+            ) : balance === null ? (
+              <span className="text-[11px] text-slate-400">—</span>
+            ) : (
+              <span className={`text-[12px] font-bold ${balance >= pending.amount_kas ? "text-emerald-600" : "text-red-500"}`}>
+                {balance.toFixed(4)} KAS {balance >= pending.amount_kas ? "" : "· insufficient"}
+              </span>
+            )}
           </div>
           <button onClick={copyAddr} className="w-full flex items-center gap-2 bg-white border border-slate-200 hover:border-amber-400 rounded-lg px-2.5 py-2 text-left">
             <span className="flex-1 text-amber-700 font-mono text-[10px] break-all">{pending.pay_to}</span>

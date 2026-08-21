@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bot, Zap, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Bot, Zap, ShieldCheck } from "lucide-react";
 import ProductivityChat from "@/components/productivity/ProductivityChat";
 
 export default function Productivity() {
@@ -11,9 +11,6 @@ export default function Productivity() {
         <div className="flex items-center justify-between mb-6">
           <Link to="/AppStoreV2" className="flex items-center gap-2 group">
             <span className="text-slate-900 font-black text-2xl tracking-tight group-hover:opacity-70 transition">TTT</span>
-          </Link>
-          <Link to="/AppStoreV2" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition">
-            <ArrowLeft className="w-3.5 h-3.5" /> App Store
           </Link>
         </div>
 
