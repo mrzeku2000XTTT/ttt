@@ -29,16 +29,25 @@ const SERVICES = {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch {
+      return Response.json({ error: 'Please log in to use the coach.' }, { status: 401 });
+    }
+    if (!user) return Response.json({ error: 'Please log in to use the coach.' }, { status: 401 });
 
     const body = await req.json();
     const action = body.action;
     let payTo = Deno.env.get("BRIDGE_WALLET_ADDRESS") || "";
     if (!payTo.startsWith("kaspa:")) {
       // Fall back to the desk's KAS funding wallet (same treasury that powers the bridge)
-      const info = await base44.asServiceRole.functions.invoke("igraBridge", { action: "info" });
-      payTo = info?.data?.kas_deposit_address || "";
+      try {
+        const info = await base44.asServiceRole.functions.invoke("igraBridge", { action: "info" });
+        payTo = info?.data?.kas_deposit_address || "";
+      } catch {
+        payTo = "";
+      }
     }
     if (!payTo.startsWith("kaspa:")) return Response.json({ error: "AWA treasury address not configured" }, { status: 500 });
 
