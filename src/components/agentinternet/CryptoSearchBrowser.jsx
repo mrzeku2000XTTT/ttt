@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Loader2, TrendingUp, Users, Bot, Share2 } from "lucide-react";
+import { X, Search, Loader2, TrendingUp, Users, Bot, Share2, Flame } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CryptoProfileGrid from "./CryptoProfileGrid";
+import Kcc20TokenBrowser from "./Kcc20TokenBrowser";
 import SiteAgentChat from "./SiteAgentChat";
 import Sparkline from "./Sparkline";
 import FearGreedDial from "./FearGreedDial";
@@ -17,7 +18,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
   const [trending, setTrending] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState("coins"); // coins | profiles
+  const [tab, setTab] = useState("coins"); // coins | profiles | kcc20
   const [profiles, setProfiles] = useState([]);
   const [chatApp, setChatApp] = useState(null); // profile whose AI agent is open
   const [kasPrice, setKasPrice] = useState(null); // for the "value in KAS" converter
@@ -169,6 +170,12 @@ export default function CryptoSearchBrowser({ open, onClose }) {
             >
               <Users className="w-3 h-3" /> Crypto Profiles
             </button>
+            <button
+              onClick={() => setTab("kcc20")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest border transition-colors ${tab === "kcc20" ? "bg-amber-500/20 border-amber-400/50 text-amber-200" : "border-white/10 text-white/50 hover:text-white"}`}
+            >
+              <Flame className="w-3 h-3" /> KCC20
+            </button>
           </div>
 
           {/* Content */}
@@ -180,6 +187,8 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                 </p>
                 <CryptoProfileGrid profiles={profiles} filter={input} onAskAI={(p) => setChatApp(p)} />
               </div>
+            ) : tab === "kcc20" ? (
+              <Kcc20TokenBrowser filter={input} kasPrice={kasPrice} />
             ) : loading ? (
               <div className="flex flex-col items-center justify-center py-24">
                 <Loader2 className="w-6 h-6 text-amber-400 animate-spin mb-3" />
