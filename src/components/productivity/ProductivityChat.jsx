@@ -3,7 +3,7 @@ import { Send, Bot, User as UserIcon, Loader2, Copy, Check, Zap, Wallet, AlertCi
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
-import { getAllOwnedAddresses, getPrivateKeyFor } from "@/lib/kachingVault";
+import { getAnyWallet } from "@/lib/localKaspaWallet";
 import { parseProductivityTools, stripToolBlocks } from "@/lib/productivityTools";
 import ProductivityToolWidget from "./ProductivityToolWidget";
 
@@ -26,37 +26,26 @@ export default function ProductivityChat() {
   const [error, setError] = useState("");
   const [txId, setTxId] = useState("");
   const [copied, setCopied] = useState(false);
-  const [wallets, setWallets] = useState([]);
-  const [walletIdx, setWalletIdx] = useState(0);
   const [paying, setPaying] = useState(false);
   const [balance, setBalance] = useState(null);
   const [loadingBal, setLoadingBal] = useState(false);
+  const [mainWallet, setMainWallet] = useState(null);
   const scrollRef = useRef(null);
 
   const loadBalance = async () => {
-    const addrs = getAllOwnedAddresses() || [];
-    if (addrs.length === 0) { setBalance(0); return; }
+    const w = getAnyWallet();
+    setMainWallet(w);
+    if (!w?.address) { setBalance(0); return; }
     setLoadingBal(true);
     try {
-      const results = await Promise.all(
-        addrs.map((a) => base44.functions.invoke("getKaspaBalance", { address: a.address }).catch(() => null))
-      );
-      let total = 0;
-      for (const r of results) {
-        const d = r?.data || r;
-        if (d && (d.balanceKAS ?? d.balance) != null) total += Number(d.balanceKAS ?? d.balance);
-      }
-      setBalance(total);
+      const r = await base44.functions.invoke("getKaspaBalance", { address: w.address }).catch(() => null);
+      const d = r?.data || r;
+      setBalance(d && (d.balanceKAS ?? d.balance) != null ? Number(d.balanceKAS ?? d.balance) : 0);
     } catch { setBalance(0); }
     finally { setLoadingBal(false); }
   };
 
   useEffect(() => {
-    try {
-      setWallets(getAllOwnedAddresses() || []);
-    } catch {
-      setWallets([]);
-    }
     loadBalance();
   }, []);
 
@@ -117,16 +106,16 @@ export default function ProductivityChat() {
   };
 
   const payWithWallet = async () => {
-    const w = wallets[walletIdx];
-    if (!w) {
-      setError("No KaChing wallet found — import one in KaChing Wallet, or pay manually.");
+    const w = mainWallet;
+    if (!w?.address || !w?.privateKey) {
+      setError("No TTT main wallet found — create or import one in the Wallet page, or pay manually.");
       return;
     }
     setPaying(true);
     setError("");
     try {
       const res = await base44.functions.invoke("sendKaspaTransaction", {
-        privateKey: getPrivateKeyFor(w.address),
+        privateKey: w.privateKey,
         fromAddress: w.address,
         toAddress: pending.pay_to,
         amountKas: String(pending.amount_kas),
@@ -136,6 +125,7 @@ export default function ProductivityChat() {
       const tx = (d?.txId || "").toLowerCase().replace(/^0x/, "");
       if (!/^[0-9a-f]{64}$/.test(tx)) throw new Error("Send succeeded but no valid tx id returned");
       await settle(pending.invoice_id, tx);
+      loadBalance();
     } catch (e) {
       setError(e?.message || "Wallet payment failed");
       setPaying(false);
@@ -205,7 +195,7 @@ export default function ProductivityChat() {
             <span className="text-slate-900 font-black text-lg">{pending.amount_kas} KAS</span>
           </div>
           <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-            <span className="text-[11px] text-slate-500 flex items-center gap-1"><Wallet className="w-3 h-3" /> KaChing balance</span>
+            <span className="text-[11px] text-slate-500 flex items-center gap-1"><Wallet className="w-3 h-3" /> TTT Wallet balance</span>
             {loadingBal ? (
               <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
             ) : balance === null ? (
@@ -220,19 +210,10 @@ export default function ProductivityChat() {
             <span className="flex-1 text-amber-700 font-mono text-[10px] break-all">{pending.pay_to}</span>
             {copied ? <Check className="w-4 h-4 text-amber-600 flex-shrink-0" /> : <Copy className="w-4 h-4 text-slate-400 flex-shrink-0" />}
           </button>
-          {wallets.length > 0 && (
-            <div className="flex items-center gap-2">
-              <select value={walletIdx} onChange={(e) => setWalletIdx(Number(e.target.value))} className="flex-1 h-9 px-2 rounded-lg bg-white border border-slate-300 text-xs text-slate-900 outline-none">
-                {wallets.map((w, i) => (
-                  <option key={w.address} value={i} className="bg-white">
-                    {w.label || "Wallet"} — {w.address.slice(0, 10)}…{w.address.slice(-4)}
-                  </option>
-                ))}
-              </select>
-              <Button onClick={payWithWallet} disabled={paying} className="bg-emerald-500 hover:bg-emerald-600 text-white h-9">
-                {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wallet className="w-4 h-4 mr-1" /> Pay</>}
-              </Button>
-            </div>
+          {mainWallet && mainWallet.privateKey && (
+            <Button onClick={payWithWallet} disabled={paying} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white h-9">
+              {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wallet className="w-4 h-4 mr-1" /> Pay with TTT Wallet</>}
+            </Button>
           )}
           <div className="flex items-center gap-2">
             <input value={txId} onChange={(e) => setTxId(e.target.value)} placeholder="…or paste Kaspa tx id" className="flex-1 h-9 px-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs outline-none" />
