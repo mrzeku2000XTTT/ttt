@@ -3,6 +3,7 @@
 // indexed Kaspa ecosystem site.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { fetchKcc20Lore, loreToKnowledge } from '../../shared/kcc20Lore.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -51,8 +52,56 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
-    const { url, name, description, category, messages, knowledge: cached, fast, prefetch } = await req.json();
+    const { url, name, description, category, messages, knowledge: cached, fast, prefetch, tick } = await req.json();
     if (!url) return Response.json({ success: false, error: 'url required' }, { status: 400, headers: CORS });
+
+    // KCC20 covenant tokens get a dedicated, token-specific knowledge base built
+    // from the KRON registry (creator address) + a web-grounded lore search.
+    // Scraping the kron.technology token page is useless (JS shell), so we never
+    // do it for these — the agent must answer about the token, not the platform.
+    const isKcc20 = (category || '').toUpperCase().includes('KCC20');
+    const kcc20Tick = (tick || '').toString().toUpperCase().trim();
+
+    if (isKcc20 && kcc20Tick) {
+      if (prefetch) {
+        const lore = await fetchKcc20Lore(kcc20Tick, base44);
+        return Response.json({ success: true, knowledge: loreToKnowledge(lore), lore }, { headers: CORS });
+      }
+      const knowledge = cached || loreToKnowledge(await fetchKcc20Lore(kcc20Tick, base44));
+      const thin = !fast && !knowledge;
+      const history = (messages || [])
+        .slice(-6)
+        .map((m: any) => `${m.role === 'user' ? 'User' : 'Agent'}: ${m.content}`)
+        .join('\n');
+
+      const answer = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: `You are the dedicated AI agent for the Kaspa KCC-20 token "${name || kcc20Tick}".
+
+This is a SPECIFIC token — NOT the kron.technology platform and NOT the KCC-20 standard. Answer ONLY about this token ($${kcc20Tick}): what it is, what it is used for, who created it, its website, its X (Twitter) profile, its community and lore, and its live market.
+
+ON-CHAIN + WEB RESEARCH ABOUT THIS TOKEN:
+${knowledge || '(no lore available — say you could not find project-specific info)'}
+
+CONVERSATION SO FAR:
+${history || '(new conversation)'}
+
+Rules:
+- Talk about the "${name || kcc20Tick}" ($${kcc20Tick}) token specifically.
+- If asked what the token is used for, what the site is, or who the creator is, use the website / X profile / lore above. If a field says "not found", say you could not find it — do NOT invent one.
+- Do NOT explain what kron.technology is, what a bonding curve is, or what KCC-20 is unless the user explicitly asks.
+- If the user asks about price or market, use the on-chain numbers above.
+- Be direct, concrete, and specific to this token.
+
+${fast ? 'Answer in ONE short sentence, max 25 words.' : 'Answer in 2-4 short plain sentences.'} No markdown headings, no bullet lists, no citation markers like [1].`,
+        add_context_from_internet: !!thin,
+        model: thin ? 'gemini_3_flash' : fast ? 'gpt_5_mini' : 'gemini_3_flash',
+      });
+
+      return Response.json(
+        { success: true, answer: typeof answer === 'string' ? answer.trim() : '', knowledge, grounded: !!knowledge },
+        { headers: CORS },
+      );
+    }
 
     // Warm-up call from the client when the panel opens: read the site, no LLM.
     if (prefetch) {

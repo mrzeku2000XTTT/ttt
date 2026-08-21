@@ -132,6 +132,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
       url: tok.covenantId ? `https://kron.technology/#/token/${tok.covenantId}` : "https://kron.technology",
       logo: tok.logo || "",
       category: "KCC20 Token",
+      tick: tok.tick,
       description: ctx || `${tok.tick} (${tok.name}) — KCC20 covenant token on Kaspa KRON. Analyze its market, holders, and risk.`,
     });
   };

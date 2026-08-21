@@ -29,7 +29,7 @@ export default function SiteAgentChat({ app, onClose }) {
   useEffect(() => {
     if (!app?.url) return;
     let alive = true;
-    base44.functions.invoke("siteAgentChat", { url: app.url, prefetch: true, fast: true })
+    base44.functions.invoke("siteAgentChat", { url: app.url, prefetch: true, fast: true, tick: app.tick, category: app.category })
       .then(raw => {
         const res = raw?.data ?? raw;
         if (alive && res?.knowledge && !knowledgeRef.current) knowledgeRef.current = res.knowledge;
@@ -64,6 +64,7 @@ export default function SiteAgentChat({ app, onClose }) {
         name: app.name,
         description: app.description,
         category: app.category,
+        tick: app.tick,
         messages: next,
         knowledge: knowledgeRef.current,
         fast,
@@ -80,7 +81,10 @@ export default function SiteAgentChat({ app, onClose }) {
 
   const isXProfile = app?.category === "X Profiles" || app?.category === "Crypto X Profiles";
   const isCoin = app?.category === "Crypto Coin";
-  const suggestions = isCoin
+  const isKcc20 = (app?.category || "").toUpperCase().includes("KCC20");
+  const suggestions = isKcc20
+    ? ["What is this token used for?", "Who created it & what's their X?", "What's the project website?", "Analyze its market & whales"]
+    : isCoin
     ? ["Analyze the price action right now", "Bullish or bearish today?", "Latest news on this coin?"]
     : isXProfile
     ? ["Who is this account?", "What do they post about?", "Latest updates from them?"]
@@ -143,7 +147,9 @@ export default function SiteAgentChat({ app, onClose }) {
             {messages.length === 0 && (
               <div className="space-y-3">
                 <p className="text-white/50 text-[13px] leading-relaxed">
-                  {isCoin
+                  {isKcc20
+                    ? <>I research <span className="text-white">{app.name}</span> specifically — its creator, website, X profile and lore, plus on-chain market data. Ask away.</>
+                    : isCoin
                     ? <>Ask me to analyze <span className="text-white">{app.name}</span> live — price action, news and market sentiment.</>
                     : isXProfile
                     ? <>Ask anything about <span className="text-white">{app.name}</span> — I read their X profile and posts.</>
@@ -177,7 +183,7 @@ export default function SiteAgentChat({ app, onClose }) {
 
             {busy && (
               <div className="flex items-center gap-2 text-white/40 text-xs">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" /> Reading the site…
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" /> {isKcc20 ? "Researching this token…" : "Reading the site…"}
               </div>
             )}
             <div ref={endRef} />
