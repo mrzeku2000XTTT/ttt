@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Loader2, ExternalLink, Trophy, Flame, Bot } from "lucide-react";
+import { Loader2, ExternalLink, Trophy, Flame, Bot, Star } from "lucide-react";
 import Kcc20TokenDetail from "./Kcc20TokenDetail";
 
 // Real KRON endpoints (same ones the KCC20-wallet repo calls)
@@ -16,34 +16,78 @@ async function fetchJson(url) {
   return body?.result ?? body;
 }
 
-// Merge registry tokenlist + live indexer markets into one list
+// Merge live indexer markets + registry tokenlist into one list.
+// The /markets endpoint is the real "live oracle" — every token there has a
+// live KAS price. Registry-only tokens are not trading yet (no market), so we
+// show them as "Pending" rather than a misleading "0".
 export async function loadKcc20Tokens() {
   const [listRes, mkts] = await Promise.all([
     fetchJson(`${REG}/api/registry/tokenlist`).catch(() => ({ tokens: [] })),
     fetchJson(`${IDX}/markets`).catch(() => []),
   ]);
-  const live = new Map();
-  for (const m of Array.isArray(mkts) ? mkts : []) {
-    live.set(String(m.tick || "").toUpperCase(), m);
+
+  const regByTick = new Map();
+  for (const e of (listRes?.tokens || [])) {
+    const t = String(e.symbol || "").toUpperCase();
+    if (t) regByTick.set(t, e);
   }
-  const tokens = (listRes?.tokens || []).map((e) => {
+
+  const seen = new Set();
+  const tokens = [];
+
+  // 1) Live-market tokens (real oracle prices) — includes tokens that may not
+  //    be in the registry yet.
+  for (const m of (Array.isArray(mkts) ? mkts : [])) {
+    const tick = String(m.tick || "").toUpperCase();
+    if (!tick || seen.has(tick)) continue;
+    seen.add(tick);
+    const e = regByTick.get(tick) || {};
+    tokens.push({
+      tick,
+      name: m.name || e.name || tick,
+      decimals: Number(e.decimals ?? m.dec ?? 0),
+      logo: e.logoURI || "",
+      covenantId: m.covenantId || e.covenantId || "",
+      graduated: !!(e.extensions?.graduated || m.graduated),
+      price: Number(m.price || 0),
+      change24h: Number(m.change24h || 0),
+      volume24h: Number(m.volume24h || 0),
+      tvl: Number(m.tvl || 0),
+      holderTotal: Number(m.holderTotal || 0),
+      hasMarket: true,
+      featured: tick === "KKDAG",
+    });
+  }
+
+  // 2) Registry tokens not yet on the market (pending / no oracle yet).
+  for (const e of (listRes?.tokens || [])) {
     const tick = String(e.symbol || "").toUpperCase();
-    const row = live.get(tick) || {};
-    return {
+    if (!tick || seen.has(tick)) continue;
+    seen.add(tick);
+    tokens.push({
       tick,
       name: e.name || tick,
       decimals: Number(e.decimals || 0),
       logo: e.logoURI || "",
       covenantId: e.covenantId || "",
-      graduated: !!(e.extensions?.graduated || row.graduated),
-      price: Number(row.price || 0),       // in KAS
-      change24h: Number(row.change24h || 0),
-      volume24h: Number(row.volume24h || 0), // in KAS
-      tvl: Number(row.tvl || 0),             // in KAS
-    };
+      graduated: !!(e.extensions?.graduated),
+      price: 0,
+      change24h: 0,
+      volume24h: 0,
+      tvl: 0,
+      holderTotal: 0,
+      hasMarket: false,
+      featured: tick === "KKDAG",
+    });
+  }
+
+  // Featured (KKDAG) first, then live volume, then TVL, then alphabetical.
+  tokens.sort((a, b) => {
+    if (a.featured !== b.featured) return a.featured ? -1 : 1;
+    return (b.volume24h || 0) - (a.volume24h || 0)
+      || (b.tvl || 0) - (a.tvl || 0)
+      || a.tick.localeCompare(b.tick);
   });
-  // Live-volume first, then TVL, then alphabetical
-  tokens.sort((a, b) => (b.volume24h || 0) - (a.volume24h || 0) || (b.tvl || 0) - (a.tvl || 0) || a.tick.localeCompare(b.tick));
   return tokens;
 }
 
@@ -131,7 +175,11 @@ export default function Kcc20TokenBrowser({ filter, kasPrice, onAskAI }) {
             return (
               <div
                 key={t.tick + (t.covenantId || "")}
-                className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-amber-500/30 transition-colors"
+                className={`flex items-center gap-2 p-3 rounded-xl border transition-colors ${
+                  t.featured
+                    ? "bg-amber-500/[0.08] border-amber-400/50 hover:bg-amber-500/[0.12]"
+                    : "bg-white/[0.04] border-white/10 hover:bg-white/[0.08] hover:border-amber-500/30"
+                }`}
               >
                 <button
                   onClick={() => setSelected(t)}
@@ -148,12 +196,17 @@ export default function Kcc20TokenBrowser({ filter, kasPrice, onAskAI }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-white text-sm font-semibold truncate">{t.tick}</span>
+                      {t.featured && (
+                        <span className="inline-flex items-center gap-0.5 text-[8px] font-mono uppercase text-amber-300 bg-amber-500/20 border border-amber-400/50 rounded px-1">
+                          <Star className="w-2 h-2" /> Featured
+                        </span>
+                      )}
                       {t.graduated && (
                         <span className="inline-flex items-center gap-0.5 text-[8px] font-mono uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded px-1">
                           <Trophy className="w-2 h-2" /> Grad
                         </span>
                       )}
-                      {!t.graduated && t.volume24h > 0 && (
+                      {!t.graduated && t.hasMarket && t.volume24h > 0 && (
                         <span className="inline-flex items-center gap-0.5 text-[8px] font-mono uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1">
                           <Flame className="w-2 h-2" /> Live
                         </span>
@@ -162,12 +215,18 @@ export default function Kcc20TokenBrowser({ filter, kasPrice, onAskAI }) {
                     <div className="text-white/40 text-[10px] truncate">{t.name}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-white text-xs font-mono">{fmtKas(t.price)}</div>
-                    {usd && <div className="text-[9px] font-mono text-white/30">{usd}</div>}
-                    {t.change24h !== 0 && (
-                      <div className={`text-[10px] font-mono ${t.change24h >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                        {t.change24h >= 0 ? "+" : ""}{t.change24h.toFixed(2)}%
-                      </div>
+                    {t.hasMarket ? (
+                      <>
+                        <div className="text-white text-xs font-mono">{fmtKas(t.price)}</div>
+                        {usd && <div className="text-[9px] font-mono text-white/30">{usd}</div>}
+                        {t.change24h !== 0 && (
+                          <div className={`text-[10px] font-mono ${t.change24h >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {t.change24h >= 0 ? "+" : ""}{t.change24h.toFixed(2)}%
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-white/30 text-[10px] font-mono uppercase tracking-wider">Pending</div>
                     )}
                   </div>
                 </button>
