@@ -156,77 +156,77 @@ export default function ProductivityChat() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-[460px] text-slate-900">
+    <div className="flex flex-col h-full min-h-[460px] text-[#f0f0f0]">
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             {m.role === "assistant" && (
-              <div className="w-7 h-7 rounded-full bg-cyan-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Bot className="w-4 h-4 text-cyan-600" />
+              <div className="w-7 h-7 rounded-full bg-[#ff9d7d]/10 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-[0_0_12px_rgba(255,157,125,0.4)]">
+                <Bot className="w-4 h-4 text-[#ff9d7d]" />
               </div>
             )}
-            <div className={`max-w-[88%] rounded-xl px-3 py-2 text-sm ${m.role === "user" ? "bg-cyan-500 text-white" : "bg-slate-100 text-slate-800 border border-slate-200"}`}>
+            <div className={`max-w-[88%] rounded-xl px-3 py-2 text-sm ${m.role === "user" ? "bg-[#ff9d7d] text-white" : "bg-[#1f2024] text-[#f0f0f0] border border-[#44464c]"}`}>
               <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
               {m.tools?.map((t, j) => (
                 <ProductivityToolWidget key={j} tool={t} storageId={`msg-${i}-${j}`} />
               ))}
             </div>
             {m.role === "user" && (
-              <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <UserIcon className="w-4 h-4 text-slate-600" />
+              <div className="w-7 h-7 rounded-full bg-[#2a2b30] flex items-center justify-center flex-shrink-0 mt-0.5">
+                <UserIcon className="w-4 h-4 text-[#a0a0a0]" />
               </div>
             )}
           </div>
         ))}
         {busy && (
           <div className="flex gap-2 justify-start">
-            <div className="w-7 h-7 rounded-full bg-cyan-100 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-cyan-600 animate-pulse" />
+            <div className="w-7 h-7 rounded-full bg-[#ff9d7d]/10 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-[#ff9d7d] animate-pulse" />
             </div>
-            <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-500">Preparing x402 quote…</div>
+            <div className="bg-[#1f2024] border border-[#44464c] rounded-xl px-3 py-2 text-sm text-[#a0a0a0]">Preparing x402 quote…</div>
           </div>
         )}
       </div>
 
       {pending && (
-        <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-2.5">
+        <div className="mt-3 rounded-xl border border-[#ff9d7d]/40 bg-[#1f2024] p-3 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-amber-700 font-mono font-black text-[10px] tracking-widest">HTTP 402 · PAYMENT REQUIRED</span>
-            <span className="text-slate-900 font-black text-lg">{pending.amount_kas} KAS</span>
+            <span className="text-[#ff9d7d] font-mono font-black text-[10px] tracking-widest">HTTP 402 · PAYMENT REQUIRED</span>
+            <span className="text-white font-black text-lg">{pending.amount_kas} KAS</span>
           </div>
-          <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-            <span className="text-[11px] text-slate-500 flex items-center gap-1"><Wallet className="w-3 h-3" /> TTT Wallet balance</span>
+          <div className="flex items-center justify-between bg-[#2a2b30] border border-[#44464c] rounded-lg px-2.5 py-1.5">
+            <span className="text-[11px] text-[#a0a0a0] flex items-center gap-1"><Wallet className="w-3 h-3" /> TTT Wallet balance</span>
             {loadingBal ? (
-              <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 text-[#a0a0a0] animate-spin" />
             ) : balance === null ? (
-              <span className="text-[11px] text-slate-400">—</span>
+              <span className="text-[11px] text-[#a0a0a0]">—</span>
             ) : (
               <span className={`text-[12px] font-bold ${balance >= pending.amount_kas ? "text-emerald-600" : "text-red-500"}`}>
                 {balance.toFixed(4)} KAS {balance >= pending.amount_kas ? "" : "· insufficient"}
               </span>
             )}
           </div>
-          <button onClick={copyAddr} className="w-full flex items-center gap-2 bg-white border border-slate-200 hover:border-amber-400 rounded-lg px-2.5 py-2 text-left">
-            <span className="flex-1 text-amber-700 font-mono text-[10px] break-all">{pending.pay_to}</span>
-            {copied ? <Check className="w-4 h-4 text-amber-600 flex-shrink-0" /> : <Copy className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+          <button onClick={copyAddr} className="w-full flex items-center gap-2 bg-[#2a2b30] border border-[#44464c] hover:border-[#ff9d7d]/60 rounded-lg px-2.5 py-2 text-left">
+            <span className="flex-1 text-[#ff9d7d] font-mono text-[10px] break-all">{pending.pay_to}</span>
+            {copied ? <Check className="w-4 h-4 text-[#ff9d7d] flex-shrink-0" /> : <Copy className="w-4 h-4 text-[#a0a0a0] flex-shrink-0" />}
           </button>
           {mainWallet && mainWallet.privateKey && (
-            <Button onClick={payWithWallet} disabled={paying} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white h-9">
+            <Button onClick={payWithWallet} disabled={paying} className="w-full bg-[#ff9d7d] hover:bg-[#ff8c66] text-white h-9">
               {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wallet className="w-4 h-4 mr-1" /> Pay with TTT Wallet</>}
             </Button>
           )}
           <div className="flex items-center gap-2">
-            <input value={txId} onChange={(e) => setTxId(e.target.value)} placeholder="…or paste Kaspa tx id" className="flex-1 h-9 px-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs outline-none" />
-            <Button onClick={payManual} disabled={paying || !txId.trim()} className="bg-amber-500 hover:bg-amber-600 text-white h-9">
+            <input value={txId} onChange={(e) => setTxId(e.target.value)} placeholder="…or paste Kaspa tx id" className="flex-1 h-9 px-2.5 rounded-lg bg-[#2a2b30] border border-[#44464c] text-[#f0f0f0] font-mono text-xs outline-none focus:border-[#ff9d7d]/60" />
+            <Button onClick={payManual} disabled={paying || !txId.trim()} className="bg-transparent border border-[#ff9d7d] text-[#ff9d7d] hover:bg-[#ff9d7d]/10 h-9">
               {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Settle"}
             </Button>
           </div>
-          <p className="text-slate-400 text-[10px] text-center">Verified on Kaspa consensus — one tx settles one invoice.</p>
+          <p className="text-[#a0a0a0] text-[10px] text-center">Verified on Kaspa consensus — one tx settles one invoice.</p>
         </div>
       )}
 
       {error && (
-        <div className="mt-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs flex items-start gap-2">
+        <div className="mt-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-xs flex items-start gap-2">
           <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
           {error}
         </div>
@@ -238,7 +238,7 @@ export default function ProductivityChat() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="What are you avoiding right now?"
           rows={2}
-          className="resize-none text-sm bg-white border-slate-300 text-slate-900 placeholder:text-slate-400"
+          className="resize-none text-sm bg-[#25262a] border-[#44464c] text-[#f0f0f0] placeholder:text-[#a0a0a0] focus:border-[#ff9d7d]/60"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -246,11 +246,11 @@ export default function ProductivityChat() {
             }
           }}
         />
-        <Button type="submit" disabled={busy || !input.trim() || paying} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+        <Button type="submit" disabled={busy || !input.trim() || paying} className="bg-[#ff9d7d] hover:bg-[#ff8c66] text-white">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
       </form>
-      <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
+      <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[10px] text-[#ff9d7d]">
         <Zap className="w-3 h-3" /> {PRICE_KAS} KAS per reply · pay-as-you-go · powered by Argent + AWA x402
       </div>
     </div>
