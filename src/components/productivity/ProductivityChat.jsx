@@ -6,7 +6,9 @@ import { base44 } from "@/api/base44Client";
 import { getAnyWallet } from "@/lib/localKaspaWallet";
 import { getAllOwnedAddresses, getPrivateKeyFor } from "@/lib/kachingVault";
 import { parseProductivityTools, stripToolBlocks } from "@/lib/productivityTools";
+import { getStoredPinHash } from "@/components/wallet/walletLock";
 import ProductivityToolWidget from "./ProductivityToolWidget";
+import ProductivityPinModal from "./ProductivityPinModal";
 
 const PRICE_KAS = 0.05;
 const SERVICE_ID = "productivity-coach";
@@ -33,18 +35,26 @@ export default function ProductivityChat() {
   const [mainWallet, setMainWallet] = useState(null);
   const [kachingWallets, setKachingWallets] = useState([]);
   const [kachingIdx, setKachingIdx] = useState(0);
-  const [tttBalance, setTttBalance] = useState(null);
-  const [kachingBalance, setKachingBalance] = useState(null);
+  const [tttInfo, setTttInfo] = useState({ balance: null, utxos: 0, pending: 0 });
+  const [kachingInfo, setKachingInfo] = useState({ balance: null, utxos: 0, pending: 0 });
+  const [pinAuth, setPinAuth] = useState(false);
+  const [resolvedPay, setResolvedPay] = useState(null);
   const scrollRef = useRef(null);
 
-  const balance = walletSource === "ttt" ? tttBalance : kachingBalance;
+  const info = walletSource === "ttt" ? tttInfo : kachingInfo;
+  const balance = info.balance;
 
-  const fetchBal = async (addr) => {
+  const fetchSpendable = async (addr) => {
     try {
-      const r = await base44.functions.invoke("getKaspaBalance", { address: addr }).catch(() => null);
+      const r = await base44.functions.invoke("getKaspaSpendable", { address: addr }).catch(() => null);
       const d = r?.data || r;
-      return d && (d.balanceKAS ?? d.balance) != null ? Number(d.balanceKAS ?? d.balance) : 0;
-    } catch { return 0; }
+      if (d && d.success !== false && d.spendableKAS != null) {
+        return { balance: Number(d.spendableKAS) || 0, utxos: Number(d.matureUtxoCount ?? d.utxoCount ?? 0), pending: Number(d.pendingUtxoCount ?? 0) };
+      }
+      const rb = await base44.functions.invoke("getKaspaBalance", { address: addr }).catch(() => null);
+      const db = rb?.data || rb;
+      return { balance: db && (db.balanceKAS ?? db.balance) != null ? Number(db.balanceKAS ?? db.balance) : 0, utxos: 0, pending: 0 };
+    } catch { return { balance: 0, utxos: 0, pending: 0 }; }
   };
 
   const loadBalance = async () => {
@@ -55,13 +65,14 @@ export default function ProductivityChat() {
     setLoadingBal(true);
     await Promise.all([
       (async () => {
-        if (!w?.address) { setTttBalance(0); return; }
-        setTttBalance(await fetchBal(w.address));
+        if (!w?.address) { setTttInfo({ balance: 0, utxos: 0, pending: 0 }); return; }
+        setTttInfo(await fetchSpendable(w.address));
       })(),
       (async () => {
-        if (kaching.length === 0) { setKachingBalance(0); return; }
-        const results = await Promise.all(kaching.map((k) => fetchBal(k.address)));
-        setKachingBalance(results.reduce((a, b) => a + b, 0));
+        if (kaching.length === 0) { setKachingInfo({ balance: 0, utxos: 0, pending: 0 }); return; }
+        const results = await Promise.all(kaching.map((k) => fetchSpendable(k.address)));
+        const merged = results.reduce((acc, r) => ({ balance: acc.balance + r.balance, utxos: acc.utxos + r.utxos, pending: acc.pending + r.pending }), { balance: 0, utxos: 0, pending: 0 });
+        setKachingInfo(merged);
       })(),
     ]);
     setLoadingBal(false);
@@ -136,11 +147,11 @@ export default function ProductivityChat() {
     }
   };
 
-  const payWithWallet = async () => {
+  const beginPay = async () => {
     setError("");
     const srcLabel = walletSource === "ttt" ? "TTT" : "KaChing";
     if (balance != null && balance < pending.amount_kas) {
-      setError(`Not enough KAS in your ${srcLabel} wallet to cover ${pending.amount_kas} KAS. Top up your wallet, switch source, or paste a manual tx below.`);
+      setError(`Not enough spendable KAS in your ${srcLabel} wallet (need ${pending.amount_kas} KAS, have ${balance.toFixed(4)} KAS confirmed). Top up, wait for pending UTXOs to confirm, switch source, or paste a manual tx below.`);
       return;
     }
     let fromAddress, privateKey;
@@ -160,6 +171,24 @@ export default function ProductivityChat() {
       fromAddress = kw.address;
       privateKey = getPrivateKeyFor(kw.address);
     }
+    // PIN gate — require unlock if a wallet PIN is set
+    if (getStoredPinHash()) {
+      setResolvedPay({ fromAddress, privateKey });
+      setPinAuth(true);
+      return;
+    }
+    await doPay(fromAddress, privateKey);
+  };
+
+  const onPinVerified = async () => {
+    setPinAuth(false);
+    const r = resolvedPay;
+    setResolvedPay(null);
+    if (r) await doPay(r.fromAddress, r.privateKey);
+  };
+
+  const doPay = async (fromAddress, privateKey) => {
+    const srcLabel = walletSource === "ttt" ? "TTT" : "KaChing";
     setPaying(true);
     try {
       const res = await base44.functions.invoke("sendKaspaTransaction", {
@@ -176,8 +205,10 @@ export default function ProductivityChat() {
       loadBalance();
     } catch (e) {
       const msg = String(e?.message || "Wallet payment failed").toLowerCase();
-      if (msg.includes("insufficient") || msg.includes("balance") || msg.includes("funds") || msg.includes("not enough") || msg.includes("enough")) {
-        setError(`Not enough KAS in your ${srcLabel} wallet to cover ${pending.amount_kas} KAS. Top up your wallet, switch source, or paste a manual tx below.`);
+      if (msg.includes("insufficient") || msg.includes("balance") || msg.includes("funds") || msg.includes("not enough") || msg.includes("enough") || msg.includes("no utxo") || msg.includes("unconfirmed")) {
+        setError(`Not enough spendable KAS in your ${srcLabel} wallet to cover ${pending.amount_kas} KAS. Top up, wait for pending UTXOs to confirm, switch source, or paste a manual tx below.`);
+      } else if (msg.includes("still confirming") || msg.includes("orphan") || msg.includes("already spent")) {
+        setError("A previous transaction is still confirming. Wait ~10 seconds and try again.");
       } else {
         setError(e?.message || "Wallet payment failed");
       }
@@ -252,7 +283,7 @@ export default function ProductivityChat() {
             <button onClick={() => setWalletSource("kaching")} disabled={kachingWallets.length === 0} className={`flex-1 h-7 rounded-md text-[11px] font-medium transition disabled:opacity-40 disabled:cursor-not-allowed ${walletSource === "kaching" ? "bg-[#ff9d7d] text-white" : "text-[#a0a0a0] hover:text-white"}`}>KaChing</button>
           </div>
           <div className="flex items-center justify-between bg-[#2a2b30] border border-[#44464c] rounded-lg px-2.5 py-1.5">
-            <span className="text-[11px] text-[#a0a0a0] flex items-center gap-1"><Wallet className="w-3 h-3" /> {walletSource === "ttt" ? "TTT Wallet balance" : "KaChing balance"}</span>
+            <span className="text-[11px] text-[#a0a0a0] flex items-center gap-1"><Wallet className="w-3 h-3" /> {walletSource === "ttt" ? "TTT Wallet" : "KaChing"}</span>
             {loadingBal ? (
               <Loader2 className="w-3.5 h-3.5 text-[#a0a0a0] animate-spin" />
             ) : balance === null ? (
@@ -263,6 +294,12 @@ export default function ProductivityChat() {
               </span>
             )}
           </div>
+          {balance !== null && !loadingBal && (
+            <div className="flex items-center justify-between px-1 -mt-1.5">
+              <span className="text-[10px] text-[#a0a0a0]">{info.utxos} spendable UTXO{info.utxos === 1 ? "" : "s"}{info.pending > 0 ? ` · ${info.pending} pending` : ""}</span>
+              {info.pending > 0 && <span className="text-[10px] text-amber-400">confirming…</span>}
+            </div>
+          )}
           {walletSource === "kaching" && kachingWallets.length > 1 && (
             <select value={kachingIdx} onChange={(e) => setKachingIdx(Number(e.target.value))} className="w-full h-9 px-2 rounded-lg bg-[#2a2b30] border border-[#44464c] text-[#f0f0f0] text-xs outline-none">
               {kachingWallets.map((k, i) => (
@@ -275,7 +312,7 @@ export default function ProductivityChat() {
             {copied ? <Check className="w-4 h-4 text-[#ff9d7d] flex-shrink-0" /> : <Copy className="w-4 h-4 text-[#a0a0a0] flex-shrink-0" />}
           </button>
           {((walletSource === "ttt" && mainWallet?.privateKey) || (walletSource === "kaching" && kachingWallets.length > 0)) && (
-            <Button onClick={payWithWallet} disabled={paying} className="w-full bg-[#ff9d7d] hover:bg-[#ff8c66] text-white h-9">
+            <Button onClick={beginPay} disabled={paying} className="w-full bg-[#ff9d7d] hover:bg-[#ff8c66] text-white h-9">
               {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wallet className="w-4 h-4 mr-1" /> Pay with {walletSource === "ttt" ? "TTT Wallet" : "KaChing"}</>}
             </Button>
           )}
@@ -300,6 +337,10 @@ export default function ProductivityChat() {
           <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
           {error}
         </div>
+      )}
+
+      {pinAuth && (
+        <ProductivityPinModal amount={pending?.amount_kas} onVerified={onPinVerified} onClose={() => { setPinAuth(false); setResolvedPay(null); }} />
       )}
 
       <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
