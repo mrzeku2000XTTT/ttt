@@ -36,6 +36,14 @@ const FEATURED = [
     logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/902352dbe_generated_image.png",
     bg: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/902352dbe_generated_image.png",
   },
+  {
+    name: "Better Ideas AI",
+    desc: "Productivity coach — pay per reply in KAS",
+    path: "/Productivity",
+    color: "from-cyan-500 to-emerald-600",
+    logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/902352dbe_generated_image.png",
+    bg: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/902352dbe_generated_image.png",
+  },
 ];
 
 export default function AppStoreFeatured() {
