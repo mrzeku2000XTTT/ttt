@@ -16,10 +16,20 @@ async function fetchJson(url) {
   return body?.result ?? body;
 }
 
-// Merge live indexer markets + registry tokenlist into one list.
-// The /markets endpoint is the real "live oracle" — every token there has a
-// live KAS price. Registry-only tokens are not trading yet (no market), so we
-// show them as "Pending" rather than a misleading "0".
+// Per-token live oracle detail. The /markets list is NOT exhaustive — many
+// trading tokens (KKDAG, CHIP, CLOCK, …) only expose live price/TVL/holders
+// via /token/{tick}. We backfill every registry token missing from /markets
+// so the "live oracle" really covers the whole list.
+async function fetchTokenDetail(tick) {
+  try {
+    const res = await fetch(`${IDX}/token/${encodeURIComponent(tick)}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const body = await res.json();
+    const d = body?.result ?? body;
+    return Array.isArray(d) ? d[0] || null : d || null;
+  } catch { return null; }
+}
+
 export async function loadKcc20Tokens() {
   const [listRes, mkts] = await Promise.all([
     fetchJson(`${REG}/api/registry/tokenlist`).catch(() => ({ tokens: [] })),
@@ -32,14 +42,34 @@ export async function loadKcc20Tokens() {
     if (t) regByTick.set(t, e);
   }
 
+  // Start the live map from the /markets bulk list.
+  const liveMap = new Map();
+  for (const m of (Array.isArray(mkts) ? mkts : [])) {
+    const t = String(m.tick || "").toUpperCase();
+    if (t) liveMap.set(t, m);
+  }
+
+  // Backfill registry tokens that /markets skipped, via per-token oracle lookups
+  // (bounded concurrency so we don't hammer the indexer).
+  const missing = [];
+  for (const t of regByTick.keys()) if (!liveMap.has(t)) missing.push(t);
+  const CONC = 6;
+  for (let i = 0; i < missing.length; i += CONC) {
+    const batch = missing.slice(i, i + CONC);
+    const details = await Promise.all(batch.map(fetchTokenDetail));
+    details.forEach((d, idx) => {
+      if (!d) return;
+      const hasData = Number(d.price) || Number(d.tvl) || Number(d.volume24h) || Number(d.holderTotal);
+      if (hasData) liveMap.set(batch[idx], { ...d, tick: batch[idx] });
+    });
+  }
+
   const seen = new Set();
   const tokens = [];
 
-  // 1) Live-market tokens (real oracle prices) — includes tokens that may not
-  //    be in the registry yet.
-  for (const m of (Array.isArray(mkts) ? mkts : [])) {
-    const tick = String(m.tick || "").toUpperCase();
-    if (!tick || seen.has(tick)) continue;
+  // 1) Every token with live oracle data (from /markets or per-token backfill).
+  for (const [tick, m] of liveMap.entries()) {
+    if (seen.has(tick)) continue;
     seen.add(tick);
     const e = regByTick.get(tick) || {};
     tokens.push({
@@ -59,7 +89,7 @@ export async function loadKcc20Tokens() {
     });
   }
 
-  // 2) Registry tokens not yet on the market (pending / no oracle yet).
+  // 2) Registry tokens with genuinely no oracle data (not launched / empty).
   for (const e of (listRes?.tokens || [])) {
     const tick = String(e.symbol || "").toUpperCase();
     if (!tick || seen.has(tick)) continue;
