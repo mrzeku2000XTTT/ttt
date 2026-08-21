@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Loader2, ExternalLink, Trophy, Flame } from "lucide-react";
+import { Loader2, ExternalLink, Trophy, Flame, Bot } from "lucide-react";
+import Kcc20TokenDetail from "./Kcc20TokenDetail";
 
 // Real KRON endpoints (same ones the KCC20-wallet repo calls)
 const REG = "https://api.kron.technology";
@@ -60,10 +61,11 @@ function fmtUsd(kas, kasPrice) {
   return `$${usd >= 1 ? usd.toLocaleString(undefined, { maximumFractionDigits: 0 }) : usd.toPrecision(2)}`;
 }
 
-export default function Kcc20TokenBrowser({ filter, kasPrice }) {
+export default function Kcc20TokenBrowser({ filter, kasPrice, onAskAI }) {
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -123,62 +125,81 @@ export default function Kcc20TokenBrowser({ filter, kasPrice }) {
         <div className="space-y-2">
           {filtered.map((t) => {
             const usd = fmtUsd(t.price, kasPrice);
-            const usdVol = fmtUsd(t.volume24h, kasPrice);
-            const usdTvl = fmtUsd(t.tvl, kasPrice);
             const kronUrl = t.covenantId
               ? `https://kron.technology/#/token/${t.covenantId}`
               : "https://kron.technology";
             return (
-              <a
+              <div
                 key={t.tick + (t.covenantId || "")}
-                href={kronUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-amber-500/30 transition-colors"
               >
-                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
-                  {t.logo ? (
-                    <img src={t.logo} alt="" className="w-8 h-8 object-contain" />
-                  ) : (
-                    <span className="text-[10px] font-mono text-white/40">{t.tick.slice(0, 3)}</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-white text-sm font-semibold truncate">{t.tick}</span>
-                    {t.graduated && (
-                      <span className="inline-flex items-center gap-0.5 text-[8px] font-mono uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded px-1">
-                        <Trophy className="w-2 h-2" /> Grad
-                      </span>
-                    )}
-                    {!t.graduated && t.volume24h > 0 && (
-                      <span className="inline-flex items-center gap-0.5 text-[8px] font-mono uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1">
-                        <Flame className="w-2 h-2" /> Live
-                      </span>
+                <button
+                  onClick={() => setSelected(t)}
+                  className="flex-1 flex items-center gap-2 min-w-0 text-left"
+                  title="Tap for 24h profit, whales & analysis"
+                >
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
+                    {t.logo ? (
+                      <img src={t.logo} alt="" className="w-8 h-8 object-contain" />
+                    ) : (
+                      <span className="text-[10px] font-mono text-white/40">{t.tick.slice(0, 3)}</span>
                     )}
                   </div>
-                  <div className="text-white/40 text-[10px] truncate">{t.name}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-white text-xs font-mono">{fmtKas(t.price)}</div>
-                  {usd && <div className="text-[9px] font-mono text-white/30">{usd}</div>}
-                  {t.change24h !== 0 && (
-                    <div className={`text-[10px] font-mono ${t.change24h >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      {t.change24h >= 0 ? "+" : ""}{t.change24h.toFixed(2)}%
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-white text-sm font-semibold truncate">{t.tick}</span>
+                      {t.graduated && (
+                        <span className="inline-flex items-center gap-0.5 text-[8px] font-mono uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded px-1">
+                          <Trophy className="w-2 h-2" /> Grad
+                        </span>
+                      )}
+                      {!t.graduated && t.volume24h > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-[8px] font-mono uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1">
+                          <Flame className="w-2 h-2" /> Live
+                        </span>
+                      )}
                     </div>
-                  )}
-                  {t.volume24h > 0 && (
-                    <div className="text-[9px] font-mono text-cyan-400/50">vol {fmtKas(t.volume24h)}</div>
-                  )}
-                  {usdTvl && t.tvl > 0 && (
-                    <div className="text-[9px] font-mono text-white/20">tvl {usdTvl}</div>
-                  )}
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
-              </a>
+                    <div className="text-white/40 text-[10px] truncate">{t.name}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-white text-xs font-mono">{fmtKas(t.price)}</div>
+                    {usd && <div className="text-[9px] font-mono text-white/30">{usd}</div>}
+                    {t.change24h !== 0 && (
+                      <div className={`text-[10px] font-mono ${t.change24h >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {t.change24h >= 0 ? "+" : ""}{t.change24h.toFixed(2)}%
+                      </div>
+                    )}
+                  </div>
+                </button>
+                <button
+                  onClick={() => onAskAI && onAskAI(t)}
+                  title="Ask AI to analyze this token"
+                  className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-300 hover:bg-amber-500/25 transition-colors"
+                >
+                  <Bot className="w-4 h-4" />
+                </button>
+                <a
+                  href={kronUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-white/[0.06] border border-white/10 text-white/50 hover:text-white transition-colors"
+                  title="Open on kron.technology"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
             );
           })}
         </div>
+      )}
+
+      {selected && (
+        <Kcc20TokenDetail
+          token={selected}
+          kasPrice={kasPrice}
+          onClose={() => setSelected(null)}
+          onAskAI={(tok, ctx) => { setSelected(null); onAskAI?.(tok, ctx); }}
+        />
       )}
 
       <p className="text-white/20 text-[9px] font-mono text-center mt-4">

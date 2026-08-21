@@ -124,6 +124,18 @@ export default function CryptoSearchBrowser({ open, onClose }) {
     });
   };
 
+  // KCC20 token → live AI analyst with full on-chain context from the detail sheet
+  const askKcc20AI = (tok, ctx) => {
+    setChatApp({
+      id: `kcc20-${tok.tick}`,
+      name: `${tok.tick} (${tok.name})`,
+      url: tok.covenantId ? `https://kron.technology/#/token/${tok.covenantId}` : "https://kron.technology",
+      logo: tok.logo || "",
+      category: "KCC20 Token",
+      description: ctx || `${tok.tick} (${tok.name}) — KCC20 covenant token on Kaspa KRON. Analyze its market, holders, and risk.`,
+    });
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -188,7 +200,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                 <CryptoProfileGrid profiles={profiles} filter={input} onAskAI={(p) => setChatApp(p)} />
               </div>
             ) : tab === "kcc20" ? (
-              <Kcc20TokenBrowser filter={input} kasPrice={kasPrice} />
+              <Kcc20TokenBrowser filter={input} kasPrice={kasPrice} onAskAI={askKcc20AI} />
             ) : loading ? (
               <div className="flex flex-col items-center justify-center py-24">
                 <Loader2 className="w-6 h-6 text-amber-400 animate-spin mb-3" />
