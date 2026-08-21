@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { buildProductivityPrompt } from '../../shared/productivityKnowledge.ts';
 
 // AWA — x402-style payment gateway on Kaspa L1.
 // Flow: request → HTTP 402 Payment Required (KAS quote) → pay on L1 → settle (tx verified on-chain) → AI service delivered.
@@ -16,6 +17,11 @@ const SERVICES = {
   "covenant-architect": {
     name: "AWA Architect — Covenant++ Blueprint",
     price_kas: 1,
+    result_type: "markdown",
+  },
+  "productivity-coach": {
+    name: "Better Ideas AI — Productivity Coach Reply",
+    price_kas: 0.05,
     result_type: "markdown",
   },
 };
@@ -129,6 +135,12 @@ Deno.serve(async (req) => {
             prompt: `You are AWA Architect, an expert in Kaspa covenant++ script design (Toccata smart covenants). The client's use case: """${invoice.input}"""\n\nDesign a covenant++ blueprint in markdown: # Blueprint title, ## Recommended rule (pick from: zktimelock, zkgate, zkescrow, zkvault, xmsslock, sentinel — justify), ## Rule parameters (concrete values), ## Transaction flow (deposit → covenant UTXO → spend paths), ## Failure & timeout paths, ## Why L1 consensus enforcement beats an indexer here. Be concrete and technical.`,
           });
           result = typeof r === "string" ? r : JSON.stringify(r);
+        } else if (invoice.service_id === "productivity-coach") {
+          const r = await base44.asServiceRole.integrations.Core.InvokeLLM({
+            model: "claude_sonnet_4_6",
+            prompt: buildProductivityPrompt(invoice.input),
+          });
+          result = typeof r === "string" ? r : (r?.response || r?.text || JSON.stringify(r));
         } else {
           throw new Error("Service fulfillment not implemented");
         }

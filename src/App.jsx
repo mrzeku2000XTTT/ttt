@@ -137,6 +137,7 @@ import KCCNftPage from './pages/KCCNft';
 import KCC20Page from './pages/KCC20';
 import TokensPage from './pages/Tokens';
 import AWAPage from './pages/AWA';
+import ProductivityPage from './pages/Productivity';
 import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
@@ -346,6 +347,7 @@ const AuthenticatedApp = () => {
       <Route path="/TTT3Manifesto" element={<TTT3ManifestoPDFPage />} />
       <Route path="/AgenticWorld" element={<AgenticWorldPage />} />
       <Route path="/AWA" element={<AWAPage />} />
+      <Route path="/Productivity" element={<ProductivityPage />} />
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />
