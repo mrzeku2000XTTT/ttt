@@ -80,7 +80,7 @@ export default function Rion() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
               <Clapperboard className="w-5 h-5 text-black" />
             </div>
-            <span className="font-black tracking-tight">RION</span>
+            <span className="font-black tracking-tight">oRION</span>
           </div>
         </div>
       </div>
@@ -88,7 +88,7 @@ export default function Rion() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="text-center mb-6">
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
-            Rion <span className="text-cyan-400">Script-First Storyboard</span>
+            oRion <span className="text-cyan-400">Script-First Storyboard</span>
           </h1>
           <p className="text-white/50 text-sm mt-2 max-w-lg mx-auto">
             Script first, camera second. Rion expands your prompt into a script, maps each beat to the right shot deterministically, then renders consistent frames from your reference photo.
