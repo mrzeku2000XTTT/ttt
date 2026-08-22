@@ -58,7 +58,7 @@ export default function LaunchBrandPage() {
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Top bar */}
       <nav className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-5 bg-black/60 backdrop-blur-2xl border-b border-white/5">
-        <Link to="/" className="flex items-center gap-2 text-white/70 hover:text-white text-[13px] font-semibold transition-colors">
+        <Link to="/TTTV2" className="flex items-center gap-2 text-white/70 hover:text-white text-[13px] font-semibold transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <div className="flex items-center gap-1.5">
