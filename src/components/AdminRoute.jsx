@@ -20,7 +20,7 @@ export default function AdminRoute({ children }) {
   }
 
   if (state === "denied") {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/AppStoreV2" replace />;
   }
 
   return children;
