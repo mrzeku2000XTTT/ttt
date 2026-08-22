@@ -149,6 +149,7 @@ import KaspaKidsPage from './pages/KaspaKids';
 import KaspaKidsAcademyPage from './pages/KaspaKidsAcademy';
 import KaspaKidsDEXPage from './pages/KaspaKidsDEX';
 import TreePage from './pages/Tree';
+import RionPage from './pages/Rion';
 import KuttPage from './pages/Kutt';
 import SlobzPage from './pages/Slobz';
 import SlobzIntakePage from './pages/SlobzIntake';
@@ -359,6 +360,7 @@ const AuthenticatedApp = () => {
       <Route path="/KaspaKidsAcademy" element={<KaspaKidsAcademyPage />} />
       <Route path="/KaspaKidsDEX" element={<KaspaKidsDEXPage />} />
       <Route path="/Tree" element={<TreePage />} />
+      <Route path="/Rion" element={<RionPage />} />
       <Route path="/Kutt" element={<KuttPage />} />
       <Route path="/Slobz" element={<SlobzPage />} />
       <Route path="/SlobzIntake" element={<SlobzIntakePage />} />
