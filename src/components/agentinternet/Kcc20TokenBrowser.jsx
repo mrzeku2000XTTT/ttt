@@ -314,7 +314,7 @@ export default function Kcc20TokenBrowser({ filter, kasPrice, onAskAI, onSellAle
           {visible.map((t) => {
             const usd = fmtUsd(t.price, kasPrice);
             const kronUrl = t.covenantId
-              ? `https://kron.technology/#/token/${t.covenantId}`
+              ? `https://kron.technology/token/${t.covenantId}`
               : "https://kron.technology";
             const isFav = favorites.has(t.tick);
             const isNew = view === "new" || (t.hasMarket && !t.graduated && (t.holderTotal || 0) <= 40);

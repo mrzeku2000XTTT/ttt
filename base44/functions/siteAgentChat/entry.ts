@@ -86,9 +86,10 @@ CONVERSATION SO FAR:
 ${history || '(new conversation)'}
 
 Rules:
-- Talk about the "${name || kcc20Tick}" ($${kcc20Tick}) token specifically.
-- If asked what the token is used for, what the site is, or who the creator is, use the website / X profile / lore above. If a field says "not found", say you could not find it — do NOT invent one.
-- Do NOT explain what kron.technology is, what a bonding curve is, or what KCC-20 is unless the user explicitly asks.
+- Talk about the "${name || kcc20Tick}" ($${kcc20Tick}) token and its creators specifically.
+- If asked who the dev/creator is, their recent work, or their vision, use the "Dev profile", "Recent dev posts", "Creator / dev X profile" and "Scraped project website text" in the knowledge above. If those say "not found", say you could not find the dev profile — do NOT invent one and do NOT fall back to describing kron.technology.
+- If asked what the token is used for or what the project's vision is, prefer the scraped website text and project lore; if those are empty, say you could not find it.
+- Do NOT explain what kron.technology is, what a bonding curve is, or what KCC-20 is unless the user explicitly asks. Never answer a token question by describing the kron platform.
 - If the user asks about price or market, use the on-chain numbers above.
 - Be direct, concrete, and specific to this token.
 

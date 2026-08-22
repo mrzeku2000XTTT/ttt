@@ -130,7 +130,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
     setChatApp({
       id: `kcc20-${tok.tick}`,
       name: `${tok.tick} (${tok.name})`,
-      url: tok.covenantId ? `https://kron.technology/#/token/${tok.covenantId}` : "https://kron.technology",
+      url: tok.covenantId ? `https://kron.technology/token/${tok.covenantId}` : "https://kron.technology",
       logo: tok.logo || "",
       category: "KCC20 Token",
       tick: tok.tick,

@@ -4,7 +4,7 @@ import { X, Loader2, ExternalLink, Trophy, Flame, Bot, Copy, Crown } from "lucid
 
 const IDX = "https://idx.kron.technology/v1/kcc20";
 const KRON_URL = (covenantId, tick) =>
-  covenantId ? `https://kron.technology/#/token/${covenantId}` : `https://kron.technology/?tick=${tick}`;
+  covenantId ? `https://kron.technology/token/${covenantId}` : `https://kron.technology/?tick=${tick}`;
 
 async function fetchJson(url) {
   const res = await fetch(url, { cache: "no-store" });
@@ -225,7 +225,7 @@ export default function Kcc20TokenDetail({ token, kasPrice, onClose, onAskAI }) 
                   <p className="text-white/30 text-xs">No holder data available.</p>
                 ) : (
                   <div className="space-y-1">
-                    {holders.slice(0, 12).map((h, i) => {
+                    {holders.map((h, i) => {
                       const addr = String(h.address || "").replace(/^kaspa:/, "");
                       const isCov = !!h.covenant;
                       return (
