@@ -23,6 +23,7 @@ export default function CryptoSearchBrowser({ open, onClose }) {
   const [chatApp, setChatApp] = useState(null); // profile whose AI agent is open
   const [kasPrice, setKasPrice] = useState(null); // for the "value in KAS" converter
   const [shareCard, setShareCard] = useState(null);
+  const [kccAlerts, setKccAlerts] = useState(0); // sell-pressure alerts on favorites
 
   // Load trending coins for the home view
   useEffect(() => {
@@ -188,6 +189,11 @@ export default function CryptoSearchBrowser({ open, onClose }) {
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest border transition-colors ${tab === "kcc20" ? "bg-amber-500/20 border-amber-400/50 text-amber-200" : "border-white/10 text-white/50 hover:text-white"}`}
             >
               <Flame className="w-3 h-3" /> KCC20
+              {kccAlerts > 0 && (
+                <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse" title={`${kccAlerts} sell alert${kccAlerts > 1 ? "s" : ""} on your favorites`}>
+                  {kccAlerts}
+                </span>
+              )}
             </button>
           </div>
 
@@ -201,7 +207,12 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                 <CryptoProfileGrid profiles={profiles} filter={input} onAskAI={(p) => setChatApp(p)} />
               </div>
             ) : tab === "kcc20" ? (
-              <Kcc20TokenBrowser filter={input} kasPrice={kasPrice} onAskAI={askKcc20AI} />
+              <Kcc20TokenBrowser
+                filter={input}
+                kasPrice={kasPrice}
+                onAskAI={askKcc20AI}
+                onSellAlertCount={setKccAlerts}
+              />
             ) : loading ? (
               <div className="flex flex-col items-center justify-center py-24">
                 <Loader2 className="w-6 h-6 text-amber-400 animate-spin mb-3" />
