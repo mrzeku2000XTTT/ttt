@@ -73,13 +73,20 @@ export default function Tree() {
       pushStep("🌳 Tree is analyzing your product & building strategy…");
       const chosen = TREE_TEMPLATES.filter((t) => templates.includes(t.id));
       const brief = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are Tree, an elite ad campaign agent. Build a full ad campaign.${ctx ? `\n\nREAL BRAND CONTEXT (scraped — ground every claim in these facts; never invent features): \n${ctx}` : ""}
+        prompt: `You are Tree, an elite ad campaign agent. Build a full ad campaign.${ctx ? `\n\nREAL BRAND CONTEXT (ground every claim ONLY in these facts; never invent features): \n${ctx}` : ""}
 
 PRODUCT: ${product}
 BRAND NAME: ${bName}
 GOAL: ${goal || "brand awareness"}
 AUDIENCE: ${audience || "general consumers"}
 TONE: ${tone || "bold"}
+
+TRUTH RULES — FOLLOW EXACTLY:
+- Never invent or embellish facts: no fake "core asset", "flagship", "official", "leading", "native" or similar status/designations.
+- Never fabricate technical claims (e.g. "L1 covenant", "built on L1", "settlement layer", protocol roles) unless it is literally stated in the brand context above.
+- Never invent holder counts, market caps, volume, prices, partnerships, roadmaps, team members, or exchange listings. Only repeat numbers that appear verbatim in the context.
+- If a fact is missing, OMIT it. Do not guess, infer, or "fill in" — vague-but-honest beats specific-but-false.
+- The strategy and every ad must be truthful about what ${bName} actually is. Marketing hype (hooks, FOMO, tone) is fine; factual claims about the product/token must be real or absent.
 
 For EACH of these ad templates, write a distinct ad:
 ${chosen.map((t) => `- ${t.id}: ${t.name} — ${t.desc}`).join("\n")}
@@ -147,10 +154,12 @@ Also provide a 2-3 sentence overall campaign strategy.`,
     setMode("build");
     setMarketingTick(token.tick);
     const website = token.website;
-    let brandContext = `KCC20 TOKEN: ${token.tick} (${token.name}) — launched on KRON (Kaspa L1 covenant).`;
+    let brandContext = `KCC20 TOKEN: ${token.tick} (${token.name}).`;
     if (token.hasMarket) {
-      brandContext += `\nLIVE STATS: price ${token.price} KAS, 24h change ${token.change24h}%, volume ${token.volume24h} KAS, TVL ${token.tvl} KAS, holders ${token.holderTotal}.`;
-      if (token.covenantId) brandContext += `\nTrade it at https://kron.technology/token/${token.covenantId}`;
+      brandContext += `\nLIVE STATS (only state these if you repeat numbers): price ${token.price} KAS, 24h change ${token.change24h}%, volume ${token.volume24h} KAS, TVL ${token.tvl} KAS, holders ${token.holderTotal}.`;
+      if (token.covenantId) brandContext += `\nIt is tradable on KRON: https://kron.technology/token/${token.covenantId}`;
+    } else {
+      brandContext += `\nMarket data not yet available — do NOT claim it is trading, listed, or has any price/holders.`;
     }
     let og = token.logo || null;
     if (website) {
