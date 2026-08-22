@@ -21,7 +21,7 @@ export default function TreeCampaignForm({ onLaunch, running }) {
         rows={3}
         value={product}
         onChange={(e) => setProduct(e.target.value)}
-        placeholder="What are we advertising? Describe your product, app or brand…"
+        placeholder="Paste your brand or project URL (e.g. tttz.xyz), or describe your product…"
         className={inputCls}
       />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

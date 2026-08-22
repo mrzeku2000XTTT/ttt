@@ -5,14 +5,30 @@ import TreeCampaignForm from "@/components/tree/TreeCampaignForm";
 import TreeAgentLog from "@/components/tree/TreeAgentLog";
 import TreeAdCard from "@/components/tree/TreeAdCard";
 import TreeCampaignHistory from "@/components/tree/TreeCampaignHistory";
+import TreePaywall from "@/components/tree/TreePaywall";
 import { Link } from "react-router-dom";
 import { TreePine, ArrowLeft } from "lucide-react";
+
+const UNLOCK_PRICE = 0.5;
+
+const looksLikeUrl = (s) => {
+  const t = s.trim();
+  if (/^https?:\/\//i.test(t)) return true;
+  // bare domain like tttz.xyz or app.example.com/path
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(t) && !/\s/.test(t);
+};
+const normalizeUrl = (s) => {
+  let t = s.trim();
+  if (!/^https?:\/\//i.test(t)) t = "https://" + t;
+  return t;
+};
 
 export default function Tree() {
   const [steps, setSteps] = useState([]);
   const [running, setRunning] = useState(false);
   const [campaign, setCampaign] = useState(null);
   const [history, setHistory] = useState([]);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     base44.entities.TreeCampaign.list("-created_date", 10).then(setHistory).catch(() => {});
@@ -25,7 +41,37 @@ export default function Tree() {
   const launch = async ({ product, goal, audience, tone, templates }) => {
     setRunning(true);
     setCampaign(null);
+    setLocked(false);
     setSteps([]);
+
+    let brandName = product.trim();
+    let brandContext = "";
+    let ogImage = null;
+
+    // 1. Scrape the brand site if the user typed a URL/domain
+    if (looksLikeUrl(product)) {
+      pushStep("🔗 Scraping your brand site for real context…");
+      try {
+        const sc = await base44.functions.invoke("brandSiteScraper", { url: normalizeUrl(product) });
+        const d = sc?.data || sc;
+        if (d && !d.error) {
+          brandName = d.site_name || d.title || brandName;
+          const subText = (d.sub_pages || [])
+            .slice(0, 4)
+            .map((p) => `- ${p.title || ""}: ${(p.text || "").slice(0, 350)}`)
+            .join("\n");
+          brandContext = `BRAND WEBSITE: ${d.url}
+BRAND NAME: ${brandName}
+TAGLINE / META DESCRIPTION: ${d.description || ""}
+SITE CONTENT EXCERPT (use these real facts — do not invent features):
+${(d.root_text || "").slice(0, 2500)}
+${subText}`.trim();
+          ogImage = d.og_image || null;
+        }
+      } catch {
+        // Guests may not have scraper access — fall back to plain text
+      }
+    }
 
     // Entity persistence is optional — guests get an in-memory record
     let record = { id: `local_${Date.now()}`, product, goal, audience, tone, status: "generating", ads: [] };
@@ -38,13 +84,14 @@ export default function Tree() {
     }
 
     try {
-      // 1. Strategy + all ad copy in one LLM pass
+      // 2. Strategy + all ad copy in one LLM pass — grounded in scraped brand context
       pushStep("🌳 Tree is analyzing your product & building strategy…");
       const chosen = TREE_TEMPLATES.filter((t) => templates.includes(t.id));
       const brief = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are Tree, an elite ad campaign agent. Build a full ad campaign.
+        prompt: `You are Tree, an elite ad campaign agent. Build a full ad campaign.${brandContext ? `\n\nREAL BRAND CONTEXT (scraped from the brand's own website — ground every claim in these facts; never invent product features): \n${brandContext}` : ""}
 
 PRODUCT: ${product}
+BRAND NAME: ${brandName}
 GOAL: ${goal || "brand awareness"}
 AUDIENCE: ${audience || "general consumers"}
 TONE: ${tone || "bold"}
@@ -53,12 +100,12 @@ For EACH of these ad templates, write a distinct ad:
 ${chosen.map((t) => `- ${t.id}: ${t.name} — ${t.desc}`).join("\n")}
 
 For each ad provide:
-- hook: a 1-line scroll-stopping hook
-- script: a 15-30 second spoken video ad script (natural, punchy)
-- caption: a social media caption with 2-3 hashtags
+- hook: a 1-line scroll-stopping hook that references the real product "${brandName}"
+- script: a 15-30 second spoken video ad script (natural, punchy) that describes what "${brandName}" actually does
+- caption: a social media caption with 2-3 hashtags including #${brandName.replace(/[^a-z0-9]/gi, "")}
 - cta: a short call to action
 - narration_text: a tight 2-sentence voiceover version of the script (max 240 chars)
-- visual_prompt: a detailed image prompt for the ad visual matching this style: "${chosen.map((t) => t.styleHint).join('" / "')}" — use the style hint matching the template.
+- visual_prompt: a detailed image prompt for the ad visual. CRITICAL RULE: the image MUST depict the actual product/brand "${brandName}" and its real domain/industry${brandContext ? " based on the scraped context above" : ""}. Do NOT produce generic stock imagery (random people drinking coffee, jogging, watches, etc). The scene must be clearly about what "${brandName}" is. Style: "${chosen.map((t) => t.styleHint).join('" / "}')}".
 
 Also provide a 2-3 sentence overall campaign strategy.`,
         response_json_schema: {
@@ -84,14 +131,16 @@ Also provide a 2-3 sentence overall campaign strategy.`,
         },
       });
 
-      // 2. Per-ad assets: UGC visual + narration
+      // 3. Per-ad assets: brand-anchored visual + narration
       const ads = [];
       for (const ad of brief.ads) {
         const tpl = TREE_TEMPLATES.find((t) => t.id === ad.template);
-        pushStep(`🎨 Styling ${tpl?.name || ad.template} visual…`);
+        pushStep(`🎨 Styling ${tpl?.name || ad.template} visual for ${brandName}…`);
+        const brandAnchor = `This is an advertisement for the real brand "${brandName}". The visual must be directly about ${brandName} and its actual product — no generic stock imagery, no unrelated objects or people. ${brandContext ? "Depict the brand's real domain/industry." : ""} ${tpl?.styleHint || ""}. No text in image.`;
         const [img, voice] = await Promise.all([
           base44.integrations.Core.GenerateImage({
-            prompt: `Advertisement visual: ${ad.visual_prompt}. ${tpl?.styleHint || ""}. No text in image.`,
+            prompt: `Advertisement visual: ${ad.visual_prompt}. ${brandAnchor}`,
+            existing_image_urls: ogImage ? [ogImage] : undefined,
           }).catch(() => null),
           base44.integrations.Core.GenerateSpeech({
             text: ad.narration_text || ad.hook,
@@ -118,8 +167,9 @@ Also provide a 2-3 sentence overall campaign strategy.`,
         // Guest — skip persistence
       }
       finishSteps();
-      const done = { ...record, strategy: brief.strategy, ads, status: "complete" };
+      const done = { ...record, strategy: brief.strategy, ads, status: "complete", brandName, hasUrl: looksLikeUrl(product) };
       setCampaign(done);
+      setLocked(true); // gate the full result behind AWA payment
       setHistory((h) => [done, ...h]);
     } catch (err) {
       try { await base44.entities.TreeCampaign.update(record.id, { status: "failed" }); } catch {}
@@ -133,7 +183,7 @@ Also provide a 2-3 sentence overall campaign strategy.`,
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <Link to="/" className="flex items-center gap-2 text-white/40 hover:text-white text-sm">
+          <Link to="/AppStoreV2" className="flex items-center gap-2 text-white/40 hover:text-white text-sm">
             <ArrowLeft className="w-4 h-4" /> TTT
           </Link>
         </div>
@@ -146,8 +196,9 @@ Also provide a 2-3 sentence overall campaign strategy.`,
             TREE <span className="text-emerald-400">Campaign Agent</span>
           </h1>
           <p className="text-white/50 text-sm mt-2 max-w-lg mx-auto">
-            One brief in — a full ad campaign out. Tree executes strategy, scripts, ad texts,
-            AI narration and UGC-styled visuals across every template you pick.
+            One brief in — a full ad campaign out. Paste any brand or project URL and Tree scrapes the real
+            content, then writes strategy, scripts, ad texts, AI narration and on-brand visuals across every
+            template you pick.
           </p>
         </div>
 
@@ -163,11 +214,19 @@ Also provide a 2-3 sentence overall campaign strategy.`,
                     <p className="text-white/80 text-sm">{campaign.strategy}</p>
                   </div>
                 )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(campaign.ads || []).map((ad, i) => (
-                    <TreeAdCard key={i} ad={ad} />
-                  ))}
-                </div>
+                {locked ? (
+                  <TreePaywall
+                    serviceInput={`Tree campaign for ${campaign.brandName || "product"}`}
+                    amount={UNLOCK_PRICE}
+                    onUnlocked={() => setLocked(false)}
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(campaign.ads || []).map((ad, i) => (
+                      <TreeAdCard key={i} ad={ad} />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
