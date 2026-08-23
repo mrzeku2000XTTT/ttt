@@ -6,6 +6,7 @@ export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
   { name: "oRion", path: "Rion", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0142f5358_generated_image.png", desc: "Script-first storyboard · script → deterministic coverage → consistent frames" },
   { name: "Sky", path: "Sky", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2777e9161_generated_image.png", desc: "AI validation cofounder · 4 research agents, real cited web sources, no limits" },
+  { name: "DD", path: "DD", cat: "Productivity", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9c255656c_IMG_5210.jpeg", desc: "All your tools in one intelligent workspace · AI agent dashboard" },
   { name: "Tokens", path: "Tokens", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/583744c85_generated_image.png", desc: "Design & launch your own Kaspa tokens — submit a brief, we mint it" },
   { name: "KCC20", path: "KCC20", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f0152b845_image.png", desc: "KCC-20 covenant wallet · mint & manage smart coins on Kaspa L1" },
   { name: "Eve", path: "Eve", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/220ffa959_generated_image.png", desc: "Talk to Eve — a durable AI agent, our take on the eve framework" },
