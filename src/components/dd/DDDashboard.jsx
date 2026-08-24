@@ -128,11 +128,8 @@ export default function DDDashboard({ onAskDD }) {
 
           {/* Organize your day */}
           <div className="mt-4 bg-white border border-neutral-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-16 h-16 rounded-full border-2 border-neutral-900 flex items-center justify-center bg-transparent overflow-hidden">
-                <DDLogo size={40} showWord={false} animate={false} dark />
-              </div>
-              <span className="text-2xl font-bold tracking-tight text-neutral-900">DD</span>
+            <div className="shrink-0">
+              <DDLogo size={64} showWord={false} animate={false} dark />
             </div>
             <div className="flex-1 text-center sm:text-left">
               <h3 className="text-base font-semibold text-neutral-900">Let DD organize your day</h3>
