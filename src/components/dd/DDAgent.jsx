@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Loader2, Sparkles, Plug, CheckCircle2, Clock, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { DD_CONNECTED, DD_ACTIVITY } from "@/components/dd/ddData";
 import DDLogo from "@/components/dd/DDLogo";
 import DDLogoCustomizer from "@/components/dd/DDLogoCustomizer";
 import { getOnboarding } from "@/components/dd/DDOnboarding";
@@ -22,7 +21,7 @@ function saveHistory(email, msgs) {
   } catch {}
 }
 
-function buildSystem(onboarding, email) {
+function buildSystem(onboarding, email, googleContext) {
   const o = onboarding || {};
   const name = o.name || "there";
   const style = o.style || "brief and direct";
@@ -34,7 +33,8 @@ function buildSystem(onboarding, email) {
     o.workHours ? `Working hours: ${o.workHours}.` : "",
     o.focus ? `Today's main focus: ${o.focus}.` : "",
     `Communication style: ${style}.`,
-    `You help organize the user's day, summarize what matters, draft replies, and surface priorities. Be concise, warm, and action-oriented. Reference the user's context when relevant. If the user asks about their day, use their priorities and focus to prepare them.`,
+    googleContext ? `\n--- REAL USER DATA (from connected Google apps) ---\n${googleContext}\n--- END REAL DATA ---` : "",
+    `You help organize the user's day, summarize what matters, draft replies, and surface priorities. Be concise, warm, and action-oriented. Use the real data above when available. Do not invent or fabricate data — if you don't have info, say so.`,
   ].filter(Boolean);
   return parts.join(" ");
 }
@@ -46,7 +46,17 @@ export default function DDAgent({ initialPrompt, active }) {
   const [email, setEmail] = useState("guest");
   const [onboarding, setOnboarding] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [googleContext, setGoogleContext] = useState("");
+  const [realConnected, setRealConnected] = useState([]);
+  const [realActivity, setRealActivity] = useState([]);
   const scrollRef = useRef(null);
+
+  const fetchGoogleContext = async (em) => {
+    try {
+      const res = await base44.functions.invoke("ddFetchGoogleContext", {});
+      if (res?.data?.context) setGoogleContext(res.data.context);
+    } catch { /* not connected — that's ok */ }
+  };
 
   useEffect(() => {
     (async () => {
@@ -66,6 +76,16 @@ export default function DDAgent({ initialPrompt, active }) {
         setMessages([{ role: "dd", text: `Hi ${name} — I'm DD, your workspace assistant. Ask me anything and I'll help you get it done.` }]);
       }
       setLoaded(true);
+      fetchGoogleContext(em);
+      // Fetch real connected apps + activity from backend
+      try {
+        const [apps, acts] = await Promise.all([
+          base44.entities.DDConnectedApp.filter({ user_email: em }, "-created_date", 6).catch(() => []),
+          base44.entities.DDActivity.filter({ user_email: em }, "-created_date", 4).catch(() => []),
+        ]);
+        setRealConnected(apps);
+        setRealActivity(acts);
+      } catch {}
     })();
   }, []);
 
@@ -87,7 +107,7 @@ export default function DDAgent({ initialPrompt, active }) {
     setInput("");
     setBusy(true);
     try {
-      const sys = buildSystem(onboarding, email);
+      const sys = buildSystem(onboarding, email, googleContext);
       const history = messages.slice(-8).map((m) => `${m.role === "user" ? "User" : "DD"}: ${m.text}`).join("\n");
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `${sys}\n\nConversation so far:\n${history}\n\nUser: ${text}`,
@@ -163,11 +183,13 @@ export default function DDAgent({ initialPrompt, active }) {
           <DDLogoCustomizer />
           <div className="bg-white border border-neutral-200 rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-neutral-700" /> Recent actions</h3>
-            <div className="space-y-2.5">{DD_ACTIVITY.map((a) => <div key={a.id} className="flex items-center gap-2 text-sm text-neutral-600"><span>{a.icon}</span> {a.text}</div>)}</div>
+            {realActivity.length === 0 ? <p className="text-sm text-neutral-400">No activity yet.</p> :
+            <div className="space-y-2.5">{realActivity.map((a) => <div key={a.id} className="flex items-center gap-2 text-sm text-neutral-600"><span>{a.icon || "📋"}</span> {a.text}</div>)}</div>}
           </div>
           <div className="bg-white border border-neutral-200 rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2"><Plug className="w-4 h-4 text-neutral-700" /> Connected tools</h3>
-            <div className="space-y-2">{DD_CONNECTED.map((c) => <div key={c.id} className="flex items-center gap-2 text-sm"><span className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${c.color}`}>{c.letter}</span> <span className="flex-1 text-neutral-700">{c.name}</span><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /></div>)}</div>
+            {realConnected.length === 0 ? <p className="text-sm text-neutral-400">No apps connected yet. Visit the Store.</p> :
+            <div className="space-y-2">{realConnected.map((c) => <div key={c.id} className="flex items-center gap-2 text-sm"><span className="w-6 h-6 rounded-md flex items-center justify-center text-sm">{c.app_icon || "📦"}</span> <span className="flex-1 text-neutral-700">{c.app_name}</span><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /></div>)}</div>}
           </div>
           <div className="bg-white border border-neutral-200 rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2"><Clock className="w-4 h-4 text-neutral-700" /> Pending approvals</h3>

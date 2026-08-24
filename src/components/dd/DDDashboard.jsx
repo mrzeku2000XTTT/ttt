@@ -57,8 +57,8 @@ export default function DDDashboard({ onAskDD }) {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 overflow-x-hidden">
-      <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight capitalize underline">{greetingHour()}{name ? `, ${name}` : ""} 👋</h1>
-      <p className="text-neutral-500 -mt-3 mb-5 text-base">What are we getting done?</p>
+      <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight capitalize">{greetingHour()}{name ? `, ${name}` : ""} 👋</h1>
+      <p className="text-neutral-500 mt-2 mb-5 text-base">What are we getting done?</p>
 
       {/* AI input */}
       <div className="bg-white border border-neutral-200 rounded-2xl p-2 shadow-sm">
