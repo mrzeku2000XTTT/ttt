@@ -1,22 +1,82 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Sparkles, Plug, CheckCircle2, Clock } from "lucide-react";
+import { Send, Loader2, Sparkles, Plug, CheckCircle2, Clock, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { DD_CONNECTED, DD_ACTIVITY } from "@/components/dd/ddData";
 import DDLogo from "@/components/dd/DDLogo";
 import DDLogoCustomizer from "@/components/dd/DDLogoCustomizer";
+import { getOnboarding } from "@/components/dd/DDOnboarding";
 
-const SYSTEM = `You are DD, an intelligent productivity agent inside a unified workspace. You have access to the user's connected tools: ${DD_CONNECTED.map((c) => c.name).join(", ")}. You help organize the day, summarize emails, find files, draft replies, and surface what matters. Be concise, warm, and action-oriented. Today the user has: a client call at 10am, a project review at 2pm, a design sync at 4:30pm, and 3 priorities (reply to Sarah, review Q2 presentation, prepare client call).`;
+const HISTORY_KEY = "dd_chat_history_v1";
+
+function loadHistory(email) {
+  try {
+    const raw = localStorage.getItem(`${HISTORY_KEY}_${email || "guest"}`);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
+
+function saveHistory(email, msgs) {
+  try {
+    localStorage.setItem(`${HISTORY_KEY}_${email || "guest"}`, JSON.stringify(msgs));
+  } catch {}
+}
+
+function buildSystem(onboarding, email) {
+  const o = onboarding || {};
+  const name = o.name || "there";
+  const style = o.style || "brief and direct";
+  const parts = [
+    `You are DD, a personal productivity agent inside a unified workspace. You are brand new — tailored specifically for this user.`,
+    `User name: ${name}.`,
+    o.role ? `Role: ${o.role}.` : "",
+    o.priorities ? `Current top priorities: ${o.priorities}.` : "",
+    o.workHours ? `Working hours: ${o.workHours}.` : "",
+    o.focus ? `Today's main focus: ${o.focus}.` : "",
+    `Communication style: ${style}.`,
+    `You help organize the user's day, summarize what matters, draft replies, and surface priorities. Be concise, warm, and action-oriented. Reference the user's context when relevant. If the user asks about their day, use their priorities and focus to prepare them.`,
+  ].filter(Boolean);
+  return parts.join(" ");
+}
 
 export default function DDAgent({ initialPrompt, active }) {
-  const [messages, setMessages] = useState([{ role: "dd", text: "Hi Alex — I'm DD. What can I help you get done?" }]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState("guest");
+  const [onboarding, setOnboarding] = useState(null);
+  const [loaded, setLoaded] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (initialPrompt) ask(initialPrompt);
+    (async () => {
+      let em = "guest";
+      try {
+        const u = await base44.auth.me();
+        em = u?.email || "guest";
+        setEmail(em);
+      } catch {}
+      const ob = getOnboarding();
+      setOnboarding(ob);
+      const saved = loadHistory(em);
+      if (saved && saved.length > 0) {
+        setMessages(saved);
+      } else {
+        const name = ob?.name || "there";
+        setMessages([{ role: "dd", text: `Hi ${name} — I'm DD, your workspace assistant. Ask me anything and I'll help you get it done.` }]);
+      }
+      setLoaded(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (loaded) saveHistory(email, messages);
+  }, [messages, email, loaded]);
+
+  useEffect(() => {
+    if (loaded && initialPrompt) ask(initialPrompt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialPrompt]);
+  }, [initialPrompt, loaded]);
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: 1e9, behavior: "smooth" }); }, [messages, busy]);
 
@@ -27,7 +87,12 @@ export default function DDAgent({ initialPrompt, active }) {
     setInput("");
     setBusy(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({ prompt: `${SYSTEM}\n\nUser: ${text}`, model: "gemini_3_flash" });
+      const sys = buildSystem(onboarding, email);
+      const history = messages.slice(-8).map((m) => `${m.role === "user" ? "User" : "DD"}: ${m.text}`).join("\n");
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `${sys}\n\nConversation so far:\n${history}\n\nUser: ${text}`,
+        model: "gemini_3_flash",
+      });
       setMessages((m) => [...m, { role: "dd", text: typeof res === "string" ? res : res?.text || "Done." }]);
     } catch {
       setMessages((m) => [...m, { role: "dd", text: "I hit a snag right now — please try again." }]);
@@ -35,10 +100,36 @@ export default function DDAgent({ initialPrompt, active }) {
     setBusy(false);
   };
 
+  const clearHistory = () => {
+    const name = onboarding?.name || "there";
+    const fresh = [{ role: "dd", text: `Hi ${name} — fresh start. What can I help you with?` }];
+    setMessages(fresh);
+    saveHistory(email, fresh);
+  };
+
+  if (!loaded) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        <div className="h-[60vh] bg-white border border-neutral-200 rounded-2xl flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-neutral-200 border-t-neutral-800 rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-      <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">DD Agent</h1>
-      <p className="text-sm text-neutral-500 mt-1">Your intelligent workspace assistant.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">DD Agent</h1>
+          <p className="text-sm text-neutral-500 mt-1">Your intelligent workspace assistant.</p>
+        </div>
+        {messages.length > 1 && (
+          <button onClick={clearHistory} className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 px-3 h-9 rounded-lg hover:bg-neutral-100">
+            <Trash2 className="w-4 h-4" /> Clear
+          </button>
+        )}
+      </div>
 
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Chat */}

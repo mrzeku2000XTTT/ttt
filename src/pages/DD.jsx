@@ -11,6 +11,7 @@ import DDProjects from "@/components/dd/DDProjects";
 import DDAutomations from "@/components/dd/DDAutomations";
 import DDActivity from "@/components/dd/DDActivity";
 import DDEmptyPage from "@/components/dd/DDEmptyPage";
+import DDOnboarding, { isOnboarded } from "@/components/dd/DDOnboarding";
 import { base44 } from "@/api/base44Client";
 import { Calendar as CalIcon, Mail as MailIcon, FileText } from "lucide-react";
 
@@ -27,6 +28,7 @@ export default function DD() {
   const [agentPrompt, setAgentPrompt] = useState("");
   const [userName, setUserName] = useState("");
   const [userPlan, setUserPlan] = useState("Free");
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -35,7 +37,10 @@ export default function DD() {
         if (u?.full_name) setUserName(u.full_name);
         else try { setUserName(localStorage.getItem("dd_profile_name") || ""); } catch {}
         try { setUserPlan(localStorage.getItem("dd_profile_plan") || "Free"); } catch {}
-      } catch {}
+        if (!isOnboarded()) setShowOnboarding(true);
+      } catch {
+        if (!isOnboarded()) setShowOnboarding(true);
+      }
     })();
   }, [view]);
 
@@ -51,6 +56,7 @@ export default function DD() {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex overflow-x-hidden w-full">
+      {showOnboarding && <DDOnboarding onComplete={() => setShowOnboarding(false)} />}
       <DDSidebar active={view} onNav={nav} />
 
       <div className="flex-1 min-w-0 flex flex-col w-full overflow-x-hidden">
