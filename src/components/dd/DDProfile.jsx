@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Check, Wallet, Loader2, User } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Check, Wallet, Loader2, User, LogOut } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import DDWalletButton from "@/components/dd/DDWalletButton";
 
@@ -47,19 +48,16 @@ export default function DDProfile() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 w-full overflow-x-hidden">
-      <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Profile</h1>
-      <p className="text-sm text-neutral-500 mt-1">Set up your DD identity. No email required — your wallet is your account.</p>
-
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 w-full overflow-x-hidden">
       {/* Identity card */}
       <div className="mt-5 bg-white border border-neutral-200 rounded-2xl p-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white text-lg font-semibold flex items-center justify-center">
+          <div className="w-14 h-14 rounded-full bg-neutral-900 text-white text-lg font-semibold flex items-center justify-center">
             {initials(savedName)}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-neutral-900 truncate">{savedName || "Set your name below"}</p>
-            <p className="text-sm text-violet-600">{plan} plan</p>
+            <p className="text-sm text-neutral-500">{plan} plan</p>
           </div>
         </div>
 
@@ -70,7 +68,7 @@ export default function DDProfile() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
-              className="mt-1 w-full h-11 px-3 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-violet-400"
+              className="mt-1 w-full h-11 px-3 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-neutral-400"
             />
           </div>
           <button
@@ -88,7 +86,7 @@ export default function DDProfile() {
       <div className="mt-4 bg-white border border-neutral-200 rounded-2xl p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-violet-600" />
+            <Wallet className="w-4 h-4 text-neutral-700" />
             <h3 className="text-sm font-semibold text-neutral-900">TTT Wallet</h3>
           </div>
           <DDWalletButton />
@@ -99,6 +97,11 @@ export default function DDProfile() {
           <p className="mt-3 text-xs text-neutral-400">Connect your TTT wallet to link it to your DD profile.</p>
         )}
       </div>
+
+      {/* Exit to App Store */}
+      <Link to="/AppStoreV2" className="mt-4 w-full h-11 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:bg-neutral-50 flex items-center justify-center gap-2">
+        <LogOut className="w-4 h-4" /> Exit to App Store
+      </Link>
     </div>
   );
 }
