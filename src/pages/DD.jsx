@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Bell, HelpCircle, Home, LayoutGrid, Bot, Activity, User } from "lucide-react";
 import DDSidebar, { DD_NAV } from "@/components/dd/DDSidebar";
+import DDWalletButton from "@/components/dd/DDWalletButton";
 import DDDashboard from "@/components/dd/DDDashboard";
 import DDAgent from "@/components/dd/DDAgent";
 import DDStore from "@/components/dd/DDStore";
@@ -59,11 +60,12 @@ export default function DD() {
               </div>
             </div>
             <button className="w-9 h-9 rounded-lg hover:bg-neutral-100 flex items-center justify-center text-neutral-500"><Bell className="w-4 h-4" /></button>
-            <button className="w-9 h-9 rounded-lg hover:bg-neutral-100 flex items-center justify-center text-neutral-500"><HelpCircle className="w-4 h-4" /></button>
-            <div className="hidden sm:flex items-center gap-2 pl-1">
+            <button onClick={() => nav("profile")} className="hidden sm:flex w-9 h-9 rounded-lg hover:bg-neutral-100 items-center justify-center text-neutral-500" title="Help"><HelpCircle className="w-4 h-4" /></button>
+            <button onClick={() => nav("profile")} className="hidden sm:flex items-center gap-2 pl-1 rounded-lg hover:bg-neutral-100 pr-2" title="Account & Premium">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white text-xs font-semibold flex items-center justify-center">AS</div>
-              <div className="leading-tight"><p className="text-xs font-semibold text-neutral-900">{DD_USER.name}</p><p className="text-[10px] text-violet-600">{DD_USER.plan}</p></div>
-            </div>
+              <div className="leading-tight text-left"><p className="text-xs font-semibold text-neutral-900">{DD_USER.name}</p><p className="text-[10px] text-violet-600">{DD_USER.plan}</p></div>
+            </button>
+            <DDWalletButton />
           </div>
         </header>
 
