@@ -1,0 +1,48 @@
+{
+  "name": "DDConnectedApp",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email"
+    },
+    "app_name": {
+      "type": "string",
+      "description": "Name of the app"
+    },
+    "app_category": {
+      "type": "string",
+      "description": "Category"
+    },
+    "app_icon": {
+      "type": "string",
+      "description": "Emoji icon"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "added",
+        "connected"
+      ],
+      "default": "added"
+    }
+  },
+  "required": [
+    "user_email",
+    "app_name"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

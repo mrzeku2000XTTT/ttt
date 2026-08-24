@@ -1,0 +1,52 @@
+{
+  "name": "DDAutomation",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email"
+    },
+    "name": {
+      "type": "string",
+      "description": "Automation name"
+    },
+    "trigger_app": {
+      "type": "string",
+      "description": "Trigger app (e.g. Gmail)"
+    },
+    "trigger_event": {
+      "type": "string",
+      "description": "What triggers it"
+    },
+    "action_app": {
+      "type": "string",
+      "description": "Action app (e.g. Slack)"
+    },
+    "action_text": {
+      "type": "string",
+      "description": "What it does"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "user_email",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

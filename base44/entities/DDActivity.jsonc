@@ -1,0 +1,37 @@
+{
+  "name": "DDActivity",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email"
+    },
+    "text": {
+      "type": "string",
+      "description": "What happened"
+    },
+    "icon": {
+      "type": "string",
+      "default": "\ud83d\udccb",
+      "description": "Emoji icon"
+    }
+  },
+  "required": [
+    "user_email",
+    "text"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

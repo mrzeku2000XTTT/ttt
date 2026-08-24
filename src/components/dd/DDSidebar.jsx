@@ -25,7 +25,7 @@ export default function DDSidebar({ active, onNav }) {
           const Icon = n.icon;
           const on = active === n.id;
           return (
-            <button key={n.id} onClick={() => onNav(n.id)} className={`w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm transition ${on ? "bg-violet-50 text-violet-700 font-semibold" : "text-neutral-600 hover:bg-neutral-50"}`}>
+            <button key={n.id} onClick={() => onNav(n.id)} className={`w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm transition ${on ? "bg-neutral-100 text-neutral-900 font-semibold" : "text-neutral-600 hover:bg-neutral-50"}`}>
               <Icon className="w-4 h-4" /> {n.label}
             </button>
           );
@@ -43,7 +43,7 @@ export default function DDSidebar({ active, onNav }) {
             <Crown className="w-4 h-4 text-amber-500" />
             <span className="text-xs font-semibold text-neutral-900">Premium Plan</span>
           </div>
-          <button className="mt-2 text-[11px] text-violet-600 font-medium hover:underline">Manage plan</button>
+          <button className="mt-2 text-[11px] text-neutral-600 font-medium hover:underline">Manage plan</button>
         </div>
         <Link to="/AppStoreV2" className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50">
           <LogOut className="w-4 h-4" /> Exit to App Store

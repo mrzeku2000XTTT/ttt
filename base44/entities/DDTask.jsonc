@@ -1,0 +1,51 @@
+{
+  "name": "DDTask",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email"
+    },
+    "title": {
+      "type": "string",
+      "description": "Task title"
+    },
+    "done": {
+      "type": "boolean",
+      "default": false,
+      "description": "Completed"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional due date"
+    }
+  },
+  "required": [
+    "user_email",
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

@@ -8,8 +8,12 @@ const NAME_KEY = "dd_profile_name";
 const PLAN_KEY = "dd_profile_plan";
 
 function getConnectedAddr() {
-  try { return sessionStorage.getItem("dd_wallet_connected") || localStorage.getItem("ttt_wallet_address") || null; }
-  catch { return null; }
+  try {
+    return localStorage.getItem("dd_kcc20_connected")
+      || sessionStorage.getItem("dd_wallet_connected")
+      || localStorage.getItem("ttt_wallet_address")
+      || null;
+  } catch { return null; }
 }
 function initials(name) {
   const n = (name || "").trim();
@@ -34,6 +38,11 @@ export default function DDProfile() {
     base44.auth.me().then((u) => {
       if (u?.full_name) { setName(u.full_name); setSavedName(u.full_name); try { localStorage.setItem(NAME_KEY, u.full_name); } catch {} }
     }).catch(() => {});
+    // Refresh wallet address periodically — DDWalletButton writes to localStorage async
+    const tick = () => setAddr(getConnectedAddr());
+    tick();
+    const iv = setInterval(tick, 1500);
+    return () => clearInterval(iv);
   }, []);
 
   const save = async () => {
@@ -73,7 +82,7 @@ export default function DDProfile() {
           </div>
           <button
             onClick={save}
-            disabled={saving || !name.trim() || name.trim() === savedName}
+            disabled={saving || !name.trim()}
             className="h-11 px-5 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-40 flex items-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <User className="w-4 h-4" />}
