@@ -1,6 +1,7 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import DDLogo from "@/components/dd/DDLogo";
-import { Home, Bot, LayoutGrid, CheckSquare, Calendar, Mail, FileText, FolderKanban, Workflow, Activity, Plus, Store, Crown } from "lucide-react";
+import { Home, Bot, LayoutGrid, CheckSquare, Calendar, Mail, FileText, FolderKanban, Workflow, Activity, Plus, Store, Crown, LogOut } from "lucide-react";
 
 export const DD_NAV = [
   { id: "home", label: "Home", icon: Home },
@@ -44,6 +45,9 @@ export default function DDSidebar({ active, onNav }) {
           </div>
           <button className="mt-2 text-[11px] text-violet-600 font-medium hover:underline">Manage plan</button>
         </div>
+        <Link to="/AppStoreV2" className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50">
+          <LogOut className="w-4 h-4" /> Exit to App Store
+        </Link>
       </div>
     </aside>
   );
