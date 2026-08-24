@@ -1,15 +1,27 @@
-// KCC20 Wallet PWA bridge — detects + connects the hosted KCC20 wallet
-// (https://kcc-20-wallet.vercel.app) the same way a dApp connects to KasWare,
-// except the wallet is a PWA on Vercel, not a Chrome extension.
-//
-// Detection is NOT silent. Browsers cannot sniff an installed PWA. The dApp
-// loads sdk.js (see index.html), which injects window.kcc20 on THIS origin.
-// connect() opens a popup/tab to the Vercel PWA; the user approves there.
+// KCC20 Wallet bridge.
+// On tttz.xyz / *.base44.app / localhost we open /KCC20 (the in-app iframe page)
+// instead of a Vercel popup. DD and /KCC20 communicate via sessionStorage:
+//   kcc20_ttt_pending  — DD writes a request before navigating to /KCC20
+//   kcc20_ttt_result   — /KCC20 writes the result; DD reads it on return
 // Keys NEVER enter TTT. Never read, copy, log, or store a private key.
+// Never call sendKaspa / signKCC20 / signMessage / signCovenant — build a PSKT, then signPskt.
 
 export const KCC20_ORIGIN = "https://kcc-20-wallet.vercel.app";
 export const KCC20_SDK = KCC20_ORIGIN + "/sdk.js";
 export const KCC20_APP = KCC20_ORIGIN + "/index.html";
+export const KCC20_ROUTE = "/KCC20";
+
+const PENDING_KEY = "kcc20_ttt_pending";
+const RESULT_KEY = "kcc20_ttt_result";
+
+export function isLocalHosted() {
+  try {
+    const h = window.location.hostname;
+    return h === "tttz.xyz" || h === "localhost" || h === "127.0.0.1" || h.endsWith(".base44.app");
+  } catch {
+    return false;
+  }
+}
 
 export function kcc20Provider() {
   try {
@@ -53,14 +65,50 @@ export function loadKcc20Sdk() {
   });
 }
 
+// --- sessionStorage bridge ---
+
+function setPending(req) {
+  try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(req)); } catch {}
+}
+export function getPending() {
+  try { return JSON.parse(sessionStorage.getItem(PENDING_KEY) || "null"); } catch { return null; }
+}
+export function clearPending() {
+  try { sessionStorage.removeItem(PENDING_KEY); } catch {}
+}
+export function setResult(res) {
+  try { sessionStorage.setItem(RESULT_KEY, JSON.stringify(res)); } catch {}
+}
+export function consumeResult() {
+  try {
+    const raw = sessionStorage.getItem(RESULT_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(RESULT_KEY);
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+// Write a pending request and navigate to /KCC20. Returns the request id.
+export function openKcc20Route(type, params = {}, returnUrl = "/DD") {
+  const id = (typeof crypto !== "undefined" && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : String(Date.now() + Math.random());
+  setPending({ id, type, ...params, returnUrl });
+  window.location.href = KCC20_ROUTE;
+  return id;
+}
+
+// Connect. On local hosted hosts, route through /KCC20 (sessionStorage bridge).
 export async function connectKcc20Pwa() {
+  if (isLocalHosted()) {
+    openKcc20Route("connect", {}, "/DD");
+    // Page navigates to /KCC20; DD reads the result on return via consumeResult().
+    return new Promise(() => {});
+  }
   const p = await loadKcc20Sdk();
   if (typeof p.request === "function") {
     const r = await p.request("connect");
-    const addr =
-      r?.address ||
-      r?.accounts?.[0] ||
-      (Array.isArray(r) ? r[0] : "");
+    const addr = r?.address || r?.accounts?.[0] || (Array.isArray(r) ? r[0] : "");
     if (!addr) throw new Error("KCC20 Wallet did not return an address");
     return { address: addr, provider: p, via: "pwa" };
   }
@@ -79,8 +127,13 @@ export async function disconnectKcc20Pwa() {
   } catch {}
 }
 
-// Sign an unsigned PSKT JSON using the connected KCC20 PWA. TTT never sees the key.
+// Sign an unsigned PSKT JSON. On local hosted, route through /KCC20.
+// TTT never sees the key. Never invent a txId — the caller broadcasts the signed tx.
 export async function signWithKcc20(txJsonString, signInputs = []) {
+  if (isLocalHosted()) {
+    openKcc20Route("signPskt", { txJsonString, signInputs }, "/DD");
+    return new Promise(() => {});
+  }
   const p = await loadKcc20Sdk();
   if (typeof p.request === "function") {
     return p.request("signPskt", { txJsonString, options: { signInputs } });
