@@ -67,7 +67,7 @@ export default function DDLogo({ size = 32, showWord = true, animate = true, act
               position: "absolute",
               left: `${prefs.faceLeft}%`,
               top: `${prefs.faceTop}%`,
-              filter: isDark ? "invert(1)" : undefined,
+              filter: isDark ? "invert(1) contrast(2.2) saturate(0) brightness(1.05)" : undefined,
               mixBlendMode: isDark ? "screen" : undefined,
             }}
           />
