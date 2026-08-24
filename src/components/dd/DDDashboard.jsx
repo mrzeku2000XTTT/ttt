@@ -10,6 +10,18 @@ function SectionTitle({ children }) {
   return <h3 className="text-sm font-semibold text-neutral-900 mb-3">{children}</h3>;
 }
 
+function greetingHour() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+function Greeting() {
+  const [name, setName] = useState("");
+  useEffect(() => { try { setName(localStorage.getItem("dd_profile_name") || ""); } catch {} }, []);
+  return <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">{greetingHour()}{name ? `, ${name}` : ""} 👋</h1>;
+}
+
 export default function DDDashboard({ onAskDD }) {
   const [priorities, setPriorities] = useState(DD_PRIORITIES);
   const [ask, setAsk] = useState("");
@@ -25,10 +37,8 @@ export default function DDDashboard({ onAskDD }) {
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 overflow-x-hidden">
       {/* Greeting */}
-      <div className="mb-5">
-        <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">Good morning, Alex 👋</h1>
-        <p className="text-neutral-500 mt-1">What are we getting done?</p>
-      </div>
+      <Greeting />
+      <p className="text-neutral-500 -mt-3 mb-5">What are we getting done?</p>
 
       {/* AI input */}
       <div className="bg-white border border-neutral-200 rounded-2xl p-2 shadow-sm">

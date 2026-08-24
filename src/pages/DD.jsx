@@ -6,6 +6,7 @@ import DDWalletButton from "@/components/dd/DDWalletButton";
 import DDDashboard from "@/components/dd/DDDashboard";
 import DDAgent from "@/components/dd/DDAgent";
 import DDStore from "@/components/dd/DDStore";
+import DDProfile from "@/components/dd/DDProfile";
 import { DD_USER, DD_EVENTS, DD_PRIORITIES, DD_FILES, DD_EMAILS, DD_ACTIVITY } from "@/components/dd/ddData";
 
 function SimpleView({ title, subtitle, children }) {
@@ -119,15 +120,7 @@ export default function DD() {
               </div>
             </SimpleView>
           )}
-          {isProfile && (
-            <SimpleView title="Profile" subtitle="Your DD account.">
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white text-lg font-semibold flex items-center justify-center">AS</div>
-                <div><p className="font-semibold text-neutral-900">{DD_USER.name}</p><p className="text-sm text-violet-600">{DD_USER.plan} plan</p></div>
-                <Link to="/AppStoreV2" className="ml-auto text-xs text-neutral-400 hover:text-neutral-900">← Back to TTT</Link>
-              </div>
-            </SimpleView>
-          )}
+          {isProfile && <DDProfile />}
         </main>
 
         {/* Mobile bottom nav */}

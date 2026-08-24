@@ -111,17 +111,19 @@ export default function DDWalletButton() {
   return (
     <>
       {address ? (
-        <button onClick={openModal} className="flex items-center gap-2 h-9 pl-2 pr-3 rounded-xl bg-white border border-neutral-200 hover:border-violet-300 transition">
-          <div className="w-6 h-6 rounded-lg bg-violet-600 text-white flex items-center justify-center text-[10px] font-bold">TT</div>
-          <div className="leading-tight text-left">
+        <button onClick={openModal} className="flex items-center gap-1.5 h-9 pl-1.5 pr-2.5 rounded-xl bg-white border border-neutral-200 hover:border-violet-300 transition whitespace-nowrap flex-shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-violet-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">TT</div>
+          <div className="leading-tight text-left hidden sm:block">
             <p className="text-xs font-semibold text-neutral-900">{balance !== null ? `${balance.toFixed(2)} KAS` : "TTT Wallet"}</p>
             <p className="text-[10px] text-neutral-400">{short(address)}</p>
           </div>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
         </button>
       ) : (
-        <button onClick={openModal} className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-neutral-900 text-white text-xs sm:text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap flex-shrink-0">
-          <Wallet className="w-4 h-4 flex-shrink-0" /> <span className="hidden sm:inline">Connect TTT Wallet</span><span className="sm:hidden">Connect Wallet</span>
+        <button onClick={openModal} className="flex items-center justify-center gap-1.5 h-9 px-2 sm:px-3 rounded-xl bg-neutral-900 text-white text-xs sm:text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap flex-shrink-0">
+          <Wallet className="w-4 h-4 flex-shrink-0" />
+          <span className="hidden lg:inline">Connect TTT Wallet</span>
+          <span className="hidden sm:inline lg:hidden">Connect Wallet</span>
         </button>
       )}
 
