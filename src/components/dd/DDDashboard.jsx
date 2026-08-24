@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Bell, HelpCircle, Plus, Mic, Check, Calendar as CalIcon, FileText, Mail as MailIcon } from "lucide-react";
 import DDLogo from "@/components/dd/DDLogo";
 import { DD_USER, DD_EVENTS, DD_PRIORITIES, DD_FILES, DD_EMAILS, DD_INSIGHTS, DD_CONNECTED, DD_ACTIVITY, DD_QUICK_ACTIONS } from "@/components/dd/ddData";
