@@ -1,9 +1,49 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9c255656c_IMG_5210.jpeg";
 
-export default function DDLogo({ size = 32, showWord = true, animate = true, active = false, dark = false }) {
+const DEFAULTS = {
+  bgColor: "#1a1a1a",
+  faceScale: 0.72,
+  faceLeft: 14,
+  faceTop: 14,
+  textColor: "#f5f5f5",
+  eyeTop: 34,
+  eyeRight: 16,
+  eyeSize: 0.18,
+};
+
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem("dd_logo_prefs");
+    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
+  } catch {}
+  return DEFAULTS;
+}
+
+export function saveLogoPrefs(prefs) {
+  const merged = { ...loadPrefs(), ...prefs };
+  localStorage.setItem("dd_logo_prefs", JSON.stringify(merged));
+  window.dispatchEvent(new Event("dd_logo_prefs_changed"));
+  return merged;
+}
+
+export function useLogoPrefs() {
+  const [prefs, setPrefs] = useState(loadPrefs);
+  useEffect(() => {
+    const handler = () => setPrefs(loadPrefs());
+    window.addEventListener("dd_logo_prefs_changed", handler);
+    return () => window.removeEventListener("dd_logo_prefs_changed", handler);
+  }, []);
+  return prefs;
+}
+
+export default function DDLogo({ size = 32, showWord = true, animate = true, active = false, dark = false, prefs: prefsOverride }) {
+  const stored = useLogoPrefs();
+  const prefs = prefsOverride || stored;
+  const isDark = dark || prefs.bgColor.toLowerCase() !== "#ffffff";
+
   return (
     <div className="flex items-center gap-2 select-none">
       <motion.div
@@ -13,38 +53,36 @@ export default function DDLogo({ size = 32, showWord = true, animate = true, act
         className="relative shrink-0"
         style={{ width: size, height: size }}
       >
-        {/* Circular head — dark fill */}
         <div
           className="absolute inset-0 rounded-full overflow-hidden"
-          style={{ background: dark ? "#1a1a1a" : "#fff" }}
+          style={{ background: prefs.bgColor }}
         >
           <img
             src={LOGO_URL}
             alt="DD"
             className="object-contain"
             style={{
-              width: "72%",
-              height: "72%",
+              width: `${prefs.faceScale * 100}%`,
+              height: `${prefs.faceScale * 100}%`,
               position: "absolute",
-              left: "14%",
-              top: "14%",
-              filter: dark ? "invert(1)" : undefined,
-              mixBlendMode: dark ? "screen" : undefined,
+              left: `${prefs.faceLeft}%`,
+              top: `${prefs.faceTop}%`,
+              filter: isDark ? "invert(1)" : undefined,
+              mixBlendMode: isDark ? "screen" : undefined,
             }}
           />
         </div>
-        {/* Circle outline */}
         <div
-          className={`absolute inset-0 rounded-full pointer-events-none ${dark ? "border-2 border-neutral-900" : "border border-neutral-200"}`}
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{ border: `2px solid ${isDark ? prefs.bgColor : "#e5e5e5"}` }}
         />
-        {/* DD eyes — at eye level of the profile, animated blink */}
         <motion.span
           className="absolute font-bold leading-none pointer-events-none z-10"
           style={{
-            top: "34%",
-            right: "16%",
-            fontSize: Math.max(7, Math.round(size * 0.18)),
-            color: dark ? "#f5f5f5" : "#1a1a1a",
+            top: `${prefs.eyeTop}%`,
+            right: `${prefs.eyeRight}%`,
+            fontSize: Math.max(7, Math.round(size * prefs.eyeSize)),
+            color: prefs.textColor,
             letterSpacing: "-0.04em",
           }}
           animate={{ opacity: [1, 1, 0.15, 1, 1], scaleY: [1, 1, 0.1, 1, 1] }}
