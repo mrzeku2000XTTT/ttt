@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { Wallet, X, Check, Loader2, Link2, Unlink, Plus, Sparkles, Shield } from "lucide-react";
+import { Wallet, X, Check, Loader2, Link2, Unlink, Plus, Sparkles, Shield, ExternalLink, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { verifyStoredPin, hashPin, storePinHash, getStoredPinHash } from "@/components/wallet/walletLock";
 import { generateWallet, isValidKaspaAddress } from "@/lib/localKaspaWallet";
+import {
+  loadKcc20Sdk,
+  connectKcc20Pwa,
+  disconnectKcc20Pwa,
+  isKcc20Detected,
+  KCC20_APP,
+  KCC20_ORIGIN,
+} from "@/lib/kcc20Pwa";
 
 const CONN_KEY = "dd_wallet_connected"; // sessionStorage — address when connected this session
 const KCC20_KEY = "dd_kcc20_connected"; // localStorage — connected KCC20 scorpion address
+const KCC20_VIA_KEY = "dd_kcc20_via"; // localStorage — "pwa" | "paste"
 
 function readTTT() {
   // Matches the wallet the feed tipping flow uses — instant connect if present.
@@ -26,6 +35,9 @@ function clearConn() { try { sessionStorage.removeItem(CONN_KEY); } catch {} }
 function getKcc20() { try { return localStorage.getItem(KCC20_KEY); } catch { return null; } }
 function setKcc20(a) { try { localStorage.setItem(KCC20_KEY, a); } catch {} }
 function clearKcc20() { try { localStorage.removeItem(KCC20_KEY); } catch {} }
+function getKcc20Via() { try { return localStorage.getItem(KCC20_VIA_KEY); } catch { return null; } }
+function setKcc20Via(v) { try { localStorage.setItem(KCC20_VIA_KEY, v); } catch {} }
+function clearKcc20Via() { try { localStorage.removeItem(KCC20_VIA_KEY); } catch {} }
 
 export default function DDWalletButton() {
   const [open, setOpen] = useState(false);
@@ -37,13 +49,17 @@ export default function DDWalletButton() {
   const [address, setAddress] = useState(null);
   const [balance, setBalance] = useState(null);
   const [kcc20Addr, setKcc20Addr] = useState(getKcc20());
+  const [kcc20Via, setKcc20Via] = useState(getKcc20Via());
   const [kcc20Input, setKcc20Input] = useState("");
+  const [kcc20Detected, setKcc20Detected] = useState(isKcc20Detected());
+  const [kcc20Busy, setKcc20Busy] = useState(false);
 
   // initial connect state
   useEffect(() => {
     const c = getConnected();
     if (c) { setAddress(c); setStage("connected"); refreshBalance(c); }
     setKcc20Addr(getKcc20());
+    setKcc20Via(getKcc20Via());
   }, []);
 
   const refreshBalance = (addr) => {
@@ -100,10 +116,48 @@ export default function DDWalletButton() {
     clearConn(); setAddress(null); setBalance(null); setOpen(false);
   };
 
-  const connectKcc20 = () => {
+  // Run when entering the kcc20 stage: detect window.kcc20 and warm up the SDK.
+  useEffect(() => {
+    if (stage !== "kcc20") return;
+    setErr("");
+    const probe = () => setKcc20Detected(isKcc20Detected());
+    probe();
+    if (!isKcc20Detected()) {
+      let cancelled = false;
+      loadKcc20Sdk()
+        .then(() => { if (!cancelled) setKcc20Detected(true); })
+        .catch(() => { if (!cancelled) setKcc20Detected(false); });
+      return () => { cancelled = true; };
+    }
+  }, [stage]);
+
+  const connectKcc20PwaLive = async () => {
+    setErr(""); setKcc20Busy(true);
+    try {
+      const { address } = await connectKcc20Pwa();
+      setKcc20(address); setKcc20Addr(address); setKcc20Via("pwa");
+      setStage("connected");
+    } catch (e) {
+      const msg = String(e?.message || e || "");
+      if (/popup|blocked/i.test(msg)) setErr("Allow popups for tttz.xyz, then tap Connect again.");
+      else if (/reject|declin|denied/i.test(msg)) setErr("Connection declined in KCC20 Wallet.");
+      else if (/timeout|unlock/i.test(msg)) setErr("Unlock KCC20 Wallet at kcc-20-wallet.vercel.app and try again.");
+      else setErr(msg || "Could not connect KCC20 Wallet.");
+    } finally { setKcc20Busy(false); }
+  };
+
+  const linkKcc20Paste = () => {
     const v = kcc20Input.trim();
     if (!isValidKaspaAddress(v)) { setErr("Enter a valid Kaspa address"); return; }
-    setKcc20(v); setKcc20Addr(v); setErr(""); setStage("connected");
+    setKcc20(v); setKcc20Addr(v); setKcc20Via("paste");
+    setErr(""); setStage("connected");
+  };
+
+  const unlinkKcc20 = async () => {
+    if (getKcc20Via() === "pwa") { try { await disconnectKcc20Pwa(); } catch {} }
+    clearKcc20(); clearKcc20Via();
+    setKcc20Addr(null); setKcc20Via(null); setKcc20Input("");
+    setStage("connected");
   };
 
   const short = (a) => a ? `${a.slice(0, 8)}…${a.slice(-6)}` : "";
@@ -184,9 +238,19 @@ export default function DDWalletButton() {
                 {/* KCC20 Scorpion external wallet */}
                 {kcc20Addr ? (
                   <div className="rounded-xl border border-violet-200 bg-violet-50 p-3">
-                    <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-violet-600" /><span className="text-sm font-semibold text-violet-800">KCC20 Scorpion linked</span></div>
+                    <div className="flex items-center gap-2">
+                      <Link2 className="w-4 h-4 text-violet-600" />
+                      <span className="text-sm font-semibold text-violet-800">
+                        {kcc20Via === "pwa" ? "KCC20 PWA connected" : "KCC20 linked (read-only)"}
+                      </span>
+                    </div>
                     <p className="text-[11px] text-violet-700 mt-1 break-all">{kcc20Addr}</p>
-                    <button onClick={() => { clearKcc20(); setKcc20Addr(null); setStage("kcc20"); }} className="text-[11px] text-violet-600 hover:underline mt-1">Unlink</button>
+                    <div className="flex items-center gap-3 mt-1">
+                      <button onClick={unlinkKcc20} className="text-[11px] text-violet-600 hover:underline">Unlink</button>
+                      <a href={KCC20_APP} target="_blank" rel="noreferrer" className="text-[11px] text-violet-600 hover:underline flex items-center gap-1">
+                        Open wallet <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
                 ) : (
                   <button onClick={() => { setStage("kcc20"); setErr(""); }} className="w-full h-10 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-violet-300 flex items-center justify-center gap-2">
@@ -194,7 +258,7 @@ export default function DDWalletButton() {
                   </button>
                 )}
 
-                <a href="/KCC20" target="_blank" rel="noreferrer" className="w-full h-10 rounded-xl bg-neutral-50 border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-300 flex items-center justify-center gap-2">
+                <a href={KCC20_APP} target="_blank" rel="noreferrer" className="w-full h-10 rounded-xl bg-neutral-50 border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-300 flex items-center justify-center gap-2">
                   <Sparkles className="w-4 h-4" /> Open KCC20 wallet app
                 </a>
 
@@ -207,11 +271,36 @@ export default function DDWalletButton() {
             {stage === "kcc20" && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-violet-600" /><h4 className="font-semibold text-neutral-900 text-sm">Connect KCC20 Scorpion wallet</h4></div>
-                <p className="text-sm text-neutral-500">Link your external KCC20 Scorpion wallet so DD can request signed transactions from it — the same way Kasware connects to websites.</p>
-                <input value={kcc20Input} onChange={(e) => { setKcc20Input(e.target.value); setErr(""); }} placeholder="kaspa:qz… (your KCC20 address)" className="w-full h-11 px-3 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-violet-400" />
-                {err && <p className="text-xs text-red-500">{err}</p>}
-                <button onClick={connectKcc20} disabled={!kcc20Input.trim()} className="w-full h-11 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-40">Link wallet</button>
-                <a href="/KCC20" target="_blank" rel="noreferrer" className="block text-center text-xs text-violet-600 hover:underline">Don't have one? Open the KCC20 wallet app →</a>
+
+                {/* Detect chip */}
+                <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${kcc20Detected ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50 text-neutral-500"}`}>
+                  <span className={`w-2 h-2 rounded-full ${kcc20Detected ? "bg-emerald-500" : "bg-neutral-400 animate-pulse"}`} />
+                  {kcc20Detected ? `Detected · ${KCC20_ORIGIN.replace("https://", "")}` : "Loading KCC20 sdk…"}
+                </div>
+
+                <p className="text-sm text-neutral-500">Connect the hosted KCC20 wallet PWA. A popup opens to {KCC20_ORIGIN.replace("https://", "")} — approve there. Keys never enter TTT.</p>
+
+                {err && (
+                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /><span>{err}</span>
+                  </div>
+                )}
+
+                <button onClick={connectKcc20PwaLive} disabled={kcc20Busy} className="w-full h-11 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-40 flex items-center justify-center gap-2">
+                  {kcc20Busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+                  {kcc20Busy ? "Connecting…" : "Connect KCC20 PWA"}
+                </button>
+
+                <a href={KCC20_APP} target="_blank" rel="noreferrer" className="w-full h-10 rounded-xl bg-neutral-50 border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-300 flex items-center justify-center gap-2">
+                  <ExternalLink className="w-4 h-4" /> Open KCC20 wallet
+                </a>
+
+                <div className="pt-1">
+                  <p className="text-[11px] text-neutral-400 mb-1.5">Or paste an address as read-only (cannot sign):</p>
+                  <input value={kcc20Input} onChange={(e) => { setKcc20Input(e.target.value); setErr(""); }} placeholder="kaspa:qz… (your KCC20 address)" className="w-full h-11 px-3 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-violet-400" />
+                  <button onClick={linkKcc20Paste} disabled={!kcc20Input.trim()} className="w-full h-10 mt-2 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-violet-300 disabled:opacity-40">Link address only</button>
+                </div>
+
                 <button onClick={() => setStage("connected")} className="w-full text-xs text-neutral-400 hover:text-neutral-700">Back</button>
               </div>
             )}

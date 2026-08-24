@@ -5,6 +5,9 @@
     <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- KCC20 Wallet PWA SDK — injects window.kcc20 on this origin for connect/sign.
+         The wallet itself lives at https://kcc-20-wallet.vercel.app; keys never enter TTT. -->
+    <script src="https://kcc-20-wallet.vercel.app/sdk.js" async></script>
     <title>TTT 2.0 — The Kaspa Super App</title>
     <script>
       // Lock the page title against Base44's server-injected SEO override
