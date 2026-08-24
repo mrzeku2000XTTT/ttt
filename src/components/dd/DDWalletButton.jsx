@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Wallet, X, Check, Loader2, Link2, Unlink, Plus, Sparkles, Shield, ExternalLink, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { verifyStoredPin, hashPin, storePinHash, getStoredPinHash } from "@/components/wallet/walletLock";
@@ -181,9 +182,9 @@ export default function DDWalletButton() {
         </button>
       )}
 
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4" onClick={() => setOpen(false)}>
-          <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-sm p-5 shadow-xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4" onClick={() => setOpen(false)}>
+          <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-sm p-5 shadow-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center"><Wallet className="w-4 h-4" /></div>
@@ -309,7 +310,8 @@ export default function DDWalletButton() {
               <Shield className="w-3 h-3" /> Keys & PIN stay on this device
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
