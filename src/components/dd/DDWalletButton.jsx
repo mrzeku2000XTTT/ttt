@@ -120,14 +120,14 @@ export default function DDWalletButton() {
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
         </button>
       ) : (
-        <button onClick={openModal} className="flex items-center gap-2 h-9 px-3.5 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 transition">
-          <Wallet className="w-4 h-4" /> Connect TTT Wallet
+        <button onClick={openModal} className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-neutral-900 text-white text-xs sm:text-sm font-medium hover:bg-neutral-800 transition whitespace-nowrap flex-shrink-0">
+          <Wallet className="w-4 h-4 flex-shrink-0" /> <span className="hidden sm:inline">Connect TTT Wallet</span><span className="sm:hidden">Connect Wallet</span>
         </button>
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
-          <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-sm p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4" onClick={() => setOpen(false)}>
+          <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-sm p-5 shadow-xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center"><Wallet className="w-4 h-4" /></div>
