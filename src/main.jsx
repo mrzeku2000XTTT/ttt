@@ -2,6 +2,9 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
+import { loadKcc20Sdk } from '@/lib/kcc20Pwa'
+
+loadKcc20Sdk().catch(() => {})
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   // <React.StrictMode>

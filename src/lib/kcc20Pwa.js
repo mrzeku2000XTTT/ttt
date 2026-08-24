@@ -32,7 +32,7 @@ export function kcc20Provider() {
 }
 
 export function isKcc20Detected() {
-  return !!kcc20Provider();
+  return !!kcc20Provider() || isInWalletIframe();
 }
 
 export function loadKcc20Sdk() {
