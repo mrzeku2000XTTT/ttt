@@ -1,26 +1,25 @@
-// KCC20 Wallet bridge.
-// On tttz.xyz / *.base44.app / localhost we open /KCC20 (the in-app iframe page)
-// instead of a Vercel popup. DD and /KCC20 communicate via sessionStorage:
-//   kcc20_ttt_pending  — DD writes a request before navigating to /KCC20
-//   kcc20_ttt_result   — /KCC20 writes the result; DD reads it on return
-// Keys NEVER enter TTT. Never read, copy, log, or store a private key.
-// Never call sendKaspa / signKCC20 / signMessage / signCovenant — build a PSKT, then signPskt.
+// KCC20 Wallet bridge — client only. No signing backend.
+// Keys never hit Base44, entities, functions, or logs.
+//
+// KCC20 Wallet (https://kcc-20-wallet.vercel.app BUILD 121+) is a MetaMask-style
+// dApp browser. On Profile it iframes https://tttz.xyz. Any TTT app inside that
+// iframe talks to the PARENT wallet via postMessage (sdk.js handles this).
+// When TTT is opened standalone, sdk.js opens a wallet popup instead.
+//
+// Live API:
+//   request('connect') → { address, accounts, network, publicKey }
+//   request('getBalance', { address }) → { balanceKAS, pending, address }
+//   request('signPskt', { txJsonString, options: { signInputs } })
+// NOT implemented: sendKaspa, signKCC20, signMessage, signCovenant.
+// Build a PSKT, then signPskt. Never invent a txId.
 
 export const KCC20_ORIGIN = "https://kcc-20-wallet.vercel.app";
 export const KCC20_SDK = KCC20_ORIGIN + "/sdk.js";
 export const KCC20_APP = KCC20_ORIGIN + "/index.html";
-export const KCC20_ROUTE = "/KCC20";
 
-const PENDING_KEY = "kcc20_ttt_pending";
-const RESULT_KEY = "kcc20_ttt_result";
-
-export function isLocalHosted() {
-  try {
-    const h = window.location.hostname;
-    return h === "tttz.xyz" || h === "localhost" || h === "127.0.0.1" || h.endsWith(".base44.app");
-  } catch {
-    return false;
-  }
+// True when TTT is running inside the KCC20 wallet's dApp browser iframe.
+export function isInWalletIframe() {
+  try { return window.parent !== window; } catch { return false; }
 }
 
 export function kcc20Provider() {
@@ -39,10 +38,7 @@ export function isKcc20Detected() {
 export function loadKcc20Sdk() {
   return new Promise((resolve, reject) => {
     const have = kcc20Provider();
-    if (have) {
-      resolve(have);
-      return;
-    }
+    if (have) { resolve(have); return; }
     const existing = document.querySelector("script[data-kcc20-sdk]");
     const onReady = (el) => {
       el.addEventListener("load", () => {
@@ -52,10 +48,7 @@ export function loadKcc20Sdk() {
       });
       el.addEventListener("error", () => reject(new Error("Could not reach KCC20 Wallet")));
     };
-    if (existing) {
-      onReady(existing);
-      return;
-    }
+    if (existing) { onReady(existing); return; }
     const s = document.createElement("script");
     s.src = KCC20_SDK;
     s.async = true;
@@ -65,57 +58,20 @@ export function loadKcc20Sdk() {
   });
 }
 
-// --- sessionStorage bridge ---
-
-function setPending(req) {
-  try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(req)); } catch {}
-}
-export function getPending() {
-  try { return JSON.parse(sessionStorage.getItem(PENDING_KEY) || "null"); } catch { return null; }
-}
-export function clearPending() {
-  try { sessionStorage.removeItem(PENDING_KEY); } catch {}
-}
-export function setResult(res) {
-  try { sessionStorage.setItem(RESULT_KEY, JSON.stringify(res)); } catch {}
-}
-export function consumeResult() {
-  try {
-    const raw = sessionStorage.getItem(RESULT_KEY);
-    if (!raw) return null;
-    sessionStorage.removeItem(RESULT_KEY);
-    return JSON.parse(raw);
-  } catch { return null; }
-}
-
-// Write a pending request and navigate to /KCC20. Returns the request id.
-export function openKcc20Route(type, params = {}, returnUrl = "/DD") {
-  const id = (typeof crypto !== "undefined" && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : String(Date.now() + Math.random());
-  setPending({ id, type, ...params, returnUrl });
-  window.location.href = KCC20_ROUTE;
-  return id;
-}
-
-// Connect. On local hosted hosts, route through /KCC20 (sessionStorage bridge).
+// Connect — calls window.kcc20.request('connect'). The sdk posts to the parent
+// wallet (if iframed) or opens a popup (if standalone). TTT never sees the key.
 export async function connectKcc20Pwa() {
-  if (isLocalHosted()) {
-    openKcc20Route("connect", {}, "/DD");
-    // Page navigates to /KCC20; DD reads the result on return via consumeResult().
-    return new Promise(() => {});
-  }
   const p = await loadKcc20Sdk();
   if (typeof p.request === "function") {
     const r = await p.request("connect");
     const addr = r?.address || r?.accounts?.[0] || (Array.isArray(r) ? r[0] : "");
     if (!addr) throw new Error("KCC20 Wallet did not return an address");
-    return { address: addr, provider: p, via: "pwa" };
+    return { address: addr, via: "pwa" };
   }
   const acc = await p.connect();
   const addr = Array.isArray(acc) ? acc[0] : acc;
   if (!addr) throw new Error("KCC20 Wallet did not return an address");
-  return { address: addr, provider: p, via: "pwa" };
+  return { address: addr, via: "pwa" };
 }
 
 export async function disconnectKcc20Pwa() {
@@ -127,13 +83,8 @@ export async function disconnectKcc20Pwa() {
   } catch {}
 }
 
-// Sign an unsigned PSKT JSON. On local hosted, route through /KCC20.
-// TTT never sees the key. Never invent a txId — the caller broadcasts the signed tx.
+// Sign an unsigned PSKT JSON. TTT never sees the key. Never invent a txId.
 export async function signWithKcc20(txJsonString, signInputs = []) {
-  if (isLocalHosted()) {
-    openKcc20Route("signPskt", { txJsonString, signInputs }, "/DD");
-    return new Promise(() => {});
-  }
   const p = await loadKcc20Sdk();
   if (typeof p.request === "function") {
     return p.request("signPskt", { txJsonString, options: { signInputs } });

@@ -4,13 +4,13 @@ import { Wallet, X, Check, Loader2, Link2, Unlink, Plus, Sparkles, Shield, Exter
 import { base44 } from "@/api/base44Client";
 import { verifyStoredPin, hashPin, storePinHash, getStoredPinHash } from "@/components/wallet/walletLock";
 import { generateWallet, isValidKaspaAddress } from "@/lib/localKaspaWallet";
-import { Link } from "react-router-dom";
 import {
   loadKcc20Sdk,
+  connectKcc20Pwa,
   disconnectKcc20Pwa,
   isKcc20Detected,
-  openKcc20Route,
-  consumeResult,
+  isInWalletIframe,
+  KCC20_APP,
   KCC20_ORIGIN,
 } from "@/lib/kcc20Pwa";
 
@@ -54,6 +54,7 @@ export default function DDWalletButton() {
   const [kcc20Via, setKcc20Via] = useState(getKcc20Via());
   const [kcc20Input, setKcc20Input] = useState("");
   const [kcc20Detected, setKcc20Detected] = useState(isKcc20Detected());
+  const [kcc20Busy, setKcc20Busy] = useState(false);
 
   // initial connect state
   useEffect(() => {
@@ -61,11 +62,6 @@ export default function DDWalletButton() {
     if (c) { setAddress(c); setStage("connected"); refreshBalance(c); }
     setKcc20Addr(getKcc20());
     setKcc20Via(getKcc20Via());
-    // Consume a KCC20 route result (returning from /KCC20).
-    const r = consumeResult();
-    if (r && r.type === "connect" && r.address) {
-      setKcc20(r.address); setKcc20Addr(r.address); setKcc20Via("pwa");
-    }
   }, []);
 
   const refreshBalance = (addr) => {
@@ -137,10 +133,18 @@ export default function DDWalletButton() {
     }
   }, [stage]);
 
-  const connectKcc20PwaLive = () => {
-    setErr("");
-    // Navigate to /KCC20 — result consumed on return via consumeResult().
-    openKcc20Route("connect", {}, "/DD");
+  const connectKcc20PwaLive = async () => {
+    setErr(""); setKcc20Busy(true);
+    try {
+      const { address } = await connectKcc20Pwa();
+      setKcc20(address); setKcc20Addr(address); setKcc20Via("pwa");
+      setStage("connected");
+    } catch (e) {
+      const msg = String(e?.message || e || "");
+      if (/popup|blocked/i.test(msg)) setErr("Allow popups for tttz.xyz, then try again.");
+      else if (/reject|declin|denied/i.test(msg)) setErr("Connection declined in KCC20 Wallet.");
+      else setErr(msg || "Could not connect KCC20 Wallet.");
+    } finally { setKcc20Busy(false); }
   };
 
   const linkKcc20Paste = () => {
@@ -244,9 +248,11 @@ export default function DDWalletButton() {
                     <p className="text-[11px] text-violet-700 mt-1 break-all">{kcc20Addr}</p>
                     <div className="flex items-center gap-3 mt-1">
                       <button onClick={unlinkKcc20} className="text-[11px] text-violet-600 hover:underline">Unlink</button>
-                      <Link to="/KCC20" className="text-[11px] text-violet-600 hover:underline flex items-center gap-1">
-                        Open wallet <ExternalLink className="w-3 h-3" />
-                      </Link>
+                      {!isInWalletIframe() && (
+                        <a href={KCC20_APP} target="_blank" rel="noreferrer" className="text-[11px] text-violet-600 hover:underline flex items-center gap-1">
+                          Open wallet <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -255,9 +261,11 @@ export default function DDWalletButton() {
                   </button>
                 )}
 
-                <Link to="/KCC20" className="w-full h-10 rounded-xl bg-neutral-50 border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-300 flex items-center justify-center gap-2">
-                  <Sparkles className="w-4 h-4" /> Open KCC20 wallet app
-                </Link>
+                {!isInWalletIframe() && (
+                  <a href={KCC20_APP} target="_blank" rel="noreferrer" className="w-full h-10 rounded-xl bg-neutral-50 border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-300 flex items-center justify-center gap-2">
+                    <Sparkles className="w-4 h-4" /> Open KCC20 wallet app
+                  </a>
+                )}
 
                 <button onClick={disconnect} className="w-full h-10 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 flex items-center justify-center gap-2">
                   <Unlink className="w-4 h-4" /> Disconnect wallet
@@ -283,13 +291,16 @@ export default function DDWalletButton() {
                   </div>
                 )}
 
-                <button onClick={connectKcc20PwaLive} className="w-full h-11 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 flex items-center justify-center gap-2">
-                  <Link2 className="w-4 h-4" /> Sign with KCC20 wallet
+                <button onClick={connectKcc20PwaLive} disabled={kcc20Busy} className="w-full h-11 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-40 flex items-center justify-center gap-2">
+                  {kcc20Busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+                  {kcc20Busy ? "Connecting…" : "Sign with KCC20 wallet"}
                 </button>
 
-                <Link to="/KCC20" className="w-full h-10 rounded-xl bg-neutral-50 border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-300 flex items-center justify-center gap-2">
-                  <ExternalLink className="w-4 h-4" /> Open KCC20 wallet
-                </Link>
+                {!isInWalletIframe() && (
+                  <a href={KCC20_APP} target="_blank" rel="noreferrer" className="w-full h-10 rounded-xl bg-neutral-50 border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-300 flex items-center justify-center gap-2">
+                    <ExternalLink className="w-4 h-4" /> Open KCC20 wallet
+                  </a>
+                )}
 
                 <div className="pt-1">
                   <p className="text-[11px] text-neutral-400 mb-1.5">Or paste an address as read-only (cannot sign):</p>
