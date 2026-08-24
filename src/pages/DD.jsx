@@ -10,7 +10,7 @@ import { DD_USER, DD_EVENTS, DD_PRIORITIES, DD_FILES, DD_EMAILS, DD_ACTIVITY } f
 
 function SimpleView({ title, subtitle, children }) {
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 overflow-x-hidden">
       <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">{title}</h1>
       {subtitle && <p className="text-sm text-neutral-500 mt-1">{subtitle}</p>}
       <div className="mt-5">{children}</div>
@@ -45,13 +45,13 @@ export default function DD() {
   const isProfile = view === "profile";
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
+    <div className="min-h-screen bg-[#F9FAFB] flex overflow-x-hidden w-full">
       <DDSidebar active={view} onNav={nav} />
 
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col w-full overflow-x-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 bg-[#F9FAFB]/90 backdrop-blur border-b border-neutral-200">
-          <div className="h-16 px-4 sm:px-6 flex items-center gap-3 max-w-6xl mx-auto">
+          <div className="h-16 px-4 sm:px-6 flex items-center gap-3 w-full max-w-6xl mx-auto">
             <h2 className="text-base font-semibold text-neutral-900 capitalize">{view === "profile" ? "Profile" : view}</h2>
             <div className="flex-1 flex justify-center">
               <div className="w-full max-w-md flex items-center gap-2 bg-white border border-neutral-200 rounded-xl px-3 h-9">

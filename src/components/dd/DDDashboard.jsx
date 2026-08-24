@@ -23,7 +23,7 @@ export default function DDDashboard({ onAskDD }) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 overflow-x-hidden">
       {/* Greeting */}
       <div className="mb-5">
         <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">Good morning, Alex 👋</h1>
@@ -137,7 +137,7 @@ export default function DDDashboard({ onAskDD }) {
 
       {/* Organize your day */}
       <div className="mt-4 bg-gradient-to-br from-violet-50 to-white border border-violet-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative w-24 h-24 shrink-0">
+        <div className="relative w-24 h-24 shrink-0 overflow-hidden">
           <div className="absolute inset-0 rounded-full bg-white border border-violet-200 flex items-center justify-center"><DDLogo size={40} animate={false} /></div>
           {DD_CONNECTED.slice(0, 6).map((c, i) => {
             const angle = (i / 6) * Math.PI * 2;
