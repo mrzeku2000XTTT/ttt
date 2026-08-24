@@ -34,31 +34,31 @@ export default function DDDashboard({ onAskDD }) {
     (async () => {
       try {
         const u = await base44.auth.me();
-        if (u?.full_name) setName(u.full_name);
-        else try { setName(localStorage.getItem("dd_profile_name") || ""); } catch {}
+        if (u?.full_name) setName(u.full_name);else
+        try {setName(localStorage.getItem("dd_profile_name") || "");} catch {}
         if (u?.email) {
           const [t, a, c] = await Promise.all([
-            base44.entities.DDTask.filter({ user_email: u.email, done: false }, "-created_date", 5).catch(() => []),
-            base44.entities.DDActivity.filter({ user_email: u.email }, "-created_date", 5).catch(() => []),
-            base44.entities.DDConnectedApp.filter({ user_email: u.email }, "-created_date", 6).catch(() => []),
-          ]);
-          setTasks(t); setActivity(a); setConnected(c);
+          base44.entities.DDTask.filter({ user_email: u.email, done: false }, "-created_date", 5).catch(() => []),
+          base44.entities.DDActivity.filter({ user_email: u.email }, "-created_date", 5).catch(() => []),
+          base44.entities.DDConnectedApp.filter({ user_email: u.email }, "-created_date", 6).catch(() => [])]
+          );
+          setTasks(t);setActivity(a);setConnected(c);
         }
-      } catch { }
+      } catch {}
       setLoading(false);
     })();
   }, []);
 
   const toggle = async (t) => {
-    try { const u = await base44.entities.DDTask.update(t.id, { done: !t.done }); setTasks((p) => p.map((x) => x.id === t.id ? u : x).filter((x) => !x.done)); } catch { }
+    try {const u = await base44.entities.DDTask.update(t.id, { done: !t.done });setTasks((p) => p.map((x) => x.id === t.id ? u : x).filter((x) => !x.done));} catch {}
   };
 
-  const submitAsk = (text) => { if (text.trim()) { onAskDD?.(text); setAsk(""); } };
+  const submitAsk = (text) => {if (text.trim()) {onAskDD?.(text);setAsk("");}};
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 overflow-x-hidden">
-      <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">{greetingHour()}{name ? `, ${name}` : ""} 👋</h1>
-      <p className="text-neutral-500 -mt-3 mb-5">What are we getting done?</p>
+      <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight capitalize underline">{greetingHour()}{name ? `, ${name}` : ""} 👋</h1>
+      <p className="text-neutral-500 -mt-3 mb-5 text-base">What are we getting done?</p>
 
       {/* AI input */}
       <div className="bg-white border border-neutral-200 rounded-2xl p-2 shadow-sm">
@@ -68,62 +68,62 @@ export default function DDDashboard({ onAskDD }) {
           <button onClick={() => submitAsk(ask)} className="w-8 h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 flex items-center justify-center text-white"><Mic className="w-4 h-4" /></button>
         </div>
         <div className="flex gap-2 overflow-x-auto px-2 pb-2 pt-1">
-          {QUICK_ACTIONS.map((q) => (
-            <button key={q} onClick={() => submitAsk(q)} className="h-8 px-3 rounded-full text-xs font-medium whitespace-nowrap bg-neutral-50 text-neutral-600 border border-neutral-200 hover:border-neutral-300">{q}</button>
-          ))}
+          {QUICK_ACTIONS.map((q) =>
+          <button key={q} onClick={() => submitAsk(q)} className="h-8 px-3 rounded-full text-xs font-medium whitespace-nowrap bg-neutral-50 text-neutral-600 border border-neutral-200 hover:border-neutral-300">{q}</button>
+          )}
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-neutral-400" /></div>
-      ) : (
-        <>
+      {loading ?
+      <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-neutral-400" /></div> :
+
+      <>
           {/* Row 1 */}
           <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <SectionTitle>Top Priorities</SectionTitle>
-              {tasks.length === 0 ? <EmptyHint>No tasks yet. Go to Tasks to add one.</EmptyHint> : (
-                <div className="space-y-2.5">
-                  {tasks.map((p) => (
-                    <button key={p.id} onClick={() => toggle(p)} className="w-full flex items-center gap-3 text-left">
+              {tasks.length === 0 ? <EmptyHint>No tasks yet. Go to Tasks to add one.</EmptyHint> :
+            <div className="space-y-2.5">
+                  {tasks.map((p) =>
+              <button key={p.id} onClick={() => toggle(p)} className="w-full flex items-center gap-3 text-left">
                       <span className="w-5 h-5 rounded-full border border-neutral-300 flex items-center justify-center shrink-0" />
                       <span className="text-sm text-neutral-700">{p.title}</span>
                     </button>
-                  ))}
-                </div>
               )}
+                </div>
+            }
             </Card>
 
             <Card>
               <SectionTitle>Connected Apps</SectionTitle>
-              {connected.length === 0 ? <EmptyHint>No apps connected. Go to Apps to add some.</EmptyHint> : (
-                <div className="space-y-2.5">
-                  {connected.map((c) => (
-                    <div key={c.id} className="flex items-center gap-3">
+              {connected.length === 0 ? <EmptyHint>No apps connected. Go to Apps to add some.</EmptyHint> :
+            <div className="space-y-2.5">
+                  {connected.map((c) =>
+              <div key={c.id} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center text-sm">{c.app_icon || "📦"}</div>
                       <span className="flex-1 text-sm text-neutral-700">{c.app_name}</span>
                       <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {c.status}</span>
                     </div>
-                  ))}
-                </div>
               )}
+                </div>
+            }
             </Card>
           </div>
 
           {/* Activity */}
           <Card className="mt-4">
             <SectionTitle>Activity Feed</SectionTitle>
-            {activity.length === 0 ? <EmptyHint>No activity yet. Create tasks, projects, or automations to see them here.</EmptyHint> : (
-              <div className="space-y-3">
-                {activity.map((a) => (
-                  <div key={a.id} className="flex items-center gap-3">
+            {activity.length === 0 ? <EmptyHint>No activity yet. Create tasks, projects, or automations to see them here.</EmptyHint> :
+          <div className="space-y-3">
+                {activity.map((a) =>
+            <div key={a.id} className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center text-sm">{a.icon || "📋"}</div>
                     <p className="flex-1 text-sm text-neutral-700">{a.text}</p>
                     <span className="text-xs text-neutral-400">{new Date(a.created_date).toLocaleString()}</span>
                   </div>
-                ))}
-              </div>
             )}
+              </div>
+          }
           </Card>
 
           {/* Organize your day */}
@@ -138,7 +138,7 @@ export default function DDDashboard({ onAskDD }) {
             <button onClick={() => onAskDD?.("Prepare my day")} className="h-10 px-5 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 whitespace-nowrap">Prepare my day</button>
           </div>
         </>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
