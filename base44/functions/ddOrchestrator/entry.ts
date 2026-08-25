@@ -135,7 +135,7 @@ export default async function(req) {
     // Tool executor — returns { step, data }
     async function executeTool(toolName, args) {
       toolCalls++;
-      const step = { tool: toolName, args: JSON.stringify(args).slice(0, 200), credits: TOOL_CREDIT, result_preview: "" };
+      const step = { tool: toolName, args: JSON.stringify(args || {}).slice(0, 200), credits: TOOL_CREDIT, result_preview: "" };
       let data = {};
       try {
         switch (toolName) {
@@ -247,7 +247,7 @@ export default async function(req) {
           type: "object",
           properties: {
             tool: { type: "string", description: "The tool to call, or 'final_answer'" },
-            args: { type: "object", description: "Arguments for the tool", properties: {}, additionalProperties: true },
+            args: { type: "string", description: 'JSON string of arguments for the tool, e.g. "{\\"title\\":\\"Buy milk\\"}" or "{}" if no args needed' },
             reasoning: { type: "string", description: "Brief reasoning for this step" },
           },
           required: ["tool", "args", "reasoning"],
@@ -261,10 +261,33 @@ export default async function(req) {
       }
 
       const toolName = decision.tool;
-      const args = decision.args || {};
+      let args = {};
+      try {
+        args = typeof decision.args === "string" ? JSON.parse(decision.args) : (decision.args || {});
+      } catch {
+        args = {};
+      }
 
       if (toolName === "final_answer") {
-        finalAnswer = args.answer || args.text || "Done.";
+        let ans = args.answer || args.text || "";
+        // If the answer is too terse or contains reasoning-style language, build a summary from the steps
+        const isTerse = !ans || ans.length < 15 || /^(done|completed|finished|ok|okay)\.?$/i.test(ans.trim());
+        const isReasoning = /I need to|i should|i must|tell the user|i'll|i will /i.test(ans);
+        if (isTerse || isReasoning) {
+          if (steps.length > 0) {
+            const lastStep = steps[steps.length - 1];
+            if (lastStep.result_preview?.includes("not connected")) {
+              ans = `I tried to help but ${lastStep.result_preview}. You can connect your Google apps in Settings to enable this.`;
+            } else if (lastStep.result_preview && !/^(no |no$)/i.test(lastStep.result_preview)) {
+              ans = `Here's what I found: ${lastStep.result_preview}`;
+            } else {
+              ans = lastStep.result_preview || "I've completed the task.";
+            }
+          } else {
+            ans = ans || "I've completed the task.";
+          }
+        }
+        finalAnswer = ans;
         break;
       }
 
