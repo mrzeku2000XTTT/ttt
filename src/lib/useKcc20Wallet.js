@@ -85,12 +85,22 @@ function registerListeners() {
   } catch {}
 }
 
+function withTimeout(p, ms, msg) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(msg)), ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); }
+    );
+  });
+}
+
 async function ensureInit() {
   if (_initDone) return;
   if (_initStarted) return;
   _initStarted = true;
   try {
-    await loadKcc20Sdk();
+    await withTimeout(loadKcc20Sdk(), 12000, "KCC20 Wallet unreachable");
     registerListeners();
     await silentRestore();
   } catch (e) {
@@ -106,7 +116,9 @@ export async function connectKcc20() {
   _loading = true; _error = null; emit();
   try {
     await ensureInit();
-    const res = await connectKcc20Pwa();
+    // Race the wallet connect against a timeout so a blocked popup / missing
+    // wallet never leaves the button stuck in the loading state.
+    const res = await withTimeout(connectKcc20Pwa(), 25000, "Connection timed out — KCC20 wallet did not respond");
     setAddress(res?.address || res?.accounts?.[0] || (Array.isArray(res) ? res[0] : null));
     refreshKcc20Balance();
   } catch (e) {
@@ -127,6 +139,8 @@ export function useKcc20Wallet() {
   const [s, setS] = useState(snap());
   useEffect(() => {
     ensureInit();
+    // Clear any stale loading flag left by a hung connect from a previous mount.
+    if (_loading) { _loading = false; emit(); }
     const fn = (next) => setS(next);
     _subscribers.add(fn);
     setS(snap());
