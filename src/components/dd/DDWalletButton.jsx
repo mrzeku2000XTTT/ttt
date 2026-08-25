@@ -297,10 +297,12 @@ export default function DDWalletButton() {
                   <p className="text-[11px] text-neutral-400 mt-1 break-all">{address}</p>
                 </div>
 
-                {/* Fund from KCC20 — send KAS from external wallet to this address */}
-                <button onClick={fundFromKcc20} className="w-full h-10 rounded-xl bg-violet-50 border border-violet-200 text-sm font-medium text-violet-700 hover:bg-violet-100 flex items-center justify-center gap-2">
-                  <ArrowDownToLine className="w-4 h-4" /> Fund TTT wallet from KCC20
-                </button>
+                {/* Fund from KCC20 — only shown inside the KCC20 wallet iframe */}
+                {isInWalletIframe() && (
+                  <button onClick={fundFromKcc20} className="w-full h-10 rounded-xl bg-violet-50 border border-violet-200 text-sm font-medium text-violet-700 hover:bg-violet-100 flex items-center justify-center gap-2">
+                    <ArrowDownToLine className="w-4 h-4" /> Fund TTT wallet from KCC20
+                  </button>
+                )}
 
                 {/* Export keys */}
                 <button onClick={exportKeys} className="w-full h-10 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-neutral-300 flex items-center justify-center gap-2">
@@ -347,9 +349,11 @@ export default function DDWalletButton() {
                     </div>
                   </div>
                 ) : (
-                  <button onClick={connectKcc20PwaLive} className="w-full h-10 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-neutral-300 flex items-center justify-center gap-2">
-                    <Link2 className="w-4 h-4" /> Link KCC20 wallet
-                  </button>
+                  isInWalletIframe() && (
+                    <button onClick={connectKcc20PwaLive} className="w-full h-10 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-neutral-300 flex items-center justify-center gap-2">
+                      <Link2 className="w-4 h-4" /> Link KCC20 wallet
+                    </button>
+                  )
                 )}
 
                 <button onClick={disconnect} className="w-full h-10 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 flex items-center justify-center gap-2">
