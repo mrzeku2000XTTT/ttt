@@ -158,8 +158,14 @@ export async function connectKcc20() {
 }
 
 export async function disconnectKcc20() {
+  // Clear UI immediately so the "Connect Wallet" button reappears — don't wait
+  // on the wallet's disconnect ack (which can hang and strand a spinner).
+  _loading = false;
+  _error = null;
+  _address = null;
+  _kas = null; _kkdag = null; _holdings = null;
+  emit();
   try { await disconnectKcc20Pwa(); } catch {}
-  setAddress(null);
 }
 
 export function useKcc20Wallet() {
