@@ -445,14 +445,15 @@ export default function DDWalletButton() {
                       {isEmbeddedKcc20() ? (
                         fundingStage === "idle" || fundingStage === "error" ? (
                           <div className="space-y-2">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 w-full min-w-0">
                               <input type="number" min="1" step="1" value={fundAmount}
                                 onChange={(e) => { setFundAmount(e.target.value); setFundingStage("idle"); setFundingMsg(""); }}
-                                className="flex-1 h-9 px-2 rounded-lg bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-blue-400"
-                                placeholder="Amount" />
+                                className="w-20 min-w-0 flex-shrink-0 h-9 px-2 rounded-lg bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-blue-400"
+                                placeholder="Amt" />
                               <button onClick={fundWithKkdag}
-                                className="h-9 px-3 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 flex items-center gap-1 flex-shrink-0">
-                                <Plus className="w-3.5 h-3.5" /> Fund with KKDAG
+                                className="h-9 px-2.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 flex items-center justify-center gap-1 flex-1 min-w-0">
+                                <Plus className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span className="truncate">Fund with KKDAG</span>
                               </button>
                             </div>
                             {fundingStage === "error" && fundingMsg && (
@@ -528,14 +529,15 @@ export default function DDWalletButton() {
                 {isInWalletIframe() && (
                   <div className="space-y-2">
                     {fundingStage === "idle" || fundingStage === "error" ? (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 w-full min-w-0">
                         <input type="number" min="1" step="1" value={fundAmount}
                           onChange={(e) => { setFundAmount(e.target.value); setFundingStage("idle"); setFundingMsg(""); }}
-                          className="flex-1 h-10 px-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-violet-400"
-                          placeholder="KKDAG amount" />
+                          className="w-20 min-w-0 flex-shrink-0 h-10 px-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-violet-400"
+                          placeholder="Amt" />
                         <button onClick={fundWithKkdag}
-                          className="h-10 px-3 rounded-xl bg-violet-600 border border-violet-600 text-sm font-medium text-white hover:bg-violet-700 flex items-center gap-1.5 flex-shrink-0">
-                          <ArrowDownToLine className="w-4 h-4" /> Fund from KCC20
+                          className="h-10 px-2.5 rounded-xl bg-violet-600 border border-violet-600 text-sm font-medium text-white hover:bg-violet-700 flex items-center justify-center gap-1.5 flex-1 min-w-0">
+                          <ArrowDownToLine className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">Fund from KCC20</span>
                         </button>
                       </div>
                     ) : fundingStage === "signing" ? (
