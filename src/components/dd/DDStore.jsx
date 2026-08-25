@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Plug, ExternalLink, Check, Loader2 } from "lucide-react";
+import { Search, Plus, Plug, ExternalLink, Check, Loader2, AlertCircle, LogIn } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { DD_STORE_CATEGORIES, DD_STORE_APPS } from "@/components/dd/ddStoreCatalog";
+import { isInWalletIframe } from "@/lib/kcc20Pwa";
 
 const STATUS = { add: "Add", connect: "Connect", open: "Open" };
 
@@ -19,27 +20,46 @@ export default function DDStore() {
   const [added, setAdded] = useState({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState({});
+  const [authed, setAuthed] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
     (async () => {
+      let isAuthed = false;
       try {
         const u = await base44.auth.me();
         if (u?.email) {
+          isAuthed = true;
+          setAuthed(true);
           const list = await base44.entities.DDConnectedApp.filter({ user_email: u.email }, "-created_date", 200);
           const map = {};
           list.forEach((a) => { map[a.app_name] = a; });
           setAdded(map);
         }
       } catch { }
+      // Check wallet connection (KCC20 iframe or local TTT wallet)
+      try {
+        const inIframe = isInWalletIframe();
+        const localWallet = localStorage.getItem("dd_wallet_connected") || sessionStorage.getItem("dd_wallet_connected");
+        const tttWallet = localStorage.getItem("ttt_wallet_address");
+        setWalletConnected(inIframe || !!localWallet || !!tttWallet);
+      } catch {}
+      if (!isAuthed) setAuthed(false);
       setLoading(false);
     })();
   }, []);
 
   const addApp = async (a) => {
+    // Google/ChatGPT apps require a Base44 account for OAuth — wallet alone isn't enough
+    if (!authed) {
+      setShowAuthPrompt(true);
+      return;
+    }
     setBusy((b) => ({ ...b, [a.name]: true }));
     try {
       const u = await base44.auth.me();
-      if (!u?.email) { setBusy((b) => ({ ...b, [a.name]: false })); return; }
+      if (!u?.email) { setBusy((b) => ({ ...b, [a.name]: false })); setShowAuthPrompt(true); return; }
       if (added[a.name]) {
         await base44.entities.DDConnectedApp.delete(added[a.name].id);
         setAdded((s) => { const n = { ...s }; delete n[a.name]; return n; });
@@ -65,6 +85,27 @@ export default function DDStore() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
       <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">DD Store</h1>
       <p className="text-sm text-neutral-500 mt-1">Everything you need. One workspace.</p>
+
+      {/* Auth required banner for wallet-only users (e.g. KCC20 iframe) */}
+      {!loading && !authed && (
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-900">Sign up to add Google & ChatGPT apps</p>
+            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+              {walletConnected
+                ? "Your wallet is connected, but Google and ChatGPT need a free account to store the connection. Sign up with your email — it takes 10 seconds."
+                : "Google and ChatGPT integrations need a free account. Sign up with your email to connect them."}
+            </p>
+            <button
+              onClick={() => base44.auth.redirectToLogin("/DD")}
+              className="mt-2.5 h-8 px-3 rounded-lg bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 hover:bg-amber-700"
+            >
+              <LogIn className="w-3.5 h-3.5" /> Sign up / Log in
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 flex items-center gap-2 bg-white border border-neutral-200 rounded-xl px-3 h-10">
         <Search className="w-4 h-4 text-neutral-400" />
@@ -111,6 +152,36 @@ export default function DDStore() {
         </div>
       )}
       {filtered.length === 0 && <p className="text-center text-sm text-neutral-400 mt-10">No apps found.</p>}
+
+      {/* Auth prompt modal when trying to add/connect without an account */}
+      {showAuthPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowAuthPrompt(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+              </div>
+              <h3 className="font-semibold text-neutral-900">Account needed</h3>
+            </div>
+            <p className="text-sm text-neutral-600 leading-relaxed">
+              {walletConnected
+                ? "Your Kaspa wallet is connected, but Google and ChatGPT need a free account to store the OAuth connection. Sign up with your email — your wallet stays linked."
+                : "Google and ChatGPT integrations need a free account to store your connection securely. Sign up with your email to get started."}
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => { setShowAuthPrompt(false); base44.auth.redirectToLogin("/DD"); }}
+                className="flex-1 h-10 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 flex items-center justify-center gap-1.5"
+              >
+                <LogIn className="w-4 h-4" /> Sign up / Log in
+              </button>
+              <button onClick={() => setShowAuthPrompt(false)} className="h-10 px-4 rounded-xl text-sm text-neutral-500 hover:bg-neutral-100">
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

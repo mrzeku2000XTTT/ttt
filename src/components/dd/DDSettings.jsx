@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Settings, Loader2, CheckCircle2, XCircle, Plug, Trash2 } from "lucide-react";
+import { Settings, Loader2, CheckCircle2, XCircle, Plug, Trash2, LogIn, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { GoogleDriveLogo, GoogleDocsLogo, GoogleSheetsLogo, GoogleCalendarLogo, GmailLogo, ChatGPTLogo } from "@/components/dd/DDGoogleLogos";
+import { isInWalletIframe } from "@/lib/kcc20Pwa";
 
 // Connector IDs from workspace registration.
 // Google Sheets uses the Drive connector (no separate Sheets connector registered).
@@ -18,6 +19,7 @@ export default function DDSettings({ onConnectionChange }) {
   const [status, setStatus] = useState({}); // { [type]: "connected" | "disconnected" | "checking" }
   const [busy, setBusy] = useState({}); // { [type]: true/false }
   const [authed, setAuthed] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
 
   const checkConnections = useCallback(async () => {
     if (!authed) return;
@@ -38,10 +40,17 @@ export default function DDSettings({ onConnectionChange }) {
       setAuthed(a);
       if (a) await checkConnections();
     });
+    // Detect wallet-only users (KCC20 iframe) so we can explain why login is needed
+    try {
+      const inIframe = isInWalletIframe();
+      const localWallet = localStorage.getItem("dd_wallet_connected") || sessionStorage.getItem("dd_wallet_connected");
+      const tttWallet = localStorage.getItem("ttt_wallet_address");
+      setWalletConnected(inIframe || !!localWallet || !!tttWallet);
+    } catch {}
   }, [checkConnections]);
 
   const handleConnect = async (c) => {
-    if (!authed) { base44.auth.redirectToLogin(); return; }
+    if (!authed) { base44.auth.redirectToLogin("/DD"); return; }
     setBusy((b) => ({ ...b, [c.type]: true }));
     try {
       const url = await base44.connectors.connectAppUser(c.id);
@@ -91,7 +100,25 @@ export default function DDSettings({ onConnectionChange }) {
 
               {!authed && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
-                  <p className="text-sm text-amber-700">Please log in first to connect your Google account.</p>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">
+                        {walletConnected ? "Wallet connected — now sign up to link Google" : "Sign up to connect Google & ChatGPT"}
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                        {walletConnected
+                          ? "Your Kaspa wallet is connected, but Google and ChatGPT need a free email account to store the OAuth connection securely."
+                          : "Google and ChatGPT integrations need a free account to store your connection. Sign up with your email — it takes 10 seconds."}
+                      </p>
+                      <button
+                        onClick={() => base44.auth.redirectToLogin("/DD")}
+                        className="mt-2 h-8 px-3 rounded-lg bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 hover:bg-amber-700"
+                      >
+                        <LogIn className="w-3.5 h-3.5" /> Sign up / Log in
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -132,7 +159,13 @@ export default function DDSettings({ onConnectionChange }) {
               </div>
 
               <div className="mt-4 pt-4 border-t border-neutral-200">
-                <p className="text-xs text-neutral-400">ChatGPT integration uses your own API key (BYOK). Configure it in your profile settings.</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <ChatGPTLogo className="w-5 h-5" />
+                  <p className="text-sm font-semibold text-neutral-900">ChatGPT (Research)</p>
+                </div>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  ChatGPT powers DD's web research. It uses a shared key by default — no setup needed. Just ask DD to "research" any topic and it will search the web and cite sources.
+                </p>
               </div>
             </div>
           </div>
