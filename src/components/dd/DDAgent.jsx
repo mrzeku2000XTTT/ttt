@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Plug, Trash2, Unlink, ExternalLink, Search, FileText, Table, AtSign, Zap } from "lucide-react";
+import { Send, Loader2, Plug, Trash2, Unlink, ExternalLink, Search, FileText, Table, AtSign, Zap, Palette, ChevronDown, Infinity as InfinityIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import DDLogo from "@/components/dd/DDLogo";
 import DDLogoCustomizer from "@/components/dd/DDLogoCustomizer";
@@ -100,6 +100,10 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
   const [showMention, setShowMention] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const [agentName, setAgentName] = useState(() => { try { return localStorage.getItem("dd_agent_name") || "DD"; } catch { return "DD"; } });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [creditRefreshKey, setCreditRefreshKey] = useState(0);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const consumedNonceRef = useRef(-1);
@@ -114,23 +118,23 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
   const fetchGoogleContext = async () => {
     try {
       const types = ["googledrive", "googlecalendar", "gmail"];
+      const results = await Promise.all(types.map((t) =>
+        base44.functions.invoke("ddGoogleAction", { action: "fetch", connectorType: t }).catch(() => null)
+      ));
       const parts = [];
-      for (const t of types) {
-        try {
-          const res = await base44.functions.invoke("ddGoogleAction", { action: "fetch", connectorType: t });
-          if (res?.data) {
-            if (t === "googledrive" && res.data.files?.length) {
-              parts.push(`Recent Drive files: ${res.data.files.slice(0, 5).map(f => f.name).join(", ")}`);
-            }
-            if (t === "googlecalendar" && res.data.events?.length) {
-              parts.push(`Upcoming events: ${res.data.events.slice(0, 5).map(e => `${e.summary} at ${e.start?.dateTime || e.start?.date}`).join("; ")}`);
-            }
-            if (t === "gmail" && res.data.messages?.length) {
-              parts.push(`Recent emails: ${res.data.messages.slice(0, 5).map(m => m.subject).join(", ")}`);
-            }
-          }
-        } catch {}
-      }
+      results.forEach((res, i) => {
+        const t = types[i];
+        if (!res?.data) return;
+        if (t === "googledrive" && res.data.files?.length) {
+          parts.push(`Recent Drive files: ${res.data.files.slice(0, 5).map(f => f.name).join(", ")}`);
+        }
+        if (t === "googlecalendar" && res.data.events?.length) {
+          parts.push(`Upcoming events: ${res.data.events.slice(0, 5).map(e => `${e.summary} at ${e.start?.dateTime || e.start?.date}`).join("; ")}`);
+        }
+        if (t === "gmail" && res.data.messages?.length) {
+          parts.push(`Recent emails: ${res.data.messages.slice(0, 5).map(m => m.subject).join(", ")}`);
+        }
+      });
       if (parts.length) setGoogleContext(parts.join("\n"));
     } catch {}
   };
@@ -142,6 +146,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
         const u = await base44.auth.me();
         em = u?.email || "guest";
         setEmail(em);
+        setIsAdmin(u?.role === "admin");
       } catch {}
       const ob = getOnboarding();
       setOnboarding(ob);
@@ -150,7 +155,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
         setMessages(saved);
       } else {
         const name = ob?.name || "there";
-        setMessages([{ role: "dd", text: `Hi ${name} — I'm DD, your workspace assistant. I can research with ChatGPT, create Google Docs & Sheets, and help organize your day. What can I do for you?` }]);
+        setMessages([{ role: "dd", text: `Hi ${name} — I'm ${agentName}, your workspace assistant. I can research with ChatGPT, create Google Docs & Sheets, and help organize your day. What can I do for you?` }]);
       }
       setLoaded(true);
       fetchGoogleContext();
@@ -174,13 +179,13 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
   useEffect(() => { scrollRef.current?.scrollTo({ top: 1e9, behavior: "smooth" }); }, [messages, busy]);
 
   const refreshConnected = async () => {
+    const results = await Promise.all(DD_CONNECTORS.map((c) =>
+      base44.functions.invoke("ddGoogleAction", { action: "status", connectorType: c.type, connectorId: c.id }).catch(() => null)
+    ));
     const connected = [];
-    for (const c of DD_CONNECTORS) {
-      try {
-        const res = await base44.functions.invoke("ddGoogleAction", { action: "status", connectorType: c.type, connectorId: c.id });
-        if (res?.connected) connected.push({ app_name: c.name, id: c.type });
-      } catch {}
-    }
+    results.forEach((res, i) => {
+      if (res?.connected) connected.push({ app_name: DD_CONNECTORS[i].name, id: DD_CONNECTORS[i].type });
+    });
     setRealConnected(connected);
   };
 
@@ -287,6 +292,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
         history,
         onboarding,
         model: "gemini_3_flash",
+        agentName,
       });
 
       const data = res?.data || res;
@@ -294,6 +300,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
       const steps = data?.steps || [];
       const credits = data?.credits || 0;
       const kaspa = data?.kaspa_cost || 0;
+      const kkdagCost = data?.kkdag_cost || credits;
 
       // Build links from step results (e.g., created docs/sheets)
       const links = [];
@@ -310,8 +317,10 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
         steps: steps.map((s) => ({ tool: s.tool, preview: (s.result_preview || "").slice(0, 120) })),
         credits,
         kaspa,
+        kkdag: kkdagCost,
         links,
       }]);
+      setCreditRefreshKey((k) => k + 1);
     } catch (e) {
       setMessages((m) => [...m, { role: "dd", text: "I hit a snag right now — please try again." }]);
     }
@@ -336,27 +345,42 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">DD Agent</h1>
-          <p className="text-sm text-neutral-500 mt-1">Research with ChatGPT, create Google Docs & Sheets, organize your day.</p>
+    <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight truncate">{agentName} Agent</h1>
+          <p className="text-xs sm:text-sm text-neutral-500 mt-0.5 truncate">Research with ChatGPT, create Google Docs & Sheets, organize your day.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {messages.length > 1 && (
-            <button onClick={clearHistory} className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 px-3 h-9 rounded-lg hover:bg-neutral-100">
-              <Trash2 className="w-4 h-4" /> Clear
+            <button onClick={clearHistory} className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 px-2 sm:px-3 h-9 rounded-lg hover:bg-neutral-100">
+              <Trash2 className="w-4 h-4" /><span className="hidden sm:inline">Clear</span>
             </button>
           )}
-          <DDCreditBar />
+          <DDCreditBar refreshKey={creditRefreshKey} />
           <DDSettings onConnectionChange={refreshConnected} />
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Chat */}
-        <div className="lg:col-span-2 bg-white border border-neutral-200 rounded-2xl flex flex-col h-[60vh]">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* Hideable face customizer (top) */}
+      <div className="mt-3">
+        <button
+          onClick={() => setShowCustomizer(!showCustomizer)}
+          className="w-full flex items-center justify-between px-3 h-10 rounded-xl bg-white border border-neutral-200 hover:border-neutral-300 text-sm text-neutral-700"
+        >
+          <span className="flex items-center gap-2 font-medium"><Palette className="w-4 h-4 text-neutral-600" /> Customize {agentName} face</span>
+          <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${showCustomizer ? "rotate-180" : ""}`} />
+        </button>
+        {showCustomizer && (
+          <div className="mt-2"><DDLogoCustomizer /></div>
+        )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Chat — mobile-native full-height column */}
+        <div className="lg:col-span-2 bg-white border border-neutral-200 rounded-2xl flex flex-col h-[70vh] lg:h-[60vh]">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
             {messages.map((m, i) => (
               <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 {m.role === "dd" && (
@@ -384,10 +408,15 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
                     </div>
                   )}
                   {(m.credits || m.kaspa) && (
-                    <div className="mt-2 flex items-center gap-2 text-[10px] text-neutral-400">
-                      <span className="flex items-center gap-1"><Zap className="w-2.5 h-2.5 text-amber-500" />{m.credits.toFixed(1)} credits</span>
+                    <div className="mt-2 flex items-center gap-2 text-[10px] text-neutral-400 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Zap className="w-2.5 h-2.5 text-amber-500" />
+                        {isAdmin ? <InfinityIcon className="w-3 h-3 text-violet-500" /> : <>{m.credits.toFixed(1)} credits</>}
+                      </span>
                       <span>·</span>
-                      <span>≈ {m.kaspa.toFixed(4)} KAS</span>
+                      <span>≈ {m.kkdag?.toFixed(0) || m.credits.toFixed(0)} KKDAG</span>
+                      <span>·</span>
+                      <span>{m.kaspa.toFixed(4)} KAS</span>
                     </div>
                   )}
                   {m.links && m.links.length > 0 && (
@@ -406,7 +435,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
             {busy && (
               <div className="flex items-center gap-2">
                 <DDLogo size={28} showWord={false} animate={false} />
-                <div className="flex items-center gap-2 text-sm text-neutral-400"><Loader2 className="w-4 h-4 animate-spin" /> DD is working on it…</div>
+                <div className="flex items-center gap-2 text-sm text-neutral-400"><Loader2 className="w-4 h-4 animate-spin" /> {agentName} is working on it…</div>
               </div>
             )}
           </div>
@@ -432,10 +461,10 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask DD anything… type @ to mention a tool"
-                className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 h-10 text-sm outline-none focus:border-neutral-400"
+                placeholder={`Ask ${agentName} anything… type @ to mention`}
+                className="flex-1 min-w-0 bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 h-10 text-sm outline-none focus:border-neutral-400"
               />
-              <button onClick={() => ask()} disabled={busy} className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center disabled:opacity-50"><Send className="w-4 h-4" /></button>
+              <button onClick={() => ask()} disabled={busy} className="w-10 h-10 flex-shrink-0 rounded-xl bg-neutral-900 text-white flex items-center justify-center disabled:opacity-50"><Send className="w-4 h-4" /></button>
               {showMention && filteredMentions.length > 0 && (
                 <div className="absolute bottom-full mb-1 left-0 right-12 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
                   {filteredMentions.map((t, i) => {
@@ -459,9 +488,8 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
           </div>
         </div>
 
-        {/* Side panels */}
-        <div className="space-y-4">
-          <DDLogoCustomizer />
+        {/* Side panel — connected tools (hidden on mobile, customizer is at top) */}
+        <div className="hidden lg:block space-y-4">
           <div className="bg-white border border-neutral-200 rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2"><Plug className="w-4 h-4 text-neutral-700" /> Connected tools</h3>
             {realConnected.length === 0 ? <p className="text-sm text-neutral-400">No apps connected yet. Click Settings to connect Google.</p> :

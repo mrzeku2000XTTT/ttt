@@ -99,7 +99,7 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { message, history, onboarding, model } = body;
+    const { message, history, onboarding, model, agentName } = body;
 
     if (!message) return Response.json({ error: "No message provided" }, { status: 400 });
 
@@ -149,8 +149,9 @@ export default async function(req) {
     const historyText = (history || []).slice(-6).map((m) => `${m.role === "user" ? "User" : "DD"}: ${m.text}`).join("\n");
 
     const o = onboarding || {};
+    const aiName = agentName || "DD";
     const systemPrompt = [
-      `You are DD, a personal productivity agent with REAL tool access to the user's Google Workspace and DD tasks.`,
+      `You are ${aiName}, a personal productivity agent with REAL tool access to the user's Google Workspace and DD tasks.`,
       `User: ${o.name || "there"}. ${o.role ? "Role: " + o.role + "." : ""} ${o.priorities ? "Priorities: " + o.priorities + "." : ""}`,
       `Style: ${o.style || "brief and direct"}.`,
       ``,
@@ -384,6 +385,7 @@ export default async function(req) {
       kaspa_cost_sompi: kaspaCostSompi,
       request_id: requestId,
       model: useModel,
+      kkdag_cost: totalCredits, // 1 integration credit ≈ 1 KKDAG
       kkdag_balance_after: kkdagBalanceAfter,
       kkdag_treasury: KKDAG_TREASURY,
       is_admin: isAdmin,
