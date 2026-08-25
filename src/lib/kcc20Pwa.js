@@ -19,12 +19,7 @@ export const KCC20_APP = KCC20_ORIGIN + "/index.html";
 
 // True when TTT is running inside the KCC20 wallet's dApp browser iframe.
 export function isInWalletIframe() {
-  try {
-    if (window.parent === window) return false;
-    // Only treat as KCC20 wallet iframe when the embedding origin is KCC20 itself.
-    const ref = document.referrer || "";
-    return ref.startsWith(KCC20_ORIGIN) || ref.includes("kcc-20-wallet");
-  } catch { return false; }
+  try { return window.parent !== window; } catch { return false; }
 }
 
 export function kcc20Provider() {
