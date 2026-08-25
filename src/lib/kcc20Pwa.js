@@ -94,3 +94,40 @@ export async function signWithKcc20(txJsonString, signInputs = []) {
   }
   throw new Error("KCC20 Wallet does not support signPskt");
 }
+
+// ── KCC20 token APIs (BUILD 141+) ──
+// The parent wallet signs and broadcasts; TTT never sees keys.
+
+// True when the KCC20 SDK is loaded AND we're inside the wallet's dApp browser.
+export function isEmbeddedKcc20() {
+  const p = kcc20Provider();
+  if (!p) return false;
+  if (typeof p.isEmbedded === "function") return !!p.isEmbedded();
+  return isInWalletIframe();
+}
+
+// Send a KCC20 token (e.g. KKDAG) to a destination address.
+// Returns { txId, amount, from, dest, explorer }.
+export async function sendTokenKcc20({ tick, amount, dest }) {
+  const p = await loadKcc20Sdk();
+  if (typeof p.sendToken === "function") return p.sendToken({ tick, amount: String(amount), dest });
+  if (typeof p.request === "function") return p.request("sendKcc20", { tick, amount: String(amount), dest });
+  throw new Error("KCC20 Wallet does not support sendToken");
+}
+
+// Get the live token balance from the parent wallet.
+// Returns { balance, raw, decimals }.
+export async function getTokenBalanceKcc20(tick) {
+  const p = kcc20Provider() || await loadKcc20Sdk();
+  if (typeof p.getTokenBalance === "function") return p.getTokenBalance(tick);
+  if (typeof p.request === "function") return p.request("getTokenBalance", { tick });
+  throw new Error("KCC20 Wallet does not support getTokenBalance");
+}
+
+// Get the connected network. Returns 'kaspa_mainnet' | 'kaspa_testnet10' | …
+export async function getNetworkKcc20() {
+  const p = kcc20Provider() || await loadKcc20Sdk();
+  if (typeof p.getNetwork === "function") return p.getNetwork();
+  if (typeof p.request === "function") return p.request("getNetwork");
+  return null;
+}

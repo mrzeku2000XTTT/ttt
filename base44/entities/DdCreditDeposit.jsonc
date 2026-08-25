@@ -1,0 +1,62 @@
+{
+  "name": "DdCreditDeposit",
+  "type": "object",
+  "properties": {
+    "txid": {
+      "type": "string",
+      "description": "On-chain KCC20 transfer txId \u2014 unique, one credit per txId"
+    },
+    "from": {
+      "type": "string",
+      "description": "Sender kaspa address (the connected KCC20 wallet)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "App user who receives the credits"
+    },
+    "treasury": {
+      "type": "string",
+      "description": "DD treasury address that received the KKDAG"
+    },
+    "tick": {
+      "type": "string",
+      "default": "KKDAG",
+      "description": "KCC20 token tick (always KKDAG for DD credits)"
+    },
+    "amount": {
+      "type": "number",
+      "default": 0,
+      "description": "KKDAG amount credited"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "credited",
+        "rejected"
+      ],
+      "default": "credited",
+      "description": "Deposit lifecycle state"
+    }
+  },
+  "required": [
+    "txid",
+    "from",
+    "user_email",
+    "amount"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

@@ -11,6 +11,10 @@ import {
   disconnectKcc20Pwa,
   isKcc20Detected,
   isInWalletIframe,
+  isEmbeddedKcc20,
+  sendTokenKcc20,
+  getTokenBalanceKcc20,
+  getNetworkKcc20,
   KCC20_APP,
   KCC20_ORIGIN,
 } from "@/lib/kcc20Pwa";
@@ -20,9 +24,8 @@ const KCC20_KEY = "dd_kcc20_connected"; // localStorage — connected KCC20 scor
 const KCC20_VIA_KEY = "dd_kcc20_via"; // localStorage — "pwa" | "paste"
 const HIDE_KCC20_KEY = "dd_hide_kcc20"; // localStorage — hide KCC20 token holdings toggle
 
-// KKDAG treasury — spent DD credits accrue here. Users send KAS here to fund KKDAG.
+// KKDAG treasury — users send real KKDAG tokens here via the parent KCC20 wallet.
 const KKDAG_TREASURY = "kaspa:qq5yhvly6338dspa9mm24g8q6chvy6v0jww3k4dgqywh0lju5mmm5pj334ews";
-const KKDAG_GRANT = 1000; // starter grant + manual top-up batch (≈ one DD request of compute)
 
 // Token metadata — mirrors the KCC20 wallet's tokenColor registry
 const TOKENS = {
@@ -81,11 +84,11 @@ export default function DDWalletButton() {
   const [exportedKey, setExportedKey] = useState(null);
   const [copied, setCopied] = useState(false);
   const [kkdagBalance, setKkdagBalance] = useState(null);
-  const [kkdagBusy, setKkdagBusy] = useState(false);
-  const [buyingKkdag, setBuyingKkdag] = useState(false);
-  const [fundingStatus, setFundingStatus] = useState("");
-  const [fundedTxid, setFundedTxid] = useState(null);
-  const fundingPollRef = useRef(null);
+  const [walletKkdag, setWalletKkdag] = useState(null); // live KKDAG from parent wallet
+  const [fundAmount, setFundAmount] = useState("10");
+  const [fundingStage, setFundingStage] = useState("idle"); // idle | signing | credited | error
+  const [fundingMsg, setFundingMsg] = useState("");
+  const [lastDeposit, setLastDeposit] = useState(null); // { amount, txid } | null
   const [hideKcc20, setHideKcc20] = useState(() => { try { return localStorage.getItem(HIDE_KCC20_KEY) === "1"; } catch { return false; } });
   const [copiedTreasury, setCopiedTreasury] = useState(false);
   const refreshTimer = useRef(null);
@@ -103,7 +106,8 @@ export default function DDWalletButton() {
     if (!address) return;
     refreshBalance(address);
     refreshKkdag();
-    refreshTimer.current = setInterval(() => { refreshBalance(address); refreshKkdag(); }, 15000);
+    refreshWalletKkdag();
+    refreshTimer.current = setInterval(() => { refreshBalance(address); refreshKkdag(); refreshWalletKkdag(); }, 15000);
     return () => { if (refreshTimer.current) clearInterval(refreshTimer.current); };
   }, [address]);
 
@@ -126,73 +130,65 @@ export default function DDWalletButton() {
     } catch { setKkdagBalance(null); }
   };
 
-  const addKkdagCredits = async () => {
-    setKkdagBusy(true);
+  // Live KKDAG balance from the parent KCC20 wallet (not an off-chain grant).
+  const refreshWalletKkdag = async () => {
+    if (!isEmbeddedKcc20()) { setWalletKkdag(null); return; }
     try {
+      const bag = await getTokenBalanceKcc20("KKDAG");
+      setWalletKkdag(bag?.balance ?? bag?.raw ?? null);
+    } catch { setWalletKkdag(null); }
+  };
+
+  // Fund DD credits with REAL KKDAG — parent wallet signs the on-chain transfer.
+  const fundWithKkdag = async () => {
+    setErr("");
+    const amt = parseFloat(fundAmount);
+    if (!amt || amt <= 0) { setErr("Enter a valid KKDAG amount"); return; }
+    if (!isEmbeddedKcc20()) { setErr("Open TTT from the KCC20 Wallet so the parent can sign."); return; }
+
+    // Mainnet check
+    try {
+      const net = await getNetworkKcc20();
+      if (net && net !== "kaspa_mainnet") { setErr("Switch to Kaspa Mainnet in the KCC20 wallet (not TN10)."); return; }
+    } catch {}
+
+    setFundingStage("signing");
+    setFundingMsg("Sign in KCC20 Wallet…");
+    setLastDeposit(null);
+    try {
+      const paid = await sendTokenKcc20({ tick: "KKDAG", amount: amt, dest: KKDAG_TREASURY });
+      const txId = paid?.txId;
+      if (!txId) throw new Error("No txId returned from wallet");
+      const from = paid?.from || kcc20Addr || "";
+
+      // Credit via backend (idempotent by txId)
       const me = await base44.auth.me().catch(() => null);
-      if (!me?.email) { setErr("Log in to add KKDAG credits."); return; }
-      const rows = await base44.entities.DDKKDAGWallet.filter({ user_email: me.email });
-      if (rows && rows[0]) {
-        const w = rows[0];
-        await base44.entities.DDKKDAGWallet.update(w.id, {
-          balance: (w.balance || 0) + KKDAG_GRANT,
-          total_funded: (w.total_funded || 0) + KKDAG_GRANT,
-        });
+      if (!me?.email) throw new Error("Log in to receive DD credits");
+      const res = await base44.functions.invoke("ddCreditKkdagDeposit", {
+        txId, amount: amt, from, dest: KKDAG_TREASURY, user_email: me.email, tick: "KKDAG",
+      });
+      const d = res?.data;
+      if (d?.credited > 0) {
+        await refreshKkdag();
+        await refreshWalletKkdag();
+        setLastDeposit({ amount: d.credited, txid: txId });
+        setFundingStage("credited");
+        setFundingMsg(`Credited ${d.credited.toLocaleString()} KKDAG`);
       } else {
-        await base44.entities.DDKKDAGWallet.create({
-          user_email: me.email,
-          balance: KKDAG_GRANT,
-          total_funded: KKDAG_GRANT,
-          total_spent: 0,
-        });
+        // Already credited (idempotent replay)
+        setFundingStage("credited");
+        setFundingMsg(d?.message || "Already credited");
       }
-      await refreshKkdag();
-    } catch (e) { setErr(e?.message || "Could not add credits."); }
-    finally { setKkdagBusy(false); }
-  };
-
-  // Buy KKDAG via KCC20 wallet — user sends KAS from their KCC20 wallet to the
-  // treasury, DD polls on-chain and auto-credits. Only for iframed (KCC20) context.
-  const buyKkdagViaKcc20 = async () => {
-    if (!kcc20Addr) {
-      setErr("Connect your KCC20 wallet first (Link KCC20 wallet below).");
-      return;
+    } catch (e) {
+      const msg = String(e?.message || e || "");
+      if (/Buy KKDAG/i.test(msg)) setFundingMsg("Buy KKDAG on Home → Tokens first");
+      else if (/reject|declin|denied|cancel/i.test(msg)) setFundingMsg("Transaction declined");
+      else setFundingMsg(msg || "Funding failed");
+      setFundingStage("error");
     }
-    setBuyingKkdag(true);
-    setFundedTxid(null);
-    setFundingStatus("Waiting for your KAS send to the treasury…");
-    try { navigator.clipboard.writeText(KKDAG_TREASURY); } catch {}
-
-    const poll = async () => {
-      try {
-        const me = await base44.auth.me().catch(() => null);
-        if (!me?.email) return;
-        const res = await base44.functions.invoke("ddCheckKkdagFunding", {
-          kcc20_address: kcc20Addr,
-          user_email: me.email,
-        });
-        const d = res?.data;
-        if (d?.credited > 0) {
-          await refreshKkdag();
-          const txid = d.new_txids && d.new_txids[0];
-          setFundedTxid(txid || null);
-          setFundingStatus(`✓ Credited ${d.credited.toLocaleString()} KKDAG!`);
-          setBuyingKkdag(false);
-          if (fundingPollRef.current) { clearInterval(fundingPollRef.current); fundingPollRef.current = null; }
-        }
-      } catch (e) { /* keep polling */ }
-    };
-    poll();
-    fundingPollRef.current = setInterval(poll, 10000);
   };
 
-  const cancelBuyKkdag = () => {
-    setBuyingKkdag(false);
-    setFundingStatus("");
-    if (fundingPollRef.current) { clearInterval(fundingPollRef.current); fundingPollRef.current = null; }
-  };
-
-  useEffect(() => () => { if (fundingPollRef.current) clearInterval(fundingPollRef.current); }, []);
+  const resetFunding = () => { setFundingStage("idle"); setFundingMsg(""); setLastDeposit(null); };
 
   const toggleHideKcc20 = () => {
     const next = !hideKcc20;
@@ -433,42 +429,63 @@ export default function DDWalletButton() {
                     {kkdagBalance === null ? "—" : kkdagBalance === Infinity ? "∞ KKDAG" : `${kkdagBalance.toLocaleString()} KKDAG`}
                   </p>
                   <p className="text-[11px] text-neutral-400 mt-0.5">
-                    {kkdagBalance === Infinity ? "Admin — unlimited DD compute" : "DD agent compute credits (1000 ≈ 1 request)"}
+                    {kkdagBalance === Infinity ? "Admin — unlimited DD compute" : "DD agent compute credits"}
                   </p>
+
+                  {/* Live wallet KKDAG from parent */}
+                  {isEmbeddedKcc20() && !hideKcc20 && (
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100">
+                      <span className="text-[10px] text-neutral-400">Wallet KKDAG</span>
+                      <span className="text-[10px] font-medium text-neutral-700">{walletKkdag ?? "—"}</span>
+                    </div>
+                  )}
+
                   {kkdagBalance !== Infinity && kkdagBalance !== null && (
-                    isInWalletIframe() ? (
-                      <div className="mt-2 space-y-2">
-                        {!buyingKkdag ? (
-                          <button onClick={buyKkdagViaKcc20}
-                            className="w-full h-9 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 flex items-center justify-center gap-1.5">
-                            <Plus className="w-3.5 h-3.5" /> Buy KKDAG via KCC20
-                          </button>
-                        ) : (
-                          <div className="rounded-lg bg-blue-50 border border-blue-200 p-2.5 space-y-2">
+                    <div className="mt-2">
+                      {isEmbeddedKcc20() ? (
+                        fundingStage === "idle" || fundingStage === "error" ? (
+                          <div className="space-y-2">
                             <div className="flex items-center gap-1.5">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
-                              <p className="text-[11px] text-blue-700 font-medium">{fundingStatus}</p>
+                              <input type="number" min="1" step="1" value={fundAmount}
+                                onChange={(e) => { setFundAmount(e.target.value); setFundingStage("idle"); setFundingMsg(""); }}
+                                className="flex-1 h-9 px-2 rounded-lg bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-blue-400"
+                                placeholder="Amount" />
+                              <button onClick={fundWithKkdag}
+                                className="h-9 px-3 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 flex items-center gap-1 flex-shrink-0">
+                                <Plus className="w-3.5 h-3.5" /> Fund with KKDAG
+                              </button>
                             </div>
-                            <p className="text-[10px] text-neutral-500">Send KAS from your KCC20 wallet to:</p>
-                            <p className="text-[10px] font-mono text-neutral-700 break-all bg-white border border-neutral-200 rounded p-1.5">{KKDAG_TREASURY}</p>
-                            <p className="text-[10px] text-neutral-400">Rate: 1 KAS = 1,000 KKDAG · Address copied to clipboard</p>
-                            {fundedTxid && (
-                              <a href={`https://kaspa.stream/transactions/${fundedTxid}`} target="_blank" rel="noreferrer"
+                            {fundingStage === "error" && fundingMsg && (
+                              <p className="text-[10px] text-red-500">{fundingMsg}</p>
+                            )}
+                            {err && <p className="text-[10px] text-red-500">{err}</p>}
+                          </div>
+                        ) : fundingStage === "signing" ? (
+                          <div className="rounded-lg bg-blue-50 border border-blue-200 p-2.5 flex items-center gap-1.5">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                            <p className="text-[11px] text-blue-700 font-medium">{fundingMsg}</p>
+                          </div>
+                        ) : (
+                          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <p className="text-[11px] text-emerald-700 font-medium">{fundingMsg}</p>
+                            </div>
+                            {lastDeposit?.txid && (
+                              <a href={`https://kaspa.stream/transactions/${lastDeposit.txid}`} target="_blank" rel="noreferrer"
                                  className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-1 underline">
-                                <ExternalLink className="w-3 h-3" /> View tx on kaspa.stream
+                                <ExternalLink className="w-3 h-3" /> {lastDeposit.txid.slice(0, 12)}…
                               </a>
                             )}
-                            <button onClick={cancelBuyKkdag} className="text-[10px] text-neutral-500 hover:text-neutral-800 underline">Cancel</button>
+                            <button onClick={resetFunding} className="text-[10px] text-neutral-500 hover:text-neutral-800 underline">Done</button>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <button onClick={addKkdagCredits} disabled={kkdagBusy}
-                        className="w-full mt-2 h-9 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-40 flex items-center justify-center gap-1.5">
-                        {kkdagBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                        Add {KKDAG_GRANT} KKDAG credits
-                      </button>
-                    )
+                        )
+                      ) : (
+                        <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5">
+                          <p className="text-[10px] text-amber-700">Open TTT from the KCC20 Wallet (TTT icon) so the parent wallet can sign your KKDAG funding.</p>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -490,12 +507,12 @@ export default function DDWalletButton() {
                         <p className="text-sm font-semibold text-neutral-900">KKDAG</p>
                         <p className="text-[10px] text-neutral-400">DD agent credit</p>
                       </div>
-                      <span className="text-xs text-neutral-400">{kkdagBalance === Infinity ? "∞" : kkdagBalance ?? "—"}</span>
+                      <span className="text-xs text-neutral-400">{walletKkdag ?? (kkdagBalance === Infinity ? "∞" : kkdagBalance ?? "—")}</span>
                     </div>
                   </div>
                 )}
 
-                {/* KKDAG treasury — where spent credits accrue / where to send KAS to fund */}
+                {/* KKDAG treasury — where KKDAG transfers are sent */}
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Shield className="w-3 h-3 text-neutral-500" />
