@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import DDLogo from "@/components/dd/DDLogo";
-import { ArrowRight, Check } from "lucide-react";
+import DDWalletSetup from "@/components/dd/DDWalletSetup";
+import { ArrowRight, Check, Wallet } from "lucide-react";
 
 const STORAGE_KEY = "dd_onboarding_v1";
 
@@ -17,7 +18,10 @@ export function isOnboarded() {
   return !!getOnboarding();
 }
 
+const WALLET_STEP = { key: "wallet", label: "Connect your wallet", type: "wallet" };
+
 const QUESTIONS = [
+  WALLET_STEP,
   {
     key: "name",
     label: "What should I call you?",
@@ -78,6 +82,7 @@ export default function DDOnboarding({ onComplete }) {
 
   const q = QUESTIONS[step];
   const isLast = step === QUESTIONS.length - 1;
+  const isWallet = q?.type === "wallet";
 
   const next = () => {
     if (isLast) {
@@ -99,7 +104,7 @@ export default function DDOnboarding({ onComplete }) {
     }
   };
 
-  const canNext = q?.type === "choice" || (answers[q?.key] || "").trim().length > 0;
+  const canNext = q?.type === "choice" || q?.type === "wallet" || (answers[q?.key] || "").trim().length > 0;
 
   return (
     <div className="fixed inset-0 z-50 bg-neutral-50 flex items-center justify-center p-4">
@@ -108,7 +113,7 @@ export default function DDOnboarding({ onComplete }) {
           <DDLogo size={44} showWord={false} animate={true} />
           <div>
             <h2 className="text-lg font-bold text-neutral-900">Hi, I'm DD</h2>
-            <p className="text-xs text-neutral-500">Let's set up your day.</p>
+            <p className="text-xs text-neutral-500">{isWallet ? "Let's set up your wallet first." : "Let's set up your day."}</p>
           </div>
         </div>
 
@@ -120,7 +125,14 @@ export default function DDOnboarding({ onComplete }) {
 
         <label className="block text-sm font-semibold text-neutral-900 mb-2">{q.label}</label>
 
-        {q.type === "choice" ? (
+        {isWallet ? (
+          <div className="mb-6">
+            <p className="text-xs text-neutral-500 mb-3">
+              Your wallet is your identity on TTT. Create a new one, import an existing TTT wallet, or connect your KCC20 wallet. You can skip and do this later.
+            </p>
+            <DDWalletSetup onDone={() => { setAnswers((a) => ({ ...a, wallet: "done" })); next(); }} />
+          </div>
+        ) : q.type === "choice" ? (
           <div className="space-y-2 mb-6">
             {q.options.map((opt) => (
               <button
@@ -144,16 +156,18 @@ export default function DDOnboarding({ onComplete }) {
           />
         )}
 
-        <div className="flex items-center justify-between">
-          <button onClick={skip} className="text-sm text-neutral-400 hover:text-neutral-600">Skip</button>
-          <button
-            onClick={next}
-            disabled={!canNext}
-            className="flex items-center gap-2 px-5 h-10 rounded-xl bg-neutral-900 text-white text-sm font-semibold disabled:opacity-40"
-          >
-            {isLast ? "Start" : "Next"} <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        {!isWallet && (
+          <div className="flex items-center justify-between">
+            <button onClick={skip} className="text-sm text-neutral-400 hover:text-neutral-600">Skip</button>
+            <button
+              onClick={next}
+              disabled={!canNext}
+              className="flex items-center gap-2 px-5 h-10 rounded-xl bg-neutral-900 text-white text-sm font-semibold disabled:opacity-40"
+            >
+              {isLast ? "Start" : "Next"} <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
