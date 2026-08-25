@@ -7,7 +7,7 @@ import { useKcc20Wallet, shortKaspaAddress, formatKas } from "@/lib/useKcc20Wall
 // Connected: compact black chip "Scorpion · 0.000 KAS" that expands into a
 // panel with the full address, balance, copy, and disconnect.
 export default function Kcc20ConnectButton() {
-  const { address, balance, loading, error, connect, disconnect, refreshBalance } = useKcc20Wallet();
+  const { address, kas, loading, error, connect, disconnect, refreshState } = useKcc20Wallet();
   const [narrow, setNarrow] = useState(false);
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
@@ -59,18 +59,20 @@ export default function Kcc20ConnectButton() {
         >
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
           {narrow ? (
-            <span className="font-mono text-[11px]">{formatKas(balance)}</span>
+            <span className="font-mono text-[11px]">{formatKas(kas)}</span>
           ) : (
             <>
               <span className="text-white/70">Scorpion</span>
-              <span className="font-mono">{formatKas(balance)} KAS</span>
+              <span className="font-mono">{formatKas(kas)} KAS</span>
             </>
           )}
           <ChevronDown className={`w-3.5 h-3.5 text-white/60 transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
         {open && (
           <div
-            className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white shadow-2xl ring-1 ring-zinc-200 overflow-hidden z-50"
+            // Mobile: fixed, centered, full-width-ish so it never clips left.
+            // Desktop: anchored under the button, right-aligned.
+            className="fixed left-2 right-2 top-[5rem] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-64 rounded-2xl bg-white shadow-2xl ring-1 ring-zinc-200 overflow-hidden z-[60]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-4 py-3 bg-black text-white">
@@ -78,7 +80,7 @@ export default function Kcc20ConnectButton() {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 KCC20 · Scorpion
               </div>
-              <div className="mt-1.5 text-2xl font-[800] tracking-tight">{formatKas(balance)} <span className="text-base text-white/60">KAS</span></div>
+              <div className="mt-1.5 text-2xl font-[800] tracking-tight">{formatKas(kas)} <span className="text-base text-white/60">KAS</span></div>
               <div className="text-[11px] font-mono text-white/50 break-all mt-1">kaspa:{address}</div>
             </div>
             <button
@@ -89,7 +91,7 @@ export default function Kcc20ConnectButton() {
               {copied ? "Copied!" : "Copy address"}
             </button>
             <button
-              onClick={() => { refreshBalance(); }}
+              onClick={() => { refreshState(); }}
               className="w-full flex items-center gap-2 px-4 py-3 text-left text-[13px] text-zinc-700 hover:bg-zinc-50"
             >
               <Wallet className="w-4 h-4" />

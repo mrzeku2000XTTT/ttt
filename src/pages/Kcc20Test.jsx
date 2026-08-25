@@ -9,7 +9,7 @@ import Kcc20PinModal from "@/components/kcc20/Kcc20PinModal";
 const TREASURY = "kaspa:qrec7c0zgp9shxht4hx0jz6e0w3q0y6e0w3q0y6e0w3q0y6e0"; // demo dest
 
 export default function Kcc20TestPage() {
-  const { address, balance, loading, connect, disconnect, refreshBalance } = useKcc20Wallet();
+  const { address, kas, loading, connect, disconnect, refreshState } = useKcc20Wallet();
   const [tick, setTick] = useState("KKDAG");
   const [amount, setAmount] = useState("1");
   const [dest, setDest] = useState("");
@@ -40,9 +40,9 @@ export default function Kcc20TestPage() {
 
   useEffect(() => { detectPayments(); }, [address, detectPayments]);
   useEffect(() => {
-    const iv = setInterval(() => { detectPayments(); refreshBalance?.(); }, 15000);
+    const iv = setInterval(() => { detectPayments(); refreshState?.(); }, 15000);
     return () => clearInterval(iv);
-  }, [detectPayments, refreshBalance]);
+  }, [detectPayments, refreshState]);
 
   const openPay = () => {
     setPayErr("");
@@ -61,7 +61,7 @@ export default function Kcc20TestPage() {
       const res = await sendTokenKcc20({ tick, amount, dest: dest.replace(/^kaspa:/, "") });
       setResult(res);
       setPinOpen(false);
-      refreshBalance?.();
+      refreshState?.();
       detectPayments();
     } catch (e) {
       setPayErr(e?.message || "Transaction rejected by KCC20");
@@ -109,9 +109,9 @@ export default function Kcc20TestPage() {
           <div className="flex items-end justify-between">
             <div>
               <div className="text-[11px] text-white/40 uppercase tracking-wide font-semibold">Balance</div>
-              <div className="text-3xl font-[800] tracking-tight mt-0.5">{address ? formatKas(balance) : "0.000"} <span className="text-lg text-white/50">KAS</span></div>
+              <div className="text-3xl font-[800] tracking-tight mt-0.5">{address ? formatKas(kas) : "0.000"} <span className="text-lg text-white/50">KAS</span></div>
             </div>
-            <button onClick={() => refreshBalance?.()} className="text-white/50 hover:text-white p-2 rounded-full hover:bg-white/5" title="Refresh">
+            <button onClick={() => refreshState?.()} className="text-white/50 hover:text-white p-2 rounded-full hover:bg-white/5" title="Refresh">
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
