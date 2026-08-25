@@ -12,7 +12,7 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { action, connectorType, connectorId, createType, title, content } = body;
+    const { action, connectorType, connectorId, createType, title, content, to, subject, body: emailBody, start, end, messageId, sheetId, range, values } = body;
 
     const cId = connectorId || CONNECTOR_MAP[connectorType];
     if (!cId) return Response.json({ error: "Unknown connector type" }, { status: 400 });
@@ -138,6 +138,90 @@ export default async function(req) {
           type: "sheet",
         });
       }
+    }
+
+    // --- SEND EMAIL (Gmail) ---
+    if (action === "send_email") {
+      if (!to || !subject) return Response.json({ error: "Missing 'to' or 'subject'" }, { status: 400 });
+      const authHeader = { Authorization: `Bearer ${accessToken}` };
+      const email = [
+        `To: ${to}`,
+        `Subject: ${subject}`,
+        "Content-Type: text/plain; charset=utf-8",
+        "",
+        emailBody || "",
+      ].join("\r\n");
+      const encoded = btoa(unescape(encodeURIComponent(email)));
+      const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+        method: "POST",
+        headers: { ...authHeader, "Content-Type": "application/json" },
+        body: JSON.stringify({ raw: encoded }),
+      });
+      const data = await res.json();
+      if (data.error) return Response.json({ error: data.error.message }, { status: 500 });
+      return Response.json({ sent: true, id: data.id, to, subject });
+    }
+
+    // --- READ FULL EMAIL BODY (Gmail) ---
+    if (action === "read_email" && connectorType === "gmail") {
+      if (!messageId) return Response.json({ error: "Missing 'messageId'" }, { status: 400 });
+      const authHeader = { Authorization: `Bearer ${accessToken}` };
+      const res = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`,
+        { headers: authHeader }
+      );
+      const d = await res.json();
+      const headers = {};
+      (d.payload?.headers || []).forEach((h) => { headers[h.name] = h.value; });
+      // Extract plain text body
+      let bodyText = d.snippet || "";
+      try {
+        const findPart = (part) => {
+          if (part.mimeType === "text/plain" && part.body?.data) return part;
+          if (part.parts) for (const p of part.parts) { const f = findPart(p); if (f) return f; }
+          return null;
+        };
+        const tp = findPart(d.payload);
+        if (tp?.body?.data) bodyText = decodeURIComponent(escape(atob(tp.body.data.replace(/-/g, "+").replace(/_/g, "/"))));
+      } catch {}
+      return Response.json({ id: d.id, from: headers.From, subject: headers.Subject, date: headers.Date, body: bodyText.slice(0, 2000) });
+    }
+
+    // --- CREATE CALENDAR EVENT ---
+    if (action === "create_event" && connectorType === "googlecalendar") {
+      if (!start || !end) return Response.json({ error: "Missing 'start' or 'end' (ISO datetime)" }, { status: 400 });
+      const authHeader = { Authorization: `Bearer ${accessToken}` };
+      const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+        method: "POST",
+        headers: { ...authHeader, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          summary: title || "Untitled Event",
+          description: content || "",
+          start: { dateTime: start },
+          end: { dateTime: end },
+        }),
+      });
+      const data = await res.json();
+      if (data.error) return Response.json({ error: data.error.message }, { status: 500 });
+      return Response.json({ id: data.id, summary: data.summary, link: data.htmlLink, start, end });
+    }
+
+    // --- APPEND TO SHEET ---
+    if (action === "append_sheet" && (connectorType === "googlesheets" || connectorType === "googledrive")) {
+      if (!sheetId || !values) return Response.json({ error: "Missing 'sheetId' or 'values'" }, { status: 400 });
+      const authHeader = { Authorization: `Bearer ${accessToken}` };
+      const rangeParam = range || "A1";
+      const res = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${rangeParam}:append?valueInputOption=RAW`,
+        {
+          method: "POST",
+          headers: { ...authHeader, "Content-Type": "application/json" },
+          body: JSON.stringify({ values }),
+        }
+      );
+      const data = await res.json();
+      if (data.error) return Response.json({ error: data.error.message }, { status: 500 });
+      return Response.json({ appended: true, updatedRange: data.updates?.updatedRange });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400 });

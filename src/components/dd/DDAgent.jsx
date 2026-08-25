@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Plug, Trash2, Unlink, ExternalLink, Search, FileText, Table, AtSign } from "lucide-react";
+import { Send, Loader2, Plug, Trash2, Unlink, ExternalLink, Search, FileText, Table, AtSign, Zap } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import DDLogo from "@/components/dd/DDLogo";
 import DDLogoCustomizer from "@/components/dd/DDLogoCustomizer";
 import DDSettings from "@/components/dd/DDSettings";
+import DDCreditBar from "@/components/dd/DDCreditBar";
 import { GOOGLE_LOGOS } from "@/components/dd/DDGoogleLogos";
 import { getOnboarding } from "@/components/dd/DDOnboarding";
 
@@ -279,64 +280,39 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
     setBusy(true);
 
     try {
-      // Step 1: Classify intent (pass available tools so it knows what's connected)
-      const { intent, title } = await classifyIntent(text, availableTools);
+      // Run the orchestrator — real agent loop with tool use
+      const history = messages.slice(-8).map((m) => ({ role: m.role, text: m.text }));
+      const res = await base44.functions.invoke("ddOrchestrator", {
+        message: text,
+        history,
+        onboarding,
+        model: "gemini_3_flash",
+      });
 
-      if (intent === "research") {
-        // Use ChatGPT research subagent
-        const res = await base44.functions.invoke("ddResearchAgent", { query: text });
-        const answer = res?.data?.answer || "I couldn't complete the research.";
-        const sources = res?.data?.sources || [];
-        const links = sources.slice(0, 5).map((s) => ({ label: s.title || s.url, url: s.url }));
-        setMessages((m) => [...m, {
-          role: "dd",
-          text: answer,
-          links,
-          badge: "Researched with ChatGPT",
-        }]);
-      } else if (intent === "create_doc") {
-        // Create a real Google Doc
-        const docTitle = title || text.slice(0, 50);
-        const res = await base44.functions.invoke("ddGoogleAction", {
-          action: "create", connectorType: "googledocs", createType: "doc", title: docTitle, content: "",
-        });
-        if (res?.data?.url) {
-          setMessages((m) => [...m, {
-            role: "dd",
-            text: `I created a Google Doc titled "${res.data.title}" for you. Click below to open and edit it.`,
-            links: [{ label: "Open Google Doc", url: res.data.url }],
-            badge: "Created with Google Docs",
-          }]);
-        } else {
-          setMessages((m) => [...m, { role: "dd", text: res?.data?.error || "I couldn't create the Doc. Make sure Google Docs is connected in Settings." }]);
+      const data = res?.data || res;
+      const answer = data?.answer || "I couldn't complete that.";
+      const steps = data?.steps || [];
+      const credits = data?.credits || 0;
+      const kaspa = data?.kaspa_cost || 0;
+
+      // Build links from step results (e.g., created docs/sheets)
+      const links = [];
+      for (const s of steps) {
+        if (s.result_preview?.includes("http")) {
+          const match = s.result_preview.match(/https?:\/\/[^\s]+/);
+          if (match) links.push({ label: s.tool === "create_doc" ? "Open Google Doc" : s.tool === "create_sheet" ? "Open Google Sheet" : "Open", url: match[0] });
         }
-      } else if (intent === "create_sheet") {
-        // Create a real Google Sheet
-        const sheetTitle = title || text.slice(0, 50);
-        const res = await base44.functions.invoke("ddGoogleAction", {
-          action: "create", connectorType: "googlesheets", createType: "sheet", title: sheetTitle,
-        });
-        if (res?.data?.url) {
-          setMessages((m) => [...m, {
-            role: "dd",
-            text: `I created a Google Sheet titled "${res.data.title}" for you. Click below to open and edit it.`,
-            links: [{ label: "Open Google Sheet", url: res.data.url }],
-            badge: "Created with Google Sheets",
-          }]);
-        } else {
-          setMessages((m) => [...m, { role: "dd", text: res?.data?.error || "I couldn't create the Sheet. Make sure Google Drive is connected in Settings." }]);
-        }
-      } else {
-        // General chat with InvokeLLM
-        const sys = buildSystem(onboarding, email, googleContext, availableTools);
-        const history = messages.slice(-8).map((m) => `${m.role === "user" ? "User" : "DD"}: ${m.text}`).join("\n");
-        const res = await base44.integrations.Core.InvokeLLM({
-          prompt: `${sys}\n\nConversation so far:\n${history}\n\nUser: ${text}`,
-          model: "gemini_3_flash",
-        });
-        setMessages((m) => [...m, { role: "dd", text: typeof res === "string" ? res : res?.text || "Done." }]);
       }
-    } catch {
+
+      setMessages((m) => [...m, {
+        role: "dd",
+        text: answer,
+        steps: steps.map((s) => ({ tool: s.tool, preview: (s.result_preview || "").slice(0, 120) })),
+        credits,
+        kaspa,
+        links,
+      }]);
+    } catch (e) {
       setMessages((m) => [...m, { role: "dd", text: "I hit a snag right now — please try again." }]);
     }
     setBusy(false);
@@ -372,6 +348,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
               <Trash2 className="w-4 h-4" /> Clear
             </button>
           )}
+          <DDCreditBar />
           <DDSettings onConnectionChange={refreshConnected} />
         </div>
       </div>
@@ -395,6 +372,24 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
                     </div>
                   )}
                   <div className="whitespace-pre-wrap">{m.role === "user" ? renderText(m.text) : m.text}</div>
+                  {m.steps && m.steps.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-neutral-200/60 space-y-1">
+                      <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">Agent steps</p>
+                      {m.steps.map((s, j) => (
+                        <div key={j} className="text-[11px] text-neutral-500 flex items-start gap-1.5">
+                          <span className="text-neutral-400 mt-0.5">→</span>
+                          <span><span className="font-medium text-neutral-700">{s.tool}</span>{s.preview ? `: ${s.preview}` : ""}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {(m.credits || m.kaspa) && (
+                    <div className="mt-2 flex items-center gap-2 text-[10px] text-neutral-400">
+                      <span className="flex items-center gap-1"><Zap className="w-2.5 h-2.5 text-amber-500" />{m.credits.toFixed(1)} credits</span>
+                      <span>·</span>
+                      <span>≈ {m.kaspa.toFixed(4)} KAS</span>
+                    </div>
+                  )}
                   {m.links && m.links.length > 0 && (
                     <div className="mt-2 space-y-1.5">
                       {m.links.map((l, j) => (

@@ -1,0 +1,83 @@
+{
+  "name": "DDCreditUsage",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email"
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Unique ID for this agent run"
+    },
+    "credits_used": {
+      "type": "number",
+      "default": 0,
+      "description": "Integration credits consumed"
+    },
+    "llm_calls": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of LLM calls in this run"
+    },
+    "tool_calls": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of tool executions in this run"
+    },
+    "kaspa_cost_sompi": {
+      "type": "number",
+      "default": 0,
+      "description": "Equivalent KAS cost in sompi (1 KAS = 100000000 sompi)"
+    },
+    "model": {
+      "type": "string",
+      "default": "gemini_3_flash",
+      "description": "Which LLM model was used"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Short description of what the agent did"
+    },
+    "steps": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string"
+          },
+          "args": {
+            "type": "string"
+          },
+          "result_preview": {
+            "type": "string"
+          },
+          "credits": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Per-step log of tool calls"
+    }
+  },
+  "required": [
+    "user_email",
+    "credits_used"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
