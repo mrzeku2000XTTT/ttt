@@ -524,11 +524,44 @@ export default function DDWalletButton() {
                   </button>
                 </div>
 
-                {/* Fund from KCC20 — only shown inside the KCC20 wallet iframe */}
+                {/* Fund from KCC20 — triggers real KKDAG transfer via parent wallet */}
                 {isInWalletIframe() && (
-                  <button onClick={fundFromKcc20} className="w-full h-10 rounded-xl bg-violet-50 border border-violet-200 text-sm font-medium text-violet-700 hover:bg-violet-100 flex items-center justify-center gap-2">
-                    <ArrowDownToLine className="w-4 h-4" /> Fund TTT wallet from KCC20
-                  </button>
+                  <div className="space-y-2">
+                    {fundingStage === "idle" || fundingStage === "error" ? (
+                      <div className="flex items-center gap-1.5">
+                        <input type="number" min="1" step="1" value={fundAmount}
+                          onChange={(e) => { setFundAmount(e.target.value); setFundingStage("idle"); setFundingMsg(""); }}
+                          className="flex-1 h-10 px-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-violet-400"
+                          placeholder="KKDAG amount" />
+                        <button onClick={fundWithKkdag}
+                          className="h-10 px-3 rounded-xl bg-violet-600 border border-violet-600 text-sm font-medium text-white hover:bg-violet-700 flex items-center gap-1.5 flex-shrink-0">
+                          <ArrowDownToLine className="w-4 h-4" /> Fund from KCC20
+                        </button>
+                      </div>
+                    ) : fundingStage === "signing" ? (
+                      <div className="w-full h-10 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center gap-1.5">
+                        <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
+                        <span className="text-sm text-violet-700 font-medium">{fundingMsg}</span>
+                      </div>
+                    ) : (
+                      <div className="w-full rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          <span className="text-sm text-emerald-700 font-medium">{fundingMsg}</span>
+                        </div>
+                        {lastDeposit?.txid && (
+                          <a href={`https://kaspa.stream/transactions/${lastDeposit.txid}`} target="_blank" rel="noreferrer"
+                             className="text-[11px] text-violet-600 hover:text-violet-800 flex items-center gap-1 underline">
+                            <ExternalLink className="w-3 h-3" /> {lastDeposit.txid.slice(0, 12)}…
+                          </a>
+                        )}
+                        <button onClick={resetFunding} className="text-[11px] text-neutral-500 hover:text-neutral-800 underline">Done</button>
+                      </div>
+                    )}
+                    {fundingStage === "error" && fundingMsg && (
+                      <p className="text-[11px] text-red-500">{fundingMsg}</p>
+                    )}
+                  </div>
                 )}
 
                 {/* Export keys */}
