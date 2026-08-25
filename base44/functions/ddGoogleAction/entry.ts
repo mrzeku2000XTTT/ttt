@@ -3,6 +3,7 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 const CONNECTOR_MAP = {
   googledrive: "6a8cde30137d405112693b7a",
   googledocs: "6a8cde51e37e03bca068b3b2",
+  googlesheets: "6a8cde30137d405112693b7a", // Sheets uses Drive connector
   googlecalendar: "6a8cde500c8f9518850896d0",
   gmail: "6a8cde4f5e2470cbe4b913d5",
 };
@@ -11,7 +12,7 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { action, connectorType, connectorId } = body;
+    const { action, connectorType, connectorId, createType, title, content } = body;
 
     const cId = connectorId || CONNECTOR_MAP[connectorType];
     if (!cId) return Response.json({ error: "Unknown connector type" }, { status: 400 });
@@ -20,19 +21,24 @@ export default async function(req) {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     // Get the current app user's connection (throws if not connected)
-    const { accessToken } = await base44.asServiceRole.connectors.getCurrentAppUserConnection(cId);
+    let accessToken;
+    try {
+      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(cId);
+      accessToken = conn.accessToken;
+    } catch (e) {
+      return Response.json({ connected: false, error: "Not connected. Click Connect in Settings." }, { status: 200 });
+    }
 
     if (action === "status") {
       return Response.json({ connected: true, connectorType });
     }
 
     if (action === "fetch") {
-      // Fetch real data from Google APIs based on connector type
       const authHeader = { Authorization: `Bearer ${accessToken}` };
 
-      if (connectorType === "googledrive") {
+      if (connectorType === "googledrive" || connectorType === "googlesheets") {
         const res = await fetch(
-          "https://www.googleapis.com/drive/v3/files?pageSize=10&fields=files(id,name,mimeType,modifiedTime)&orderBy=modifiedTime desc",
+          "https://www.googleapis.com/drive/v3/files?pageSize=10&fields=files(id,name,mimeType,modifiedTime,webViewLink)&orderBy=modifiedTime desc",
           { headers: authHeader }
         );
         const data = await res.json();
@@ -71,9 +77,8 @@ export default async function(req) {
       }
 
       if (connectorType === "googledocs") {
-        // Docs are files in Drive with mimeType application/vnd.google-apps.document
         const res = await fetch(
-          "https://www.googleapis.com/drive/v3/files?pageSize=10&q=mimeType='application/vnd.google-apps.document'&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc",
+          "https://www.googleapis.com/drive/v3/files?pageSize=10&q=mimeType='application/vnd.google-apps.document'&fields=files(id,name,modifiedTime,webViewLink)&orderBy=modifiedTime desc",
           { headers: authHeader }
         );
         const data = await res.json();
@@ -81,9 +86,62 @@ export default async function(req) {
       }
     }
 
+    if (action === "create") {
+      const authHeader = { Authorization: `Bearer ${accessToken}` };
+      const fileTitle = title || `Untitled ${createType === "sheet" ? "Spreadsheet" : "Document"}`;
+
+      if (createType === "doc") {
+        // Create a Google Doc via Drive API
+        const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+          method: "POST",
+          headers: { ...authHeader, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: fileTitle, mimeType: "application/vnd.google-apps.document" }),
+        });
+        const file = await createRes.json();
+        if (file.error) return Response.json({ error: file.error.message }, { status: 500 });
+
+        // Add content via Docs API if provided
+        if (content) {
+          try {
+            await fetch(`https://docs.googleapis.com/v1/documents/${file.id}:batchUpdate`, {
+              method: "POST",
+              headers: { ...authHeader, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                requests: [{ insertText: { location: { index: 1 }, text: content } }],
+              }),
+            });
+          } catch {}
+        }
+
+        return Response.json({
+          id: file.id,
+          url: `https://docs.google.com/document/d/${file.id}/edit`,
+          title: fileTitle,
+          type: "doc",
+        });
+      }
+
+      if (createType === "sheet") {
+        // Create a Google Sheet via Drive API
+        const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+          method: "POST",
+          headers: { ...authHeader, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: fileTitle, mimeType: "application/vnd.google-apps.spreadsheet" }),
+        });
+        const file = await createRes.json();
+        if (file.error) return Response.json({ error: file.error.message }, { status: 500 });
+
+        return Response.json({
+          id: file.id,
+          url: `https://docs.google.com/spreadsheets/d/${file.id}/edit`,
+          title: fileTitle,
+          type: "sheet",
+        });
+      }
+    }
+
     return Response.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
-    // If connection doesn't exist, return disconnected status
     if (error.message?.includes("connection") || error.message?.includes("Connection") || error.status === 404) {
       return Response.json({ connected: false, error: "Not connected" }, { status: 200 });
     }

@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Settings, Loader2, CheckCircle2, XCircle, Plug, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { GoogleDriveLogo, GoogleDocsLogo, GoogleCalendarLogo, GmailLogo, ChatGPTLogo } from "@/components/dd/DDGoogleLogos";
+import { GoogleDriveLogo, GoogleDocsLogo, GoogleSheetsLogo, GoogleCalendarLogo, GmailLogo, ChatGPTLogo } from "@/components/dd/DDGoogleLogos";
 
-// Connector IDs from workspace registration
+// Connector IDs from workspace registration.
+// Google Sheets uses the Drive connector (no separate Sheets connector registered).
 const CONNECTORS = [
   { id: "6a8cde30137d405112693b7a", type: "googledrive", name: "Google Drive", desc: "List, read, and manage your Drive files", Logo: GoogleDriveLogo },
   { id: "6a8cde51e37e03bca068b3b2", type: "googledocs", name: "Google Docs", desc: "Create and edit Google Docs documents", Logo: GoogleDocsLogo },
+  { id: "6a8cde30137d405112693b7a", type: "googlesheets", name: "Google Sheets", desc: "Create spreadsheets (uses Drive connection)", Logo: GoogleSheetsLogo },
   { id: "6a8cde500c8f9518850896d0", type: "googlecalendar", name: "Google Calendar", desc: "View and manage your calendar events", Logo: GoogleCalendarLogo },
   { id: "6a8cde4f5e2470cbe4b913d5", type: "gmail", name: "Gmail", desc: "Send and read your emails", Logo: GmailLogo },
 ];
 
-export default function DDSettings() {
+export default function DDSettings({ onConnectionChange }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState({}); // { [type]: "connected" | "disconnected" | "checking" }
   const [busy, setBusy] = useState({}); // { [type]: true/false }
@@ -48,6 +50,7 @@ export default function DDSettings() {
         if (!popup || popup.closed) {
           clearInterval(timer);
           checkConnections();
+          onConnectionChange?.();
         }
       }, 500);
     } catch {}
@@ -59,6 +62,7 @@ export default function DDSettings() {
     try {
       await base44.connectors.disconnectAppUser(c.id);
       setStatus((s) => ({ ...s, [c.type]: "disconnected" }));
+      onConnectionChange?.();
     } catch {}
     setBusy((b) => ({ ...b, [c.type]: false }));
   };

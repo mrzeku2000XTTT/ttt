@@ -26,6 +26,7 @@ const MOBILE_NAV = [
 export default function DD() {
   const [view, setView] = useState("home");
   const [agentPrompt, setAgentPrompt] = useState("");
+  const [agentNonce, setAgentNonce] = useState(0);
   const [userName, setUserName] = useState("");
   const [userPlan, setUserPlan] = useState("Free");
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -45,7 +46,7 @@ export default function DD() {
   }, [view]);
 
   const nav = (id) => setView(id);
-  const askDD = (text) => { setAgentPrompt(text); setView("agent"); };
+  const askDD = (text) => { setAgentPrompt(text); setAgentNonce((n) => n + 1); setView("agent"); };
 
   const initials = (name) => {
     const n = (name || "").trim();
@@ -83,7 +84,7 @@ export default function DD() {
         {/* Content */}
         <main className="flex-1 pb-20 lg:pb-6">
           {view === "home" && <DDDashboard onAskDD={askDD} />}
-          {view === "agent" && <DDAgent initialPrompt={agentPrompt} />}
+          {view === "agent" && <DDAgent initialPrompt={agentPrompt} nonce={agentNonce} />}
           {view === "apps" && <DDStore />}
           {view === "tasks" && <DDTasks />}
           {view === "projects" && <DDProjects />}

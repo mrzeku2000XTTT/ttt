@@ -50,6 +50,17 @@ export function GmailLogo({ className = "w-5 h-5" }) {
   );
 }
 
+export function GoogleSheetsLogo({ className = "w-5 h-5" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#0f9d58" />
+      <path d="M14 2l6 6h-6V2z" fill="#87ceac" />
+      <path d="M8 13h8v1.5H8zm0 3h8v1.5H8zm0-6h5v1.5H8z" fill="#fff" />
+      <rect x="8" y="13" width="2" height="1.5" fill="#0f9d58" opacity="0.3" />
+    </svg>
+  );
+}
+
 export function ChatGPTLogo({ className = "w-5 h-5" }) {
   return (
     <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg" fill="currentColor">
@@ -62,7 +73,12 @@ export function ChatGPTLogo({ className = "w-5 h-5" }) {
 export const GOOGLE_LOGOS = {
   googledrive: GoogleDriveLogo,
   googledocs: GoogleDocsLogo,
+  googlesheets: GoogleSheetsLogo,
   googlecalendar: GoogleCalendarLogo,
   gmail: GmailLogo,
   chatgpt: ChatGPTLogo,
+  "google drive": GoogleDriveLogo,
+  "google docs": GoogleDocsLogo,
+  "google sheets": GoogleSheetsLogo,
+  "google calendar": GoogleCalendarLogo,
 };
