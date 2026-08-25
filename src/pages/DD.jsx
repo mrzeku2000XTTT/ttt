@@ -15,6 +15,7 @@ import DDEmptyPage from "@/components/dd/DDEmptyPage";
 import DDOnboarding, { isOnboarded } from "@/components/dd/DDOnboarding";
 import DDLogo from "@/components/dd/DDLogo";
 import DDWelcomeLanding from "@/components/dd/DDWelcomeLanding";
+import DDBuildBanner from "@/components/dd/DDBuildBanner";
 import { base44 } from "@/api/base44Client";
 import { Calendar as CalIcon, Mail as MailIcon, FileText } from "lucide-react";
 
@@ -88,6 +89,7 @@ export default function DD() {
 
         {/* Content */}
         <main className="flex-1 pb-20 lg:pb-6">
+          <DDBuildBanner />
           {view === "home" && <DDDashboard onAskDD={askDD} />}
           {view === "agent" && <DDAgent initialPrompt={agentPrompt} nonce={agentNonce} />}
           {view === "apps" && <DDStore />}
