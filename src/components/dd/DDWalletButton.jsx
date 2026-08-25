@@ -82,6 +82,9 @@ export default function DDWalletButton() {
   const [copied, setCopied] = useState(false);
   const [kkdagBalance, setKkdagBalance] = useState(null);
   const [kkdagBusy, setKkdagBusy] = useState(false);
+  const [buyingKkdag, setBuyingKkdag] = useState(false);
+  const [fundingStatus, setFundingStatus] = useState("");
+  const fundingPollRef = useRef(null);
   const [hideKcc20, setHideKcc20] = useState(() => { try { return localStorage.getItem(HIDE_KCC20_KEY) === "1"; } catch { return false; } });
   const [copiedTreasury, setCopiedTreasury] = useState(false);
   const refreshTimer = useRef(null);
@@ -146,6 +149,46 @@ export default function DDWalletButton() {
     } catch (e) { setErr(e?.message || "Could not add credits."); }
     finally { setKkdagBusy(false); }
   };
+
+  // Buy KKDAG via KCC20 wallet — user sends KAS from their KCC20 wallet to the
+  // treasury, DD polls on-chain and auto-credits. Only for iframed (KCC20) context.
+  const buyKkdagViaKcc20 = async () => {
+    if (!kcc20Addr) {
+      setErr("Connect your KCC20 wallet first (Link KCC20 wallet below).");
+      return;
+    }
+    setBuyingKkdag(true);
+    setFundingStatus("Waiting for your KAS send to the treasury…");
+    try { navigator.clipboard.writeText(KKDAG_TREASURY); } catch {}
+
+    const poll = async () => {
+      try {
+        const me = await base44.auth.me().catch(() => null);
+        if (!me?.email) return;
+        const res = await base44.functions.invoke("ddCheckKkdagFunding", {
+          kcc20_address: kcc20Addr,
+          user_email: me.email,
+        });
+        const d = res?.data;
+        if (d?.credited > 0) {
+          await refreshKkdag();
+          setFundingStatus(`✓ Credited ${d.credited.toLocaleString()} KKDAG!`);
+          setBuyingKkdag(false);
+          if (fundingPollRef.current) { clearInterval(fundingPollRef.current); fundingPollRef.current = null; }
+        }
+      } catch (e) { /* keep polling */ }
+    };
+    poll();
+    fundingPollRef.current = setInterval(poll, 10000);
+  };
+
+  const cancelBuyKkdag = () => {
+    setBuyingKkdag(false);
+    setFundingStatus("");
+    if (fundingPollRef.current) { clearInterval(fundingPollRef.current); fundingPollRef.current = null; }
+  };
+
+  useEffect(() => () => { if (fundingPollRef.current) clearInterval(fundingPollRef.current); }, []);
 
   const toggleHideKcc20 = () => {
     const next = !hideKcc20;
@@ -389,11 +432,33 @@ export default function DDWalletButton() {
                     {kkdagBalance === Infinity ? "Admin — unlimited DD compute" : "DD agent compute credits (1000 ≈ 1 request)"}
                   </p>
                   {kkdagBalance !== Infinity && kkdagBalance !== null && (
-                    <button onClick={addKkdagCredits} disabled={kkdagBusy}
-                      className="w-full mt-2 h-9 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-40 flex items-center justify-center gap-1.5">
-                      {kkdagBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                      Add {KKDAG_GRANT} KKDAG credits
-                    </button>
+                    isInWalletIframe() ? (
+                      <div className="mt-2 space-y-2">
+                        {!buyingKkdag ? (
+                          <button onClick={buyKkdagViaKcc20}
+                            className="w-full h-9 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 flex items-center justify-center gap-1.5">
+                            <Plus className="w-3.5 h-3.5" /> Buy KKDAG via KCC20
+                          </button>
+                        ) : (
+                          <div className="rounded-lg bg-blue-50 border border-blue-200 p-2.5 space-y-2">
+                            <div className="flex items-center gap-1.5">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                              <p className="text-[11px] text-blue-700 font-medium">{fundingStatus}</p>
+                            </div>
+                            <p className="text-[10px] text-neutral-500">Send KAS from your KCC20 wallet to:</p>
+                            <p className="text-[10px] font-mono text-neutral-700 break-all bg-white border border-neutral-200 rounded p-1.5">{KKDAG_TREASURY}</p>
+                            <p className="text-[10px] text-neutral-400">Rate: 1 KAS = 1,000 KKDAG · Address copied to clipboard</p>
+                            <button onClick={cancelBuyKkdag} className="text-[10px] text-neutral-500 hover:text-neutral-800 underline">Cancel</button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <button onClick={addKkdagCredits} disabled={kkdagBusy}
+                        className="w-full mt-2 h-9 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-40 flex items-center justify-center gap-1.5">
+                        {kkdagBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                        Add {KKDAG_GRANT} KKDAG credits
+                      </button>
+                    )
                   )}
                 </div>
 
