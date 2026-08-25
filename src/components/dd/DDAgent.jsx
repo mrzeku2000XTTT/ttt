@@ -345,7 +345,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+    <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-3 sm:px-6 py-3 sm:py-4 min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
@@ -377,9 +377,9 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="flex-1 min-h-0 mt-3 grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Chat — mobile-native full-height column */}
-        <div className="lg:col-span-2 bg-white border border-neutral-200 rounded-2xl flex flex-col h-[70vh] lg:h-[60vh]">
+        <div className="lg:col-span-2 bg-white border border-neutral-200 rounded-2xl flex flex-col min-h-0 h-full">
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
             {messages.map((m, i) => (
               <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -489,7 +489,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
         </div>
 
         {/* Side panel — connected tools (hidden on mobile, customizer is at top) */}
-        <div className="hidden lg:block space-y-4">
+        <div className="hidden lg:block space-y-4 min-h-0 overflow-y-auto">
           <div className="bg-white border border-neutral-200 rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2"><Plug className="w-4 h-4 text-neutral-700" /> Connected tools</h3>
             {realConnected.length === 0 ? <p className="text-sm text-neutral-400">No apps connected yet. Click Settings to connect Google.</p> :

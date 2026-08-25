@@ -38,16 +38,16 @@ export default function DDCreditBar({ refreshKey = 0 }) {
   const kkdagEquivalent = total.credits;
 
   return (
-    <div className="flex items-center gap-2 px-2.5 sm:px-3 h-9 rounded-xl bg-neutral-50 border border-neutral-200 text-xs whitespace-nowrap overflow-x-auto scrollbar-hide max-w-full">
+    <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-9 rounded-xl bg-neutral-50 border border-neutral-200 text-xs whitespace-nowrap overflow-x-auto scrollbar-hide max-w-full">
       {isAdmin && (
         <span className="flex items-center gap-0.5 px-1.5 h-6 rounded-md bg-violet-100 text-violet-700 font-semibold flex-shrink-0">
-          <InfinityIcon className="w-3.5 h-3.5" /> Admin
+          <InfinityIcon className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Admin</span>
         </span>
       )}
       <span className="flex items-center gap-1 flex-shrink-0">
         <Zap className="w-3.5 h-3.5 text-amber-500" />
         <span className="font-medium text-neutral-700">{total.credits.toFixed(1)}</span>
-        <span className="text-neutral-400">credits</span>
+        <span className="text-neutral-400 hidden sm:inline">credits</span>
       </span>
       {kkdagBalance !== null && (
         <>
@@ -58,10 +58,10 @@ export default function DDCreditBar({ refreshKey = 0 }) {
           </span>
         </>
       )}
+      <span className="text-neutral-300 flex-shrink-0 hidden sm:inline">·</span>
+      <span className="text-neutral-500 flex-shrink-0 hidden sm:inline">≈ {kkdagEquivalent.toFixed(0)} KKDAG</span>
       <span className="text-neutral-300 flex-shrink-0">·</span>
-      <span className="text-neutral-500 flex-shrink-0">≈ {kkdagEquivalent.toFixed(0)} KKDAG</span>
-      <span className="text-neutral-300 flex-shrink-0">·</span>
-      <span className="text-neutral-400 flex-shrink-0">{total.runs} runs</span>
+      <span className="text-neutral-400 flex-shrink-0">{total.runs}<span className="hidden sm:inline"> runs</span></span>
     </div>
   );
 }

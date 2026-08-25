@@ -61,12 +61,12 @@ export default function DD() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex overflow-x-hidden w-full">
+    <div className="h-screen bg-[#F9FAFB] flex overflow-hidden w-full">
       {showOnboarding && <DDOnboarding onComplete={() => { setShowOnboarding(false); setShowWelcome(true); }} />}
       {showWelcome && <DDWelcomeLanding onLaunch={() => setShowWelcome(false)} />}
       <DDSidebar active={view} onNav={nav} />
 
-      <div className="flex-1 min-w-0 flex flex-col w-full overflow-x-hidden">
+      <div className="flex-1 min-w-0 flex flex-col w-full overflow-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 bg-[#F9FAFB]/90 backdrop-blur border-b border-neutral-200">
           <div className="h-16 px-4 sm:px-6 flex items-center gap-3 w-full max-w-6xl mx-auto">
@@ -88,7 +88,7 @@ export default function DD() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 pb-20 lg:pb-6">
+        <main className={`flex-1 min-h-0 ${view === "agent" ? "overflow-hidden flex flex-col" : "overflow-y-auto"} pb-20 lg:pb-6`}>
           <DDBuildBanner />
           {view === "home" && <DDDashboard onAskDD={askDD} />}
           {view === "agent" && <DDAgent initialPrompt={agentPrompt} nonce={agentNonce} />}
