@@ -339,7 +339,7 @@ export default function DDWalletButton() {
 
       {open && createPortal(
         <div className="fixed inset-0 z-[100] bg-black/40 flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4" onClick={() => setOpen(false)}>
-          <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-sm p-5 shadow-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-sm p-5 shadow-xl max-h-[85vh] overflow-y-auto overflow-x-hidden box-border" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <DDLogo size={32} showWord={false} animate={false} />
