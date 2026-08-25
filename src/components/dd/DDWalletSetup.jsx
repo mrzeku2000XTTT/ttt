@@ -131,11 +131,17 @@ export default function DDWalletSetup({ onDone }) {
       {/* Choose mode */}
       {mode === "choose" && (
         <div className="space-y-3">
+          {isInWalletIframe() && (
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-[11px] text-amber-700">Running inside the KCC20 wallet frame — your main TTT wallet isn't visible here. Create a fresh local wallet, then fund it from KCC20. Export your keys from Settings so you never lose access.</p>
+            </div>
+          )}
           <button onClick={doCreate} className="w-full h-11 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 flex items-center justify-center gap-2">
             <Wallet className="w-4 h-4" /> Create new TTT wallet
           </button>
           <button onClick={() => setMode("import")} className="w-full h-11 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-neutral-300">
-            I already have a TTT wallet
+            I already have a wallet on this device
           </button>
           <button onClick={() => setMode("kcc20")} className="w-full h-11 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-neutral-300 flex items-center justify-center gap-2">
             <Link2 className="w-4 h-4" /> Connect external KCC20 wallet

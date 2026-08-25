@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Check, Wallet, Loader2, User, LogOut } from "lucide-react";
+import { Check, Wallet, Loader2, User, LogOut, Download, Copy, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import DDWalletButton from "@/components/dd/DDWalletButton";
+import { getWallet } from "@/lib/localKaspaWallet";
 
 const NAME_KEY = "dd_profile_name";
 const PLAN_KEY = "dd_profile_plan";
@@ -30,6 +31,20 @@ export default function DDProfile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [showKeys, setShowKeys] = useState(false);
+  const [exportedKey, setExportedKey] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const exportKeys = () => {
+    const w = getWallet();
+    if (!w?.privateKey) return;
+    setExportedKey({ address: w.address, privateKey: w.privateKey });
+    setShowKeys(true);
+  };
+  const copyKey = () => {
+    if (!exportedKey?.privateKey) return;
+    try { navigator.clipboard.writeText(exportedKey.privateKey); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
+  };
 
   useEffect(() => {
     try { setName(localStorage.getItem(NAME_KEY) || ""); setSavedName(localStorage.getItem(NAME_KEY) || ""); } catch {}
@@ -101,9 +116,33 @@ export default function DDProfile() {
           <DDWalletButton />
         </div>
         {addr ? (
-          <p className="mt-3 text-xs text-neutral-400 break-all">{addr}</p>
+          <>
+            <p className="mt-3 text-xs text-neutral-400 break-all">{addr}</p>
+            <button onClick={exportKeys} className="mt-3 w-full h-10 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-neutral-300 flex items-center justify-center gap-2">
+              <Download className="w-4 h-4" /> Export private key
+            </button>
+            {showKeys && exportedKey && (
+              <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-[11px] text-amber-700 font-medium">Store this key safely — anyone with it controls your funds. You'll need it to recover this wallet on another device.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setShowKeys(!showKeys)} className="text-[11px] text-neutral-500 hover:text-neutral-700 flex items-center gap-1">
+                    {showKeys ? <><EyeOff className="w-3 h-3" /> Hide</> : <><Eye className="w-3 h-3" /> Show</>}
+                  </button>
+                  <button onClick={copyKey} className="text-[11px] text-neutral-500 hover:text-neutral-700 flex items-center gap-1">
+                    {copied ? <><Check className="w-3 h-3 text-emerald-600" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+                  </button>
+                </div>
+                {showKeys && (
+                  <p className="text-[10px] font-mono text-neutral-800 break-all bg-white border border-neutral-200 rounded-lg p-2 select-all">{exportedKey.privateKey}</p>
+                )}
+              </div>
+            )}
+          </>
         ) : (
-          <p className="mt-3 text-xs text-neutral-400">Connect your TTT wallet to link it to your DD profile.</p>
+          <p className="mt-3 text-xs text-neutral-400">Create a TTT wallet to get started. Keys stay on this device — export them anytime so you never lose access.</p>
         )}
       </div>
 
