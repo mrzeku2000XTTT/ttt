@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Sparkles, Plug, CheckCircle2, Clock, Trash2 } from "lucide-react";
+import { Send, Loader2, Plug, CheckCircle2, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import DDLogo from "@/components/dd/DDLogo";
 import DDLogoCustomizer from "@/components/dd/DDLogoCustomizer";
+import DDSettings from "@/components/dd/DDSettings";
+import { GOOGLE_LOGOS } from "@/components/dd/DDGoogleLogos";
 import { getOnboarding } from "@/components/dd/DDOnboarding";
 
 const HISTORY_KEY = "dd_chat_history_v1";
@@ -144,11 +146,14 @@ export default function DDAgent({ initialPrompt, active }) {
           <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">DD Agent</h1>
           <p className="text-sm text-neutral-500 mt-1">Your intelligent workspace assistant.</p>
         </div>
-        {messages.length > 1 && (
-          <button onClick={clearHistory} className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 px-3 h-9 rounded-lg hover:bg-neutral-100">
-            <Trash2 className="w-4 h-4" /> Clear
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {messages.length > 1 && (
+            <button onClick={clearHistory} className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 px-3 h-9 rounded-lg hover:bg-neutral-100">
+              <Trash2 className="w-4 h-4" /> Clear
+            </button>
+          )}
+          <DDSettings />
+        </div>
       </div>
 
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -182,18 +187,16 @@ export default function DDAgent({ initialPrompt, active }) {
         <div className="space-y-4">
           <DDLogoCustomizer />
           <div className="bg-white border border-neutral-200 rounded-2xl p-4">
-            <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-neutral-700" /> Recent actions</h3>
-            {realActivity.length === 0 ? <p className="text-sm text-neutral-400">No activity yet.</p> :
-            <div className="space-y-2.5">{realActivity.map((a) => <div key={a.id} className="flex items-center gap-2 text-sm text-neutral-600"><span>{a.icon || "📋"}</span> {a.text}</div>)}</div>}
-          </div>
-          <div className="bg-white border border-neutral-200 rounded-2xl p-4">
             <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2"><Plug className="w-4 h-4 text-neutral-700" /> Connected tools</h3>
-            {realConnected.length === 0 ? <p className="text-sm text-neutral-400">No apps connected yet. Visit the Store.</p> :
-            <div className="space-y-2">{realConnected.map((c) => <div key={c.id} className="flex items-center gap-2 text-sm"><span className="w-6 h-6 rounded-md flex items-center justify-center text-sm">{c.app_icon || "📦"}</span> <span className="flex-1 text-neutral-700">{c.app_name}</span><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /></div>)}</div>}
-          </div>
-          <div className="bg-white border border-neutral-200 rounded-2xl p-4">
-            <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2"><Clock className="w-4 h-4 text-neutral-700" /> Pending approvals</h3>
-            <p className="text-sm text-neutral-400">Nothing waiting on you. 🎉</p>
+            {realConnected.length === 0 ? <p className="text-sm text-neutral-400">No apps connected yet. Click Settings to connect Google.</p> :
+            <div className="space-y-2">{realConnected.map((c) => {
+              const Logo = GOOGLE_LOGOS[c.app_name?.toLowerCase().replace(/\s/g, "")] || null;
+              return <div key={c.id} className="flex items-center gap-2 text-sm">
+                {Logo ? <Logo className="w-5 h-5" /> : <span className="w-5 h-5 rounded-md bg-neutral-100" />}
+                <span className="flex-1 text-neutral-700">{c.app_name}</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              </div>;
+            })}</div>}
           </div>
         </div>
       </div>

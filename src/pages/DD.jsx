@@ -45,7 +45,7 @@ export default function DD() {
   }, [view]);
 
   const nav = (id) => setView(id);
-  const askDD = (text) => { setAgentPrompt(text + " " + Date.now()); setView("agent"); };
+  const askDD = (text) => { setAgentPrompt(text); setView("agent"); };
 
   const initials = (name) => {
     const n = (name || "").trim();

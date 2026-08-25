@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Mic, Check, Loader2 } from "lucide-react";
 import DDLogo from "@/components/dd/DDLogo";
+import { GOOGLE_LOGOS } from "@/components/dd/DDGoogleLogos";
 import { base44 } from "@/api/base44Client";
 
 function Card({ children, className = "" }) {
@@ -57,7 +58,7 @@ export default function DDDashboard({ onAskDD }) {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 overflow-x-hidden">
-      <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight capitalize">{greetingHour()}{name ? `, ${name}` : ""} 👋</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight capitalize">{greetingHour()}{name ? `, ${name}` : ""}</h1>
       <p className="text-neutral-500 mt-2 mb-5 text-base">What are we getting done?</p>
 
       {/* AI input */}
@@ -100,7 +101,9 @@ export default function DDDashboard({ onAskDD }) {
             <div className="space-y-2.5">
                   {connected.map((c) =>
               <div key={c.id} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center text-sm">{c.app_icon || "📦"}</div>
+                      <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center">
+                        {(() => { const Logo = GOOGLE_LOGOS[c.app_name?.toLowerCase().replace(/\s/g, "")]; return Logo ? <Logo className="w-5 h-5" /> : null; })()}
+                      </div>
                       <span className="flex-1 text-sm text-neutral-700">{c.app_name}</span>
                       <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {c.status}</span>
                     </div>
@@ -117,7 +120,9 @@ export default function DDDashboard({ onAskDD }) {
           <div className="space-y-3">
                 {activity.map((a) =>
             <div key={a.id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center text-sm">{a.icon || "📋"}</div>
+                    <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center">
+                      <Check className="w-4 h-4 text-neutral-400" />
+                    </div>
                     <p className="flex-1 text-sm text-neutral-700">{a.text}</p>
                     <span className="text-xs text-neutral-400">{new Date(a.created_date).toLocaleString()}</span>
                   </div>
