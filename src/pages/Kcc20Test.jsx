@@ -4,7 +4,6 @@ import { ArrowLeft, Wallet, Loader2, Send, RefreshCw, CheckCircle2, AlertTriangl
 import { useKcc20Wallet, shortKaspaAddress, formatKas } from "@/lib/useKcc20Wallet";
 import { sendTokenKcc20 } from "@/lib/kcc20Pwa";
 import { base44 } from "@/api/base44Client";
-import Kcc20PinModal from "@/components/kcc20/Kcc20PinModal";
 
 const TREASURY = "kaspa:qrec7c0zgp9shxht4hx0jz6e0w3q0y6e0w3q0y6e0w3q0y6e0"; // demo dest
 
@@ -13,7 +12,6 @@ export default function Kcc20TestPage() {
   const [tick, setTick] = useState("KKDAG");
   const [amount, setAmount] = useState("1");
   const [dest, setDest] = useState("");
-  const [pinOpen, setPinOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
   const [payErr, setPayErr] = useState("");
@@ -44,23 +42,18 @@ export default function Kcc20TestPage() {
     return () => clearInterval(iv);
   }, [detectPayments, refreshState]);
 
-  const openPay = () => {
+  // Pay fires sendToken straight to the KCC20 wallet on click — no TTT PIN modal.
+  // The wallet opens its own window/sheet for signing; TTT never sees the PIN.
+  const pay = async () => {
     setPayErr("");
     setResult(null);
     if (!address) { setPayErr("Connect your KCC20 wallet first."); return; }
     if (!dest.trim()) { setPayErr("Enter a destination address."); return; }
     if (!amount || Number(amount) <= 0) { setPayErr("Enter an amount."); return; }
-    setPinOpen(true);
-  };
-
-  const onPinSubmit = async (_pin) => {
     setSending(true);
-    setPayErr("");
     try {
-      // Create + sign + broadcast via the KCC20 wallet. TTT never sees keys.
       const res = await sendTokenKcc20({ tick, amount, dest: dest.replace(/^kaspa:/, "") });
       setResult(res);
-      setPinOpen(false);
       refreshState?.();
       detectPayments();
     } catch (e) {
@@ -142,11 +135,11 @@ export default function Kcc20TestPage() {
                 <span>{payErr}</span>
               </div>
             )}
-            <button onClick={openPay} disabled={!address || sending} className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-white text-black font-semibold text-sm hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <button onClick={pay} disabled={!address || sending} className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-white text-black font-semibold text-sm hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Pay with KCC20
+              {sending ? "Sign in the KCC20 Wallet window…" : "Pay with KCC20"}
             </button>
-            <p className="text-[11px] text-white/30 text-center">You'll enter your wallet PIN, then KCC20 signs & broadcasts. TTT never sees your keys.</p>
+            <p className="text-[11px] text-white/30 text-center">KCC20 opens its own window to sign — TTT never sees your PIN or keys.</p>
           </div>
         </div>
 
@@ -197,13 +190,6 @@ export default function Kcc20TestPage() {
         </div>
       </div>
 
-      <Kcc20PinModal
-        open={pinOpen}
-        onClose={() => setPinOpen(false)}
-        onSubmit={onPinSubmit}
-        title="Enter KCC20 PIN"
-        subtitle={`Confirm to send ${amount} ${tick} from your KCC20 wallet`}
-      />
     </div>
   );
 }
