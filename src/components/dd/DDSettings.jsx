@@ -26,8 +26,8 @@ export default function DDSettings({ onConnectionChange }) {
     const next = {};
     for (const c of CONNECTORS) {
       try {
-        await base44.functions.invoke("ddGoogleAction", { action: "status", connectorType: c.type, connectorId: c.id });
-        next[c.type] = "connected";
+        const res = await base44.functions.invoke("ddGoogleAction", { action: "status", connectorType: c.type, connectorId: c.id });
+        next[c.type] = res?.connected ? "connected" : "disconnected";
       } catch {
         next[c.type] = "disconnected";
       }

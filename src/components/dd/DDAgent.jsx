@@ -33,6 +33,15 @@ const TOOL_CAPABILITIES = {
   "ChatGPT": { type: "chatgpt", can: "research any topic with real web search — say 'research X'" },
 };
 
+// Real workspace connectors — used to check actual OAuth status
+const DD_CONNECTORS = [
+  { id: "6a8cde30137d405112693b7a", type: "googledrive", name: "Google Drive" },
+  { id: "6a8cde51e37e03bca068b3b2", type: "googledocs", name: "Google Docs" },
+  { id: "6a8cde30137d405112693b7a", type: "googlesheets", name: "Google Sheets" },
+  { id: "6a8cde500c8f9518850896d0", type: "googlecalendar", name: "Google Calendar" },
+  { id: "6a8cde4f5e2470cbe4b913d5", type: "gmail", name: "Gmail" },
+];
+
 function buildSystem(onboarding, email, googleContext, availableTools) {
   const o = onboarding || {};
   const name = o.name || "there";
@@ -94,8 +103,8 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
   const inputRef = useRef(null);
   const consumedNonceRef = useRef(-1);
 
-  // Derive available tool names from connected apps
-  const availableTools = realConnected.map((c) => c.app_name).filter((n) => TOOL_CAPABILITIES[n]);
+  // Derive available tool names from connected apps; ChatGPT is always available (shared key)
+  const availableTools = [...realConnected.map((c) => c.app_name), "ChatGPT"].filter((n) => TOOL_CAPABILITIES[n]);
 
   const filteredMentions = availableTools.filter((t) =>
     t.toLowerCase().includes(mentionQuery.toLowerCase())
@@ -144,10 +153,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
       }
       setLoaded(true);
       fetchGoogleContext();
-      try {
-        const apps = await base44.entities.DDConnectedApp.filter({ user_email: em }, "-created_date", 10).catch(() => []);
-        setRealConnected(apps);
-      } catch {}
+      refreshConnected();
     })();
   }, []);
 
@@ -167,36 +173,23 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
   useEffect(() => { scrollRef.current?.scrollTo({ top: 1e9, behavior: "smooth" }); }, [messages, busy]);
 
   const refreshConnected = async () => {
-    try {
-      const apps = await base44.entities.DDConnectedApp.filter({ user_email: email }, "-created_date", 10).catch(() => []);
-      setRealConnected(apps);
-    } catch {}
+    const connected = [];
+    for (const c of DD_CONNECTORS) {
+      try {
+        const res = await base44.functions.invoke("ddGoogleAction", { action: "status", connectorType: c.type, connectorId: c.id });
+        if (res?.connected) connected.push({ app_name: c.name, id: c.type });
+      } catch {}
+    }
+    setRealConnected(connected);
   };
 
   const handleDisconnect = async (c) => {
     setDisconnecting(c.app_name);
     try {
-      // Find the connector type for this app
-      const typeMap = {
-        "Google Drive": "googledrive",
-        "Google Docs": "googledocs",
-        "Google Sheets": "googlesheets",
-        "Google Calendar": "googlecalendar",
-        "Gmail": "gmail",
-      };
-      const type = typeMap[c.app_name];
-      const idMap = {
-        googledrive: "6a8cde30137d405112693b7a",
-        googledocs: "6a8cde51e37e03bca068b3b2",
-        googlesheets: "6a8cde30137d405112693b7a",
-        googlecalendar: "6a8cde500c8f9518850896d0",
-        gmail: "6a8cde4f5e2470cbe4b913d5",
-      };
-      const cId = idMap[type];
-      if (cId) {
-        try { await base44.connectors.disconnectAppUser(cId); } catch {}
+      const connector = DD_CONNECTORS.find((x) => x.name === c.app_name);
+      if (connector) {
+        try { await base44.connectors.disconnectAppUser(connector.id); } catch {}
       }
-      await base44.entities.DDConnectedApp.delete(c.id);
       await refreshConnected();
     } catch {}
     setDisconnecting(null);
@@ -252,22 +245,30 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
     if (e.key === "Enter" && !showMention) ask();
   };
 
-  // Render text with @-mentions highlighted
+  // Render text with @-mentions highlighted — only highlight known tool names
   const renderText = (text) => {
     if (!text) return text;
-    const parts = text.split(/(@\w[\w\s]+)/);
-    return parts.map((part, i) => {
-      if (part.startsWith("@") && part.length > 1) {
-        const toolName = part.slice(1).trim();
-        const isAvailable = availableTools.some((t) => t.toLowerCase() === toolName.toLowerCase());
-        return (
-          <span key={i} className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${isAvailable ? "bg-blue-100 text-blue-700" : "bg-neutral-200 text-neutral-500"}`}>
-            {part}
-          </span>
-        );
-      }
-      return part;
-    });
+    const toolNames = Object.keys(TOOL_CAPABILITIES);
+    if (toolNames.length === 0) return text;
+    const sorted = [...toolNames].sort((a, b) => b.length - a);
+    const pattern = sorted.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+    const regex = new RegExp(`@(${pattern})`, "g");
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+      const toolName = match[1];
+      const isAvailable = availableTools.some((t) => t.toLowerCase() === toolName.toLowerCase());
+      parts.push(
+        <span key={parts.length} className={`px-1.5 py-0.5 rounded-md font-medium ${isAvailable ? "bg-blue-500/25 text-blue-200" : "bg-white/15 text-white/60"}`}>
+          {match[0]}
+        </span>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+    return parts;
   };
 
   const ask = async (prompt) => {
