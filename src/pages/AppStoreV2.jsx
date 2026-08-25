@@ -14,6 +14,7 @@ import AdminProposalsPanel from "@/components/appstore2/AdminProposalsPanel";
 import BlueprintModal from "@/components/appstore2/BlueprintModal";
 import AppStoreAISearch from "@/components/appstore2/AppStoreAISearch";
 import AgentInternetAlphaCard from "@/components/appstore2/AgentInternetAlphaCard";
+import Kcc20ConnectButton from "@/components/appstore2/Kcc20ConnectButton";
 
 const CATEGORIES = [
   { id: "All", label: "All", icon: Sparkles },
@@ -65,7 +66,7 @@ export default function AppStoreV2Page() {
     <div className="min-h-screen bg-[#F5F5F7] text-zinc-900">
       {/* Nav */}
       <nav
-        className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-5 bg-[#F5F5F7]/80 backdrop-blur-2xl border-b border-zinc-200/50"
+        className="sticky top-0 z-50 flex items-center justify-between pl-3 sm:pl-5 pr-[calc(0.75rem+env(safe-area-inset-right,0px))] sm:pr-[calc(1.25rem+env(safe-area-inset-right,0px))] bg-[#F5F5F7]/80 backdrop-blur-2xl border-b border-zinc-200/50"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex items-center justify-between w-full h-14 gap-2">
@@ -77,8 +78,9 @@ export default function AppStoreV2Page() {
             <ArrowLeft className="w-5 h-5" />
             <span className="text-[14px] font-medium">Back</span>
           </Link>
-          <span className="text-[15px] font-[800] tracking-tight">App Store</span>
-          <div className="flex items-center gap-2">
+          <span className="text-[15px] font-[800] tracking-tight min-w-0 truncate text-center">App Store</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <Kcc20ConnectButton />
             <Link
               to="/AIAgentHub"
               onClick={playGTA}
@@ -105,6 +107,16 @@ export default function AppStoreV2Page() {
           </div>
         </div>
       </nav>
+
+      {/* Subheader — Connect Scorpion (mobile-native fit) */}
+      <div
+        className="sticky top-14 z-40 flex items-center justify-center pl-3 pr-[calc(0.75rem+env(safe-area-inset-right,0px))] py-1.5 bg-[#F5F5F7]/80 backdrop-blur-xl border-b border-zinc-200/50"
+      >
+        <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] text-zinc-500 font-medium truncate">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0" />
+          <span className="truncate">Connect Scorpion — KCC20 Wallet powers every app in the store</span>
+        </div>
+      </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20">
         {/* Cinematic Hero Banner */}
