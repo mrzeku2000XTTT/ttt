@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Wallet, X, Check, Loader2, Link2, Unlink, Plus, Sparkles, Shield, ExternalLink, AlertCircle, Download, ArrowDownToLine, Copy, Eye, EyeOff } from "lucide-react";
+import { Wallet, X, Check, Loader2, Link2, Unlink, Plus, Sparkles, Shield, ExternalLink, AlertCircle, Download, ArrowDownToLine, Copy, Eye, EyeOff, History, ChevronDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { verifyStoredPin, hashPin, storePinHash, getStoredPinHash } from "@/components/wallet/walletLock";
 import { generateWallet, isValidKaspaAddress, getWallet } from "@/lib/localKaspaWallet";
@@ -89,6 +89,8 @@ export default function DDWalletButton() {
   const [fundingStage, setFundingStage] = useState("idle"); // idle | signing | credited | error
   const [fundingMsg, setFundingMsg] = useState("");
   const [lastDeposit, setLastDeposit] = useState(null); // { amount, txid } | null
+  const [deposits, setDeposits] = useState([]); // history of credited deposits
+  const [showHistory, setShowHistory] = useState(false);
   const [hideKcc20, setHideKcc20] = useState(() => { try { return localStorage.getItem(HIDE_KCC20_KEY) === "1"; } catch { return false; } });
   const [copiedTreasury, setCopiedTreasury] = useState(false);
   const refreshTimer = useRef(null);
@@ -171,7 +173,9 @@ export default function DDWalletButton() {
       if (d?.credited > 0) {
         await refreshKkdag();
         await refreshWalletKkdag();
-        setLastDeposit({ amount: d.credited, txid: txId });
+        const entry = { amount: d.credited, txid: txId, at: new Date().toLocaleTimeString() };
+        setLastDeposit(entry);
+        setDeposits((prev) => [entry, ...prev]);
         setFundingStage("credited");
         setFundingMsg(`Credited ${d.credited.toLocaleString()} KKDAG`);
       } else {
@@ -525,43 +529,74 @@ export default function DDWalletButton() {
                   </button>
                 </div>
 
-                {/* Fund from KCC20 — triggers real KKDAG transfer via parent wallet */}
+                {/* Fund from KCC20 — triggers real KKDAG transfer via parent wallet.
+                    Fund row is always visible so users can fund multiple times. */}
                 {isInWalletIframe() && (
                   <div className="space-y-2">
-                    {fundingStage === "idle" || fundingStage === "error" ? (
-                      <div className="flex items-center gap-1.5 w-full min-w-0">
-                        <input type="number" min="1" step="1" value={fundAmount}
-                          onChange={(e) => { setFundAmount(e.target.value); setFundingStage("idle"); setFundingMsg(""); }}
-                          className="w-20 min-w-0 flex-shrink-0 h-10 px-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-violet-400"
-                          placeholder="Amt" />
-                        <button onClick={fundWithKkdag}
-                          className="h-10 px-2.5 rounded-xl bg-violet-600 border border-violet-600 text-sm font-medium text-white hover:bg-violet-700 flex items-center justify-center gap-1.5 flex-1 min-w-0">
-                          <ArrowDownToLine className="w-4 h-4 flex-shrink-0" />
-                          <span className="truncate">Fund from KCC20</span>
-                        </button>
+                    {/* Status line (signing / credited / error) — sits above the always-on fund row */}
+                    {fundingStage === "signing" && (
+                      <div className="flex items-center gap-1.5 text-violet-700">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span className="text-[11px] font-medium">{fundingMsg}</span>
                       </div>
-                    ) : fundingStage === "signing" ? (
-                      <div className="w-full h-10 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center gap-1.5">
-                        <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
-                        <span className="text-sm text-violet-700 font-medium">{fundingMsg}</span>
-                      </div>
-                    ) : (
-                      <div className="w-full rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 space-y-1">
-                        <div className="flex items-center gap-1.5">
-                          <Check className="w-4 h-4 text-emerald-600" />
-                          <span className="text-sm text-emerald-700 font-medium">{fundingMsg}</span>
-                        </div>
+                    )}
+                    {fundingStage === "credited" && (
+                      <div className="flex items-center gap-1.5 text-emerald-700">
+                        <Check className="w-3.5 h-3.5" />
+                        <span className="text-[11px] font-medium">{fundingMsg}</span>
                         {lastDeposit?.txid && (
                           <a href={`https://kaspa.stream/transactions/${lastDeposit.txid}`} target="_blank" rel="noreferrer"
-                             className="text-[11px] text-violet-600 hover:text-violet-800 flex items-center gap-1 underline">
-                            <ExternalLink className="w-3 h-3" /> {lastDeposit.txid.slice(0, 12)}…
+                             className="text-[11px] text-violet-600 hover:text-violet-800 flex items-center gap-0.5 underline ml-auto">
+                            <ExternalLink className="w-3 h-3" /> tx
                           </a>
                         )}
-                        <button onClick={resetFunding} className="text-[11px] text-neutral-500 hover:text-neutral-800 underline">Done</button>
                       </div>
                     )}
                     {fundingStage === "error" && fundingMsg && (
                       <p className="text-[11px] text-red-500">{fundingMsg}</p>
+                    )}
+
+                    {/* Always-on fund row */}
+                    <div className="flex items-center gap-1.5 w-full min-w-0">
+                      <input type="number" min="1" step="1" value={fundAmount}
+                        onChange={(e) => { setFundAmount(e.target.value); if (fundingStage !== "idle") { setFundingStage("idle"); setFundingMsg(""); } }}
+                        disabled={fundingStage === "signing"}
+                        className="w-20 min-w-0 flex-shrink-0 h-10 px-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm outline-none focus:border-violet-400 disabled:opacity-50"
+                        placeholder="Amt" />
+                      <button onClick={fundWithKkdag}
+                        disabled={fundingStage === "signing"}
+                        className="h-10 px-2.5 rounded-xl bg-violet-600 border border-violet-600 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60 flex items-center justify-center gap-1.5 flex-1 min-w-0">
+                        {fundingStage === "signing" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4 flex-shrink-0" />}
+                        <span className="truncate">Fund from KCC20</span>
+                      </button>
+                    </div>
+
+                    {/* History toggle */}
+                    {deposits.length > 0 && (
+                      <div className="border-t border-neutral-100 pt-1.5">
+                        <button onClick={() => setShowHistory(!showHistory)}
+                          className="w-full flex items-center justify-between text-[11px] text-neutral-500 hover:text-neutral-800">
+                          <span className="flex items-center gap-1.5">
+                            <History className="w-3.5 h-3.5" /> Funding history ({deposits.length})
+                          </span>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showHistory ? "rotate-180" : ""}`} />
+                        </button>
+                        {showHistory && (
+                          <div className="mt-1.5 space-y-1 max-h-32 overflow-y-auto">
+                            {deposits.map((d, i) => (
+                              <div key={d.txid + i} className="flex items-center gap-1.5 text-[11px] py-1">
+                                <Check className="w-3 h-3 text-emerald-600 flex-shrink-0" />
+                                <span className="font-medium text-neutral-700">{d.amount.toLocaleString()} KKDAG</span>
+                                <span className="text-neutral-400 ml-auto">{d.at}</span>
+                                <a href={`https://kaspa.stream/transactions/${d.txid}`} target="_blank" rel="noreferrer"
+                                   className="text-violet-600 hover:text-violet-800 flex items-center gap-0.5">
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
