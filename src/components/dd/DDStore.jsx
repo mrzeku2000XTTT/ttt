@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Plus, Plug, ExternalLink, Check, Loader2, AlertCircle, LogIn } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { DD_STORE_CATEGORIES, DD_STORE_APPS } from "@/components/dd/ddStoreCatalog";
+import DDAppLogo from "@/components/dd/DDAppLogo";
 import { isInWalletIframe } from "@/lib/kcc20Pwa";
 
 const STATUS = { add: "Add", connect: "Connect", open: "Open" };
@@ -129,7 +130,7 @@ export default function DDStore() {
             return (
               <div key={a.name} className="bg-white border border-neutral-200 rounded-2xl p-4 flex flex-col">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center text-lg">{a.icon}</div>
+                  <div className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-center shrink-0"><DDAppLogo name={a.name} className="w-6 h-6" /></div>
                   <div className="min-w-0">
                     <p className="font-semibold text-neutral-900 text-sm truncate">{a.name}</p>
                     <p className="text-[11px] text-neutral-400">{a.category}</p>
