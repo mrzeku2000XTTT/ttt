@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Plug, Trash2, Unlink, ExternalLink, Search, FileText, Table } from "lucide-react";
+import { Send, Loader2, Plug, Trash2, Unlink, ExternalLink, Search, FileText, Table, AtSign } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import DDLogo from "@/components/dd/DDLogo";
 import DDLogoCustomizer from "@/components/dd/DDLogoCustomizer";
@@ -23,10 +23,23 @@ function saveHistory(email, msgs) {
   } catch {}
 }
 
-function buildSystem(onboarding, email, googleContext) {
+// Map app names to their connector type and capabilities
+const TOOL_CAPABILITIES = {
+  "Google Drive": { type: "googledrive", can: "list and open your Drive files" },
+  "Google Docs": { type: "googledocs", can: "create and edit Google Docs — say 'create a doc' or 'write a document'" },
+  "Google Sheets": { type: "googlesheets", can: "create Google Sheets — say 'create a sheet' or 'make a spreadsheet'" },
+  "Google Calendar": { type: "googlecalendar", can: "view your upcoming calendar events" },
+  "Gmail": { type: "gmail", can: "read your recent emails" },
+  "ChatGPT": { type: "chatgpt", can: "research any topic with real web search — say 'research X'" },
+};
+
+function buildSystem(onboarding, email, googleContext, availableTools) {
   const o = onboarding || {};
   const name = o.name || "there";
   const style = o.style || "brief and direct";
+  const toolsList = availableTools.length > 0
+    ? `\n--- AVAILABLE TOOLS (connected and ready to use) ---\n${availableTools.map(t => `@${t} — ${TOOL_CAPABILITIES[t]?.can || "available"}`).join("\n")}\nWhen the user @-mentions a tool, they expect you to USE that tool. If they ask you to create something with a mentioned tool, do it. If a tool is listed above, it IS connected and working.\n--- END TOOLS ---`
+    : "\nNo tools are currently connected. Tell the user to click Settings to connect Google.";
   const parts = [
     `You are DD, a personal productivity agent inside a unified workspace. You are brand new — tailored specifically for this user.`,
     `User name: ${name}.`,
@@ -35,6 +48,7 @@ function buildSystem(onboarding, email, googleContext) {
     o.workHours ? `Working hours: ${o.workHours}.` : "",
     o.focus ? `Today's main focus: ${o.focus}.` : "",
     `Communication style: ${style}.`,
+    toolsList,
     googleContext ? `\n--- REAL USER DATA (from connected Google apps) ---\n${googleContext}\n--- END REAL DATA ---` : "",
     `You help organize the user's day, summarize what matters, draft replies, and surface priorities. Be concise, warm, and action-oriented. Use the real data above when available. Do not invent or fabricate data — if you don't have info, say so.`,
   ].filter(Boolean);
@@ -42,10 +56,13 @@ function buildSystem(onboarding, email, googleContext) {
 }
 
 // Classify user intent to route to the right tool
-async function classifyIntent(text) {
+async function classifyIntent(text, availableTools) {
+  const toolsHint = availableTools.length > 0
+    ? `\nCurrently connected tools: ${availableTools.join(", ")}`
+    : "";
   try {
     const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `Classify this user message into exactly one intent:\n- "research": wants to search, research, or look up something online\n- "create_doc": wants to create or write a Google Doc document\n- "create_sheet": wants to create a Google Sheet or spreadsheet\n- "general": normal chat, questions, or productivity help\n\nMessage: "${text}"\n\nRespond with ONLY the intent name.`,
+      prompt: `Classify this user message into exactly one intent:\n- "research": wants to search, research, or look up something online (uses ChatGPT + web search)\n- "create_doc": wants to create or write a Google Doc document\n- "create_sheet": wants to create a Google Sheet or spreadsheet\n- "general": normal chat, questions, or productivity help${toolsHint}\n\nMessage: "${text}"\n\nRespond with ONLY the intent name and a short title if creating.`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -70,8 +87,19 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
   const [googleContext, setGoogleContext] = useState("");
   const [realConnected, setRealConnected] = useState([]);
   const [disconnecting, setDisconnecting] = useState(null);
+  const [showMention, setShowMention] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionIndex, setMentionIndex] = useState(0);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
   const consumedNonceRef = useRef(-1);
+
+  // Derive available tool names from connected apps
+  const availableTools = realConnected.map((c) => c.app_name).filter((n) => TOOL_CAPABILITIES[n]);
+
+  const filteredMentions = availableTools.filter((t) =>
+    t.toLowerCase().includes(mentionQuery.toLowerCase())
+  );
 
   const fetchGoogleContext = async () => {
     try {
@@ -174,6 +202,74 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
     setDisconnecting(null);
   };
 
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInput(val);
+    // Detect @-mention: check if user just typed @ or is typing after @
+    const atIdx = val.lastIndexOf("@");
+    if (atIdx !== -1) {
+      const afterAt = val.slice(atIdx + 1);
+      // Only show mentions if @ was just typed (no spaces after @ yet, or filtering)
+      if (!afterAt.includes(" ") && afterAt.length <= 20) {
+        setShowMention(true);
+        setMentionQuery(afterAt);
+        setMentionIndex(0);
+        return;
+      }
+    }
+    setShowMention(false);
+  };
+
+  const insertMention = (toolName) => {
+    const atIdx = input.lastIndexOf("@");
+    if (atIdx !== -1) {
+      const before = input.slice(0, atIdx);
+      const after = input.slice(input.lastIndexOf("@") + 1 + mentionQuery.length);
+      setInput(`${before}@${toolName} ${after}`);
+    }
+    setShowMention(false);
+    setMentionQuery("");
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e) => {
+    if (showMention && filteredMentions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMentionIndex((i) => (i + 1) % filteredMentions.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMentionIndex((i) => (i - 1 + filteredMentions.length) % filteredMentions.length);
+      } else if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        insertMention(filteredMentions[mentionIndex]);
+        return;
+      } else if (e.key === "Escape") {
+        setShowMention(false);
+        return;
+      }
+    }
+    if (e.key === "Enter" && !showMention) ask();
+  };
+
+  // Render text with @-mentions highlighted
+  const renderText = (text) => {
+    if (!text) return text;
+    const parts = text.split(/(@\w[\w\s]+)/);
+    return parts.map((part, i) => {
+      if (part.startsWith("@") && part.length > 1) {
+        const toolName = part.slice(1).trim();
+        const isAvailable = availableTools.some((t) => t.toLowerCase() === toolName.toLowerCase());
+        return (
+          <span key={i} className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${isAvailable ? "bg-blue-100 text-blue-700" : "bg-neutral-200 text-neutral-500"}`}>
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   const ask = async (prompt) => {
     const text = (prompt ?? input).trim();
     if (!text || busy) return;
@@ -182,8 +278,8 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
     setBusy(true);
 
     try {
-      // Step 1: Classify intent
-      const { intent, title } = await classifyIntent(text);
+      // Step 1: Classify intent (pass available tools so it knows what's connected)
+      const { intent, title } = await classifyIntent(text, availableTools);
 
       if (intent === "research") {
         // Use ChatGPT research subagent
@@ -231,7 +327,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
         }
       } else {
         // General chat with InvokeLLM
-        const sys = buildSystem(onboarding, email, googleContext);
+        const sys = buildSystem(onboarding, email, googleContext, availableTools);
         const history = messages.slice(-8).map((m) => `${m.role === "user" ? "User" : "DD"}: ${m.text}`).join("\n");
         const res = await base44.integrations.Core.InvokeLLM({
           prompt: `${sys}\n\nConversation so far:\n${history}\n\nUser: ${text}`,
@@ -297,7 +393,7 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
                       {m.badge}
                     </div>
                   )}
-                  <div className="whitespace-pre-wrap">{m.text}</div>
+                  <div className="whitespace-pre-wrap">{m.role === "user" ? renderText(m.text) : m.text}</div>
                   {m.links && m.links.length > 0 && (
                     <div className="mt-2 space-y-1.5">
                       {m.links.map((l, j) => (
@@ -318,9 +414,52 @@ export default function DDAgent({ initialPrompt, nonce, active }) {
               </div>
             )}
           </div>
-          <div className="border-t border-neutral-200 p-3 flex items-center gap-2">
-            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ask()} placeholder="Ask DD to research, create a doc, or anything…" className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 h-10 text-sm outline-none focus:border-neutral-400" />
-            <button onClick={() => ask()} disabled={busy} className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center disabled:opacity-50"><Send className="w-4 h-4" /></button>
+          <div className="border-t border-neutral-200 p-3">
+            {availableTools.length > 0 && (
+              <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                <span className="text-[11px] text-neutral-400 flex items-center gap-1"><AtSign className="w-3 h-3" /> Mention:</span>
+                {availableTools.map((t) => {
+                  const key = t.toLowerCase().replace(/\s/g, "");
+                  const Logo = GOOGLE_LOGOS[key];
+                  return (
+                    <button key={t} onClick={() => insertMention(t)} className="flex items-center gap-1 px-2 h-6 rounded-full bg-neutral-50 border border-neutral-200 hover:border-neutral-300 text-[11px] text-neutral-600">
+                      {Logo && <Logo className="w-3 h-3" />}
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex items-center gap-2 relative">
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask DD anything… type @ to mention a tool"
+                className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 h-10 text-sm outline-none focus:border-neutral-400"
+              />
+              <button onClick={() => ask()} disabled={busy} className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center disabled:opacity-50"><Send className="w-4 h-4" /></button>
+              {showMention && filteredMentions.length > 0 && (
+                <div className="absolute bottom-full mb-1 left-0 right-12 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
+                  {filteredMentions.map((t, i) => {
+                    const key = t.toLowerCase().replace(/\s/g, "");
+                    const Logo = GOOGLE_LOGOS[key];
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => insertMention(t)}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${i === mentionIndex ? "bg-neutral-100" : "hover:bg-neutral-50"}`}
+                      >
+                        {Logo && <Logo className="w-4 h-4" />}
+                        <span className="flex-1 text-neutral-700">@{t}</span>
+                        <span className="text-[10px] text-neutral-400">{TOOL_CAPABILITIES[t]?.can?.split("—")[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
