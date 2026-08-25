@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "KCC20 Test", path: "Kcc20Test", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f0152b845_image.png", desc: "TEST · connect KCC20, detect payments, create & sign a transaction with PIN" },
   { name: "oRion", path: "Rion", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0142f5358_generated_image.png", desc: "Script-first storyboard · script → deterministic coverage → consistent frames" },
   { name: "Sky", path: "Sky", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2777e9161_generated_image.png", desc: "AI validation cofounder · 4 research agents, real cited web sources, no limits" },
   { name: "DD", path: "DD", cat: "Productivity", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9c255656c_IMG_5210.jpeg", desc: "All your tools in one intelligent workspace · AI agent dashboard" },
