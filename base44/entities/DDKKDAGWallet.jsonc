@@ -1,0 +1,43 @@
+{
+  "name": "DDKKDAGWallet",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email"
+    },
+    "balance": {
+      "type": "number",
+      "default": 0,
+      "description": "KKDAG credit balance (100 KKDAG = 1 KAS)"
+    },
+    "total_funded": {
+      "type": "number",
+      "default": 0,
+      "description": "Total credits ever added to this wallet"
+    },
+    "total_spent": {
+      "type": "number",
+      "default": 0,
+      "description": "Total credits ever consumed by the DD agent"
+    }
+  },
+  "required": [
+    "user_email",
+    "balance"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

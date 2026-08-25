@@ -18,6 +18,27 @@ import {
 const CONN_KEY = "dd_wallet_connected"; // sessionStorage — address when connected this session
 const KCC20_KEY = "dd_kcc20_connected"; // localStorage — connected KCC20 scorpion address
 const KCC20_VIA_KEY = "dd_kcc20_via"; // localStorage — "pwa" | "paste"
+const HIDE_KCC20_KEY = "dd_hide_kcc20"; // localStorage — hide KCC20 token holdings toggle
+
+// KKDAG treasury — spent DD credits accrue here. Users send KAS here to fund KKDAG.
+const KKDAG_TREASURY = "kaspa:qq5yhvly6338dspa9mm24g8q6chvy6v0jww3k4dgqywh0lju5mmm5pj334ews";
+const KKDAG_GRANT = 1000; // starter grant + manual top-up batch (≈ one DD request of compute)
+
+// Token metadata — mirrors the KCC20 wallet's tokenColor registry
+const TOKENS = {
+  KAS:   { color: "#49eacb", letter: "K", name: "Kaspa" },
+  KKDAG: { color: "#7aa2f7", letter: "D", name: "DD Agent Credit" },
+  KRON:  { color: "#d4b07a", letter: "R", name: "KRON" },
+};
+function TokenLogo({ ticker, size = 22 }) {
+  const t = TOKENS[ticker] || { color: "#9ece6a", letter: (ticker || "?")[0], name: ticker };
+  return (
+    <span className="inline-flex items-center justify-center rounded-full flex-shrink-0 font-bold text-white"
+      style={{ width: size, height: size, background: t.color, fontSize: size * 0.5 }}>
+      {t.letter}
+    </span>
+  );
+}
 
 function readTTT() {
   // Matches the wallet the feed tipping flow uses — instant connect if present.
@@ -59,6 +80,10 @@ export default function DDWalletButton() {
   const [showKeys, setShowKeys] = useState(false);
   const [exportedKey, setExportedKey] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [kkdagBalance, setKkdagBalance] = useState(null);
+  const [kkdagBusy, setKkdagBusy] = useState(false);
+  const [hideKcc20, setHideKcc20] = useState(() => { try { return localStorage.getItem(HIDE_KCC20_KEY) === "1"; } catch { return false; } });
+  const [copiedTreasury, setCopiedTreasury] = useState(false);
   const refreshTimer = useRef(null);
 
   // initial connect state
@@ -73,7 +98,8 @@ export default function DDWalletButton() {
   useEffect(() => {
     if (!address) return;
     refreshBalance(address);
-    refreshTimer.current = setInterval(() => refreshBalance(address), 15000);
+    refreshKkdag();
+    refreshTimer.current = setInterval(() => { refreshBalance(address); refreshKkdag(); }, 15000);
     return () => { if (refreshTimer.current) clearInterval(refreshTimer.current); };
   }, [address]);
 
@@ -82,6 +108,53 @@ export default function DDWalletButton() {
     base44.functions.invoke("getKaspaBalance", { address: addr })
       .then((res) => res?.data?.success && setBalance(res.data.balanceKAS))
       .catch(() => {});
+  };
+
+  // KKDAG credit balance — off-chain ledger in DDKKDAGWallet entity.
+  // Admins get infinite credits (shown as ∞); non-admins see their real balance.
+  const refreshKkdag = async () => {
+    try {
+      const me = await base44.auth.me().catch(() => null);
+      if (me?.role === "admin") { setKkdagBalance(Infinity); return; }
+      if (!me?.email) { setKkdagBalance(null); return; }
+      const rows = await base44.entities.DDKKDAGWallet.filter({ user_email: me.email });
+      setKkdagBalance(rows && rows[0] ? (rows[0].balance || 0) : 0);
+    } catch { setKkdagBalance(null); }
+  };
+
+  const addKkdagCredits = async () => {
+    setKkdagBusy(true);
+    try {
+      const me = await base44.auth.me().catch(() => null);
+      if (!me?.email) { setErr("Log in to add KKDAG credits."); return; }
+      const rows = await base44.entities.DDKKDAGWallet.filter({ user_email: me.email });
+      if (rows && rows[0]) {
+        const w = rows[0];
+        await base44.entities.DDKKDAGWallet.update(w.id, {
+          balance: (w.balance || 0) + KKDAG_GRANT,
+          total_funded: (w.total_funded || 0) + KKDAG_GRANT,
+        });
+      } else {
+        await base44.entities.DDKKDAGWallet.create({
+          user_email: me.email,
+          balance: KKDAG_GRANT,
+          total_funded: KKDAG_GRANT,
+          total_spent: 0,
+        });
+      }
+      await refreshKkdag();
+    } catch (e) { setErr(e?.message || "Could not add credits."); }
+    finally { setKkdagBusy(false); }
+  };
+
+  const toggleHideKcc20 = () => {
+    const next = !hideKcc20;
+    setHideKcc20(next);
+    try { localStorage.setItem(HIDE_KCC20_KEY, next ? "1" : "0"); } catch {}
+  };
+
+  const copyTreasury = () => {
+    try { navigator.clipboard.writeText(KKDAG_TREASURY); setCopiedTreasury(true); setTimeout(() => setCopiedTreasury(false), 2000); } catch {}
   };
 
   const exportKeys = () => {
@@ -98,10 +171,11 @@ export default function DDWalletButton() {
 
   const openModal = () => {
     const c = getConnected();
-    if (c) { setAddress(c); setStage("connected"); refreshBalance(c); }
+    if (c) { setAddress(c); setStage("connected"); refreshBalance(c); refreshKkdag(); }
     else {
       const t = readTTT();
       setStage(t.address && t.pk ? (getStoredPinHash() ? "pin" : "setup") : "connect");
+      refreshKkdag();
     }
     setErr(""); setPin(""); setFirstPin(""); setOpen(true);
   };
@@ -295,6 +369,67 @@ export default function DDWalletButton() {
                   </div>
                   <p className="text-lg font-bold text-neutral-900">{balance !== null ? `${balance.toFixed(4)} KAS` : "—"}</p>
                   <p className="text-[11px] text-neutral-400 mt-1 break-all">{address}</p>
+                </div>
+
+                {/* KKDAG credit balance — DD agent compute credits */}
+                <div className="rounded-xl border border-neutral-200 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <TokenLogo ticker="KKDAG" size={20} />
+                      <p className="text-[11px] text-neutral-400">KKDAG credits</p>
+                    </div>
+                    <button onClick={toggleHideKcc20} className="text-[10px] text-neutral-400 hover:text-neutral-700 underline">
+                      {hideKcc20 ? "Show holdings" : "Hide holdings"}
+                    </button>
+                  </div>
+                  <p className="text-lg font-bold text-neutral-900 mt-1">
+                    {kkdagBalance === null ? "—" : kkdagBalance === Infinity ? "∞ KKDAG" : `${kkdagBalance.toLocaleString()} KKDAG`}
+                  </p>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    {kkdagBalance === Infinity ? "Admin — unlimited DD compute" : "DD agent compute credits (1000 ≈ 1 request)"}
+                  </p>
+                  {kkdagBalance !== Infinity && kkdagBalance !== null && (
+                    <button onClick={addKkdagCredits} disabled={kkdagBusy}
+                      className="w-full mt-2 h-9 rounded-lg bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-40 flex items-center justify-center gap-1.5">
+                      {kkdagBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                      Add {KKDAG_GRANT} KKDAG credits
+                    </button>
+                  )}
+                </div>
+
+                {/* KCC20 token holdings — KRON + KKDAG logos, toggleable */}
+                {!hideKcc20 && (
+                  <div className="rounded-xl border border-neutral-200 p-3">
+                    <p className="text-[11px] text-neutral-400 mb-2">KCC20 holdings</p>
+                    <div className="flex items-center gap-2">
+                      <TokenLogo ticker="KRON" size={24} />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-neutral-900">KRON</p>
+                        <p className="text-[10px] text-neutral-400">Kaspa DEX token</p>
+                      </div>
+                      <span className="text-xs text-neutral-400">—</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <TokenLogo ticker="KKDAG" size={24} />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-neutral-900">KKDAG</p>
+                        <p className="text-[10px] text-neutral-400">DD agent credit</p>
+                      </div>
+                      <span className="text-xs text-neutral-400">{kkdagBalance === Infinity ? "∞" : kkdagBalance ?? "—"}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* KKDAG treasury — where spent credits accrue / where to send KAS to fund */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Shield className="w-3 h-3 text-neutral-500" />
+                    <p className="text-[11px] font-medium text-neutral-600">KKDAG treasury</p>
+                  </div>
+                  <p className="text-[10px] text-neutral-400 break-all">{KKDAG_TREASURY}</p>
+                  <button onClick={copyTreasury} className="text-[10px] text-neutral-500 hover:text-neutral-800 flex items-center gap-1 mt-1">
+                    {copiedTreasury ? <><Check className="w-3 h-3 text-emerald-600" /> Copied</> : <><Copy className="w-3 h-3" /> Copy address</>}
+                  </button>
                 </div>
 
                 {/* Fund from KCC20 — only shown inside the KCC20 wallet iframe */}

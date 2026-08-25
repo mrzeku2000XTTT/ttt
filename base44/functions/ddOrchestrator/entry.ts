@@ -19,6 +19,8 @@ const TOOL_CREDIT = 0.5;
 // Conversion: 100 credits = 1 KAS (adjustable)
 const CREDITS_PER_KAS = 100;
 const SOMPI_PER_KAS = 100000000;
+// KKDAG treasury — spent DD credits accrue here (users send KAS here to fund KKDAG)
+const KKDAG_TREASURY = "kaspa:qq5yhvly6338dspa9mm24g8q6chvy6v0jww3k4dgqywh0lju5mmm5pj334ews";
 
 // Tool definitions exposed to the LLM
 const TOOLS = [
@@ -105,12 +107,43 @@ export default async function(req) {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const email = user.email;
+    const isAdmin = user.role === "admin";
     const useModel = model || "gemini_3_flash";
     const requestId = `dd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const steps = [];
     let totalCredits = 0;
     let llmCalls = 0;
     let toolCalls = 0;
+    let kkdagBalanceAfter = null;
+
+    // --- KKDAG credit wallet: admins get infinite credits, non-admins are charged ---
+    // 1000 KKDAG ≈ one DD request of real Base44 integration compute. New users get a 1000 starter grant.
+    const STARTER_GRANT = 1000;
+    let kkdagWallet = null;
+    if (!isAdmin) {
+      try {
+        const existing = await base44.entities.DDKKDAGWallet.filter({ user_email: email });
+        kkdagWallet = existing && existing[0];
+        if (!kkdagWallet) {
+          kkdagWallet = await base44.entities.DDKKDAGWallet.create({
+            user_email: email,
+            balance: STARTER_GRANT,
+            total_funded: STARTER_GRANT,
+            total_spent: 0,
+          });
+        }
+        if ((kkdagWallet.balance || 0) <= 0) {
+          return Response.json({
+            error: "out_of_credits",
+            message: "You're out of KKDAG credits. Add more from the TTT wallet to keep using DD.",
+            balance: 0,
+            kkdag_treasury: KKDAG_TREASURY,
+          }, { status: 402 });
+        }
+      } catch (e) {
+        console.warn("KKDAG wallet pre-check failed:", e?.message);
+      }
+    }
 
     // Build conversation context from history
     const historyText = (history || []).slice(-6).map((m) => `${m.role === "user" ? "User" : "DD"}: ${m.text}`).join("\n");
@@ -324,6 +357,23 @@ export default async function(req) {
       });
     } catch {}
 
+    // Deduct KKDAG credits from the user's wallet (admins skipped — infinite credits).
+    // The spent KKDAG accrues to the treasury address recorded above.
+    if (!isAdmin && kkdagWallet) {
+      try {
+        const charge = Math.min(totalCredits, kkdagWallet.balance || 0);
+        const newBalance = Math.max(0, (kkdagWallet.balance || 0) - charge);
+        const newSpent = (kkdagWallet.total_spent || 0) + charge;
+        await base44.entities.DDKKDAGWallet.update(kkdagWallet.id, {
+          balance: newBalance,
+          total_spent: newSpent,
+        });
+        kkdagBalanceAfter = newBalance;
+      } catch (e) {
+        console.warn("KKDAG wallet deduction failed:", e?.message);
+      }
+    }
+
     return Response.json({
       answer: finalAnswer,
       steps,
@@ -334,6 +384,9 @@ export default async function(req) {
       kaspa_cost_sompi: kaspaCostSompi,
       request_id: requestId,
       model: useModel,
+      kkdag_balance_after: kkdagBalanceAfter,
+      kkdag_treasury: KKDAG_TREASURY,
+      is_admin: isAdmin,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
