@@ -192,7 +192,7 @@ export default function DDWalletSetup({ onDone }) {
       {mode === "kcc20" && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Link2 className="w-4 h-4 text-violet-600" />
+            <Link2 className="w-4 h-4 text-neutral-700" />
             <h4 className="font-semibold text-neutral-900 text-sm">Connect KCC20 wallet</h4>
           </div>
 
@@ -209,7 +209,7 @@ export default function DDWalletSetup({ onDone }) {
             </div>
           )}
 
-          <button onClick={connectKcc20Live} disabled={kcc20Busy} className="w-full h-11 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-40 flex items-center justify-center gap-2">
+          <button onClick={connectKcc20Live} disabled={kcc20Busy} className="w-full h-11 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-40 flex items-center justify-center gap-2">
             {kcc20Busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
             {kcc20Busy ? "Connecting…" : "Sign with KCC20 wallet"}
           </button>

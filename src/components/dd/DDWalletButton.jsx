@@ -4,6 +4,7 @@ import { Wallet, X, Check, Loader2, Link2, Unlink, Plus, Sparkles, Shield, Exter
 import { base44 } from "@/api/base44Client";
 import { verifyStoredPin, hashPin, storePinHash, getStoredPinHash } from "@/components/wallet/walletLock";
 import { generateWallet, isValidKaspaAddress } from "@/lib/localKaspaWallet";
+import DDLogo from "@/components/dd/DDLogo";
 import {
   loadKcc20Sdk,
   connectKcc20Pwa,
@@ -166,8 +167,8 @@ export default function DDWalletButton() {
   return (
     <>
       {address ? (
-        <button onClick={openModal} className="flex items-center gap-1.5 h-9 pl-1.5 pr-2.5 rounded-xl bg-white border border-neutral-200 hover:border-violet-300 transition whitespace-nowrap flex-shrink-0">
-          <div className="w-6 h-6 rounded-lg bg-violet-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">TT</div>
+        <button onClick={openModal} className="flex items-center gap-1.5 h-9 pl-1.5 pr-2.5 rounded-xl bg-white border border-neutral-200 hover:border-neutral-300 transition whitespace-nowrap flex-shrink-0">
+          <DDLogo size={24} showWord={false} animate={false} />
           <div className="leading-tight text-left hidden sm:block">
             <p className="text-xs font-semibold text-neutral-900">{balance !== null ? `${balance.toFixed(2)} KAS` : "TTT Wallet"}</p>
             <p className="text-[10px] text-neutral-400">{short(address)}</p>
@@ -187,7 +188,7 @@ export default function DDWalletButton() {
           <div className="bg-white border border-neutral-200 rounded-2xl w-full max-w-sm p-5 shadow-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center"><Wallet className="w-4 h-4" /></div>
+                <DDLogo size={32} showWord={false} animate={false} />
                 <h3 className="font-semibold text-neutral-900">TTT Wallet</h3>
               </div>
               <button onClick={() => setOpen(false)} className="text-neutral-400 hover:text-neutral-900"><X className="w-4 h-4" /></button>
@@ -212,10 +213,10 @@ export default function DDWalletButton() {
                   onChange={(e) => { setPin(e.target.value.replace(/\D/g, "")); setErr(""); }}
                   onKeyDown={(e) => e.key === "Enter" && submitPin()}
                   placeholder="••••••"
-                  className="w-full h-12 text-center tracking-[0.5em] text-lg bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-violet-400"
+                  className="w-full h-12 text-center tracking-[0.5em] text-lg bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-neutral-400"
                 />
                 {err && <p className="text-xs text-red-500">{err}</p>}
-                <button onClick={submitPin} disabled={busy || pin.length !== 6} className="w-full h-11 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-40">
+                <button onClick={submitPin} disabled={busy || pin.length !== 6} className="w-full h-11 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-40">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : stage === "pin" ? "Connect" : "Continue"}
                 </button>
                 {stage === "pin" && (
@@ -238,25 +239,25 @@ export default function DDWalletButton() {
 
                 {/* KCC20 Scorpion external wallet */}
                 {kcc20Addr ? (
-                  <div className="rounded-xl border border-violet-200 bg-violet-50 p-3">
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
                     <div className="flex items-center gap-2">
-                      <Link2 className="w-4 h-4 text-violet-600" />
-                      <span className="text-sm font-semibold text-violet-800">
+                      <Link2 className="w-4 h-4 text-neutral-700" />
+                      <span className="text-sm font-semibold text-neutral-800">
                         {kcc20Via === "pwa" ? "KCC20 PWA connected" : "KCC20 linked (read-only)"}
                       </span>
                     </div>
-                    <p className="text-[11px] text-violet-700 mt-1 break-all">{kcc20Addr}</p>
+                    <p className="text-[11px] text-neutral-600 mt-1 break-all">{kcc20Addr}</p>
                     <div className="flex items-center gap-3 mt-1">
-                      <button onClick={unlinkKcc20} className="text-[11px] text-violet-600 hover:underline">Unlink</button>
+                      <button onClick={unlinkKcc20} className="text-[11px] text-neutral-600 hover:underline">Unlink</button>
                       {!isInWalletIframe() && (
-                        <a href={KCC20_APP} target="_blank" rel="noreferrer" className="text-[11px] text-violet-600 hover:underline flex items-center gap-1">
+                        <a href={KCC20_APP} target="_blank" rel="noreferrer" className="text-[11px] text-neutral-600 hover:underline flex items-center gap-1">
                           Open wallet <ExternalLink className="w-3 h-3" />
                         </a>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <button onClick={connectKcc20PwaLive} className="w-full h-10 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-violet-300 flex items-center justify-center gap-2">
+                  <button onClick={connectKcc20PwaLive} className="w-full h-10 rounded-xl bg-white border border-neutral-200 text-sm font-medium text-neutral-700 hover:border-neutral-300 flex items-center justify-center gap-2">
                     <Link2 className="w-4 h-4" /> Sign with KCC20 wallet
                   </button>
                 )}
@@ -275,7 +276,7 @@ export default function DDWalletButton() {
 
             {stage === "kcc20" && (
               <div className="space-y-3">
-                <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-violet-600" /><h4 className="font-semibold text-neutral-900 text-sm">Connect KCC20 Scorpion wallet</h4></div>
+                <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-neutral-700" /><h4 className="font-semibold text-neutral-900 text-sm">Connect KCC20 wallet</h4></div>
 
                 {/* Detect chip */}
                 <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${kcc20Detected ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50 text-neutral-500"}`}>
@@ -291,7 +292,7 @@ export default function DDWalletButton() {
                   </div>
                 )}
 
-                <button onClick={connectKcc20PwaLive} disabled={kcc20Busy} className="w-full h-11 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-40 flex items-center justify-center gap-2">
+                <button onClick={connectKcc20PwaLive} disabled={kcc20Busy} className="w-full h-11 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-40 flex items-center justify-center gap-2">
                   {kcc20Busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
                   {kcc20Busy ? "Connecting…" : "Sign with KCC20 wallet"}
                 </button>

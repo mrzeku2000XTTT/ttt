@@ -19,7 +19,9 @@ export const DD_NAV = [
 export default function DDSidebar({ active, onNav }) {
   return (
     <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-neutral-200 bg-white h-screen sticky top-0">
-      <div className="px-5 h-16 flex items-center"><DDLogo size={28} animate={false} dark /></div>
+      <Link to="/DDLanding" className="px-5 h-16 flex items-center hover:opacity-80 transition" title="Back to landing page">
+        <DDLogo size={28} animate={false} dark />
+      </Link>
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
         {DD_NAV.map((n) => {
           const Icon = n.icon;
