@@ -101,8 +101,8 @@ export default function DDDashboard({ onAskDD }) {
             <div className="space-y-2.5">
                   {connected.map((c) =>
               <div key={c.id} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center">
-                        {(() => { const Logo = GOOGLE_LOGOS[c.app_name?.toLowerCase().replace(/\s/g, "")]; return Logo ? <Logo className="w-5 h-5" /> : null; })()}
+                      <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center overflow-hidden">
+                        {(() => { const Logo = GOOGLE_LOGOS[c.app_name?.toLowerCase().replace(/\s/g, "")]; return Logo ? <Logo className="w-5 h-5" /> : <span className="text-xs font-bold text-neutral-500">{(c.app_name || "?")[0]}</span>; })()}
                       </div>
                       <span className="flex-1 text-sm text-neutral-700">{c.app_name}</span>
                       <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {c.status}</span>

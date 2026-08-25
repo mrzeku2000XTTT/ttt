@@ -69,6 +69,31 @@ export function ChatGPTLogo({ className = "w-5 h-5" }) {
   );
 }
 
+export function ClaudeLogo({ className = "w-5 h-5" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg" fill="none">
+      <rect width="24" height="24" rx="5" fill="#D97757" />
+      <path d="M6.5 17.5L10.5 6.5H13.5L17.5 17.5H14.8L14.05 15.4H9.95L9.2 17.5H6.5ZM10.65 13.3H13.35L12 9.5L10.65 13.3Z" fill="#fff" />
+    </svg>
+  );
+}
+
+export function GoogleGeminiLogo({ className = "w-5 h-5" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg" fill="none">
+      <rect width="24" height="24" rx="5" fill="#fff" />
+      <path d="M12 2L13.3 8.2L19.5 9.5L14.5 12L19.5 14.5L13.3 15.8L12 22L10.7 15.8L4.5 14.5L9.5 12L4.5 9.5L10.7 8.2L12 2Z" fill="url(#geminiGrad)" />
+      <defs>
+        <linearGradient id="geminiGrad" x1="4.5" y1="9.5" x2="19.5" y2="14.5" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#4285F4" />
+          <stop offset="0.5" stopColor="#9B72CB" />
+          <stop offset="1" stopColor="#D96570" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 // Map connector integration type to logo component
 export const GOOGLE_LOGOS = {
   googledrive: GoogleDriveLogo,
@@ -77,8 +102,11 @@ export const GOOGLE_LOGOS = {
   googlecalendar: GoogleCalendarLogo,
   gmail: GmailLogo,
   chatgpt: ChatGPTLogo,
+  claude: ClaudeLogo,
+  googlegemini: GoogleGeminiLogo,
   "google drive": GoogleDriveLogo,
   "google docs": GoogleDocsLogo,
   "google sheets": GoogleSheetsLogo,
   "google calendar": GoogleCalendarLogo,
+  "google gemini": GoogleGeminiLogo,
 };
