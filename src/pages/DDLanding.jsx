@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import DDLogo from "@/components/dd/DDLogo";
-import { Search, Plus, Mic, Calendar as CalIcon, FileText, Mail as MailIcon, Check } from "lucide-react";
+import { Search, Plus, Mic, Calendar as CalIcon, FileText, Mail as MailIcon, Check, X } from "lucide-react";
 
 const APP_ICONS = [
   { letter: "G", color: "bg-rose-50 text-rose-500", name: "Gmail" },
@@ -41,6 +41,9 @@ export default function DDLanding() {
           <div className="flex items-center gap-2">
             <Link to="/DD"><NavBtn>Sign in</NavBtn></Link>
             <Link to="/DD"><NavBtn primary>Get Started</NavBtn></Link>
+            <Link to="/AppStoreV2" title="Exit to App Store" className="ml-1 flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition">
+              <X className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </header>
