@@ -84,6 +84,7 @@ export default function DDWalletButton() {
   const [kkdagBusy, setKkdagBusy] = useState(false);
   const [buyingKkdag, setBuyingKkdag] = useState(false);
   const [fundingStatus, setFundingStatus] = useState("");
+  const [fundedTxid, setFundedTxid] = useState(null);
   const fundingPollRef = useRef(null);
   const [hideKcc20, setHideKcc20] = useState(() => { try { return localStorage.getItem(HIDE_KCC20_KEY) === "1"; } catch { return false; } });
   const [copiedTreasury, setCopiedTreasury] = useState(false);
@@ -158,6 +159,7 @@ export default function DDWalletButton() {
       return;
     }
     setBuyingKkdag(true);
+    setFundedTxid(null);
     setFundingStatus("Waiting for your KAS send to the treasury…");
     try { navigator.clipboard.writeText(KKDAG_TREASURY); } catch {}
 
@@ -172,6 +174,8 @@ export default function DDWalletButton() {
         const d = res?.data;
         if (d?.credited > 0) {
           await refreshKkdag();
+          const txid = d.new_txids && d.new_txids[0];
+          setFundedTxid(txid || null);
           setFundingStatus(`✓ Credited ${d.credited.toLocaleString()} KKDAG!`);
           setBuyingKkdag(false);
           if (fundingPollRef.current) { clearInterval(fundingPollRef.current); fundingPollRef.current = null; }
@@ -448,6 +452,12 @@ export default function DDWalletButton() {
                             <p className="text-[10px] text-neutral-500">Send KAS from your KCC20 wallet to:</p>
                             <p className="text-[10px] font-mono text-neutral-700 break-all bg-white border border-neutral-200 rounded p-1.5">{KKDAG_TREASURY}</p>
                             <p className="text-[10px] text-neutral-400">Rate: 1 KAS = 1,000 KKDAG · Address copied to clipboard</p>
+                            {fundedTxid && (
+                              <a href={`https://kaspa.stream/transactions/${fundedTxid}`} target="_blank" rel="noreferrer"
+                                 className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-1 underline">
+                                <ExternalLink className="w-3 h-3" /> View tx on kaspa.stream
+                              </a>
+                            )}
                             <button onClick={cancelBuyKkdag} className="text-[10px] text-neutral-500 hover:text-neutral-800 underline">Cancel</button>
                           </div>
                         )}
