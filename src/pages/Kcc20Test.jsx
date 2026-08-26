@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft, Wallet, Loader2, RefreshCw, CheckCircle2, AlertTriangle,
+  ArrowLeft, Wallet, Loader2, Send, RefreshCw, CheckCircle2, AlertTriangle,
   Radio, ArrowDownToLine, Zap, Coins, TrendingUp, TrendingDown, Info, ExternalLink,
 } from "lucide-react";
 import { useKcc20Wallet, shortKaspaAddress, formatKas } from "@/lib/useKcc20Wallet";
 import {
-  getTokenBalanceKcc20, buyKronKcc20, sellKronKcc20,
+  sendTokenKcc20, getTokenBalanceKcc20, buyKronKcc20, sellKronKcc20,
   quoteKronKcc20, getKcc20SdkVersion,
 } from "@/lib/kcc20Pwa";
 import { base44 } from "@/api/base44Client";
@@ -49,16 +49,25 @@ export default function Kcc20TestPage() {
   // Action states
   const [buying, setBuying] = useState(false);
   const [selling, setSelling] = useState(false);
+  const [sending, setSending] = useState(false);
 
   // Results
   const [buyRes, setBuyRes] = useState(null);
   const [sellRes, setSellRes] = useState(null);
+  const [sendRes, setSendRes] = useState(null);
   const [buyErr, setBuyErr] = useState("");
   const [sellErr, setSellErr] = useState("");
+  const [sendErr, setSendErr] = useState("");
+
+  // Create & Sign Transaction inputs
+  const [sendTick, setSendTick] = useState("KKDAG");
+  const [sendDest, setSendDest] = useState("");
+  const [sendAmt, setSendAmt] = useState("1");
 
   // Main TTT Kaspa wallet (localStorage) — detected so it can be funded & used for PSKTs
   const [mainWallet, setMainWallet] = useState({ address: null, hasKey: false });
-  const [copiedMain, setCopiedMain] = useState(false);
+  const [mainKas, setMainKas] = useState(null);
+  const [mainKasLoading, setMainKasLoading] = useState(false);
 
   // SDK version
   const [sdkV, setSdkV] = useState(null);
@@ -112,16 +121,22 @@ export default function Kcc20TestPage() {
     return () => { window.removeEventListener("focus", onFocus); window.removeEventListener("storage", onFocus); };
   }, []);
 
+  // Fetch the main TTT wallet's KAS balance (read-only, via backend).
+  const refreshMainKas = useCallback(async () => {
+    if (!mainWallet.address) { setMainKas(null); return; }
+    setMainKasLoading(true);
+    try {
+      const r = await base44.functions.invoke("getKaspaBalance", { address: mainWallet.address });
+      setMainKas(r?.balanceKAS ?? null);
+    } catch { setMainKas(null); } finally { setMainKasLoading(false); }
+  }, [mainWallet.address]);
+  useEffect(() => { refreshMainKas(); }, [refreshMainKas]);
+
   const sdkOk = sdkV != null && Number(String(sdkV)) >= 167;
 
   // ── Click-only wallet actions ──
   const onConnect = async () => { try { await connect(); } catch {} };
   const onDisconnect = () => { disconnect(); };
-
-  const copyMain = async () => {
-    if (!mainWallet.address) return;
-    try { await navigator.clipboard.writeText(`kaspa:${mainWallet.address}`); setCopiedMain(true); setTimeout(() => setCopiedMain(false), 1400); } catch {}
-  };
 
   const onBuy = async () => {
     setBuyErr(""); setBuyRes(null);
@@ -162,6 +177,24 @@ export default function Kcc20TestPage() {
     finally { setQuoteLoading(false); }
   };
 
+  // Create & Sign Transaction — send any KCC20 token to any full kaspa:q... address.
+  const onSend = async () => {
+    setSendErr(""); setSendRes(null);
+    if (!address) { setSendErr("Connect your KCC20 wallet first."); return; }
+    if (!sendTick) { setSendErr("Enter a token tick (e.g. KKDAG)."); return; }
+    const dest = sendDest.trim().replace(/^kaspa:/, "");
+    if (!/^q[a-z0-9]{60,62}$/.test(dest)) { setSendErr("Need a full kaspa:q... receive address (not truncated, not kaspa:p)."); return; }
+    if (!sendAmt || Number(sendAmt) <= 0) { setSendErr("Enter a token amount."); return; }
+    setSending(true);
+    try {
+      const res = await sendTokenKcc20({ tick: sendTick, amount: sendAmt, dest });
+      setSendRes(res);
+      refreshBag(); refreshState?.(); detectPayments();
+    } catch (e) {
+      setSendErr(e?.message || "Transaction rejected by KCC20");
+    } finally { setSending(false); }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Nav */}
@@ -175,48 +208,103 @@ export default function Kcc20TestPage() {
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Wallet card */}
-        <div className="rounded-3xl bg-gradient-to-br from-zinc-900 to-black ring-1 ring-white/10 p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-cyan-500/15 ring-1 ring-cyan-400/30 flex items-center justify-center">
-                <Wallet className="w-4 h-4 text-cyan-300" />
+        {/* Dual-wallet header — TTT wallet + Scorpion (KCC20) wallet + disconnect */}
+        <div className="rounded-3xl bg-gradient-to-br from-zinc-900 to-black ring-1 ring-white/10 p-5 shadow-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Main TTT Kaspa wallet */}
+            <div className="rounded-2xl bg-black/40 ring-1 ring-white/10 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Wallet className="w-3.5 h-3.5 text-cyan-300" />
+                  <span className="text-[11px] uppercase tracking-wide text-white/50 font-semibold">TTT Wallet</span>
+                </div>
+                <button onClick={refreshMainKas} disabled={!mainWallet.address || mainKasLoading} className="text-white/40 hover:text-white p-1 rounded-full hover:bg-white/5 disabled:opacity-40" title="Refresh TTT balance">
+                  <RefreshCw className={`w-3.5 h-3.5 ${mainKasLoading ? "animate-spin" : ""}`} />
+                </button>
               </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-white/40 font-semibold">KCC20 · Scorpion</div>
-                <div className="text-sm font-mono text-white/80">{address ? shortKaspaAddress(address) : "not connected"}</div>
+              <div className="text-2xl font-[800] tracking-tight">
+                {mainWallet.address ? (mainKas != null ? formatKas(mainKas) : "—") : "0.000"}
+                <span className="text-sm text-white/50"> KAS</span>
+              </div>
+              <div className="mt-1 text-[11px] font-mono text-white/50 truncate">
+                {mainWallet.address ? `kaspa:${mainWallet.address}` : "no wallet on device"}
               </div>
             </div>
+
+            {/* Scorpion (KCC20) wallet */}
+            <div className="rounded-2xl bg-black/40 ring-1 ring-white/10 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-cyan-300" />
+                  <span className="text-[11px] uppercase tracking-wide text-white/50 font-semibold">Scorpion · KCC20</span>
+                </div>
+                <button onClick={() => refreshState?.()} disabled={!address} className="text-white/40 hover:text-white p-1 rounded-full hover:bg-white/5 disabled:opacity-40" title="Refresh KAS">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="text-2xl font-[800] tracking-tight">
+                {address ? formatKas(kas) : "0.000"}
+                <span className="text-sm text-white/50"> KAS</span>
+              </div>
+              <div className="mt-1 text-[11px] font-mono text-white/50 truncate">
+                {address ? `kaspa:${address}` : "not connected"}
+              </div>
+            </div>
+          </div>
+
+          {/* Connect / Disconnect + SDK badge */}
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className={`px-2 py-0.5 rounded-full font-mono ${sdkOk ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30" : "bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30"}`}>
+                SDK v{sdkV ?? "—"}
+              </span>
+              {!sdkOk && (
+                <span className="text-amber-300/80 flex items-center gap-1">
+                  <Info className="w-3 h-3" /> Need v167+ for Buy KRON — hard-refresh.
+                </span>
+              )}
+            </div>
             {address ? (
-              <button onClick={onDisconnect} className="text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded-full ring-1 ring-red-500/30 hover:bg-red-500/10">
+              <button onClick={onDisconnect} className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded-full ring-1 ring-red-500/30 hover:bg-red-500/10">
                 Disconnect
               </button>
             ) : (
               <button onClick={onConnect} disabled={loading} className="flex items-center gap-1.5 text-xs font-semibold bg-white text-black px-3.5 py-1.5 rounded-full hover:bg-white/90 disabled:opacity-60">
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wallet className="w-3.5 h-3.5" />}
-                Connect
+                Connect Scorpion
               </button>
             )}
           </div>
-          <div className="flex items-end justify-between">
+        </div>
+
+        {/* Create & Sign Transaction */}
+        <div className="rounded-3xl bg-zinc-900/60 ring-1 ring-white/10 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Send className="w-4 h-4 text-cyan-300" />
+            <h2 className="text-[15px] font-semibold">Create &amp; Sign Transaction</h2>
+            <span className="text-[11px] text-white/30">send any KCC20 token</span>
+          </div>
+          <div className="space-y-3">
             <div>
-              <div className="text-[11px] text-white/40 uppercase tracking-wide font-semibold">Balance</div>
-              <div className="text-3xl font-[800] tracking-tight mt-0.5">{address ? formatKas(kas) : "0.000"} <span className="text-lg text-white/50">KAS</span></div>
+              <label className="text-[11px] text-white/40 font-medium uppercase tracking-wide">Token (KCC20 tick)</label>
+              <input value={sendTick} onChange={(e) => setSendTick(e.target.value.toUpperCase())} placeholder="KKDAG" className="mt-1 w-full bg-black/50 ring-1 ring-white/10 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:ring-cyan-400/50 outline-none" />
             </div>
-            <button onClick={() => refreshState?.()} className="text-white/50 hover:text-white p-2 rounded-full hover:bg-white/5" title="Refresh KAS">
-              <RefreshCw className="w-4 h-4" />
+            <div>
+              <label className="text-[11px] text-white/40 font-medium uppercase tracking-wide">Destination address</label>
+              <input value={sendDest} onChange={(e) => setSendDest(e.target.value)} placeholder="kaspa:qz..." className="mt-1 w-full bg-black/50 ring-1 ring-white/10 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:ring-cyan-400/50 outline-none" />
+            </div>
+            <div>
+              <label className="text-[11px] text-white/40 font-medium uppercase tracking-wide">Amount</label>
+              <input value={sendAmt} onChange={(e) => setSendAmt(e.target.value)} inputMode="decimal" placeholder="1" className="mt-1 w-full bg-black/50 ring-1 ring-white/10 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:ring-cyan-400/50 outline-none" />
+            </div>
+            {sendErr && <ErrorLine msg={sendErr} />}
+            <button onClick={onSend} disabled={!address || sending} className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity">
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {sending ? "Sign in KCC20…" : "Pay with KCC20"}
             </button>
+            <p className="text-[11px] text-white/30 text-center">KCC20 opens its own window to sign — TTT never sees your PIN or keys.</p>
           </div>
-          <div className="mt-3 flex items-center gap-2 text-[11px]">
-            <span className={`px-2 py-0.5 rounded-full font-mono ${sdkOk ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30" : "bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30"}`}>
-              SDK v{sdkV ?? "—"}
-            </span>
-            {!sdkOk && (
-              <span className="text-amber-300/80 flex items-center gap-1">
-                <Info className="w-3 h-3" /> Need v167+ for Buy KRON — hard-refresh.
-              </span>
-            )}
-          </div>
+          <ResultCard res={sendRes} label="Transaction submitted" />
         </div>
 
         {/* KRON Trade */}
@@ -289,41 +377,6 @@ export default function Kcc20TestPage() {
 
           <ResultCard res={buyRes} label="Buy submitted" />
           <ResultCard res={sellRes} label="Sell submitted" />
-        </div>
-
-        {/* Main TTT Kaspa wallet — detected from localStorage */}
-        <div className="rounded-3xl bg-zinc-900/60 ring-1 ring-white/10 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Wallet className="w-4 h-4 text-cyan-300" />
-            <h2 className="text-[15px] font-semibold">Main TTT Kaspa Wallet</h2>
-            <span className="text-[11px] text-white/30">detected from this device</span>
-          </div>
-          {mainWallet.address ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-xl bg-black/40 ring-1 ring-white/5 px-3.5 py-3">
-                <div className="min-w-0">
-                  <div className="text-[11px] text-white/40 uppercase tracking-wide font-semibold">Your wallet</div>
-                  <div className="text-sm font-mono text-white/90 break-all">kaspa:{mainWallet.address}</div>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button onClick={copyMain} className="text-white/50 hover:text-white p-1.5 rounded-full hover:bg-white/5" title="Copy address">
-                    {copiedMain ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Coins className="w-4 h-4" />}
-                  </button>
-                  <a href={`https://kaspastream.com/address/kaspa:${mainWallet.address}`} target="_blank" rel="noreferrer" className="text-white/50 hover:text-white p-1.5 rounded-full hover:bg-white/5" title="View on explorer">
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-white/40">
-                <span className={`px-2 py-0.5 rounded-full ${mainWallet.hasKey ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30" : "bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30"}`}>
-                  {mainWallet.hasKey ? "key present · can build unsigned PSKTs" : "no key · fund & import to sign"}
-                </span>
-              </div>
-              <p className="text-[11px] text-white/30">Send KAS here to fund it, then use it to generate unsigned PSKTs for KCC20 to sign. Incoming payments show up in Payment Detection below.</p>
-            </div>
-          ) : (
-            <p className="text-white/40 text-sm">No main TTT wallet found on this device yet. Create one from the Wallet page or KaChing — it will show up here automatically.</p>
-          )}
         </div>
 
         {/* Payment detection */}
