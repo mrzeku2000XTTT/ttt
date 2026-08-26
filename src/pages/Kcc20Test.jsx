@@ -1,18 +1,28 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft, Wallet, Loader2, Send, RefreshCw, CheckCircle2, AlertTriangle,
+  ArrowLeft, Wallet, Loader2, RefreshCw, CheckCircle2, AlertTriangle,
   Radio, ArrowDownToLine, Zap, Coins, TrendingUp, TrendingDown, Info, ExternalLink,
 } from "lucide-react";
 import { useKcc20Wallet, shortKaspaAddress, formatKas } from "@/lib/useKcc20Wallet";
 import {
-  sendTokenKcc20, getTokenBalanceKcc20, buyKronKcc20, sellKronKcc20,
+  getTokenBalanceKcc20, buyKronKcc20, sellKronKcc20,
   quoteKronKcc20, getKcc20SdkVersion,
 } from "@/lib/kcc20Pwa";
 import { base44 } from "@/api/base44Client";
 
-// DD treasury that receives KKDAG funding. Full kaspa: address.
-const TREASURY = "kaspa:qrec7c0zgp9shxht4hx0jz6e0w3q0y6e0w3q0y6e0w3q0y6e0";
+// Detect the user's main TTT Kaspa wallet (the one used for tipping / KaChing).
+// Lives in localStorage — address + private key derived client-side, never sent to Base44.
+function readMainTttWallet() {
+  try {
+    const address = localStorage.getItem("ttt_wallet_address");
+    const local = JSON.parse(localStorage.getItem("ttt_local_kaspa_wallet") || "null");
+    return {
+      address: address || local?.address || null,
+      hasKey: !!(localStorage.getItem("ttt_wallet_pk") || local?.privateKey),
+    };
+  } catch { return { address: null, hasKey: false }; }
+}
 
 function explorerHref(txId, explorer) {
   if (explorer) return explorer;
@@ -39,16 +49,16 @@ export default function Kcc20TestPage() {
   // Action states
   const [buying, setBuying] = useState(false);
   const [selling, setSelling] = useState(false);
-  const [funding, setFunding] = useState(false);
-  const [fundAmt, setFundAmt] = useState("1000");
 
   // Results
   const [buyRes, setBuyRes] = useState(null);
   const [sellRes, setSellRes] = useState(null);
-  const [fundRes, setFundRes] = useState(null);
   const [buyErr, setBuyErr] = useState("");
   const [sellErr, setSellErr] = useState("");
-  const [fundErr, setFundErr] = useState("");
+
+  // Main TTT Kaspa wallet (localStorage) — detected so it can be funded & used for PSKTs
+  const [mainWallet, setMainWallet] = useState({ address: null, hasKey: false });
+  const [copiedMain, setCopiedMain] = useState(false);
 
   // SDK version
   const [sdkV, setSdkV] = useState(null);
@@ -58,16 +68,19 @@ export default function Kcc20TestPage() {
   const [detecting, setDetecting] = useState(false);
   const [lastDetect, setLastDetect] = useState(null);
 
+  // Listen for incoming payments to the connected KCC20 wallet OR the main TTT wallet.
+  const listenAddr = address || mainWallet.address;
+
   const detectPayments = useCallback(async () => {
-    if (!address) { setIncoming([]); return; }
+    if (!listenAddr) { setIncoming([]); return; }
     setDetecting(true);
     try {
-      const res = await base44.functions.invoke("getKaspaTransactionHistory", { address });
+      const res = await base44.functions.invoke("getKaspaTransactionHistory", { address: listenAddr });
       const txs = res?.transactions || [];
       setIncoming(txs.filter(t => t.direction === "received" || t.received).slice(0, 8));
       setLastDetect(new Date().toLocaleTimeString());
     } catch { /* non-fatal */ } finally { setDetecting(false); }
-  }, [address]);
+  }, [listenAddr]);
 
   // Read-only bag refresh. getTokenBalance does NOT open a popup.
   const refreshBag = useCallback(async () => {
@@ -80,7 +93,7 @@ export default function Kcc20TestPage() {
     } catch { setBag(null); } finally { setBagLoading(false); }
   }, [address, tick]);
 
-  useEffect(() => { detectPayments(); }, [address, detectPayments]);
+  useEffect(() => { detectPayments(); }, [listenAddr, detectPayments]);
   useEffect(() => {
     const iv = setInterval(() => { detectPayments(); refreshState?.(); }, 15000);
     return () => clearInterval(iv);
@@ -90,11 +103,25 @@ export default function Kcc20TestPage() {
   useEffect(() => { refreshBag(); }, [address, tick, refreshBag]);
   useEffect(() => { setSdkV(getKcc20SdkVersion()); }, [address]);
 
+  // Detect the main TTT wallet on mount and re-check on focus (user may create it any time).
+  useEffect(() => {
+    setMainWallet(readMainTttWallet());
+    const onFocus = () => setMainWallet(readMainTttWallet());
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("storage", onFocus);
+    return () => { window.removeEventListener("focus", onFocus); window.removeEventListener("storage", onFocus); };
+  }, []);
+
   const sdkOk = sdkV != null && Number(String(sdkV)) >= 167;
 
   // ── Click-only wallet actions ──
   const onConnect = async () => { try { await connect(); } catch {} };
   const onDisconnect = () => { disconnect(); };
+
+  const copyMain = async () => {
+    if (!mainWallet.address) return;
+    try { await navigator.clipboard.writeText(`kaspa:${mainWallet.address}`); setCopiedMain(true); setTimeout(() => setCopiedMain(false), 1400); } catch {}
+  };
 
   const onBuy = async () => {
     setBuyErr(""); setBuyRes(null);
@@ -133,20 +160,6 @@ export default function Kcc20TestPage() {
       setQuote(q);
     } catch { setQuote(null); /* skip — Sign sheet still quotes */ }
     finally { setQuoteLoading(false); }
-  };
-
-  const onFund = async () => {
-    setFundErr(""); setFundRes(null);
-    if (!address) { setFundErr("Connect your KCC20 wallet first."); return; }
-    if (!fundAmt || Number(fundAmt) <= 0) { setFundErr("Enter a KKDAG amount."); return; }
-    setFunding(true);
-    try {
-      const res = await sendTokenKcc20({ tick: "KKDAG", amount: fundAmt, dest: TREASURY.replace(/^kaspa:/, "") });
-      setFundRes(res);
-      refreshState?.(); detectPayments();
-    } catch (e) {
-      setFundErr(e?.message || "Funding rejected by KCC20");
-    } finally { setFunding(false); }
   };
 
   return (
@@ -278,25 +291,39 @@ export default function Kcc20TestPage() {
           <ResultCard res={sellRes} label="Sell submitted" />
         </div>
 
-        {/* Fund DD */}
+        {/* Main TTT Kaspa wallet — detected from localStorage */}
         <div className="rounded-3xl bg-zinc-900/60 ring-1 ring-white/10 p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Send className="w-4 h-4 text-cyan-300" />
-            <h2 className="text-[15px] font-semibold">Fund DD (KKDAG)</h2>
+            <Wallet className="w-4 h-4 text-cyan-300" />
+            <h2 className="text-[15px] font-semibold">Main TTT Kaspa Wallet</h2>
+            <span className="text-[11px] text-white/30">detected from this device</span>
           </div>
-          <div className="space-y-3">
-            <div>
-              <label className="text-[11px] text-white/40 font-medium uppercase tracking-wide">KKDAG amount</label>
-              <input value={fundAmt} onChange={(e) => setFundAmt(e.target.value)} inputMode="decimal" placeholder="1000" className="mt-1 w-full bg-black/50 ring-1 ring-white/10 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:ring-cyan-400/50 outline-none" />
+          {mainWallet.address ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-xl bg-black/40 ring-1 ring-white/5 px-3.5 py-3">
+                <div className="min-w-0">
+                  <div className="text-[11px] text-white/40 uppercase tracking-wide font-semibold">Your wallet</div>
+                  <div className="text-sm font-mono text-white/90 break-all">kaspa:{mainWallet.address}</div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button onClick={copyMain} className="text-white/50 hover:text-white p-1.5 rounded-full hover:bg-white/5" title="Copy address">
+                    {copiedMain ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Coins className="w-4 h-4" />}
+                  </button>
+                  <a href={`https://kaspastream.com/address/kaspa:${mainWallet.address}`} target="_blank" rel="noreferrer" className="text-white/50 hover:text-white p-1.5 rounded-full hover:bg-white/5" title="View on explorer">
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-white/40">
+                <span className={`px-2 py-0.5 rounded-full ${mainWallet.hasKey ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30" : "bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30"}`}>
+                  {mainWallet.hasKey ? "key present · can build unsigned PSKTs" : "no key · fund & import to sign"}
+                </span>
+              </div>
+              <p className="text-[11px] text-white/30">Send KAS here to fund it, then use it to generate unsigned PSKTs for KCC20 to sign. Incoming payments show up in Payment Detection below.</p>
             </div>
-            <div className="text-[11px] text-white/30 font-mono break-all">→ {TREASURY}</div>
-            {fundErr && <ErrorLine msg={fundErr} />}
-            <button onClick={onFund} disabled={!address || funding} className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-white text-black font-semibold text-sm hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              {funding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {funding ? "Sign in KCC20…" : "Fund DD"}
-            </button>
-          </div>
-          <ResultCard res={fundRes} label="Funding submitted" />
+          ) : (
+            <p className="text-white/40 text-sm">No main TTT wallet found on this device yet. Create one from the Wallet page or KaChing — it will show up here automatically.</p>
+          )}
         </div>
 
         {/* Payment detection */}
@@ -310,8 +337,8 @@ export default function Kcc20TestPage() {
               <RefreshCw className={`w-4 h-4 ${detecting ? "animate-spin" : ""}`} />
             </button>
           </div>
-          {!address ? (
-            <p className="text-white/40 text-sm">Connect your wallet to detect incoming payments.</p>
+          {!listenAddr ? (
+            <p className="text-white/40 text-sm">Connect KCC20 or create a main TTT wallet to detect incoming payments.</p>
           ) : incoming.length === 0 ? (
             <p className="text-white/40 text-sm">No incoming payments detected{lastDetect ? ` (checked ${lastDetect})` : ""}.</p>
           ) : (
