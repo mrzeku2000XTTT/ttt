@@ -14,7 +14,7 @@
 // Build a PSKT, then signPskt. Never invent a txId.
 
 export const KCC20_ORIGIN = "https://kcc-20-wallet.vercel.app";
-export const KCC20_SDK = KCC20_ORIGIN + "/sdk.js";
+export const KCC20_SDK = KCC20_ORIGIN + "/sdk.js?v=167";
 export const KCC20_APP = KCC20_ORIGIN + "/index.html";
 
 // True when TTT is running inside the KCC20 wallet's dApp browser iframe.
@@ -130,4 +130,35 @@ export async function getNetworkKcc20() {
   if (typeof p.getNetwork === "function") return p.getNetwork();
   if (typeof p.request === "function") return p.request("getNetwork");
   return null;
+}
+
+// ── KRON swap APIs (SDK v167+) ──
+// The wallet quotes and builds the same Home TRADE swap. TTT never sees keys.
+// Buy: amount = KAS to spend (e.g. "10"). Returns { txId, quote, explorer }.
+export async function buyKronKcc20({ tick, amount }) {
+  const p = await loadKcc20Sdk();
+  if (typeof p.buyKron === "function") return p.buyKron({ tick, amount: String(amount) });
+  if (typeof p.request === "function") return p.request("buyKron", { tick, amount: String(amount) });
+  throw new Error("KCC20 Wallet SDK does not support buyKron (need v167+)");
+}
+
+// Sell: amount = token amount to sell (not KAS).
+export async function sellKronKcc20({ tick, amount }) {
+  const p = await loadKcc20Sdk();
+  if (typeof p.sellKron === "function") return p.sellKron({ tick, amount: String(amount) });
+  if (typeof p.request === "function") return p.request("sellKron", { tick, amount: String(amount) });
+  throw new Error("KCC20 Wallet SDK does not support sellKron (need v167+)");
+}
+
+// Optional preview quote. May throw — skip if it does (the Sign sheet still quotes).
+export async function quoteKronKcc20({ tick, side, amount }) {
+  const p = await loadKcc20Sdk();
+  if (typeof p.quoteKron === "function") return p.quoteKron({ tick, side, amount: String(amount) });
+  if (typeof p.request === "function") return p.request("quoteKron", { tick, side, amount: String(amount) });
+  return null;
+}
+
+export function getKcc20SdkVersion() {
+  const p = kcc20Provider();
+  return p?.sdkVersion != null ? String(p.sdkVersion) : null;
 }
