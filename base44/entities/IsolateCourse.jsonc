@@ -1,0 +1,153 @@
+{
+  "name": "IsolateCourse",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email"
+    },
+    "title": {
+      "type": "string",
+      "description": "Course title (generated from topic + theme)"
+    },
+    "topic": {
+      "type": "string",
+      "description": "What the user wants to learn"
+    },
+    "skill_level": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "default": "beginner",
+      "description": "Stated skill level"
+    },
+    "theme": {
+      "type": "string",
+      "description": "Theme the user loves (Disney, Star Wars, cooking, etc.)"
+    },
+    "modules": {
+      "type": "array",
+      "default": [],
+      "description": "Ordered list of learning modules",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "concept": {
+            "type": "string",
+            "description": "The real concept being taught"
+          },
+          "theme_hook": {
+            "type": "string",
+            "description": "One-line themed hook"
+          },
+          "content": {
+            "type": "string",
+            "description": "Full themed explanation text"
+          },
+          "real_facts": {
+            "type": "string",
+            "description": "Here's what's actually true callout"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean",
+            "default": false
+          },
+          "knowledge_check": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "answer": {
+                  "type": "number",
+                  "description": "Index of correct option"
+                }
+              }
+            }
+          },
+          "chat": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "user",
+                    "tutor"
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                },
+                "ts": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "completion_pct": {
+      "type": "number",
+      "default": 0,
+      "description": "Percentage of modules completed"
+    },
+    "streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Daily learning streak"
+    },
+    "last_accessed": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "theme_palette": {
+      "type": "string",
+      "description": "Color palette hint for UI theming (e.g. 'violet', 'ocean', 'sunset')"
+    }
+  },
+  "required": [
+    "user_email",
+    "title",
+    "topic",
+    "theme"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

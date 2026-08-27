@@ -136,6 +136,7 @@ import KCCPage from './pages/KCC';
 import KCCNftPage from './pages/KCCNft';
 import KCC20Page from './pages/KCC20';
 import Kcc20TestPage from './pages/Kcc20Test';
+import IsolatePage from './pages/Isolate';
 import TokensPage from './pages/Tokens';
 import AWAPage from './pages/AWA';
 import ProductivityPage from './pages/Productivity';
@@ -346,6 +347,7 @@ const AuthenticatedApp = () => {
       <Route path="/KCCNft" element={<KCCNftPage />} />
       <Route path="/KCC20" element={<KCC20Page />} />
       <Route path="/Kcc20Test" element={<Kcc20TestPage />} />
+      <Route path="/Isolate" element={<IsolatePage />} />
       <Route path="/Tokens" element={<TokensPage />} />
       <Route path="/KasBillboard" element={<KasBillboardPage />} />
       <Route path="/KasSword" element={<KasSwordPage />} />
