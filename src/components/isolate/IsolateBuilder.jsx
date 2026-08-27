@@ -21,10 +21,11 @@ export default function IsolateBuilder({ user, onCreated, onBack }) {
   const [topic, setTopic] = useState("");
   const [level, setLevel] = useState("beginner");
   const [theme, setTheme] = useState("");
+  const [moduleCount, setModuleCount] = useState(6);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
 
-  const canProceed = step === 0 ? topic.trim().length > 2 : step === 1 ? !!level : step === 2 ? theme.trim().length > 1 : false;
+  const canProceed = step === 0 ? topic.trim().length > 2 : step === 1 ? !!level : step === 2 ? theme.trim().length > 1 : step === 3 ? moduleCount > 0 : false;
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -38,7 +39,7 @@ Topic: ${topic}
 Skill level: ${level}
 Theme: ${theme}
 
-Generate 6 modules that teach this topic from ${level} level. Each module should wrap the real concept in a metaphor/scenario from the theme "${theme}".
+Generate exactly ${moduleCount} modules that teach this topic from ${level} level. Each module should wrap the real concept in a metaphor/scenario from the theme "${theme}".
 
 Return JSON with this exact structure:
 {
@@ -57,7 +58,7 @@ Return JSON with this exact structure:
   ]
 }
 
-IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never specific copyrighted character names. Generate exactly 6 modules. Each knowledge_check has exactly 3 questions.`,
+IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never specific copyrighted character names. Generate exactly ${moduleCount} modules. Each knowledge_check has exactly 3 questions.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -94,9 +95,9 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
 
       // Step 2: Generate illustration for each module (in batches)
       const modules = outline.modules || [];
-      const moduleCount = Math.min(modules.length, 6);
+      const numMods = Math.min(modules.length, moduleCount);
       const imagePromises = [];
-      for (let i = 0; i < moduleCount; i++) {
+      for (let i = 0; i < numMods; i++) {
         const m = modules[i];
         imagePromises.push(
           base44.integrations.Core.GenerateImage({
@@ -107,7 +108,7 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
       const imageResults = await Promise.all(imagePromises);
 
       // Step 3: Build full module objects
-      const fullModules = modules.slice(0, moduleCount).map((m, i) => ({
+      const fullModules = modules.slice(0, numMods).map((m, i) => ({
         ...m,
         order: i,
         image_url: imageResults[i]?.url || "",
@@ -137,7 +138,7 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
     }
   };
 
-  const steps = ["What do you want to learn?", "What's your level?", "Pick a theme you love"];
+  const steps = ["What do you want to learn?", "What's your level?", "Pick a theme you love", "How many modules?"];
 
   return (
     <div className="min-h-screen bg-[#fbfbfd] flex flex-col">
@@ -235,7 +236,7 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
                     type="text"
                     value={theme}
                     onChange={(e) => setTheme(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && canProceed && handleGenerate()}
+                    onKeyDown={(e) => e.key === "Enter" && canProceed && setStep(3)}
                     placeholder="e.g. Disney movies, Star Wars, cooking..."
                     autoFocus
                     className="w-full px-5 py-4 rounded-2xl bg-white ring-1 ring-zinc-200 focus:ring-2 focus:ring-violet-400 outline-none text-lg text-zinc-900 placeholder:text-zinc-300 transition-all"
@@ -251,6 +252,43 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
                 </div>
               )}
 
+              {/* Step 3: Module count */}
+              {step === 3 && (
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.03em] text-zinc-900 mb-2">{steps[3]}</h1>
+                  <p className="text-zinc-500 mb-8 text-lg">How deep do you want to go? Pick any number.</p>
+                  <div className="flex items-center justify-center gap-4 mb-6">
+                    <button
+                      onClick={() => setModuleCount(Math.max(1, moduleCount - 1))}
+                      className="w-14 h-14 rounded-2xl bg-zinc-100 hover:bg-zinc-200 text-2xl font-bold text-zinc-700 transition-colors flex items-center justify-center"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      value={moduleCount}
+                      onChange={(e) => setModuleCount(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))}
+                      className="w-24 text-center text-5xl font-bold tracking-tight text-zinc-900 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => setModuleCount(Math.min(99, moduleCount + 1))}
+                      className="w-14 h-14 rounded-2xl bg-zinc-100 hover:bg-zinc-200 text-2xl font-bold text-zinc-700 transition-colors flex items-center justify-center"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {[3, 5, 6, 8, 10, 12].map((n) => (
+                      <button key={n} onClick={() => setModuleCount(n)} className={`px-4 py-2 rounded-full text-[13px] font-medium transition-all ${moduleCount === n ? "bg-violet-500 text-white" : "bg-zinc-100 hover:bg-zinc-200 text-zinc-600"}`}>
+                        {n} modules
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-6 text-center text-[13px] text-zinc-400">More modules = longer generation time. Each module gets its own illustration.</p>
+                </div>
+              )}
+
               {/* Navigation */}
               {!generating && (
                 <div className="mt-10 flex items-center justify-between">
@@ -260,7 +298,7 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
                       <span className="text-[14px] font-medium">Back</span>
                     </button>
                   ) : <div />}
-                  {step < 2 ? (
+                  {step < 3 ? (
                     <button
                       onClick={() => canProceed && setStep(step + 1)}
                       disabled={!canProceed}

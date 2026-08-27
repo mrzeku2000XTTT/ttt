@@ -116,6 +116,7 @@ export default function IsolatePage() {
           onUpdate={handleUpdateCourse}
           onBack={() => setView("course")}
           onNextModule={() => setActiveModuleIdx((i) => i + 1)}
+          onJumpToModule={(idx) => setActiveModuleIdx(idx)}
         />
       )}
     </div>

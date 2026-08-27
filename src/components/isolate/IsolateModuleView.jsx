@@ -19,7 +19,7 @@ function getPalette(theme) {
   return PALETTES[keys[hash % keys.length]] || PALETTES.violet;
 }
 
-export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, onBack, onNextModule }) {
+export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, onBack, onNextModule, onJumpToModule }) {
   const pal = getPalette(course.theme);
   const mod = course.modules?.[moduleIdx];
   const [chatInput, setChatInput] = useState("");
@@ -29,6 +29,23 @@ export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, o
   const [checkResult, setCheckResult] = useState(null);
   const [regenerating, setRegenerating] = useState(false);
   const chatEndRef = useRef(null);
+
+  // Reset check state when navigating to a different module
+  useEffect(() => {
+    setCheckOpen(false);
+    setCheckAnswers({});
+    setCheckResult(null);
+    setChatInput("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [moduleIdx]);
+
+  // Auto-advance to next module after passing the knowledge check
+  useEffect(() => {
+    if (checkResult?.passed && moduleIdx < (course.modules?.length || 0) - 1) {
+      const timer = setTimeout(() => onNextModule(), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [checkResult]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
