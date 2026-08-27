@@ -231,6 +231,35 @@ Return JSON:
       </nav>
 
       <div className="max-w-3xl mx-auto px-6 py-10">
+        {/* Module navigation bar — jump to any unlocked module by number */}
+        <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <span className="text-[12px] font-semibold text-zinc-400 uppercase tracking-wider flex-shrink-0 mr-1">Modules</span>
+          {(course.modules || []).map((m, i) => {
+            const isCompleted = m.completed;
+            const isCurrent = i === moduleIdx;
+            const isUnlocked = i <= moduleIdx || isCompleted;
+            return (
+              <button
+                key={i}
+                disabled={!isUnlocked}
+                onClick={() => isUnlocked && onJumpToModule(i)}
+                className={`flex-shrink-0 w-9 h-9 rounded-xl text-[13px] font-bold transition-all ${
+                  isCurrent
+                    ? `bg-gradient-to-br ${pal.grad} text-white scale-110 shadow-lg`
+                    : isCompleted
+                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                    : isUnlocked
+                    ? "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                    : "bg-zinc-50 text-zinc-300 cursor-not-allowed"
+                }`}
+                title={m.title}
+              >
+                {isCompleted && !isCurrent ? "✓" : i + 1}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Module header */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${pal.bg} ${pal.text} text-[12px] font-semibold mb-3`}>
@@ -290,17 +319,33 @@ Return JSON:
                   <div key={qi} className="mb-5">
                     <p className="text-[15px] font-medium text-zinc-800 mb-3">{qi + 1}. {q.question}</p>
                     <div className="space-y-2">
-                      {(q.options || []).map((opt, oi) => (
-                        <button
-                          key={oi}
-                          onClick={() => setCheckAnswers({ ...checkAnswers, [qi]: oi })}
-                          className={`w-full text-left px-4 py-2.5 rounded-xl ring-1 transition-all text-[14px] ${
-                            checkAnswers[qi] === oi ? `ring-2 ${pal.ring} ${pal.bg} ${pal.text} font-semibold` : "ring-zinc-200 hover:bg-zinc-50 text-zinc-700"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
+                      {(q.options || []).map((opt, oi) => {
+                        const isSelected = checkAnswers[qi] === oi;
+                        const isCorrect = q.answer === oi;
+                        const showResult = !!checkResult;
+                        let cls = "ring-zinc-200 hover:bg-zinc-50 text-zinc-700";
+                        if (!showResult && isSelected) {
+                          cls = `ring-2 ${pal.ring} ${pal.bg} ${pal.text} font-semibold`;
+                        } else if (showResult && isCorrect) {
+                          cls = "ring-2 ring-emerald-400 bg-emerald-50 text-emerald-800 font-semibold";
+                        } else if (showResult && isSelected && !isCorrect) {
+                          cls = "ring-2 ring-rose-400 bg-rose-50 text-rose-800 font-semibold";
+                        } else if (showResult) {
+                          cls = "ring-zinc-200 text-zinc-400";
+                        }
+                        return (
+                          <button
+                            key={oi}
+                            onClick={() => !showResult && setCheckAnswers({ ...checkAnswers, [qi]: oi })}
+                            disabled={showResult}
+                            className={`w-full text-left px-4 py-2.5 rounded-xl ring-1 transition-all text-[14px] flex items-center justify-between ${cls}`}
+                          >
+                            <span>{opt}</span>
+                            {showResult && isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                            {showResult && isSelected && !isCorrect && <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -309,7 +354,13 @@ Return JSON:
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`mt-4 p-4 rounded-xl ${checkResult.passed ? "bg-emerald-50" : "bg-rose-50"}`}>
                     <div className="flex items-center gap-2">
                       {checkResult.passed ? (
-                        <><CheckCircle2 className="w-5 h-5 text-emerald-600" /><span className="font-semibold text-emerald-900">Passed! {checkResult.correct}/{checkResult.total} correct</span></>
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                          <span className="font-semibold text-emerald-900">Passed! {checkResult.correct}/{checkResult.total} correct</span>
+                          {moduleIdx < (course.modules?.length || 0) - 1 && (
+                            <span className="ml-auto text-[12px] text-emerald-600 font-medium">Moving to next module...</span>
+                          )}
+                        </>
                       ) : (
                         <><XCircle className="w-5 h-5 text-rose-600" /><span className="font-semibold text-rose-900">You got {checkResult.correct}/{checkResult.total}. Let's try a different explanation.</span></>
                       )}
