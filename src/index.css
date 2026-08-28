@@ -214,3 +214,13 @@ button:focus-visible {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Live news ticker — continuous horizontal scroll, pause on hover */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker 40s linear infinite;
+  width: max-content;
+}

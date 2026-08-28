@@ -16,7 +16,7 @@ import LivePagesBrowser from "@/components/agentinternet/LivePagesBrowser";
 import WebSearchBrowser from "@/components/agentinternet/WebSearchBrowser";
 import KaspaSearchBrowser from "@/components/agentinternet/KaspaSearchBrowser";
 import CryptoSearchBrowser from "@/components/agentinternet/CryptoSearchBrowser";
-import KaspaHotTopics from "@/components/agentinternet/KaspaHotTopics";
+import HotTopicsTicker from "@/components/agentinternet/HotTopicsTicker";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -140,10 +140,10 @@ export default function AgentInternetLanding() {
 
       {/* Scrollable content */}
       <div
-        className="relative z-20 h-full overflow-y-auto scrollbar-hide"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 4.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 6rem)" }}
+        className="relative z-20 h-full overflow-hidden flex flex-col"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 3rem)" }}
       >
-        <div className="max-w-2xl mx-auto px-5 sm:px-8 flex flex-col items-center">
+        <div className="max-w-2xl mx-auto px-5 sm:px-8 flex-1 flex flex-col items-center justify-center w-full">
           {/* Boot sequence */}
           <AnimatePresence>
             {!booted && (
@@ -173,7 +173,7 @@ export default function AgentInternetLanding() {
                 className="flex flex-col items-center w-full"
               >
                 {/* Merged status + version pill */}
-                <div className="w-full flex justify-center mb-5">
+                <div className="w-full flex justify-center mb-3">
                   <div className="inline-flex items-center justify-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-[10px] sm:text-xs font-mono tracking-[0.25em] uppercase text-white/70">LIVE · v3.0</span>
@@ -187,12 +187,12 @@ export default function AgentInternetLanding() {
                 </h1>
 
                 {/* Description */}
-                <p className="mt-5 max-w-md text-sm sm:text-base text-white/60 leading-relaxed font-body text-center">
+                <p className="mt-3 max-w-md text-sm sm:text-base text-white/60 leading-relaxed font-body text-center">
                   One superagent runs every TTT app, waking up to <span className="text-cyan-300 font-medium">100 sub-agents</span> in the right order. A <span className="text-cyan-300 font-medium">supercomputer</span>, not a chatbot.
                 </p>
 
                 {/* Input */}
-                <div className="mt-6 w-full max-w-md">
+                <div className="mt-4 w-full max-w-md">
                   <PowerConsole onSubmit={openChat} />
                 </div>
 
@@ -216,7 +216,7 @@ export default function AgentInternetLanding() {
                 )}
 
                 {/* Launch buttons */}
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
                   <button
                     onClick={() => guardLaunch("agent")}
                     className="h-14 px-6 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
@@ -232,7 +232,7 @@ export default function AgentInternetLanding() {
                 </div>
 
                 {/* Browse all live pages + Search the web — guest discovery */}
-                <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   <button
                     onClick={() => setShowBrowser(true)}
                     className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors"
@@ -267,15 +267,12 @@ export default function AgentInternetLanding() {
                   </button>
                 </div>
 
-                {/* Hot Topics — trending $KAS posts this week */}
-                <KaspaHotTopics />
-
                 {/* Footer status */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6 }}
-                  className="mt-6 text-[10px] font-mono tracking-widest uppercase text-white/35 text-center"
+                  className="mt-3 text-[10px] font-mono tracking-widest uppercase text-white/35 text-center"
                 >
                   {isAdmin
                     ? viewAsGuest
@@ -287,6 +284,11 @@ export default function AgentInternetLanding() {
             )}
           </AnimatePresence>
         </div>
+      </div>
+
+      {/* Live news ticker — bottom bar */}
+      <div className="absolute bottom-0 left-0 right-0 z-30" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        <HotTopicsTicker />
       </div>
 
       {/* Access denied */}
