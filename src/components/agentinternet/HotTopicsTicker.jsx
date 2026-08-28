@@ -7,15 +7,17 @@ const CATEGORY_DOT = {
   crypto: "bg-amber-400",
   youtube: "bg-red-500",
   advertisement: "bg-violet-500",
+  app: "bg-emerald-400",
 };
 
 /**
- * HotTopicsTicker — a live news-style scrolling ticker for crypto news.
- * Topics scroll continuously from right to left, pausing on hover.
+ * HotTopicsTicker — a live news-style scrolling ticker for crypto news + Kaspa apps.
+ * All ~700 Kaspa apps are interspersed so every one shows at least once per hour.
  * Shows live UTC time and category-colored indicators.
  */
 export default function HotTopicsTicker() {
   const [topics, setTopics] = useState([]);
+  const [kaspaApps, setKaspaApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [utcTime, setUtcTime] = useState("");
 
@@ -33,6 +35,7 @@ export default function HotTopicsTicker() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch news topics
   useEffect(() => {
     (async () => {
       try {
@@ -47,11 +50,43 @@ export default function HotTopicsTicker() {
     })();
   }, []);
 
-  if (loading || topics.length === 0) return null;
+  // Fetch ALL Kaspa apps — cycle through every one at least once per hour
+  useEffect(() => {
+    (async () => {
+      try {
+        const apps = await base44.entities.KaspaHubApp.list("-indexed_at", 1000);
+        setKaspaApps(apps || []);
+      } catch (e) {
+        console.error("Kaspa apps fetch failed", e);
+      }
+    })();
+  }, []);
 
-  // Use first 60 unique items for the ticker (duplicated for seamless loop)
-  const sample = topics.slice(0, 60);
-  const items = [...sample, ...sample];
+  if (loading || (topics.length === 0 && kaspaApps.length === 0)) return null;
+
+  // Convert Kaspa apps to ticker items
+  const appItems = kaspaApps.map((app) => {
+    let host = app.url || "";
+    try { host = new URL(app.url).host.replace(/^www\./, ""); } catch {}
+    return {
+      author_handle: host || app.name,
+      author_name: app.name,
+      profile_image_url: app.logo,
+      tweet_url: app.url,
+      category: "app",
+      is_advertisement: false,
+    };
+  });
+
+  // News items (first 40 to leave room for apps)
+  const newsItems = topics.slice(0, 40);
+
+  // Intersperse: apps + news so all ~700 apps get exposure each cycle
+  const sample = [...appItems, ...newsItems];
+  const items = [...sample, ...sample]; // duplicate for seamless loop
+
+  // ~3s per unique item → all apps shown within ~35 min (well under 1 hour)
+  const duration = Math.max(sample.length * 3, 90);
 
   return (
     <div className="w-full overflow-hidden border-t border-white/10 bg-black/70 backdrop-blur-xl">
@@ -65,11 +100,14 @@ export default function HotTopicsTicker() {
 
         {/* Scrolling ticker */}
         <div className="flex-1 overflow-hidden">
-          <div className="flex items-center gap-5 whitespace-nowrap animate-ticker hover:[animation-play-state:paused]">
+          <div
+            className="flex items-center gap-5 whitespace-nowrap animate-ticker hover:[animation-play-state:paused]"
+            style={{ animationDuration: `${duration}s` }}
+          >
             {items.map((topic, i) => (
               <button
                 key={i}
-                onClick={() => window.open(topic.tweet_url, "_blank", "noopener,noreferrer")}
+                onClick={() => topic.tweet_url && window.open(topic.tweet_url, "_blank", "noopener,noreferrer")}
                 className="flex items-center gap-1.5 text-[10px] text-white/50 hover:text-white transition-colors flex-shrink-0"
               >
                 {/* Category indicator dot */}
