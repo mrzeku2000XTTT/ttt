@@ -1,7 +1,6 @@
-// Fetches trending $KAS X (Twitter) posts from the past week using web-grounded
-// LLM research, caches them in KaspaHotTopic, and returns the top posts by
-// engagement. Results are cached per ISO week — the first call in a week
-// triggers a fresh scrape; subsequent calls return the cache.
+// Fetches trending $KAS X (Twitter) posts using the REAL X API v2 recent
+// search endpoint. Returns actual tweets with real URLs, engagement metrics,
+// and profile images. Cached per ISO week.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 function getWeekKey(d = new Date()) {
@@ -31,104 +30,108 @@ export default async function(req) {
       return Response.json({ topics: cached, source: 'cache', weekKey });
     }
 
-    // 2. Fetch fresh data via LLM web search
-    const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Search the web for the most popular and trending X (Twitter) posts about Kaspa ($KAS cryptocurrency) from the past 7 days.
-
-Include posts from: Kaspa core developers, KRC-20 token projects, Kaspa influencers, content creators, news accounts, and notable community members who discuss $KAS or #Kaspa.
-
-For each post provide:
-- author_handle: the X handle without @
-- author_name: display name
-- content: the full tweet text
-- tweet_url: full URL to the tweet (https://x.com/handle/status/ID)
-- impressions: estimated view count
-- likes: like count
-- retweets: retweet count
-- replies: reply count
-- profile_image_url: URL of the author's X profile avatar image
-- posted_at: ISO date when the tweet was posted
-
-IMPORTANT: Only include REAL posts that actually exist on X. Do not invent or fabricate tweets, handles, or URLs. Rank by total engagement (impressions + likes + retweets). Return the top 15 most popular posts from the past week.
-
-Return JSON:
-{
-  "topics": [
-    {
-      "author_handle": "handle",
-      "author_name": "Name",
-      "content": "tweet text",
-      "tweet_url": "https://x.com/handle/status/123",
-      "impressions": 50000,
-      "likes": 500,
-      "retweets": 100,
-      "replies": 50,
-      "posted_at": "2026-08-20T10:00:00Z"
+    // 2. Fetch real tweets from X API v2
+    const X_API_KEY = process.env.X_API_KEY;
+    if (!X_API_KEY) {
+      return Response.json({ error: 'X_API_KEY not configured', topics: [] }, { status: 500 });
     }
-  ]
-}`,
-      add_context_from_internet: true,
-      model: 'gemini_3_flash',
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          topics: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                author_handle: { type: 'string' },
-                author_name: { type: 'string' },
-                content: { type: 'string' },
-                tweet_url: { type: 'string' },
-                impressions: { type: 'number' },
-                likes: { type: 'number' },
-                retweets: { type: 'number' },
-                replies: { type: 'number' },
-                profile_image_url: { type: 'string' },
-                posted_at: { type: 'string' }
-              }
-            }
-          }
+
+    const query = encodeURIComponent('$KAS OR #Kaspa -is:retweet lang:en');
+    const tweetFields = 'public_metrics,created_at,author_id,entities';
+    const userFields = 'name,username,profile_image_url';
+    const expansions = 'author_id';
+
+    let allTweets = [];
+    let userMap = {};
+    let nextToken = null;
+
+    // Fetch up to 3 pages (up to 300 tweets) to find the most popular ones
+    for (let page = 0; page < 3; page++) {
+      let url = `https://api.twitter.com/2/tweets/search/recent?query=${query}&tweet.fields=${tweetFields}&expansions=${expansions}&user.fields=${userFields}&max_results=100`;
+      if (nextToken) {
+        url += `&next_token=${encodeURIComponent(nextToken)}`;
+      }
+
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${X_API_KEY}` },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('X API error:', response.status, errorText);
+        break;
+      }
+
+      const data = await response.json();
+      if (data.data) allTweets = allTweets.concat(data.data);
+      if (data.includes?.users) {
+        for (const user of data.includes.users) {
+          userMap[user.id] = user;
         }
       }
+
+      if (data.meta?.next_token) {
+        nextToken = data.meta.next_token;
+      } else {
+        break;
+      }
+    }
+
+    if (allTweets.length === 0) {
+      return Response.json({ topics: [], source: 'x_api_empty', weekKey });
+    }
+
+    // 3. Sort by engagement (weighted: impressions + likes*10 + retweets*20 + replies*5)
+    const scored = allTweets.map((t) => {
+      const m = t.public_metrics || {};
+      const score =
+        (m.impression_count || 0) +
+        (m.like_count || 0) * 10 +
+        (m.retweet_count || 0) * 20 +
+        (m.reply_count || 0) * 5;
+      return { tweet: t, score, metrics: m };
     });
+    scored.sort((a, b) => b.score - a.score);
 
-    const data = typeof res === 'string' ? JSON.parse(res) : res;
-    const topics = data.topics || [];
-
-    // 3. Store new topics
-    const records = topics
-      .filter((t) => t.content && t.author_handle)
-      .map((t) => ({
-        tweet_id: (t.tweet_url || '').split('/status/')[1]?.split('?')[0] || '',
-        author_handle: t.author_handle,
-        author_name: t.author_name || t.author_handle,
-        content: (t.content || '').slice(0, 500),
-        tweet_url: t.tweet_url || `https://x.com/${t.author_handle}`,
-        profile_image_url: t.profile_image_url || '',
-        posted_at: t.posted_at || new Date().toISOString(),
-        impressions: t.impressions || 0,
-        likes: t.likes || 0,
-        retweets: t.retweets || 0,
-        replies: t.replies || 0,
+    // 4. Take top 20 and build records
+    const top = scored.slice(0, 20);
+    const records = top.map(({ tweet, metrics }) => {
+      const user = userMap[tweet.author_id] || {};
+      const handle = user.username || 'unknown';
+      const tweetId = tweet.id;
+      // Upgrade profile image from _normal (48px) to _bigger (73px) for clarity
+      const profileImage = (user.profile_image_url || '').replace('_normal', '_bigger');
+      return {
+        tweet_id: tweetId,
+        author_handle: handle,
+        author_name: user.name || handle,
+        profile_image_url: profileImage,
+        content: (tweet.text || '').slice(0, 500),
+        tweet_url: `https://x.com/${handle}/status/${tweetId}`,
+        posted_at: tweet.created_at || new Date().toISOString(),
+        impressions: metrics.impression_count || 0,
+        likes: metrics.like_count || 0,
+        retweets: metrics.retweet_count || 0,
+        replies: metrics.reply_count || 0,
         app_views: 0,
         week_key: weekKey,
         scraped_at: new Date().toISOString(),
-      }));
+      };
+    });
 
+    // 5. Store
     if (records.length > 0) {
       await base44.asServiceRole.entities.KaspaHotTopic.bulkCreate(records);
     }
 
-    // 4. Return the stored records sorted by impressions
+    // 6. Return stored records sorted by impressions
     const result = await base44.asServiceRole.entities.KaspaHotTopic.filter(
       { week_key: weekKey },
       '-impressions',
       20
     );
 
-    return Response.json({ topics: result, source: 'fresh', weekKey });
+    return Response.json({ topics: result, source: 'x_api', weekKey });
   } catch (error) {
     console.error('[fetchKaspaHotTopics] error', error);
     return Response.json({ error: error.message, topics: [] }, { status: 500 });
