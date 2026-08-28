@@ -1,11 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Heart, Repeat2, MessageCircle, Eye, ExternalLink, ArrowLeft } from "lucide-react";
+import { Flame, Heart, Repeat2, MessageCircle, Eye, ExternalLink, ArrowLeft, Sparkles, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+
+function TopicAvatar({ topic, size = "w-8 h-8", textSize = "text-[12px]" }) {
+  const [error, setError] = useState(false);
+  const src = topic.profile_image_url || `https://unavatar.io/x/${topic.author_handle}`;
+  if (error) {
+    return (
+      <div className={`${size} rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center ${textSize} font-bold text-white flex-shrink-0`}>
+        {(topic.author_name || topic.author_handle || "?")[0].toUpperCase()}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      onError={() => setError(true)}
+      className={`${size} rounded-full object-cover flex-shrink-0`}
+      alt={topic.author_handle}
+      loading="lazy"
+    />
+  );
+}
 
 export default function TrendingPage() {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [summaries, setSummaries] = useState({});
+  const [summarizing, setSummarizing] = useState({});
 
   useEffect(() => {
     (async () => {
@@ -23,6 +46,29 @@ export default function TrendingPage() {
 
   const openTopic = (topic) => {
     window.open(topic.tweet_url, "_blank", "noopener,noreferrer");
+  };
+
+  const summarizeTopic = async (topic) => {
+    if (summaries[topic.id]) {
+      setSummaries((prev) => {
+        const next = { ...prev };
+        delete next[topic.id];
+        return next;
+      });
+      return;
+    }
+    setSummarizing((prev) => ({ ...prev, [topic.id]: true }));
+    try {
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `Summarize this X post about Kaspa in 1-2 clear sentences. Focus on the key point or announcement:\n\n"${topic.content}"\n\nAuthor: @${topic.author_handle}`,
+      });
+      const summary = typeof res === "string" ? res : res?.text || "";
+      setSummaries((prev) => ({ ...prev, [topic.id]: summary }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSummarizing((prev) => ({ ...prev, [topic.id]: false }));
+    }
   };
 
   const formatNum = (n) => {
@@ -59,29 +105,48 @@ export default function TrendingPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {topics.map((topic, i) => (
-              <button
+              <div
                 key={topic.id || i}
-                onClick={() => openTopic(topic)}
-                className="text-left rounded-2xl bg-white/5 border border-white/10 hover:border-white/25 p-4 transition-colors group"
+                className="rounded-2xl bg-white/5 border border-white/10 hover:border-white/25 p-4 transition-colors"
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center text-[12px] font-bold text-white">
-                    {(topic.author_name || topic.author_handle || "?")[0].toUpperCase()}
-                  </div>
+                  <TopicAvatar topic={topic} />
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-semibold text-white truncate">{topic.author_name || topic.author_handle}</div>
                     <div className="text-[10px] text-white/40 truncate">@{topic.author_handle}</div>
                   </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
+                  <button onClick={() => openTopic(topic)} className="text-white/20 hover:text-white/50 transition-colors">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
                 </div>
                 <p className="text-[12px] text-white/70 leading-relaxed line-clamp-3 mb-3">{topic.content}</p>
-                <div className="flex items-center gap-3 text-[10px] text-white/40">
-                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {formatNum(topic.impressions)}</span>
-                  <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {formatNum(topic.likes)}</span>
-                  <span className="flex items-center gap-1"><Repeat2 className="w-3 h-3" /> {formatNum(topic.retweets)}</span>
-                  <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {formatNum(topic.replies)}</span>
+                {summaries[topic.id] && (
+                  <div className="mb-3 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                    <p className="text-[11px] text-violet-200 leading-relaxed">{summaries[topic.id]}</p>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 text-[10px] text-white/40">
+                    <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {formatNum(topic.impressions)}</span>
+                    <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {formatNum(topic.likes)}</span>
+                    <span className="flex items-center gap-1"><Repeat2 className="w-3 h-3" /> {formatNum(topic.retweets)}</span>
+                    <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {formatNum(topic.replies)}</span>
+                  </div>
+                  <button
+                    onClick={() => summarizeTopic(topic)}
+                    disabled={summarizing[topic.id]}
+                    className="flex items-center gap-1 text-[10px] text-violet-300 hover:text-violet-200 transition-colors disabled:opacity-50"
+                  >
+                    {summarizing[topic.id] ? (
+                      <><Sparkles className="w-3 h-3 animate-pulse" /> Summarizing...</>
+                    ) : summaries[topic.id] ? (
+                      <><FileText className="w-3 h-3" /> Hide</>
+                    ) : (
+                      <><FileText className="w-3 h-3" /> Summarize</>
+                    )}
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}

@@ -46,6 +46,7 @@ For each post provide:
 - likes: like count
 - retweets: retweet count
 - replies: reply count
+- profile_image_url: URL of the author's X profile avatar image
 - posted_at: ISO date when the tweet was posted
 
 IMPORTANT: Only include REAL posts that actually exist on X. Do not invent or fabricate tweets, handles, or URLs. Rank by total engagement (impressions + likes + retweets). Return the top 15 most popular posts from the past week.
@@ -84,6 +85,7 @@ Return JSON:
                 likes: { type: 'number' },
                 retweets: { type: 'number' },
                 replies: { type: 'number' },
+                profile_image_url: { type: 'string' },
                 posted_at: { type: 'string' }
               }
             }
@@ -104,6 +106,7 @@ Return JSON:
         author_name: t.author_name || t.author_handle,
         content: (t.content || '').slice(0, 500),
         tweet_url: t.tweet_url || `https://x.com/${t.author_handle}`,
+        profile_image_url: t.profile_image_url || '',
         posted_at: t.posted_at || new Date().toISOString(),
         impressions: t.impressions || 0,
         likes: t.likes || 0,

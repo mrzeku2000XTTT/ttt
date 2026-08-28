@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Display name of the X account"
     },
+    "profile_image_url": {
+      "type": "string",
+      "description": "URL of the author's X profile avatar image"
+    },
     "content": {
       "type": "string",
       "description": "Tweet text content"
