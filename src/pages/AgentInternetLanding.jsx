@@ -287,7 +287,7 @@ export default function AgentInternetLanding() {
       </div>
 
       {/* Live news ticker — bottom bar */}
-      <div className="absolute bottom-0 left-0 right-0 z-30" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="absolute bottom-3 left-2 right-2 sm:bottom-0 sm:left-0 sm:right-0 z-30 rounded-xl overflow-hidden sm:rounded-none" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <HotTopicsTicker />
       </div>
 
