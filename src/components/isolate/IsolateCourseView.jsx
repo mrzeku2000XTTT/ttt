@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Lock, CheckCircle2, Play, BookOpen } from "lucide-react";
+import { ArrowLeft, Lock, CheckCircle2, Play, BookOpen, Trophy, Zap, Gamepad2, Star } from "lucide-react";
+import IsolateSettings from "@/components/isolate/IsolateSettings";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2a0fa1205_generated_image.png";
 
@@ -24,6 +25,7 @@ export default function IsolateCourseView({ course, user, onOpenModule, onUpdate
   const completedCount = modules.filter((m) => m.completed).length;
   const totalCount = modules.length;
   const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const isGameMode = course.settings?.game_mode;
 
   // First uncompleted module is unlocked; everything before it is completed/unlocked; everything after first uncompleted is locked
   const firstIncomplete = modules.findIndex((m) => !m.completed);
@@ -49,12 +51,41 @@ export default function IsolateCourseView({ course, user, onOpenModule, onUpdate
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Course header */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${pal.bg} ${pal.text} text-[12px] font-semibold mb-3`}>
-            <BookOpen className="w-3.5 h-3.5" />
-            {course.theme}
+          <div className="flex items-center gap-2 mb-3">
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${pal.bg} ${pal.text} text-[12px] font-semibold`}>
+              <BookOpen className="w-3.5 h-3.5" />
+              {course.theme}
+            </div>
+            {isGameMode && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[12px] font-semibold">
+                <Gamepad2 className="w-3.5 h-3.5" />
+                Game Mode
+              </div>
+            )}
           </div>
           <h1 className="text-3xl sm:text-5xl font-bold tracking-[-0.03em] text-zinc-900">{course.title}</h1>
           <p className="mt-3 text-lg text-zinc-500">{course.topic}</p>
+
+          {/* Game mode stats bar */}
+          {isGameMode && (
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              <div className="rounded-xl bg-gradient-to-br from-violet-50 to-fuchsia-50 ring-1 ring-violet-200 p-3 text-center">
+                <Trophy className="w-5 h-5 text-violet-600 mx-auto mb-1" />
+                <div className="text-xl font-bold text-violet-700">Lvl {course.level || 1}</div>
+                <div className="text-[11px] text-violet-500">Level</div>
+              </div>
+              <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 ring-1 ring-amber-200 p-3 text-center">
+                <Zap className="w-5 h-5 text-amber-600 mx-auto mb-1" />
+                <div className="text-xl font-bold text-amber-700">{course.xp || 0}</div>
+                <div className="text-[11px] text-amber-500">XP</div>
+              </div>
+              <div className="rounded-xl bg-gradient-to-br from-cyan-50 to-blue-50 ring-1 ring-cyan-200 p-3 text-center">
+                <Star className="w-5 h-5 text-cyan-600 mx-auto mb-1" />
+                <div className="text-xl font-bold text-cyan-700">{completedCount}</div>
+                <div className="text-[11px] text-cyan-500">Cleared</div>
+              </div>
+            </div>
+          )}
 
           {/* Progress bar */}
           <div className="mt-6 flex items-center gap-3">
@@ -71,6 +102,9 @@ export default function IsolateCourseView({ course, user, onOpenModule, onUpdate
         </motion.div>
 
         {/* Module path — level select style */}
+        <h2 className="text-xl font-semibold tracking-tight text-zinc-900 mb-4">
+          {isGameMode ? "🗺️ World Map" : "Course path"}
+        </h2>
         <div className="relative">
           {/* Vertical connecting path */}
           <div className="absolute left-7 top-0 bottom-0 w-0.5 bg-zinc-200" />
@@ -158,6 +192,9 @@ export default function IsolateCourseView({ course, user, onOpenModule, onUpdate
           </div>
         </div>
       </div>
+
+      {/* Settings */}
+      <IsolateSettings course={course} onUpdate={onUpdate} />
     </div>
   );
 }

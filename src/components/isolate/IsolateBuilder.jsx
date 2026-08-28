@@ -22,16 +22,22 @@ export default function IsolateBuilder({ user, onCreated, onBack }) {
   const [level, setLevel] = useState("beginner");
   const [theme, setTheme] = useState("");
   const [moduleCount, setModuleCount] = useState(6);
+  const [sourceUrls, setSourceUrls] = useState([]);
+  const [urlInput, setUrlInput] = useState("");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
 
-  const canProceed = step === 0 ? topic.trim().length > 2 : step === 1 ? !!level : step === 2 ? theme.trim().length > 1 : step === 3 ? moduleCount > 0 : false;
+  const canProceed = step === 0 ? topic.trim().length > 2 : step === 1 ? !!level : step === 2 ? theme.trim().length > 1 : step === 3 ? moduleCount > 0 : step === 4 ? true : false;
 
   const handleGenerate = async () => {
     setGenerating(true);
     setError("");
     try {
-      // Step 1: Generate course outline via LLM
+      // Step 1: Generate course outline via LLM with web search for fact-checking
+      const sourceContext = sourceUrls.length > 0
+        ? `\n\nThe user provided these source URLs to learn from. Search the web and use them as primary references:\n${sourceUrls.map((u, i) => `${i + 1}. ${u}`).join("\n")}\nEnsure the course content matches what's in these sources and is up-to-date.`
+        : "";
+
       const outlineRes = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a curriculum designer. Create a learning course outline.
 
@@ -40,6 +46,8 @@ Skill level: ${level}
 Theme: ${theme}
 
 Generate exactly ${moduleCount} modules that teach this topic from ${level} level. Each module should wrap the real concept in a metaphor/scenario from the theme "${theme}".
+
+IMPORTANT: Search the web to fact-check all content. Use the latest up-to-date information. Make sure every "real_facts" section is accurate and current.${sourceContext}
 
 Return JSON with this exact structure:
 {
@@ -58,7 +66,9 @@ Return JSON with this exact structure:
   ]
 }
 
-IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never specific copyrighted character names. Generate exactly ${moduleCount} modules. Each knowledge_check has exactly 3 questions.`,
+IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never specific copyrighted character names. Generate exactly ${moduleCount} modules. Each knowledge_check has exactly 3 questions. Fact-check all content using web search — the real_facts must be accurate and current.`,
+        add_context_from_internet: true,
+        model: "gemini_3_flash",
         response_json_schema: {
           type: "object",
           properties: {
@@ -128,6 +138,10 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
         streak: 1,
         last_accessed: new Date().toISOString(),
         theme_palette: "violet",
+        source_urls: sourceUrls,
+        settings: { game_mode: false, daily_time_minutes: 30, session_timer_minutes: 0, checkpoint_frequency: 3 },
+        xp: 0,
+        level: 1,
       });
 
       onCreated(course);
@@ -138,7 +152,7 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
     }
   };
 
-  const steps = ["What do you want to learn?", "What's your level?", "Pick a theme you love", "How many modules?"];
+  const steps = ["What do you want to learn?", "What's your level?", "Pick a theme you love", "How many modules?", "Sources (optional)"];
 
   return (
     <div className="min-h-screen bg-[#fbfbfd] flex flex-col">
@@ -289,6 +303,62 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
                 </div>
               )}
 
+              {/* Step 4: Sources (optional) */}
+              {step === 4 && (
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.03em] text-zinc-900 mb-2">{steps[4]}</h1>
+                  <p className="text-zinc-500 mb-8 text-lg">Paste URLs to learn from. We'll scrape & fact-check them.</p>
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      type="url"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && urlInput.trim()) {
+                          e.preventDefault();
+                          setSourceUrls([...sourceUrls, urlInput.trim()]);
+                          setUrlInput("");
+                        }
+                      }}
+                      placeholder="https://article.com/what-i-want-to-learn"
+                      autoFocus
+                      className="flex-1 px-4 py-3 rounded-xl bg-white ring-1 ring-zinc-200 focus:ring-2 focus:ring-violet-400 outline-none text-[15px] text-zinc-900 placeholder:text-zinc-300 transition-all"
+                    />
+                    <button
+                      onClick={() => {
+                        if (urlInput.trim()) {
+                          setSourceUrls([...sourceUrls, urlInput.trim()]);
+                          setUrlInput("");
+                        }
+                      }}
+                      className="px-4 rounded-xl bg-zinc-900 text-white text-[14px] font-medium hover:bg-zinc-800 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {sourceUrls.length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      {sourceUrls.map((url, i) => (
+                        <div key={i} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white ring-1 ring-zinc-200">
+                          <span className="text-[13px] text-zinc-600 truncate flex-1">{url}</span>
+                          <button
+                            onClick={() => setSourceUrls(sourceUrls.filter((_, idx) => idx !== i))}
+                            className="text-zinc-400 hover:text-rose-500 transition-colors text-[14px] font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="rounded-xl bg-violet-50 ring-1 ring-violet-200 p-4">
+                    <p className="text-[13px] text-violet-700 leading-relaxed">
+                      <span className="font-semibold">Web search is always on.</span> Even without URLs, we fact-check your course against the latest web sources so you learn what's current — not outdated info.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Navigation */}
               {!generating && (
                 <div className="mt-10 flex items-center justify-between">
@@ -298,7 +368,7 @@ IMPORTANT: Use original characters/art inspired by the MOOD of the theme, never 
                       <span className="text-[14px] font-medium">Back</span>
                     </button>
                   ) : <div />}
-                  {step < 3 ? (
+                  {step < 4 ? (
                     <button
                       onClick={() => canProceed && setStep(step + 1)}
                       disabled={!canProceed}

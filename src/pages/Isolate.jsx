@@ -55,6 +55,12 @@ export default function IsolatePage() {
     setView("course");
   };
 
+  const handleOpenCourseModule = (course, idx) => {
+    setActiveCourse(course);
+    setActiveModuleIdx(idx);
+    setView("module");
+  };
+
   const handleOpenModule = (idx) => {
     setActiveModuleIdx(idx);
     setView("module");
@@ -85,6 +91,7 @@ export default function IsolatePage() {
           setLoading={setLoading}
           onNewCourse={() => setView("builder")}
           onOpenCourse={handleOpenCourse}
+          onOpenCourseModule={handleOpenCourseModule}
           onBack={() => setView("landing")}
           onReload={loadCourses}
         />

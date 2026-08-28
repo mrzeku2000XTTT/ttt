@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Loader2, CheckCircle2, XCircle, Sparkles, RefreshCw, Lightbulb } from "lucide-react";
+import { ArrowLeft, Send, Loader2, CheckCircle2, XCircle, Sparkles, RefreshCw, Lightbulb, Trophy, Zap, Flag, Timer, Gamepad2, Search, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import IsolateSettings from "@/components/isolate/IsolateSettings";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2a0fa1205_generated_image.png";
 
@@ -28,7 +29,14 @@ export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, o
   const [checkAnswers, setCheckAnswers] = useState({});
   const [checkResult, setCheckResult] = useState(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [showCheckpoint, setShowCheckpoint] = useState(false);
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const chatEndRef = useRef(null);
+
+  const isGameMode = course.settings?.game_mode;
+  const sessionTimerMin = course.settings?.session_timer_minutes || 0;
 
   // Reset check state when navigating to a different module
   useEffect(() => {
@@ -36,12 +44,34 @@ export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, o
     setCheckAnswers({});
     setCheckResult(null);
     setChatInput("");
+    setShowCheckpoint(false);
+    setSearchOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [moduleIdx]);
 
-  // Auto-advance to next module after passing the knowledge check
+  // Session timer countdown
+  useEffect(() => {
+    if (sessionTimerMin > 0) {
+      setSessionTimeLeft(sessionTimerMin * 60);
+      const interval = setInterval(() => {
+        setSessionTimeLeft((t) => {
+          if (t <= 1) { clearInterval(interval); return 0; }
+          return t - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [moduleIdx, sessionTimerMin]);
+
+  // Auto-advance or show checkpoint after passing the knowledge check
   useEffect(() => {
     if (checkResult?.passed && moduleIdx < (course.modules?.length || 0) - 1) {
+      const freq = course.settings?.checkpoint_frequency ?? 3;
+      const isCheckpoint = freq > 0 && (moduleIdx + 1) % freq === 0;
+      if (isCheckpoint) {
+        setShowCheckpoint(true);
+        return;
+      }
       const timer = setTimeout(() => onNextModule(), 2500);
       return () => clearTimeout(timer);
     }
@@ -136,12 +166,25 @@ Respond as the tutor:`,
       const completedCount = updatedModules.filter((m) => m.completed).length;
       const pct = Math.round((completedCount / updatedModules.length) * 100);
       const updatedCourse = { ...course, modules: updatedModules, completion_pct: pct, last_accessed: new Date().toISOString() };
+
+      // Game mode: award XP and level up
+      if (course.settings?.game_mode) {
+        const xpGain = 100;
+        updatedCourse.xp = (course.xp || 0) + xpGain;
+        updatedCourse.level = Math.floor(updatedCourse.xp / 500) + 1;
+      }
+
       onUpdate(updatedCourse);
-      base44.entities.IsolateCourse.update(course.id, {
+      const updateData = {
         modules: updatedModules,
         completion_pct: pct,
         last_accessed: new Date().toISOString(),
-      });
+      };
+      if (course.settings?.game_mode) {
+        updateData.xp = updatedCourse.xp;
+        updateData.level = updatedCourse.level;
+      }
+      base44.entities.IsolateCourse.update(course.id, updateData);
     }
   };
 
@@ -226,8 +269,86 @@ Return JSON:
             <img src={LOGO_URL} alt="ISOLATE" className="w-6 h-6 rounded-lg" />
             <span className="text-[15px] font-semibold tracking-tight">Module {moduleIdx + 1}</span>
           </div>
-          <div className="w-20" />
+          <div className="flex items-center gap-2">
+            {/* Module search */}
+            <button onClick={() => setSearchOpen(!searchOpen)} className="w-9 h-9 rounded-lg hover:bg-zinc-100 flex items-center justify-center transition-colors">
+              <Search className="w-4 h-4 text-zinc-500" />
+            </button>
+            {/* Session timer */}
+            {sessionTimerMin > 0 && sessionTimeLeft > 0 && (
+              <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 ring-1 ring-amber-200">
+                <Timer className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-[12px] font-semibold text-amber-700 tabular-nums">
+                  {Math.floor(sessionTimeLeft / 60)}:{String(sessionTimeLeft % 60).padStart(2, "0")}
+                </span>
+              </div>
+            )}
+            {sessionTimerMin > 0 && sessionTimeLeft === 0 && (
+              <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 ring-1 ring-rose-200">
+                <Timer className="w-3.5 h-3.5 text-rose-600" />
+                <span className="text-[12px] font-semibold text-rose-700">Break!</span>
+              </div>
+            )}
+          </div>
         </div>
+        {/* Module search dropdown */}
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden border-t border-zinc-100">
+              <div className="max-w-3xl mx-auto px-6 py-3">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search modules by title or concept..."
+                  autoFocus
+                  className="w-full px-4 py-2.5 rounded-xl bg-white ring-1 ring-zinc-200 focus:ring-2 focus:ring-violet-400 outline-none text-[14px] text-zinc-900 placeholder:text-zinc-400"
+                />
+                {searchQuery && (
+                  <div className="mt-2 space-y-1 max-h-60 overflow-y-auto">
+                    {(course.modules || [])
+                      .filter((m) => {
+                        const q = searchQuery.toLowerCase();
+                        return (m.title || "").toLowerCase().includes(q) || (m.concept || "").toLowerCase().includes(q) || (m.theme_hook || "").toLowerCase().includes(q);
+                      })
+                      .map((m, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { onJumpToModule(course.modules.indexOf(m)); setSearchOpen(false); setSearchQuery(""); }}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-zinc-100 transition-colors"
+                        >
+                          <span className="text-[13px] font-medium text-zinc-700">{course.modules.indexOf(m) + 1}. {m.title}</span>
+                          <span className="text-[12px] text-zinc-400 ml-2">{m.concept}</span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Game mode XP bar */}
+        {isGameMode && (
+          <div className="bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border-t border-violet-200/50">
+            <div className="max-w-3xl mx-auto px-6 py-2 flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-[13px] font-bold text-violet-700">Lvl {course.level || 1}</span>
+              </div>
+              <div className="flex-1 h-2 rounded-full bg-violet-100 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all" style={{ width: `${((course.xp || 0) % 500) / 5}%` }} />
+              </div>
+              <span className="text-[12px] font-semibold text-violet-600 tabular-nums">{course.xp || 0} XP</span>
+              {checkResult?.passed && (
+                <motion.span initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} className="flex items-center gap-0.5 text-amber-500 text-[13px] font-bold">
+                  <Zap className="w-3.5 h-3.5" />+100
+                </motion.span>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       <div className="max-w-3xl mx-auto px-6 py-10">
@@ -453,6 +574,40 @@ Return JSON:
           </div>
         </div>
       </div>
+
+      {/* Checkpoint modal — ask user to continue or explore */}
+      <AnimatePresence>
+        {showCheckpoint && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-6">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-5">
+                <Flag className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold tracking-tight text-zinc-900 mb-2">Checkpoint!</h2>
+              <p className="text-[15px] text-zinc-500 mb-6 leading-relaxed">
+                You've completed {moduleIdx + 1} modules of <span className="font-semibold text-zinc-700">{course.topic}</span>. Keep going, or jump back to explore something new?
+              </p>
+              <div className="space-y-2">
+                <button
+                  onClick={() => { setShowCheckpoint(false); onNextModule(); }}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[15px] font-semibold hover:opacity-90 transition-all shadow-lg shadow-violet-500/20"
+                >
+                  Keep learning →
+                </button>
+                <button
+                  onClick={() => onBack()}
+                  className="w-full py-3.5 rounded-xl bg-zinc-100 text-zinc-700 text-[15px] font-medium hover:bg-zinc-200 transition-colors"
+                >
+                  Explore something new
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Settings */}
+      <IsolateSettings course={course} onUpdate={onUpdate} />
     </div>
   );
 }

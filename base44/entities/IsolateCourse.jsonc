@@ -128,6 +128,47 @@
     "theme_palette": {
       "type": "string",
       "description": "Color palette hint for UI theming (e.g. 'violet', 'ocean', 'sunset')"
+    },
+    "source_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "URLs the user provided to scrape for course content"
+    },
+    "settings": {
+      "type": "object",
+      "description": "User preferences: game mode, time management, checkpoints",
+      "default": {},
+      "properties": {
+        "game_mode": {
+          "type": "boolean",
+          "default": false
+        },
+        "daily_time_minutes": {
+          "type": "number",
+          "default": 30
+        },
+        "session_timer_minutes": {
+          "type": "number",
+          "default": 0
+        },
+        "checkpoint_frequency": {
+          "type": "number",
+          "default": 3
+        }
+      }
+    },
+    "xp": {
+      "type": "number",
+      "default": 0,
+      "description": "Experience points earned (game mode)"
+    },
+    "level": {
+      "type": "number",
+      "default": 1,
+      "description": "Current level (game mode)"
     }
   },
   "required": [
