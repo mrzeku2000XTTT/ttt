@@ -5,6 +5,7 @@ import IsolateDashboard from "@/components/isolate/IsolateDashboard";
 import IsolateBuilder from "@/components/isolate/IsolateBuilder";
 import IsolateCourseView from "@/components/isolate/IsolateCourseView";
 import IsolateModuleView from "@/components/isolate/IsolateModuleView";
+import IsolateGame from "@/components/isolate/IsolateGame";
 
 export default function IsolatePage() {
   const [view, setView] = useState("landing");
@@ -124,6 +125,16 @@ export default function IsolatePage() {
           onBack={() => setView("course")}
           onNextModule={() => setActiveModuleIdx((i) => i + 1)}
           onJumpToModule={(idx) => setActiveModuleIdx(idx)}
+          onPlayGame={() => setView("game")}
+        />
+      )}
+
+      {view === "game" && activeCourse && (
+        <IsolateGame
+          course={activeCourse}
+          moduleIdx={activeModuleIdx}
+          onUpdate={handleUpdateCourse}
+          onBack={() => setView("module")}
         />
       )}
     </div>

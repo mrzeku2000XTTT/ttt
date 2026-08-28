@@ -20,7 +20,7 @@ function getPalette(theme) {
   return PALETTES[keys[hash % keys.length]] || PALETTES.violet;
 }
 
-export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, onBack, onNextModule, onJumpToModule }) {
+export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, onBack, onNextModule, onJumpToModule, onPlayGame }) {
   const pal = getPalette(course.theme);
   const mod = course.modules?.[moduleIdx];
   const [chatInput, setChatInput] = useState("");
@@ -419,6 +419,25 @@ Return JSON:
           </motion.div>
         )}
 
+        {/* Play game (game mode) */}
+        {isGameMode && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={onPlayGame}
+            className="w-full mb-6 rounded-2xl bg-gradient-to-r from-zinc-900 to-zinc-800 text-white p-5 text-left hover:scale-[1.01] active:scale-100 transition-transform shadow-lg shadow-zinc-900/20 flex items-center gap-4"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+              <Gamepad2 className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="text-lg font-semibold tracking-tight">Play the game</div>
+              <div className="text-[14px] text-white/70">Battle through this module and earn XP</div>
+            </div>
+            <span className="text-white/40 text-lg">→</span>
+          </motion.button>
+        )}
+
         {/* Knowledge check */}
         {!mod.completed && !checkOpen && (
           <motion.button
@@ -487,10 +506,16 @@ Return JSON:
                       )}
                     </div>
                     {!checkResult.passed && (
-                      <button onClick={regenerate} disabled={regenerating} className="mt-3 flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-900 text-white text-[13px] font-medium hover:bg-zinc-800 disabled:opacity-50 transition-colors">
-                        {regenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                        Regenerate with a different analogy
-                      </button>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button onClick={() => { setCheckResult(null); setCheckAnswers({}); }} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-900 text-white text-[13px] font-medium hover:bg-zinc-800 transition-colors">
+                          <RefreshCw className="w-4 h-4" />
+                          Try again
+                        </button>
+                        <button onClick={regenerate} disabled={regenerating} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white ring-1 ring-zinc-200 text-zinc-700 text-[13px] font-medium hover:bg-zinc-50 disabled:opacity-50 transition-colors">
+                          {regenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                          New explanation
+                        </button>
+                      </div>
                     )}
                   </motion.div>
                 )}
