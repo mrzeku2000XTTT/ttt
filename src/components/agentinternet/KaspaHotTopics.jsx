@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Flame, Heart, Repeat2, MessageCircle, Eye, ExternalLink } from "lucide-react";
+import { Flame, Heart, Repeat2, MessageCircle, Eye, ExternalLink, ChevronRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function KaspaHotTopics() {
@@ -64,9 +65,9 @@ export default function KaspaHotTopics() {
           </div>
           <span className="text-[11px] font-mono tracking-widest uppercase text-white/60">Hot Topics</span>
         </div>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex-shrink-0 w-72 h-36 rounded-2xl bg-white/5 border border-white/10 animate-pulse" />
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex-shrink-0 w-44 h-28 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
           ))}
         </div>
       </div>
@@ -77,49 +78,45 @@ export default function KaspaHotTopics() {
 
   return (
     <div className="w-full mt-8">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
             <Flame className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="text-[11px] font-mono tracking-widest uppercase text-white/60">Hot Topics</span>
         </div>
-        <span className="text-[10px] font-mono text-white/30">Trending $KAS · this week</span>
+        <Link
+          to="/Trending"
+          className="flex items-center gap-1 text-[10px] font-mono text-white/40 hover:text-white/70 transition-colors"
+        >
+          View more <ChevronRight className="w-3 h-3" />
+        </Link>
       </div>
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-5 px-5 sm:-mx-8 sm:px-8">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-5 px-5 sm:-mx-8 sm:px-8">
         {topics.map((topic, i) => (
           <motion.button
             key={topic.id || i}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
+            transition={{ delay: i * 0.04 }}
             onClick={() => openTopic(topic)}
-            className="flex-shrink-0 w-72 text-left rounded-2xl bg-white/5 border border-white/10 hover:border-white/25 p-4 transition-colors group"
+            className="flex-shrink-0 w-44 text-left rounded-xl bg-white/5 border border-white/10 hover:border-white/25 p-3 transition-colors group"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center text-[12px] font-bold text-white">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center text-[10px] font-bold text-white">
                 {(topic.author_name || topic.author_handle || "?")[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-white truncate">{topic.author_name || topic.author_handle}</div>
-                <div className="text-[10px] text-white/40 truncate">@{topic.author_handle}</div>
+                <div className="text-[11px] font-semibold text-white truncate">{topic.author_name || topic.author_handle}</div>
+                <div className="text-[9px] text-white/40 truncate">@{topic.author_handle}</div>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
+              <ExternalLink className="w-3 h-3 text-white/20 group-hover:text-white/50 transition-colors" />
             </div>
-            <p className="text-[12px] text-white/70 leading-relaxed line-clamp-3 mb-3">{topic.content}</p>
-            <div className="flex items-center gap-3 text-[10px] text-white/40">
-              <span className="flex items-center gap-1">
-                <Eye className="w-3 h-3" /> {formatNum(topic.impressions)}
-              </span>
-              <span className="flex items-center gap-1">
-                <Heart className="w-3 h-3" /> {formatNum(topic.likes)}
-              </span>
-              <span className="flex items-center gap-1">
-                <Repeat2 className="w-3 h-3" /> {formatNum(topic.retweets)}
-              </span>
-              <span className="flex items-center gap-1">
-                <MessageCircle className="w-3 h-3" /> {formatNum(topic.replies)}
-              </span>
+            <p className="text-[11px] text-white/70 leading-snug line-clamp-2 mb-2">{topic.content}</p>
+            <div className="flex items-center gap-2.5 text-[9px] text-white/40">
+              <span className="flex items-center gap-0.5"><Eye className="w-2.5 h-2.5" /> {formatNum(topic.impressions)}</span>
+              <span className="flex items-center gap-0.5"><Heart className="w-2.5 h-2.5" /> {formatNum(topic.likes)}</span>
+              <span className="flex items-center gap-0.5"><Repeat2 className="w-2.5 h-2.5" /> {formatNum(topic.retweets)}</span>
             </div>
           </motion.button>
         ))}
