@@ -6,7 +6,11 @@ import { base44 } from "@/api/base44Client";
 
 function TopicAvatar({ topic, size = "w-6 h-6", textSize = "text-[10px]" }) {
   const [error, setError] = useState(false);
-  const src = topic.profile_image_url || `https://unavatar.io/x/${topic.author_handle}`;
+  const isXHandle = topic.profile_image_url || (topic.author_handle && !topic.author_handle.includes("."));
+  const src = topic.profile_image_url ||
+    (isXHandle
+      ? `https://unavatar.io/x/${topic.author_handle}`
+      : `https://www.google.com/s2/favicons?domain=${topic.author_handle}&sz=64`);
   if (error) {
     return (
       <div className={`${size} rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center ${textSize} font-bold text-white flex-shrink-0`}>
@@ -19,7 +23,7 @@ function TopicAvatar({ topic, size = "w-6 h-6", textSize = "text-[10px]" }) {
       src={src}
       onError={() => setError(true)}
       className={`${size} rounded-full object-cover flex-shrink-0`}
-      alt={topic.author_handle}
+      alt=""
       loading="lazy"
     />
   );
@@ -55,18 +59,7 @@ export default function KaspaHotTopics() {
     }
   };
 
-  const trackView = async (topic) => {
-    try {
-      const isAuth = await base44.auth.isAuthenticated();
-      if (!isAuth) return;
-      await base44.entities.KaspaHotTopic.update(topic.id, {
-        app_views: (topic.app_views || 0) + 1,
-      });
-    } catch (e) {}
-  };
-
   const openTopic = (topic) => {
-    trackView(topic);
     window.open(topic.tweet_url, "_blank", "noopener,noreferrer");
   };
 
@@ -82,7 +75,7 @@ export default function KaspaHotTopics() {
     setSummarizing((prev) => ({ ...prev, [topic.id]: true }));
     try {
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Summarize this X post about Kaspa in 1-2 clear sentences. Focus on the key point or announcement:\n\n"${topic.content}"\n\nAuthor: @${topic.author_handle}`,
+        prompt: `Summarize this content about Kaspa in 1-2 clear sentences. Focus on the key point or announcement:\n\nTitle: ${topic.author_name}\nContent: ${topic.content}\nSource: ${topic.author_handle}`,
       });
       const summary = typeof res === "string" ? res : res?.text || "";
       setSummaries((prev) => ({ ...prev, [topic.id]: summary }));
@@ -91,13 +84,6 @@ export default function KaspaHotTopics() {
     } finally {
       setSummarizing((prev) => ({ ...prev, [topic.id]: false }));
     }
-  };
-
-  const formatNum = (n) => {
-    if (!n) return "0";
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-    return String(n);
   };
 
   if (loading) {
@@ -137,52 +123,64 @@ export default function KaspaHotTopics() {
         </Link>
       </div>
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-5 px-5 sm:-mx-8 sm:px-8">
-        {topics.map((topic, i) => (
-          <motion.div
-            key={topic.id || i}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-            onClick={() => openTopic(topic)}
-            className="flex-shrink-0 w-44 rounded-xl bg-white/5 border border-white/10 hover:border-white/25 p-3 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <TopicAvatar topic={topic} />
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-semibold text-white truncate">{topic.author_name || topic.author_handle}</div>
-                <div className="text-[9px] text-white/40 truncate">@{topic.author_handle}</div>
+        {topics.map((topic, i) => {
+          const hasMetrics = topic.impressions > 0 || topic.likes > 0 || topic.retweets > 0;
+          return (
+            <motion.div
+              key={topic.id || i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04 }}
+              onClick={() => openTopic(topic)}
+              className="flex-shrink-0 w-44 rounded-xl bg-white/5 border border-white/10 hover:border-white/25 p-3 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <TopicAvatar topic={topic} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-semibold text-white/80 truncate">{topic.author_handle}</div>
+                </div>
+                <ExternalLink className="w-3 h-3 text-white/20 flex-shrink-0" />
               </div>
-              <ExternalLink className="w-3 h-3 text-white/20 group-hover:text-white/50 transition-colors flex-shrink-0" />
-            </div>
-            <p className="text-[11px] text-white/70 leading-snug line-clamp-2 mb-2">{topic.content}</p>
-            {summaries[topic.id] && (
-              <div className="mb-2 px-2 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/20">
-                <p className="text-[10px] text-violet-200 leading-snug">{summaries[topic.id]}</p>
-              </div>
-            )}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-[9px] text-white/40">
-                <span className="flex items-center gap-0.5"><Eye className="w-2.5 h-2.5" /> {formatNum(topic.impressions)}</span>
-                <span className="flex items-center gap-0.5"><Heart className="w-2.5 h-2.5" /> {formatNum(topic.likes)}</span>
-                <span className="flex items-center gap-0.5"><Repeat2 className="w-2.5 h-2.5" /> {formatNum(topic.retweets)}</span>
-              </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); summarizeTopic(topic); }}
-                disabled={summarizing[topic.id]}
-                className="flex items-center gap-1 text-[9px] text-violet-300 hover:text-violet-200 transition-colors disabled:opacity-50"
-              >
-                {summarizing[topic.id] ? (
-                  <><Sparkles className="w-2.5 h-2.5 animate-pulse" /> ...</>
-                ) : summaries[topic.id] ? (
-                  <><FileText className="w-2.5 h-2.5" /> Hide</>
-                ) : (
-                  <><FileText className="w-2.5 h-2.5" /> Summary</>
+              <p className="text-[11px] text-white font-medium leading-snug line-clamp-2 mb-1">{topic.author_name}</p>
+              <p className="text-[10px] text-white/50 leading-snug line-clamp-2 mb-2">{topic.content}</p>
+              {summaries[topic.id] && (
+                <div className="mb-2 px-2 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/20">
+                  <p className="text-[10px] text-violet-200 leading-snug">{summaries[topic.id]}</p>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-2">
+                {hasMetrics && (
+                  <div className="flex items-center gap-2 text-[9px] text-white/40">
+                    <span className="flex items-center gap-0.5"><Eye className="w-2.5 h-2.5" /> {formatNum(topic.impressions)}</span>
+                    <span className="flex items-center gap-0.5"><Heart className="w-2.5 h-2.5" /> {formatNum(topic.likes)}</span>
+                    <span className="flex items-center gap-0.5"><Repeat2 className="w-2.5 h-2.5" /> {formatNum(topic.retweets)}</span>
+                  </div>
                 )}
-              </button>
-            </div>
-          </motion.div>
-        ))}
+                <button
+                  onClick={(e) => { e.stopPropagation(); summarizeTopic(topic); }}
+                  disabled={summarizing[topic.id]}
+                  className={`flex items-center gap-1 text-[9px] text-violet-300 hover:text-violet-200 transition-colors disabled:opacity-50 ${!hasMetrics ? "ml-auto" : ""}`}
+                >
+                  {summarizing[topic.id] ? (
+                    <><Sparkles className="w-2.5 h-2.5 animate-pulse" /> ...</>
+                  ) : summaries[topic.id] ? (
+                    <><FileText className="w-2.5 h-2.5" /> Hide</>
+                  ) : (
+                    <><FileText className="w-2.5 h-2.5" /> Summary</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
+}
+
+function formatNum(n) {
+  if (!n) return "0";
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
 }
