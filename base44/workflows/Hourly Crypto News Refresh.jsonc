@@ -1,0 +1,47 @@
+{
+  "description": "Fetches latest Kaspa + general crypto news and Kaspa YouTube videos every hour, maintaining a 24-hour rolling window of ~500 fact-checked items. Removes the oldest hour and adds the newest hour each cycle.",
+  "name": "Hourly Crypto News Refresh",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 * * * *",
+      "one_time_date": null,
+      "timezone": "America/Chicago",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "hourly_crypto_news",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "fetch_news": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "fetchKaspaHotTopics",
+            "args": {
+              "force": true
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Fetch hourly crypto news",
+            "description": "Kaspa + crypto + YouTube, 24h rolling window"
+          }
+        }
+      }
+    ]
+  }
+}

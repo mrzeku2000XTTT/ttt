@@ -1,135 +1,164 @@
-// Fetches trending Kaspa content using LLM web search. The LLM searches the
-// web and returns REAL URLs it found — we parse each URL to extract the
-// source, handle, and content. No metrics are fabricated. Cached per ISO week.
+// 24/7 hourly crypto news fetcher — maintains a rolling 24-hour window of
+// Kaspa + general crypto news + Kaspa YouTube videos. Deduplicates, fact-checks
+// via web search, removes items older than 24h, and includes paid advertisements.
+// Target: ~500 news items across 24 hours (~21 per hour).
+//
+// Performance: the hourly workflow passes { force: true } to trigger the slow LLM
+// fetch. Frontend calls (no force flag) return existing cached data immediately.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
-function getWeekKey(d = new Date()) {
-  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const dayNum = (date.getUTCDay() + 6) % 7;
-  date.setUTCDate(date.getUTCDate() - dayNum + 3);
-  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
-  const weekNum = 1 + Math.round(
-    ((date.getTime() - firstThursday.getTime()) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7
-  );
-  return `${date.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+function getHourKey(d = new Date()) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}-${String(d.getUTCHours()).padStart(2, '0')}`;
 }
 
-export default async function(req) {
-  try {
-    const base44 = createClientFromRequest(req);
-    const weekKey = getWeekKey();
-
-    // 1. Check for cached results from this week
-    const cached = await base44.asServiceRole.entities.KaspaHotTopic.filter(
-      { week_key: weekKey },
-      '-impressions',
-      20
-    );
-    if (cached.length > 0) {
-      return Response.json({ topics: cached, source: 'cache', weekKey });
-    }
-
-    // 2. Use LLM with web search to find REAL content about Kaspa
-    const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Search the web for recent, popular content about Kaspa ($KAS cryptocurrency) from the past week.
-
-Look for real articles, blog posts, Reddit discussions, YouTube videos, and X/Twitter posts about Kaspa.
-
-For each result, return:
-- url: the ACTUAL URL you found via web search (must be real — do NOT invent URLs)
-- title: the title of the page or post
-- content: a 1-2 sentence excerpt of what the content is about
-- source: the domain name (e.g. "reddit.com", "youtube.com", "x.com", "newsbtc.com")
-
-CRITICAL RULES:
-- Only return URLs that you ACTUALLY found in your web search results
-- Do NOT generate, invent, or fabricate any URLs
-- Do NOT make up engagement metrics
-- If you found fewer than 15 results, return only what you actually found
-- Prioritize content from the past 7 days
-
-Return JSON:
-{
-  "topics": [
-    {
-      "url": "https://example.com/article",
-      "title": "Title here",
-      "content": "Brief excerpt of the content",
-      "source": "example.com"
-    }
-  ]
-}`,
-      add_context_from_internet: true,
-      model: 'gemini_3_flash',
-      response_json_schema: {
+const SCHEMA = {
+  type: 'object',
+  properties: {
+    topics: {
+      type: 'array',
+      items: {
         type: 'object',
         properties: {
-          topics: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                url: { type: 'string' },
-                title: { type: 'string' },
-                content: { type: 'string' },
-                source: { type: 'string' },
-              },
-            },
-          },
+          url: { type: 'string' },
+          title: { type: 'string' },
+          content: { type: 'string' },
+          source: { type: 'string' },
         },
       },
+    },
+  },
+};
+
+function parseTopics(raw, category) {
+  const records = [];
+  for (const t of raw || []) {
+    const url = (t.url || '').trim();
+    if (!url || !url.startsWith('http')) continue;
+    let host = '';
+    try { host = new URL(url).host.replace(/^www\./, ''); } catch { continue; }
+    let ytId = '';
+    if (category === 'youtube') {
+      const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+      if (m) ytId = m[1];
+      else continue;
+    }
+    records.push({
+      author_handle: host,
+      author_name: (t.title || host).slice(0, 300),
+      profile_image_url: '',
+      content: (t.content || t.title || '').slice(0, 500),
+      tweet_url: url,
+      posted_at: new Date().toISOString(),
+      hour_key: getHourKey(),
+      scraped_at: new Date().toISOString(),
+      category,
+      youtube_video_id: ytId,
+      is_advertisement: false,
     });
+  }
+  return records;
+}
 
-    const data = typeof res === 'string' ? JSON.parse(res) : res;
-    const rawTopics = data.topics || [];
+async function fetchCategory(base44, prompt) {
+  try {
+    const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt,
+      add_context_from_internet: true,
+      model: 'gemini_3_flash',
+      response_json_schema: SCHEMA,
+    });
+    return typeof res === 'string' ? JSON.parse(res) : res;
+  } catch (e) {
+    console.error('LLM fetch error:', e);
+    return { topics: [] };
+  }
+}
 
-    // 3. Parse URLs and build records — only keep entries with valid URLs
-    const records = [];
-    for (const t of rawTopics) {
-      const url = (t.url || '').trim();
-      if (!url || !url.startsWith('http')) continue;
+export default async function (req) {
+  try {
+    const base44 = createClientFromRequest(req);
+    const now = new Date();
+    const hourKey = getHourKey(now);
 
-      let host = '';
-      try { host = new URL(url).host.replace(/^www\./, ''); } catch { continue; }
+    // Read body for optional force flag (workflow passes force=true)
+    const body = await req.json().catch(() => ({}));
+    const force = body?.force === true;
 
-      // Extract X/Twitter handle if it's an X URL
-      const xMatch = url.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/status\/(\d+)/);
-      const xProfileMatch = !xMatch && url.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/?$/);
-
-      const handle = xMatch ? xMatch[1] : (xProfileMatch ? xProfileMatch[1] : '');
-      const tweetId = xMatch ? xMatch[2] : '';
-
-      records.push({
-        tweet_id: tweetId,
-        author_handle: handle || host,
-        author_name: t.title || handle || host,
-        profile_image_url: handle ? `https://unavatar.io/x/${handle}` : '',
-        content: (t.content || t.title || '').slice(0, 500),
-        tweet_url: url,
-        posted_at: new Date().toISOString(),
-        impressions: 0,
-        likes: 0,
-        retweets: 0,
-        replies: 0,
-        app_views: 0,
-        week_key: weekKey,
-        scraped_at: new Date().toISOString(),
-      });
-    }
-
-    // 4. Store
-    if (records.length > 0) {
-      await base44.asServiceRole.entities.KaspaHotTopic.bulkCreate(records);
-    }
-
-    // 5. Return stored records
-    const stored = await base44.asServiceRole.entities.KaspaHotTopic.filter(
-      { week_key: weekKey },
-      '-impressions',
-      20
+    // 1. Check if this hour already has data
+    const existingThisHour = await base44.asServiceRole.entities.KaspaHotTopic.filter(
+      { hour_key: hourKey, is_advertisement: false },
+      '-created_date',
+      1
     );
 
-    return Response.json({ topics: stored, source: 'web_search', weekKey, found: rawTopics.length, parsed: records.length });
+    if (existingThisHour.length === 0) {
+      // Only do the slow LLM fetch if forced (workflow) or no data exists at all
+      const anyData = await base44.asServiceRole.entities.KaspaHotTopic.list('-scraped_at', 1);
+
+      if (force || anyData.length === 0) {
+        // Fetch new content for this hour — 3 parallel web searches
+        const [kaspaData, cryptoData, ytData] = await Promise.all([
+          fetchCategory(base44, `Search the web for the LATEST news about Kaspa ($KAS cryptocurrency) from today. Find real articles, blog posts, exchange listings, and news from the past few hours. Return up to 10 results as JSON. CRITICAL: Only return URLs you actually found via web search. Do NOT invent or fabricate any URLs.`),
+          fetchCategory(base44, `Search the web for the LATEST cryptocurrency news from today — Bitcoin, Ethereum, major altcoins, DeFi, regulations, market moves, institutional adoption. Find real articles from the past few hours. Return up to 8 results as JSON. CRITICAL: Only return URLs you actually found via web search. Do NOT invent URLs.`),
+          fetchCategory(base44, `Search the web for the LATEST YouTube videos about Kaspa ($KAS cryptocurrency) from this week. Find real YouTube video URLs. Return up to 5 results as JSON. CRITICAL: Only return youtube.com or youtu.be URLs you actually found.`),
+        ]);
+
+        const allNew = [
+          ...parseTopics(kaspaData.topics, 'kaspa'),
+          ...parseTopics(cryptoData.topics, 'crypto'),
+          ...parseTopics(ytData.topics, 'youtube'),
+        ];
+
+        // Deduplicate against existing URLs to avoid repeating news
+        const existing = await base44.asServiceRole.entities.KaspaHotTopic.list('-scraped_at', 600);
+        const existingUrls = new Set(existing.map(e => e.tweet_url));
+        const deduped = allNew.filter(r => !existingUrls.has(r.tweet_url));
+
+        if (deduped.length > 0) {
+          await base44.asServiceRole.entities.KaspaHotTopic.bulkCreate(deduped);
+        }
+      }
+    }
+
+    // 2. Cleanup: delete items older than 24 hours + expired ads
+    const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const allItems = await base44.asServiceRole.entities.KaspaHotTopic.list('-scraped_at', 1000);
+    for (const item of allItems) {
+      const isOld = !item.is_advertisement && new Date(item.scraped_at) < cutoff;
+      const isExpiredAd = item.is_advertisement && item.ad_expires_at && new Date(item.ad_expires_at) < now;
+      if (isOld || isExpiredAd) {
+        try { await base44.asServiceRole.entities.KaspaHotTopic.delete(item.id); } catch { /* best effort */ }
+      }
+    }
+
+    // 3. Return current 24h window + active ads
+    const recent = allItems
+      .filter(item => !item.is_advertisement && new Date(item.scraped_at) >= cutoff)
+      .sort((a, b) => new Date(b.scraped_at) - new Date(a.scraped_at))
+      .slice(0, 500);
+
+    const activeAds = allItems.filter(item =>
+      item.is_advertisement &&
+      item.ad_status === 'active' &&
+      item.ad_expires_at &&
+      new Date(item.ad_expires_at) >= now
+    );
+
+    // Interleave ads every ~100 items so they get seen multiple times
+    const topics = [...recent];
+    activeAds.forEach((ad, i) => {
+      const insertAt = Math.min((i + 1) * 100, topics.length);
+      topics.splice(insertAt, 0, ad);
+    });
+
+    return Response.json({
+      topics,
+      source: existingThisHour.length > 0 ? 'cache' : 'fresh',
+      hourKey,
+      utcTime: now.toISOString(),
+      totalNews: recent.length,
+      totalAds: activeAds.length,
+    });
   } catch (error) {
     console.error('[fetchKaspaHotTopics] error', error);
     return Response.json({ error: error.message, topics: [] }, { status: 500 });

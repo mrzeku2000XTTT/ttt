@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Loader2, TrendingUp, Users, Bot, Share2, Flame } from "lucide-react";
+import { X, Search, Loader2, TrendingUp, Users, Bot, Share2, Flame, Megaphone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import CryptoProfileGrid from "./CryptoProfileGrid";
 import Kcc20TokenBrowser from "./Kcc20TokenBrowser";
@@ -8,6 +8,7 @@ import SiteAgentChat from "./SiteAgentChat";
 import Sparkline from "./Sparkline";
 import FearGreedDial from "./FearGreedDial";
 import ShareCardModal from "./ShareCardModal";
+import CryptoAdSubmission from "./CryptoAdSubmission";
 
 const BTC_LOGO = "https://assets.coingecko.com/coins/images/1/large/bitcoin.png";
 
@@ -195,6 +196,12 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setTab("advertise")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest border transition-colors ${tab === "advertise" ? "bg-violet-500/20 border-violet-400/50 text-violet-200" : "border-white/10 text-white/50 hover:text-white"}`}
+            >
+              <Megaphone className="w-3 h-3" /> Advertise
+            </button>
           </div>
 
           {/* Content */}
@@ -213,6 +220,8 @@ export default function CryptoSearchBrowser({ open, onClose }) {
                 onAskAI={askKcc20AI}
                 onSellAlertCount={setKccAlerts}
               />
+            ) : tab === "advertise" ? (
+              <CryptoAdSubmission />
             ) : loading ? (
               <div className="flex flex-col items-center justify-center py-24">
                 <Loader2 className="w-6 h-6 text-amber-400 animate-spin mb-3" />

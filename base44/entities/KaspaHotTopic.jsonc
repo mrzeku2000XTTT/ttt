@@ -4,37 +4,36 @@
   "properties": {
     "tweet_id": {
       "type": "string",
-      "description": "X tweet ID (extracted from tweet URL)"
+      "description": "Legacy X tweet ID"
     },
     "author_handle": {
       "type": "string",
-      "description": "X @handle without the @ symbol"
+      "description": "Source domain or social handle"
     },
     "author_name": {
       "type": "string",
-      "description": "Display name of the X account"
+      "description": "Article title or display name"
     },
     "profile_image_url": {
       "type": "string",
-      "description": "URL of the author's X profile avatar image"
+      "description": "Avatar or favicon URL"
     },
     "content": {
       "type": "string",
-      "description": "Tweet text content"
+      "description": "Content excerpt or ad text"
     },
     "tweet_url": {
       "type": "string",
-      "description": "Full URL to the tweet on X"
+      "description": "Full URL to the content"
     },
     "posted_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When the tweet was originally posted"
+      "description": "When the content was originally posted"
     },
     "impressions": {
       "type": "number",
-      "default": 0,
-      "description": "X impressions / view count"
+      "default": 0
     },
     "likes": {
       "type": "number",
@@ -51,16 +50,68 @@
     "app_views": {
       "type": "number",
       "default": 0,
-      "description": "How many times this topic was viewed inside the TTT app"
+      "description": "How many times this topic was viewed inside the app"
     },
     "week_key": {
       "type": "string",
-      "description": "ISO week key for grouping, e.g. 2026-W35"
+      "description": "Legacy ISO week key"
+    },
+    "hour_key": {
+      "type": "string",
+      "description": "Hour bucket key: YYYY-MM-DD-HH (UTC) \u2014 used for hourly dedup"
     },
     "scraped_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When this record was scraped and stored"
+      "description": "When this record was stored"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "kaspa",
+        "crypto",
+        "youtube",
+        "advertisement"
+      ],
+      "default": "kaspa",
+      "description": "Content category"
+    },
+    "youtube_video_id": {
+      "type": "string",
+      "description": "YouTube video ID if category is youtube"
+    },
+    "is_advertisement": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if this is a paid advertisement"
+    },
+    "advertiser_email": {
+      "type": "string",
+      "description": "Email of the advertiser who submitted this ad"
+    },
+    "ad_payment_txid": {
+      "type": "string",
+      "description": "Kaspa transaction ID that paid for this ad"
+    },
+    "ad_payment_address": {
+      "type": "string",
+      "description": "Sender's Kaspa address"
+    },
+    "ad_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this ad expires (1 hour from creation)"
+    },
+    "ad_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "expired",
+        "rejected"
+      ],
+      "default": "active",
+      "description": "Ad lifecycle state"
     }
   },
   "required": [
