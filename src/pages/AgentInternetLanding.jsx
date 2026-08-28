@@ -16,6 +16,7 @@ import LivePagesBrowser from "@/components/agentinternet/LivePagesBrowser";
 import WebSearchBrowser from "@/components/agentinternet/WebSearchBrowser";
 import KaspaSearchBrowser from "@/components/agentinternet/KaspaSearchBrowser";
 import CryptoSearchBrowser from "@/components/agentinternet/CryptoSearchBrowser";
+import KaspaHotTopics from "@/components/agentinternet/KaspaHotTopics";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -265,6 +266,9 @@ export default function AgentInternetLanding() {
                     /> Search Crypto
                   </button>
                 </div>
+
+                {/* Hot Topics — trending $KAS posts this week */}
+                <KaspaHotTopics />
 
                 {/* Footer status */}
                 <motion.div

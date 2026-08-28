@@ -1,0 +1,81 @@
+{
+  "name": "KaspaHotTopic",
+  "type": "object",
+  "properties": {
+    "tweet_id": {
+      "type": "string",
+      "description": "X tweet ID (extracted from tweet URL)"
+    },
+    "author_handle": {
+      "type": "string",
+      "description": "X @handle without the @ symbol"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Display name of the X account"
+    },
+    "content": {
+      "type": "string",
+      "description": "Tweet text content"
+    },
+    "tweet_url": {
+      "type": "string",
+      "description": "Full URL to the tweet on X"
+    },
+    "posted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the tweet was originally posted"
+    },
+    "impressions": {
+      "type": "number",
+      "default": 0,
+      "description": "X impressions / view count"
+    },
+    "likes": {
+      "type": "number",
+      "default": 0
+    },
+    "retweets": {
+      "type": "number",
+      "default": 0
+    },
+    "replies": {
+      "type": "number",
+      "default": 0
+    },
+    "app_views": {
+      "type": "number",
+      "default": 0,
+      "description": "How many times this topic was viewed inside the TTT app"
+    },
+    "week_key": {
+      "type": "string",
+      "description": "ISO week key for grouping, e.g. 2026-W35"
+    },
+    "scraped_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this record was scraped and stored"
+    }
+  },
+  "required": [
+    "author_handle",
+    "content",
+    "tweet_url"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
