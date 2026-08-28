@@ -6,6 +6,7 @@ import IsolateBuilder from "@/components/isolate/IsolateBuilder";
 import IsolateCourseView from "@/components/isolate/IsolateCourseView";
 import IsolateModuleView from "@/components/isolate/IsolateModuleView";
 import IsolateGame from "@/components/isolate/IsolateGame";
+import BackToStore from "@/components/BackToStore";
 
 export default function IsolatePage() {
   const [view, setView] = useState("landing");
@@ -137,6 +138,8 @@ export default function IsolatePage() {
           onBack={() => setView("module")}
         />
       )}
+
+      <BackToStore />
     </div>
   );
 }
