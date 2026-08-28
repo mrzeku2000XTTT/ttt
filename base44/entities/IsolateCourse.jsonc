@@ -28,6 +28,14 @@
       "type": "string",
       "description": "Theme the user loves (Disney, Star Wars, cooking, etc.)"
     },
+    "additional_themes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Extra themes the user added as add-ons to their training"
+    },
     "modules": {
       "type": "array",
       "default": [],

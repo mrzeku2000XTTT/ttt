@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus, Flame, BookOpen, Clock, Search, X, Play } from "lucide-react";
+import { ArrowLeft, Plus, Flame, BookOpen, Clock, Search, X, Play, FileText, Check } from "lucide-react";
+import { generateCoursesPDF } from "@/components/isolate/isolatePdf";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2a0fa1205_generated_image.png";
 
@@ -20,6 +21,7 @@ function getPalette(theme) {
 
 export default function IsolateDashboard({ user, courses, loading, onNewCourse, onOpenCourse, onOpenCourseModule, onBack }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
   const totalModules = courses.reduce((sum, c) => sum + (c.modules?.length || 0), 0);
   const completedModules = courses.reduce(
     (sum, c) => sum + (c.modules?.filter((m) => m.completed).length || 0),
@@ -145,21 +147,32 @@ export default function IsolateDashboard({ user, courses, loading, onNewCourse, 
                 const total = course.modules?.length || 0;
                 const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
                 return (
-                  <motion.button
+                  <motion.div
                     key={course.id}
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 + i * 0.05 }}
                     onClick={() => onOpenCourse(course)}
-                    className={`text-left rounded-2xl bg-gradient-to-br ${pal.bg} ring-1 ${pal.ring} p-5 hover:scale-[1.02] active:scale-100 transition-transform`}
+                    role="button"
+                    className={`text-left rounded-2xl bg-gradient-to-br ${pal.bg} ring-1 ${pal.ring} p-5 hover:scale-[1.02] active:scale-100 transition-transform cursor-pointer relative ${selectedIds.includes(course.id) ? "ring-2 ring-violet-400" : ""}`}
                   >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedIds((prev) => prev.includes(course.id) ? prev.filter((id) => id !== course.id) : [...prev, course.id]);
+                      }}
+                      className={`absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all z-10 ${selectedIds.includes(course.id) ? "bg-violet-500 border-2 border-violet-500" : "bg-white/70 border-2 border-zinc-300 hover:border-violet-400"}`}
+                      title={selectedIds.includes(course.id) ? "Deselect" : "Select for PDF"}
+                    >
+                      {selectedIds.includes(course.id) && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
+                    </button>
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <div className={`text-[11px] font-semibold uppercase tracking-wider ${pal.text}`}>{course.theme}</div>
                         <h3 className="text-lg font-semibold tracking-tight text-zinc-900 mt-0.5">{course.title}</h3>
                       </div>
                       {course.modules?.[0]?.image_url && (
-                        <img src={course.modules[0].image_url} alt="" className="w-12 h-12 rounded-xl object-cover ring-1 ring-white/40" />
+                        <img src={course.modules[0].image_url} alt="" className="w-12 h-12 rounded-xl object-cover ring-1 ring-white/40 mr-9" />
                       )}
                     </div>
                     <p className="text-[13px] text-zinc-500 mb-4 line-clamp-2">{course.topic}</p>
@@ -169,7 +182,7 @@ export default function IsolateDashboard({ user, courses, loading, onNewCourse, 
                       </div>
                       <span className="text-[12px] font-medium text-zinc-600">{completed}/{total}</span>
                     </div>
-                  </motion.button>
+                  </motion.div>
                 );
               })}
             </div>
@@ -225,6 +238,39 @@ export default function IsolateDashboard({ user, courses, loading, onNewCourse, 
           </div>
         )}
       </div>
+
+      {/* Floating PDF export bar — shows when courses are selected */}
+      <AnimatePresence>
+        {selectedIds.length > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-zinc-900 text-white rounded-2xl shadow-2xl px-5 py-3.5 flex items-center gap-3"
+          >
+            <span className="text-[14px] font-medium">
+              {selectedIds.length} course{selectedIds.length !== 1 ? "s" : ""} selected
+            </span>
+            <div className="w-px h-6 bg-white/20" />
+            <button
+              onClick={() => {
+                const selected = courses.filter((c) => selectedIds.includes(c.id));
+                generateCoursesPDF(selected);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-600 text-[14px] font-semibold transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              Generate PDF
+            </button>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="text-white/50 hover:text-white text-[14px] px-2"
+            >
+              Clear
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

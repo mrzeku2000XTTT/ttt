@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Loader2, CheckCircle2, XCircle, Sparkles, RefreshCw, Lightbulb, Trophy, Zap, Flag, Timer, Gamepad2, Search, X } from "lucide-react";
+import { ArrowLeft, Send, Loader2, CheckCircle2, XCircle, Sparkles, RefreshCw, Lightbulb, Trophy, Zap, Flag, Timer, Gamepad2, Search, X, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import IsolateSettings from "@/components/isolate/IsolateSettings";
+import IsolateRecapModal from "@/components/isolate/IsolateRecapModal";
 
 const LOGO_URL = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2a0fa1205_generated_image.png";
 
@@ -20,7 +21,7 @@ function getPalette(theme) {
   return PALETTES[keys[hash % keys.length]] || PALETTES.violet;
 }
 
-export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, onBack, onNextModule, onJumpToModule, onPlayGame }) {
+export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, onBack, onNextModule, onJumpToModule, onPlayGame, onAddModules, onLevelUp }) {
   const pal = getPalette(course.theme);
   const mod = course.modules?.[moduleIdx];
   const [chatInput, setChatInput] = useState("");
@@ -30,6 +31,10 @@ export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, o
   const [checkResult, setCheckResult] = useState(null);
   const [regenerating, setRegenerating] = useState(false);
   const [showCheckpoint, setShowCheckpoint] = useState(false);
+  const [showRecap, setShowRecap] = useState(false);
+  const [showAddModules, setShowAddModules] = useState(false);
+  const [addCount, setAddCount] = useState(5);
+  const [addingModules, setAddingModules] = useState(false);
   const [sessionTimeLeft, setSessionTimeLeft] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -45,6 +50,8 @@ export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, o
     setCheckResult(null);
     setChatInput("");
     setShowCheckpoint(false);
+    setShowRecap(false);
+    setShowAddModules(false);
     setSearchOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [moduleIdx]);
@@ -74,8 +81,10 @@ export default function IsolateModuleView({ course, moduleIdx, user, onUpdate, o
       }
       const timer = setTimeout(() => onNextModule(), 2500);
       return () => clearTimeout(timer);
+    } else if (checkResult?.passed && moduleIdx === (course.modules?.length || 0) - 1) {
+      setShowRecap(true);
     }
-  }, [checkResult]);
+  }, [checkResult, moduleIdx, course.modules, onNextModule]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -379,6 +388,16 @@ Return JSON:
               </button>
             );
           })}
+          {/* Infinite modules — add more anytime */}
+          <button
+            onClick={() => setShowAddModules(true)}
+            disabled={addingModules}
+            className="flex-shrink-0 h-9 px-3 rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-200 hover:bg-violet-100 transition-all flex items-center gap-1 text-[12px] font-semibold disabled:opacity-50"
+            title="Add more modules — learn infinitely"
+          >
+            {addingModules ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            <span>{addingModules ? "Adding..." : "More"}</span>
+          </button>
         </div>
 
         {/* Module header */}
@@ -630,6 +649,50 @@ Return JSON:
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Add more modules popover — infinite learning */}
+      <AnimatePresence>
+        {showAddModules && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-6">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="text-xl font-bold tracking-tight text-zinc-900 mb-2">Add more modules</h2>
+              <p className="text-[14px] text-zinc-500 mb-5">Keep learning {course.topic} with brand new modules — no repeats.</p>
+              <div className="flex items-center justify-center gap-3 mb-5">
+                <button onClick={() => setAddCount(Math.max(1, addCount - 1))} className="w-11 h-11 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-xl font-bold text-zinc-700 flex items-center justify-center">−</button>
+                <span className="text-3xl font-bold text-zinc-900 w-16">{addCount}</span>
+                <button onClick={() => setAddCount(Math.min(50, addCount + 1))} className="w-11 h-11 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-xl font-bold text-zinc-700 flex items-center justify-center">+</button>
+              </div>
+              <button
+                onClick={async () => {
+                  setAddingModules(true);
+                  setShowAddModules(false);
+                  try {
+                    await onAddModules(addCount, course.additional_themes || []);
+                  } catch (e) { console.error(e); }
+                  setAddingModules(false);
+                }}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[15px] font-semibold hover:opacity-90 transition-all shadow-lg shadow-violet-500/20 mb-2"
+              >
+                Generate {addCount} new modules
+              </button>
+              <button onClick={() => setShowAddModules(false)} className="w-full py-2.5 text-[14px] text-zinc-500 hover:text-zinc-700">Cancel</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Recap modal — shown after completing the last module */}
+      {showRecap && (
+        <IsolateRecapModal
+          course={course}
+          onClose={() => setShowRecap(false)}
+          onContinue={onAddModules}
+          onLevelUp={onLevelUp}
+        />
+      )}
 
       {/* Settings */}
       <IsolateSettings course={course} onUpdate={onUpdate} />

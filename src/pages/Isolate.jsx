@@ -7,6 +7,7 @@ import IsolateCourseView from "@/components/isolate/IsolateCourseView";
 import IsolateModuleView from "@/components/isolate/IsolateModuleView";
 import IsolateGame from "@/components/isolate/IsolateGame";
 import BackToStore from "@/components/BackToStore";
+import { generateMoreModules } from "@/components/isolate/isolateGenerate";
 
 export default function IsolatePage() {
   const [view, setView] = useState("landing");
@@ -78,6 +79,53 @@ export default function IsolatePage() {
     setView("dashboard");
   };
 
+  // Generate more modules and append to the course (infinite learning)
+  const handleAddModules = async (count, additionalThemes = []) => {
+    if (!activeCourse) return;
+    const existingConcepts = (activeCourse.modules || []).map((m) => m.concept).filter(Boolean);
+    const newModules = await generateMoreModules({
+      topic: activeCourse.topic,
+      skillLevel: activeCourse.skill_level,
+      theme: activeCourse.theme,
+      additionalThemes,
+      count,
+      existingConcepts,
+      sourceUrls: activeCourse.source_urls || [],
+    });
+    const updatedModules = [...(activeCourse.modules || []), ...newModules];
+    const updatedCourse = { ...activeCourse, modules: updatedModules, additional_themes: additionalThemes, last_accessed: new Date().toISOString() };
+    handleUpdateCourse(updatedCourse);
+    await base44.entities.IsolateCourse.update(activeCourse.id, {
+      modules: updatedModules,
+      additional_themes: additionalThemes,
+      last_accessed: new Date().toISOString(),
+    });
+  };
+
+  // Level up: advance skill level + generate modules at the new level
+  const handleLevelUp = async (newLevel, count, additionalThemes = []) => {
+    if (!activeCourse) return;
+    const existingConcepts = (activeCourse.modules || []).map((m) => m.concept).filter(Boolean);
+    const newModules = await generateMoreModules({
+      topic: activeCourse.topic,
+      skillLevel: newLevel,
+      theme: activeCourse.theme,
+      additionalThemes,
+      count,
+      existingConcepts,
+      sourceUrls: activeCourse.source_urls || [],
+    });
+    const updatedModules = [...(activeCourse.modules || []), ...newModules];
+    const updatedCourse = { ...activeCourse, modules: updatedModules, skill_level: newLevel, additional_themes: additionalThemes, last_accessed: new Date().toISOString() };
+    handleUpdateCourse(updatedCourse);
+    await base44.entities.IsolateCourse.update(activeCourse.id, {
+      modules: updatedModules,
+      skill_level: newLevel,
+      additional_themes: additionalThemes,
+      last_accessed: new Date().toISOString(),
+    });
+  };
+
   // ── Apple system font stack, applied globally to this page ──
   const appleFont = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif';
 
@@ -127,6 +175,8 @@ export default function IsolatePage() {
           onNextModule={() => setActiveModuleIdx((i) => i + 1)}
           onJumpToModule={(idx) => setActiveModuleIdx(idx)}
           onPlayGame={() => setView("game")}
+          onAddModules={handleAddModules}
+          onLevelUp={handleLevelUp}
         />
       )}
 
