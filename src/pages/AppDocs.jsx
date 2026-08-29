@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { APPS } from "@/components/appstore2/appCatalog";
 import { getAppDocs, getLayoutKey } from "@/components/appstore2/appDocsData";
 import DocsLayoutDefault from "@/components/appstore2/docs/DocsLayoutDefault";
@@ -13,14 +13,11 @@ const playGTA = () => { try { const a = new Audio("https://media.base44.com/file
 
 export default function AppDocsPage() {
   const { appPath } = useParams();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
   const app = useMemo(() => APPS.find((a) => a.path === appPath), [appPath]);
   const docs = useMemo(() => (app ? getAppDocs(app) : null), [app]);
   const layoutKey = useMemo(() => (app ? getLayoutKey(app) : "default"), [app]);
-
-  const onBack = () => navigate("/AppStoreV2");
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-zinc-900">
@@ -51,11 +48,11 @@ export default function AppDocsPage() {
         {!app ? (
           <div className="text-center py-24">
             <p className="text-zinc-400 text-sm">App not found.</p>
-            <button onClick={onBack} className="mt-3 text-sm font-semibold text-zinc-900 underline">Back to Store</button>
+            <Link to="/AppStoreV2" className="mt-3 text-sm font-semibold text-zinc-900 underline inline-block">Back to Store</Link>
           </div>
         ) : (
           (() => {
-            const props = { app, docs, activeTab, onTab: setActiveTab, onBack };
+            const props = { app, docs, activeTab, onTab: setActiveTab };
             switch (layoutKey) {
               case "creative": return <DocsLayoutCreative {...props} />;
               case "finance": return <DocsLayoutFinance {...props} />;

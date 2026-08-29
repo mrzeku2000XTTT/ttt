@@ -1,11 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Crown, ExternalLink } from "lucide-react";
+import { Crown, ExternalLink } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 // Shared docs hero — app icon, name, tagline, and action buttons.
-// Layouts inject their own accent styling around this.
-export default function DocsHero({ app, docs, onBack, accent = "zinc" }) {
+// The top nav already provides a "Store" back button, so no inline back link here.
+export default function DocsHero({ app, docs, accent = "zinc" }) {
   const accentMap = {
     zinc: "from-zinc-900 to-zinc-700",
     violet: "from-violet-600 to-fuchsia-600",
@@ -23,14 +23,6 @@ export default function DocsHero({ app, docs, onBack, accent = "zinc" }) {
     <div className="relative overflow-hidden">
       <div className={`absolute inset-0 bg-gradient-to-br ${grad} opacity-[0.07]`} />
       <div className="relative px-5 sm:px-8 pt-6 pb-6">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-colors mb-5"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          App Store
-        </button>
-
         <div className="flex items-start gap-4 sm:gap-5">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Sparkles, ListChecks, Play, HelpCircle, Cpu } from "lucide-react";
 import DocsHero from "./DocsHero";
 import { TabBar } from "./DocsLayoutDefault";
+import DocsHowItWorksBrowser from "./DocsHowItWorksBrowser";
 
 // Neural/terminal aesthetic for AI apps.
 export default function DocsLayoutAI({ app, docs, activeTab, onTab, onBack }) {
@@ -42,17 +43,7 @@ export default function DocsLayoutAI({ app, docs, activeTab, onTab, onBack }) {
             </div>
           )}
           {activeTab === "how" && (
-            <div className="rounded-2xl bg-zinc-900 p-5 font-mono text-[13px] text-cyan-300 space-y-2 overflow-x-auto">
-              {docs.howItWorks.map((s, i) => (
-                <div key={i} className="flex gap-2">
-                  <span className="text-cyan-500 select-none">{">"}</span>
-                  <div>
-                    <span className="text-white font-semibold">{s.title}:</span>{" "}
-                    <span className="text-zinc-400">{s.desc}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <DocsHowItWorksBrowser app={app} docs={docs} />
           )}
           {activeTab === "start" && (
             <div className="space-y-3">

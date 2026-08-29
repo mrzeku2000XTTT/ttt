@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Sparkles, ListChecks, Play, HelpCircle, ShieldCheck } from "lucide-react";
 import DocsHero from "./DocsHero";
 import { TabBar } from "./DocsLayoutDefault";
+import DocsHowItWorksBrowser from "./DocsHowItWorksBrowser";
 
 // Light dashboard layout for Finance & Kaspa apps — stats-forward, trust-forward.
 export default function DocsLayoutFinance({ app, docs, activeTab, onTab, onBack }) {
@@ -54,17 +55,7 @@ export default function DocsLayoutFinance({ app, docs, activeTab, onTab, onBack 
             </div>
           )}
           {activeTab === "how" && (
-            <ol className="space-y-3">
-              {docs.howItWorks.map((s, i) => (
-                <li key={i} className="rounded-2xl bg-white ring-1 ring-zinc-200/70 p-4 flex gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white text-[13px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</div>
-                  <div>
-                    <h3 className="text-[14px] font-semibold text-zinc-900">{s.title}</h3>
-                    <p className="text-[13px] text-zinc-500 leading-relaxed">{s.desc}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <DocsHowItWorksBrowser app={app} docs={docs} />
           )}
           {activeTab === "start" && (
             <div className="space-y-3">

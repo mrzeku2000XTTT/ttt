@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Sparkles, ListChecks, Play, HelpCircle, Trophy } from "lucide-react";
 import DocsHero from "./DocsHero";
 import { TabBar } from "./DocsLayoutDefault";
+import DocsHowItWorksBrowser from "./DocsHowItWorksBrowser";
 
 // Playful, achievement-style layout for Games.
 export default function DocsLayoutGames({ app, docs, activeTab, onTab, onBack }) {
@@ -40,17 +41,7 @@ export default function DocsLayoutGames({ app, docs, activeTab, onTab, onBack })
             </div>
           )}
           {activeTab === "how" && (
-            <div className="space-y-3">
-              {docs.howItWorks.map((s, i) => (
-                <div key={i} className="rounded-2xl bg-white ring-1 ring-zinc-200/70 p-4 flex gap-3 items-start">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[14px] font-bold flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-500/30">{i + 1}</div>
-                  <div>
-                    <h3 className="text-[14px] font-semibold text-zinc-900">{s.title}</h3>
-                    <p className="text-[13px] text-zinc-500 leading-relaxed">{s.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <DocsHowItWorksBrowser app={app} docs={docs} />
           )}
           {activeTab === "start" && (
             <div className="space-y-3">

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Sparkles, ListChecks, Play, HelpCircle } from "lucide-react";
 import DocsHero from "./DocsHero";
 import { TabBar } from "./DocsLayoutDefault";
+import DocsHowItWorksBrowser from "./DocsHowItWorksBrowser";
 
 // Dark, gallery-forward layout for Creative & Media apps.
 export default function DocsLayoutCreative({ app, docs, activeTab, onTab, onBack }) {
@@ -34,15 +35,7 @@ export default function DocsLayoutCreative({ app, docs, activeTab, onTab, onBack
               </div>
             )}
             {activeTab === "how" && (
-              <div className="relative pl-6 space-y-5 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-fuchsia-500 before:to-cyan-500">
-                {docs.howItWorks.map((s, i) => (
-                  <div key={i} className="relative">
-                    <div className="absolute -left-6 top-0.5 w-6 h-6 rounded-full bg-gradient-to-br from-fuchsia-500 to-cyan-500 flex items-center justify-center text-[11px] font-bold text-white">{i + 1}</div>
-                    <h3 className="text-[14px] font-semibold text-white mb-0.5">{s.title}</h3>
-                    <p className="text-[13px] text-zinc-400 leading-relaxed">{s.desc}</p>
-                  </div>
-                ))}
-              </div>
+              <DocsHowItWorksBrowser app={app} docs={docs} />
             )}
             {activeTab === "start" && (
               <div className="space-y-3">
@@ -64,12 +57,9 @@ export default function DocsLayoutCreative({ app, docs, activeTab, onTab, onBack
   );
 }
 
-function DocsHeroDark({ app, docs, onBack }) {
+function DocsHeroDark({ app, docs }) {
   return (
     <div className="relative overflow-hidden px-5 sm:px-8 pt-6 pb-6">
-      <button onClick={onBack} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-zinc-400 hover:text-white transition-colors mb-5">
-        <span>←</span> App Store
-      </button>
       <div className="flex items-start gap-4">
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-xl flex-shrink-0 ring-1 ring-white/20">
           {app.logo ? <img src={app.logo} alt={app.name} className="absolute inset-0 w-full h-full object-cover" /> : <div className="w-full h-full bg-white/10 flex items-center justify-center text-2xl font-[900]">{app.name?.[0]?.toUpperCase()}</div>}
