@@ -201,13 +201,15 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
           txId = res.data?.txId || 'ttt-tx';
         }
       } else if (sendMethod === 'kastle') {
-        // Kastle wallet extension (KAS only — KRC-20 needs a backend commit/reveal flow)
-        if (tipTokenType === 'KRC20') {
-          throw new Error('Kastle does not support KRC-20 tipping yet. Use Kasware, Terra, or TTT Wallet for KRC-20.');
+        // Kastle wallet extension — KAS only (per Kastle SDK: connect() then sendKaspa(toAddress, sompi)).
+        // KRC-20/KCC-20 need a commit/reveal flow Kastle doesn't expose for tips.
+        if (tipTokenType === 'KRC20' || tipTokenType === 'KCC20') {
+          throw new Error('Kastle supports KAS tipping only. Use Kasware/Terra for KRC-20, or Scorpion for KCC-20.');
         }
-        if (!window.kastle) throw new Error('Kastle wallet extension not detected');
+        if (!window.kastle) throw new Error('Kastle wallet not detected. Install it from kastle.cc, then refresh.');
         try {
-          await window.kastle.request?.('kas:connect');
+          if (typeof window.kastle.connect === 'function') await window.kastle.connect();
+          else await window.kastle.request?.('kas:connect');
         } catch { /* may already be connected */ }
         txId = await window.kastle.sendKaspa(
           tippingPost.author_wallet_address,
@@ -377,9 +379,8 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             <div className="text-white font-mono text-sm break-all">{tippingPost.author_wallet_address}</div>
           </div>
 
-          {/* Send Method — show wallet choices */}
-          {(tttWalletAddress || hasKasware || hasKastle || hasTerra || tipTokenType === 'KCC20') && (
-            <div>
+          {/* Send Method — wallet choices. Kastle + Scorpion are always shown as toggles. */}
+          <div>
               <div className="text-xs text-white/50 mb-2">Send from</div>
               <div className="flex gap-2 flex-wrap">
                 {hasTerra && (
@@ -411,16 +412,24 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                     Kasware
                   </Button>
                 )}
-                {hasKastle && (
-                  <Button
-                    onClick={() => setSendMethod('kastle')}
-                    size="sm"
-                    className={`flex-1 flex items-center gap-1 ${sendMethod === 'kastle' ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}
-                  >
-                    <img src={KASTLE_LOGO} alt="Kastle" className="w-4 h-4 rounded" />
-                    Kastle
-                  </Button>
-                )}
+                {/* Kastle — always shown as a toggle so users can easily switch to it.
+                     If the extension isn't installed, clicking prompts install. */}
+                <Button
+                  onClick={() => {
+                    setSendMethod('kastle');
+                    if (!window.kastle) {
+                      setTipError('Kastle wallet not detected. Install the Kastle extension from kastle.cc, then refresh this page.');
+                      return;
+                    }
+                    setTipError('');
+                    try { window.kastle.connect?.(); } catch { /* may already be connected */ }
+                  }}
+                  size="sm"
+                  className={`flex-1 flex items-center gap-1 ${sendMethod === 'kastle' ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}
+                >
+                  <img src={KASTLE_LOGO} alt="Kastle" className="w-4 h-4 rounded" />
+                  Kastle
+                </Button>
                 {/* Scorpion — the KCC-20 (KCC20 Wallet) dApp browser. Signs KCC-20 sends on-device. */}
                 <Button
                   onClick={() => { setSendMethod('scorpion'); if (!kcc20.address) kcc20.connect().catch(() => {}); }}
@@ -463,10 +472,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                 </div>
               )}
               {!hasKasware && !hasKastle && !tttWalletAddress && !hasTerra && (
-                <p className="text-xs text-amber-400 mt-2">No wallet detected. Set up a wallet in Terra or install the Kasware/Kastle extension.</p>
+                <p className="text-xs text-amber-400 mt-2">No wallet detected. Install the Kastle or Kasware extension, or set up a wallet in Terra.</p>
               )}
             </div>
-          )}
 
           {/* Token Type: KAS or KRC-20 */}
           <div className="flex gap-2">
