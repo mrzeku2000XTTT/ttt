@@ -5,8 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DollarSign, Wallet, Loader2, X, Sparkles, AlertCircle, Smartphone, Globe } from "lucide-react";
 import { verifyStoredPin } from "@/components/wallet/walletLock";
+import { sendTokenKcc20 } from "@/lib/kcc20Pwa";
+import { useKcc20Wallet } from "@/lib/useKcc20Wallet";
 
 const KASTLE_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d958c7898_image.png";
+
+// KCC-20 token presets for the Scorpion (KCC20 Wallet) send flow.
+// KKDAG first — it's the DD credit token and the wallet's native staking token.
+const KCC20_TOKENS = [
+  { tick: "KKDAG", note: "DD credits · Scorpion native" },
+  { tick: "KRON", note: "KRON protocol" },
+  { tick: "KROSHI", note: "Kaspa OG" },
+  { tick: "COOK", note: "Cook launchpad" },
+];
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
@@ -56,6 +67,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
   const [pinError, setPinError] = useState('');
   const [tipMnemonic, setTipMnemonic] = useState('');
   const [showMnemonicFallback, setShowMnemonicFallback] = useState(false);
+  // KCC-20 / Scorpion wallet (window.kcc20 SDK) — add-on flow, does not touch KAS/KRC-20.
+  const kcc20 = useKcc20Wallet();
+  const [tipKcc20Tick, setTipKcc20Tick] = useState('KKDAG');
   const pinHash = localStorage.getItem('ttt_wallet_pin_hash');
   const hasPinSet = !!pinHash;
   const tttPrivateKeyMissing = !tttPrivateKey && sendMethod === 'ttt';
@@ -115,7 +129,19 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
       const tipAmountValue = parseFloat(tipAmount);
       let txId;
 
-      if (sendMethod === 'terra') {
+      // KCC-20 path — Scorpion (window.kcc20) signs on-device. Amount + tick
+      // are handed to the wallet's sendToken sheet; TTT never sees the key.
+      if (tipTokenType === 'KCC20') {
+        if (!tipKcc20Tick.trim()) { setTipError('Pick a KCC-20 token'); setIsSendingTip(false); return; }
+        let scorpionAddr = kcc20.address;
+        if (!scorpionAddr) {
+          try { await kcc20.connect(); } catch { throw new Error('Scorpion wallet connection rejected'); }
+          scorpionAddr = kcc20.address;
+        }
+        if (!scorpionAddr) throw new Error('Scorpion wallet not connected');
+        const r = await sendTokenKcc20({ tick: tipKcc20Tick.toUpperCase(), amount: tipAmountValue, dest: tippingPost.author_wallet_address });
+        txId = r?.txId || r?.txid || 'kcc20-tx';
+      } else if (sendMethod === 'terra') {
         // Terra wallet — use mnemonic from terra_wallets
         const terraWallet = terraWallets[selectedTerraIdx];
         if (!terraWallet?.mnemonic) throw new Error('Terra wallet has no seed phrase');
@@ -207,9 +233,9 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         }
       }
 
-      const senderWallet = sendMethod === 'terra' ? terraWallets[selectedTerraIdx]?.address : sendMethod === 'ttt' ? tttWalletAddress : sendMethod === 'kastle' ? (kaswareWallet?.address || user?.created_wallet_address || 'kastle') : (kaswareWallet?.address || user?.created_wallet_address);
+      const senderWallet = sendMethod === 'terra' ? terraWallets[selectedTerraIdx]?.address : sendMethod === 'ttt' ? tttWalletAddress : sendMethod === 'kastle' ? (kaswareWallet?.address || user?.created_wallet_address || 'kastle') : sendMethod === 'scorpion' ? (kcc20.address || user?.created_wallet_address) : (kaswareWallet?.address || user?.created_wallet_address);
       const senderName = user?.username || (senderWallet ? `${senderWallet.slice(0, 8)}...` : 'Anonymous');
-      const ticker = tipTokenType === 'KRC20' ? tipKrc20Ticker.toUpperCase() : 'KAS';
+      const ticker = tipTokenType === 'KRC20' ? tipKrc20Ticker.toUpperCase() : tipTokenType === 'KCC20' ? tipKcc20Tick.toUpperCase() : 'KAS';
 
       // Bookkeeping below must NEVER fail the tip — the KAS is already sent.
       // Guests (no email login) may not have permission for some of these.
@@ -224,7 +250,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         recipient_name: tippingPost.author_name,
         amount: tipAmountValue,
         token_type: tipTokenType,
-        krc20_ticker: tipTokenType === 'KRC20' ? tipKrc20Ticker.toUpperCase() : null,
+        krc20_ticker: (tipTokenType === 'KRC20' || tipTokenType === 'KCC20') ? (tipTokenType === 'KRC20' ? tipKrc20Ticker : tipKcc20Tick).toUpperCase() : null,
         tx_hash: txId,
         post_id: tippingPost.id,
         source: 'feed'
@@ -236,7 +262,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         postId: tippingPost.id,
         amount: tipAmountValue,
         tokenType: tipTokenType,
-        ticker: tipTokenType === 'KRC20' ? tipKrc20Ticker.toUpperCase() : null,
+        ticker: (tipTokenType === 'KRC20' || tipTokenType === 'KCC20') ? (tipTokenType === 'KRC20' ? tipKrc20Ticker : tipKcc20Tick).toUpperCase() : null,
       });
 
       // Track tip stats
@@ -352,7 +378,7 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
           </div>
 
           {/* Send Method — show wallet choices */}
-          {(tttWalletAddress || hasKasware || hasKastle || hasTerra) && (
+          {(tttWalletAddress || hasKasware || hasKastle || hasTerra || tipTokenType === 'KCC20') && (
             <div>
               <div className="text-xs text-white/50 mb-2">Send from</div>
               <div className="flex gap-2 flex-wrap">
@@ -395,6 +421,14 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                     Kastle
                   </Button>
                 )}
+                {/* Scorpion — the KCC-20 (KCC20 Wallet) dApp browser. Signs KCC-20 sends on-device. */}
+                <Button
+                  onClick={() => { setSendMethod('scorpion'); if (!kcc20.address) kcc20.connect().catch(() => {}); }}
+                  size="sm"
+                  className={`flex-1 flex items-center gap-1 ${sendMethod === 'scorpion' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'}`}
+                >
+                  <span className="text-sm">🦂</span> Scorpion
+                </Button>
               </div>
               {/* Terra wallet selector when multiple wallets exist */}
               {sendMethod === 'terra' && terraWallets.length > 1 && (
@@ -446,6 +480,11 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
               size="sm"
               className={`flex-1 ${tipTokenType === 'KRC20' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
             >KRC-20</Button>
+            <Button
+              onClick={() => { setTipTokenType('KCC20'); setSendMethod('scorpion'); if (!kcc20.address) kcc20.connect().catch(() => {}); }}
+              size="sm"
+              className={`flex-1 ${tipTokenType === 'KCC20' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'}`}
+            >KCC-20</Button>
           </div>
 
           {tipTokenType === 'KRC20' && (
@@ -460,9 +499,40 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
             </div>
           )}
 
+          {/* KCC-20 token picker (Scorpion wallet) — mini chatbox of preset tokens, KKDAG first */}
+          {tipTokenType === 'KCC20' && (
+            <div className="space-y-2">
+              <label className="text-sm text-white/60 block">KCC-20 token · Scorpion 🦂</label>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-2 max-h-44 overflow-y-auto space-y-1">
+                {KCC20_TOKENS.map((t) => (
+                  <button
+                    key={t.tick}
+                    onClick={() => setTipKcc20Tick(t.tick)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${tipKcc20Tick === t.tick ? 'bg-amber-500/20 border border-amber-500/40 text-amber-200' : 'bg-white/5 border border-transparent text-white/70 hover:bg-white/10'}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-base">🦂</span>
+                      <span className="font-semibold">{t.tick}</span>
+                    </span>
+                    <span className="text-[10px] text-white/40">{t.note}</span>
+                  </button>
+                ))}
+              </div>
+              <Input
+                value={tipKcc20Tick}
+                onChange={e => setTipKcc20Tick(e.target.value.toUpperCase())}
+                placeholder="Or type a custom KCC-20 ticker"
+                className="bg-white/5 border-white/10 text-white text-center h-10 font-semibold"
+              />
+              {!kcc20.address && (
+                <p className="text-[10px] text-amber-400">Scorpion wallet not connected — tap the Scorpion button below to connect.</p>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="text-sm text-white/60 mb-2 block">
-              Amount ({tipTokenType === 'KRC20' ? tipKrc20Ticker || 'Tokens' : 'KAS'})
+              Amount ({tipTokenType === 'KRC20' ? tipKrc20Ticker || 'Tokens' : tipTokenType === 'KCC20' ? tipKcc20Tick : 'KAS'})
             </label>
             <Input
               type="number" step="0.01" min="0.01"
@@ -478,6 +548,16 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                   <Button key={a} onClick={() => setTipAmount(a)} size="sm"
                     className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white">
                     {a} KAS
+                  </Button>
+                ))}
+              </div>
+            )}
+            {tipTokenType === 'KCC20' && (
+              <div className="flex gap-2 mt-2">
+                {['100', '500', '1000', '5000'].map(a => (
+                  <Button key={a} onClick={() => setTipAmount(a)} size="sm"
+                    className="flex-1 bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white">
+                    {a} {tipKcc20Tick}
                   </Button>
                 ))}
               </div>
@@ -535,13 +615,13 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
 
           <Button
             onClick={handleSend}
-            disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0 || (tipTokenType === 'KRC20' && !tipKrc20Ticker.trim())}
+            disabled={isSendingTip || !tipAmount || parseFloat(tipAmount) <= 0 || (tipTokenType === 'KRC20' && !tipKrc20Ticker.trim()) || (tipTokenType === 'KCC20' && !tipKcc20Tick.trim())}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 h-12 text-white font-bold"
           >
             {isSendingTip ? (
               <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Sending...</>
             ) : (
-              <><Wallet className="w-5 h-5 mr-2" />Send {tipAmount || ''} {tipTokenType === 'KRC20' ? tipKrc20Ticker : 'KAS'}</>
+              <><Wallet className="w-5 h-5 mr-2" />Send {tipAmount || ''} {tipTokenType === 'KRC20' ? tipKrc20Ticker : tipTokenType === 'KCC20' ? tipKcc20Tick : 'KAS'}</>
             )}
           </Button>
 
@@ -557,6 +637,8 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
                     : 'Sent natively via your TTT Wallet — no Kasware needed.')
                   : sendMethod === 'kastle'
                   ? 'Sent directly from your Kastle wallet extension instantly.'
+                  : sendMethod === 'scorpion'
+                  ? 'Signed on-device by your Scorpion (KCC-20) wallet — the covenant enforces the send.'
                   : 'Tips are sent directly from your Kasware wallet instantly.'}
               </p>
             </div>
