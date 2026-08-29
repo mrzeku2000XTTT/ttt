@@ -268,6 +268,14 @@ export default function FeedTipModal({ tippingPost, user, kaswareWallet, onClose
         console.warn('Tip sent OK, but recording stats failed (guest?):', bookkeepingErr);
       }
 
+      // Marketing KPI — on-chain tip confirmed. Never let analytics break a successful tip.
+      try {
+        base44.analytics.track({
+          eventName: "tip_sent",
+          properties: { token_type: tipTokenType, amount: tipAmountValue },
+        });
+      } catch { /* analytics must never fail a tip */ }
+
       onSuccess({ tipAmountValue, txId, ticker, tippingPost, tipTokenType, tipKrc20Ticker });
       onClose();
 
