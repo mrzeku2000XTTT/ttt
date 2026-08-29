@@ -6,7 +6,7 @@
 const CURATED = {
   Isolate: {
     tagline: "Learn anything through themes you love",
-    overview: "ISOLATE turns any topic into a personalized course built around a theme you already love — Star Wars, cooking, anime, anything. An AI tutor teaches each module through themed metaphors, then a 'Here's what's actually true' callout grounds it in real facts. Progress through a game-like level-select map, earn XP, and keep learning infinitely with on-demand module generation.",
+    overview: "ISOLATE turns any topic into a personalized course built around a theme you already love — Star Wars, cooking, anime, anything. An AI tutor teaches each module through themed metaphors, then a 'Here's what's actually true' callout grounds it in real facts. Progress through a game-like level-select map, earn XP, and keep learning infinitely with on-demand module generation. ISOLATE runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and your course progress is tied to your wallet, no separate account required.",
     features: [
       { title: "Theme-based courses", desc: "Pick a topic + a theme you love; the AI builds a full curriculum where every module is taught through that theme's metaphors." },
       { title: "AI tutor chat", desc: "Ask questions inside any module and get themed, context-aware answers from your personal tutor." },
@@ -138,7 +138,7 @@ const CURATED = {
   },
   Hikaru: {
     tagline: "AI image studio",
-    overview: "Hikaru is a full AI image studio: generate images from prompts, upscale them, relight scenes, and edit specific regions — all in one creative workspace with a gallery of your work.",
+    overview: "Hikaru is a full AI image studio: generate images from prompts, upscale them, relight scenes, and edit specific regions — all in one creative workspace with a gallery of your work. Hikaru runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, so your creations and credits stay tied to your wallet, not a separate account.",
     features: [
       { title: "Text-to-image", desc: "Generate images from detailed prompts with advanced cinematography framing." },
       { title: "Upscale", desc: "Boost resolution on any image without losing detail." },
@@ -160,7 +160,7 @@ const CURATED = {
   },
   Tree: {
     tagline: "Campaign agent — full ad campaigns from one brief",
-    overview: "Tree is a campaign agent that takes a single brief and grows a full advertising campaign: ad copy, visuals, targeting suggestions, and a spend plan — all organized like branches on a tree.",
+    overview: "Tree is a campaign agent that takes a single brief and grows a full advertising campaign: ad copy, visuals, targeting suggestions, and a spend plan — all organized like branches on a tree. Tree runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and any paid campaign budget you allocate settles directly on the Kaspa Layer-1 DAG.",
     features: [
       { title: "Brief to campaign", desc: "Give Tree one brief; it produces a complete multi-asset campaign." },
       { title: "Ad copy generation", desc: "Generates headlines, body copy, and CTAs tuned to your audience." },
@@ -181,7 +181,7 @@ const CURATED = {
   },
   Klipz: {
     tagline: "AI clip engine — clip live streams & videos natively",
-    overview: "Klipz clips live streams and long videos into shareable moments, natively in the browser. Point it at a stream or video, let the AI find the highlights, and export clips — with an agent canvas for guided editing.",
+    overview: "Klipz clips live streams and long videos into shareable moments, natively in the browser. Point it at a stream or video, let the AI find the highlights, and export clips — with an agent canvas for guided editing. Klipz runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and paid editor hand-offs settle on-chain on Kaspa.",
     features: [
       { title: "Live stream clipping", desc: "Clip from live streams as they happen." },
       { title: "AI highlight detection", desc: "The agent surfaces the most shareable moments automatically." },
@@ -328,7 +328,7 @@ const CURATED = {
   },
   TTTBuilder: {
     tagline: "AI site builder — prompt to live site",
-    overview: "TTT Builder is an AI site builder: describe what you want and watch it generate a full, live site — code, design, and deploy. Chat with the agent, attach files, and push to GitHub when you're done.",
+    overview: "TTT Builder is an AI site builder: describe what you want and watch it generate a full, live site — code, design, and deploy. Chat with the agent, attach files, and push to GitHub when you're done. TTT Builder runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and every published site is part of the Kaspa-native TTT ecosystem, no separate hosting account required.",
     features: [
       { title: "Prompt to site", desc: "Describe your site and the AI builds it — code, layout, and copy." },
       { title: "Agent chat", desc: "Iterate in a chat: ask for changes, attach files, drop images." },
@@ -350,7 +350,7 @@ const CURATED = {
   },
   MotionFly: {
     tagline: "AI motion graphics scene builder",
-    overview: "MotionFly builds motion-graphics scenes from a prompt. Layer panels, a live timeline, and instant previews let you compose animated scenes without opening a full motion suite.",
+    overview: "MotionFly builds motion-graphics scenes from a prompt. Layer panels, a live timeline, and instant previews let you compose animated scenes without opening a full motion suite. MotionFly runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and any premium render credits settle on-chain on Kaspa.",
     features: [
       { title: "Prompt to scene", desc: "Describe a motion scene and MotionFly composes the layers." },
       { title: "Layer panel", desc: "Add, reorder, and tweak each layer independently." },
@@ -370,7 +370,7 @@ const CURATED = {
   },
   Kutt: {
     tagline: "AI video editor — URL to viral video, real export",
-    overview: "KUTT turns any video URL into a finished, viral-ready edit. Drop a link, let the AI analyze beats and scenes, pick a template, and export a real video file — no timeline expertise required.",
+    overview: "KUTT turns any video URL into a finished, viral-ready edit. Drop a link, let the AI analyze beats and scenes, pick a template, and export a real video file — no timeline expertise required. KUTT runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and any rendering credits or premium renders settle on the Kaspa Layer-1 DAG.",
     features: [
       { title: "URL to edit", desc: "Paste a video URL and KUTT pulls it in for editing." },
       { title: "Beat detection", desc: "AI finds the beats and cuts on them automatically." },
@@ -416,7 +416,7 @@ function generateDocs(app) {
 
   return {
     tagline: desc,
-    overview: `${name} is a ${cat.toLowerCase()} app in the TTT ecosystem. ${desc} ${isKaspa ? "It's built natively on Kaspa, so every action settles on-chain." : ""} ${isAgent ? "An AI agent guides you through the core workflow." : ""} Launch it directly from the store — no install needed.`,
+    overview: `${name} is a ${cat.toLowerCase()} app in the TTT ecosystem. ${desc} ${isKaspa ? "It's built natively on Kaspa, so every action settles on-chain." : "It runs entirely in your browser inside the TTT super app, which is built on the Kaspa network — your Kaspa wallet is your login, and any payment or reward settles on the Kaspa Layer-1 DAG."} ${isAgent ? "An AI agent guides you through the core workflow." : ""} Launch it directly from the store — no install needed.`,
     features: features.slice(0, 5),
     howItWorks: [
       { title: "Open the app", desc: `Launch ${name} from the store with a single tap.` },
