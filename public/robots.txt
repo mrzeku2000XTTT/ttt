@@ -1,4 +1,10 @@
+# TTT — The Kaspa Super App
+# Allow all crawlers full access
 User-agent: *
 Allow: /
 
+# Block nothing — all pages (including app docs) are public and indexable
+Disallow:
+
+# Sitemap
 Sitemap: https://tttz.xyz/sitemap.xml

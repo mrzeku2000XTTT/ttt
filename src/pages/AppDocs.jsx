@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { APPS } from "@/components/appstore2/appCatalog";
 import { getAppDocs, getLayoutKey } from "@/components/appstore2/appDocsData";
@@ -18,6 +18,21 @@ export default function AppDocsPage() {
   const app = useMemo(() => APPS.find((a) => a.path === appPath), [appPath]);
   const docs = useMemo(() => (app ? getAppDocs(app) : null), [app]);
   const layoutKey = useMemo(() => (app ? getLayoutKey(app) : "default"), [app]);
+
+  // Set a unique, Kaspa-keyworded title + meta description per app so each docs
+  // page indexes distinctly in Google. Restored on unmount.
+  useEffect(() => {
+    if (!app) return;
+    const prevTitle = document.title;
+    const prevDesc = document.querySelector('meta[name="description"]')?.getAttribute("content") || "";
+    const title = `${app.name} on Kaspa — ${docs?.tagline || app.desc || "TTT App"}`;
+    const desc = `${app.name} ${docs?.tagline ? "— " + docs.tagline : ""}. ${docs?.overview || app.desc || ""} Built on the Kaspa network — your wallet is your login, on-chain settlement on the Kaspa Layer-1 DAG.`.slice(0, 160);
+    document.title = title;
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) { metaDesc = document.createElement("meta"); metaDesc.setAttribute("name", "description"); document.head.appendChild(metaDesc); }
+    metaDesc.setAttribute("content", desc);
+    return () => { document.title = prevTitle; if (metaDesc) metaDesc.setAttribute("content", prevDesc); };
+  }, [app, docs]);
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-zinc-900">
