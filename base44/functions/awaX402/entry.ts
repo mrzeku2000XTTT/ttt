@@ -41,6 +41,13 @@ function sompiToKas(sompi) {
   return Number(sompi) / 1e8;
 }
 
+// Kaspa addresses can be returned with or without the `kaspa:` prefix by
+// different APIs/wallets. Normalize to the bare lowercase form for comparison.
+function normAddr(a) {
+  if (!a) return "";
+  return String(a).toLowerCase().replace(/^kaspa:/, "").trim();
+}
+
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -120,17 +127,20 @@ Deno.serve(async (req) => {
     }
 
     // Sum every output paying the invoice's pay_to address.
+    // Works regardless of which address sent the payment — we only check that
+    // at least one output pays the treasury (pay_to) the required amount.
     const needed = Number(invoice.amount_kas) || 0;
+    const target = normAddr(invoice.pay_to);
     let paid = 0;
     for (const out of (txData.outputs || [])) {
       const addr = out.script_public_key_address || out.script_public_key?.address;
-      if (addr && String(addr) === String(invoice.pay_to)) {
+      if (addr && normAddr(addr) === target) {
         paid += sompiToKas(out.amount);
       }
     }
     if (paid + 1e-8 < needed) {
       return json({
-        error: `Payment not verified — expected ${needed} KAS to ${invoice.pay_to}, found ${paid.toFixed(6)} KAS. Send the exact amount and retry Settle.`,
+        error: `Payment not verified — expected ${needed} KAS to ${invoice.pay_to}, found ${paid.toFixed(6)} KAS. Send the exact amount to kaspa:${invoice.pay_to} and retry Settle.`,
       }, 400);
     }
 

@@ -180,7 +180,7 @@ export default function TreePaywall({ serviceInput, amount, onUnlocked }) {
   };
 
   const copyAddr = () => {
-    navigator.clipboard.writeText(pending.pay_to).then(() => {
+    navigator.clipboard.writeText(`kaspa:${pending.pay_to}`).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -223,10 +223,12 @@ export default function TreePaywall({ serviceInput, amount, onUnlocked }) {
               </span>
             )}
           </div>
-          <button onClick={copyAddr} className="w-full flex items-center gap-2 bg-black/40 border border-emerald-500/20 hover:border-emerald-400/60 rounded-lg px-2.5 py-2 text-left">
-            <span className="flex-1 text-emerald-300 font-mono text-[10px] break-all">{pending.pay_to}</span>
-            {copied ? <Check className="w-4 h-4 text-emerald-300 flex-shrink-0" /> : <Copy className="w-4 h-4 text-white/50 flex-shrink-0" />}
-          </button>
+          <div className="w-full flex items-center gap-2 bg-black/40 border border-emerald-500/20 hover:border-emerald-400/60 rounded-lg px-2.5 py-2">
+            <a href={`kaspa:${pending.pay_to}`} title="Open in wallet" className="flex-1 text-emerald-300 font-mono text-[10px] break-all hover:underline min-w-0">{`kaspa:${pending.pay_to}`}</a>
+            <button onClick={copyAddr} className="flex-shrink-0" title="Copy address">
+              {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4 text-white/50" />}
+            </button>
+          </div>
           {((walletSource === "ttt" && mainWallet?.privateKey) || (walletSource === "kaching" && kachingWallets.length > 0)) && (
             <Button onClick={beginPay} disabled={paying} className="w-full bg-emerald-500 hover:bg-emerald-400 text-black h-9">
               {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wallet className="w-4 h-4 mr-1" /> Pay with {walletSource === "ttt" ? "TTT Wallet" : "KaChing"}</>}
