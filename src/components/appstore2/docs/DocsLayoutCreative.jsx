@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Sparkles, ListChecks, Play, HelpCircle } from "lucide-react";
 import { TabBar } from "./DocsLayoutDefault";
 import DocsHowItWorksBrowser from "./DocsHowItWorksBrowser";
+import DocsHero from "./DocsHero";
 
 // Light, gallery-forward layout for Creative & Media apps.
 export default function DocsLayoutCreative({ app, docs, activeTab, onTab, onBack }) {
@@ -15,7 +16,7 @@ export default function DocsLayoutCreative({ app, docs, activeTab, onTab, onBack
 
   return (
     <div>
-      <CreativeHero app={app} docs={docs} onBack={onBack} />
+      <DocsHero app={app} docs={docs} accent="violet" />
       <TabBar tabs={tabs} active={activeTab} onChange={onTab} />
       <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8">
         <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
@@ -49,38 +50,6 @@ export default function DocsLayoutCreative({ app, docs, activeTab, onTab, onBack
             </div>
           )}
         </motion.div>
-      </div>
-    </div>
-  );
-}
-
-function CreativeHero({ app, docs }) {
-  return (
-    <div className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-500 opacity-[0.07]" />
-      <div className="relative px-5 sm:px-8 pt-6 pb-6">
-        <div className="flex items-start gap-4 sm:gap-5">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-lg flex-shrink-0"
-          >
-            {app.logo ? (
-              <img src={app.logo} alt={app.name} className="absolute inset-0 w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-zinc-200 flex items-center justify-center text-2xl font-[900] text-zinc-500">
-                {app.name?.[0]?.toUpperCase()}
-              </div>
-            )}
-          </motion.div>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl font-[900] tracking-tight text-zinc-900 leading-tight">{app.name}</h1>
-            <p className="text-sm sm:text-[15px] text-zinc-500 mt-1">{docs.tagline}</p>
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600">{app.cat}</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
