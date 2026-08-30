@@ -12,6 +12,58 @@ import { TreePine, ArrowLeft, Hammer, Coins } from "lucide-react";
 
 const UNLOCK_PRICE = 0.5;
 
+// Fact-check pass: after the LLM writes the ads, rewrite every data detail in
+// the copy so it matches the verified live token stats EXACTLY. Removes any
+// invented/rounded/altered numbers so the marketing words stay truthful.
+async function factCheckAds(ads, v) {
+  if (!v || !ads || !ads.length) return ads;
+  const verified = [
+    `Tick / symbol: ${v.tick}`,
+    v.name ? `Token name: ${v.name}` : "",
+    v.hasMarket ? `Price: ${v.price} KAS` : "Price: NOT available — do not state a price",
+    v.hasMarket ? `24h change: ${v.change24h}%` : "",
+    v.hasMarket ? `24h volume: ${v.volume24h} KAS` : "",
+    v.hasMarket ? `TVL: ${v.tvl} KAS` : "",
+    v.hasMarket ? `Holders: ${v.holderTotal}` : "Holders: NOT available — do not state a holder count",
+    v.kronUrl ? `KRON URL: ${v.kronUrl}` : "",
+  ].filter(Boolean).join("\n");
+  try {
+    const res = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are a strict fact-checker for KCC20 token marketing copy. The ONLY verified data is:
+
+${verified}
+
+For EACH ad below, rewrite hook, script, caption, narration_text so that EVERY number and every factual data claim (price, TVL, holders, volume, change, "new entry", "listed on KRON", etc.) matches the verified data EXACTLY — no rounding, no approximations, no invented figures. If a claim is not supported by the verified data, REMOVE it (do not replace with a different number). Keep the tone, hashtags and style. Do not touch template or visual_prompt. Return the same JSON shape with the same number of ads in the same order.
+
+${JSON.stringify(ads, null, 2)}`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          ads: { type: "array", items: { type: "object", properties: {
+            template: { type: "string" }, hook: { type: "string" }, script: { type: "string" },
+            caption: { type: "string" }, cta: { type: "string" }, narration_text: { type: "string" },
+            visual_prompt: { type: "string" },
+          } } },
+        },
+      },
+    });
+    const fixed = res?.ads;
+    if (Array.isArray(fixed) && fixed.length === ads.length) {
+      // preserve visual_prompt/cta/template from the original (fact-checker only owns words)
+      return ads.map((a, i) => ({
+        ...a,
+        hook: fixed[i].hook ?? a.hook,
+        script: fixed[i].script ?? a.script,
+        caption: fixed[i].caption ?? a.caption,
+        narration_text: fixed[i].narration_text ?? a.narration_text,
+      }));
+    }
+    return ads;
+  } catch {
+    return ads;
+  }
+}
+
 const looksLikeUrl = (s) => {
   const t = s.trim();
   if (/^https?:\/\//i.test(t)) return true;
@@ -42,7 +94,7 @@ export default function Tree() {
 
   // Core campaign runner. Accepts an optional precomputed brand context so the
   // one-click token launcher can skip URL auto-detection and feed real token lore.
-  const runCampaign = async ({ product, goal, audience, tone, templates, brandName, brandContext, ogImage }) => {
+  const runCampaign = async ({ product, goal, audience, tone, templates, brandName, brandContext, ogImage, verifiedData }) => {
     setRunning(true);
     setCampaign(null);
     setLocked(false);
@@ -72,7 +124,7 @@ export default function Tree() {
     try {
       pushStep("🌳 Tree is analyzing your product & building strategy…");
       const chosen = TREE_TEMPLATES.filter((t) => templates.includes(t.id));
-      const brief = await base44.integrations.Core.InvokeLLM({
+      let brief = await base44.integrations.Core.InvokeLLM({
         prompt: `You are Tree, an elite ad campaign agent. Build a full ad campaign.${ctx ? `\n\nREAL BRAND CONTEXT (ground every claim ONLY in these facts; never invent features): \n${ctx}` : ""}
 
 PRODUCT: ${product}
@@ -112,6 +164,12 @@ Also provide a 2-3 sentence overall campaign strategy.`,
           },
         },
       });
+
+      // Fact-check: force every data detail in the copy to match the live token stats.
+      if (verifiedData) {
+        pushStep("✅ Fact-checking data details against live KCC20 stats…");
+        brief = { ...brief, ads: await factCheckAds(brief.ads, verifiedData) };
+      }
 
       const ads = [];
       for (const ad of brief.ads) {
@@ -183,6 +241,17 @@ Also provide a 2-3 sentence overall campaign strategy.`,
       brandName: token.name || token.tick,
       brandContext,
       ogImage: og,
+      verifiedData: {
+        tick: token.tick,
+        name: token.name || token.tick,
+        hasMarket: !!token.hasMarket,
+        price: token.price,
+        change24h: token.change24h,
+        volume24h: token.volume24h,
+        tvl: token.tvl,
+        holderTotal: token.holderTotal,
+        kronUrl: token.covenantId ? `https://kron.technology/token/${token.covenantId}` : "",
+      },
     });
   };
 
