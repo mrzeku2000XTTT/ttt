@@ -33,6 +33,31 @@ const fmtDate = (ts) => {
 // escape regex special chars in the query for safe highlighting
 const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// scroll a textarea so the character at `offset` is centered; sync an optional backdrop layer
+function scrollToOffset(ta, offset, backdrop) {
+  if (!ta) return;
+  const cs = window.getComputedStyle(ta);
+  const mirror = document.createElement("div");
+  const props = ["boxSizing","width","paddingTop","paddingRight","paddingBottom","paddingLeft","fontStyle","fontVariant","fontWeight","fontStretch","fontSize","lineHeight","fontFamily","letterSpacing","wordSpacing","textIndent","whiteSpace","wordBreak"];
+  props.forEach((p) => { mirror.style[p] = cs[p]; });
+  mirror.style.position = "absolute";
+  mirror.style.visibility = "hidden";
+  mirror.style.top = "0";
+  mirror.style.left = "-9999px";
+  mirror.style.height = "auto";
+  mirror.style.width = cs.width;
+  mirror.style.whiteSpace = "pre-wrap";
+  mirror.style.wordBreak = "break-word";
+  mirror.style.overflow = "hidden";
+  mirror.textContent = ta.value.slice(0, offset);
+  document.body.appendChild(mirror);
+  const top = mirror.scrollHeight;
+  document.body.removeChild(mirror);
+  const target = Math.max(0, top - ta.clientHeight / 2 + (parseFloat(cs.lineHeight) || 22));
+  ta.scrollTop = target;
+  if (backdrop) backdrop.scrollTop = target;
+}
+
 // all match positions of a case-insensitive query inside a text
 function matchPositions(text, q) {
   if (!q) return [];
@@ -96,6 +121,7 @@ export default function Quickz() {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState("");
   const bodyRef = useRef(null);
+  const backdropRef = useRef(null);
 
   // hydrate from localStorage on mount
   useEffect(() => {
@@ -191,24 +217,33 @@ TOPIC: ${prompt.trim()}`,
 
   // matches of the current search query inside the active note's body
   const matches = useMemo(() => active ? matchPositions(active.body || "", query.trim()) : [], [active, query]);
+  const matchesRef = useRef(matches);
+  matchesRef.current = matches;
   useEffect(() => { setMatchIdx(0); }, [query, activeId]);
 
   const jumpToMatch = (i) => {
-    if (!matches.length || !bodyRef.current) return;
-    const idx = ((i % matches.length) + matches.length) % matches.length;
+    const ms = matchesRef.current;
+    if (!ms.length || !bodyRef.current) return;
+    const idx = ((i % ms.length) + ms.length) % ms.length;
     setMatchIdx(idx);
-    const start = matches[idx];
+    const start = ms[idx];
     const q = query.trim();
-    const ta = bodyRef.current;
-    ta.focus();
-    ta.setSelectionRange(start, start + q.length);
-    // best-effort scroll the textarea so the match is visible
-    try {
-      const lineHeight = parseFloat(window.getComputedStyle(ta).lineHeight) || 22;
-      const linesBefore = ta.value.slice(0, start).split("\n").length - 1;
-      ta.scrollTop = Math.max(0, (linesBefore - 2) * lineHeight);
-    } catch {}
+    bodyRef.current.focus();
+    bodyRef.current.setSelectionRange(start, start + q.length);
+    scrollToOffset(bodyRef.current, start, backdropRef.current);
   };
+
+  // auto-scroll the editor to the current match whenever the query, note, or match index changes
+  useEffect(() => {
+    const ms = matchesRef.current;
+    if (!query.trim() || !ms.length || !bodyRef.current) return;
+    const idx = Math.min(matchIdx, ms.length - 1);
+    const start = ms[idx];
+    const q = query.trim();
+    bodyRef.current.focus();
+    bodyRef.current.setSelectionRange(start, start + q.length);
+    scrollToOffset(bodyRef.current, start, backdropRef.current);
+  }, [query, activeId, matchIdx]);
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col">
@@ -308,8 +343,9 @@ TOPIC: ${prompt.trim()}`,
                           setMatchIdx(0);
                           bodyRef.current.focus();
                           bodyRef.current.setSelectionRange(pos[0], pos[0] + query.trim().length);
+                          scrollToOffset(bodyRef.current, pos[0], backdropRef.current);
                         }
-                      }, 50);
+                      }, 60);
                     }}
                     className={`group w-full text-left p-3 rounded-xl border transition-all ${
                       activeId === n.id
@@ -359,20 +395,24 @@ TOPIC: ${prompt.trim()}`,
                     <p className="text-[11px] text-[#1d1d1f]/30 mt-1">{fmtDate(active.updated)}</p>
                   </div>
                   <div className="px-5 py-4 relative">
-                    {query.trim() && (active.body || "").toLowerCase().includes(query.trim().toLowerCase()) && (
+                    {query.trim() && matches.length > 0 && (
                       <div
+                        ref={backdropRef}
                         aria-hidden
-                        className="absolute inset-0 px-5 py-4 pointer-events-none whitespace-pre-wrap break-words text-[15px] leading-relaxed text-[#1d1d1f]/90 overflow-hidden"
+                        className="absolute inset-0 px-5 py-4 pointer-events-none overflow-hidden"
                       >
-                        {renderHighlighted(active.body || "", query.trim(), matches[matchIdx] ?? -1)}
+                        <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-[#1d1d1f]/90">
+                          {renderHighlighted(active.body || "", query.trim(), matches[matchIdx] ?? -1)}
+                        </div>
                       </div>
                     )}
                     <textarea
                       ref={bodyRef}
                       value={active.body}
                       onChange={(e) => updateActive({ body: e.target.value })}
+                      onScroll={(e) => { if (backdropRef.current) backdropRef.current.scrollTop = e.target.scrollTop; }}
                       placeholder="Start writing…"
-                      className={`relative w-full min-h-[40vh] resize-y outline-none text-[15px] leading-relaxed placeholder:text-[#1d1d1f]/25 bg-transparent ${query.trim() && (active.body || "").toLowerCase().includes(query.trim().toLowerCase()) ? "text-transparent caret-[#1d1d1f]" : "text-[#1d1d1f]/90"}`}
+                      className={`relative w-full min-h-[40vh] resize-y outline-none text-[15px] leading-relaxed placeholder:text-[#1d1d1f]/25 bg-transparent ${query.trim() && matches.length > 0 ? "text-transparent caret-[#1d1d1f]" : "text-[#1d1d1f]/90"}`}
                     />
                   </div>
                   <div className="px-5 py-3 border-t border-black/[0.06] flex items-center justify-between gap-3 bg-[#fafafa]">
