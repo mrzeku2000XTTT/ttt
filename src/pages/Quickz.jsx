@@ -46,6 +46,24 @@ function matchPositions(text, q) {
   return out;
 }
 
+// render the full text with every match highlighted; the current match is emphasized
+function renderHighlighted(text, q, currentStart = -1) {
+  if (!q) return text;
+  const re = new RegExp(escRe(q), "gi");
+  const parts = [];
+  let last = 0, m, k = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    const isCurrent = m.index === currentStart;
+    parts.push(
+      <mark key={k++} className={isCurrent ? "bg-[#6e5ce6]/45 text-[#1d1d1f] rounded px-0.5" : "bg-[#6e5ce6]/20 text-[#1d1d1f] rounded px-0.5"}>{m[0]}</mark>
+    );
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
 // render a snippet centered on the first match with the query highlighted
 function HighlightedSnippet({ text, q, max = 120 }) {
   if (!q) {
@@ -340,13 +358,21 @@ TOPIC: ${prompt.trim()}`,
                     </div>
                     <p className="text-[11px] text-[#1d1d1f]/30 mt-1">{fmtDate(active.updated)}</p>
                   </div>
-                  <div className="px-5 py-4">
+                  <div className="px-5 py-4 relative">
+                    {query.trim() && (active.body || "").toLowerCase().includes(query.trim().toLowerCase()) && (
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 px-5 py-4 pointer-events-none whitespace-pre-wrap break-words text-[15px] leading-relaxed text-[#1d1d1f]/90 overflow-hidden"
+                      >
+                        {renderHighlighted(active.body || "", query.trim(), matches[matchIdx] ?? -1)}
+                      </div>
+                    )}
                     <textarea
                       ref={bodyRef}
                       value={active.body}
                       onChange={(e) => updateActive({ body: e.target.value })}
                       placeholder="Start writing…"
-                      className="w-full min-h-[40vh] resize-y outline-none text-[15px] leading-relaxed text-[#1d1d1f]/90 placeholder:text-[#1d1d1f]/25 bg-transparent"
+                      className={`relative w-full min-h-[40vh] resize-y outline-none text-[15px] leading-relaxed placeholder:text-[#1d1d1f]/25 bg-transparent ${query.trim() && (active.body || "").toLowerCase().includes(query.trim().toLowerCase()) ? "text-transparent caret-[#1d1d1f]" : "text-[#1d1d1f]/90"}`}
                     />
                   </div>
                   <div className="px-5 py-3 border-t border-black/[0.06] flex items-center justify-between gap-3 bg-[#fafafa]">
