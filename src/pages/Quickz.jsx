@@ -30,6 +30,47 @@ const fmtDate = (ts) => {
     " · " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 };
 
+// escape regex special chars in the query for safe highlighting
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// all match positions of a case-insensitive query inside a text
+function matchPositions(text, q) {
+  if (!q) return [];
+  const out = [];
+  const re = new RegExp(escRe(q), "gi");
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    out.push(m.index);
+    if (m.index === re.lastIndex) re.lastIndex++; // avoid zero-length loop
+  }
+  return out;
+}
+
+// render a snippet centered on the first match with the query highlighted
+function HighlightedSnippet({ text, q, max = 120 }) {
+  if (!q) {
+    const t = (text || "").slice(0, max);
+    return <span className="line-clamp-2">{t || "No additional text"}</span>;
+  }
+  const pos = matchPositions(text, q);
+  if (!pos.length) return <span className="line-clamp-2">{(text || "").slice(0, max) || "No additional text"}</span>;
+  const start = Math.max(0, pos[0] - 30);
+  const end = Math.min(text.length, start + max);
+  let slice = text.slice(start, end);
+  if (start > 0) slice = "…" + slice;
+  if (end < text.length) slice = slice + "…";
+  const re = new RegExp(escRe(q), "gi");
+  const parts = [];
+  let last = 0, m;
+  while ((m = re.exec(slice)) !== null) {
+    if (m.index > last) parts.push(slice.slice(last, m.index));
+    parts.push(<mark key={m.index} className="bg-[#6e5ce6]/20 text-[#1d1d1f] rounded px-0.5">{m[0]}</mark>);
+    last = m.index + m[0].length;
+  }
+  if (last < slice.length) parts.push(slice.slice(last));
+  return <span className="line-clamp-2">{parts}</span>;
+}
+
 export default function Quickz() {
   const [notes, setNotes] = useState([]);
   const [query, setQuery] = useState("");
@@ -128,6 +169,28 @@ TOPIC: ${prompt.trim()}`,
 
   const [genPrompt, setGenPrompt] = useState("");
   const [showGen, setShowGen] = useState(false);
+  const [matchIdx, setMatchIdx] = useState(0);
+
+  // matches of the current search query inside the active note's body
+  const matches = useMemo(() => active ? matchPositions(active.body || "", query.trim()) : [], [active, query]);
+  useEffect(() => { setMatchIdx(0); }, [query, activeId]);
+
+  const jumpToMatch = (i) => {
+    if (!matches.length || !bodyRef.current) return;
+    const idx = ((i % matches.length) + matches.length) % matches.length;
+    setMatchIdx(idx);
+    const start = matches[idx];
+    const q = query.trim();
+    const ta = bodyRef.current;
+    ta.focus();
+    ta.setSelectionRange(start, start + q.length);
+    // best-effort scroll the textarea so the match is visible
+    try {
+      const lineHeight = parseFloat(window.getComputedStyle(ta).lineHeight) || 22;
+      const linesBefore = ta.value.slice(0, start).split("\n").length - 1;
+      ta.scrollTop = Math.max(0, (linesBefore - 2) * lineHeight);
+    } catch {}
+  };
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col">
@@ -219,7 +282,17 @@ TOPIC: ${prompt.trim()}`,
                 {filtered.map((n) => (
                   <button
                     key={n.id}
-                    onClick={() => setActiveId(n.id)}
+                    onClick={() => {
+                      setActiveId(n.id);
+                      if (query.trim()) setTimeout(() => {
+                        const pos = matchPositions(n.body || "", query.trim());
+                        if (pos.length && bodyRef.current) {
+                          setMatchIdx(0);
+                          bodyRef.current.focus();
+                          bodyRef.current.setSelectionRange(pos[0], pos[0] + query.trim().length);
+                        }
+                      }, 50);
+                    }}
                     className={`group w-full text-left p-3 rounded-xl border transition-all ${
                       activeId === n.id
                         ? "bg-white border-[#1d1d1f]/15 shadow-sm"
@@ -235,7 +308,7 @@ TOPIC: ${prompt.trim()}`,
                         <Trash2 className="w-3.5 h-3.5" />
                       </span>
                     </div>
-                    <p className="text-[12px] text-[#1d1d1f]/50 line-clamp-2 mt-0.5">{(n.body || "").slice(0, 120) || "No additional text"}</p>
+                    <p className="text-[12px] text-[#1d1d1f]/50 line-clamp-2 mt-0.5"><HighlightedSnippet text={n.body || ""} q={query.trim()} /></p>
                     <p className="text-[10px] text-[#1d1d1f]/30 mt-1">{fmtDate(n.updated)}</p>
                   </button>
                 ))}
@@ -250,12 +323,21 @@ TOPIC: ${prompt.trim()}`,
               {active ? (
                 <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm overflow-hidden">
                   <div className="px-5 pt-5">
-                    <input
-                      value={active.title}
-                      onChange={(e) => updateActive({ title: e.target.value })}
-                      placeholder="Title"
-                      className="w-full text-2xl font-bold tracking-tight outline-none placeholder:text-[#1d1d1f]/20 bg-transparent"
-                    />
+                    <div className="flex items-start gap-3">
+                      <input
+                        value={active.title}
+                        onChange={(e) => updateActive({ title: e.target.value })}
+                        placeholder="Title"
+                        className="flex-1 text-2xl font-bold tracking-tight outline-none placeholder:text-[#1d1d1f]/20 bg-transparent"
+                      />
+                      {query.trim() && matches.length > 0 && (
+                        <div className="inline-flex items-center gap-1 h-7 px-2 rounded-full bg-[#6e5ce6]/10 border border-[#6e5ce6]/20 text-[11px] font-medium text-[#6e5ce6] flex-shrink-0">
+                          <button onClick={() => jumpToMatch(matchIdx - 1)} className="px-1 hover:opacity-60">‹</button>
+                          <span>{matchIdx + 1}/{matches.length}</span>
+                          <button onClick={() => jumpToMatch(matchIdx + 1)} className="px-1 hover:opacity-60">›</button>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-[11px] text-[#1d1d1f]/30 mt-1">{fmtDate(active.updated)}</p>
                   </div>
                   <div className="px-5 py-4">
