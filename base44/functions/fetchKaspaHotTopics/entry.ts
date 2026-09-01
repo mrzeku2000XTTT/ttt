@@ -6,6 +6,7 @@
 // Performance: the hourly workflow passes { force: true } to trigger the slow LLM
 // fetch. Frontend calls (no force flag) return existing cached data immediately.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { isXLink, verifyXProfile } from '../../shared/xProfileVerify.ts';
 
 function getHourKey(d = new Date()) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}-${String(d.getUTCHours()).padStart(2, '0')}`;
@@ -109,10 +110,27 @@ export default async function (req) {
           ...parseTopics(ytData.topics, 'youtube'),
         ];
 
+        // Drop any X (Twitter) links whose handle no longer resolves — users
+        // rename accounts, so a handle that was live at fetch time can 404 now.
+        // Verify in parallel (bounded) so we never store dead profile links.
+        const xLinks = allNew.filter(r => isXLink(r.tweet_url));
+        const deadUrls = new Set<string>();
+        if (xLinks.length > 0) {
+          const verdicts = await Promise.all(
+            xLinks.map((r) => verifyXProfile(r.tweet_url).catch(() => ({ live: true, reason: 'verify error', handle: null })))
+          );
+          xLinks.forEach((r, i) => {
+            if (verdicts[i] && !verdicts[i].live) deadUrls.add(r.tweet_url);
+          });
+          if (deadUrls.size > 0) {
+            console.log(`[fetchKaspaHotTopics] dropped ${deadUrls.size} dead X link(s)`);
+          }
+        }
+
         // Deduplicate against existing URLs to avoid repeating news
         const existing = await base44.asServiceRole.entities.KaspaHotTopic.list('-scraped_at', 600);
         const existingUrls = new Set(existing.map(e => e.tweet_url));
-        const deduped = allNew.filter(r => !existingUrls.has(r.tweet_url));
+        const deduped = allNew.filter(r => !existingUrls.has(r.tweet_url) && !deadUrls.has(r.tweet_url));
 
         if (deduped.length > 0) {
           await base44.asServiceRole.entities.KaspaHotTopic.bulkCreate(deduped);
