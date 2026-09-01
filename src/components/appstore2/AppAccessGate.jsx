@@ -10,7 +10,8 @@ import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
 // miner fee) → we off-chain verify → 30-minute access to every app.
 export default function AppAccessGate({ open, onClose, onAuthorized }) {
   const access = useAppStoreAccess();
-  const { address, connect, loading, walletError, verifying, verifyError, verify, valid } = access;
+  const { address, connect, loading, walletError, verifying, verifyError, verify, cancelVerify, valid } = access;
+  const walletClosed = !address && verifyError;
   const [copied, setCopied] = useState(false);
   const firedRef = useRef(false);
 
@@ -65,27 +66,32 @@ export default function AppAccessGate({ open, onClose, onAuthorized }) {
 
             <div className="p-5 sm:p-6">
               <p className="text-sm text-zinc-600 leading-relaxed mb-4">
-                TTT apps run on Kaspa. To open this app, pay the Kaspa miner fee — send KAS to yourself from your Scorpion wallet. We verify it off-chain and unlock <b>every app in the store</b> for 30 minutes.
+                TTT apps run on Kaspa. To open this app, pay the Kaspa miner fee — send KAS to yourself from your Scorpion wallet. We watch the Kaspa network for your self-send and unlock <b>every app in the store</b> for 30 minutes.
               </p>
 
               {/* Steps */}
               <div className="rounded-xl bg-white ring-1 ring-zinc-200/70 p-4 space-y-3 mb-4">
                 <Step n="1" title="Connect Scorpion" desc="The KCC-20 wallet powers the store." />
                 <Step n="2" title="Self-send KAS" desc="In Scorpion, send any amount to your own address." />
-                <Step n="3" title="We verify off-chain" desc="Auto-detected — no signatures, no custody." />
+                <Step n="3" title="We detect it on-chain" desc="Auto-detected on the Kaspa network — no signatures, no custody." />
                 <Step n="4" title="30-minute access" desc="All apps unlock. Renew by self-sending again." />
               </div>
 
               {/* Action */}
               {!address ? (
-                <button
-                  onClick={connect}
-                  disabled={loading}
-                  className="w-full h-11 rounded-full bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-zinc-800 transition-colors"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
-                  Connect Scorpion
-                </button>
+                <div className="space-y-2">
+                  {walletClosed && (
+                    <p className="text-xs text-amber-600 text-center">{verifyError}</p>
+                  )}
+                  <button
+                    onClick={connect}
+                    disabled={loading}
+                    className="w-full h-11 rounded-full bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-zinc-800 transition-colors"
+                  >
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
+                    {walletClosed ? "Reconnect Scorpion" : "Connect Scorpion"}
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-3">
                   <div>
@@ -97,7 +103,7 @@ export default function AppAccessGate({ open, onClose, onAuthorized }) {
                       className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg bg-white ring-1 ring-zinc-200/60 hover:bg-zinc-50 transition"
                     >
                       <span className="font-mono text-xs text-zinc-700 break-all text-left">
-                        {shortKaspaAddress(address)}
+                        kaspa:{shortKaspaAddress(address)}
                       </span>
                       {copied ? (
                         <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -109,25 +115,35 @@ export default function AppAccessGate({ open, onClose, onAuthorized }) {
 
                   <ol className="text-xs text-zinc-500 space-y-1 list-decimal list-inside pl-1">
                     <li>Open Scorpion → <b>Send</b>.</li>
-                    <li>Paste your own address as the recipient.</li>
+                    <li>Paste your own address (with the <span className="font-mono">kaspa:</span> prefix) as the recipient.</li>
                     <li>Send any amount of KAS (the miner fee is all you pay).</li>
                   </ol>
 
-                  <button
-                    onClick={verify}
-                    disabled={verifying}
-                    className="w-full h-11 rounded-full bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-zinc-800 transition-colors"
-                  >
-                    {verifying ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" />Verifying…</>
-                    ) : (
-                      <><Shield className="w-5 h-5" />I sent it — Verify</>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={verify}
+                      disabled={verifying}
+                      className="flex-1 h-11 rounded-full bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-zinc-800 transition-colors"
+                    >
+                      {verifying ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" />Verifying…</>
+                      ) : (
+                        <><Shield className="w-5 h-5" />I sent it — Verify</>
                     )}
-                  </button>
+                    </button>
+                    {verifying && (
+                      <button
+                        onClick={cancelVerify}
+                        className="h-11 px-4 rounded-full bg-zinc-200 text-zinc-700 font-semibold flex items-center justify-center hover:bg-zinc-300 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
 
                   {verifying && (
                     <p className="text-[11px] text-zinc-400 text-center">
-                      Watching for your self-send… (checks every few seconds, up to 3 min)
+                      Watching for your self-send… (checks every few seconds, up to 3 min). Close Scorpion and we'll stop automatically.
                     </p>
                   )}
                   {verifyError && !verifying && (

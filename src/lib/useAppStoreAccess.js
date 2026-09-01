@@ -66,6 +66,24 @@ export function useAppStoreAccess() {
     return () => clearInterval(iv);
   }, [valid, snap.access]);
 
+  // If the wallet disconnects (user closed Scorpion / switched account) while
+  // we're polling for the self-send, stop the spinner and tell them to reconnect.
+  useEffect(() => {
+    if (!address && _verifying) {
+      stopPoll();
+      _verifying = false;
+      _verifyError = "Wallet closed — reconnect Scorpion to continue.";
+      emit();
+    }
+  }, [address]);
+
+  const cancelVerify = useCallback(() => {
+    stopPoll();
+    _verifying = false;
+    _verifyError = null;
+    emit();
+  }, []);
+
   const verify = useCallback(async () => {
     if (!address || _verifying) return;
     stopPoll();
@@ -125,6 +143,7 @@ export function useAppStoreAccess() {
     verifying: snap.verifying,
     verifyError: snap.verifyError,
     verify,
+    cancelVerify,
     access: snap.access,
   };
 }
