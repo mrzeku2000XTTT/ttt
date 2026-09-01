@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Crown, ExternalLink, Lock } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import DocsAdminLock from "./DocsAdminLock";
 import AppAccessGate from "@/components/appstore2/AppAccessGate";
 import AccessTimePill from "@/components/appstore2/AccessTimePill";
@@ -25,13 +26,21 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
   const isAdmin = !!app.admin;
   const access = useAppStoreAccess();
   const [gateOpen, setGateOpen] = useState(false);
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then((u) => setUserIsAdmin(u?.role === "admin")).catch(() => setUserIsAdmin(false));
+  }, []);
 
   const launch = () => {
     try { localStorage.setItem("came_from_categories", "true"); } catch {}
     if (openApp.startsWith("http")) window.open(openApp, "_blank", "noopener,noreferrer");
     else window.location.href = openApp;
   };
+  // App Store is open to everyone. The Scorpion self-send gate is kept around
+  // only for admins to test the flow — everyone else launches directly.
   const guardedLaunch = () => {
+    if (!userIsAdmin) { launch(); return; }
     if (access.valid) launch();
     else setGateOpen(true);
   };
