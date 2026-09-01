@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Wallet, Copy, Check, Loader2, Shield, Zap, Clock } from "lucide-react";
+import { X, Wallet, Copy, Check, Loader2, Shield, Zap, Clock, ExternalLink } from "lucide-react";
 import { shortKaspaAddress } from "@/lib/useKcc20Wallet";
 import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
+import { KCC20_APP, isInWalletIframe } from "@/lib/kcc20Pwa";
 
 // Modal shown when a user tries to OPEN an app without an active access window.
 // Browsing the store and reading app docs stay open; only the launch is gated.
@@ -162,6 +163,21 @@ export default function AppAccessGate({ open, onClose, onAuthorized }) {
                     <li>Paste your own address (with the <span className="font-mono">kaspa:</span> prefix) as the recipient.</li>
                     <li>Send any amount of KAS (the miner fee is all you pay).</li>
                   </ol>
+
+                  <a
+                    href={KCC20_APP}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full h-11 rounded-full bg-zinc-900 text-white font-semibold flex items-center justify-center gap-2 hover:bg-zinc-800 transition-colors"
+                  >
+                    <ExternalLink className="w-5 h-5" />
+                    Open Scorpion Wallet
+                  </a>
+                  {!isInWalletIframe() && (
+                    <p className="text-[11px] text-zinc-400 text-center -mt-1">
+                      Scorpion opens in a new tab. Do the self-send there, come back, then tap Verify.
+                    </p>
+                  )}
 
                   <div className="flex gap-2">
                     <button
