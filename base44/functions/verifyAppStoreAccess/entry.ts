@@ -33,10 +33,14 @@ Deno.serve(async (req) => {
       headers['Authorization'] = `Bearer ${apiKey}`;
     }
 
+    // api.kaspa.org requires the `kaspa:` prefix in the path and only the
+    // `/full-transactions` endpoint returns data for an address; the bare
+    // `/transactions` route 404s even for active addresses.
+    const addrPath = encodeURIComponent(`kaspa:${addr}`);
     let res;
     for (let i = 0; i < 3; i++) {
       try {
-        res = await fetch(`${API_BASE}/addresses/${addr}/transactions?limit=100`, { headers });
+        res = await fetch(`${API_BASE}/addresses/${addrPath}/full-transactions?limit=100`, { headers });
       } catch (e) {
         if (i < 2) { await new Promise((s) => setTimeout(s, 800)); continue; }
         return Response.json({ verified: false, error: 'Kaspa API unreachable' });
