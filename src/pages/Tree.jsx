@@ -88,6 +88,15 @@ export default function Tree() {
     base44.entities.TreeCampaign.list("-created_date", 10).then(setHistory).catch(() => {});
   }, []);
 
+  const deleteCampaign = async (c) => {
+    // Local-only campaigns (guests) have a synthetic id; just drop from history.
+    if (c.id && !String(c.id).startsWith("local_")) {
+      try { await base44.entities.TreeCampaign.delete(c.id); } catch { /* already gone */ }
+    }
+    setHistory((h) => h.filter((x) => x.id !== c.id));
+    setCampaign((cur) => (cur?.id === c.id ? null : cur));
+  };
+
   const pushStep = (label) =>
     setSteps((s) => [...s.map((x) => ({ ...x, done: true })), { label, done: false }]);
   const finishSteps = () => setSteps((s) => s.map((x) => ({ ...x, done: true })));
@@ -335,7 +344,7 @@ Also provide a 2-3 sentence overall campaign strategy.`,
               )}
             </div>
             <div>
-              <TreeCampaignHistory campaigns={history} onSelect={setCampaign} />
+              <TreeCampaignHistory campaigns={history} onSelect={setCampaign} onDelete={deleteCampaign} />
             </div>
           </div>
         )}
