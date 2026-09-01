@@ -37,12 +37,10 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
     if (openApp.startsWith("http")) window.open(openApp, "_blank", "noopener,noreferrer");
     else window.location.href = openApp;
   };
-  // App Store is open to everyone. The Scorpion self-send gate is kept around
-  // only for admins to test the flow — everyone else launches directly.
+  // App Store is open to everyone (admins included). The Scorpion self-send
+  // gate stays wired here, dormant, ready to re-enable on request.
   const guardedLaunch = () => {
-    if (!userIsAdmin) { launch(); return; }
-    if (access.valid) launch();
-    else setGateOpen(true);
+    launch();
   };
 
   const OpenAppButton = ({ fullWidth = false }) => {
