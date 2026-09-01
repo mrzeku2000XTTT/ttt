@@ -5,6 +5,7 @@ import { createPageUrl } from "@/utils";
 import DocsAdminLock from "./DocsAdminLock";
 import AppAccessGate from "@/components/appstore2/AppAccessGate";
 import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
+import { getMaturityMeta } from "@/components/appstore2/appCatalog";
 
 // Shared docs hero — app icon, name, tagline, badges, and the Open App action.
 // Open App is always shown (mobile + desktop). Admin-only apps render an
@@ -82,8 +83,26 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
             <p className="text-sm sm:text-[15px] text-zinc-500 mt-1">{docs.tagline}</p>
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600">{app.cat}</span>
-              {app.admin && <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700"><Lock className="w-3 h-3" />Admin</span>}
+              {app.admin ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700"><Lock className="w-3 h-3" />Admin</span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Available</span>
+              )}
               {app.premium && <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700">Premium</span>}
+              {(() => {
+                const m = getMaturityMeta(app);
+                const toneCls = m.tone === "done"
+                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                  : m.tone === "usable"
+                    ? "bg-amber-50 text-amber-700 ring-amber-200"
+                    : "bg-rose-50 text-rose-700 ring-rose-200";
+                return (
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full ring-1 ${toneCls}`} title={`Maturity: ${m.value}% — ${m.label}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                    {m.value}% · {m.label}
+                  </span>
+                );
+              })()}
             </div>
           </div>
 

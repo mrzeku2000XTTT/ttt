@@ -199,3 +199,59 @@ export const KASPA_APPS_ORDER = [
   "SilverScript",
   "KaShop",
 ];
+
+// ── App maturity ──
+// A 0–100 judgment of how "done" each app is. Apps at 80%+ are considered
+// shipped/polished; 50–79 are usable but still evolving; below 50 are early or
+// experimental and likely need more versions. Explicit overrides below capture
+// the flagship apps we have high confidence about; everything else derives a
+// sensible default from signals already on the catalog entry (video, premium,
+// admin, community/review state).
+export const APP_MATURITY = {
+  Quickz: 85,
+  Isolate: 90,
+  Kcc20Test: 35,
+  DD: 85,
+  KaChingWallet: 88,
+  KCC20: 85,
+  KCCNft: 82,
+  Slobz: 82,
+  Hikaru: 88,
+  Tree: 82,
+  Klipz: 72,
+  Kascov: 78,
+  AgentZK: 86,
+  Feed: 90,
+  Bridge: 86,
+  Terra: 86,
+  TTTBuilder: 86,
+  Browser: 86,
+  StakeDAG: 58,
+  KaSkool: 60,
+  TTT: 50,
+};
+
+const clampM = (n) => Math.max(20, Math.min(95, Math.round(n)));
+
+export function getMaturity(app) {
+  if (app.maturity != null) return clampM(app.maturity);
+  const key = app.path || app.name;
+  if (APP_MATURITY[key] != null) return APP_MATURITY[key];
+  // Derived default from catalog signals.
+  let m = 55;
+  if (app.video) m += 10;      // polished preview → more complete
+  if (app.premium) m += 10;    // shipped paid feature
+  if (app.admin) m -= 10;      // internal / experimental
+  if (app.review) m -= 15;     // community submission not yet approved
+  else if (app.community) m -= 5;
+  return clampM(m);
+}
+
+// Returns { value, label, tone } where tone drives badge color.
+// tone: "done" (>=80) | "usable" (50–79) | "wip" (<50)
+export function getMaturityMeta(app) {
+  const value = getMaturity(app);
+  const label = value >= 80 ? "Done" : value >= 50 ? "Usable" : "In Progress";
+  const tone = value >= 80 ? "done" : value >= 50 ? "usable" : "wip";
+  return { value, label, tone };
+}
