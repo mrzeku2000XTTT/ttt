@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Crown, ExternalLink, Lock } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import DocsAdminLock from "./DocsAdminLock";
+import AppAccessGate from "@/components/appstore2/AppAccessGate";
+import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
 
 // Shared docs hero — app icon, name, tagline, badges, and the Open App action.
 // Open App is always shown (mobile + desktop). Admin-only apps render an
@@ -19,10 +21,17 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
 
   const openApp = app.path ? createPageUrl(app.path) : app.externalUrl;
   const isAdmin = !!app.admin;
+  const access = useAppStoreAccess();
+  const [gateOpen, setGateOpen] = useState(false);
 
-  const go = () => {
+  const launch = () => {
     try { localStorage.setItem("came_from_categories", "true"); } catch {}
-    window.location.href = openApp;
+    if (openApp.startsWith("http")) window.open(openApp, "_blank", "noopener,noreferrer");
+    else window.location.href = openApp;
+  };
+  const guardedLaunch = () => {
+    if (access.valid) launch();
+    else setGateOpen(true);
   };
 
   const OpenAppButton = ({ fullWidth = false }) => {
@@ -34,15 +43,13 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
       return openApp.startsWith("http") ? (
         <a href={openApp} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
       ) : (
-        <button onClick={go} className={cls}>{inner}</button>
+        <button onClick={launch} className={cls}>{inner}</button>
       );
     }
     const cls = `inline-flex items-center justify-center gap-1.5 h-10 ${size} rounded-full bg-zinc-900 text-white text-[13px] font-semibold hover:bg-zinc-700 transition-colors flex-shrink-0`;
     const inner = (<><ExternalLink className="w-4 h-4" />Open App</>);
-    return openApp.startsWith("http") ? (
-      <a href={openApp} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
-    ) : (
-      <button onClick={go} className={cls}>{inner}</button>
+    return (
+      <button onClick={guardedLaunch} className={cls}>{inner}</button>
     );
   };
 
@@ -91,6 +98,11 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
         </div>
 
         {isAdmin && <DocsAdminLock app={app} />}
+        <AppAccessGate
+          open={gateOpen}
+          onClose={() => setGateOpen(false)}
+          onAuthorized={() => { setGateOpen(false); launch(); }}
+        />
       </div>
     </div>
   );

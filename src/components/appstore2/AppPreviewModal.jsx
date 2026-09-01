@@ -1,12 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ExternalLink, Shield } from "lucide-react";
+import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
+import AppAccessGate from "@/components/appstore2/AppAccessGate";
 
 // In-store live preview for community-listed apps. We iframe the app's live
 // URL (e.g. a Vercel deployment) so users can try it without leaving TTT.
 // A "Open in new tab" button is kept as a fallback for apps that block framing.
 export default function AppPreviewModal({ app, onClose }) {
+  const access = useAppStoreAccess();
+  const [gateOpen, setGateOpen] = useState(false);
+  const guardedOpen = () => {
+    if (access.valid && app?.externalUrl) window.open(app.externalUrl, "_blank", "noopener,noreferrer");
+    else setGateOpen(true);
+  };
   return (
+    <>
     <AnimatePresence>
       {app && (
         <motion.div
@@ -38,15 +47,13 @@ export default function AppPreviewModal({ app, onClose }) {
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <a
-                  href={app.externalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={guardedOpen}
                   className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-700 transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Open in new tab</span>
-                </a>
+                </button>
                 <button
                   onClick={onClose}
                   className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-900 transition-colors"
@@ -70,5 +77,11 @@ export default function AppPreviewModal({ app, onClose }) {
         </motion.div>
       )}
     </AnimatePresence>
+    <AppAccessGate
+      open={gateOpen}
+      onClose={() => setGateOpen(false)}
+      onAuthorized={() => { setGateOpen(false); if (app?.externalUrl) window.open(app.externalUrl, "_blank", "noopener,noreferrer"); }}
+    />
+    </>
   );
 }
