@@ -136,6 +136,7 @@ export function useAppStoreAccess() {
   return {
     address,
     connect: kcc.connect,
+    disconnect: kcc.disconnect,
     loading: kcc.loading,
     walletError: kcc.error,
     valid,

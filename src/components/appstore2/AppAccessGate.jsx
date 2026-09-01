@@ -10,8 +10,34 @@ import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
 // miner fee) → we off-chain verify → 30-minute access to every app.
 export default function AppAccessGate({ open, onClose, onAuthorized }) {
   const access = useAppStoreAccess();
-  const { address, connect, loading, walletError, verifying, verifyError, verify, cancelVerify, valid } = access;
+  const { address, connect, disconnect, loading, walletError, verifying, verifyError, verify, cancelVerify, valid } = access;
   const walletClosed = !address && verifyError;
+  const [connectError, setConnectError] = useState(null);
+
+  const handleConnect = async () => {
+    setConnectError(null);
+    try {
+      const res = Promise.race([
+        connect(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 30000)),
+      ]);
+      await res;
+    } catch (e) {
+      // Scorpion popup closed / didn't respond — reset the stuck loading flag
+      // so the user can retry instead of staring at a forever-spinner.
+      try { disconnect?.(); } catch {}
+      setConnectError(
+        e?.message === "timeout"
+          ? "Scorpion didn't respond in time. Open Scorpion and tap Connect again."
+          : e?.message || "Could not connect Scorpion. Try again."
+      );
+    }
+  };
+
+  const cancelConnect = () => {
+    try { disconnect?.(); } catch {}
+    setConnectError(null);
+  };
   const [copied, setCopied] = useState(false);
   const firedRef = useRef(false);
 
@@ -83,14 +109,32 @@ export default function AppAccessGate({ open, onClose, onAuthorized }) {
                   {walletClosed && (
                     <p className="text-xs text-amber-600 text-center">{verifyError}</p>
                   )}
-                  <button
-                    onClick={connect}
-                    disabled={loading}
-                    className="w-full h-11 rounded-full bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-zinc-800 transition-colors"
-                  >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
-                    {walletClosed ? "Reconnect Scorpion" : "Connect Scorpion"}
-                  </button>
+                  {connectError && !loading && (
+                    <p className="text-xs text-red-500 text-center">{connectError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleConnect}
+                      disabled={loading}
+                      className="flex-1 h-11 rounded-full bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-zinc-800 transition-colors"
+                    >
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
+                      {walletClosed ? "Reconnect Scorpion" : "Connect Scorpion"}
+                    </button>
+                    {loading && (
+                      <button
+                        onClick={cancelConnect}
+                        className="h-11 px-4 rounded-full bg-zinc-200 text-zinc-700 font-semibold flex items-center justify-center hover:bg-zinc-300 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                  {loading && (
+                    <p className="text-[11px] text-zinc-400 text-center">
+                      Waiting on Scorpion… if the wallet closed, tap Cancel and retry.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
