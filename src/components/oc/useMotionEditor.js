@@ -89,7 +89,7 @@ export function useMotionEditor() {
     else if (type === "device") {
       const d = extra?.device || "iphone";
       const dims = { iphone: [0.3, 0.62], ipad: [0.5, 0.7], macbook: [0.62, 0.42], monitor: [0.56, 0.38] }[d] || [0.4, 0.4];
-      base = { x: cx, y: cy, width: Math.round(sw * dims[0]), height: Math.round(sw * dims[1]), device: d, scale: 1, rotation: 0, opacity: 1 };
+      base = { x: cx, y: cy, width: Math.round(sw * dims[0]), height: Math.round(sw * dims[1]), device: d, src: extra?.src || "", mediaType: extra?.mediaType || "", scale: 1, rotation: 0, opacity: 1 };
     }
     const obj = { id: uid(), type, name: type === "device" ? (extra?.device ? extra.device[0].toUpperCase() + extra.device.slice(1) : "Device") : type[0].toUpperCase() + type.slice(1), base, keyframes: {} };
     setObjects((o) => [...o, obj]);

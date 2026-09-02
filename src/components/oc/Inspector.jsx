@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { valueAt, ANIM_PROPS } from "./useMotionEditor";
 
 function Row({ label, children, hasKf, onToggleKf, ease, onEase }) {
@@ -56,6 +56,10 @@ function Slider({ value, onChange, min, max, step }) {
 
 export default function Inspector({ editor }) {
   const { selectedObject: o, time, setValue, setKeyframe, removeKeyframe, clearPropKeyframes, deleteObject, duplicateObject, bringToFront, updateBase, canvasW, canvasH } = editor;
+  const devImgRef = useRef(null);
+  const devVidRef = useRef(null);
+  const onDevImg = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) updateBase(o.id, { src: URL.createObjectURL(f), mediaType: "image" }); };
+  const onDevVid = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) updateBase(o.id, { src: URL.createObjectURL(f), mediaType: "video" }); };
   if (!o) {
     return (
       <div className="flex flex-1 min-h-0 w-full md:w-72 flex-shrink-0 border-l border-black/[0.06] bg-white/70 backdrop-blur-xl items-center justify-center p-6">
@@ -100,6 +104,20 @@ export default function Inspector({ editor }) {
             <span className="text-[#86868b]">⧉</span> Duplicate {o.type === "video" ? "video" : o.type === "image" ? "image" : "asset"}
           </button>
         </div>
+        {o.type === "device" && (
+          <div className="py-2.5 border-b border-black/[0.05]">
+            <div className="text-[12px] font-medium text-[#1d1d1f] mb-1.5">Screen media</div>
+            <div className="flex gap-2 mb-2">
+              <button onClick={() => devImgRef.current?.click()} className="flex-1 h-8 rounded-lg bg-black/[0.04] text-[12px] text-[#1d1d1f] hover:bg-black/[0.08]">Upload image</button>
+              <button onClick={() => devVidRef.current?.click()} className="flex-1 h-8 rounded-lg bg-black/[0.04] text-[12px] text-[#1d1d1f] hover:bg-black/[0.08]">Upload video</button>
+            </div>
+            <input value={o.base.src} onChange={(e) => updateBase(o.id, { src: e.target.value, mediaType: e.target.value ? (o.base.mediaType || "image") : "" })} placeholder="https://…"
+              className="w-full bg-black/[0.04] rounded-lg px-2.5 py-2 text-[12px] text-[#1d1d1f] outline-none focus:ring-2 focus:ring-[#0A84FF]/30" />
+            {o.base.src && <button onClick={() => updateBase(o.id, { src: "", mediaType: "" })} className="mt-1.5 text-[11px] text-[#86868b] hover:text-red-500">Clear media</button>}
+            <input ref={devImgRef} type="file" accept="image/*" className="hidden" onChange={onDevImg} />
+            <input ref={devVidRef} type="file" accept="video/*" className="hidden" onChange={onDevVid} />
+          </div>
+        )}
         {/* Static content props */}
         {o.type === "text" && (
           <>

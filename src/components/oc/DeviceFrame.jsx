@@ -1,14 +1,27 @@
 import React from "react";
 
+// If a screen media src is provided, render it inside the screen; otherwise
+// show a subtle gradient placeholder.
+function Screen({ src, mediaType, radius }) {
+  if (!src) {
+    return <div style={{ width: "100%", height: "100%", background: "linear-gradient(155deg,#3a3a4e,#1a1a2a 60%,#2a2a3a)" }} />;
+  }
+  if (mediaType === "video") {
+    return <video src={src} muted loop playsInline autoPlay draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: radius || 0, pointerEvents: "none" }} />;
+  }
+  return <img src={src} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: radius || 0, pointerEvents: "none" }} />;
+}
+
 // Apple-style device mockups rendered with pure CSS so they stay crisp at any size.
-// Each fills its 100% × 100% box; the object's width/height define the frame size.
-export default function DeviceFrame({ device }) {
+export default function DeviceFrame({ device, src, mediaType }) {
   if (device === "iphone") {
     return (
       <div style={{ width: "100%", height: "100%", background: "linear-gradient(150deg,#ededf0,#c7c7cc)", borderRadius: "22%", padding: "5%", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.6), inset 0 0 6px rgba(0,0,0,0.08)" }}>
         <div style={{ width: "100%", height: "100%", background: "#0b0b0d", borderRadius: "17%", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: "2.5%", left: "50%", transform: "translateX(-50%)", width: "36%", height: "2.2%", background: "#1a1a1e", borderRadius: 6, zIndex: 2 }} />
-          <div style={{ position: "absolute", inset: "9% 5% 5% 5%", background: "linear-gradient(155deg,#3a3a4e,#1a1a2a 60%,#2a2a3a)", borderRadius: "10%" }} />
+          <div style={{ position: "absolute", inset: "9% 5% 5% 5%", overflow: "hidden", borderRadius: "10%" }}>
+            <Screen src={src} mediaType={mediaType} />
+          </div>
         </div>
       </div>
     );
@@ -17,7 +30,9 @@ export default function DeviceFrame({ device }) {
     return (
       <div style={{ width: "100%", height: "100%", background: "linear-gradient(150deg,#ededf0,#c7c7cc)", borderRadius: "11%", padding: "5%", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.6), inset 0 0 6px rgba(0,0,0,0.08)" }}>
         <div style={{ width: "100%", height: "100%", background: "#0b0b0d", borderRadius: "7%", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", inset: "6%", background: "linear-gradient(155deg,#3a3a4e,#1a1a2a 60%,#2a2a3a)", borderRadius: "5%" }} />
+          <div style={{ position: "absolute", inset: "6%", overflow: "hidden", borderRadius: "5%" }}>
+            <Screen src={src} mediaType={mediaType} />
+          </div>
         </div>
       </div>
     );
@@ -27,7 +42,7 @@ export default function DeviceFrame({ device }) {
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
         <div style={{ flex: "1 1 auto", background: "linear-gradient(150deg,#e4e4e7,#bcbcc0)", borderRadius: "4% 4% 1% 1%", padding: "3.5%", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.5)" }}>
           <div style={{ width: "100%", height: "100%", background: "#0b0b0d", borderRadius: "1.5%", overflow: "hidden" }}>
-            <div style={{ width: "100%", height: "100%", background: "linear-gradient(155deg,#3a3a4e,#1a1a2a 60%,#2a2a3a)" }} />
+            <Screen src={src} mediaType={mediaType} />
           </div>
         </div>
         <div style={{ flex: "0 0 9%", marginTop: "1.5%", position: "relative" }}>
@@ -42,7 +57,7 @@ export default function DeviceFrame({ device }) {
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: "1 1 auto", background: "linear-gradient(150deg,#e4e4e7,#bcbcc0)", borderRadius: "3%", padding: "4%", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.5)" }}>
         <div style={{ width: "100%", height: "100%", background: "#0b0b0d", borderRadius: "1.5%", overflow: "hidden" }}>
-          <div style={{ width: "100%", height: "100%", background: "linear-gradient(155deg,#3a3a4e,#1a1a2a 60%,#2a2a3a)" }} />
+          <Screen src={src} mediaType={mediaType} />
         </div>
       </div>
       <div style={{ flex: "0 0 14%", display: "flex", justifyContent: "center" }}>

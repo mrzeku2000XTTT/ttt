@@ -38,7 +38,7 @@ function Layer({ obj, time, selected, onPointerDown }) {
   } else if (obj.type === "video") {
     inner = <video src={obj.base.src} muted loop playsInline autoPlay draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, pointerEvents: "none" }} />;
   } else if (obj.type === "device") {
-    inner = <DeviceFrame device={obj.base.device} />;
+    inner = <DeviceFrame device={obj.base.device} src={obj.base.src} mediaType={obj.base.mediaType} />;
   }
   return (
     <div style={common} onPointerDown={(e) => onPointerDown(e, obj.id)}>
