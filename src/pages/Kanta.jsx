@@ -31,12 +31,13 @@ export default function Kanta() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("kantaGenerate", { prompt });
+      const data = res?.data ?? res ?? {};
       setMessages((m) => [...m, {
         role: "assistant",
         prompt,
-        title: res.title || "Untitled",
-        lyrics: res.lyrics || "",
-        tags: res.tags || "",
+        title: data.title || "Untitled",
+        lyrics: data.lyrics || "",
+        tags: data.tags || "",
       }]);
     } catch (e) {
       setError(e?.message || "Lyrics generation failed.");
