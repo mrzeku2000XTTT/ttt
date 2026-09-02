@@ -79,7 +79,7 @@ function Layer({ obj, time, selected, onPointerDown, onMeasure }) {
 }
 
 export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenInspector }) {
-  const { objects, selectedId, selectObject, setKeyframe, setPlaying, setRecording, addObject, setCanvasSize, canvasW, canvasH } = editor;
+  const { objects, selectedId, selectObject, setKeyframe, setPlaying, setRecording, addObject, deleteObject, setCanvasSize, canvasW, canvasH } = editor;
   const wrapRef = useRef(null);
   const fitRef = useRef(null);
   const stageRef = useRef(null);
@@ -198,10 +198,15 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
     const rotX = p.x + (h / 2 * s + rOff) * Math.sin(th);
     const rotY = p.y - (h / 2 * s + rOff) * Math.cos(th);
     const handleBase = { position: "absolute", transform: "translate(-50%,-50%)", touchAction: "none", zIndex: 5, background: "#FF0000", border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" };
+    const trX = p.x + dx * Math.cos(th) + dy * Math.sin(th);
+    const trY = p.y + dx * Math.sin(th) - dy * Math.cos(th);
     handles = (
       <>
         <div onPointerDown={onRotDown} style={{ ...handleBase, left: rotX, top: rotY, width: 15, height: 15, borderRadius: "50%", cursor: "grab" }} />
         <div onPointerDown={onScaleDown} style={{ ...handleBase, left: cornerX, top: cornerY, width: 15, height: 15, borderRadius: 3, cursor: "nwse-resize" }} />
+        <button onPointerDown={(e) => { e.stopPropagation(); deleteObject(sel.id); }} title="Delete asset" style={{ ...handleBase, left: trX, top: trY, width: 18, height: 18, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round"><path d="M1.5 1.5l5 5M6.5 1.5l-5 5"/></svg>
+        </button>
       </>
     );
   }

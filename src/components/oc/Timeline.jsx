@@ -43,7 +43,7 @@ export default function Timeline({ editor }) {
 
   return (
     <div className="flex flex-col gap-2 px-4 py-3 bg-white/80 backdrop-blur-xl border-t border-black/[0.06]" style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <button onClick={toStart} title="Back to start" className={`${iconBtn} bg-black/[0.05] text-[#1d1d1f] hover:bg-black/[0.08]`}>
           <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="2" y="2" width="2" height="9" rx="0.5"/><path d="M11.5 2.2 L5 6.5 L11.5 10.8 Z"/></svg>
         </button>
@@ -60,7 +60,6 @@ export default function Timeline({ editor }) {
         <div className="text-[13px] font-medium text-[#1d1d1f] tabular-nums tracking-tight">
           {fmt(time)} <span className="text-[#86868b]">/ {fmt(duration)}</span>
         </div>
-        <div className="flex-1" />
         <div className="flex items-center gap-1.5 text-[12px] text-[#86868b]">
           <span>Dur</span>
           <input type="number" min="1" max="60" step="1" value={duration}
@@ -70,7 +69,7 @@ export default function Timeline({ editor }) {
         </div>
         <div className="flex items-center gap-1 ml-1">
           <button onClick={() => zoom(1 / 1.4)} title="Zoom out" className={`${iconBtn} bg-black/[0.05] text-[#1d1d1f] hover:bg-black/[0.08]`}><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 6.5h7"/></svg></button>
-          <span className="text-[11px] text-[#86868b] tabular-nums w-10 text-center">{Math.round(pxPerSec)}px/s</span>
+          <span className="hidden sm:inline-block text-[11px] text-[#86868b] tabular-nums w-10 text-center">{Math.round(pxPerSec)}px/s</span>
           <button onClick={() => zoom(1.4)} title="Zoom in" className={`${iconBtn} bg-black/[0.05] text-[#1d1d1f] hover:bg-black/[0.08]`}><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 6.5h7M6.5 3v7"/></svg></button>
         </div>
         <button onClick={addLayer} title="Add a new layer" className="h-8 px-3 rounded-full bg-[#0A84FF] text-white text-[12px] font-medium hover:bg-[#0a78e0] flex items-center gap-1">
