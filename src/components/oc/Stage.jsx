@@ -87,11 +87,11 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
   const onObjectPointerDown = (e, id) => {
     e.stopPropagation();
     selectObject(id);
-    setPlaying(false);
+    const wasPlaying = editor.playing;
     const o = live.current.objects.find((x) => x.id === id);
     const p = propsAtTime(o, live.current.time);
     const start = toLogical(e.clientX, e.clientY);
-    dragRef.current = { id, mode: "position", start, origin: { x: p.x, y: p.y }, recording: false };
+    dragRef.current = { id, mode: "position", start, origin: { x: p.x, y: p.y }, recording: false, wasPlaying };
   };
 
   const onScaleDown = (e) => {
@@ -118,14 +118,21 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
       const d = dragRef.current; if (!d) return;
       const cur = toLogical(e.clientX, e.clientY);
       if (d.mode === "position") {
-        // Position drag = record mode: playhead auto-advances, painting a motion path.
-        if (!d.recording) {
-          d.recording = true; setRecording(true);
-          setKeyframe(d.id, "x", live.current.time, d.origin.x);
-          setKeyframe(d.id, "y", live.current.time, d.origin.y);
+        // If playback was running when the drag began, record a motion path
+        // (playhead auto-advances). If paused, just keyframe at the current
+        // playhead — the line stays put while you drag.
+        if (d.wasPlaying) {
+          if (!d.recording) {
+            d.recording = true; setRecording(true);
+            setKeyframe(d.id, "x", live.current.time, d.origin.x);
+            setKeyframe(d.id, "y", live.current.time, d.origin.y);
+          }
+          setKeyframe(d.id, "x", live.current.time, d.origin.x + (cur.x - d.start.x));
+          setKeyframe(d.id, "y", live.current.time, d.origin.y + (cur.y - d.start.y));
+        } else {
+          setKeyframe(d.id, "x", live.current.time, d.origin.x + (cur.x - d.start.x));
+          setKeyframe(d.id, "y", live.current.time, d.origin.y + (cur.y - d.start.y));
         }
-        setKeyframe(d.id, "x", live.current.time, d.origin.x + (cur.x - d.start.x));
-        setKeyframe(d.id, "y", live.current.time, d.origin.y + (cur.y - d.start.y));
       } else if (d.mode === "scale") {
         // Scale/rotation keyframe at the current playhead (no auto-advance) — stable, no duplicates.
         const dist = Math.hypot(cur.x - d.center.x, cur.y - d.center.y);
