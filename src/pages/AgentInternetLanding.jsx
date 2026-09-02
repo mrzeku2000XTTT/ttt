@@ -216,18 +216,18 @@ export default function AgentInternetLanding() {
                 )}
 
                 {/* Launch buttons */}
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                   <button
                     onClick={() => guardLaunch("agent")}
-                    className="h-14 px-6 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
+                    className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
                   >
-                    <span className="text-xs font-mono tracking-widest uppercase text-white/80">Launch Agent Internet</span>
+                    <span className="text-[11px] font-mono tracking-widest uppercase text-white/80">Launch Agent Internet</span>
                   </button>
                   <button
                     onClick={() => guardLaunch("ttt")}
-                    className="h-14 px-6 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
+                    className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
                   >
-                    <span className="text-xs font-mono tracking-widest uppercase text-white/80">Launch TTT</span>
+                    <span className="text-[11px] font-mono tracking-widest uppercase text-white/80">Launch TTT</span>
                   </button>
                 </div>
 
