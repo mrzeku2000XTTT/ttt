@@ -140,6 +140,7 @@ import IsolatePage from './pages/Isolate';
 import QuickzPage from './pages/Quickz';
 import KantaPage from './pages/Kanta';
 import OCPage from './pages/OC';
+import SpatialPage from './pages/Spatial';
 import AppDocsPage from './pages/AppDocs';
 import TrendingPage from './pages/Trending';
 import TokensPage from './pages/Tokens';
@@ -356,6 +357,7 @@ const AuthenticatedApp = () => {
       <Route path="/Quickz" element={<QuickzPage />} />
       <Route path="/Kanta" element={<KantaPage />} />
       <Route path="/OC" element={<OCPage />} />
+      <Route path="/Spatial" element={<SpatialPage />} />
       <Route path="/AppDocs/:appPath" element={<AppDocsPage />} />
       <Route path="/Trending" element={<TrendingPage />} />
       <Route path="/Tokens" element={<TokensPage />} />

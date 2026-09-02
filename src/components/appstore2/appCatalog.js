@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Spatial", path: "Spatial", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9889bbc28_image.jpeg", desc: "Room transform prompt studio · upload a room photo, get a consistent image-gen prompt" },
   { name: "OC", path: "OC", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/bdf31a3a8_generated_image.png", desc: "Auto-keyframe motion graphics · drag objects and keyframes write themselves — Canva-style animation, no timeline wrestling" },
   { name: "Kanta", path: "Kanta", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3abbf9202_generated_image.png", desc: "Lyrics → song generator · Mureka AI writes lyrics and composes a full produced track" },
   { name: "Quickz", path: "Quickz", cat: "Productivity", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2932a5b3f_generated_image.png", desc: "AI-powered local notepad · infinite notes, instant search, stays on your device" },
