@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Mic, Loader2, Copy, Check, Download, Send } from "lucide-react";
+import { Mic, Loader2, Copy, Check, Download, Send, Store } from "lucide-react";
 
 // Kanta — chat-style AI lyrics writer powered by TTT's built-in AI.
 // Strict monochrome: pure black background, white text only.
@@ -103,7 +104,14 @@ export default function Kanta() {
               <p className="text-[11px] text-white/50 -mt-0.5">AI Lyrics Writer</p>
             </div>
           </div>
-          <div className="w-24" />
+          <Link
+            to="/AppStoreV2"
+            className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white border border-white/15 rounded-full px-3 py-1.5 transition-colors hover:bg-white/10"
+            title="Exit to Store"
+          >
+            <Store className="w-3.5 h-3.5" />
+            Store
+          </Link>
         </div>
       </header>
 
