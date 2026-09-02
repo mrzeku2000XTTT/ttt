@@ -18,7 +18,7 @@ const ANGLES = [
   { label: "Wide establishing shot", desc: "full room view from the main doorway, eye-level, showing the entire space" },
   { label: "Corner detail", desc: "45-degree angle where two walls meet, mid-shot" },
   { label: "Material close-up", desc: "tight close-up of the key surface material and texture" },
-  { label: "Opposite wall view", desc: "reverse angle from the far wall looking back across the room" },
+  { label: "CCTV overhead", desc: "high-mounted CCTV security-camera angle, wide lens, top-down surveillance view of the whole room, slight fisheye distortion" },
 ];
 const MORE_ANGLES = [
   { label: "Low angle", desc: "floor-level shot looking upward, dramatic perspective" },
