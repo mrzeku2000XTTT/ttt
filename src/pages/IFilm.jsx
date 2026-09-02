@@ -39,6 +39,8 @@ export default function IFilm() {
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState(null);
   const [playing, setPlaying] = useState(null);
+  const [channelInfo, setChannelInfo] = useState(null);
+  const [channels, setChannels] = useState([]);
   const searchInputRef = useRef(null);
 
   const runSearch = async (q, pg = 1, append = false) => {
@@ -51,6 +53,10 @@ export default function IFilm() {
       const list = data?.videos || [];
       setVideos((prev) => append ? [...prev, ...list] : list);
       setHasMore(!!data?.hasMore && list.length > 0);
+      if (!append) {
+        setChannelInfo(data?.mode === "channel" ? data.channel : null);
+        setChannels(data?.mode === "search" ? (data.channels || []) : []);
+      }
       setPage(pg);
     } catch (e) {
       setError(e?.message || "Search failed. Try again.");
@@ -70,6 +76,14 @@ export default function IFilm() {
   };
 
   const loadMore = () => runSearch(activeQuery, page + 1, true);
+
+  const openChannel = (username) => {
+    const q = `@${username}`;
+    setQuery(q);
+    setActiveQuery(q);
+    runSearch(q, 1);
+    window.scrollTo({ top: 0 });
+  };
 
   const onKey = (e) => { if (e.key === "Escape") setPlaying(null); };
   useEffect(() => {
@@ -92,7 +106,7 @@ export default function IFilm() {
               ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search videos…"
+              placeholder="Search videos or @channel…"
               className="w-full h-9 pl-9 pr-9 rounded-full bg-white/10 border border-white/15 text-[13px] text-white placeholder-white/40 outline-none focus:border-white/40 focus:bg-white/15 transition-colors"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
@@ -112,10 +126,44 @@ export default function IFilm() {
         {/* Section label */}
         <div className="flex items-center justify-between mb-3 mt-1">
           <div className="text-[11px] tracking-[0.2em] text-white/45">
-            {activeQuery ? `RESULTS · ${activeQuery.toUpperCase()}` : "TRENDING NOW"}
+            {channelInfo ? "CHANNEL" : activeQuery ? `RESULTS · ${activeQuery.toUpperCase()}` : "TRENDING NOW"}
           </div>
           {!loading && videos.length > 0 && <div className="text-[11px] text-white/35">{videos.length} videos</div>}
         </div>
+
+        {/* Channel header */}
+        {channelInfo && !loading && (
+          <div className="flex items-start gap-3 mb-4 p-3 rounded-xl border border-white/10 bg-white/[0.03]">
+            {channelInfo.avatar ? (
+              <img src={channelInfo.avatar} alt={channelInfo.screenname} className="w-14 h-14 rounded-full object-cover border border-white/20 flex-shrink-0" />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-white/10 flex-shrink-0" />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="text-white font-semibold text-[15px] truncate">{channelInfo.screenname}</div>
+              <div className="text-white/40 text-[12px] truncate">@{channelInfo.username} · {channelInfo.videos_total} videos</div>
+              {channelInfo.description && <div className="text-white/55 text-[12px] mt-1 line-clamp-2">{channelInfo.description}</div>}
+            </div>
+          </div>
+        )}
+
+        {/* Channel suggestions */}
+        {channels.length > 0 && !channelInfo && !loading && !error && (
+          <div className="mb-4">
+            <div className="text-[11px] tracking-[0.18em] text-white/45 mb-2">CHANNELS</div>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {channels.map((c) => (
+                <button key={c.username} onClick={() => openChannel(c.username)} className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors flex-shrink-0">
+                  {c.avatar ? <img src={c.avatar} alt={c.screenname} className="w-7 h-7 rounded-full object-cover" /> : <div className="w-7 h-7 rounded-full bg-white/10" />}
+                  <div className="text-left min-w-0">
+                    <div className="text-[12px] text-white/90 truncate max-w-[120px]">{c.screenname}</div>
+                    <div className="text-[10px] text-white/40">{c.videos_total} videos</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Loading grid */}
         {loading && (
