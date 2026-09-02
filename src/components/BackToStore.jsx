@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Store } from "lucide-react";
 
 /**
- * Floating "Exit to Store" button — shows when the user arrived from
- * AppStoreV2 (localStorage flag `came_from_categories` === 'true').
- * Renders nothing if the user didn't come from the store.
+ * Floating "Exit to App Store" button — top-right, always visible on every
+ * app page except the store itself and the top-level landings.
  */
+const HIDDEN_PATHS = ["/AppStoreV2", "/AppStore", "/", "/TTTHome", "/TTTGate", "/Kanta"];
+
 export default function BackToStore() {
-  const [show, setShow] = useState(false);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
-    try {
-      setShow(localStorage.getItem("came_from_categories") === "true");
-    } catch {
-      setShow(false);
-    }
-  }, []);
+    setShow(!HIDDEN_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/")));
+  }, [pathname]);
 
   if (!show) return null;
 
@@ -31,9 +29,9 @@ export default function BackToStore() {
   return (
     <button
       onClick={handleBack}
-      className="fixed bottom-5 right-5 z-[100] flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900 text-white text-[13px] font-medium shadow-lg shadow-black/20 hover:bg-zinc-800 transition-colors active:scale-95"
+      className="fixed top-3 right-3 z-[120] flex items-center gap-1.5 px-3 py-2 rounded-full bg-zinc-900/90 backdrop-blur-md text-white text-[12px] font-medium border border-white/15 shadow-lg shadow-black/30 hover:bg-zinc-800 transition-colors active:scale-95"
     >
-      <Store className="w-4 h-4" />
+      <Store className="w-3.5 h-3.5" />
       <span>Exit to Store</span>
     </button>
   );
