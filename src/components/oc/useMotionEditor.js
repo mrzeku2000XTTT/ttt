@@ -43,7 +43,10 @@ export const ANIM_PROPS = ["x", "y", "scale", "rotation", "opacity"];
 let _seq = 0;
 const uid = () => `o${Date.now().toString(36)}${(_seq++).toString(36)}`;
 
-export function useMotionEditor({ canvasW = 1280, canvasH = 720 } = {}) {
+export function useMotionEditor() {
+  const [canvasW, setCanvasW] = useState(1280);
+  const [canvasH, setCanvasH] = useState(720);
+  const setCanvasSize = useCallback((w, h) => { setCanvasW(Math.round(w)); setCanvasH(Math.round(h)); }, []);
   const [objects, setObjects] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [time, setTime] = useState(0);
@@ -152,6 +155,6 @@ export function useMotionEditor({ canvasW = 1280, canvasH = 720 } = {}) {
     setDuration, seek, togglePlay, stop, setPlaying, setRecording,
     addObject, updateBase, setKeyframe, setValue, removeKeyframe, clearPropKeyframes,
     deleteObject, duplicateObject, bringToFront, selectObject: setSelectedId,
-    canvasW, canvasH,
+    canvasW, canvasH, setCanvasSize,
   };
 }

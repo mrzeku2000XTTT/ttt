@@ -50,7 +50,7 @@ function Layer({ obj, time, selected, onPointerDown }) {
 }
 
 export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenInspector }) {
-  const { objects, selectedId, selectObject, setKeyframe, setPlaying, setRecording, addObject, canvasW, canvasH } = editor;
+  const { objects, selectedId, selectObject, setKeyframe, setPlaying, setRecording, addObject, setCanvasSize, canvasW, canvasH } = editor;
   const wrapRef = useRef(null);
   const fitRef = useRef(null);
   const stageRef = useRef(null);
@@ -62,16 +62,22 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
   useEffect(() => {
     const el = fitRef.current; if (!el) return;
     const fit = () => {
-      // px-2 (8px each side) + pt-2 (8) + pb-16 (64) for the floating Add button
-      const w = el.clientWidth - 16;
-      const h = el.clientHeight - 72;
-      setScale(Math.max(0.05, Math.min(w / canvasW, h / canvasH)));
+      // content area = client minus px-2 (16) sides and pt-2+pb-16 (72) vertical
+      const aw = el.clientWidth - 16;
+      const ah = el.clientHeight - 72;
+      if (aw <= 10 || ah <= 10) return;
+      // Make the canvas fill the available area by adapting its aspect ratio,
+      // keeping a 720-tall coordinate space so object sizes stay consistent.
+      const refH = 720;
+      const newW = Math.max(320, Math.round(refH * aw / ah));
+      setCanvasSize(newW, refH);
+      setScale(ah / refH);
     };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [canvasW, canvasH, fullscreen]);
+  }, [fullscreen, setCanvasSize]);
 
   const toLogical = (clientX, clientY) => {
     const r = stageRef.current.getBoundingClientRect();
