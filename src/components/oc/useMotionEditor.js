@@ -83,15 +83,15 @@ export function useMotionEditor() {
   // In record mode the playhead auto-advances while you drag an object,
   // so a single drag paints a real motion path as keyframes.
   useEffect(() => {
-    if (!playing) { lastTs.current = null; return; }
+    if (!playing && !recording) { lastTs.current = null; return; }
     const tick = (ts) => {
       if (lastTs.current == null) lastTs.current = ts;
       const dt = (ts - lastTs.current) / 1000;
       lastTs.current = ts;
       setTime((t) => {
+        if (recording) return Math.min(duration, t + dt); // record mode: auto-advance, clamp at end
         let nt = t + dt;
-        if (recording) return Math.min(duration, nt); // clamp at end while recording a motion path
-        if (nt >= duration) nt = 0; // loop on playback
+        if (nt >= duration) nt = 0; // playback loops
         return nt;
       });
       rafRef.current = requestAnimationFrame(tick);
