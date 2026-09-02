@@ -104,7 +104,7 @@ export function useMotionEditor() {
     const cx = canvasW / 2, cy = canvasH / 2;
     const sw = Math.min(canvasW, canvasH);
     let base;
-    if (type === "text") base = { x: cx, y: cy, width: Math.round(sw * 0.6), height: Math.round(sw * 0.15), text: "Text", color: "#1d1d1f", fontSize: Math.max(24, Math.round(sw * 0.09)), scale: 1, rotation: 0, opacity: 1 };
+    if (type === "text") base = { x: cx, y: cy, width: Math.round(sw * 0.6), height: Math.round(sw * 0.15), text: "Text", color: "#1d1d1f", fontSize: Math.max(24, Math.round(sw * 0.09)), fontFamily: '-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif', fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.02em", lineHeight: 1.05, textTransform: "none", scale: 1, rotation: 0, opacity: 1 };
     else if (type === "rect") base = { x: cx, y: cy, width: Math.round(sw * 0.3), height: Math.round(sw * 0.3), color: "#0A84FF", radius: Math.round(sw * 0.03), scale: 1, rotation: 0, opacity: 1 };
     else if (type === "ellipse") base = { x: cx, y: cy, width: Math.round(sw * 0.3), height: Math.round(sw * 0.3), color: "#30D158", scale: 1, rotation: 0, opacity: 1 };
     else if (type === "image") base = { x: cx, y: cy, width: Math.round(sw * 0.4), height: Math.round(sw * 0.4), src: extra?.src || "", scale: 1, rotation: 0, opacity: 1 };

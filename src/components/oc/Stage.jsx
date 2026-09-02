@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { propsAtTime } from "./useMotionEditor";
 import { Minimize2, SlidersHorizontal } from "lucide-react";
 import AddMenu from "./AddMenu";
+import TypographyAgent from "./TypographyAgent";
 import DeviceFrame from "./DeviceFrame";
 
 function Layer({ obj, time, selected, onPointerDown }) {
@@ -24,8 +25,13 @@ function Layer({ obj, time, selected, onPointerDown }) {
       <div style={{
         width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
         textAlign: "center", color: obj.base.color, fontSize: obj.base.fontSize,
-        fontFamily: '-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
-        fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", whiteSpace: "pre-wrap",
+        fontFamily: obj.base.fontFamily || '-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
+        fontWeight: obj.base.fontWeight ?? 700,
+        fontStyle: obj.base.fontStyle || "normal",
+        lineHeight: obj.base.lineHeight ?? 1.05,
+        letterSpacing: obj.base.letterSpacing || "-0.02em",
+        textTransform: obj.base.textTransform || "none",
+        whiteSpace: "pre-wrap",
         userSelect: "none", pointerEvents: "none",
       }}>{obj.base.text}</div>
     );
@@ -191,7 +197,7 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
       <div ref={fitRef} className="flex-1 min-h-0 px-2 pt-2 pb-16"
         onPointerDown={() => selectObject(null)}
       >
-        <div ref={stageRef} onPointerDown={(e) => e.stopPropagation()} style={{
+        <div ref={stageRef} onPointerDown={() => selectObject(null)} style={{
           width: "100%", height: "100%",
           background: "#ffffff", borderRadius: 14,
           boxShadow: "0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
@@ -226,7 +232,8 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
         </button>
       )}
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+        <TypographyAgent editor={editor} />
         <AddMenu editor={editor} />
       </div>
     </div>

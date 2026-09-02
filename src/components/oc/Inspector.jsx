@@ -1,6 +1,9 @@
 import React, { useRef } from "react";
 import { valueAt, ANIM_PROPS } from "./useMotionEditor";
 import EasingControl from "./EasingControl";
+import { FONTS } from "./TypographyAgent";
+
+const SF_DEFAULT = FONTS[0].value;
 
 function Row({ label, children, hasKf, onToggleKf, ease, onEase }) {
   return (
@@ -140,6 +143,56 @@ export default function Inspector({ editor }) {
               <div className="text-[12px] font-medium text-[#1d1d1f] mb-1.5">Font size</div>
               <Slider value={o.base.fontSize} min={12} max={200} step={1} onChange={(v) => updateBase(o.id, { fontSize: v })} />
               <div className="text-[11px] text-[#86868b] mt-0.5 tabular-nums">{o.base.fontSize}px</div>
+            </div>
+            <div className="py-2.5 border-b border-black/[0.05]">
+              <div className="text-[12px] font-medium text-[#1d1d1f] mb-1.5">Typography</div>
+              <select
+                value={o.base.fontFamily || SF_DEFAULT}
+                onChange={(e) => updateBase(o.id, { fontFamily: e.target.value })}
+                className="w-full bg-black/[0.04] rounded-lg px-2.5 py-1.5 text-[12px] text-[#1d1d1f] outline-none focus:ring-2 focus:ring-[#0A84FF]/30"
+              >
+                {FONTS.map((f) => (
+                  <option key={f.label} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <select
+                  value={o.base.fontWeight ?? 700}
+                  onChange={(e) => updateBase(o.id, { fontWeight: Number(e.target.value) })}
+                  className="bg-black/[0.04] rounded-lg px-2 py-1.5 text-[12px] text-[#1d1d1f] outline-none"
+                >
+                  {[400, 500, 600, 700, 800, 900].map((w) => (
+                    <option key={w} value={w}>{w}</option>
+                  ))}
+                </select>
+                <select
+                  value={o.base.textTransform || "none"}
+                  onChange={(e) => updateBase(o.id, { textTransform: e.target.value })}
+                  className="bg-black/[0.04] rounded-lg px-2 py-1.5 text-[12px] text-[#1d1d1f] outline-none"
+                >
+                  {["none", "uppercase", "lowercase", "capitalize"].map((t) => (
+                    <option key={t} value={t}>{t === "none" ? "Aa" : t[0].toUpperCase() + t.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <label className="text-[11px] text-[#86868b]">
+                  Tracking
+                  <input
+                    value={o.base.letterSpacing || "0"}
+                    onChange={(e) => updateBase(o.id, { letterSpacing: e.target.value })}
+                    className="w-full bg-black/[0.04] rounded-lg px-2 py-1 text-[12px] text-[#1d1d1f] outline-none mt-0.5"
+                  />
+                </label>
+                <label className="text-[11px] text-[#86868b]">
+                  Leading
+                  <input
+                    type="number" step="0.05" value={o.base.lineHeight ?? 1.05}
+                    onChange={(e) => updateBase(o.id, { lineHeight: Number(e.target.value) })}
+                    className="w-full bg-black/[0.04] rounded-lg px-2 py-1 text-[12px] text-[#1d1d1f] outline-none mt-0.5"
+                  />
+                </label>
+              </div>
             </div>
           </>
         )}
