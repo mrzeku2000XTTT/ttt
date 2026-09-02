@@ -3,10 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { propsAtTime } from "./useMotionEditor";
 import { Minimize2, SlidersHorizontal } from "lucide-react";
 import AddMenu from "./AddMenu";
-import TypographyAgent from "./TypographyAgent";
+import TypographyAgent, { ensureFont } from "./TypographyAgent";
 import DeviceFrame from "./DeviceFrame";
 
 function Layer({ obj, time, selected, onPointerDown }) {
+  useEffect(() => { if (obj.type === "text") ensureFont(obj.base.fontFamily); }, [obj.type, obj.base.fontFamily]);
   const p = propsAtTime(obj, time);
   const w = obj.base.width, h = obj.base.height;
   const left = p.x - w / 2;

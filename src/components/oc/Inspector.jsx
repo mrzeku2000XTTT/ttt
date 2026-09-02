@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { valueAt, ANIM_PROPS } from "./useMotionEditor";
 import EasingControl from "./EasingControl";
-import { FONTS } from "./TypographyAgent";
+import { FONTS, ensureFont } from "./TypographyAgent";
 
 const SF_DEFAULT = FONTS[0].value;
 
@@ -148,7 +148,7 @@ export default function Inspector({ editor }) {
               <div className="text-[12px] font-medium text-[#1d1d1f] mb-1.5">Typography</div>
               <select
                 value={o.base.fontFamily || SF_DEFAULT}
-                onChange={(e) => updateBase(o.id, { fontFamily: e.target.value })}
+                onChange={(e) => { ensureFont(e.target.value); updateBase(o.id, { fontFamily: e.target.value }); }}
                 className="w-full bg-black/[0.04] rounded-lg px-2.5 py-1.5 text-[12px] text-[#1d1d1f] outline-none focus:ring-2 focus:ring-[#0A84FF]/30"
               >
                 {FONTS.map((f) => (

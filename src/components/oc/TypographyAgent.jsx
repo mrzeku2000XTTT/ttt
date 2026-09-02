@@ -2,19 +2,50 @@ import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Sparkles, Loader2, X } from "lucide-react";
 
-// Curated web-safe + Apple font stack the AI can choose from.
+// Google + system fonts the AI can choose from. Google fonts are loaded
+// on demand so the preview actually reflects the chosen lettering style
+// (blackletter, script, display, etc.) — web-safe fonts can't do that.
 export const FONTS = [
-  { value: '-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif', label: "SF Pro" },
-  { value: '"Helvetica Neue", Helvetica, Arial, sans-serif', label: "Helvetica" },
-  { value: "Georgia, \"Times New Roman\", serif", label: "Georgia" },
-  { value: '"Times New Roman", Times, serif', label: "Times" },
-  { value: '"Courier New", Courier, monospace', label: "Courier" },
-  { value: 'Impact, "Arial Black", sans-serif', label: "Impact" },
-  { value: '"Arial Black", Arial, sans-serif', label: "Arial Black" },
-  { value: "Verdana, Geneva, sans-serif", label: "Verdana" },
-  { value: '"Trebuchet MS", sans-serif', label: "Trebuchet" },
-  { value: '"Brush Script MT", cursive', label: "Brush Script" },
+  { value: '-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif', label: "SF Pro", google: null },
+  { value: '"Helvetica Neue", Helvetica, Arial, sans-serif', label: "Helvetica", google: null },
+  { value: '"UnifrakturMaguntia", cursive', label: "Blackletter", google: "UnifrakturMaguntia" },
+  { value: '"MedievalSharp", cursive', label: "Medieval", google: "MedievalSharp" },
+  { value: '"Cinzel", serif', label: "Cinzel", google: "Cinzel" },
+  { value: '"Playfair Display", serif', label: "Playfair", google: "Playfair Display" },
+  { value: '"DM Serif Display", serif', label: "DM Serif", google: "DM Serif Display" },
+  { value: '"Abril Fatface", cursive', label: "Fatface", google: "Abril Fatface" },
+  { value: '"Bebas Neue", sans-serif', label: "Bebas", google: "Bebas Neue" },
+  { value: '"Anton", sans-serif', label: "Anton", google: "Anton" },
+  { value: '"Oswald", sans-serif', label: "Oswald", google: "Oswald" },
+  { value: '"Archivo Black", sans-serif', label: "Archivo Black", google: "Archivo Black" },
+  { value: '"Montserrat", sans-serif', label: "Montserrat", google: "Montserrat" },
+  { value: '"Inter", sans-serif', label: "Inter", google: "Inter" },
+  { value: '"Lato", sans-serif', label: "Lato", google: "Lato" },
+  { value: '"Merriweather", serif', label: "Merriweather", google: "Merriweather" },
+  { value: '"Lobster", cursive', label: "Lobster", google: "Lobster" },
+  { value: '"Pacifico", cursive', label: "Pacifico", google: "Pacifico" },
+  { value: '"Caveat", cursive', label: "Caveat", google: "Caveat" },
+  { value: '"Permanent Marker", cursive', label: "Marker", google: "Permanent Marker" },
+  { value: '"Press Start 2P", cursive', label: "Pixel", google: "Press Start 2P" },
+  { value: '"Major Mono Display", monospace', label: "Major Mono", google: "Major Mono Display" },
+  { value: '"IBM Plex Mono", monospace', label: "Plex Mono", google: "IBM Plex Mono" },
+  { value: '"Bungee", cursive', label: "Bungee", google: "Bungee" },
+  { value: '"Righteous", cursive', label: "Righteous", google: "Righteous" },
+  { value: '"Spectral", serif', label: "Spectral", google: "Spectral" },
 ];
+
+const loaded = new Set();
+export function ensureFont(stack) {
+  const f = FONTS.find((x) => x.value === stack);
+  if (!f || !f.google || loaded.has(f.google)) return;
+  loaded.add(f.google);
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${f.google.replace(/ /g, "+")}:wght@400;700;900&display=swap`;
+  document.head.appendChild(link);
+}
+
+const SF_DEFAULT = FONTS[0].value;
 
 export default function TypographyAgent({ editor }) {
   const { selectedObject, addObject, updateBase } = editor;
@@ -37,8 +68,6 @@ export default function TypographyAgent({ editor }) {
     setBusy(true);
     setErr(null);
     try {
-      // Make sure there's a text object to style. If the current selection
-      // isn't text, create one and style that.
       let id, baseFontSize = null;
       if (selectedObject && selectedObject.type === "text") {
         id = selectedObject.id;
@@ -52,10 +81,13 @@ export default function TypographyAgent({ editor }) {
       const up = await base44.integrations.Core.UploadFile({ file });
       const fileUrl = up?.file_url || up?.url;
 
+      const fontList = FONTS.map((f) => `${f.label} → ${JSON.stringify(f.value)}`).join("; ");
+
       const res = await base44.integrations.Core.InvokeLLM({
         prompt:
           "You are a typography expert. Analyze the typography / lettering in the attached image and return CSS-equivalent styling that best reproduces its look. " +
-          `Choose fontFamily from exactly this list: ${FONTS.map((f) => JSON.stringify(f.value)).join(", ")}. ` +
+          `Pick fontFamily as one of these EXACT cssStack values (return the value string verbatim): ${fontList}. ` +
+          "For blackletter/gothic or old-English lettering choose Blackletter or Medieval. For heavy display sans choose Anton/Archivo Black/Bebas. For script choose Lobster/Pacifico/Caveat. " +
           "fontWeight is a number 100-900. fontStyle is normal or italic. letterSpacing is a CSS string like \"-0.02em\" or \"0.05em\". lineHeight is a unitless number. color is a hex string. textTransform is one of none|uppercase|lowercase|capitalize. fontSizeScale is a multiplier 0.5-2 for how large the lettering feels (1 = normal).",
         file_urls: [fileUrl],
         response_json_schema: {
@@ -74,8 +106,14 @@ export default function TypographyAgent({ editor }) {
       });
 
       const s = res || {};
+      // Normalize fontFamily to one of our stacks; fall back to closest by label match.
+      let stack = FONTS.find((f) => f.value === s.fontFamily)?.value;
+      if (!stack && typeof s.fontFamily === "string") {
+        const guess = FONTS.find((f) => s.fontFamily.toLowerCase().includes(f.label.toLowerCase()));
+        stack = guess?.value;
+      }
       const patch = {
-        fontFamily: s.fontFamily || FONTS[0].value,
+        fontFamily: stack || SF_DEFAULT,
         fontWeight: s.fontWeight || 700,
         fontStyle: s.fontStyle || "normal",
         letterSpacing: s.letterSpacing || "-0.02em",
@@ -86,6 +124,7 @@ export default function TypographyAgent({ editor }) {
       if (baseFontSize && s.fontSizeScale) {
         patch.fontSize = Math.round(baseFontSize * s.fontSizeScale);
       }
+      ensureFont(patch.fontFamily);
       updateBase(id, patch);
       setOpen(false);
     } catch (e) {
