@@ -136,7 +136,7 @@ Requested transformation: ${t}`;
 
   const genOne = async (angle, scenePrompt, refUrls) => {
     const r = await base44.integrations.Core.GenerateImage({
-      prompt: `${scenePrompt}\n\nCamera angle: ${angle.label} — ${angle.desc}. CRITICAL: the reference image is the structural anchor — reuse the EXACT same room architecture: wall layout, window position and shape, ceiling height, wall paneling/molding, doorways, and floor. Do not move, resize, add, or remove walls or windows. Only change furniture, decor, materials, colors, and mood per the transformation. Keep lighting direction consistent with the reference.`,
+      prompt: `${angle.label.toUpperCase()} CAMERA — ${angle.desc}.\n\nReposition the virtual camera to this NEW viewpoint. This must be a different camera position from the reference photo — do NOT copy the reference photo's composition or camera angle. Move the camera to: ${angle.label}.\n\nReuse the EXACT same room from the reference photo: identical wall layout, window position/shape, ceiling height, wall paneling/molding, doorways, and floor. Do not move, resize, add, or remove walls or windows. Keep lighting direction consistent with the reference.\n\nScene to apply: ${scenePrompt}`,
       existing_image_urls: refUrls?.length ? refUrls : undefined,
     });
     return r?.url;
@@ -180,7 +180,6 @@ Requested transformation: ${t}`;
         const url = await genOne(ANGLES[i], scene, refUrls);
         if (url) {
           newImgs.push({ angle: ANGLES[i].label, label: ANGLES[i].label, url });
-          if (refUrls.length === 1) refUrls.push(url);
           setImages([...newImgs]);
         }
       }
@@ -202,7 +201,7 @@ Requested transformation: ${t}`;
     setGenerating(true); setError(null);
     try {
       const scene = extractSection(output, "PROMPT");
-      const refUrls = [currentRoom?.photo_url, images[0]?.url].filter(Boolean);
+      const refUrls = [currentRoom?.photo_url].filter(Boolean);
       const start = images.length;
       const newImgs = [...images];
       const count = 2;
