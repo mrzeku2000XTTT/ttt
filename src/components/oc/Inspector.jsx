@@ -58,7 +58,7 @@ export default function Inspector({ editor }) {
   const { selectedObject: o, time, setValue, setKeyframe, removeKeyframe, clearPropKeyframes, deleteObject, duplicateObject, bringToFront, updateBase } = editor;
   if (!o) {
     return (
-      <div className="hidden md:flex w-72 flex-shrink-0 border-l border-black/[0.06] bg-white/70 backdrop-blur-xl items-center justify-center p-6">
+      <div className="flex w-full md:w-72 flex-shrink-0 border-l border-black/[0.06] bg-white/70 backdrop-blur-xl items-center justify-center p-6">
         <p className="text-[13px] text-[#86868b] text-center leading-relaxed" style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
           Add an object, then drag it around the canvas. Keyframes are written automatically at the playhead — move the playhead and drag again to create motion.
         </p>

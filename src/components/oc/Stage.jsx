@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { propsAtTime } from "./useMotionEditor";
-import { Minimize2 } from "lucide-react";
+import { Minimize2, SlidersHorizontal } from "lucide-react";
 import AddMenu from "./AddMenu";
 
 function Layer({ obj, time, selected, onPointerDown }) {
@@ -49,9 +49,10 @@ function Layer({ obj, time, selected, onPointerDown }) {
   );
 }
 
-export default function Stage({ editor, fullscreen, onToggleFullscreen }) {
+export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenInspector }) {
   const { objects, selectedId, selectObject, setKeyframe, setPlaying, setRecording, addObject, canvasW, canvasH } = editor;
   const wrapRef = useRef(null);
+  const fitRef = useRef(null);
   const stageRef = useRef(null);
   const [scale, setScale] = useState(0.5);
   const dragRef = useRef(null);
@@ -59,10 +60,11 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen }) {
   live.current = { objects, time: editor.time };
 
   useEffect(() => {
-    const el = wrapRef.current; if (!el) return;
+    const el = fitRef.current; if (!el) return;
     const fit = () => {
-      const pad = fullscreen ? 24 : 56;
-      const w = el.clientWidth - pad, h = el.clientHeight - pad;
+      // px-2 (8px each side) + pt-2 (8) + pb-16 (64) for the floating Add button
+      const w = el.clientWidth - 16;
+      const h = el.clientHeight - 72;
       setScale(Math.max(0.05, Math.min(w / canvasW, h / canvasH)));
     };
     fit();
@@ -94,7 +96,6 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen }) {
       if (!d.recording) {
         d.recording = true;
         setRecording(true);
-        // seed a keyframe at the start so motion begins from here
         setKeyframe(d.id, "x", live.current.time, d.origin.x);
         setKeyframe(d.id, "y", live.current.time, d.origin.y);
       }
@@ -125,36 +126,43 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen }) {
   };
 
   return (
-    <div ref={wrapRef} className="relative flex-1 min-h-0 flex items-center justify-center"
+    <div ref={wrapRef} className="relative flex-1 min-h-0 flex flex-col"
       style={{ background: fullscreen ? "#000" : "#f5f5f7" }}
-      onPointerDown={() => selectObject(null)}
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
     >
-      <div
-        ref={stageRef}
-        onPointerDown={(e) => e.stopPropagation()}
-        style={{
+      <div ref={fitRef} className="flex-1 min-h-0 flex items-center justify-center px-2 pt-2 pb-16"
+        onPointerDown={() => selectObject(null)}
+      >
+        <div ref={stageRef} onPointerDown={(e) => e.stopPropagation()} style={{
           width: canvasW, height: canvasH, transform: `scale(${scale})`, transformOrigin: "center center",
           background: "#ffffff", borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
-          position: "relative", overflow: "hidden",
-        }}
-      >
-        {objects.map((o) => (
-          <Layer key={o.id} obj={o} time={editor.time} selected={o.id === selectedId} onPointerDown={onObjectPointerDown} />
-        ))}
+          position: "relative", overflow: "hidden", touchAction: "none",
+        }}>
+          {objects.map((o) => (
+            <Layer key={o.id} obj={o} time={editor.time} selected={o.id === selectedId} onPointerDown={onObjectPointerDown} />
+          ))}
+        </div>
       </div>
 
       {editor.recording && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500 text-white text-[11px] font-semibold pointer-events-none">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500 text-white text-[11px] font-semibold pointer-events-none z-30">
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> REC
         </div>
       )}
 
       {fullscreen && (
         <button onClick={onToggleFullscreen} title="Exit fullscreen"
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-xl shadow-sm hover:bg-white flex items-center justify-center text-[#1d1d1f]">
+          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-xl shadow-sm hover:bg-white flex items-center justify-center text-[#1d1d1f] z-30">
           <Minimize2 className="w-4 h-4" />
+        </button>
+      )}
+
+      {!fullscreen && (
+        <button onClick={onOpenInspector}
+          className="md:hidden absolute bottom-4 left-4 flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-white/90 backdrop-blur-xl text-[#1d1d1f] text-[13px] font-medium shadow-sm z-30"
+          style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
+          <SlidersHorizontal className="w-4 h-4" /> Properties
         </button>
       )}
 
