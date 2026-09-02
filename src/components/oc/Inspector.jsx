@@ -58,7 +58,7 @@ export default function Inspector({ editor }) {
   const { selectedObject: o, time, setValue, setKeyframe, removeKeyframe, clearPropKeyframes, deleteObject, duplicateObject, bringToFront, updateBase, canvasW, canvasH } = editor;
   if (!o) {
     return (
-      <div className="flex w-full md:w-72 flex-shrink-0 border-l border-black/[0.06] bg-white/70 backdrop-blur-xl items-center justify-center p-6">
+      <div className="flex flex-1 min-h-0 w-full md:w-72 flex-shrink-0 border-l border-black/[0.06] bg-white/70 backdrop-blur-xl items-center justify-center p-6">
         <p className="text-[13px] text-[#86868b] text-center leading-relaxed" style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
           Add an object, then drag it around the canvas. Keyframes are written automatically at the playhead — move the playhead and drag again to create motion.
         </p>
@@ -83,7 +83,7 @@ export default function Inspector({ editor }) {
   ];
 
   return (
-    <div className="w-full md:w-72 flex-shrink-0 border-l border-black/[0.06] bg-white/70 backdrop-blur-xl overflow-y-auto" style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
+    <div className="flex flex-col flex-1 min-h-0 w-full md:w-72 flex-shrink-0 border-l border-black/[0.06] bg-white/70 backdrop-blur-xl overflow-y-auto" style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
       <div className="px-4 py-3 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-xl border-b border-black/[0.05]">
         <span className="text-[13px] font-semibold text-[#1d1d1f]">{o.name}</span>
         <div className="flex items-center gap-1">
@@ -94,6 +94,12 @@ export default function Inspector({ editor }) {
       </div>
 
       <div className="px-4">
+        <div className="py-2.5 border-b border-black/[0.05]">
+          <button onClick={() => duplicateObject(o.id)}
+            className="w-full h-9 rounded-lg bg-black/[0.04] text-[#1d1d1f] text-[13px] font-medium hover:bg-black/[0.08] flex items-center justify-center gap-2">
+            <span className="text-[#86868b]">⧉</span> Duplicate {o.type === "video" ? "video" : o.type === "image" ? "image" : "asset"}
+          </button>
+        </div>
         {/* Static content props */}
         {o.type === "text" && (
           <>

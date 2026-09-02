@@ -16,7 +16,7 @@ export default function OCPage() {
       {!fullscreen && <Toolbar fullscreen={fullscreen} onToggleFullscreen={toggleFullscreen} />}
       <div className="flex flex-1 min-h-0 flex-col md:flex-row">
         <Stage editor={editor} fullscreen={fullscreen} onToggleFullscreen={toggleFullscreen} onOpenInspector={() => setMobileInspector(true)} />
-        <div className="hidden md:block flex-shrink-0">
+        <div className="hidden md:flex md:flex-col flex-shrink-0">
           {!fullscreen && <Inspector editor={editor} />}
         </div>
       </div>

@@ -114,19 +114,20 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
   };
 
   useEffect(() => {
-    const seed = (d) => {
-      if (d.mode === "position") { setKeyframe(d.id, "x", live.current.time, d.origin.x); setKeyframe(d.id, "y", live.current.time, d.origin.y); }
-      else if (d.mode === "scale") setKeyframe(d.id, "scale", live.current.time, d.origin);
-      else if (d.mode === "rotation") setKeyframe(d.id, "rotation", live.current.time, d.origin);
-    };
     const move = (e) => {
       const d = dragRef.current; if (!d) return;
-      if (!d.recording) { d.recording = true; setRecording(true); seed(d); }
       const cur = toLogical(e.clientX, e.clientY);
       if (d.mode === "position") {
+        // Position drag = record mode: playhead auto-advances, painting a motion path.
+        if (!d.recording) {
+          d.recording = true; setRecording(true);
+          setKeyframe(d.id, "x", live.current.time, d.origin.x);
+          setKeyframe(d.id, "y", live.current.time, d.origin.y);
+        }
         setKeyframe(d.id, "x", live.current.time, d.origin.x + (cur.x - d.start.x));
         setKeyframe(d.id, "y", live.current.time, d.origin.y + (cur.y - d.start.y));
       } else if (d.mode === "scale") {
+        // Scale/rotation keyframe at the current playhead (no auto-advance) — stable, no duplicates.
         const dist = Math.hypot(cur.x - d.center.x, cur.y - d.center.y);
         const ns = Math.max(0.1, Math.min(4, dist / d.halfDiag));
         setKeyframe(d.id, "scale", live.current.time, Math.round(ns * 100) / 100);
