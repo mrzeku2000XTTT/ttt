@@ -136,7 +136,7 @@ Requested transformation: ${t}`;
 
   const genOne = async (angle, scenePrompt, refUrls) => {
     const r = await base44.integrations.Core.GenerateImage({
-      prompt: `${scenePrompt}\n\nCamera angle: ${angle.label} — ${angle.desc}. Maintain exact consistency with the reference: identical room, lighting, materials, color palette, and furniture.`,
+      prompt: `${scenePrompt}\n\nCamera angle: ${angle.label} — ${angle.desc}. CRITICAL: the reference image is the structural anchor — reuse the EXACT same room architecture: wall layout, window position and shape, ceiling height, wall paneling/molding, doorways, and floor. Do not move, resize, add, or remove walls or windows. Only change furniture, decor, materials, colors, and mood per the transformation. Keep lighting direction consistent with the reference.`,
       existing_image_urls: refUrls?.length ? refUrls : undefined,
     });
     return r?.url;
@@ -173,14 +173,14 @@ Requested transformation: ${t}`;
       }
       setCurrentRoom({ id: roomId, transform: transform.trim(), prompt: promptText.trim(), photo_url: photoUrl, images: [] });
 
-      const refUrls = [];
+      const refUrls = photoUrl ? [photoUrl] : [];
       const newImgs = [];
       for (let i = 0; i < ANGLES.length; i++) {
         setGenStep(`Generating B-roll ${i + 1} of ${ANGLES.length} — ${ANGLES[i].label}…`);
         const url = await genOne(ANGLES[i], scene, refUrls);
         if (url) {
           newImgs.push({ angle: ANGLES[i].label, label: ANGLES[i].label, url });
-          if (refUrls.length === 0) refUrls.push(url);
+          if (refUrls.length === 1) refUrls.push(url);
           setImages([...newImgs]);
         }
       }
@@ -202,7 +202,7 @@ Requested transformation: ${t}`;
     setGenerating(true); setError(null);
     try {
       const scene = extractSection(output, "PROMPT");
-      const refUrls = images.length ? [images[0].url] : [];
+      const refUrls = [currentRoom?.photo_url, images[0]?.url].filter(Boolean);
       const start = images.length;
       const newImgs = [...images];
       const count = 2;
