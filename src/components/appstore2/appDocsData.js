@@ -368,6 +368,29 @@ const CURATED = {
       { title: "Compose & preview", desc: "Use the layer panel and timeline to refine, then preview." },
     ],
   },
+  Kanta: {
+    tagline: "Lyrics → song generator powered by Mureka AI",
+    overview: "Kanta turns words into music. Write a prompt and Mureka AI drafts original titled lyrics, then composes a full produced song around them — vocals, instrumentation, and all. Royalty-free output you can preview and download instantly. Kanta runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and music generation runs through the Mureka AI music engine.",
+    features: [
+      { title: "Prompt to lyrics", desc: "Describe a vibe or story; Mureka writes titled, structured lyrics in seconds." },
+      { title: "Editable lyrics", desc: "Tweak the generated title and lyrics before you generate the song." },
+      { title: "Style control", desc: "Add a genre/mood prompt (lo-fi, r&b, dreamy) and pick a vocal gender." },
+      { title: "Full song output", desc: "Mureka composes a complete produced track — not a loop, a real song." },
+      { title: "Preview & download", desc: "Play takes inline and download the audio as MP3, royalty-free." },
+      { title: "Regenerate", desc: "Generate fresh takes from the same lyrics until it's right." },
+    ],
+    howItWorks: [
+      { title: "Write a prompt", desc: "Tell Kanta what the song should be about or feel like." },
+      { title: "Generate lyrics", desc: "Mureka drafts titled lyrics you can edit freely." },
+      { title: "Style & generate", desc: "Add a style prompt and vocal gender, then generate the full song." },
+      { title: "Play & download", desc: "Preview the takes and download the one you love." },
+    ],
+    getStarted: [
+      { title: "Open Kanta", desc: "Launch the app from the store — it opens with built-in docs." },
+      { title: "Write your prompt", desc: "Describe the song you want in a sentence or two." },
+      { title: "Generate & download", desc: "Generate lyrics, then the song, and download your track." },
+    ],
+  },
   Kutt: {
     tagline: "AI video editor — URL to viral video, real export",
     overview: "KUTT turns any video URL into a finished, viral-ready edit. Drop a link, let the AI analyze beats and scenes, pick a template, and export a real video file — no timeline expertise required. KUTT runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and any rendering credits or premium renders settle on the Kaspa Layer-1 DAG.",

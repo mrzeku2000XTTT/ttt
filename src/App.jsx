@@ -138,6 +138,7 @@ import KCC20Page from './pages/KCC20';
 import Kcc20TestPage from './pages/Kcc20Test';
 import IsolatePage from './pages/Isolate';
 import QuickzPage from './pages/Quickz';
+import KantaPage from './pages/Kanta';
 import AppDocsPage from './pages/AppDocs';
 import TrendingPage from './pages/Trending';
 import TokensPage from './pages/Tokens';
@@ -352,6 +353,7 @@ const AuthenticatedApp = () => {
       <Route path="/Kcc20Test" element={<Kcc20TestPage />} />
       <Route path="/Isolate" element={<IsolatePage />} />
       <Route path="/Quickz" element={<QuickzPage />} />
+      <Route path="/Kanta" element={<KantaPage />} />
       <Route path="/AppDocs/:appPath" element={<AppDocsPage />} />
       <Route path="/Trending" element={<TrendingPage />} />
       <Route path="/Tokens" element={<TokensPage />} />

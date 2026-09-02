@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Kanta", path: "Kanta", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3abbf9202_generated_image.png", desc: "Lyrics → song generator · Mureka AI writes lyrics and composes a full produced track" },
   { name: "Quickz", path: "Quickz", cat: "Productivity", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2932a5b3f_generated_image.png", desc: "AI-powered local notepad · infinite notes, instant search, stays on your device" },
   { name: "ISOLATE", path: "Isolate", cat: "Education", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/2a0fa1205_generated_image.png", desc: "Learn anything through themes you love · AI tutor courses with personalized metaphors" },
   { name: "KCC20 Test", path: "Kcc20Test", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f0152b845_image.png", desc: "TEST · connect KCC20, detect payments, create & sign a transaction with PIN" },
