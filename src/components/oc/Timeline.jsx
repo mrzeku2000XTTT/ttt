@@ -88,7 +88,7 @@ export default function Timeline({ editor }) {
 
       <div className="text-[11px] text-[#86868b]" style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
         {selectedObject ? (
-          <>Drag the object to auto-add keyframes at the playhead. {hasKfAtTime ? "● keyframe here" : "○ no keyframe here"}</>
+          <>Drag the object — the playhead auto-advances and records a motion path. {hasKfAtTime ? "● keyframe here" : "○ no keyframe here"}</>
         ) : (
           <>Select an object to see its keyframes. Right-click a diamond to delete it.</>
         )}

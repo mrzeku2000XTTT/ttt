@@ -48,26 +48,31 @@ export function useMotionEditor({ canvasW = 1280, canvasH = 720 } = {}) {
   const [selectedId, setSelectedId] = useState(null);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [duration, setDuration] = useState(5);
   const rafRef = useRef(null);
   const lastTs = useRef(null);
 
+  // A single RAF loop drives both playback and "record" mode.
+  // In record mode the playhead auto-advances while you drag an object,
+  // so a single drag paints a real motion path as keyframes.
   useEffect(() => {
-    if (!playing) { lastTs.current = null; return; }
+    if (!playing && !recording) { lastTs.current = null; return; }
     const tick = (ts) => {
       if (lastTs.current == null) lastTs.current = ts;
       const dt = (ts - lastTs.current) / 1000;
       lastTs.current = ts;
       setTime((t) => {
+        if (recording) return Math.min(duration, t + dt); // clamp at end while recording
         let nt = t + dt;
-        if (nt >= duration) nt = 0;
+        if (nt >= duration) nt = 0; // loop on playback
         return nt;
       });
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [playing, duration]);
+  }, [playing, recording, duration]);
 
   const addObject = useCallback((type, extra) => {
     const cx = canvasW / 2, cy = canvasH / 2;
@@ -143,8 +148,8 @@ export function useMotionEditor({ canvasW = 1280, canvasH = 720 } = {}) {
   const selectedObject = useMemo(() => objects.find((o) => o.id === selectedId) || null, [objects, selectedId]);
 
   return {
-    objects, selectedId, selectedObject, time, playing, duration,
-    setDuration, seek, togglePlay, stop, setPlaying,
+    objects, selectedId, selectedObject, time, playing, recording, duration,
+    setDuration, seek, togglePlay, stop, setPlaying, setRecording,
     addObject, updateBase, setKeyframe, setValue, removeKeyframe, clearPropKeyframes,
     deleteObject, duplicateObject, bringToFront, selectObject: setSelectedId,
     canvasW, canvasH,

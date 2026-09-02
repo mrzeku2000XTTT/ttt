@@ -1,5 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import { propsAtTime } from "./useMotionEditor";
+import { Minimize2 } from "lucide-react";
+import AddMenu from "./AddMenu";
 
 function Layer({ obj, time, selected, onPointerDown }) {
   const p = propsAtTime(obj, time);
@@ -33,10 +36,7 @@ function Layer({ obj, time, selected, onPointerDown }) {
     inner = <img src={obj.base.src} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, pointerEvents: "none" }} />;
   }
   return (
-    <div
-      style={common}
-      onPointerDown={(e) => onPointerDown(e, obj.id)}
-    >
+    <div style={common} onPointerDown={(e) => onPointerDown(e, obj.id)}>
       {inner}
       {selected && (
         <div style={{
@@ -49,8 +49,8 @@ function Layer({ obj, time, selected, onPointerDown }) {
   );
 }
 
-export default function Stage({ editor }) {
-  const { objects, selectedId, selectObject, setKeyframe, setPlaying, canvasW, canvasH } = editor;
+export default function Stage({ editor, fullscreen, onToggleFullscreen }) {
+  const { objects, selectedId, selectObject, setKeyframe, setPlaying, setRecording, addObject, canvasW, canvasH } = editor;
   const wrapRef = useRef(null);
   const stageRef = useRef(null);
   const [scale, setScale] = useState(0.5);
@@ -61,7 +61,7 @@ export default function Stage({ editor }) {
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
     const fit = () => {
-      const pad = 56;
+      const pad = fullscreen ? 24 : 56;
       const w = el.clientWidth - pad, h = el.clientHeight - pad;
       setScale(Math.max(0.05, Math.min(w / canvasW, h / canvasH)));
     };
@@ -69,13 +69,15 @@ export default function Stage({ editor }) {
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [canvasW, canvasH]);
+  }, [canvasW, canvasH, fullscreen]);
 
   const toLogical = (clientX, clientY) => {
     const r = stageRef.current.getBoundingClientRect();
     return { x: (clientX - r.left) * (canvasW / r.width), y: (clientY - r.top) * (canvasH / r.height) };
   };
 
+  // Drag = record mode: the playhead auto-advances and each position is
+  // written as a keyframe, so one drag paints a real motion path.
   const onObjectPointerDown = (e, id) => {
     e.stopPropagation();
     selectObject(id);
@@ -83,28 +85,51 @@ export default function Stage({ editor }) {
     const o = live.current.objects.find((x) => x.id === id);
     const p = propsAtTime(o, live.current.time);
     const start = toLogical(e.clientX, e.clientY);
-    dragRef.current = { id, start, origin: { x: p.x, y: p.y } };
+    dragRef.current = { id, start, origin: { x: p.x, y: p.y }, recording: false };
   };
 
   useEffect(() => {
     const move = (e) => {
       const d = dragRef.current; if (!d) return;
+      if (!d.recording) {
+        d.recording = true;
+        setRecording(true);
+        // seed a keyframe at the start so motion begins from here
+        setKeyframe(d.id, "x", live.current.time, d.origin.x);
+        setKeyframe(d.id, "y", live.current.time, d.origin.y);
+      }
       const cur = toLogical(e.clientX, e.clientY);
       const nx = d.origin.x + (cur.x - d.start.x);
       const ny = d.origin.y + (cur.y - d.start.y);
       setKeyframe(d.id, "x", live.current.time, nx);
       setKeyframe(d.id, "y", live.current.time, ny);
     };
-    const up = () => { dragRef.current = null; };
+    const up = () => {
+      if (dragRef.current?.recording) setRecording(false);
+      dragRef.current = null;
+    };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-  }, [setKeyframe, canvasW, canvasH]);
+  }, [setKeyframe, setRecording, canvasW, canvasH]);
+
+  const onDrop = async (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (f && f.type.startsWith("image/")) {
+      try {
+        const res = await base44.integrations.Core.UploadFile({ file: f });
+        addObject("image", { src: res?.file_url || res?.url });
+      } catch { /* ignore */ }
+    }
+  };
 
   return (
     <div ref={wrapRef} className="relative flex-1 min-h-0 flex items-center justify-center"
-      style={{ background: "#f5f5f7" }}
+      style={{ background: fullscreen ? "#000" : "#f5f5f7" }}
       onPointerDown={() => selectObject(null)}
+      onDrop={onDrop}
+      onDragOver={(e) => e.preventDefault()}
     >
       <div
         ref={stageRef}
@@ -118,6 +143,23 @@ export default function Stage({ editor }) {
         {objects.map((o) => (
           <Layer key={o.id} obj={o} time={editor.time} selected={o.id === selectedId} onPointerDown={onObjectPointerDown} />
         ))}
+      </div>
+
+      {editor.recording && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500 text-white text-[11px] font-semibold pointer-events-none">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> REC
+        </div>
+      )}
+
+      {fullscreen && (
+        <button onClick={onToggleFullscreen} title="Exit fullscreen"
+          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-xl shadow-sm hover:bg-white flex items-center justify-center text-[#1d1d1f]">
+          <Minimize2 className="w-4 h-4" />
+        </button>
+      )}
+
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
+        <AddMenu editor={editor} />
       </div>
     </div>
   );
