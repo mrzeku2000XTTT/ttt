@@ -1,18 +1,21 @@
 import React from "react";
 
-// If a screen media src is provided, render it inside the screen; otherwise
-// show a subtle gradient placeholder.
-function Screen({ src, mediaType, radius }) {
+// Screen media is absolutely positioned so an image/video's intrinsic size
+// never forces the device's flex layout to overflow its bounding box
+// (which previously clipped the selection outline to the screen only).
+function Screen({ src, mediaType }) {
   if (!src) {
-    return <div style={{ width: "100%", height: "100%", background: "linear-gradient(155deg,#3a3a4e,#1a1a2a 60%,#2a2a3a)" }} />;
+    return <div style={{ position: "absolute", inset: 0, background: "linear-gradient(155deg,#3a3a4e,#1a1a2a 60%,#2a3a3a)" }} />;
   }
   if (mediaType === "video") {
-    return <video src={src} muted loop playsInline autoPlay draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: radius || 0, pointerEvents: "none" }} />;
+    return <video src={src} muted loop playsInline autoPlay draggable={false} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />;
   }
-  return <img src={src} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: radius || 0, pointerEvents: "none" }} />;
+  return <img src={src} alt="" draggable={false} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />;
 }
 
-// Apple-style device mockups rendered with pure CSS so they stay crisp at any size.
+// Apple-style device mockups rendered with pure CSS so they stay crisp at any
+// size. The whole mockup (screen + stand) always fits exactly within the
+// object's bounding box, so the selection outline wraps the entire device.
 export default function DeviceFrame({ device, src, mediaType }) {
   if (device === "iphone") {
     return (
@@ -40,8 +43,8 @@ export default function DeviceFrame({ device, src, mediaType }) {
   if (device === "macbook") {
     return (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-        <div style={{ flex: "1 1 auto", background: "linear-gradient(150deg,#e4e4e7,#bcbcc0)", borderRadius: "4% 4% 1% 1%", padding: "3.5%", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.5)" }}>
-          <div style={{ width: "100%", height: "100%", background: "#0b0b0d", borderRadius: "1.5%", overflow: "hidden" }}>
+        <div style={{ flex: "1 1 auto", minHeight: 0, background: "linear-gradient(150deg,#e4e4e7,#bcbcc0)", borderRadius: "4% 4% 1% 1%", padding: "3.5%", position: "relative", overflow: "hidden", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.5)" }}>
+          <div style={{ position: "absolute", inset: "3.5%", background: "#0b0b0d", borderRadius: "1.5%", overflow: "hidden" }}>
             <Screen src={src} mediaType={mediaType} />
           </div>
         </div>
@@ -55,8 +58,8 @@ export default function DeviceFrame({ device, src, mediaType }) {
   // monitor
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: "1 1 auto", background: "linear-gradient(150deg,#e4e4e7,#bcbcc0)", borderRadius: "3%", padding: "4%", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.5)" }}>
-        <div style={{ width: "100%", height: "100%", background: "#0b0b0d", borderRadius: "1.5%", overflow: "hidden" }}>
+      <div style={{ flex: "1 1 auto", minHeight: 0, background: "linear-gradient(150deg,#e4e4e7,#bcbcc0)", borderRadius: "3%", padding: "4%", position: "relative", overflow: "hidden", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.5)" }}>
+        <div style={{ position: "absolute", inset: "4%", background: "#0b0b0d", borderRadius: "1.5%", overflow: "hidden" }}>
           <Screen src={src} mediaType={mediaType} />
         </div>
       </div>

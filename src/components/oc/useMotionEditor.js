@@ -5,6 +5,29 @@ const EPS = 0.001;
 export const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 export const linear = (t) => t;
 
+// Easing functions used by interpolate() and the EasingControl graph.
+export const EASES = {
+  linear: (t) => t,
+  smooth: easeInOut,
+  easeIn: (t) => t * t,
+  easeOut: (t) => 1 - (1 - t) * (1 - t),
+  easeInOut: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+  back: (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
+  elastic: (t) => { if (t === 0 || t === 1) return t; const c4 = (2 * Math.PI) / 3; return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1; },
+  bounce: (t) => { const n1 = 7.5625, d1 = 2.75; if (t < 1 / d1) return n1 * t * t; else if (t < 2 / d1) { t -= 1.5 / d1; return n1 * t * t + 0.75; } else if (t < 2.5 / d1) { t -= 2.25 / d1; return n1 * t * t + 0.9375; } else { t -= 2.625 / d1; return n1 * t * t + 0.984375; } },
+};
+
+export const EASE_LABELS = [
+  { value: "smooth", label: "Smooth" },
+  { value: "linear", label: "Linear" },
+  { value: "easeIn", label: "Ease In" },
+  { value: "easeOut", label: "Ease Out" },
+  { value: "easeInOut", label: "Ease In Out" },
+  { value: "back", label: "Back" },
+  { value: "elastic", label: "Elastic" },
+  { value: "bounce", label: "Bounce" },
+];
+
 const sortKfs = (kfs) => [...kfs].sort((a, b) => a.t - b.t);
 
 export function interpolate(kfs, t) {
@@ -18,7 +41,7 @@ export function interpolate(kfs, t) {
   const a = kfs[i], b = kfs[i + 1];
   const span = b.t - a.t || EPS;
   const lt = (t - a.t) / span;
-  const fn = b.ease === "linear" ? linear : easeInOut;
+  const fn = EASES[b.ease] || EASES.smooth;
   return a.v + (b.v - a.v) * fn(lt);
 }
 
@@ -130,6 +153,19 @@ export function useMotionEditor() {
     setObjects((os) => os.map((o) => (o.id === id ? { ...o, keyframes: { ...o.keyframes, [prop]: [] } } : o)));
   }, []);
 
+  // Set the easing of every keyframe sitting at time `t` on object `id`
+  // (the outgoing segment's curve). Used by the Inspector's Transition easing control.
+  const setEase = useCallback((id, t, ease) => {
+    setObjects((os) => os.map((o) => {
+      if (o.id !== id) return o;
+      const kf = {};
+      Object.entries(o.keyframes).forEach(([prop, arr]) => {
+        kf[prop] = arr.map((k) => (Math.abs(k.t - t) < EPS ? { ...k, ease } : k));
+      });
+      return { ...o, keyframes: kf };
+    }));
+  }, []);
+
   const deleteObject = useCallback((id) => {
     setObjects((os) => os.filter((o) => o.id !== id));
     setSelectedId((s) => (s === id ? null : s));
@@ -190,6 +226,6 @@ export function useMotionEditor() {
     setDuration, seek, togglePlay, stop, setPlaying, setRecording,
     addObject, updateBase, setKeyframe, setValue, removeKeyframe, clearPropKeyframes,
     deleteObject, duplicateObject, bringToFront, selectObject: setSelectedId,
-    canvasW, canvasH, setCanvasSize, applyPreset,
+    canvasW, canvasH, setCanvasSize, applyPreset, setEase,
   };
 }

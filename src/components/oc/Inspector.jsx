@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { valueAt, ANIM_PROPS } from "./useMotionEditor";
+import EasingControl from "./EasingControl";
 
 function Row({ label, children, hasKf, onToggleKf, ease, onEase }) {
   return (
@@ -55,7 +56,7 @@ function Slider({ value, onChange, min, max, step }) {
 }
 
 export default function Inspector({ editor }) {
-  const { selectedObject: o, time, setValue, setKeyframe, removeKeyframe, clearPropKeyframes, deleteObject, duplicateObject, bringToFront, updateBase, canvasW, canvasH } = editor;
+  const { selectedObject: o, time, setValue, setKeyframe, setEase, removeKeyframe, clearPropKeyframes, deleteObject, duplicateObject, bringToFront, updateBase, canvasW, canvasH } = editor;
   const devImgRef = useRef(null);
   const devVidRef = useRef(null);
   const onDevImg = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) updateBase(o.id, { src: URL.createObjectURL(f), mediaType: "image" }); };
@@ -104,6 +105,11 @@ export default function Inspector({ editor }) {
             <span className="text-[#86868b]">⧉</span> Duplicate {o.type === "video" ? "video" : o.type === "image" ? "image" : "asset"}
           </button>
         </div>
+        {(() => {
+          const kfsHere = Object.values(o.keyframes).flatMap((arr) => arr.filter((k) => Math.abs(k.t - time) < 0.001));
+          if (kfsHere.length === 0) return null;
+          return <EasingControl ease={kfsHere[0].ease || "smooth"} onChange={(e) => setEase(o.id, time, e)} />;
+        })()}
         {o.type === "device" && (
           <div className="py-2.5 border-b border-black/[0.05]">
             <div className="text-[12px] font-medium text-[#1d1d1f] mb-1.5">Screen media</div>
