@@ -86,7 +86,12 @@ export function useMotionEditor() {
     else if (type === "ellipse") base = { x: cx, y: cy, width: Math.round(sw * 0.3), height: Math.round(sw * 0.3), color: "#30D158", scale: 1, rotation: 0, opacity: 1 };
     else if (type === "image") base = { x: cx, y: cy, width: Math.round(sw * 0.4), height: Math.round(sw * 0.4), src: extra?.src || "", scale: 1, rotation: 0, opacity: 1 };
     else if (type === "video") base = { x: cx, y: cy, width: Math.round(sw * 0.5), height: Math.round(sw * 0.28), src: extra?.src || "", scale: 1, rotation: 0, opacity: 1 };
-    const obj = { id: uid(), type, name: type[0].toUpperCase() + type.slice(1), base, keyframes: {} };
+    else if (type === "device") {
+      const d = extra?.device || "iphone";
+      const dims = { iphone: [0.3, 0.62], ipad: [0.5, 0.7], macbook: [0.62, 0.42], monitor: [0.56, 0.38] }[d] || [0.4, 0.4];
+      base = { x: cx, y: cy, width: Math.round(sw * dims[0]), height: Math.round(sw * dims[1]), device: d, scale: 1, rotation: 0, opacity: 1 };
+    }
+    const obj = { id: uid(), type, name: type === "device" ? (extra?.device ? extra.device[0].toUpperCase() + extra.device.slice(1) : "Device") : type[0].toUpperCase() + type.slice(1), base, keyframes: {} };
     setObjects((o) => [...o, obj]);
     setSelectedId(obj.id);
     setPlaying(false);
@@ -152,11 +157,39 @@ export function useMotionEditor() {
 
   const selectedObject = useMemo(() => objects.find((o) => o.id === selectedId) || null, [objects, selectedId]);
 
+  // Apply an After-Effects-style motion preset: writes a full set of keyframes
+  // across the timeline for the selected object (auto-keyframed + timelined).
+  const applyPreset = useCallback((name) => {
+    const o = objects.find((x) => x.id === selectedId);
+    if (!o) return;
+    const dur = duration;
+    const cx = o.base.x, cy = o.base.y;
+    const s0 = o.base.scale ?? 1, r0 = o.base.rotation ?? 0;
+    const setK = (prop, pts) => pts.forEach(([t, v, ease]) => setKeyframe(o.id, prop, t, v, ease));
+    switch (name) {
+      case "fadeIn": setK("opacity", [[0, 0, "linear"], [dur * 0.2, 1, "smooth"], [dur, 1, "linear"]]); break;
+      case "fadeOut": setK("opacity", [[0, 1, "linear"], [dur * 0.8, 1, "smooth"], [dur, 0, "linear"]]); break;
+      case "slideInLeft":
+        setK("x", [[0, cx - canvasW, "linear"], [dur * 0.25, cx, "smooth"], [dur, cx, "linear"]]);
+        setK("opacity", [[0, 0, "linear"], [dur * 0.15, 1, "smooth"], [dur, 1, "linear"]]); break;
+      case "slideInRight":
+        setK("x", [[0, cx + canvasW, "linear"], [dur * 0.25, cx, "smooth"], [dur, cx, "linear"]]);
+        setK("opacity", [[0, 0, "linear"], [dur * 0.15, 1, "smooth"], [dur, 1, "linear"]]); break;
+      case "scalePop":
+        setK("scale", [[0, 0, "smooth"], [dur * 0.15, s0 * 1.15, "smooth"], [dur * 0.3, s0, "smooth"], [dur, s0, "linear"]]);
+        setK("opacity", [[0, 0, "linear"], [dur * 0.1, 1, "smooth"], [dur, 1, "linear"]]); break;
+      case "spin": setK("rotation", [[0, r0, "linear"], [dur, r0 + 360, "linear"]]); break;
+      case "bounce": setK("y", [[0, cy, "smooth"], [dur * 0.25, cy - canvasH * 0.25, "smooth"], [dur * 0.5, cy, "smooth"], [dur * 0.75, cy - canvasH * 0.1, "smooth"], [dur, cy, "smooth"]]); break;
+      case "float": setK("y", [[0, cy, "smooth"], [dur * 0.5, cy - canvasH * 0.06, "smooth"], [dur, cy, "smooth"]]); break;
+      default: break;
+    }
+  }, [objects, selectedId, duration, canvasW, canvasH, setKeyframe]);
+
   return {
     objects, selectedId, selectedObject, time, playing, recording, duration,
     setDuration, seek, togglePlay, stop, setPlaying, setRecording,
     addObject, updateBase, setKeyframe, setValue, removeKeyframe, clearPropKeyframes,
     deleteObject, duplicateObject, bringToFront, selectObject: setSelectedId,
-    canvasW, canvasH, setCanvasSize,
+    canvasW, canvasH, setCanvasSize, applyPreset,
   };
 }

@@ -55,7 +55,7 @@ function Slider({ value, onChange, min, max, step }) {
 }
 
 export default function Inspector({ editor }) {
-  const { selectedObject: o, time, setValue, setKeyframe, removeKeyframe, clearPropKeyframes, deleteObject, duplicateObject, bringToFront, updateBase } = editor;
+  const { selectedObject: o, time, setValue, setKeyframe, removeKeyframe, clearPropKeyframes, deleteObject, duplicateObject, bringToFront, updateBase, canvasW, canvasH } = editor;
   if (!o) {
     return (
       <div className="flex w-full md:w-72 flex-shrink-0 border-l border-black/[0.06] bg-white/70 backdrop-blur-xl items-center justify-center p-6">
@@ -126,6 +126,27 @@ export default function Inspector({ editor }) {
               className="w-full bg-black/[0.04] rounded-lg px-2.5 py-2 text-[12px] text-[#1d1d1f] outline-none focus:ring-2 focus:ring-[#0A84FF]/30" />
           </div>
         )}
+
+        {/* Size — works for every object type; media can be fit to canvas */}
+        <div className="py-2.5 border-b border-black/[0.05]">
+          <div className="text-[12px] font-medium text-[#1d1d1f] mb-1.5">Size</div>
+          <div className="flex items-center gap-2">
+            <NumInput value={o.base.width} step={1} onChange={(v) => updateBase(o.id, { width: Math.max(8, v) })} />
+            <span className="text-[11px] text-[#86868b]">×</span>
+            <NumInput value={o.base.height} step={1} onChange={(v) => updateBase(o.id, { height: Math.max(8, v) })} />
+          </div>
+          {(o.type === "image" || o.type === "video") && (
+            <button
+              onClick={() => {
+                const ar = (o.base.width / o.base.height) || 16 / 9;
+                const maxW = Math.max(80, canvasW * 0.7), maxH = Math.max(80, canvasH * 0.7);
+                let w = maxW, h = w / ar; if (h > maxH) { h = maxH; w = h * ar; }
+                updateBase(o.id, { width: Math.round(w), height: Math.round(h) });
+              }}
+              className="mt-2 text-[11px] text-[#0A84FF] hover:underline"
+            >Fit to canvas</button>
+          )}
+        </div>
 
         {/* Animated props */}
         <div className="pt-2 pb-1">

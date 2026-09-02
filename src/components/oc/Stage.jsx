@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { propsAtTime } from "./useMotionEditor";
 import { Minimize2, SlidersHorizontal } from "lucide-react";
 import AddMenu from "./AddMenu";
+import DeviceFrame from "./DeviceFrame";
 
 function Layer({ obj, time, selected, onPointerDown }) {
   const p = propsAtTime(obj, time);
@@ -36,6 +37,8 @@ function Layer({ obj, time, selected, onPointerDown }) {
     inner = <img src={obj.base.src} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, pointerEvents: "none" }} />;
   } else if (obj.type === "video") {
     inner = <video src={obj.base.src} muted loop playsInline autoPlay draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, pointerEvents: "none" }} />;
+  } else if (obj.type === "device") {
+    inner = <DeviceFrame device={obj.base.device} />;
   }
   return (
     <div style={common} onPointerDown={(e) => onPointerDown(e, obj.id)}>

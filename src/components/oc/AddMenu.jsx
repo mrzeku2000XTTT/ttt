@@ -1,67 +1,104 @@
 import React, { useRef, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import Templates from "./Templates";
 
-// Floating "Add" menu — lives underneath the stage so it stays reachable
-// even in fullscreen (when the top toolbar is hidden).
+// Media is added as a local object URL (URL.createObjectURL) so it appears
+// instantly — no upload round-trip. Images/videos are auto-sized to fit the
+// canvas while preserving their aspect ratio.
 export default function AddMenu({ editor }) {
-  const { addObject } = editor;
+  const { addObject, canvasW, canvasH } = editor;
   const [open, setOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [view, setView] = useState("main");
   const imgRef = useRef(null);
   const vidRef = useRef(null);
 
-  const add = (type) => { addObject(type); setOpen(false); };
-
-  const upload = async (f, kind) => {
-    setOpen(false);
-    setUploading(true);
-    try {
-      const res = await base44.integrations.Core.UploadFile({ file: f });
-      addObject(kind, { src: res?.file_url || res?.url });
-    } catch { /* ignore */ } finally { setUploading(false); }
+  const fit = (nw, nh) => {
+    const ar = nw && nh ? nw / nh : 16 / 9;
+    const maxW = Math.max(80, canvasW * 0.7);
+    const maxH = Math.max(80, canvasH * 0.7);
+    let w = maxW, h = w / ar;
+    if (h > maxH) { h = maxH; w = h * ar; }
+    return { width: Math.round(w), height: Math.round(h) };
   };
-  const onImg = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f, "image"); };
-  const onVid = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f, "video"); };
+
+  const addMedia = (f, kind) => {
+    setOpen(false);
+    const url = URL.createObjectURL(f);
+    if (kind === "video") {
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.onloadedmetadata = () => {
+        const { width, height } = fit(v.videoWidth, v.videoHeight);
+        addObject("video", { src: url, width, height });
+      };
+      v.src = url;
+    } else {
+      const im = new Image();
+      im.onload = () => {
+        const { width, height } = fit(im.naturalWidth, im.naturalHeight);
+        addObject("image", { src: url, width, height });
+      };
+      im.src = url;
+    }
+  };
+  const onImg = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addMedia(f, "image"); };
+  const onVid = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addMedia(f, "video"); };
+
+  const add = (type) => { addObject(type); setOpen(false); };
+  const close = () => { setOpen(false); setView("main"); };
 
   return (
     <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); setView("main"); }}
         className="flex items-center gap-1.5 h-10 pl-3.5 pr-3.5 rounded-full bg-[#0A84FF] text-white text-[14px] font-medium hover:bg-[#0a78e0] transition-colors shadow-[0_4px_14px_rgba(10,132,255,0.35)]"
         style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5v11M1.5 7h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5v11M1.5 7h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
         Add
       </button>
+
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-12 z-20 w-48 rounded-2xl bg-white/95 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.06] py-1.5 overflow-hidden">
-            {[
-              { type: "text", label: "Text", glyph: "T" },
-              { type: "rect", label: "Rectangle", glyph: "▭" },
-              { type: "ellipse", label: "Ellipse", glyph: "◯" },
-            ].map((it) => (
-              <button key={it.type} onClick={() => add(it.type)}
+          <div className="fixed inset-0 z-10" onClick={close} />
+          {view === "main" ? (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-12 z-20 w-48 rounded-2xl bg-white/95 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.06] py-1.5 overflow-hidden">
+              {[
+                { type: "text", label: "Text", glyph: "T" },
+                { type: "rect", label: "Rectangle", glyph: "▭" },
+                { type: "ellipse", label: "Ellipse", glyph: "◯" },
+              ].map((it) => (
+                <button key={it.type} onClick={() => add(it.type)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#1d1d1f] hover:bg-black/[0.04] text-left"
+                  style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
+                  <span className="w-5 text-center text-[#86868b]">{it.glyph}</span>{it.label}
+                </button>
+              ))}
+              <div className="my-1 h-px bg-black/[0.06]" />
+              <button onClick={() => imgRef.current?.click()}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#1d1d1f] hover:bg-black/[0.04] text-left"
                 style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
-                <span className="w-5 text-center text-[#86868b]">{it.glyph}</span>{it.label}
+                <span className="w-5 text-center text-[#86868b]">↥</span>Image
               </button>
-            ))}
-            <div className="my-1 h-px bg-black/[0.06]" />
-            <button onClick={() => imgRef.current?.click()} disabled={uploading}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#1d1d1f] hover:bg-black/[0.04] text-left disabled:opacity-50"
-              style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
-              <span className="w-5 text-center text-[#86868b]">{uploading ? "…" : "↥"}</span>{uploading ? "Uploading…" : "Image"}
-            </button>
-            <button onClick={() => vidRef.current?.click()} disabled={uploading}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#1d1d1f] hover:bg-black/[0.04] text-left disabled:opacity-50"
-              style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
-              <span className="w-5 text-center text-[#86868b]">▶</span>Video
-            </button>
-          </div>
+              <button onClick={() => vidRef.current?.click()}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#1d1d1f] hover:bg-black/[0.04] text-left"
+                style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
+                <span className="w-5 text-center text-[#86868b]">▶</span>Video
+              </button>
+              <div className="my-1 h-px bg-black/[0.06]" />
+              <button onClick={() => setView("templates")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#1d1d1f] hover:bg-black/[0.04] text-left"
+                style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
+                <span className="w-5 text-center text-[#86868b]">✦</span>Templates
+              </button>
+            </div>
+          ) : (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-12 z-20">
+              <Templates editor={editor} onClose={close} />
+            </div>
+          )}
         </>
       )}
+
       <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={onImg} />
       <input ref={vidRef} type="file" accept="video/*" className="hidden" onChange={onVid} />
     </div>
