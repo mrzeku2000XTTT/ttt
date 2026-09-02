@@ -46,10 +46,11 @@ export default function IFilm() {
     setError(null);
     try {
       const res = await base44.functions.invoke("ifilmSearch", { query: q, page: pg, limit: 24 });
-      if (res?.error) throw new Error(res.error);
-      const list = res?.videos || [];
+      const data = res?.data ?? res;
+      if (data?.error) throw new Error(data.error);
+      const list = data?.videos || [];
       setVideos((prev) => append ? [...prev, ...list] : list);
-      setHasMore(!!res?.hasMore && list.length > 0);
+      setHasMore(!!data?.hasMore && list.length > 0);
       setPage(pg);
     } catch (e) {
       setError(e?.message || "Search failed. Try again.");
