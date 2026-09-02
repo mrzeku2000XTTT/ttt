@@ -85,6 +85,7 @@ export function useMotionEditor() {
     else if (type === "rect") base = { x: cx, y: cy, width: Math.round(sw * 0.3), height: Math.round(sw * 0.3), color: "#0A84FF", radius: Math.round(sw * 0.03), scale: 1, rotation: 0, opacity: 1 };
     else if (type === "ellipse") base = { x: cx, y: cy, width: Math.round(sw * 0.3), height: Math.round(sw * 0.3), color: "#30D158", scale: 1, rotation: 0, opacity: 1 };
     else if (type === "image") base = { x: cx, y: cy, width: Math.round(sw * 0.4), height: Math.round(sw * 0.4), src: extra?.src || "", scale: 1, rotation: 0, opacity: 1 };
+    else if (type === "video") base = { x: cx, y: cy, width: Math.round(sw * 0.5), height: Math.round(sw * 0.28), src: extra?.src || "", scale: 1, rotation: 0, opacity: 1 };
     const obj = { id: uid(), type, name: type[0].toUpperCase() + type.slice(1), base, keyframes: {} };
     setObjects((o) => [...o, obj]);
     setSelectedId(obj.id);

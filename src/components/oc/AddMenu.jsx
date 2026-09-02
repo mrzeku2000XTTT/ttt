@@ -7,21 +7,21 @@ export default function AddMenu({ editor }) {
   const { addObject } = editor;
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const fileRef = useRef(null);
+  const imgRef = useRef(null);
+  const vidRef = useRef(null);
 
   const add = (type) => { addObject(type); setOpen(false); };
 
-  const onFile = async (e) => {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    if (!f) return;
+  const upload = async (f, kind) => {
     setOpen(false);
     setUploading(true);
     try {
       const res = await base44.integrations.Core.UploadFile({ file: f });
-      addObject("image", { src: res?.file_url || res?.url });
+      addObject(kind, { src: res?.file_url || res?.url });
     } catch { /* ignore */ } finally { setUploading(false); }
   };
+  const onImg = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f, "image"); };
+  const onVid = (e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f, "video"); };
 
   return (
     <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
@@ -49,15 +49,21 @@ export default function AddMenu({ editor }) {
               </button>
             ))}
             <div className="my-1 h-px bg-black/[0.06]" />
-            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+            <button onClick={() => imgRef.current?.click()} disabled={uploading}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#1d1d1f] hover:bg-black/[0.04] text-left disabled:opacity-50"
               style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
-              <span className="w-5 text-center text-[#86868b]">{uploading ? "…" : "↥"}</span>{uploading ? "Uploading…" : "Upload image"}
+              <span className="w-5 text-center text-[#86868b]">{uploading ? "…" : "↥"}</span>{uploading ? "Uploading…" : "Image"}
+            </button>
+            <button onClick={() => vidRef.current?.click()} disabled={uploading}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#1d1d1f] hover:bg-black/[0.04] text-left disabled:opacity-50"
+              style={{ fontFamily: '-apple-system, system-ui, sans-serif' }}>
+              <span className="w-5 text-center text-[#86868b]">▶</span>Video
             </button>
           </div>
         </>
       )}
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+      <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={onImg} />
+      <input ref={vidRef} type="file" accept="video/*" className="hidden" onChange={onVid} />
     </div>
   );
 }

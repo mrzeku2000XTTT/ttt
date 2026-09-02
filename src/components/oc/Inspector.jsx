@@ -119,9 +119,9 @@ export default function Inspector({ editor }) {
             <input type="color" value={o.base.color} onChange={(e) => updateBase(o.id, { color: e.target.value })} className="w-9 h-9 rounded-lg border border-black/10 bg-transparent cursor-pointer" />
           </div>
         )}
-        {o.type === "image" && (
+        {(o.type === "image" || o.type === "video") && (
           <div className="py-2.5 border-b border-black/[0.05]">
-            <div className="text-[12px] font-medium text-[#1d1d1f] mb-1.5">Image URL</div>
+            <div className="text-[12px] font-medium text-[#1d1d1f] mb-1.5">{o.type === "video" ? "Video URL" : "Image URL"}</div>
             <input value={o.base.src} onChange={(e) => updateBase(o.id, { src: e.target.value })} placeholder="https://…"
               className="w-full bg-black/[0.04] rounded-lg px-2.5 py-2 text-[12px] text-[#1d1d1f] outline-none focus:ring-2 focus:ring-[#0A84FF]/30" />
           </div>

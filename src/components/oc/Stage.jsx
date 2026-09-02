@@ -34,6 +34,8 @@ function Layer({ obj, time, selected, onPointerDown }) {
     inner = <div style={{ width: "100%", height: "100%", background: obj.base.color, borderRadius: "50%" }} />;
   } else if (obj.type === "image") {
     inner = <img src={obj.base.src} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, pointerEvents: "none" }} />;
+  } else if (obj.type === "video") {
+    inner = <video src={obj.base.src} muted loop playsInline autoPlay draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, pointerEvents: "none" }} />;
   }
   return (
     <div style={common} onPointerDown={(e) => onPointerDown(e, obj.id)}>
@@ -58,14 +60,11 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
   const live = useRef({ objects, time: editor.time });
   live.current = { objects, time: editor.time };
 
-  // The canvas fills the available area exactly (no scale/transform), so it
-  // always renders visibly on every screen size. Its coordinate space is set
-  // to the measured pixel size of the stage area.
   useEffect(() => {
     const el = fitRef.current; if (!el) return;
     const fit = () => {
-      const aw = el.clientWidth - 16;   // px-2 (8px each side)
-      const ah = el.clientHeight - 72;  // pt-2 (8) + pb-16 (64) reserved for the Add button
+      const aw = el.clientWidth - 16;
+      const ah = el.clientHeight - 72;
       if (aw <= 10 || ah <= 10) return;
       setCanvasSize(aw, ah);
     };
@@ -80,8 +79,8 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
     return { x: (clientX - r.left) * (canvasW / r.width), y: (clientY - r.top) * (canvasH / r.height) };
   };
 
-  // Drag = record mode: the playhead auto-advances and each position is
-  // written as a keyframe, so one drag paints a real motion path.
+  // Every direct manipulation (position / scale / rotation) is "record mode":
+  // the playhead auto-advances and writes a keyframe, painting a motion path.
   const onObjectPointerDown = (e, id) => {
     e.stopPropagation();
     selectObject(id);
@@ -89,23 +88,51 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
     const o = live.current.objects.find((x) => x.id === id);
     const p = propsAtTime(o, live.current.time);
     const start = toLogical(e.clientX, e.clientY);
-    dragRef.current = { id, start, origin: { x: p.x, y: p.y }, recording: false };
+    dragRef.current = { id, mode: "position", start, origin: { x: p.x, y: p.y }, recording: false };
+  };
+
+  const onScaleDown = (e) => {
+    e.stopPropagation();
+    const o = live.current.objects.find((x) => x.id === selectedId);
+    if (!o) return;
+    setPlaying(false);
+    const p = propsAtTime(o, live.current.time);
+    const halfDiag = Math.hypot(o.base.width / 2, o.base.height / 2) || 1;
+    dragRef.current = { id: o.id, mode: "scale", center: { x: p.x, y: p.y }, halfDiag, origin: p.scale, recording: false };
+  };
+
+  const onRotDown = (e) => {
+    e.stopPropagation();
+    const o = live.current.objects.find((x) => x.id === selectedId);
+    if (!o) return;
+    setPlaying(false);
+    const p = propsAtTime(o, live.current.time);
+    dragRef.current = { id: o.id, mode: "rotation", center: { x: p.x, y: p.y }, origin: p.rotation, recording: false };
   };
 
   useEffect(() => {
+    const seed = (d) => {
+      if (d.mode === "position") { setKeyframe(d.id, "x", live.current.time, d.origin.x); setKeyframe(d.id, "y", live.current.time, d.origin.y); }
+      else if (d.mode === "scale") setKeyframe(d.id, "scale", live.current.time, d.origin);
+      else if (d.mode === "rotation") setKeyframe(d.id, "rotation", live.current.time, d.origin);
+    };
     const move = (e) => {
       const d = dragRef.current; if (!d) return;
-      if (!d.recording) {
-        d.recording = true;
-        setRecording(true);
-        setKeyframe(d.id, "x", live.current.time, d.origin.x);
-        setKeyframe(d.id, "y", live.current.time, d.origin.y);
-      }
+      if (!d.recording) { d.recording = true; setRecording(true); seed(d); }
       const cur = toLogical(e.clientX, e.clientY);
-      const nx = d.origin.x + (cur.x - d.start.x);
-      const ny = d.origin.y + (cur.y - d.start.y);
-      setKeyframe(d.id, "x", live.current.time, nx);
-      setKeyframe(d.id, "y", live.current.time, ny);
+      if (d.mode === "position") {
+        setKeyframe(d.id, "x", live.current.time, d.origin.x + (cur.x - d.start.x));
+        setKeyframe(d.id, "y", live.current.time, d.origin.y + (cur.y - d.start.y));
+      } else if (d.mode === "scale") {
+        const dist = Math.hypot(cur.x - d.center.x, cur.y - d.center.y);
+        const ns = Math.max(0.1, Math.min(4, dist / d.halfDiag));
+        setKeyframe(d.id, "scale", live.current.time, Math.round(ns * 100) / 100);
+      } else if (d.mode === "rotation") {
+        const ang = Math.atan2(cur.y - d.center.y, cur.x - d.center.x);
+        let deg = (ang + Math.PI / 2) * 180 / Math.PI;
+        deg = ((deg + 180) % 360 + 360) % 360 - 180;
+        setKeyframe(d.id, "rotation", live.current.time, Math.round(deg));
+      }
     };
     const up = () => {
       if (dragRef.current?.recording) setRecording(false);
@@ -114,18 +141,41 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-  }, [setKeyframe, setRecording, canvasW, canvasH]);
+  }, [setKeyframe, setRecording, canvasW, canvasH, selectedId]);
 
   const onDrop = async (e) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
-    if (f && f.type.startsWith("image/")) {
-      try {
-        const res = await base44.integrations.Core.UploadFile({ file: f });
-        addObject("image", { src: res?.file_url || res?.url });
-      } catch { /* ignore */ }
-    }
+    if (!f) return;
+    try {
+      const res = await base44.integrations.Core.UploadFile({ file: f });
+      const src = res?.file_url || res?.url;
+      addObject(f.type.startsWith("video/") ? "video" : "image", { src });
+    } catch { /* ignore */ }
   };
+
+  // Transform handles for the selected object (canvas coords = stage px 1:1)
+  let handles = null;
+  const sel = objects.find((o) => o.id === selectedId);
+  if (sel) {
+    const p = propsAtTime(sel, editor.time);
+    const w = sel.base.width, h = sel.base.height;
+    const s = p.scale ?? 1;
+    const th = (p.rotation ?? 0) * Math.PI / 180;
+    const dx = w / 2 * s, dy = h / 2 * s;
+    const cornerX = p.x + dx * Math.cos(th) - dy * Math.sin(th);
+    const cornerY = p.y + dx * Math.sin(th) + dy * Math.cos(th);
+    const rOff = 44;
+    const rotX = p.x + (h / 2 * s + rOff) * Math.sin(th);
+    const rotY = p.y - (h / 2 * s + rOff) * Math.cos(th);
+    const handleBase = { position: "absolute", transform: "translate(-50%,-50%)", touchAction: "none", zIndex: 5, background: "#0A84FF", border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" };
+    handles = (
+      <>
+        <div onPointerDown={onRotDown} style={{ ...handleBase, left: rotX, top: rotY, width: 15, height: 15, borderRadius: "50%", cursor: "grab" }} />
+        <div onPointerDown={onScaleDown} style={{ ...handleBase, left: cornerX, top: cornerY, width: 15, height: 15, borderRadius: 3, cursor: "nwse-resize" }} />
+      </>
+    );
+  }
 
   return (
     <div ref={wrapRef} className="relative flex-1 min-h-0 flex flex-col"
@@ -146,6 +196,7 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
           {objects.map((o) => (
             <Layer key={o.id} obj={o} time={editor.time} selected={o.id === selectedId} onPointerDown={onObjectPointerDown} />
           ))}
+          {handles}
         </div>
       </div>
 
