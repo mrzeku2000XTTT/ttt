@@ -1,0 +1,66 @@
+{
+  "name": "SpatialRoom",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email \u2014 only they can see or restore this room"
+    },
+    "title": {
+      "type": "string",
+      "description": "Room title (derived from the transform request)"
+    },
+    "transform": {
+      "type": "string",
+      "description": "The requested transformation text"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "Full generated image-gen prompt (all sections)"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Original uploaded room photo URL"
+    },
+    "images": {
+      "type": "array",
+      "default": [],
+      "description": "Generated B-roll shots for this room",
+      "items": {
+        "type": "object",
+        "properties": {
+          "angle": {
+            "type": "string",
+            "description": "Angle key"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable camera angle label"
+          },
+          "url": {
+            "type": "string",
+            "description": "Generated image URL"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "user_email",
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}

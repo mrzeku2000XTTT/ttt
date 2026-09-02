@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,10 @@ import RMXNodeConfig from "@/components/rmx/RMXNodeConfig";
 import RMXRunPanel from "@/components/rmx/RMXRunPanel";
 
 export default function RMXPage() {
+  const location = useLocation();
+  const fromSpatial = new URLSearchParams(location.search).get("from") === "spatial";
+  const backTarget = fromSpatial ? "/Spatial" : createPageUrl("AppStoreV2");
+  const backLabel = fromSpatial ? "Back to Spatial" : "Back";
   const [nodes, setNodes] = useState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -213,10 +217,10 @@ export default function RMXPage() {
       <div className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/40 backdrop-blur-xl">
         <div className="flex items-center gap-3 min-w-0">
           <Link
-            to={createPageUrl("AppStoreV2")}
+            to={backTarget}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 text-white/60 hover:text-white text-sm"
           >
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {backLabel}
           </Link>
           <div className="hidden sm:block w-px h-6 bg-white/10" />
           <div className="flex items-center gap-2 min-w-0">
