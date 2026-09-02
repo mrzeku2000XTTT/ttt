@@ -6,8 +6,26 @@ import AddMenu from "./AddMenu";
 import TypographyAgent, { ensureFont } from "./TypographyAgent";
 import DeviceFrame from "./DeviceFrame";
 
-function Layer({ obj, time, selected, onPointerDown }) {
+function Layer({ obj, time, selected, onPointerDown, onMeasure }) {
+  const measureRef = useRef(null);
   useEffect(() => { if (obj.type === "text") ensureFont(obj.base.fontFamily); }, [obj.type, obj.base.fontFamily]);
+  // Keep the text bounding box snapped to the rendered text so the selection
+  // outline + transform handles always align with the visible letters.
+  useEffect(() => {
+    if (obj.type !== "text" || !measureRef.current) return;
+    const el = measureRef.current;
+    const measure = () => {
+      const nw = Math.ceil(el.offsetWidth), nh = Math.ceil(el.offsetHeight);
+      if (nw > 0 && nh > 0 && (Math.abs(nw - obj.base.width) > 1 || Math.abs(nh - obj.base.height) > 1)) {
+        onMeasure?.(obj.id, { width: nw, height: nh });
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    if (document.fonts?.ready) document.fonts.ready.then(measure);
+    return () => ro.disconnect();
+  }, [obj.type, obj.base.text, obj.base.fontSize, obj.base.fontFamily, obj.base.fontWeight, obj.base.fontStyle, obj.base.letterSpacing, obj.base.lineHeight, obj.base.textTransform, onMeasure]);
   const p = propsAtTime(obj, time);
   const w = obj.base.width, h = obj.base.height;
   const left = p.x - w / 2;
@@ -22,19 +40,18 @@ function Layer({ obj, time, selected, onPointerDown }) {
   };
   let inner;
   if (obj.type === "text") {
+    const fontStack = obj.base.fontFamily || '-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif';
+    const fontVars = {
+      color: obj.base.color, fontSize: obj.base.fontSize, fontFamily: fontStack,
+      fontWeight: obj.base.fontWeight ?? 700, fontStyle: obj.base.fontStyle || "normal",
+      lineHeight: obj.base.lineHeight ?? 1.05, letterSpacing: obj.base.letterSpacing || "-0.02em",
+      textTransform: obj.base.textTransform || "none", whiteSpace: "pre",
+    };
     inner = (
-      <div style={{
-        width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-        textAlign: "center", color: obj.base.color, fontSize: obj.base.fontSize,
-        fontFamily: obj.base.fontFamily || '-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
-        fontWeight: obj.base.fontWeight ?? 700,
-        fontStyle: obj.base.fontStyle || "normal",
-        lineHeight: obj.base.lineHeight ?? 1.05,
-        letterSpacing: obj.base.letterSpacing || "-0.02em",
-        textTransform: obj.base.textTransform || "none",
-        whiteSpace: "pre-wrap",
-        userSelect: "none", pointerEvents: "none",
-      }}>{obj.base.text}</div>
+      <>
+        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", userSelect: "none", pointerEvents: "none", ...fontVars }}>{obj.base.text}</div>
+        <span ref={measureRef} style={{ position: "absolute", left: -9999, top: 0, visibility: "hidden", pointerEvents: "none", ...fontVars }}>{obj.base.text}</span>
+      </>
     );
   } else if (obj.type === "rect") {
     inner = <div style={{ width: "100%", height: "100%", background: obj.base.color, borderRadius: obj.base.radius || 0 }} />;
@@ -53,7 +70,7 @@ function Layer({ obj, time, selected, onPointerDown }) {
       {selected && (
         <div style={{
           position: "absolute", inset: -1.5, borderRadius: obj.type === "ellipse" ? "50%" : (obj.type === "rect" ? (obj.base.radius || 0) + 2 : 12),
-          boxShadow: "0 0 0 1.5px #0A84FF, 0 0 0 3px rgba(10,132,255,0.18)",
+          boxShadow: "0 0 0 1.5px #FF0000, 0 0 0 3px rgba(255,0,0,0.18)",
           pointerEvents: "none",
         }} />
       )}
@@ -180,7 +197,7 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
     const rOff = 44;
     const rotX = p.x + (h / 2 * s + rOff) * Math.sin(th);
     const rotY = p.y - (h / 2 * s + rOff) * Math.cos(th);
-    const handleBase = { position: "absolute", transform: "translate(-50%,-50%)", touchAction: "none", zIndex: 5, background: "#0A84FF", border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" };
+    const handleBase = { position: "absolute", transform: "translate(-50%,-50%)", touchAction: "none", zIndex: 5, background: "#FF0000", border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" };
     handles = (
       <>
         <div onPointerDown={onRotDown} style={{ ...handleBase, left: rotX, top: rotY, width: 15, height: 15, borderRadius: "50%", cursor: "grab" }} />
@@ -206,7 +223,7 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
           position: "relative", overflow: "hidden", touchAction: "none",
         }}>
           {objects.map((o) => (
-            <Layer key={o.id} obj={o} time={editor.time} selected={o.id === selectedId} onPointerDown={onObjectPointerDown} />
+            <Layer key={o.id} obj={o} time={editor.time} selected={o.id === selectedId} onPointerDown={onObjectPointerDown} onMeasure={editor.updateBase} />
           ))}
           {handles}
         </div>
