@@ -41,6 +41,10 @@ export default function IFilm() {
   const [playing, setPlaying] = useState(null);
   const [channelInfo, setChannelInfo] = useState(null);
   const [channels, setChannels] = useState([]);
+  const [focused, setFocused] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const suggestTimer = useRef(null);
   const searchInputRef = useRef(null);
 
   const runSearch = async (q, pg = 1, append = false) => {
@@ -68,11 +72,36 @@ export default function IFilm() {
 
   useEffect(() => { runSearch(""); }, []); // default trending feed
 
+  // Live autocomplete while typing
+  useEffect(() => {
+    const q = query.trim();
+    if (!focused || !q || q.startsWith("@")) { setSuggestions([]); return; }
+    clearTimeout(suggestTimer.current);
+    suggestTimer.current = setTimeout(async () => {
+      setSuggestLoading(true);
+      try {
+        const res = await base44.functions.invoke("ifilmSearch", { suggest: true, query: q });
+        const data = res?.data ?? res;
+        setSuggestions(data?.suggestions || []);
+      } catch { setSuggestions([]); }
+      finally { setSuggestLoading(false); }
+    }, 250);
+    return () => clearTimeout(suggestTimer.current);
+  }, [query, focused]);
+
+  const pickSuggestion = (s) => {
+    setQuery(s); setActiveQuery(s); runSearch(s, 1);
+    setFocused(false); setSuggestions([]);
+    searchInputRef.current?.blur();
+  };
+
   const submit = (e) => {
     e?.preventDefault();
     const q = query.trim();
     setActiveQuery(q);
     runSearch(q, 1);
+    setFocused(false); setSuggestions([]);
+    searchInputRef.current?.blur();
   };
 
   const loadMore = () => runSearch(activeQuery, page + 1, true);
@@ -106,6 +135,7 @@ export default function IFilm() {
               ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setFocused(true)}
               placeholder="Search videos or @channel…"
               className="w-full h-9 pl-9 pr-9 rounded-full bg-white/10 border border-white/15 text-[13px] text-white placeholder-white/40 outline-none focus:border-white/40 focus:bg-white/15 transition-colors"
             />
@@ -121,6 +151,34 @@ export default function IFilm() {
           <X className="w-4 h-4" />
         </Link>
       </div>
+
+      {/* Autocomplete suggestions */}
+      {focused && query.trim() && !query.trim().startsWith("@") && (suggestions.length > 0 || suggestLoading) && (
+        <div className="fixed inset-0 z-30" onMouseDown={() => setFocused(false)}>
+          <div
+            className="absolute left-0 right-0 bg-[#121212] border-b border-white/10 shadow-2xl"
+            style={{ top: "calc(env(safe-area-inset-top, 0px) + 3.7rem)", maxHeight: "60vh", overflowY: "auto" }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {suggestLoading && suggestions.length === 0 ? (
+              <div className="px-4 py-3 text-[12px] text-white/40 flex items-center gap-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Searching…
+              </div>
+            ) : (
+              suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onMouseDown={(e) => { e.preventDefault(); pickSuggestion(s); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors border-b border-white/5"
+                >
+                  <Search className="w-4 h-4 text-white/40 flex-shrink-0" />
+                  <span className="text-[13px] text-white/85 truncate">{s}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-[1100px] mx-auto px-3 sm:px-5 pt-20 pb-24">
         {/* Section label */}
