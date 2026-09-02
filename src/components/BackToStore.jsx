@@ -6,7 +6,7 @@ import { Store } from "lucide-react";
  * Floating "Exit to App Store" button — top-right, always visible on every
  * app page except the store itself and the top-level landings.
  */
-const HIDDEN_PATHS = ["/AppStoreV2", "/AppStore", "/", "/TTTHome", "/TTTGate", "/Kanta"];
+const HIDDEN_PATHS = ["/AppStoreV2", "/AppStore", "/", "/TTTHome", "/TTTGate"];
 
 export default function BackToStore() {
   const navigate = useNavigate();

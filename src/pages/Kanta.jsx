@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Mic, Loader2, Copy, Check, Download, Send, Store } from "lucide-react";
+import { Mic, Loader2, Copy, Check, Download, Send } from "lucide-react";
 
 // Kanta — chat-style AI lyrics writer powered by TTT's built-in AI.
 // Strict monochrome: pure black background, white text only.
@@ -10,7 +9,6 @@ import { Mic, Loader2, Copy, Check, Download, Send, Store } from "lucide-react";
 const KANTA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/3abbf9202_generated_image.png";
 
 export default function Kanta() {
-  const navigate = useNavigate();
   const [messages, setMessages] = useState([]); // { role: 'user'|'assistant', prompt?, title?, lyrics?, tags? }
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -104,13 +102,7 @@ export default function Kanta() {
               <p className="text-[11px] text-white/50 -mt-0.5">AI Lyrics Writer</p>
             </div>
           </div>
-          <button
-            onClick={() => navigate("/AppStoreV2")}
-            className="flex items-center gap-1.5 text-xs font-medium text-white/80 hover:text-white border border-white/15 rounded-full px-3 py-1.5 transition-colors hover:bg-white/10"
-          >
-            <Store className="w-3.5 h-3.5" />
-            Exit to App Store
-          </button>
+          <div className="w-24" />
         </div>
       </header>
 
