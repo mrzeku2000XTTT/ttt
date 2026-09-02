@@ -9,14 +9,18 @@ const LYRICS_SCHEMA = {
     title: { type: "string", description: "Short, catchy song title" },
     lyrics: {
       type: "string",
-      description: "Full song lyrics with section tags like [Verse 1], [Chorus], [Bridge], [Outro]. 2-3 verses, a repeating chorus, and a bridge."
+      description: "Full song lyrics with section tags like [Verse 1], [Chorus], [Bridge], [Outro]. 2-3 verses, a repeating chorus, and a bridge. Formatted exactly as the HeartMuLa heartlib repo expects (assets/lyrics.txt format)."
+    },
+    tags: {
+      type: "string",
+      description: "Comma-separated musical style tags with NO spaces, e.g. 'piano,happy,wedding,synthesizer,romantic'. 3-6 tags capturing genre, mood, instrumentation. This is the assets/tags.txt format the HeartMuLa heartlib repo reads."
     }
   },
-  required: ["title", "lyrics"]
+  required: ["title", "lyrics", "tags"]
 };
 
 function buildPrompt(userPrompt) {
-  return `You are a professional songwriter. Write original song lyrics based on this request:\n\n"${userPrompt}"\n\nRules:\n- Invent a short, memorable title.\n- Write full lyrics with clear structure: 2-3 Verses, a Chorus that repeats, a Bridge, and an Outro.\n- Tag each section in brackets, e.g. [Verse 1], [Chorus], [Bridge], [Outro].\n- Keep lines natural to sing — rhythm and rhyme matter.\n- No commentary, no explanations — only the title and the lyrics.\n- Do not copy existing songs; write something original.`;
+  return `You are a professional songwriter. Write original song lyrics based on this request:\n\n"${userPrompt}"\n\nRules:\n- Invent a short, memorable title.\n- Write full lyrics with clear structure: 2-3 Verses, a Chorus that repeats, a Bridge, and an Outro.\n- Tag each section in brackets on its own line, e.g. [Verse 1], [Chorus], [Bridge], [Outro] — exactly like the HeartMuLa heartlib assets/lyrics.txt example.\n- Keep lines natural to sing — rhythm and rhyme matter.\n- Also produce a "tags" string: comma-separated musical style tags with NO spaces (e.g. piano,happy,wedding,synthesizer,romantic), 3-6 tags covering genre, mood, instrumentation — the assets/tags.txt format the HeartMuLa heartlib repo reads.\n- No commentary, no explanations — only the title, the lyrics, and the tags.\n- Do not copy existing songs; write something original.`;
 }
 
 Deno.serve(async (req) => {
@@ -40,8 +44,12 @@ Deno.serve(async (req) => {
     const title = (res && res.title) || "Untitled";
     const lyrics = (res && res.lyrics) || "";
     if (!lyrics) return Response.json({ error: "Lyrics generation returned empty." }, { status: 500 });
+    // Normalize tags: strip spaces, collapse commas, lowercase — HeartMuLa expects comma-separated, no spaces.
+    let tags = (res && res.tags) || "";
+    tags = tags.split(",").map((t) => t.trim().toLowerCase().replace(/\s+/g, "")).filter(Boolean).join(",");
+    if (!tags) tags = "pop,upbeat,soft";
 
-    return Response.json({ title, lyrics });
+    return Response.json({ title, lyrics, tags });
   } catch (error) {
     return Response.json({ error: error?.message || "Lyrics generation failed" }, { status: 500 });
   }
