@@ -79,11 +79,12 @@ export function useMotionEditor() {
 
   const addObject = useCallback((type, extra) => {
     const cx = canvasW / 2, cy = canvasH / 2;
+    const sw = Math.min(canvasW, canvasH);
     let base;
-    if (type === "text") base = { x: cx, y: cy, width: 420, height: 100, text: "Text", color: "#1d1d1f", fontSize: 64, scale: 1, rotation: 0, opacity: 1 };
-    else if (type === "rect") base = { x: cx, y: cy, width: 240, height: 240, color: "#0A84FF", radius: 22, scale: 1, rotation: 0, opacity: 1 };
-    else if (type === "ellipse") base = { x: cx, y: cy, width: 240, height: 240, color: "#30D158", scale: 1, rotation: 0, opacity: 1 };
-    else if (type === "image") base = { x: cx, y: cy, width: 360, height: 360, src: extra?.src || "", scale: 1, rotation: 0, opacity: 1 };
+    if (type === "text") base = { x: cx, y: cy, width: Math.round(sw * 0.6), height: Math.round(sw * 0.15), text: "Text", color: "#1d1d1f", fontSize: Math.max(24, Math.round(sw * 0.09)), scale: 1, rotation: 0, opacity: 1 };
+    else if (type === "rect") base = { x: cx, y: cy, width: Math.round(sw * 0.3), height: Math.round(sw * 0.3), color: "#0A84FF", radius: Math.round(sw * 0.03), scale: 1, rotation: 0, opacity: 1 };
+    else if (type === "ellipse") base = { x: cx, y: cy, width: Math.round(sw * 0.3), height: Math.round(sw * 0.3), color: "#30D158", scale: 1, rotation: 0, opacity: 1 };
+    else if (type === "image") base = { x: cx, y: cy, width: Math.round(sw * 0.4), height: Math.round(sw * 0.4), src: extra?.src || "", scale: 1, rotation: 0, opacity: 1 };
     const obj = { id: uid(), type, name: type[0].toUpperCase() + type.slice(1), base, keyframes: {} };
     setObjects((o) => [...o, obj]);
     setSelectedId(obj.id);

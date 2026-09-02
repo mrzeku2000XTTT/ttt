@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { propsAtTime } from "./useMotionEditor";
 import { Minimize2, SlidersHorizontal } from "lucide-react";
@@ -54,24 +54,20 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
   const wrapRef = useRef(null);
   const fitRef = useRef(null);
   const stageRef = useRef(null);
-  const [scale, setScale] = useState(0.5);
   const dragRef = useRef(null);
   const live = useRef({ objects, time: editor.time });
   live.current = { objects, time: editor.time };
 
+  // The canvas fills the available area exactly (no scale/transform), so it
+  // always renders visibly on every screen size. Its coordinate space is set
+  // to the measured pixel size of the stage area.
   useEffect(() => {
     const el = fitRef.current; if (!el) return;
     const fit = () => {
-      // content area = client minus px-2 (16) sides and pt-2+pb-16 (72) vertical
-      const aw = el.clientWidth - 16;
-      const ah = el.clientHeight - 72;
+      const aw = el.clientWidth - 16;   // px-2 (8px each side)
+      const ah = el.clientHeight - 72;  // pt-2 (8) + pb-16 (64) reserved for the Add button
       if (aw <= 10 || ah <= 10) return;
-      // Make the canvas fill the available area by adapting its aspect ratio,
-      // keeping a 720-tall coordinate space so object sizes stay consistent.
-      const refH = 720;
-      const newW = Math.max(320, Math.round(refH * aw / ah));
-      setCanvasSize(newW, refH);
-      setScale(ah / refH);
+      setCanvasSize(aw, ah);
     };
     fit();
     const ro = new ResizeObserver(fit);
@@ -137,12 +133,14 @@ export default function Stage({ editor, fullscreen, onToggleFullscreen, onOpenIn
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
     >
-      <div ref={fitRef} className="flex-1 min-h-0 flex items-center justify-center px-2 pt-2 pb-16"
+      <div ref={fitRef} className="flex-1 min-h-0 px-2 pt-2 pb-16"
         onPointerDown={() => selectObject(null)}
       >
         <div ref={stageRef} onPointerDown={(e) => e.stopPropagation()} style={{
-          width: canvasW, height: canvasH, transform: `scale(${scale})`, transformOrigin: "center center",
-          background: "#ffffff", borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
+          width: "100%", height: "100%",
+          background: "#ffffff", borderRadius: 14,
+          boxShadow: "0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
+          border: "1px solid rgba(0,0,0,0.08)",
           position: "relative", overflow: "hidden", touchAction: "none",
         }}>
           {objects.map((o) => (
