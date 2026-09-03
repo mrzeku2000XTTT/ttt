@@ -3,7 +3,7 @@ import { PenTool, Loader2, Mic, Download, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
-import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
+import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
@@ -20,6 +20,8 @@ export default function NicheExplainerLab({ niche }) {
   const [learnedStyles, setLearnedStyles] = useState([]);
   const [showLearner, setShowLearner] = useState(false);
   const [colorMode, setColorMode] = useState('mono'); // black & white by default, colored optional
+  const [appName, setAppName] = useState(''); // for the "Real UI Clone" style
+  const [uiResearch, setUiResearch] = useState(null); // cached {app, description}
   const [elapsed, setElapsed] = useState(0); // live elapsed on the working status
 
   const scenes = script?.scenes || [];
@@ -104,15 +106,35 @@ Narration must total about 60–120 seconds when spoken.`,
   const generateVisuals = async () => {
     setBusy('Drawing scene 1/' + scenes.length + '…');
     try {
+      // Real UI Clone: research the actual app's UI once, then clone it per scene
+      let uiDesc = '';
+      if (styleId === 'real-ui') {
+        const name = appName.trim();
+        if (!name) {
+          setBusy('Enter the app name to clone its real UI…');
+          setTimeout(() => setBusy(''), 1800);
+          return;
+        }
+        if (!uiResearch || uiResearch.app !== name) {
+          setBusy(`Researching the real ${name} UI from the web…`);
+          const r = await researchAppUi(name);
+          setUiResearch(r);
+          uiDesc = r.description;
+        } else {
+          uiDesc = uiResearch.description;
+        }
+      }
       const urls = [];
       for (let i = 0; i < scenes.length; i++) {
         setBusy(`Drawing scene ${i + 1}/${scenes.length}…`);
         const learned = learnedStyles.find((s) => `learned:${s.id}` === styleId);
-        const res = await base44.integrations.Core.GenerateImage({
-          prompt: learned
-            ? customStylePrompt(learned.description, scenes[i].action, colorMode)
-            : stylePrompt(styleId, scenes[i].action, colorMode)
-        });
+        const prompt =
+          styleId === 'real-ui'
+            ? realUiPrompt(appName.trim(), uiDesc, scenes[i].action, colorMode)
+            : learned
+              ? customStylePrompt(learned.description, scenes[i].action, colorMode)
+              : stylePrompt(styleId, scenes[i].action, colorMode);
+        const res = await base44.integrations.Core.GenerateImage({ prompt });
         urls.push(res.url);
         setImages([...urls]);
       }
@@ -250,6 +272,15 @@ Narration must total about 60–120 seconds when spoken.`,
           ))}
         </select>
       </div>
+
+      {styleId === 'real-ui' && (
+        <input
+          value={appName}
+          onChange={(e) => setAppName(e.target.value)}
+          placeholder="App name to clone — e.g. Kaspium wallet, Cash App, Binance"
+          className="w-full mb-4 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row gap-2">
         <input

@@ -41,6 +41,14 @@ export const ANIMATION_STYLES = [
     ink: '#f5f5f5',
     prompt: (action) =>
       `Chalkboard illustration showing: ${action}. One simple character sketched in white chalk mid-action on a dark blackboard background, rough chalk strokes, faint chalk dust texture, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    id: 'real-ui',
+    name: 'Real UI Clone',
+    bg: '#0a0a0a',
+    ink: '#f5f5f5',
+    // prompt() is unused for this style — clones are built via realUiPrompt()
+    prompt: (action) => action
   }
 ];
 
@@ -64,6 +72,35 @@ export const stylePrompt = (styleId, action, colorMode) => {
 // Builds an image prompt in a style the AI learned from a user's video or images
 export const customStylePrompt = (styleDescription, action, colorMode) =>
   `Wordless illustration, 16:9 wide composition. Recreate this exact learned visual style: ${styleDescription}. Depict this scene purely as artwork: ${action}.${colorMode === 'color' ? COLOR_MODES[1].clause : ''} The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`;
+
+// Research a real app's UI from the web (Google Play / App Store / official site)
+// and return a description used to clone that UI in generated scene images.
+export async function researchAppUi(appName) {
+  const { base44 } = await import("@/api/base44Client");
+  const res = await base44.integrations.Core.InvokeLLM({
+    prompt: `Research the real mobile app "${appName}" from live web sources (Google Play, Apple App Store, official website, reviews, screenshots). Describe its UI as accurately as possible: signature colors (with hex where possible), dark/light theme, home screen layout, key screens, typography, button styles, navigation patterns, and overall visual identity. This will be used to generate faithful UI clone screenshots. Be specific and factual.`,
+    add_context_from_internet: true,
+    model: "gemini_3_flash",
+    response_json_schema: {
+      type: "object",
+      properties: {
+        description: { type: "string" },
+        app_name: { type: "string" }
+      }
+    }
+  });
+  return {
+    app: res?.app_name || appName,
+    description: (res?.description || "").trim()
+  };
+}
+
+// Build an image prompt that clones the real app's UI for a given scene action.
+// Unlike the stick-man styles, UI clones DO contain realistic app text (buttons,
+// balances, labels) — that's the whole point of cloning a real interface.
+export function realUiPrompt(appName, uiDesc, action, colorMode) {
+  return `High-fidelity vertical phone screenshot faithfully cloning the real UI of the mobile app "${appName}". ${uiDesc}. Depict this scene as a realistic, pixel-perfect, modern, premium app interface showing: ${action}. Render as a clean 9:19.5 phone screen, sharp, professional, the actual app's real color palette and typography. Realistic UI text and labels (buttons, balances, menu items, headings) belong in the frame — this is a UI clone, not a cartoon. No watermark, no mockup frame, no stick figures — just the screen content.${colorMode === 'color' ? '' : ''}`;
+}
 
 // "mp4" for MP4 blobs, "webm" only if the browser truly can't record MP4
 export const videoExt = (type = '') => (type.includes('mp4') ? 'mp4' : 'webm');

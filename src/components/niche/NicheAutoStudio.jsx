@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Download, Compass, Film, Lightbulb } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
-import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
+import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
@@ -141,6 +141,7 @@ ${convo ? `Conversation so far:\n${convo}\n\n` : ''}User's saved niches: ${(nich
 User's new message: """${text}"""
 
 Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (${s.name})`).join(', ')}. Default style: neutral.
+"real-ui" (Real UI Clone) is special: use it when the topic is about a REAL app (e.g. "Kaspium wallet", "Cash App", "Binance", "Kaspa wallet", "Kaspa node dashboard"). It researches the app's actual UI from the web and clones it faithfully — premium modern UI, not stick-man. When you pick "real-ui" you MUST also set the app field to the app's name.
 ${learnedStyles.length ? `Styles the user personally taught you from their own videos or images (style ids): ${learnedStyles.map((s) => `${s.id} ("${s.name}")`).join(', ')}. If they ask to use one of these, use its id.` : ''}
 
 First, carefully extract the user's intent from their message and the conversation so far:
@@ -173,6 +174,7 @@ Decide what to do:
                 style: { type: 'string', enum: [...ANIMATION_STYLES.map((s) => s.id), ...learnedStyles.map((s) => s.id)] },
                 scene_count: { type: 'number' },
                 color_mode: { type: 'string', enum: ['mono', 'color'] },
+                app: { type: 'string', description: 'App name when style is real-ui' },
                 title: { type: 'string' },
                 description: { type: 'string' },
                 tags: { type: 'array', items: { type: 'string' } },
@@ -212,14 +214,24 @@ Decide what to do:
           .then((r) => setMessages((m) => m.map((x) => (x.id === workId ? { ...x, tips: r.tips || [] } : x))))
           .catch(() => {});
 
+        // Real UI Clone: research the actual app's UI once, then clone it per scene
+        let uiDesc = '';
+        if (styleId === 'real-ui') {
+          setWork(`Researching the real ${v.app || v.title} UI from the web`);
+          const r = await researchAppUi(v.app || v.title);
+          uiDesc = r.description;
+        }
         const images = [];
         const audios = [];
         for (let i = 0; i < n; i++) {
           setWork(`Drawing · scene ${i + 1}/${n}`);
           const img = await base44.integrations.Core.GenerateImage({
-            prompt: learned
-              ? customStylePrompt(learned.description, scenes[i].action, v.color_mode)
-              : stylePrompt(styleId, scenes[i].action, v.color_mode)
+            prompt:
+              styleId === 'real-ui'
+                ? realUiPrompt(v.app || v.title, uiDesc, scenes[i].action, v.color_mode)
+                : learned
+                  ? customStylePrompt(learned.description, scenes[i].action, v.color_mode)
+                  : stylePrompt(styleId, scenes[i].action, v.color_mode)
           });
           images.push(img.url);
         }
