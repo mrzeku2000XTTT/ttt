@@ -29,6 +29,7 @@ export default function Narrate() {
   const [loadingLib, setLoadingLib] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [generatingOverview, setGeneratingOverview] = useState(false);
   const [error, setError] = useState(null);
   const [reader, setReader] = useState(null);
   const fileRef = useRef(null);
@@ -96,17 +97,14 @@ export default function Narrate() {
     setError(null);
     try {
       let text = book.text || "";
-      if (!text && book.ia_id) {
+      if (!text) {
         let off = 0;
         let full = "";
         let guard = 0;
         while (guard < 6) {
-          const r = await base44.functions.invoke("bookText", { ia_id: book.ia_id, offset: off, title: book.title, author: book.author });
+          const r = await base44.functions.invoke("bookText", { ia_id: book.ia_id || "", offset: off, title: book.title, author: book.author });
           const d = r?.data ?? r;
-          if (d?.error) {
-            setError(d.error);
-            break;
-          }
+          if (d?.error) break;
           full += d.text || "";
           if (!d.hasMore) break;
           off += (d.text || "").length;
@@ -114,17 +112,31 @@ export default function Narrate() {
         }
         text = full;
       }
+      let isOverview = false;
+      if (!text || text.trim().length < 200) {
+        // Copyrighted / unavailable — narrate an AI-generated overview instead
+        setFetching(false);
+        setGeneratingOverview(true);
+        const llm = await base44.integrations.Core.InvokeLLM({
+          prompt: `Write a spoken-word audio overview of the book "${book.title}"${book.author ? ` by ${book.author}` : ""}. Written for listening, in flowing prose with no headings, bullet points or markdown. Cover in order: a one-paragraph introduction of the book and author; the setting and main characters; a detailed chapter-by-chapter or act-by-act walk through the plot (including the ending); the major themes; and why it resonates with readers. Aim for 1200-1800 words. Only use facts you are confident about; do not invent plot points.`,
+          add_context_from_internet: true,
+        });
+        const ld = llm?.data ?? llm;
+        text = typeof ld === "string" ? ld : ld?.response || ld?.text || "";
+        isOverview = true;
+      }
       if (text && text.trim().length > 20) {
-        saveBook({ ...book, text });
-        setReader({ text, title: book.title, author: book.author, cover: book.cover });
+        if (!isOverview) saveBook({ ...book, text });
+        setReader({ text, title: isOverview ? `${book.title} — Audio Overview` : book.title, author: book.author, cover: book.cover });
         window.scrollTo({ top: 0 });
-      } else if (!error) {
-        setError("Full text isn't available for this title. Try scanning your own copy with the Scan button.");
+      } else {
+        setError("Couldn't load this title. Try scanning a page of your own copy with the Scan button.");
       }
     } catch (err) {
       setError(err?.message || "Couldn't load book.");
     } finally {
       setFetching(false);
+      setGeneratingOverview(false);
     }
   };
 
@@ -267,10 +279,14 @@ export default function Narrate() {
             {error}
           </div>
         )}
-        {(scanning || fetching) && (
+        {(scanning || fetching || generatingOverview) && (
           <div className="mb-4 flex items-center gap-2 text-[12.5px] text-white/60">
             <Loader2 className="w-4 h-4 animate-spin" />
-            {scanning ? "Reading the text from your photo…" : "Loading book text…"}
+            {scanning
+              ? "Reading the text from your photo…"
+              : generatingOverview
+              ? "Full text is copyrighted — preparing a spoken overview of this book…"
+              : "Loading book text…"}
           </div>
         )}
 

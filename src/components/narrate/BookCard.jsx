@@ -1,8 +1,8 @@
 import React from "react";
-import { BookOpen, Headphones, Lock } from "lucide-react";
+import { BookOpen, Headphones } from "lucide-react";
 
 export default function BookCard({ book, onOpen }) {
-  const readable = book.source === "scan" || !!book.ia_id || (book.text && book.text.length > 20);
+  const fullText = book.source === "scan" || !!book.ia_id || (book.text && book.text.length > 20);
   const subjects = (book.subjects || []).slice(0, 2).join(" · ");
   return (
     <button
@@ -22,18 +22,12 @@ export default function BookCard({ book, onOpen }) {
             <BookOpen className="w-8 h-8 text-white/25" />
           </div>
         )}
-        {/* Tap-to-read affordance on hover */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 bg-white text-black rounded-full px-3 py-1.5 text-[11px] font-semibold">
             <Headphones className="w-3.5 h-3.5" />
-            {readable ? "Listen" : "Preview"}
+            Listen
           </div>
         </div>
-        {!readable && (
-          <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 backdrop-blur flex items-center justify-center" title="Full text unavailable — scan your copy">
-            <Lock className="w-3 h-3 text-amber-400" />
-          </div>
-        )}
       </div>
       <div className="text-[12.5px] text-white/90 line-clamp-2 leading-snug group-hover:text-white">{book.title}</div>
       <div className="text-[11px] text-white/45 truncate mt-0.5">
@@ -41,11 +35,7 @@ export default function BookCard({ book, onOpen }) {
         {book.year ? ` · ${book.year}` : ""}
       </div>
       {subjects && <div className="text-[10px] text-white/35 truncate mt-0.5">{subjects}</div>}
-      {!readable && (
-        <div className="text-[10px] text-amber-400/70 mt-1 flex items-center gap-1">
-          <Lock className="w-2.5 h-2.5" /> Scan your copy to read
-        </div>
-      )}
+      <div className="text-[10px] text-white/35 mt-1">{fullText ? "Full text" : "Audio overview"}</div>
     </button>
   );
 }
