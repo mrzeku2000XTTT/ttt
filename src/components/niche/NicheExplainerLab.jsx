@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PenTool, Loader2, Mic, Download, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
-import { ANIMATION_STYLES, stylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
+import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
+import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
 export default function NicheExplainerLab({ niche }) {
@@ -14,8 +15,14 @@ export default function NicheExplainerLab({ niche }) {
   const [busy, setBusy] = useState(''); // progress label while working
   const [styleId, setStyleId] = useState('neutral'); // default animation style
   const [sceneCount, setSceneCount] = useState(8);
+  const [learnedStyles, setLearnedStyles] = useState([]);
+  const [showLearner, setShowLearner] = useState(false);
 
   const scenes = script?.scenes || [];
+
+  useEffect(() => {
+    base44.entities.NicheStyle.list().then(setLearnedStyles).catch(() => {});
+  }, []);
 
   const generateScript = async () => {
     setBusy('Writing script…');
@@ -28,7 +35,7 @@ Video topic: "${topic.trim() || niche.niche_name}"
 
 Write:
 1. A click-worthy title (under 60 characters)
-2. A script of exactly ${sceneCount} scenes. For each scene: one simple visual "action" the single character can plainly show (walking, pointing, lifting, falling, celebrating — one clear visual moment, no words involved), a short on-screen "caption" of at most 8 words matching the scene, and the exact narrator voiceover lines for that scene (2–4 sentences, written the way a person talks).
+2. A script of exactly ${sceneCount} scenes. For each scene: a visual "action" describing ONLY what is seen (typing at a desk, plugging in a cable, celebrating) — never commands, URLs, code or step text in the action, those go only in the voiceover; a short on-screen "caption" of at most 8 words matching the scene; and the exact narrator voiceover lines for that scene (2–4 sentences, written the way a person talks).
 3. A YouTube description (2 short paragraphs)
 4. 8–10 SEO tags
 
@@ -47,7 +54,7 @@ Narration must total about 60–120 seconds when spoken.`,
               items: {
                 type: 'object',
                 properties: {
-                  action: { type: 'string', description: 'What the stick figure is doing — one clear visual moment' },
+                  action: { type: 'string', description: 'What the character is seen doing — pure visual moment, no commands or step text' },
                   caption: { type: 'string', description: 'Short on-screen caption, max 8 words' },
                   voiceover: { type: 'string' }
                 }
@@ -76,7 +83,12 @@ Narration must total about 60–120 seconds when spoken.`,
       const urls = [];
       for (let i = 0; i < scenes.length; i++) {
         setBusy(`Drawing scene ${i + 1}/${scenes.length}…`);
-        const res = await base44.integrations.Core.GenerateImage({ prompt: stylePrompt(styleId, scenes[i].action) });
+        const learned = learnedStyles.find((s) => `learned:${s.id}` === styleId);
+        const res = await base44.integrations.Core.GenerateImage({
+          prompt: learned
+            ? customStylePrompt(learned.description, scenes[i].action)
+            : stylePrompt(styleId, scenes[i].action)
+        });
         urls.push(res.url);
         setImages([...urls]);
       }
@@ -106,7 +118,7 @@ Narration must total about 60–120 seconds when spoken.`,
       const blob = await compileExplainerVideo({
         images,
         audios,
-        captions: scenes.map((s) => s.caption || ''),
+        captions: scenes.map((s) => s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')),
         style: styleId,
         onProgress: setBusy
       });
@@ -141,6 +153,27 @@ Narration must total about 60–120 seconds when spoken.`,
             {s.name}
           </button>
         ))}
+        {learnedStyles.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setStyleId(`learned:${s.id}`)}
+            disabled={!!busy}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border disabled:opacity-50 ${
+              styleId === `learned:${s.id}`
+                ? 'bg-white text-black border-white'
+                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+          >
+            ★ {s.name}
+          </button>
+        ))}
+        <button
+          onClick={() => setShowLearner(true)}
+          disabled={!!busy}
+          className="px-3 py-1.5 rounded-full text-xs font-semibold border border-white/15 text-white/60 hover:text-white hover:border-white/40 transition-all disabled:opacity-50"
+        >
+          + Learn a style
+        </button>
         <select
           value={sceneCount}
           onChange={(e) => setSceneCount(Number(e.target.value))}
@@ -246,6 +279,16 @@ Narration must total about 60–120 seconds when spoken.`,
 
           <YouTubeDeploy title={script.title} description={script.description} tags={script.tags} />
         </div>
+      )}
+
+      {showLearner && (
+        <NicheStyleLearner
+          onClose={() => setShowLearner(false)}
+          onLearned={(s) => {
+            setLearnedStyles((prev) => [...prev, s]);
+            setStyleId(`learned:${s.id}`);
+          }}
+        />
       )}
     </div>
   );

@@ -8,7 +8,7 @@ export const ANIMATION_STYLES = [
     bg: '#ffffff',
     ink: '#111111',
     prompt: (action) =>
-      `Minimalist hand-drawn stick figure explainer illustration showing: ${action}. One simple black stick-figure character with expressive stick arms and legs mid-action on a clean pure white background, thin marker ink lines, doodle sketch style, generous white space, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+      `Minimalist hand-drawn stick figure explainer illustration showing: ${action}. One simple black stick-figure character with expressive stick arms and legs mid-action on a clean pure white background, thin marker ink lines, doodle sketch style, generous white space, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   },
   {
     id: 'comic',
@@ -16,7 +16,7 @@ export const ANIMATION_STYLES = [
     bg: '#ffffff',
     ink: '#111111',
     prompt: (action) =>
-      `Bold black-and-white comic book illustration showing: ${action}. One expressive character mid-action, thick confident ink outlines, halftone dot shading, dramatic pose, clean white background, wide 16:9 comic panel composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+      `Bold black-and-white comic book illustration showing: ${action}. One expressive character mid-action, thick confident ink outlines, halftone dot shading, dramatic pose, clean white background, wide 16:9 comic panel composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   },
   {
     id: 'papercut',
@@ -24,7 +24,7 @@ export const ANIMATION_STYLES = [
     bg: '#f7f4ee',
     ink: '#26221c',
     prompt: (action) =>
-      `Layered construction-paper cutout collage illustration showing: ${action}. One paper character built from simple flat cut shapes with soft drop shadows, textured paper edges, muted craft colors, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+      `Layered construction-paper cutout collage illustration showing: ${action}. One paper character built from simple flat cut shapes with soft drop shadows, textured paper edges, muted craft colors, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   },
   {
     id: 'isometric',
@@ -32,7 +32,7 @@ export const ANIMATION_STYLES = [
     bg: '#ffffff',
     ink: '#1b2430',
     prompt: (action) =>
-      `Clean flat isometric vector illustration showing: ${action}. One friendly minimal character mid-action, soft pastel color palette, subtle long shadows, simple geometric props, white background, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+      `Clean flat isometric vector illustration showing: ${action}. One friendly minimal character mid-action, soft pastel color palette, subtle long shadows, simple geometric props, white background, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   },
   {
     id: 'chalkboard',
@@ -40,13 +40,17 @@ export const ANIMATION_STYLES = [
     bg: '#1c1c1c',
     ink: '#f5f5f5',
     prompt: (action) =>
-      `Chalkboard illustration showing: ${action}. One simple character sketched in white chalk mid-action on a dark blackboard background, rough chalk strokes, faint chalk dust texture, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+      `Chalkboard illustration showing: ${action}. One simple character sketched in white chalk mid-action on a dark blackboard background, rough chalk strokes, faint chalk dust texture, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   }
 ];
 
 export const styleById = (id) => ANIMATION_STYLES.find((s) => s.id === id) || ANIMATION_STYLES[0];
 
 export const stylePrompt = (styleId, action) => styleById(styleId).prompt(action);
+
+// Builds an image prompt in a style the AI learned from a user's video or images
+export const customStylePrompt = (styleDescription, action) =>
+  `Wordless illustration, 16:9 wide composition. Recreate this exact learned visual style: ${styleDescription}. Depict this scene purely as artwork: ${action}. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`;
 
 // "mp4" for MP4 blobs, "webm" only if the browser truly can't record MP4
 export const videoExt = (type = '') => (type.includes('mp4') ? 'mp4' : 'webm');

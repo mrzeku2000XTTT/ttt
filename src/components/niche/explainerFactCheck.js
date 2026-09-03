@@ -15,7 +15,7 @@ ${listing}
 Research the topic live on the web and verify every technical claim. Then correct the script so it ACTUALLY teaches the viewer how to do the thing for real:
 - Exact steps in chronological order: which website to open, which buttons or menus to click, which commands to run.
 - Real URLs, real command lines, real requirements (RAM, disk, versions) — no invented ones. If you cannot verify a detail, remove it rather than guess.
-- Each voiceover stays 2–4 spoken sentences; each caption stays max 8 words; each action stays one clear stick-figure visual moment.
+- Each voiceover stays 2–4 spoken sentences; each caption stays max 8 words and is never empty; each action describes ONLY what is visually seen — move any commands, URLs, code or step text out of the action and into the voiceover.
 - Fix or cut anything vague, generic, or wrong.
 
 Return the corrected scenes (same count or fewer if a scene had to be cut) and a one-sentence "note" naming the most important fix you made.`,

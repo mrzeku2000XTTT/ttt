@@ -1,0 +1,44 @@
+{
+  "name": "NicheStyle",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email \u2014 only they can see or use this learned style"
+    },
+    "name": {
+      "type": "string",
+      "description": "Short memorable style name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Full learned style description used as an image-generation style prompt"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "video",
+        "image"
+      ],
+      "description": "What the style was learned from"
+    }
+  },
+  "required": [
+    "user_email",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
