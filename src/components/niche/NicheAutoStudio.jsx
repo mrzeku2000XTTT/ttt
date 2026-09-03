@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Download, Compass } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
 import { stickPrompt, compileExplainerVideo } from './explainerVideo';
+import { factCheckExplainer } from './explainerFactCheck';
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -79,6 +80,7 @@ Decide what to do:
 - If the user wants a video built (asks for an explainer, gives a topic or niche to create content for, says "make a video on X"), return kind "video". Research the topic live for accuracy and fresh, specific angles. Then produce:
   - title: click-worthy, under 60 characters
   - scenes: 6 to 15 — pick the count the topic deserves. Each scene: "action" = one clear visual moment a single stick figure can plainly show (walking, pointing, lifting, falling, celebrating — no words involved), "caption" = an on-screen caption of at most 8 words matching the scene, "voiceover" = 2–4 spoken sentences, written the way a person talks.
+  - The script must actually teach: for how-to topics it includes the real technical steps — which website to open, which buttons or menus to click, which commands to run — in chronological order, using real URLs, commands and requirements you have verified from live research. No vague generalities, no invented details.
   - description: 2 short paragraphs for YouTube; tags: 8–10 SEO tags
   - reply: one warm sentence announcing the video and its topic
 - Otherwise return kind "chat" and reply conversationally like a top-shelf niche strategist — sharp, creative, specific to their niche, never generic. Do NOT build a video unless it's clearly wanted.`,
@@ -113,7 +115,9 @@ Decide what to do:
 
       if (res.kind === 'video' && res.video?.scenes?.length) {
         const v = res.video;
-        const scenes = v.scenes.slice(0, 15);
+        setWork('Fact-checking with live sources');
+        const checked = await factCheckExplainer({ topic: v.title, title: v.title, scenes: v.scenes.slice(0, 15) });
+        const scenes = checked.scenes.slice(0, 15);
         const n = scenes.length;
         const images = [];
         const audios = [];
@@ -135,7 +139,7 @@ Decide what to do:
           onProgress: setWork
         });
         finish({
-          text: res.reply || `Your stick-man explainer is ready — ${n} scenes, narrated, captioned, stitched.`,
+          text: `${res.reply || `Your stick-man explainer is ready — ${n} scenes, narrated, captioned, stitched.`}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
           video: {
             url: URL.createObjectURL(blob),
             title: v.title,

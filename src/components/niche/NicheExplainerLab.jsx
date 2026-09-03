@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { PenTool, Loader2, Mic, Download } from 'lucide-react';
+import { PenTool, Loader2, Mic, Download, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
 import { stickPrompt, compileExplainerVideo } from './explainerVideo';
+import { factCheckExplainer } from './explainerFactCheck';
 
 export default function NicheExplainerLab({ niche }) {
   const [topic, setTopic] = useState('');
@@ -29,7 +30,10 @@ Write:
 3. A YouTube description (2 short paragraphs)
 4. 8–10 SEO tags
 
+The script must actually teach: for how-to topics include the real technical steps — which website to open, which buttons or menus to click, which commands to run — in chronological order, with real URLs, commands and requirements you have verified from live research. No vague generalities, no invented details.
+
 Narration must total about 60–120 seconds when spoken.`,
+        add_context_from_internet: true,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -50,7 +54,13 @@ Narration must total about 60–120 seconds when spoken.`,
           }
         }
       });
-      setScript(res);
+      setBusy('Fact-checking with live sources…');
+      const checked = await factCheckExplainer({
+        topic: topic.trim() || niche.niche_name,
+        title: res.title,
+        scenes: res.scenes || []
+      });
+      setScript({ ...res, scenes: checked.scenes, fact_note: checked.note });
       setImages([]);
       setAudios([]);
     } finally {
@@ -141,6 +151,11 @@ Narration must total about 60–120 seconds when spoken.`,
           <div className="rounded-xl border border-white/10 p-4">
             <p className="text-white/40 text-xs uppercase tracking-wider font-bold mb-1">Title</p>
             <p className="text-white font-bold text-lg">{script.title}</p>
+            {script.fact_note && (
+              <p className="text-white/40 text-xs mt-2 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> Fact-checked: {script.fact_note}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2">
