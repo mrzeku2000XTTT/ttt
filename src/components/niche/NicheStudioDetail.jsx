@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronLeft, Zap } from 'lucide-react';
 import NicheThumbnailLab from './NicheThumbnailLab';
 import NicheScriptLab from './NicheScriptLab';
+import NicheExplainerLab from './NicheExplainerLab';
 
 // Full view of one saved niche — report + content labs, nothing to copy by hand
 export default function NicheStudioDetail({ niche, onBack }) {
@@ -53,6 +54,7 @@ export default function NicheStudioDetail({ niche, onBack }) {
       <div className="space-y-4">
         <NicheThumbnailLab niche={niche} />
         <NicheScriptLab niche={niche} />
+        <NicheExplainerLab niche={niche} />
       </div>
     </div>
   );
