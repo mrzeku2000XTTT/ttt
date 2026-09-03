@@ -148,6 +148,7 @@ import TrendingPage from './pages/Trending';
 import TokensPage from './pages/Tokens';
 import AWAPage from './pages/AWA';
 import ProductivityPage from './pages/Productivity';
+import NichePage from './pages/Niche';
 import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
@@ -372,6 +373,7 @@ const AuthenticatedApp = () => {
       <Route path="/AgenticWorld" element={<AgenticWorldPage />} />
       <Route path="/AWA" element={<AWAPage />} />
       <Route path="/Productivity" element={<ProductivityPage />} />
+      <Route path="/Niche" element={<NichePage />} />
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />
