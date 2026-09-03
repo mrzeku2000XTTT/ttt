@@ -72,7 +72,19 @@
     "app_idea"
   ],
   "rls": {
-    "create": null,
+    "create": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.user_email": ""
+        },
+        {
+          "data.user_email": null
+        }
+      ]
+    },
     "read": {
       "$or": [
         {
