@@ -12,8 +12,10 @@ const Panel = ({ icon: Icon, title, children, className = '' }) => (
   </div>
 );
 
-export default function NicheResults({ result, onRestart, answers, saved }) {
+export default function NicheResults({ result, onRestart, answers, saved, savedId }) {
   const [copied, setCopied] = React.useState(false);
+  const [sceneCount, setSceneCount] = React.useState(8);
+  const [colorMode, setColorMode] = React.useState('mono');
 
   const copyIdeas = async () => {
     const text = result.ideas.map((i) => `• ${i.title} — ${i.hook}`).join('\n');
@@ -91,10 +93,48 @@ export default function NicheResults({ result, onRestart, answers, saved }) {
         <p className="text-white text-sm leading-relaxed">{result.cadence}</p>
       </Panel>
 
-      <div className="flex flex-col sm:flex-row gap-3 mt-8">
+      {saved && (
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
+          <span className="text-white/40 text-xs font-bold uppercase tracking-[0.2em] mr-1">Studio setup</span>
+          <select
+            value={sceneCount}
+            onChange={(e) => setSceneCount(Number(e.target.value))}
+            className="bg-white/[0.03] border border-white/10 rounded-full px-3 py-2 text-xs text-white/70 focus:border-white/40 focus:outline-none"
+          >
+            {[6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((n) => (
+              <option key={n} value={n} className="bg-black text-white">
+                {n} scenes
+              </option>
+            ))}
+          </select>
+          {[
+            { id: 'mono', label: 'Black & white' },
+            { id: 'color', label: 'Colored' }
+          ].map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setColorMode(c.id)}
+              className={`px-3 py-2 rounded-full text-xs font-semibold border transition-all ${
+                colorMode === c.id
+                  ? 'bg-white text-black border-white'
+                  : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-3 mt-4">
         {saved && (
           <Link
-            to="/NicheStudio"
+            to={`/NicheStudio${savedId ? `?id=${savedId}` : ''}`}
+            onClick={() => {
+              try {
+                localStorage.setItem('niche_video_request', JSON.stringify({ scenes: sceneCount, colorMode }));
+              } catch {}
+            }}
             className="flex-1 py-4 rounded-2xl bg-white text-black font-bold hover:shadow-[0_0_40px_rgba(255,255,255,0.35)] transition-all flex items-center justify-center gap-2"
           >
             <Compass className="w-4 h-4" /> Open in Studio

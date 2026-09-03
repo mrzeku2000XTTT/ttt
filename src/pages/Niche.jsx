@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { LayoutGrid, Compass } from 'lucide-react';
@@ -57,11 +57,39 @@ const RESULT_SCHEMA = {
   }
 };
 
+const STORE_KEY = 'niche_page_state';
+
 export default function NichePage() {
-  const [result, setResult] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const restore = () => {
+    try {
+      return JSON.parse(sessionStorage.getItem(STORE_KEY) || 'null');
+    } catch {
+      return null;
+    }
+  };
+  const [result, setResult] = useState(() => restore()?.result || null);
+  const [saved, setSaved] = useState(() => !!restore()?.saved);
+  const [savedId, setSavedId] = useState(() => restore()?.savedId || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // survive refresh — the found niche stays on screen
+  useEffect(() => {
+    if (result) {
+      try {
+        sessionStorage.setItem(STORE_KEY, JSON.stringify({ result, saved, savedId }));
+      } catch {}
+    }
+  }, [result, saved, savedId]);
+
+  const restart = () => {
+    try {
+      sessionStorage.removeItem(STORE_KEY);
+    } catch {}
+    setResult(null);
+    setSaved(false);
+    setSavedId(null);
+  };
 
   const findNiche = async (answers) => {
     setLoading(true);
@@ -94,7 +122,7 @@ Be decisive. No hedging. Be specific to THEM, not generic advice. Their first po
       try {
         const me = await base44.auth.me();
         if (me?.email) {
-          await base44.entities.NicheResult.create({
+          const rec = await base44.entities.NicheResult.create({
             user_email: me.email,
             niche_name: res.niche?.name || 'My niche',
             tagline: res.niche?.tagline || '',
@@ -102,6 +130,7 @@ Be decisive. No hedging. Be specific to THEM, not generic advice. Their first po
             passions: answers.passions,
             platforms: answers.platforms
           });
+          setSavedId(rec.id);
           setSaved(true);
         }
       } catch (err) {
@@ -154,7 +183,7 @@ Be decisive. No hedging. Be specific to THEM, not generic advice. Their first po
         {loading ? (
           <NicheScanning />
         ) : result ? (
-          <NicheResults result={result} saved={saved} onRestart={() => setResult(null)} />
+          <NicheResults result={result} saved={saved} savedId={savedId} onRestart={restart} />
         ) : (
           <>
             {error && (

@@ -3,7 +3,7 @@ import { PenTool, Loader2, Mic, Download, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
-import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
+import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
@@ -17,11 +17,24 @@ export default function NicheExplainerLab({ niche }) {
   const [sceneCount, setSceneCount] = useState(8);
   const [learnedStyles, setLearnedStyles] = useState([]);
   const [showLearner, setShowLearner] = useState(false);
+  const [colorMode, setColorMode] = useState('mono'); // black & white by default, colored optional
 
   const scenes = script?.scenes || [];
 
   useEffect(() => {
     base44.entities.NicheStyle.list().then(setLearnedStyles).catch(() => {});
+  }, []);
+
+  // a scene count / color choice sent over from the Niche app
+  useEffect(() => {
+    try {
+      const req = JSON.parse(localStorage.getItem('niche_video_request') || 'null');
+      if (req) {
+        if (req.scenes >= 6 && req.scenes <= 15) setSceneCount(req.scenes);
+        if (req.colorMode) setColorMode(req.colorMode);
+        localStorage.removeItem('niche_video_request');
+      }
+    } catch {}
   }, []);
 
   const generateScript = async () => {
@@ -86,8 +99,8 @@ Narration must total about 60–120 seconds when spoken.`,
         const learned = learnedStyles.find((s) => `learned:${s.id}` === styleId);
         const res = await base44.integrations.Core.GenerateImage({
           prompt: learned
-            ? customStylePrompt(learned.description, scenes[i].action)
-            : stylePrompt(styleId, scenes[i].action)
+            ? customStylePrompt(learned.description, scenes[i].action, colorMode)
+            : stylePrompt(styleId, scenes[i].action, colorMode)
         });
         urls.push(res.url);
         setImages([...urls]);
@@ -199,6 +212,20 @@ Narration must total about 60–120 seconds when spoken.`,
         >
           + Learn a style
         </button>
+        {COLOR_MODES.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setColorMode(c.id)}
+            disabled={!!busy}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border disabled:opacity-50 ${
+              colorMode === c.id
+                ? 'bg-white text-black border-white'
+                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+          >
+            {c.name}
+          </button>
+        ))}
         <select
           value={sceneCount}
           onChange={(e) => setSceneCount(Number(e.target.value))}

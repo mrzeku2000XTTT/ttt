@@ -7,6 +7,7 @@ import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
 const uid = () => Math.random().toString(36).slice(2);
+const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
 
 const WorkDots = () => (
   <span className="inline-flex gap-1 ml-1 align-middle">
@@ -53,11 +54,19 @@ export default function NicheAutoStudio({ niches }) {
     const intro = names.length
       ? `Your saved niches: ${names.slice(0, 6).join(' · ')}. Tap one below, paste any niche, or just talk to me.`
       : `Paste your niche and I'll take it from there — or just talk to me.`;
+    // refresh survival — restore the chat if there is one
+    try {
+      const saved = (JSON.parse(localStorage.getItem(CHAT_KEY) || '[]') || []).filter((m) => m && m.role && m.text);
+      if (saved.length && saved.some((m) => m.role === 'user')) {
+        setMessages(saved);
+        return;
+      }
+    } catch {}
     setMessages([
       {
         id: uid(),
         role: 'ai',
-        text: `Hey — I'm your NICHE auto-pilot. Give me a topic — I'll ask you to pick the animation style and how many scenes you want, then research live, write the script, draw every scene, narrate, caption and stitch the MP4 — ready to deploy to YouTube.\n\n${intro}`
+        text: `Hey — I'm your NICHE auto-pilot. Give me a topic — I'll ask you to pick the animation style, how many scenes you want, and whether you want it black & white or colored. Then I research live, write the script, draw every scene, narrate, caption and stitch the MP4 — ready to deploy to YouTube.\n\n${intro}`
       }
     ]);
   }, []);
@@ -69,6 +78,26 @@ export default function NicheAutoStudio({ niches }) {
   useEffect(() => {
     base44.entities.NicheStyle.list().then(setLearnedStyles).catch(() => {});
   }, []);
+
+  // keep the chat on disk so a refresh doesn't wipe it
+  useEffect(() => {
+    if (!messages.length) return;
+    try {
+      localStorage.setItem(
+        CHAT_KEY,
+        JSON.stringify(
+          messages
+            .filter((m) => !m.working)
+            .map((m) => ({
+              id: m.id,
+              role: m.role,
+              text: m.text,
+              video: m.video ? { title: m.video.title, description: m.video.description, tags: m.video.tags } : undefined
+            }))
+        )
+      );
+    } catch {}
+  }, [messages]);
 
   const send = async (raw) => {
     const text = raw.trim();
@@ -103,11 +132,18 @@ User's new message: """${text}"""
 Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (${s.name})`).join(', ')}. Default style: neutral.
 ${learnedStyles.length ? `Styles the user personally taught you from their own videos or images (style ids): ${learnedStyles.map((s) => `${s.id} ("${s.name}")`).join(', ')}. If they ask to use one of these, use its id.` : ''}
 
+First, carefully extract the user's intent from their message and the conversation so far:
+- topic: what the video is about
+- style: a style id from the lists above — match casual names ("stick man"→neutral, "comic"→comic); if they name a style you don't have, offer the closest one from the list instead of using it
+- scene_count: any number 6–15 they mention ("7 scenes", "10 steps")
+- color_mode: "color" if they want a colored animation, "mono" for black & white
+
 Decide what to do:
-- If the user wants a video built (asks for an explainer, gives a topic or niche, says "make a video on X") but they have NOT yet picked an animation style and a scene count, return kind "ask". Reply with one short warm message asking BOTH: which animation style they want (list the 5 style names${learnedStyles.length ? ' plus their learned styles: ' + learnedStyles.map((s) => s.name).join(', ') : ''}) and how many scenes they'd like (6 to 15).
-- If they HAVE picked (or told you to decide — then use style "neutral" and 8 scenes), return kind "video". Research the topic live for accuracy and fresh, specific angles. Then produce:
+- If the user wants a video built (asks for an explainer, gives a topic or niche, says "make a video on X") but style, scene_count or color_mode are still unknown from this message or the conversation, return kind "ask". Reply with one short warm message asking ONLY for what is missing: which animation style they want (list the 5 style names${learnedStyles.length ? ' plus their learned styles: ' + learnedStyles.map((s) => s.name).join(', ') : ''}), how many scenes they'd like (6 to 15), and whether they want black & white or colored animation.
+- If everything is known (or they told you to decide — then style "neutral", 8 scenes, color_mode "mono"), return kind "video". Research the topic live for accuracy and fresh, specific angles. Then produce:
   - style: the chosen style id from the list above (default "neutral")
   - scene_count: the number of scenes they chose
+  - color_mode: "mono" or "color"
   - title: click-worthy, under 60 characters
   - scenes: EXACTLY scene_count scenes. Each scene: "action" = describes ONLY what is seen (typing at a desk, plugging in a cable, celebrating) — never commands, URLs, code or step text in the action, those go only in the voiceover, "caption" = an on-screen caption of at most 8 words matching the scene, "voiceover" = 2–4 spoken sentences, written the way a person talks.
   - The script must actually teach: for how-to topics it includes the real technical steps — which website to open, which buttons or menus to click, which commands to run — in chronological order, using real URLs, commands and requirements you have verified from live research. No vague generalities, no invented details.
@@ -125,6 +161,7 @@ Decide what to do:
               properties: {
                 style: { type: 'string', enum: [...ANIMATION_STYLES.map((s) => s.id), ...learnedStyles.map((s) => s.id)] },
                 scene_count: { type: 'number' },
+                color_mode: { type: 'string', enum: ['mono', 'color'] },
                 title: { type: 'string' },
                 description: { type: 'string' },
                 tags: { type: 'array', items: { type: 'string' } },
@@ -170,8 +207,8 @@ Decide what to do:
           setWork(`Drawing · scene ${i + 1}/${n}`);
           const img = await base44.integrations.Core.GenerateImage({
             prompt: learned
-              ? customStylePrompt(learned.description, scenes[i].action)
-              : stylePrompt(styleId, scenes[i].action)
+              ? customStylePrompt(learned.description, scenes[i].action, v.color_mode)
+              : stylePrompt(styleId, scenes[i].action, v.color_mode)
           });
           images.push(img.url);
         }
@@ -265,13 +302,21 @@ Decide what to do:
                   <p className="whitespace-pre-line">{m.text}</p>
                   {m.video && (
                     <div className="mt-3 space-y-3">
-                      <video src={m.video.url} controls className="w-full rounded-xl border border-white/10 bg-black" />
-                      <button
-                        onClick={() => download(m)}
-                        className="w-full py-3 rounded-xl border border-white/15 text-white/80 hover:text-white hover:border-white/40 text-sm font-semibold transition-all flex items-center justify-center gap-2"
-                      >
-                        <Download className="w-4 h-4" /> Download MP4
-                      </button>
+                      {m.video.url ? (
+                        <>
+                          <video src={m.video.url} controls className="w-full rounded-xl border border-white/10 bg-black" />
+                          <button
+                            onClick={() => download(m)}
+                            className="w-full py-3 rounded-xl border border-white/15 text-white/80 hover:text-white hover:border-white/40 text-sm font-semibold transition-all flex items-center justify-center gap-2"
+                          >
+                            <Download className="w-4 h-4" /> Download MP4
+                          </button>
+                        </>
+                      ) : (
+                        <p className="text-white/50 text-xs border border-white/10 rounded-lg px-3 py-2">
+                          This video is saved in your Library tab.
+                        </p>
+                      )}
                       <YouTubeDeploy title={m.video.title} description={m.video.description} tags={m.video.tags} />
                     </div>
                   )}

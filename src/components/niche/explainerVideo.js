@@ -46,11 +46,24 @@ export const ANIMATION_STYLES = [
 
 export const styleById = (id) => ANIMATION_STYLES.find((s) => s.id === id) || ANIMATION_STYLES[0];
 
-export const stylePrompt = (styleId, action) => styleById(styleId).prompt(action);
+// Every style can be rendered black & white (default) or fully colored
+export const COLOR_MODES = [
+  { id: 'mono', name: 'Black & white', clause: '' },
+  {
+    id: 'color',
+    name: 'Colored',
+    clause: ' Render this scene in vivid, harmonious full color — the artwork is fully colored, not black and white.'
+  }
+];
+
+export const stylePrompt = (styleId, action, colorMode) => {
+  const base = styleById(styleId).prompt(action);
+  return colorMode === 'color' ? `${base}${COLOR_MODES[1].clause}` : base;
+};
 
 // Builds an image prompt in a style the AI learned from a user's video or images
-export const customStylePrompt = (styleDescription, action) =>
-  `Wordless illustration, 16:9 wide composition. Recreate this exact learned visual style: ${styleDescription}. Depict this scene purely as artwork: ${action}. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`;
+export const customStylePrompt = (styleDescription, action, colorMode) =>
+  `Wordless illustration, 16:9 wide composition. Recreate this exact learned visual style: ${styleDescription}. Depict this scene purely as artwork: ${action}.${colorMode === 'color' ? COLOR_MODES[1].clause : ''} The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`;
 
 // "mp4" for MP4 blobs, "webm" only if the browser truly can't record MP4
 export const videoExt = (type = '') => (type.includes('mp4') ? 'mp4' : 'webm');
