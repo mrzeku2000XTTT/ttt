@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Download, Compass } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
-import { stickPrompt, compileExplainerVideo } from './explainerVideo';
+import { ANIMATION_STYLES, stylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
 import { factCheckExplainer } from './explainerFactCheck';
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -37,7 +37,7 @@ export default function NicheAutoStudio({ niches }) {
       {
         id: uid(),
         role: 'ai',
-        text: `Hey — I'm your NICHE auto-pilot. I research your topic live, write the script, draw the stick-man scenes, record the narration, caption it and stitch the whole video — then hand it to you ready to deploy to YouTube.\n\n${intro}`
+        text: `Hey — I'm your NICHE auto-pilot. Give me a topic — I'll ask you to pick the animation style and how many scenes you want, then research live, write the script, draw every scene, narrate, caption and stitch the MP4 — ready to deploy to YouTube.\n\n${intro}`
       }
     ]);
   }, []);
@@ -70,16 +70,21 @@ export default function NicheAutoStudio({ niches }) {
         .join('\n');
 
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are the NICHE Studio auto-pilot — a creative content director that builds stick-man explainer videos for creators, inside a chat.
+        prompt: `You are the NICHE Studio auto-pilot — a creative content director that builds animated explainer videos for creators, inside a chat.
 
 ${convo ? `Conversation so far:\n${convo}\n\n` : ''}User's saved niches: ${(niches || []).map((n) => n.niche_name).join(', ') || 'none yet'}.
 
 User's new message: """${text}"""
 
+Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (${s.name})`).join(', ')}. Default style: neutral.
+
 Decide what to do:
-- If the user wants a video built (asks for an explainer, gives a topic or niche to create content for, says "make a video on X"), return kind "video". Research the topic live for accuracy and fresh, specific angles. Then produce:
+- If the user wants a video built (asks for an explainer, gives a topic or niche, says "make a video on X") but they have NOT yet picked an animation style and a scene count, return kind "ask". Reply with one short warm message asking BOTH: which animation style they want (list the 5 style names) and how many scenes they'd like (6 to 15).
+- If they HAVE picked (or told you to decide — then use style "neutral" and 8 scenes), return kind "video". Research the topic live for accuracy and fresh, specific angles. Then produce:
+  - style: the chosen style id from the list above (default "neutral")
+  - scene_count: the number of scenes they chose
   - title: click-worthy, under 60 characters
-  - scenes: 6 to 15 — pick the count the topic deserves. Each scene: "action" = one clear visual moment a single stick figure can plainly show (walking, pointing, lifting, falling, celebrating — no words involved), "caption" = an on-screen caption of at most 8 words matching the scene, "voiceover" = 2–4 spoken sentences, written the way a person talks.
+  - scenes: EXACTLY scene_count scenes. Each scene: "action" = one clear visual moment a single character can plainly show (walking, pointing, lifting, falling, celebrating — no words involved), "caption" = an on-screen caption of at most 8 words matching the scene, "voiceover" = 2–4 spoken sentences, written the way a person talks.
   - The script must actually teach: for how-to topics it includes the real technical steps — which website to open, which buttons or menus to click, which commands to run — in chronological order, using real URLs, commands and requirements you have verified from live research. No vague generalities, no invented details.
   - description: 2 short paragraphs for YouTube; tags: 8–10 SEO tags
   - reply: one warm sentence announcing the video and its topic
@@ -88,11 +93,13 @@ Decide what to do:
         response_json_schema: {
           type: 'object',
           properties: {
-            kind: { type: 'string', enum: ['chat', 'video'] },
+            kind: { type: 'string', enum: ['chat', 'ask', 'video'] },
             reply: { type: 'string' },
             video: {
               type: 'object',
               properties: {
+                style: { type: 'string', enum: ANIMATION_STYLES.map((s) => s.id) },
+                scene_count: { type: 'number' },
                 title: { type: 'string' },
                 description: { type: 'string' },
                 tags: { type: 'array', items: { type: 'string' } },
@@ -115,6 +122,7 @@ Decide what to do:
 
       if (res.kind === 'video' && res.video?.scenes?.length) {
         const v = res.video;
+        const styleId = ANIMATION_STYLES.some((s) => s.id === v.style) ? v.style : 'neutral';
         setWork('Fact-checking with live sources');
         const checked = await factCheckExplainer({ topic: v.title, title: v.title, scenes: v.scenes.slice(0, 15) });
         const scenes = checked.scenes.slice(0, 15);
@@ -122,8 +130,8 @@ Decide what to do:
         const images = [];
         const audios = [];
         for (let i = 0; i < n; i++) {
-          setWork(`Drawing stick man · scene ${i + 1}/${n}`);
-          const img = await base44.integrations.Core.GenerateImage({ prompt: stickPrompt(scenes[i].action) });
+          setWork(`Drawing · scene ${i + 1}/${n}`);
+          const img = await base44.integrations.Core.GenerateImage({ prompt: stylePrompt(styleId, scenes[i].action) });
           images.push(img.url);
         }
         for (let i = 0; i < n; i++) {
@@ -136,12 +144,14 @@ Decide what to do:
           images,
           audios,
           captions: scenes.map((s) => s.caption || ''),
+          style: styleId,
           onProgress: setWork
         });
         finish({
-          text: `${res.reply || `Your stick-man explainer is ready — ${n} scenes, narrated, captioned, stitched.`}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
+          text: `${res.reply || `Your explainer is ready — ${n} scenes, narrated, captioned, stitched.`}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
           video: {
             url: URL.createObjectURL(blob),
+            type: blob.type,
             title: v.title,
             description: v.description,
             tags: v.tags || []
@@ -161,7 +171,7 @@ Decide what to do:
   const download = (m) => {
     const a = document.createElement('a');
     a.href = m.video.url;
-    a.download = `${(m.video.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.webm`;
+    a.download = `${(m.video.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.${videoExt(m.video.type)}`;
     a.click();
   };
 
@@ -192,7 +202,7 @@ Decide what to do:
                         onClick={() => download(m)}
                         className="w-full py-3 rounded-xl border border-white/15 text-white/80 hover:text-white hover:border-white/40 text-sm font-semibold transition-all flex items-center justify-center gap-2"
                       >
-                        <Download className="w-4 h-4" /> Download video
+                        <Download className="w-4 h-4" /> Download MP4
                       </button>
                       <YouTubeDeploy title={m.video.title} description={m.video.description} tags={m.video.tags} />
                     </div>
@@ -208,7 +218,7 @@ Decide what to do:
             {niches.slice(0, 4).map((n) => (
               <button
                 key={n.id}
-                onClick={() => send(`Build a stick-man explainer video for my niche: ${n.niche_name}`)}
+                onClick={() => send(`Make an explainer video for my niche: ${n.niche_name}`)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-white/15 text-white/70 hover:text-white hover:border-white/40 text-xs font-medium transition-all"
               >
                 <Compass className="w-3.5 h-3.5" /> {n.niche_name}

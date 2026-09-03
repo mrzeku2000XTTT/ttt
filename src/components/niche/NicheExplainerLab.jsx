@@ -3,7 +3,7 @@ import { PenTool, Loader2, Mic, Download, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
-import { stickPrompt, compileExplainerVideo } from './explainerVideo';
+import { ANIMATION_STYLES, stylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
 import { factCheckExplainer } from './explainerFactCheck';
 
 export default function NicheExplainerLab({ niche }) {
@@ -12,6 +12,8 @@ export default function NicheExplainerLab({ niche }) {
   const [images, setImages] = useState([]);
   const [audios, setAudios] = useState([]);
   const [busy, setBusy] = useState(''); // progress label while working
+  const [styleId, setStyleId] = useState('neutral'); // default animation style
+  const [sceneCount, setSceneCount] = useState(8);
 
   const scenes = script?.scenes || [];
 
@@ -19,14 +21,14 @@ export default function NicheExplainerLab({ niche }) {
     setBusy('Writing script…');
     try {
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a viral explainer-video scriptwriter. Write a stick-man explainer video script.
+        prompt: `You are a viral explainer-video scriptwriter. Write an animated explainer video script.
 
 Creator's niche: "${niche.niche_name}" — ${niche.tagline}
 Video topic: "${topic.trim() || niche.niche_name}"
 
 Write:
 1. A click-worthy title (under 60 characters)
-2. A script of 6 to 15 scenes — pick the count that best serves the topic. For each scene: one simple visual "action" a single stick figure can plainly show (walking, pointing, lifting, falling, celebrating — one clear visual moment, no words involved), a short on-screen "caption" of at most 8 words matching the scene, and the exact narrator voiceover lines for that scene (2–4 sentences, written the way a person talks).
+2. A script of exactly ${sceneCount} scenes. For each scene: one simple visual "action" the single character can plainly show (walking, pointing, lifting, falling, celebrating — one clear visual moment, no words involved), a short on-screen "caption" of at most 8 words matching the scene, and the exact narrator voiceover lines for that scene (2–4 sentences, written the way a person talks).
 3. A YouTube description (2 short paragraphs)
 4. 8–10 SEO tags
 
@@ -74,7 +76,7 @@ Narration must total about 60–120 seconds when spoken.`,
       const urls = [];
       for (let i = 0; i < scenes.length; i++) {
         setBusy(`Drawing scene ${i + 1}/${scenes.length}…`);
-        const res = await base44.integrations.Core.GenerateImage({ prompt: stickPrompt(scenes[i].action) });
+        const res = await base44.integrations.Core.GenerateImage({ prompt: stylePrompt(styleId, scenes[i].action) });
         urls.push(res.url);
         setImages([...urls]);
       }
@@ -105,11 +107,12 @@ Narration must total about 60–120 seconds when spoken.`,
         images,
         audios,
         captions: scenes.map((s) => s.caption || ''),
+        style: styleId,
         onProgress: setBusy
       });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `${(script.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.webm`;
+      a.download = `${(script.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.${videoExt(blob.type)}`;
       a.click();
     } finally {
       setBusy('');
@@ -120,7 +123,36 @@ Narration must total about 60–120 seconds when spoken.`,
     <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6">
       <div className="flex items-center gap-2 mb-4">
         <PenTool className="w-4 h-4 text-white/50" />
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">Stick-Man Explainer</h3>
+        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">Explainer Video</h3>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {ANIMATION_STYLES.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setStyleId(s.id)}
+            disabled={!!busy}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border disabled:opacity-50 ${
+              styleId === s.id
+                ? 'bg-white text-black border-white'
+                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+          >
+            {s.name}
+          </button>
+        ))}
+        <select
+          value={sceneCount}
+          onChange={(e) => setSceneCount(Number(e.target.value))}
+          disabled={!!busy}
+          className="ml-auto bg-white/[0.03] border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/70 focus:border-white/40 focus:outline-none disabled:opacity-50"
+        >
+          {[6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((n) => (
+            <option key={n} value={n} className="bg-black text-white">
+              {n} scenes
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
@@ -165,7 +197,7 @@ Narration must total about 60–120 seconds when spoken.`,
               className="flex-1 py-3 rounded-xl border border-white/15 text-white/80 hover:text-white hover:border-white/40 text-sm font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {busy.startsWith('Drawing') ? <Loader2 className="w-4 h-4 animate-spin" /> : <PenTool className="w-4 h-4" />}
-              {images.length === scenes.length ? 'Stick-man visuals ready' : `Generate stick-man visuals (${scenes.length} scenes)`}
+              {images.length === scenes.length ? 'Visuals ready' : `Generate visuals (${scenes.length} scenes)`}
             </button>
             <button
               onClick={generateNarration}
@@ -186,7 +218,7 @@ Narration must total about 60–120 seconds when spoken.`,
                 className="w-full py-3.5 rounded-xl bg-white text-black font-bold text-sm hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] disabled:opacity-40 transition-all flex items-center justify-center gap-2"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {busy ? busy : 'Download stitched video'}
+                {busy ? busy : 'Download MP4'}
               </button>
             </>
           )}

@@ -1,7 +1,55 @@
-// Stick-man explainer video utilities — shared by the Manual lab and the Automatic chat studio
+// Explainer video utilities — shared by the Manual lab and the Automatic chat studio
 
-export const stickPrompt = (action) =>
-  `Minimalist hand-drawn stick figure explainer illustration showing: ${action}. One simple black stick-figure character with expressive stick arms and legs mid-action on a clean pure white background, thin marker ink lines, doodle sketch style, generous white space, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`;
+// 5 animation styles the user can pick from — "neutral" is the default
+export const ANIMATION_STYLES = [
+  {
+    id: 'neutral',
+    name: 'Neutral Stick-Man',
+    bg: '#ffffff',
+    ink: '#111111',
+    prompt: (action) =>
+      `Minimalist hand-drawn stick figure explainer illustration showing: ${action}. One simple black stick-figure character with expressive stick arms and legs mid-action on a clean pure white background, thin marker ink lines, doodle sketch style, generous white space, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+  },
+  {
+    id: 'comic',
+    name: 'Comic Book',
+    bg: '#ffffff',
+    ink: '#111111',
+    prompt: (action) =>
+      `Bold black-and-white comic book illustration showing: ${action}. One expressive character mid-action, thick confident ink outlines, halftone dot shading, dramatic pose, clean white background, wide 16:9 comic panel composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+  },
+  {
+    id: 'papercut',
+    name: 'Paper Cutout',
+    bg: '#f7f4ee',
+    ink: '#26221c',
+    prompt: (action) =>
+      `Layered construction-paper cutout collage illustration showing: ${action}. One paper character built from simple flat cut shapes with soft drop shadows, textured paper edges, muted craft colors, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+  },
+  {
+    id: 'isometric',
+    name: 'Isometric Vector',
+    bg: '#ffffff',
+    ink: '#1b2430',
+    prompt: (action) =>
+      `Clean flat isometric vector illustration showing: ${action}. One friendly minimal character mid-action, soft pastel color palette, subtle long shadows, simple geometric props, white background, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+  },
+  {
+    id: 'chalkboard',
+    name: 'Chalkboard',
+    bg: '#1c1c1c',
+    ink: '#f5f5f5',
+    prompt: (action) =>
+      `Chalkboard illustration showing: ${action}. One simple character sketched in white chalk mid-action on a dark blackboard background, rough chalk strokes, faint chalk dust texture, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`
+  }
+];
+
+export const styleById = (id) => ANIMATION_STYLES.find((s) => s.id === id) || ANIMATION_STYLES[0];
+
+export const stylePrompt = (styleId, action) => styleById(styleId).prompt(action);
+
+// "mp4" for MP4 blobs, "webm" only if the browser truly can't record MP4
+export const videoExt = (type = '') => (type.includes('mp4') ? 'mp4' : 'webm');
 
 const CAPTION_MAX = 42;
 
@@ -30,9 +78,19 @@ const loadImage = (src) =>
     img.src = src;
   });
 
-// Stitches scene images + narration audio into one downloadable webm video,
-// drawing each scene's clean caption at the bottom in the doodle style.
-export async function compileExplainerVideo({ images, audios, captions = [], onProgress }) {
+// MP4 first — webm only as a last-resort fallback for browsers without MP4 recording
+const RECORDER_TYPES = [
+  'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+  'video/mp4;codecs=avc1',
+  'video/mp4',
+  'video/webm;codecs=vp9,opus',
+  'video/webm'
+];
+
+// Stitches scene images + narration audio into one downloadable video,
+// drawing each scene's caption at the bottom in the chosen style's palette.
+export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, onProgress }) {
+  const style = styleById(styleId);
   const W = 1280;
   const H = 720;
   const canvas = document.createElement('canvas');
@@ -56,9 +114,7 @@ export async function compileExplainerVideo({ images, audios, captions = [], onP
 
   const stream = canvas.captureStream(25);
   dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
-  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-    ? 'video/webm;codecs=vp9,opus'
-    : 'video/webm';
+  const mimeType = RECORDER_TYPES.find((t) => MediaRecorder.isTypeSupported(t)) || 'video/mp4';
   const recorder = new MediaRecorder(stream, { mimeType });
   const chunks = [];
   recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -80,7 +136,7 @@ export async function compileExplainerVideo({ images, audios, captions = [], onP
   });
 
   const drawFrame = (seg) => {
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = style.bg;
     ctx.fillRect(0, 0, W, H);
     const { img } = seg;
     const r = Math.min(W / img.width, (H - 100) / img.height);
@@ -89,7 +145,7 @@ export async function compileExplainerVideo({ images, audios, captions = [], onP
     ctx.drawImage(img, (W - dw) / 2, (H - 100 - dh) / 2, dw, dh);
     const lines = wrapCaption(seg.caption);
     ctx.font = 'bold 34px "Nunito", sans-serif';
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = style.ink;
     ctx.textAlign = 'center';
     lines.forEach((line, li) => {
       ctx.fillText(line, W / 2, H - 56 + li * 42);
@@ -111,5 +167,5 @@ export async function compileExplainerVideo({ images, audios, captions = [], onP
   recorder.stop();
   await stopped;
   await ac.close();
-  return new Blob(chunks, { type: 'video/webm' });
+  return new Blob(chunks, { type: mimeType.split(';')[0] });
 }
