@@ -174,7 +174,7 @@ export default function Narrate() {
       setReader({ text: combined, title: b.title, author: b.author });
       window.scrollTo({ top: 0 });
     } else {
-      setError("Couldn't read text from those images. Try clearer, well-lit photos of an open page.");
+      setError("Couldn't read text from those photos. Photograph a flat, well-lit, open page of a physical book — fill the frame with the text.");
     }
   };
 
@@ -214,10 +214,11 @@ export default function Narrate() {
         </div>
         <button
           onClick={() => fileRef.current?.click()}
+          title="Photograph a page from a physical book — Narrate reads it out loud"
           className="h-9 px-3 rounded-full bg-white text-black text-[12px] font-semibold flex items-center gap-1.5 hover:bg-white/90 transition-colors flex-shrink-0"
         >
           <ScanLine className="w-4 h-4" />
-          <span className="hidden sm:inline">Scan</span>
+          <span className="hidden sm:inline">Scan a page</span>
         </button>
         <Link
           to="/AppStoreV2"
@@ -269,7 +270,7 @@ export default function Narrate() {
         {(scanning || fetching) && (
           <div className="mb-4 flex items-center gap-2 text-[12.5px] text-white/60">
             <Loader2 className="w-4 h-4 animate-spin" />
-            {scanning ? "Scanning & reading text…" : "Loading book text…"}
+            {scanning ? "Reading the text from your photo…" : "Loading book text…"}
           </div>
         )}
 
@@ -283,7 +284,7 @@ export default function Narrate() {
                 </div>
                 <div className="text-[16px] text-white/80 font-semibold mb-1">Read any book out loud</div>
                 <div className="text-[13px] text-white/45 max-w-sm mx-auto">
-                  Search millions of titles, hit play, and listen with live captions. Or tap <span className="text-white">Scan</span> to photograph any page and hear it instantly.
+                  Search millions of titles, tap a cover, and listen with live captions. Or tap <span className="text-white">Scan a page</span> to photograph a page from any physical book and hear it read instantly.
                 </div>
                 <div className="flex flex-wrap gap-2 justify-center mt-6">
                   {["Pride and Prejudice", "Alice in Wonderland", "Sherlock Holmes", "Moby Dick", "Dracula"].map((s) => (
