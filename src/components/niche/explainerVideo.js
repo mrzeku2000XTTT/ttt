@@ -150,6 +150,41 @@ const RECORDER_TYPES = [
   'video/webm'
 ];
 
+// Play one narration clip to completion, routing its audio into the recording
+// stream. Uses an HTML audio element so the browser plays the FULL file and
+// fires `ended` only when playback truly reaches the end — no cut-off, no
+// overlap. Falls back to a decoded buffer source if the element can't be
+// routed (e.g. CORS-tainted).
+function playNarration(url, ac, dest) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; resolve(); } };
+    (async () => {
+      try {
+        const audio = new Audio();
+        audio.crossOrigin = 'anonymous';
+        audio.src = url;
+        const node = ac.createMediaElementSource(audio);
+        node.connect(dest);
+        audio.onended = () => { try { node.disconnect(); } catch {} finish(); };
+        audio.onerror = finish;
+        await audio.play();
+      } catch {
+        try {
+          const buf = await ac.decodeAudioData(await (await fetch(url)).arrayBuffer());
+          const src = ac.createBufferSource();
+          src.buffer = buf;
+          src.connect(dest);
+          src.onended = finish;
+          src.start();
+        } catch {
+          finish();
+        }
+      }
+    })();
+  });
+}
+
 // Stitches scene images + narration audio into one downloadable video,
 // drawing each scene's caption at the bottom in the chosen style's palette.
 export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, onProgress }) {
@@ -169,12 +204,6 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   const ac = new AudioCtx();
   try { await ac.resume(); } catch {} // keep audio alive even if the tab is backgrounded
   const dest = ac.createMediaStreamDestination();
-  const buffers = await Promise.all(
-    audios.map(async (u) => {
-      const buf = await (await fetch(u)).arrayBuffer();
-      return ac.decodeAudioData(buf);
-    })
-  );
 
   const stream = canvas.captureStream(25);
   dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
@@ -203,10 +232,10 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     });
   };
 
-  // Play each scene's narration ONE AT A TIME, waiting for it to actually
-  // finish (the audio source's `ended` event) before starting the next scene.
-  // This guarantees no TTS is ever cut off — the next scene cannot begin until
-  // the current narration has fully played to its real end.
+  // Play each scene's narration through an HTML audio element and wait for its
+  // `ended` event before starting the next scene. The browser plays the full
+  // file and fires `ended` only when playback truly reaches the end, so no
+  // narration is ever cut off and scenes never overlap.
   onProgress?.('Stitching your video…');
   let current = 0;
   // keep redrawing the active frame so canvas capture stays alive in background tabs
@@ -214,17 +243,11 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     if (current < imgEls.length) drawFrame(imgEls[current], captions[current] || '');
   }, 100);
 
-  for (let i = 0; i < buffers.length; i++) {
+  for (let i = 0; i < audios.length; i++) {
     current = i;
     drawFrame(imgEls[i], captions[i] || '');
     // play this scene's narration and wait for it to truly end
-    await new Promise((resolve) => {
-      const src = ac.createBufferSource();
-      src.buffer = buffers[i];
-      src.connect(dest);
-      src.onended = resolve;
-      src.start();
-    });
+    await playNarration(audios[i], ac, dest);
     // brief silent hold on the current image before the next scene begins
     await new Promise((r) => setTimeout(r, 350));
   }
