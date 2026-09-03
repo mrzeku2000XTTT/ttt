@@ -105,6 +105,15 @@ export function realUiPrompt(appName, uiDesc, action, colorMode) {
 // "mp4" for MP4 blobs, "webm" only if the browser truly can't record MP4
 export const videoExt = (type = '') => (type.includes('mp4') ? 'mp4' : 'webm');
 
+// TTS engines often skip text wrapped in parentheses/brackets, so narration
+// tails like "(When you follow the data...)" go unheard. Strip those wrappers
+// so the content is spoken as normal text.
+export const ttsText = (text) =>
+  String(text || '')
+    .replace(/[()[\]{}]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 const CAPTION_MAX = 42;
 
 const wrapCaption = (text) => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Download, Compass, Film, Lightbulb } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
-import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt } from './explainerVideo';
+import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, ttsText } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
@@ -237,7 +237,7 @@ Decide what to do:
         }
         for (let i = 0; i < n; i++) {
           setWork(`Recording narration · scene ${i + 1}/${n}`);
-          const sp = await base44.integrations.Core.GenerateSpeech({ text: scenes[i].voiceover, voice: 'storm' });
+          const sp = await base44.integrations.Core.GenerateSpeech({ text: ttsText(scenes[i].voiceover), voice: 'storm' });
           audios.push(sp.url);
         }
         setWork('Stitching your video');

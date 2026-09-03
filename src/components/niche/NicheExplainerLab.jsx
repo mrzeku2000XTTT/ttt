@@ -3,7 +3,7 @@ import { PenTool, Loader2, Mic, Download, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
-import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt } from './explainerVideo';
+import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, ttsText } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
@@ -149,7 +149,7 @@ Narration must total about 60–120 seconds when spoken.`,
       const urls = [];
       for (let i = 0; i < scenes.length; i++) {
         setBusy(`Recording narration ${i + 1}/${scenes.length}…`);
-        const res = await base44.integrations.Core.GenerateSpeech({ text: scenes[i].voiceover, voice: 'storm' });
+        const res = await base44.integrations.Core.GenerateSpeech({ text: ttsText(scenes[i].voiceover), voice: 'storm' });
         urls.push(res.url);
         setAudios([...urls]);
       }
