@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { LayoutGrid, Compass, Link as LinkIcon, Sparkles, SlidersHorizontal } from 'lucide-react';
+import { LayoutGrid, Compass, Link as LinkIcon, Sparkles, SlidersHorizontal, Library as LibraryIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import NicheLogo from '@/components/niche/NicheLogo';
 import NicheStudioList from '@/components/niche/NicheStudioList';
 import NicheStudioDetail from '@/components/niche/NicheStudioDetail';
 import NicheAutoStudio from '@/components/niche/NicheAutoStudio';
+import NicheVideoLibrary from '@/components/niche/NicheVideoLibrary';
 
 export default function NicheStudio() {
   const [niches, setNiches] = useState(null); // null = loading
@@ -64,7 +65,8 @@ export default function NicheStudio() {
       <div className="flex items-center justify-center gap-2 relative z-10 mb-2">
         {[
           { key: 'auto', label: 'Automatic', icon: Sparkles },
-          { key: 'manual', label: 'Manual', icon: SlidersHorizontal }
+          { key: 'manual', label: 'Manual', icon: SlidersHorizontal },
+          { key: 'library', label: 'Library', icon: LibraryIcon }
         ].map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -81,7 +83,9 @@ export default function NicheStudio() {
       </div>
 
       <div className="relative z-10 py-4 sm:py-8 pb-24">
-        {mode === 'auto' ? (
+        {mode === 'library' ? (
+          <NicheVideoLibrary />
+        ) : mode === 'auto' ? (
           niches === null ? (
             <div className="min-h-[50vh] flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />

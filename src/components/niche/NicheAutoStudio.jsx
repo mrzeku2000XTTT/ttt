@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
 import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
@@ -19,6 +19,23 @@ const WorkDots = () => (
     ))}
   </span>
 );
+
+// Rotating wait-tips shown while the auto-pilot builds — about their own topic,
+// plus how Kaspa can plug into their niche
+const TipRotator = ({ tips }) => {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (!tips?.length) return;
+    const t = setInterval(() => setI((x) => (x + 1) % tips.length), 8000);
+    return () => clearInterval(t);
+  }, [tips]);
+  if (!tips?.length) return null;
+  return (
+    <p className="mt-2 flex items-start gap-1.5 text-xs text-white/40">
+      <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {tips[i]}
+    </p>
+  );
+};
 
 // Automatic mode: talk to the auto-pilot, it researches, writes, draws, narrates,
 // stitches the stick-man explainer and hands it back ready to deploy.
@@ -136,6 +153,17 @@ Decide what to do:
         const checked = await factCheckExplainer({ topic: v.title, title: v.title, scenes: v.scenes.slice(0, 15) });
         const scenes = checked.scenes.slice(0, 15);
         const n = scenes.length;
+        // keep them company while we draw, narrate and stitch
+        base44.integrations.Core.InvokeLLM({
+          prompt: `A creator is building an explainer video on "${v.title}" right now and has to wait a while. Write 6 short tips (max 18 words each): at least 3 genuinely useful insights about this exact topic, and at least 2 concrete ways Kaspa — the instant proof-of-work cryptocurrency (on-chain tipping, KRC-20 tokens, its fast-growing community) — could plug into a creator's work in this niche. Punchy, no emojis.`,
+          response_json_schema: {
+            type: 'object',
+            properties: { tips: { type: 'array', items: { type: 'string' } } }
+          }
+        })
+          .then((r) => setMessages((m) => m.map((x) => (x.id === workId ? { ...x, tips: r.tips || [] } : x))))
+          .catch(() => {});
+
         const images = [];
         const audios = [];
         for (let i = 0; i < n; i++) {
@@ -160,8 +188,32 @@ Decide what to do:
           style: styleId,
           onProgress: setWork
         });
+        // best effort — save the finished video to the user's Library
+        (async () => {
+          try {
+            const me = await base44.auth.me();
+            if (!me?.email) return;
+            const up = await base44.integrations.Core.UploadFile({
+              file: new File(
+                [blob],
+                `${(v.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-')}.${videoExt(blob.type)}`,
+                { type: blob.type }
+              )
+            });
+            await base44.entities.NicheVideo.create({
+              user_email: me.email,
+              title: v.title,
+              description: v.description || '',
+              tags: v.tags || [],
+              style_name: learned ? learned.name : (ANIMATION_STYLES.find((s) => s.id === styleId) || {}).name || 'Neutral',
+              video_url: up.file_url,
+              scenes: scenes.map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
+              fact_note: checked.note || ''
+            });
+          } catch {}
+        })();
         finish({
-          text: `${res.reply || `Your explainer is ready — ${n} scenes, narrated, captioned, stitched.`}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
+          text: `${res.reply || `Your explainer is ready — ${n} scenes, narrated, captioned, stitched. Saved to your Library.`}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
           video: {
             url: URL.createObjectURL(blob),
             type: blob.type,
@@ -201,10 +253,13 @@ Decide what to do:
               }`}
             >
               {m.working ? (
-                <span className="flex items-center gap-2 font-medium">
-                  <Loader2 className="w-4 h-4 animate-spin opacity-70" /> {m.text}
-                  <WorkDots />
-                </span>
+                <>
+                  <span className="flex items-center gap-2 font-medium">
+                    <Loader2 className="w-4 h-4 animate-spin opacity-70" /> {m.text}
+                    <WorkDots />
+                  </span>
+                  <TipRotator tips={m.tips} />
+                </>
               ) : (
                 <>
                   <p className="whitespace-pre-line">{m.text}</p>

@@ -122,6 +122,31 @@ Narration must total about 60–120 seconds when spoken.`,
         style: styleId,
         onProgress: setBusy
       });
+      // best effort — save the finished video to the user's Library
+      (async () => {
+        try {
+          const me = await base44.auth.me();
+          if (!me?.email) return;
+          const learned = learnedStyles.find((s) => `learned:${s.id}` === styleId);
+          const up = await base44.integrations.Core.UploadFile({
+            file: new File(
+              [blob],
+              `${(script.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-')}.${videoExt(blob.type)}`,
+              { type: blob.type }
+            )
+          });
+          await base44.entities.NicheVideo.create({
+            user_email: me.email,
+            title: script.title,
+            description: script.description || '',
+            tags: script.tags || [],
+            style_name: learned ? learned.name : (ANIMATION_STYLES.find((s) => s.id === styleId) || {}).name || 'Neutral',
+            video_url: up.file_url,
+            scenes: scenes.map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
+            fact_note: script.fact_note || ''
+          });
+        } catch {}
+      })();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `${(script.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.${videoExt(blob.type)}`;

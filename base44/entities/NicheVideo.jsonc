@@ -1,0 +1,78 @@
+{
+  "name": "NicheVideo",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email \u2014 only they can see this video in their library"
+    },
+    "title": {
+      "type": "string",
+      "description": "Video title"
+    },
+    "description": {
+      "type": "string",
+      "description": "YouTube description"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "SEO tags"
+    },
+    "style_name": {
+      "type": "string",
+      "description": "Animation style used"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "Uploaded stitched video file URL"
+    },
+    "scenes": {
+      "type": "array",
+      "default": [],
+      "description": "Full script \u2014 one entry per scene",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Visual moment"
+          },
+          "caption": {
+            "type": "string",
+            "description": "On-screen caption"
+          },
+          "voiceover": {
+            "type": "string",
+            "description": "Narration lines"
+          }
+        }
+      }
+    },
+    "fact_note": {
+      "type": "string",
+      "description": "What the fact-check pass fixed"
+    }
+  },
+  "required": [
+    "user_email",
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
