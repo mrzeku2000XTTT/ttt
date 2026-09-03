@@ -4,7 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
-  { name: "NICHE", path: "Niche", cat: "AI", logo: "https://images.unsplash.com/photo-1526374965328-7f61d1dc9bc9?w=200&h=200&fit=crop", desc: "Instant niche finder · know what you're good at & exactly what to post" },
+  { name: "NICHE", path: "Niche", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9b60f0292_generated_image.png", desc: "Instant niche finder · know what you're good at & exactly what to post" },
   { name: "Narrate", path: "Narrate", cat: "Education", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/cd9921ac6_generated_image.png", desc: "Scan or search any book · listen with live word-by-word captions" },
   { name: "iFilm", path: "IFilm", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/77074ab57_generated_image.png", desc: "Search & watch videos · trending feed, instant playback" },
   { name: "Spatial", path: "Spatial", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9889bbc28_image.jpeg", desc: "Room transform prompt studio · upload a room photo, get a consistent image-gen prompt" },
