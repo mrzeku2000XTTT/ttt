@@ -976,6 +976,69 @@ ${autoText ? `<p style="margin-top:20px;font-size:14px;">Tagline: <em>${autoText
         results,
       };
     },
+    search_app_ui: async (a = {}) => {
+      const app = (a.app || "").trim();
+      if (!app) throw new Error("app is required");
+      const mode = a.mode === "real" ? "real" : "generate";
+      const { base44 } = await import("@/api/base44Client");
+
+      // Make sure there's a device to host the UI
+      let target = items.find((it) => it.kind === "device");
+      if (!target) {
+        const it = makeItem({ x: 50, y: 55, scale: 0.85 });
+        setItems((prev) => [...prev, it]);
+        setSelectedId(it.id);
+        target = it;
+      }
+
+      if (mode === "real") {
+        // Pull actual app screenshots from the web
+        const res = await base44.integrations.Core.InvokeLLM({
+          prompt: `Find real, direct image URLs of screenshots of the mobile app "${app}" UI — from Google Play, the Apple App Store, or the app's official website. Return up to 6 direct .png/.jpg/.webp image URLs that load in an <img> tag. Only return URLs you are confident are real, direct image links. If unsure, return an empty list.`,
+          add_context_from_internet: true,
+          model: "gemini_3_flash",
+          response_json_schema: { type: "object", properties: { urls: { type: "array", items: { type: "string" } } } },
+        });
+        const urls = (res?.urls || []).filter(Boolean);
+        const loadCheck = (u) =>
+          new Promise((resolve) => {
+            const im = new Image();
+            im.crossOrigin = "anonymous";
+            im.onload = () => resolve(u);
+            im.onerror = () => resolve(null);
+            im.src = u;
+            setTimeout(() => resolve(null), 6000);
+          });
+        let picked = null;
+        for (const u of urls) {
+          picked = await loadCheck(u);
+          if (picked) break;
+        }
+        if (picked) {
+          updateItem(target.id, { media: { url: picked, type: "image", name: `${app} (real UI)` } });
+          setSelectedId(target.id);
+          return { mode: "real", url: picked, app };
+        }
+        // none loaded → fall through to a faithful generated reproduction
+      }
+
+      // Research the real UI, then generate a faithful reproduction
+      const desc = await base44.integrations.Core.InvokeLLM({
+        prompt: `Describe the real UI of the mobile app "${app}" as accurately as you can from live research: signature colors (with hex where possible), dark/light theme, home screen layout, key screens, typography, button styles, and overall visual identity. Be specific and factual — this reproduces the UI as a phone screenshot.`,
+        add_context_from_internet: true,
+        model: "gemini_3_flash",
+        response_json_schema: { type: "object", properties: { description: { type: "string" } } },
+      });
+      const uiDesc = (desc?.description || "").trim();
+      const gen = await base44.integrations.Core.GenerateImage({
+        prompt: `A faithful, high-fidelity vertical phone screenshot reproducing the real UI of the mobile app "${app}". ${uiDesc}. Render as a clean 9:19.5 phone screen, sharp, pixel-perfect, realistic app interface (not a sketch). Reproduce the actual app's look as closely as possible. No watermark, no mockup frame — just the screen content.`,
+      });
+      const url = gen?.url;
+      if (!url) throw new Error("UI generation returned no URL");
+      updateItem(target.id, { media: { url, type: "image", name: `${app} UI` } });
+      setSelectedId(target.id);
+      return { mode: mode === "real" ? "real-fallback-generate" : "generate", url, app };
+    },
     render_mp4: async () => {
       if (!timelineRef.current) throw new Error("no timeline");
       await timelineRef.current.recordVideo();

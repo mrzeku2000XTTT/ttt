@@ -6,6 +6,7 @@ import html2canvas from "html2canvas";
 import { buildSystemPrompt, runTools } from "./mockAgentTools";
 
 const QUICK_PROMPTS = [
+  "Put the real Kaspium wallet UI on the phone",
   "Make a dramatic product reveal",
   "Slide in from the left, then zoom into the chat",
   "Background: midnight. Add 'COMING SOON' as bold text",
