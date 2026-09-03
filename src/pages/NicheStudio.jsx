@@ -32,13 +32,13 @@ export default function NicheStudio() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+    <div className="h-[100dvh] bg-black text-white relative overflow-hidden flex flex-col">
       <div
         className="fixed inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 60% 40% at 50% -10%, rgba(255,255,255,0.07) 0%, rgba(0,0,0,0) 60%)' }}
       />
 
-      <div className="flex items-center justify-between px-4 sm:px-6 py-4 relative z-10">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 relative z-10 shrink-0">
         <Link to="/Niche" className="flex items-center gap-2.5 group">
           <NicheLogo size={32} />
           <span className="font-black tracking-tight text-xl">NICHE <span className="text-white/40 group-hover:text-white/70 transition-colors">Studio</span></span>
@@ -62,7 +62,7 @@ export default function NicheStudio() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 relative z-10 mb-2">
+      <div className="flex items-center justify-center gap-2 relative z-10 mb-2 shrink-0">
         {[
           { key: 'auto', label: 'Automatic', icon: Sparkles },
           { key: 'manual', label: 'Manual', icon: SlidersHorizontal },
@@ -82,37 +82,40 @@ export default function NicheStudio() {
         ))}
       </div>
 
-      <div className="relative z-10 py-4 sm:py-8 pb-24">
+      {/* Fills the rest of the viewport — only this area scrolls, never the page */}
+      <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
         {mode === 'library' ? (
-          <NicheVideoLibrary />
+          <div className="h-full overflow-y-auto"><NicheVideoLibrary /></div>
         ) : mode === 'auto' ? (
           niches === null ? (
-            <div className="min-h-[50vh] flex items-center justify-center">
+            <div className="h-full flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             </div>
           ) : (
             <NicheAutoStudio niches={niches} />
           )
         ) : !niches ? (
-          <div className="min-h-[50vh] flex items-center justify-center">
+          <div className="h-full flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
           </div>
         ) : selected ? (
-          <NicheStudioDetail niche={selected} onBack={() => setSelected(null)} />
+          <div className="h-full overflow-y-auto"><NicheStudioDetail niche={selected} onBack={() => setSelected(null)} /></div>
         ) : niches.length === 0 ? (
-          <div className="max-w-md mx-auto px-4 text-center pt-16">
-            <Compass className="w-10 h-10 text-white/30 mx-auto mb-4" />
-            <h1 className="text-2xl font-black text-white">No niches yet</h1>
-            <p className="text-white/50 text-sm mt-2 mb-6">Find your first niche and it will be saved here automatically.</p>
-            <Link
-              to="/Niche"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-black font-bold hover:shadow-[0_0_40px_rgba(255,255,255,0.35)] transition-all"
-            >
-              <LinkIcon className="w-4 h-4" /> Find my niche
-            </Link>
+          <div className="h-full overflow-y-auto flex items-center justify-center px-4">
+            <div className="max-w-md text-center">
+              <Compass className="w-10 h-10 text-white/30 mx-auto mb-4" />
+              <h1 className="text-2xl font-black text-white">No niches yet</h1>
+              <p className="text-white/50 text-sm mt-2 mb-6">Find your first niche and it will be saved here automatically.</p>
+              <Link
+                to="/Niche"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-black font-bold hover:shadow-[0_0_40px_rgba(255,255,255,0.35)] transition-all"
+              >
+                <LinkIcon className="w-4 h-4" /> Find my niche
+              </Link>
+            </div>
           </div>
         ) : (
-          <NicheStudioList niches={niches} onSelect={setSelected} />
+          <div className="h-full overflow-y-auto"><NicheStudioList niches={niches} onSelect={setSelected} /></div>
         )}
       </div>
     </div>
