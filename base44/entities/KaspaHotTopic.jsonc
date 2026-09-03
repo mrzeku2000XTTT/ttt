@@ -125,8 +125,12 @@
         "role": "admin"
       }
     },
-    "read": true,
-    "update": true,
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "delete": {
       "user_condition": {
         "role": "admin"
