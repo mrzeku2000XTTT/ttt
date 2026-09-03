@@ -1,5 +1,6 @@
 import React from 'react';
-import { Copy, Check, RotateCcw, Target, Users, Zap, Calendar } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Copy, Check, RotateCcw, Target, Users, Zap, Calendar, Compass } from 'lucide-react';
 
 const Panel = ({ icon: Icon, title, children, className = '' }) => (
   <div className={`rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6 ${className}`}>
@@ -11,7 +12,7 @@ const Panel = ({ icon: Icon, title, children, className = '' }) => (
   </div>
 );
 
-export default function NicheResults({ result, onRestart, answers }) {
+export default function NicheResults({ result, onRestart, answers, saved }) {
   const [copied, setCopied] = React.useState(false);
 
   const copyIdeas = async () => {
@@ -91,6 +92,14 @@ export default function NicheResults({ result, onRestart, answers }) {
       </Panel>
 
       <div className="flex flex-col sm:flex-row gap-3 mt-8">
+        {saved && (
+          <Link
+            to="/NicheStudio"
+            className="flex-1 py-4 rounded-2xl bg-white text-black font-bold hover:shadow-[0_0_40px_rgba(255,255,255,0.35)] transition-all flex items-center justify-center gap-2"
+          >
+            <Compass className="w-4 h-4" /> Open in Studio
+          </Link>
+        )}
         <button
           onClick={onRestart}
           className="flex-1 py-4 rounded-2xl border border-white/15 text-white/70 hover:text-white hover:border-white/40 font-semibold transition-all flex items-center justify-center gap-2"

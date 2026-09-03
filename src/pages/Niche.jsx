@@ -58,6 +58,7 @@ const RESULT_SCHEMA = {
 
 export default function NichePage() {
   const [result, setResult] = useState(null);
+  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -88,6 +89,23 @@ Be decisive. No hedging. Be specific to THEM, not generic advice. Their first po
         response_json_schema: RESULT_SCHEMA
       });
       setResult(res);
+      // Save to the user's Studio history (logged-in users only)
+      try {
+        const me = await base44.auth.me();
+        if (me?.email) {
+          await base44.entities.NicheResult.create({
+            user_email: me.email,
+            niche_name: res.niche?.name || 'My niche',
+            tagline: res.niche?.tagline || '',
+            result: res,
+            passions: answers.passions,
+            platforms: answers.platforms
+          });
+          setSaved(true);
+        }
+      } catch (err) {
+        // not logged in — the result still shows, it just isn't saved
+      }
     } catch (e) {
       setError(e?.message || 'Could not read your signal. Try again.');
     } finally {
@@ -126,7 +144,7 @@ Be decisive. No hedging. Be specific to THEM, not generic advice. Their first po
         {loading ? (
           <NicheScanning />
         ) : result ? (
-          <NicheResults result={result} onRestart={() => setResult(null)} />
+          <NicheResults result={result} saved={saved} onRestart={() => setResult(null)} />
         ) : (
           <>
             {error && (
