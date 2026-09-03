@@ -1,0 +1,64 @@
+{
+  "name": "NarrateBook",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner email \u2014 only they can see or open this saved book"
+    },
+    "title": {
+      "type": "string",
+      "description": "Book title"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author or source"
+    },
+    "cover": {
+      "type": "string",
+      "description": "Cover image URL (if available)"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "scan",
+        "search"
+      ],
+      "default": "search",
+      "description": "Whether the book came from a scan or a search"
+    },
+    "ia_id": {
+      "type": "string",
+      "description": "Internet Archive id \u2014 used to refetch full text for search books on reopen"
+    },
+    "text": {
+      "type": "string",
+      "default": "",
+      "description": "Stored text (scan books only \u2014 search books refetch on open to keep records small)"
+    },
+    "words_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Approximate word count of the text"
+    }
+  },
+  "required": [
+    "user_email",
+    "title",
+    "source"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
