@@ -101,7 +101,7 @@ export default function Narrate() {
         let full = "";
         let guard = 0;
         while (guard < 6) {
-          const r = await base44.functions.invoke("bookText", { ia_id: book.ia_id, offset: off });
+          const r = await base44.functions.invoke("bookText", { ia_id: book.ia_id, offset: off, title: book.title, author: book.author });
           const d = r?.data ?? r;
           if (d?.error) {
             setError(d.error);
