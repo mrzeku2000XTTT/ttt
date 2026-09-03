@@ -178,16 +178,27 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   });
   recorder.start(250);
 
-  // Schedule narration back-to-back; remember the window for each scene
+  // Schedule narration so each scene's TTS is fully spoken before the next
+  // scene begins. A short hold after each narration keeps the current image
+  // on screen for a beat after the voice finishes (no cut-off, no overlap).
+  const HOLD = 0.4; // seconds the image stays after narration ends
+  const PRE = 0.15; // lead-in before the first line starts
   const segments = [];
-  let t = ac.currentTime + 0.15;
+  let t = ac.currentTime + PRE;
   buffers.forEach((buf, i) => {
     const src = ac.createBufferSource();
     src.buffer = buf;
     src.connect(dest);
     src.start(t);
-    segments.push({ start: t, end: t + buf.duration, img: imgEls[i], caption: captions[i] || '' });
-    t += buf.duration;
+    const speakEnd = t + buf.duration;
+    const segEnd = speakEnd + HOLD;
+    segments.push({
+      start: i === 0 ? ac.currentTime : t,
+      end: segEnd,
+      img: imgEls[i],
+      caption: captions[i] || ''
+    });
+    t = segEnd;
   });
 
   const drawFrame = (seg) => {
