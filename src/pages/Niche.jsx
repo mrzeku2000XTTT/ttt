@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Compass } from 'lucide-react';
 import NicheLogo from '@/components/niche/NicheLogo';
 import NicheQuiz from '@/components/niche/NicheQuiz';
 import NicheResults from '@/components/niche/NicheResults';
@@ -130,14 +131,23 @@ Be decisive. No hedging. Be specific to THEM, not generic advice. Their first po
           <NicheLogo size={32} />
           <span className="font-black tracking-tight text-xl">NICHE</span>
         </div>
-        <a
-          href="/AppStoreV2"
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 text-sm font-medium transition-all"
-        >
-          <LayoutGrid className="w-4 h-4" />
-          <span className="hidden sm:inline">Exit to App Store</span>
-          <span className="sm:hidden">Exit</span>
-        </a>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/NicheStudio"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 text-sm font-medium transition-all"
+          >
+            <Compass className="w-4 h-4" />
+            <span className="hidden sm:inline">Studio</span>
+          </Link>
+          <a
+            href="/AppStoreV2"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 text-sm font-medium transition-all"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span className="hidden sm:inline">Exit to App Store</span>
+            <span className="sm:hidden">Exit</span>
+          </a>
+        </div>
       </div>
 
       <div className="relative z-10 py-8 sm:py-12 pb-24">

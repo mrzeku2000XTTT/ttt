@@ -42,14 +42,23 @@ export default function NicheStudio() {
           <NicheLogo size={32} />
           <span className="font-black tracking-tight text-xl">NICHE <span className="text-white/40 group-hover:text-white/70 transition-colors">Studio</span></span>
         </Link>
-        <a
-          href="/AppStoreV2"
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 text-sm font-medium transition-all"
-        >
-          <LayoutGrid className="w-4 h-4" />
-          <span className="hidden sm:inline">Exit to App Store</span>
-          <span className="sm:hidden">Exit</span>
-        </a>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/Niche"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 text-sm font-medium transition-all"
+          >
+            <Compass className="w-4 h-4" />
+            <span className="hidden sm:inline">Find a niche</span>
+          </Link>
+          <a
+            href="/AppStoreV2"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/40 text-sm font-medium transition-all"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span className="hidden sm:inline">Exit to App Store</span>
+            <span className="sm:hidden">Exit</span>
+          </a>
+        </div>
       </div>
 
       <div className="flex items-center justify-center gap-2 relative z-10 mb-2">
