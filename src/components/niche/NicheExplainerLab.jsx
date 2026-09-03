@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { PenTool, Loader2, Mic } from 'lucide-react';
+import { PenTool, Loader2, Mic, Download } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
-
-const stickPrompt = (action) =>
-  `Minimalist hand-drawn stick figure explainer illustration showing: ${action}. One simple black stick-figure character with expressive stick arms and legs mid-action on a clean pure white background, thin marker ink lines, doodle sketch style, generous white space, wide 16:9 composition. STRICTLY NO TEXT: no words, no letters, no numbers, no labels, no captions, no signs, no writing of any kind anywhere in the image.`;
+import { stickPrompt, compileExplainerVideo } from './explainerVideo';
 
 export default function NicheExplainerLab({ niche }) {
   const [topic, setTopic] = useState('');
@@ -27,11 +25,11 @@ Video topic: "${topic.trim() || niche.niche_name}"
 
 Write:
 1. A click-worthy title (under 60 characters)
-2. A 5-scene script. For each scene: one simple visual "action" a single stick figure can plainly show (walking, pointing, lifting, falling, celebrating — one clear visual moment, no words involved), and the exact narrator voiceover lines for that scene (2–4 sentences, written the way a person talks).
+2. A script of 6 to 15 scenes — pick the count that best serves the topic. For each scene: one simple visual "action" a single stick figure can plainly show (walking, pointing, lifting, falling, celebrating — one clear visual moment, no words involved), a short on-screen "caption" of at most 8 words matching the scene, and the exact narrator voiceover lines for that scene (2–4 sentences, written the way a person talks).
 3. A YouTube description (2 short paragraphs)
 4. 8–10 SEO tags
 
-Narration must total about 60–90 seconds when spoken.`,
+Narration must total about 60–120 seconds when spoken.`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -44,6 +42,7 @@ Narration must total about 60–90 seconds when spoken.`,
                 type: 'object',
                 properties: {
                   action: { type: 'string', description: 'What the stick figure is doing — one clear visual moment' },
+                  caption: { type: 'string', description: 'Short on-screen caption, max 8 words' },
                   voiceover: { type: 'string' }
                 }
               }
@@ -84,6 +83,24 @@ Narration must total about 60–90 seconds when spoken.`,
         urls.push(res.url);
         setAudios([...urls]);
       }
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const downloadVideo = async () => {
+    setBusy('Stitching your video…');
+    try {
+      const blob = await compileExplainerVideo({
+        images,
+        audios,
+        captions: scenes.map((s) => s.caption || ''),
+        onProgress: setBusy
+      });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${(script.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.webm`;
+      a.click();
     } finally {
       setBusy('');
     }
@@ -146,7 +163,17 @@ Narration must total about 60–90 seconds when spoken.`,
           </div>
 
           {images.length === scenes.length && audios.length === scenes.length && (
-            <ExplainerPlayer images={images} audios={audios} />
+            <>
+              <ExplainerPlayer images={images} audios={audios} captions={scenes.map((s) => s.caption || '')} />
+              <button
+                onClick={downloadVideo}
+                disabled={!!busy}
+                className="w-full py-3.5 rounded-xl bg-white text-black font-bold text-sm hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+              >
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {busy ? busy : 'Download stitched video'}
+              </button>
+            </>
           )}
 
           <ol className="space-y-3">

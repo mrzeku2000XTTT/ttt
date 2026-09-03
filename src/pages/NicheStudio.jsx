@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { LayoutGrid, Compass, Link as LinkIcon } from 'lucide-react';
+import { LayoutGrid, Compass, Link as LinkIcon, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import NicheLogo from '@/components/niche/NicheLogo';
 import NicheStudioList from '@/components/niche/NicheStudioList';
 import NicheStudioDetail from '@/components/niche/NicheStudioDetail';
+import NicheAutoStudio from '@/components/niche/NicheAutoStudio';
 
 export default function NicheStudio() {
   const [niches, setNiches] = useState(null); // null = loading
   const [selected, setSelected] = useState(null);
+  const [mode, setMode] = useState(() =>
+    new URLSearchParams(window.location.search).get('id') ? 'manual' : 'auto'
+  );
 
   useEffect(() => {
     (async () => {
@@ -48,8 +52,35 @@ export default function NicheStudio() {
         </a>
       </div>
 
-      <div className="relative z-10 py-8 sm:py-12 pb-24">
-        {niches === null ? (
+      <div className="flex items-center justify-center gap-2 relative z-10 mb-2">
+        {[
+          { key: 'auto', label: 'Automatic', icon: Sparkles },
+          { key: 'manual', label: 'Manual', icon: SlidersHorizontal }
+        ].map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setMode(key)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+              mode === key
+                ? 'bg-white text-black'
+                : 'border border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+          >
+            <Icon className="w-4 h-4" /> {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative z-10 py-4 sm:py-8 pb-24">
+        {mode === 'auto' ? (
+          niches === null ? (
+            <div className="min-h-[50vh] flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            </div>
+          ) : (
+            <NicheAutoStudio niches={niches} />
+          )
+        ) : !niches ? (
           <div className="min-h-[50vh] flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
           </div>

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 
 // Plays the explainer like a video: scene image synced to its narration, in order
-export default function ExplainerPlayer({ images, audios }) {
+export default function ExplainerPlayer({ images, audios, captions }) {
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef(null);
@@ -28,8 +28,13 @@ export default function ExplainerPlayer({ images, audios }) {
 
   return (
     <div className="rounded-2xl border border-white/15 overflow-hidden">
-      <div className="bg-white">
+      <div className="bg-white relative">
         <img src={images[idx]} alt={`Scene ${idx + 1}`} className="w-full aspect-video object-contain" />
+        {captions?.[idx] && (
+          <p className="absolute bottom-3 left-1/2 -translate-x-1/2 max-w-[85%] text-center text-black font-bold text-sm sm:text-base px-4 py-1.5 bg-white/85 rounded-full border border-black/10 shadow-sm">
+            {captions[idx]}
+          </p>
+        )}
       </div>
       <div className="flex items-center justify-center gap-4 bg-black border-t border-white/10 py-3">
         <button onClick={() => startAt(idx - 1)} className="text-white/60 hover:text-white transition-colors" aria-label="Previous scene">
