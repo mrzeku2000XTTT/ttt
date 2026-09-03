@@ -13,89 +13,9 @@ Deno.serve(async (req) => {
 
         const allNews = [];
 
-        // Source 1: NewsAPI.org - War coverage
-        try {
-            const newsApiResponse = await fetch(
-                `https://newsapi.org/v2/everything?q=war OR conflict OR military OR crisis OR ukraine OR gaza OR syria&language=en&sortBy=publishedAt&pageSize=30`,
-                {
-                    headers: {
-                        'X-Api-Key': Deno.env.get("NEWS_API_KEY") || ''
-                    }
-                }
-            );
-            
-            if (newsApiResponse.ok) {
-                const data = await newsApiResponse.json();
-                if (data.articles) {
-                    allNews.push(...data.articles.map(article => ({
-                        title: article.title,
-                        summary: article.description || article.content?.substring(0, 250) || '',
-                        category: 'conflict',
-                        timestamp: article.publishedAt,
-                        source: article.source.name,
-                        url: article.url,
-                        image: article.urlToImage,
-                        location: extractLocation(article.title + ' ' + article.description)
-                    })));
-                }
-            }
-        } catch (e) {
-            console.log('NewsAPI war news failed:', e.message);
-        }
-
-        // Source 2: GNews API - Conflict coverage
-        try {
-            const gnewsResponse = await fetch(
-                `https://gnews.io/api/v4/search?q=war OR conflict OR military OR crisis&lang=en&max=30&apikey=${Deno.env.get("GNEWS_API_KEY") || ''}`
-            );
-            
-            if (gnewsResponse.ok) {
-                const data = await gnewsResponse.json();
-                if (data.articles) {
-                    allNews.push(...data.articles.map(article => ({
-                        title: article.title,
-                        summary: article.description || '',
-                        category: 'humanitarian',
-                        timestamp: article.publishedAt,
-                        source: article.source.name,
-                        url: article.url,
-                        image: article.image,
-                        location: extractLocation(article.title + ' ' + article.description)
-                    })));
-                }
-            }
-        } catch (e) {
-            console.log('GNews war coverage failed:', e.message);
-        }
-
-        // Source 3: The News API - Global crisis
-        try {
-            const theNewsApiResponse = await fetch(
-                `https://api.thenewsapi.com/v1/news/all?api_token=${Deno.env.get("THE_NEWS_API_KEY") || ''}&search=war OR conflict OR military&language=en&limit=30`
-            );
-            
-            if (theNewsApiResponse.ok) {
-                const data = await theNewsApiResponse.json();
-                if (data.data) {
-                    allNews.push(...data.data.map(article => ({
-                        title: article.title,
-                        summary: article.description || article.snippet || '',
-                        category: 'military',
-                        timestamp: article.published_at,
-                        source: article.source,
-                        url: article.url,
-                        image: article.image_url,
-                        location: extractLocation(article.title + ' ' + article.description)
-                    })));
-                }
-            }
-        } catch (e) {
-            console.log('TheNewsAPI crisis news failed:', e.message);
-        }
-
-        // Fallback: Use InvokeLLM with web search for war news
-        if (allNews.length < 10) {
-            console.log('Using LLM fallback for war news...');
+        // Source: InvokeLLM with live web search
+        {
+            console.log('Fetching war news via LLM web search...');
             try {
                 const llmResponse = await base44.integrations.Core.InvokeLLM({
                     prompt: `Search for the LATEST global war, conflict, and humanitarian crisis news from the last 24 hours. Include:
