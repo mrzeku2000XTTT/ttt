@@ -151,36 +151,42 @@ const RECORDER_TYPES = [
 ];
 
 // Play one narration clip to completion, routing its audio into the recording
-// stream. Uses an HTML audio element so the browser plays the FULL file and
-// fires `ended` only when playback truly reaches the end — no cut-off, no
-// overlap. Falls back to a decoded buffer source if the element can't be
-// routed (e.g. CORS-tainted).
+// stream. The decoded buffer is played into the MediaStreamDestination (this
+// path is not CORS-tainted, so the audio is actually captured). A MUTED HTML
+// audio element plays the same clip purely to detect the real end — its
+// `ended` event is the same reliable mechanism the in-app preview uses, so we
+// never advance before the narration has truly finished (no cut-off, no
+// overlap). Safety timeouts guarantee we never hang.
 function playNarration(url, ac, dest) {
   return new Promise((resolve) => {
     let done = false;
     const finish = () => { if (!done) { done = true; resolve(); } };
     (async () => {
+      let buf = null;
       try {
-        const audio = new Audio();
-        audio.crossOrigin = 'anonymous';
-        audio.src = url;
-        const node = ac.createMediaElementSource(audio);
-        node.connect(dest);
-        audio.onended = () => { try { node.disconnect(); } catch {} finish(); };
-        audio.onerror = finish;
+        buf = await ac.decodeAudioData(await (await fetch(url)).arrayBuffer());
+      } catch {}
+      // muted element drives reliable end detection (no speaker sound)
+      const audio = new Audio();
+      audio.muted = true;
+      audio.src = url;
+      audio.onended = finish;
+      audio.onerror = finish;
+      // play the decoded buffer into the recording stream
+      if (buf) {
+        const src = ac.createBufferSource();
+        src.buffer = buf;
+        src.connect(dest);
+        src.start();
+      }
+      try {
         await audio.play();
       } catch {
-        try {
-          const buf = await ac.decodeAudioData(await (await fetch(url)).arrayBuffer());
-          const src = ac.createBufferSource();
-          src.buffer = buf;
-          src.connect(dest);
-          src.onended = finish;
-          src.start();
-        } catch {
-          finish();
-        }
+        // autoplay blocked — fall back to the buffer's own duration
+        setTimeout(finish, (buf ? buf.duration : 0) * 1000 + 300);
       }
+      // safety: never hang longer than the clip + 5s
+      setTimeout(finish, ((buf ? buf.duration : 10) + 5) * 1000);
     })();
   });
 }
