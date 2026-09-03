@@ -2,7 +2,7 @@ import React from "react";
 import { BookOpen, Headphones } from "lucide-react";
 
 export default function BookCard({ book, onOpen }) {
-  const fullText = book.source === "scan" || !!book.ia_id || (book.text && book.text.length > 20);
+  const fullText = book.free || book.source === "scan" || !!book.ia_id || !!book.gutenberg_id || (book.text && book.text.length > 20);
   const subjects = (book.subjects || []).slice(0, 2).join(" · ");
   return (
     <button

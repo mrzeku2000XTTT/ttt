@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Search, X, ScanLine, BookOpen, Loader2, Library, Headphones } from "lucide-react";
+import { Search, X, ScanLine, BookOpen, Loader2, Library, Headphones, Coins } from "lucide-react";
 import BookReader from "@/components/narrate/BookReader";
 import BookCard from "@/components/narrate/BookCard";
+import { WEALTH_BOOKS } from "@/components/narrate/wealthCollection";
 
 function NarrateLogo({ size = 22 }) {
   return (
@@ -102,7 +103,7 @@ export default function Narrate() {
         let full = "";
         let guard = 0;
         while (guard < 6) {
-          const r = await base44.functions.invoke("bookText", { ia_id: book.ia_id || "", offset: off, title: book.title, author: book.author });
+          const r = await base44.functions.invoke("bookText", { ia_id: book.ia_id || "", gutenberg_id: book.gutenberg_id || "", offset: off, title: book.title, author: book.author });
           const d = r?.data ?? r;
           if (d?.error) break;
           full += d.text || "";
@@ -263,6 +264,15 @@ export default function Narrate() {
             Search
           </button>
           <button
+            onClick={() => setTab("wealth")}
+            className={`h-9 px-4 rounded-full text-[13px] font-medium transition-colors flex items-center gap-1.5 ${
+              tab === "wealth" ? "bg-white text-black" : "bg-white/10 text-white/70 hover:bg-white/15"
+            }`}
+          >
+            <Coins className="w-3.5 h-3.5" />
+            Wealth
+          </button>
+          <button
             onClick={() => setTab("library")}
             className={`h-9 px-4 rounded-full text-[13px] font-medium transition-colors flex items-center gap-1.5 ${
               tab === "library" ? "bg-white text-black" : "bg-white/10 text-white/70 hover:bg-white/15"
@@ -345,6 +355,21 @@ export default function Narrate() {
                 </div>
               </>
             )}
+          </>
+        )}
+
+        {/* WEALTH TAB */}
+        {tab === "wealth" && (
+          <>
+            <div className="mb-4">
+              <div className="text-[16px] text-white/90 font-semibold">150 free books on wealth</div>
+              <div className="text-[12.5px] text-white/45">Money, success, markets and the great novels of fortune — all public domain, full text, free to listen.</div>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {WEALTH_BOOKS.map((b, i) => (
+                <BookCard key={b.title + i} book={b} onOpen={() => openBook(b)} />
+              ))}
+            </div>
           </>
         )}
 

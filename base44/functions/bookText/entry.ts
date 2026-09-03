@@ -1,11 +1,29 @@
 Deno.serve(async (req) => {
   try {
-    const { ia_id, offset = 0, chunk = 200000, title, author } = await req.json().catch(() => ({}));
+    const { ia_id, gutenberg_id, offset = 0, chunk = 200000, title, author } = await req.json().catch(() => ({}));
     const ua = { 'User-Agent': 'Narrate/1.0 (+https://tttxyz.base44.app)' };
+
+    let text = '';
+    // ---------- 0) Direct Project Gutenberg id (curated collections) ----------
+    if (gutenberg_id) {
+      for (const url of [
+        `https://www.gutenberg.org/cache/epub/${gutenberg_id}/pg${gutenberg_id}.txt`,
+        `https://www.gutenberg.org/ebooks/${gutenberg_id}.txt.utf-8`,
+        `https://www.gutenberg.org/files/${gutenberg_id}/${gutenberg_id}-0.txt`,
+      ]) {
+        try {
+          const r = await fetch(url, { headers: ua, redirect: 'follow' });
+          if (r.ok) {
+            text = await r.text();
+            if (text.length > 200) break;
+          }
+        } catch {}
+      }
+    }
 
     // ---------- 1) Internet Archive (primary) ----------
     let textUrl = null;
-    if (ia_id) {
+    if (ia_id && text.length < 200) {
       try {
         const meta = await fetch(`https://archive.org/metadata/${ia_id}`, { headers: ua }).then((r) => r.json());
         const files = (meta?.files || []).filter((f) => f.name);
@@ -18,7 +36,6 @@ Deno.serve(async (req) => {
       if (!textUrl) textUrl = `https://archive.org/download/${ia_id}/${ia_id}_djvu.txt`;
     }
 
-    let text = '';
     if (textUrl) {
       try {
         const r = await fetch(textUrl, { headers: ua, redirect: 'follow' });
