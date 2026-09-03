@@ -121,6 +121,7 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   onProgress?.('Preparing narration…');
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const ac = new AudioCtx();
+  try { await ac.resume(); } catch {} // keep audio alive even if the tab is backgrounded
   const dest = ac.createMediaStreamDestination();
   const buffers = await Promise.all(
     audios.map(async (u) => {
@@ -170,14 +171,19 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   };
 
   onProgress?.('Stitching your video…');
+  // setInterval (not requestAnimationFrame) so the capture loop keeps drawing
+  // even when the user leaves the tab — rAF is paused in background tabs.
   await new Promise((resolve) => {
     const tick = () => {
       const now = ac.currentTime;
       const seg = segments.find((s) => now >= s.start && now < s.end) || segments[segments.length - 1];
       if (seg) drawFrame(seg);
-      if (now >= t + 0.3) return resolve();
-      requestAnimationFrame(tick);
+      if (now >= t + 0.3) {
+        clearInterval(timer);
+        resolve();
+      }
     };
+    const timer = setInterval(tick, 100);
     tick();
   });
 

@@ -7,6 +7,8 @@ import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileE
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
+const fmtElapsed = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, '0')}`;
+
 export default function NicheExplainerLab({ niche }) {
   const [topic, setTopic] = useState('');
   const [script, setScript] = useState(null);
@@ -18,8 +20,17 @@ export default function NicheExplainerLab({ niche }) {
   const [learnedStyles, setLearnedStyles] = useState([]);
   const [showLearner, setShowLearner] = useState(false);
   const [colorMode, setColorMode] = useState('mono'); // black & white by default, colored optional
+  const [elapsed, setElapsed] = useState(0); // live elapsed on the working status
 
   const scenes = script?.scenes || [];
+
+  // tick elapsed seconds while any build step is running
+  useEffect(() => {
+    if (!busy) { setElapsed(0); return; }
+    const start = Date.now();
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [busy]);
 
   useEffect(() => {
     base44.entities.NicheStyle.list().then(setLearnedStyles).catch(() => {});
@@ -257,9 +268,10 @@ Narration must total about 60–120 seconds when spoken.`,
         </button>
       </div>
 
-      {busy && busy !== 'Writing script…' && (
+      {busy && (
         <p className="text-white/50 text-xs mt-3 flex items-center gap-2">
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> {busy}
+          {elapsed > 0 ? <span className="tabular-nums text-white/35">· {fmtElapsed(elapsed)}</span> : null}
         </p>
       )}
 

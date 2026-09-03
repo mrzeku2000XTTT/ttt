@@ -8,6 +8,7 @@ import { factCheckExplainer } from './explainerFactCheck';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
+const fmtElapsed = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, '0')}`;
 
 const WorkDots = () => (
   <span className="inline-flex gap-1 ml-1 align-middle">
@@ -75,6 +76,16 @@ export default function NicheAutoStudio({ niches }) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
+  // live elapsed timer on whichever message is currently working
+  useEffect(() => {
+    const t = setInterval(() => {
+      setMessages((m) =>
+        m.map((x) => (x.working ? { ...x, elapsed: Math.floor((Date.now() - (x.startedAt || Date.now())) / 1000) } : x))
+      );
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
+
   useEffect(() => {
     base44.entities.NicheStyle.list().then(setLearnedStyles).catch(() => {});
   }, []);
@@ -109,7 +120,7 @@ export default function NicheAutoStudio({ niches }) {
     setMessages((m) => [
       ...m,
       { id: uid(), role: 'user', text },
-      { id: workId, role: 'ai', working: true, text: 'Thinking' }
+      { id: workId, role: 'ai', working: true, text: 'Thinking', startedAt: Date.now() }
     ]);
 
     const setWork = (t) => setMessages((m) => m.map((x) => (x.id === workId ? { ...x, text: t } : x)));
@@ -293,6 +304,7 @@ Decide what to do:
                 <>
                   <span className="flex items-center gap-2 font-medium">
                     <Loader2 className="w-4 h-4 animate-spin opacity-70" /> {m.text}
+                    {m.elapsed != null ? <span className="text-white/40 tabular-nums">· {fmtElapsed(m.elapsed)}</span> : null}
                     <WorkDots />
                   </span>
                   <TipRotator tips={m.tips} />
