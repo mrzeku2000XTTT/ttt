@@ -187,38 +187,14 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   });
   recorder.start(250);
 
-  // Schedule narration so each scene's TTS is fully spoken before the next
-  // scene begins. A short hold after each narration keeps the current image
-  // on screen for a beat after the voice finishes (no cut-off, no overlap).
-  const HOLD = 0.4; // seconds the image stays after narration ends
-  const PRE = 0.15; // lead-in before the first line starts
-  const segments = [];
-  let t = ac.currentTime + PRE;
-  buffers.forEach((buf, i) => {
-    const src = ac.createBufferSource();
-    src.buffer = buf;
-    src.connect(dest);
-    src.start(t);
-    const speakEnd = t + buf.duration;
-    const segEnd = speakEnd + HOLD;
-    segments.push({
-      start: i === 0 ? ac.currentTime : t,
-      end: segEnd,
-      img: imgEls[i],
-      caption: captions[i] || ''
-    });
-    t = segEnd;
-  });
-
-  const drawFrame = (seg) => {
+  const drawFrame = (img, caption) => {
     ctx.fillStyle = style.bg;
     ctx.fillRect(0, 0, W, H);
-    const { img } = seg;
     const r = Math.min(W / img.width, (H - 100) / img.height);
     const dw = img.width * r;
     const dh = img.height * r;
     ctx.drawImage(img, (W - dw) / 2, (H - 100 - dh) / 2, dw, dh);
-    const lines = wrapCaption(seg.caption);
+    const lines = wrapCaption(caption);
     ctx.font = 'bold 34px "Nunito", sans-serif';
     ctx.fillStyle = style.ink;
     ctx.textAlign = 'center';
@@ -227,23 +203,33 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     });
   };
 
+  // Play each scene's narration ONE AT A TIME, waiting for it to actually
+  // finish (the audio source's `ended` event) before starting the next scene.
+  // This guarantees no TTS is ever cut off — the next scene cannot begin until
+  // the current narration has fully played to its real end.
   onProgress?.('Stitching your video…');
-  // setInterval (not requestAnimationFrame) so the capture loop keeps drawing
-  // even when the user leaves the tab — rAF is paused in background tabs.
-  await new Promise((resolve) => {
-    const tick = () => {
-      const now = ac.currentTime;
-      const seg = segments.find((s) => now >= s.start && now < s.end) || segments[segments.length - 1];
-      if (seg) drawFrame(seg);
-      if (now >= t + 0.3) {
-        clearInterval(timer);
-        resolve();
-      }
-    };
-    const timer = setInterval(tick, 100);
-    tick();
-  });
+  let current = 0;
+  // keep redrawing the active frame so canvas capture stays alive in background tabs
+  const timer = setInterval(() => {
+    if (current < imgEls.length) drawFrame(imgEls[current], captions[current] || '');
+  }, 100);
 
+  for (let i = 0; i < buffers.length; i++) {
+    current = i;
+    drawFrame(imgEls[i], captions[i] || '');
+    // play this scene's narration and wait for it to truly end
+    await new Promise((resolve) => {
+      const src = ac.createBufferSource();
+      src.buffer = buffers[i];
+      src.connect(dest);
+      src.onended = resolve;
+      src.start();
+    });
+    // brief silent hold on the current image before the next scene begins
+    await new Promise((r) => setTimeout(r, 350));
+  }
+
+  clearInterval(timer);
   recorder.stop();
   await stopped;
   await ac.close();
