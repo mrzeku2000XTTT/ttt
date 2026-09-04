@@ -179,6 +179,37 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     })
   );
 
+  // Mix every narration line into ONE continuous track offline, with a short breath
+  // between scenes. A single source can't drift or overlap the way many scheduled
+  // sources can, and it gives us the exact scene boundaries for the visuals.
+  onProgress?.('Laying out narration…');
+  const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const LEAD = 0.25;
+  const GAP = 0.45;
+  const timeline = [];
+  let cursor = LEAD;
+  buffers.forEach((buf, i) => {
+    timeline.push({ at: cursor, dur: buf.duration, buf, img: imgEls[i], caption: captions[i] || '' });
+    cursor += buf.duration + GAP;
+  });
+  const totalDur = cursor + 0.4;
+  const offline = new OfflineCtx(2, Math.ceil(totalDur * ac.sampleRate), ac.sampleRate);
+  timeline.forEach((seg) => {
+    const s = offline.createBufferSource();
+    s.buffer = seg.buf;
+    s.connect(offline.destination);
+    s.start(seg.at);
+  });
+  const mixed = await offline.startRendering();
+
+  // Scene windows: each image stays up for its own line plus the breath after it
+  const segments = timeline.map((seg, i) => ({
+    start: i === 0 ? 0 : seg.at,
+    end: i === timeline.length - 1 ? totalDur : seg.at + seg.dur + GAP,
+    img: seg.img,
+    caption: seg.caption
+  }));
+
   const stream = canvas.captureStream(25);
   dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
   const mimeType = RECORDER_TYPES.find((t) => MediaRecorder.isTypeSupported(t)) || 'video/mp4';
@@ -188,19 +219,11 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   const stopped = new Promise((resolve) => {
     recorder.onstop = resolve;
   });
-  recorder.start(250);
 
-  // Schedule narration back-to-back; remember the window for each scene
-  const segments = [];
-  let t = ac.currentTime + 0.15;
-  buffers.forEach((buf, i) => {
-    const src = ac.createBufferSource();
-    src.buffer = buf;
-    src.connect(dest);
-    src.start(t);
-    segments.push({ start: t, end: t + buf.duration, img: imgEls[i], caption: captions[i] || '' });
-    t += buf.duration;
-  });
+  // Draw the first scene before recording starts so the video never opens on a blank frame
+  const player = ac.createBufferSource();
+  player.buffer = mixed;
+  player.connect(dest);
 
   const drawFrame = (seg) => {
     ctx.fillStyle = style.bg;
@@ -220,25 +243,34 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   };
 
   onProgress?.('Stitching your video…');
+  drawFrame(segments[0]);
+
+  // Start the narration and the recording together, then follow the audio clock
+  const t0 = ac.currentTime + 0.1;
+  player.start(t0);
+  recorder.start(250);
+
   // setInterval (not requestAnimationFrame) so the capture loop keeps drawing
   // even when the user leaves the tab — rAF is paused in background tabs.
   const wallStart = Date.now();
-  const totalMs = (t - ac.currentTime + 2) * 1000;
+  const guardMs = (totalDur + 5) * 1000;
   await new Promise((resolve) => {
     const tick = () => {
-      const now = ac.currentTime;
-      const seg = segments.find((s) => now >= s.start && now < s.end) || segments[segments.length - 1];
-      if (seg) drawFrame(seg);
+      const elapsed = ac.currentTime - t0;
+      const seg = segments.find((s) => elapsed >= s.start && elapsed < s.end) || segments[segments.length - 1];
+      drawFrame(seg);
       // wall-clock guard: finish even if the audio clock stalls
-      if (now >= t + 0.3 || Date.now() - wallStart > totalMs) {
+      if (elapsed >= totalDur || Date.now() - wallStart > guardMs) {
         clearInterval(timer);
         resolve();
       }
     };
-    const timer = setInterval(tick, 100);
+    const timer = setInterval(tick, 40);
     tick();
   });
 
+  // small tail so the last words are never clipped off the end of the file
+  await new Promise((r) => setTimeout(r, 400));
   recorder.stop();
   await stopped;
   await ac.close();
