@@ -160,6 +160,7 @@ import PetVetPage from './pages/PetVet';
 import ReceiptSplitPage from './pages/ReceiptSplit';
 import PackPalPage from './pages/PackPal';
 import GiftGeniusPage from './pages/GiftGenius';
+import LifestyleHubPage from './pages/LifestyleHub';
 import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
@@ -396,6 +397,7 @@ const AuthenticatedApp = () => {
       <Route path="/ReceiptSplit" element={<ReceiptSplitPage />} />
       <Route path="/PackPal" element={<PackPalPage />} />
       <Route path="/GiftGenius" element={<GiftGeniusPage />} />
+      <Route path="/LifestyleHub" element={<LifestyleHubPage />} />
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />

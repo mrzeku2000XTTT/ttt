@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Everyday AI", path: "LifestyleHub", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e68fc7d6f_generated_image.png", desc: "10 AI life tools in one hub · cars, pets, receipts, trips, gifts, outfits, plants, rooms, food & resumes" },
   { name: "AutoDoc", path: "AutoDoc", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fe796cdc2_generated_image.png", desc: "Car dashboard or damage photo · diagnosis, urgency & rough repair cost" },
   { name: "PetVet", path: "PetVet", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/69222f34d_generated_image.png", desc: "Pet photo + symptoms · calm triage, home care & vet questions" },
   { name: "ReceiptSplit", path: "ReceiptSplit", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c2ce1aceb_generated_image.png", desc: "Receipt photo · itemized read + per-person split with tip" },
@@ -177,6 +178,22 @@ export const APPS = [
   // ── New ──
   { name: "Krust", path: "Krust", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e2e8601a9_generated_image.png", desc: "Web weaver" },
   { name: "OneShot", path: "UICloner", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/17316d6b3_generated_image.png", desc: "Clone & vibe-code any UI", admin: true },
+];
+
+// The 10 lifestyle AI-tool apps are grouped inside the "Everyday AI" hub
+// (LifestyleHub) — they stay in APPS for search & docs but are hidden from
+// the main store grid, which shows the single hub tile instead.
+export const LIFESTYLE_APP_PATHS = [
+  "AutoDoc",
+  "PetVet",
+  "ReceiptSplit",
+  "PackPal",
+  "GiftGenius",
+  "PlatePal",
+  "OutfitAI",
+  "PlantDoc",
+  "RoomRater",
+  "ResumeRevive",
 ];
 
 // Curated Kaspa apps in priority order (KaspaHub first, Ksocial second, etc.)

@@ -4,7 +4,10 @@ import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { Crown, ExternalLink, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { APPS } from "./appCatalog";
+import { APPS, LIFESTYLE_APP_PATHS } from "./appCatalog";
+
+// Lifestyle tools live inside the "Everyday AI" hub, not the main grid.
+const HUB_ONLY_PATHS = new Set(LIFESTYLE_APP_PATHS);
 import AppPreviewModal from "./AppPreviewModal";
 import AppGridItem from "./AppGridItem";
 
@@ -77,7 +80,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
   }, [refreshKey]);
 
   // TTT Builder lives in the Featured row, not the grid.
-  const allApps = [...APPS, ...communityApps].filter((a) => a.name !== "TTT Builder");
+  const allApps = [...APPS, ...communityApps].filter((a) => a.name !== "TTT Builder" && !HUB_ONLY_PATHS.has(a.path));
 
   const isKaspaApp = (app) => {
     const text = `${app.name} ${app.desc} ${app.path || ""}`.toLowerCase();
@@ -170,7 +173,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
           return (
             <Link
               key={app.name + app.path + i}
-              to={`/AppDocs/${app.path}`}
+              to={app.path === "LifestyleHub" ? "/LifestyleHub" : `/AppDocs/${app.path}`}
               className="block w-full"
             >
               {inner}
