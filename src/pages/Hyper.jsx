@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Download, Film, Wand2, Sparkles, Copy, Check } from 'lucide-react';
+import BackToStore from '@/components/BackToStore';
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -95,6 +96,7 @@ Return JSON with: reply (one warm sentence confirming), videoPrompt (the prompt)
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      <BackToStore />
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-black/80 backdrop-blur-xl">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">

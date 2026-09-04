@@ -419,7 +419,7 @@ const AuthenticatedApp = () => {
       <Route path="/NameLab" element={<NameLabPage />} />
       <Route path="/MsgCraft" element={<MsgCraftPage />} />
       <Route path="/ColorPull" element={<ColorPullPage />} />
-      <Route path="/Hyper" element={<HyperPage />} />
+      <Route path="/Hyper" element={<AdminRoute><HyperPage /></AdminRoute>} />
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />
