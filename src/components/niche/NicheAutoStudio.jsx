@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
@@ -11,6 +11,20 @@ import { factCheckExplainer } from './explainerFactCheck';
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
 const fmtElapsed = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, '0')}`;
+
+// Detect a file's type from its mime + extension so the attachment chip can show
+// the right logo (PDF, CSV, JSON, MD, TXT, image…) instead of a generic icon.
+const fileKind = (file) => {
+  const name = (file?.name || '').toLowerCase();
+  const type = file?.type || '';
+  if (type.startsWith('image/')) return { label: 'IMG', Icon: FileImage, color: 'text-sky-300' };
+  if (type === 'application/pdf' || name.endsWith('.pdf')) return { label: 'PDF', Icon: FileText, color: 'text-red-300' };
+  if (name.endsWith('.csv') || type === 'text/csv') return { label: 'CSV', Icon: FileSpreadsheet, color: 'text-emerald-300' };
+  if (name.endsWith('.json') || type === 'application/json') return { label: 'JSON', Icon: FileJson, color: 'text-amber-300' };
+  if (name.endsWith('.md') || type === 'text/markdown') return { label: 'MD', Icon: FileCode, color: 'text-violet-300' };
+  if (name.endsWith('.txt') || type.startsWith('text/')) return { label: 'TXT', Icon: FileText, color: 'text-white/60' };
+  return { label: 'FILE', Icon: File, color: 'text-white/60' };
+};
 
 const WorkDots = () => (
   <span className="inline-flex gap-1 ml-1 align-middle">
@@ -496,13 +510,16 @@ Decide what to do:
         {/* Attached references preview */}
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 pb-2">
-            {attachments.map((a) => (
+            {attachments.map((a) => {
+              const k = a.previewUrl ? null : fileKind(a.file);
+              return (
               <div key={a.id} className="relative">
                 {a.previewUrl ? (
                   <img src={a.previewUrl} alt="" className="w-14 h-14 rounded-lg object-cover border border-white/15" />
                 ) : (
-                  <div className="w-14 h-14 rounded-lg border border-white/15 bg-white/5 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-white/40" />
+                  <div className="w-14 h-14 rounded-lg border border-white/15 bg-white/5 flex flex-col items-center justify-center gap-0.5" title={a.file?.name}>
+                    <k.Icon className={`w-5 h-5 ${k.color}`} />
+                    <span className={`text-[9px] font-bold tracking-wide ${k.color}`}>{k.label}</span>
                   </div>
                 )}
                 {a.status === 'uploading' && (
@@ -518,7 +535,8 @@ Decide what to do:
                   <X className="w-3 h-3" />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
