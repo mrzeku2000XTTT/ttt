@@ -49,7 +49,7 @@ export default function LifestyleHub() {
           <div>
             <h1 className="text-2xl font-[800] tracking-tight">Everyday AI</h1>
             <p className="text-sm text-zinc-500 mt-1 leading-relaxed">
-              10 AI tools for real life — snap a photo or answer a few questions and get an instant, practical answer.
+              20 AI tools for real life — snap a photo or answer a few questions and get an instant, practical answer.
             </p>
           </div>
         </div>

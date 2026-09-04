@@ -161,6 +161,16 @@ import ReceiptSplitPage from './pages/ReceiptSplit';
 import PackPalPage from './pages/PackPal';
 import GiftGeniusPage from './pages/GiftGenius';
 import LifestyleHubPage from './pages/LifestyleHub';
+import MealPlanPage from './pages/MealPlan';
+import FitForgePage from './pages/FitForge';
+import BudgetCoachPage from './pages/BudgetCoach';
+import PlainSpeakPage from './pages/PlainSpeak';
+import TripPlannerPage from './pages/TripPlanner';
+import InterviewPrepPage from './pages/InterviewPrep';
+import StudyBuddyPage from './pages/StudyBuddy';
+import NameLabPage from './pages/NameLab';
+import MsgCraftPage from './pages/MsgCraft';
+import ColorPullPage from './pages/ColorPull';
 import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
@@ -398,6 +408,16 @@ const AuthenticatedApp = () => {
       <Route path="/PackPal" element={<PackPalPage />} />
       <Route path="/GiftGenius" element={<GiftGeniusPage />} />
       <Route path="/LifestyleHub" element={<LifestyleHubPage />} />
+      <Route path="/MealPlan" element={<MealPlanPage />} />
+      <Route path="/FitForge" element={<FitForgePage />} />
+      <Route path="/BudgetCoach" element={<BudgetCoachPage />} />
+      <Route path="/PlainSpeak" element={<PlainSpeakPage />} />
+      <Route path="/TripPlanner" element={<TripPlannerPage />} />
+      <Route path="/InterviewPrep" element={<InterviewPrepPage />} />
+      <Route path="/StudyBuddy" element={<StudyBuddyPage />} />
+      <Route path="/NameLab" element={<NameLabPage />} />
+      <Route path="/MsgCraft" element={<MsgCraftPage />} />
+      <Route path="/ColorPull" element={<ColorPullPage />} />
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />

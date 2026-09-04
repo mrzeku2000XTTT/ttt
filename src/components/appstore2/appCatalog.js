@@ -4,7 +4,17 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
-  { name: "Everyday AI", path: "LifestyleHub", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e68fc7d6f_generated_image.png", desc: "10 AI life tools in one hub · cars, pets, receipts, trips, gifts, outfits, plants, rooms, food & resumes" },
+  { name: "MealPlan", path: "MealPlan", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0d385409d_generated_image.png", desc: "Goal + diet · a week of dinners with calories & one grocery list" },
+  { name: "FitForge", path: "FitForge", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f5fc8763a_generated_image.png", desc: "Goal + equipment · a weekly workout plan built for your days" },
+  { name: "BudgetCoach", path: "BudgetCoach", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/37aec0b29_generated_image.png", desc: "Paste income & expenses · an honest budget plan with smart cuts" },
+  { name: "PlainSpeak", path: "PlainSpeak", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/38f59e3f7_generated_image.png", desc: "Paste dense text · plain-English summary, key points & red flags" },
+  { name: "TripPlanner", path: "TripPlanner", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/113f18b6a_generated_image.png", desc: "City + days · a day-by-day itinerary matched to your pace" },
+  { name: "InterviewPrep", path: "InterviewPrep", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/486efa748_generated_image.png", desc: "Role + company · likely questions, answer guides & what to ask back" },
+  { name: "StudyBuddy", path: "StudyBuddy", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e24b89eff_generated_image.png", desc: "Any topic · study outline, flashcards & a quick self-quiz" },
+  { name: "NameLab", path: "NameLab", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/189b37fab_generated_image.png", desc: "Describe your thing · name + tagline ideas that fit the vibe" },
+  { name: "MsgCraft", path: "MsgCraft", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ef1cad7cc_generated_image.png", desc: "Say the gist · get the message written in 3 ready-to-send tones" },
+  { name: "ColorPull", path: "ColorPull", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/7d3d0590d_generated_image.png", desc: "Any photo · its color palette with hex codes & pairing ideas" },
+  { name: "Everyday AI", path: "LifestyleHub", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e68fc7d6f_generated_image.png", desc: "20 AI life tools in one hub · cars, pets, receipts, trips, gifts, food, fitness, budgets, study, interviews & more" },
   { name: "AutoDoc", path: "AutoDoc", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fe796cdc2_generated_image.png", desc: "Car dashboard or damage photo · diagnosis, urgency & rough repair cost" },
   { name: "PetVet", path: "PetVet", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/69222f34d_generated_image.png", desc: "Pet photo + symptoms · calm triage, home care & vet questions" },
   { name: "ReceiptSplit", path: "ReceiptSplit", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c2ce1aceb_generated_image.png", desc: "Receipt photo · itemized read + per-person split with tip" },
@@ -184,6 +194,16 @@ export const APPS = [
 // (LifestyleHub) — they stay in APPS for search & docs but are hidden from
 // the main store grid, which shows the single hub tile instead.
 export const LIFESTYLE_APP_PATHS = [
+  "MealPlan",
+  "FitForge",
+  "BudgetCoach",
+  "PlainSpeak",
+  "TripPlanner",
+  "InterviewPrep",
+  "StudyBuddy",
+  "NameLab",
+  "MsgCraft",
+  "ColorPull",
   "AutoDoc",
   "PetVet",
   "ReceiptSplit",
