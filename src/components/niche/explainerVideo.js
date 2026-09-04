@@ -43,6 +43,17 @@ export const ANIMATION_STYLES = [
       `Chalkboard illustration showing: ${action}. One simple character sketched in white chalk mid-action on a dark blackboard background, rough chalk strokes, faint chalk dust texture, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   },
   {
+    // Vox-style documentary — taught from the Mark Ai Guy "Vox Style Animation" workflow.
+    // Archival cinematic photographic look, consistent across every scene, for documentary
+    // topics: history, wars, famous people, true stories, business mysteries, world events.
+    id: 'vox',
+    name: 'Vox Documentary',
+    bg: '#0e0d0b',
+    ink: '#f2ece0',
+    prompt: (action) =>
+      `Vox-style documentary illustration, archival cinematic aesthetic: ${action}. Realistic semi-photographic documentary scene like a high-quality explainer-documentary still, muted cinematic color grading, dramatic natural lighting, historical archival mood, rich texture and film depth, subtle film grain, wide 16:9 documentary composition, consistent documentary visual style across every scene. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
     id: 'real-ui',
     name: 'Real UI Clone',
     bg: '#0a0a0a',

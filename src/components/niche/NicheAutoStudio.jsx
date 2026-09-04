@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
 import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
@@ -47,14 +47,15 @@ export default function NicheAutoStudio({ niches }) {
   const [busy, setBusy] = useState(false);
   const [learnedStyles, setLearnedStyles] = useState([]);
   const [showLearner, setShowLearner] = useState(false);
+  const [voxMode, setVoxMode] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
     const names = (niches || []).map((n) => n.niche_name);
     const intro = names.length
-      ? `Your saved niches: ${names.slice(0, 6).join(' · ')}. Tap one below, paste any niche, or just talk to me.`
-      : `Paste your niche and I'll take it from there — or just talk to me.`;
+      ? `Your saved niches: ${names.slice(0, 6).join(' · ')}. Tap one below to drop it in the box, then add any details — or paste a topic, an X link, or a prompt.`
+      : `Paste a topic, an X link, or a prompt and I'll take it from there — or just talk to me.`;
     // refresh survival — restore the chat if there is one
     try {
       const saved = (JSON.parse(localStorage.getItem(CHAT_KEY) || '[]') || []).filter((m) => m && m.role && m.text);
@@ -67,7 +68,7 @@ export default function NicheAutoStudio({ niches }) {
       {
         id: uid(),
         role: 'ai',
-        text: `Hey — I'm your NICHE auto-pilot. Give me a topic — I'll ask you to pick the animation style, how many scenes you want, and whether you want it black & white or colored. Then I research live, write the script, draw every scene, narrate, caption and stitch the MP4 — ready to deploy to YouTube.\n\n${intro}`
+        text: `Hey — I'm your NICHE auto-pilot. Give me a topic, an X link, or a prompt — I'll ask you to pick the animation style, how many scenes you want, and whether you want it black & white or colored. Then I research live, write the script, draw every scene, narrate, caption and stitch the MP4 — ready to deploy to YouTube.\n\n${intro}`
       }
     ]);
   }, []);
@@ -144,16 +145,18 @@ User's new message: """${text}"""
 
 Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (${s.name})`).join(', ')}. Default style: neutral.
 "real-ui" (Real UI Clone) is special: use it when the topic is about a REAL app (e.g. "Kaspium wallet", "Cash App", "Binance", "Kaspa wallet", "Kaspa node dashboard"). It researches the app's actual UI from the web and clones it faithfully — premium modern UI, not stick-man. When you pick "real-ui" you MUST also set the app field to the app's name.
+"vox" (Vox Documentary) is the documentary style — use it for documentary topics: history, wars, famous people, true stories, business mysteries, major world events, or anything that reads like a mini-documentary. It produces an archival cinematic photographic look with muted color grading, consistent across every scene. Match casual names ("documentary", "vox style", "explainer documentary") to "vox".
 ${learnedStyles.length ? `Styles the user personally taught you from their own videos or images (style ids): ${learnedStyles.map((s) => `${s.id} ("${s.name}")`).join(', ')}. If they ask to use one of these, use its id.` : ''}
+${voxMode ? `MOTION V1 IS ON: the user selected the Vox documentary style. Always use style "vox" — do NOT ask about the animation style, and skip style from the things you ask for. You may still ask about scene_count and color_mode if unknown (default color_mode "color" for vox, 10 scenes).` : ''}
 
 First, carefully extract the user's intent from their message and the conversation so far:
 - topic: what the video is about
-- style: a style id from the lists above — match casual names ("stick man"→neutral, "comic"→comic); if they name a style you don't have, offer the closest one from the list instead of using it
+- style: a style id from the lists above — match casual names ("stick man"→neutral, "comic"→comic, "documentary"/"vox"→vox); if they name a style you don't have, offer the closest one from the list instead of using it
 - scene_count: any number 6–15 they mention ("7 scenes", "10 steps")
 - color_mode: "color" if they want a colored animation, "mono" for black & white
 
 Decide what to do:
-- If the user wants a video built (asks for an explainer, gives a topic or niche, says "make a video on X") but style, scene_count or color_mode are still unknown from this message or the conversation, return kind "ask". Reply with one short warm message asking ONLY for what is missing: which animation style they want (list the 5 style names${learnedStyles.length ? ' plus their learned styles: ' + learnedStyles.map((s) => s.name).join(', ') : ''}), how many scenes they'd like (6 to 15), and whether they want black & white or colored animation.
+- If the user wants a video built (asks for an explainer, gives a topic or niche, says "make a video on X") but style, scene_count or color_mode are still unknown from this message or the conversation, return kind "ask". Reply with one short warm message asking ONLY for what is missing: which animation style they want (list the style names: ${ANIMATION_STYLES.filter((s) => s.id !== 'real-ui').map((s) => s.name).join(', ')}${learnedStyles.length ? ' plus their learned styles: ' + learnedStyles.map((s) => s.name).join(', ') : ''}), how many scenes they'd like (6 to 15), and whether they want black & white or colored animation.
 - If everything is known (or they told you to decide — then style "neutral", 8 scenes, color_mode "mono"), return kind "video". Research the topic live for accuracy and fresh, specific angles. Then produce:
   - style: the chosen style id from the list above (default "neutral")
   - scene_count: the number of scenes they chose
@@ -359,24 +362,43 @@ Decide what to do:
           </div>
         ))}
 
-        {!busy && niches?.length > 0 && !messages.some((m) => m.role === 'user') && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {niches.slice(0, 4).map((n) => (
+      </div>
+
+      {/* Input stays pinned — it never scrolls away */}
+      <div className="pt-3 pb-1 border-t border-white/10 mt-2">
+        {niches?.length > 0 && (
+          <div className="flex flex-wrap gap-2 pb-2 items-center">
+            <span className="text-[10px] uppercase tracking-wider text-white/30 mr-1">Recent</span>
+            {niches.slice(0, 6).map((n) => (
               <button
                 key={n.id}
-                onClick={() => send(`Make an explainer video for my niche: ${n.niche_name}`)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-white/15 text-white/70 hover:text-white hover:border-white/40 text-xs font-medium transition-all"
+                onClick={() => {
+                  setInput(`Make an explainer video for my niche: ${n.niche_name}`);
+                  inputRef.current?.focus();
+                }}
+                disabled={busy}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 text-white/70 hover:text-white hover:border-white/40 text-xs font-medium transition-all disabled:opacity-40"
               >
                 <Compass className="w-3.5 h-3.5" /> {n.niche_name}
               </button>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Input stays pinned — it never scrolls away */}
-      <div className="pt-3 pb-1 border-t border-white/10 mt-2">
         <div className="flex gap-2">
+          <button
+            onClick={() => setVoxMode((v) => !v)}
+            disabled={busy}
+            title="Motion V1 — Vox documentary style"
+            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
+              voxMode
+                ? 'border-amber-400/60 bg-amber-400/15 text-amber-300'
+                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+            aria-label="Motion V1 — Vox style"
+          >
+            <Clapperboard className="w-4 h-4" />
+            <span className="text-xs font-semibold hidden sm:inline">Motion V1</span>
+          </button>
           <button
             onClick={() => setShowLearner(true)}
             disabled={busy}
@@ -396,7 +418,7 @@ Decide what to do:
                 send(input);
               }
             }}
-            placeholder="Paste your niche or tell me what to build…"
+            placeholder={voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or tell me what to build…'}
             disabled={busy}
             className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
