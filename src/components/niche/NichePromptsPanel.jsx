@@ -35,13 +35,12 @@ function GoogleDocsLogo({ className }) {
   );
 }
 
-export default function NichePromptsPanel() {
+export default function NichePromptsPanel({ onUse }) {
   const [custom, setCustom] = useState([]);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [copied, setCopied] = useState(null);
 
   useEffect(() => {
     try {
@@ -53,14 +52,6 @@ export default function NichePromptsPanel() {
     setCustom(next);
     try {
       localStorage.setItem(CUSTOM_KEY, JSON.stringify(next));
-    } catch {}
-  };
-
-  const copy = async (p) => {
-    try {
-      await navigator.clipboard.writeText(p || '');
-      setCopied(p);
-      setTimeout(() => setCopied(null), 2000);
     } catch {}
   };
 
@@ -84,7 +75,6 @@ export default function NichePromptsPanel() {
   return (
     <div className="flex flex-col gap-1.5 pb-1">
       {all.map((p) => {
-        const isCopied = copied === (p.prompt || p.docUrl);
         const copyVal = p.prompt || p.docUrl || '';
         return (
           <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl border border-white/10 bg-white/[0.02]">
@@ -105,16 +95,12 @@ export default function NichePromptsPanel() {
               {p.blurb && <p className="text-[10px] text-white/40 truncate leading-tight">{p.blurb}</p>}
             </div>
             <button
-              onClick={() => copy(copyVal)}
+              onClick={() => onUse?.(copyVal)}
               disabled={!copyVal}
-              title="Use in my niche — copy to clipboard"
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-semibold transition-all disabled:opacity-40 ${
-                isCopied
-                  ? 'border-emerald-400/60 bg-emerald-400/15 text-emerald-300'
-                  : 'border-white/15 text-white/70 hover:text-white hover:border-white/40'
-              }`}
+              title="Use in my niche — load into the chat"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:text-white hover:border-white/40 text-[11px] font-semibold transition-all disabled:opacity-40"
             >
-              {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              <Copy className="w-3 h-3" />
               Use
             </button>
             {custom.some((c) => c.id === p.id) && (

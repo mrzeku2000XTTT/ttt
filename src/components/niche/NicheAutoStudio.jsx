@@ -58,8 +58,10 @@ export default function NicheAutoStudio({ niches }) {
   const [m1Copied, setM1Copied] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
   const [attachments, setAttachments] = useState([]);
+  const [masterMode, setMasterMode] = useState(false);
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
+  const masterPromptRef = useRef(null);
   const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
   const inputRef = useRef(null);
@@ -209,6 +211,23 @@ export default function NicheAutoStudio({ niches }) {
         .slice(-6)
         .map((m) => `${m.role === 'user' ? 'User' : 'You'}: ${m.text}`)
         .join('\n');
+
+      // Master-prompt mode: the user loaded a master engine (Vox M1, Stickman,
+      // or their own). The AI adopts it and walks its states instead of building
+      // a TTT video.
+      const activating = !masterMode && !!masterPromptRef.current && userText === masterPromptRef.current;
+      if (activating || masterMode) {
+        if (activating) setMasterMode(true);
+        setWork('Reading the master prompt');
+        const masterRes = await base44.integrations.Core.InvokeLLM({
+          prompt: `${masterPromptRef.current}\n\n---\n\nConversation so far:\n${convo}\n\nUser's latest message: """${activating ? '(Engine activated — begin STATE 1 now. Ask the first question exactly as specified, nothing else.)' : userText}"""\n\nFollow this engine's states in order. Respond ONLY with the current state's deliverable — no preamble, no commentary about your process. Stop after each state and wait for the user's reply.`,
+          add_context_from_internet: false
+        });
+        if (token.cancelled) { audioContext.close().catch(() => {}); return; }
+        audioContext.close().catch(() => {});
+        finish({ text: typeof masterRes === 'string' ? masterRes : (masterRes?.reply || JSON.stringify(masterRes)) });
+        return;
+      }
 
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the NICHE Studio auto-pilot — a creative content director that builds animated explainer videos for creators, inside a chat.
@@ -443,7 +462,7 @@ Decide what to do:
                       ))}
                     </div>
                   )}
-                  <p className="whitespace-pre-line">{m.text}</p>
+                  <p className={`whitespace-pre-line ${m.text.length > 300 ? 'max-h-40 overflow-y-auto' : ''}`}>{m.text}</p>
                   {m.video && (
                     <div className="mt-3 space-y-3">
                       {m.video.url ? (
@@ -607,7 +626,20 @@ Decide what to do:
                 className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
               />
             )}
-            {showPrompts && <NichePromptsPanel />}
+            {showPrompts && <NichePromptsPanel onUse={(text) => { masterPromptRef.current = text; setInput(text); inputRef.current?.focus(); }} />}
+          </div>
+        )}
+
+        {/* Master-engine active banner */}
+        {masterMode && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-1 rounded-full bg-violet-400/15 border border-violet-400/40 text-violet-300 text-[11px] font-semibold">📐 Engine active</span>
+            <button
+              onClick={() => { setMasterMode(false); masterPromptRef.current = null; }}
+              className="text-[11px] text-white/50 hover:text-white transition-colors"
+            >
+              Exit
+            </button>
           </div>
         )}
 
