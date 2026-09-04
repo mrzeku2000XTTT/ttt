@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Plus } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
-import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, ttsText } from './explainerVideo';
+import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
@@ -237,7 +237,7 @@ Decide what to do:
         }
         for (let i = 0; i < n; i++) {
           setWork(`Recording narration · scene ${i + 1}/${n}`);
-          const sp = await base44.integrations.Core.GenerateSpeech({ text: ttsText(scenes[i].voiceover), voice: 'storm' });
+          const sp = await base44.integrations.Core.GenerateSpeech({ text: scenes[i].voiceover, voice: 'storm' });
           audios.push(sp.url);
         }
         setWork('Stitching your video');
@@ -300,27 +300,9 @@ Decide what to do:
     a.click();
   };
 
-  const newChat = () => {
-    if (busy) return;
-    try { localStorage.removeItem(CHAT_KEY); } catch {}
-    const names = (niches || []).map((n) => n.niche_name);
-    const intro = names.length
-      ? `Your saved niches: ${names.slice(0, 6).join(' · ')}. Tap one below, paste any niche, or just talk to me.`
-      : `Paste your niche and I'll take it from there — or just talk to me.`;
-    setMessages([
-      {
-        id: uid(),
-        role: 'ai',
-        text: `Hey — I'm your NICHE auto-pilot. Give me a topic — I'll ask you to pick the animation style, how many scenes you want, and whether you want it black & white or colored. Then I research live, write the script, draw every scene, narrate, caption and stitch the MP4 — ready to deploy to YouTube.\n\n${intro}`
-      }
-    ]);
-    setInput('');
-    inputRef.current?.focus();
-  };
-
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 h-full flex flex-col">
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1 scrollbar-hide">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 flex flex-col" style={{ height: 'calc(100vh - 190px)' }}>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide">
         {messages.map((m) => (
           <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
             <div
@@ -384,17 +366,8 @@ Decide what to do:
       </div>
 
       {/* Input stays pinned — it never scrolls away */}
-      <div className="pt-3 pb-1 border-t border-white/10 mt-2 shrink-0">
+      <div className="pt-3 pb-1 border-t border-white/10 mt-2">
         <div className="flex gap-2">
-          <button
-            onClick={newChat}
-            disabled={busy}
-            title="New chat"
-            className="px-3 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-white/40 transition-all disabled:opacity-40"
-            aria-label="New chat"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
           <button
             onClick={() => setShowLearner(true)}
             disabled={busy}
