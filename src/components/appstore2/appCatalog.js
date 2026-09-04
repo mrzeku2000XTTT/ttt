@@ -4,6 +4,11 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "PlatePal", path: "PlatePal", cat: "Lifestyle", logo: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop", desc: "Snap your fridge · get recipes you can cook tonight + a shopping list" },
+  { name: "OutfitAI", path: "OutfitAI", cat: "Lifestyle", logo: "https://images.unsplash.com/photo-1489987707026-1ab1c0adcd8f?w=200&h=200&fit=crop", desc: "Photograph your closet · get a daily outfit picked for the occasion" },
+  { name: "PlantDoc", path: "PlantDoc", cat: "Lifestyle", logo: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=200&h=200&fit=crop", desc: "Photo of a sick plant · diagnosis, treatment & care plan" },
+  { name: "RoomRater", path: "RoomRater", cat: "Lifestyle", logo: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop", desc: "Photo of your room · honest roast + 5 redesign fixes" },
+  { name: "ResumeRevive", path: "ResumeRevive", cat: "Productivity", logo: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=200&h=200&fit=crop", desc: "Old resume + job link · tailored resume, cover letter & keywords" },
   { name: "NICHE", path: "Niche", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9b60f0292_generated_image.png", desc: "Instant niche finder · know what you're good at & exactly what to post" },
   { name: "NICHE Studio", path: "NicheStudio", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9b60f0292_generated_image.png", desc: "Your saved niches · generate thumbnails & video scripts, deploy to YouTube" },
   { name: "Narrate", path: "Narrate", cat: "Education", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/cd9921ac6_generated_image.png", desc: "Scan or search any book · listen with live word-by-word captions" },

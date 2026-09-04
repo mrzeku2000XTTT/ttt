@@ -150,6 +150,11 @@ import AWAPage from './pages/AWA';
 import ProductivityPage from './pages/Productivity';
 import NichePage from './pages/Niche';
 import NicheStudioPage from './pages/NicheStudio';
+import PlatePalPage from './pages/PlatePal';
+import OutfitAIPage from './pages/OutfitAI';
+import PlantDocPage from './pages/PlantDoc';
+import RoomRaterPage from './pages/RoomRater';
+import ResumeRevivePage from './pages/ResumeRevive';
 import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
@@ -376,6 +381,11 @@ const AuthenticatedApp = () => {
       <Route path="/Productivity" element={<ProductivityPage />} />
       <Route path="/Niche" element={<NichePage />} />
       <Route path="/NicheStudio" element={<NicheStudioPage />} />
+      <Route path="/PlatePal" element={<PlatePalPage />} />
+      <Route path="/OutfitAI" element={<OutfitAIPage />} />
+      <Route path="/PlantDoc" element={<PlantDocPage />} />
+      <Route path="/RoomRater" element={<RoomRaterPage />} />
+      <Route path="/ResumeRevive" element={<ResumeRevivePage />} />
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />
