@@ -200,7 +200,7 @@ export function createAudioContext() {
   return ac;
 }
 
-export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], onProgress, audioContext }) {
+export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext }) {
   const style = styleById(styleId);
   const W = 1280;
   const H = 720;
@@ -227,6 +227,19 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     })
   );
 
+  // Optional background soundtrack — fetch + decode a royalty-free audio URL
+  // (e.g. a Pixabay download link) to mix under the narration. Failures (CORS,
+  // bad URL) are swallowed so the video still renders without music.
+  let musicBuf = null;
+  if (musicUrl) {
+    try {
+      const marr = await (await fetch(musicUrl)).arrayBuffer();
+      musicBuf = await new Promise((resolve, reject) => ac.decodeAudioData(marr, resolve, reject));
+    } catch {
+      musicBuf = null;
+    }
+  }
+
   // Mix every narration line into ONE continuous track offline, with a short breath
   // between scenes. A single source can't drift or overlap the way many scheduled
   // sources can, and it gives us the exact scene boundaries for the visuals.
@@ -248,6 +261,17 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     s.connect(offline.destination);
     s.start(seg.at);
   });
+  if (musicBuf) {
+    const mg = offline.createGain();
+    mg.gain.value = musicVolume;
+    const ms = offline.createBufferSource();
+    ms.buffer = musicBuf;
+    ms.loop = true;
+    ms.connect(mg);
+    mg.connect(offline.destination);
+    ms.start(0);
+    ms.stop(totalDur);
+  }
   const mixed = await offline.startRendering();
 
   // Scene windows: each image stays up for its own line plus the breath after it

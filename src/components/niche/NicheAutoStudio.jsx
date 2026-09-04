@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
 import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
@@ -49,6 +49,8 @@ export default function NicheAutoStudio({ niches }) {
   const [showLearner, setShowLearner] = useState(false);
   const [voxMode, setVoxMode] = useState(false);
   const [captionMode, setCaptionMode] = useState('summary'); // 'summary' = short label, 'tts' = real narration
+  const [soundtrack, setSoundtrack] = useState(false);
+  const [musicUrl, setMusicUrl] = useState('');
   const scrollRef = useRef(null);
   const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
@@ -273,6 +275,7 @@ Decide what to do:
           captions: scenes.map((s) => (captionMode === 'tts' ? (s.voiceover || s.caption || '') : (s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
           style: styleId,
           cameras: scenes.map((s) => s.camera),
+          musicUrl: soundtrack ? musicUrl.trim() : '',
           onProgress: setWork,
           audioContext
         });
@@ -444,6 +447,20 @@ Decide what to do:
             <span className="text-xs font-semibold hidden sm:inline">{captionMode === 'tts' ? 'Real TTS' : 'Summary'}</span>
           </button>
           <button
+            onClick={() => setSoundtrack((s) => !s)}
+            disabled={busy}
+            title="Background soundtrack — paste a royalty-free audio URL (e.g. a Pixabay download link)"
+            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
+              soundtrack
+                ? 'border-emerald-400/60 bg-emerald-400/15 text-emerald-300'
+                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+            aria-label="Soundtrack"
+          >
+            <Music className="w-4 h-4" />
+            <span className="text-xs font-semibold hidden sm:inline">Music</span>
+          </button>
+          <button
             onClick={() => setShowLearner(true)}
             disabled={busy}
             title="Teach me a style from a video or images"
@@ -480,6 +497,15 @@ Decide what to do:
             {busy ? <Pause className="w-5 h-5" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
+        {soundtrack && (
+          <input
+            value={musicUrl}
+            onChange={(e) => setMusicUrl(e.target.value)}
+            disabled={busy}
+            placeholder="Paste a direct .mp3/.wav URL (royalty-free, e.g. a Pixabay download link)"
+            className="w-full mt-2 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
+          />
+        )}
       </div>
 
       {showLearner && (

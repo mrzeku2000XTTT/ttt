@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PenTool, Loader2, Mic, Download, ShieldCheck, Captions } from 'lucide-react';
+import { PenTool, Loader2, Mic, Download, ShieldCheck, Captions, Music } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
@@ -21,6 +21,8 @@ export default function NicheExplainerLab({ niche }) {
   const [showLearner, setShowLearner] = useState(false);
   const [colorMode, setColorMode] = useState('mono'); // black & white by default, colored optional
   const [captionMode, setCaptionMode] = useState('summary'); // 'summary' = short label, 'tts' = real narration
+  const [soundtrack, setSoundtrack] = useState(false);
+  const [musicUrl, setMusicUrl] = useState('');
   const [appName, setAppName] = useState(''); // for the "Real UI Clone" style
   const [uiResearch, setUiResearch] = useState(null); // cached {app, description}
   const [elapsed, setElapsed] = useState(0); // live elapsed on the working status
@@ -169,6 +171,7 @@ Narration must total about 60–120 seconds when spoken.`,
         audios,
         captions: scenes.map((s) => (captionMode === 'tts' ? (s.voiceover || s.caption || '') : (s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
         style: styleId,
+        musicUrl: soundtrack ? musicUrl.trim() : '',
         onProgress: setBusy,
         audioContext
       });
@@ -277,6 +280,20 @@ Narration must total about 60–120 seconds when spoken.`,
           <Captions className="w-3.5 h-3.5" />
           {captionMode === 'tts' ? 'Real TTS' : 'Summary'}
         </button>
+        <button
+          onClick={() => setSoundtrack((s) => !s)}
+          disabled={!!busy}
+          title="Background soundtrack — paste a royalty-free audio URL (e.g. a Pixabay download link)"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border disabled:opacity-50 ${
+            soundtrack
+              ? 'bg-emerald-400/15 text-emerald-300 border-emerald-400/60'
+              : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+          }`}
+          aria-label="Soundtrack"
+        >
+          <Music className="w-3.5 h-3.5" />
+          Music
+        </button>
         <select
           value={sceneCount}
           onChange={(e) => setSceneCount(Number(e.target.value))}
@@ -296,6 +313,15 @@ Narration must total about 60–120 seconds when spoken.`,
           value={appName}
           onChange={(e) => setAppName(e.target.value)}
           placeholder="App name to clone — e.g. Kaspium wallet, Cash App, Binance"
+          className="w-full mb-4 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+        />
+      )}
+
+      {soundtrack && (
+        <input
+          value={musicUrl}
+          onChange={(e) => setMusicUrl(e.target.value)}
+          placeholder="Paste a direct .mp3/.wav URL (royalty-free, e.g. a Pixabay download link)"
           className="w-full mb-4 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
         />
       )}
