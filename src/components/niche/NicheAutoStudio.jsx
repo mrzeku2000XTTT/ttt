@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
 import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
@@ -50,6 +50,8 @@ export default function NicheAutoStudio({ niches }) {
   const [voxMode, setVoxMode] = useState(false);
   const [captionMode, setCaptionMode] = useState('summary'); // 'summary' = short label, 'tts' = real narration
   const scrollRef = useRef(null);
+  const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
+  const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -120,6 +122,9 @@ export default function NicheAutoStudio({ niches }) {
     // must be created synchronously inside the tap — iOS blocks audio otherwise
     const audioContext = createAudioContext();
     const workId = uid();
+    const token = { cancelled: false };
+    buildRef.current = token;
+    workIdRef.current = workId;
     const history = [...messages];
     setMessages((m) => [
       ...m,
@@ -156,9 +161,12 @@ First, carefully extract the user's intent from their message and the conversati
 - scene_count: any number 6–15 they mention ("7 scenes", "10 steps")
 - color_mode: "color" if they want a colored animation, "mono" for black & white
 
+Read the user's intent carefully from their message AND the conversation so far. Decide for yourself whether you have enough to build a great customized video — do not block on style, scene count or color; those are details you can default. The only thing you truly need is a clear topic or angle.
+
 Decide what to do:
-- If the user wants a video built (asks for an explainer, gives a topic or niche, says "make a video on X") but style, scene_count or color_mode are still unknown from this message or the conversation, return kind "ask". Reply with one short warm message asking ONLY for what is missing: which animation style they want (list the style names: ${ANIMATION_STYLES.filter((s) => s.id !== 'real-ui').map((s) => s.name).join(', ')}${learnedStyles.length ? ' plus their learned styles: ' + learnedStyles.map((s) => s.name).join(', ') : ''}), how many scenes they'd like (6 to 15), and whether they want black & white or colored animation.
-- If everything is known (or they told you to decide — then style "neutral", 8 scenes, color_mode "mono"), return kind "video". Research the topic live for accuracy and fresh, specific angles. Then produce:
+- kind "chat": the user is just talking, asking a question, or exploring ideas — NOT asking for a video right now. Reply like a top-shelf niche strategist: sharp, creative, specific to their niche, never generic. Do NOT build a video.
+- kind "ask": the user wants a video but the topic or angle is genuinely too thin or ambiguous to make a good one (e.g. just "make a video" with no subject). Ask ONE concise, specific question — two at most — to nail down what they actually want. Never ask a menu of style/scene/color questions unless they explicitly want to choose. Keep it warm and short.
+- kind "video": the user gave a clear enough topic (even roughly), OR they are iterating on a video already discussed in this conversation (e.g. "make it shorter", "add a scene about Y", "change the ending", "do it in color", "redo it as a documentary"). You decide the rest — default style "neutral", 8 scenes, color_mode "mono" (if Motion V1 is on, style "vox", 10 scenes, color_mode "color"); honor any style/scene/color they did specify. For iterations, carry forward the previous topic and fold the requested change into a fresh full script. Research the topic live for accuracy and fresh, specific angles. Then produce:
   - style: the chosen style id from the list above (default "neutral")
   - scene_count: the number of scenes they chose
   - color_mode: "mono" or "color"
@@ -204,6 +212,8 @@ Decide what to do:
         }
       });
 
+      if (token.cancelled) { audioContext.close().catch(() => {}); return; }
+
       if (res.kind === 'video' && res.video?.scenes?.length) {
         const v = res.video;
         const learned = learnedStyles.find((s) => s.id === v.style);
@@ -211,6 +221,7 @@ Decide what to do:
         setWork('Fact-checking with live sources');
         const checked = await factCheckExplainer({ topic: v.title, title: v.title, scenes: v.scenes.slice(0, 15) });
         const scenes = checked.scenes.slice(0, 15);
+        if (token.cancelled) { audioContext.close().catch(() => {}); return; }
         const n = scenes.length;
         // keep them company while we draw, narrate and stitch
         base44.integrations.Core.InvokeLLM({
@@ -254,6 +265,7 @@ Decide what to do:
             )
           )
         ]);
+        if (token.cancelled) { audioContext.close().catch(() => {}); return; }
         setWork('Stitching your video');
         const blob = await compileExplainerVideo({
           images,
@@ -308,6 +320,19 @@ Decide what to do:
       setBusy(false);
       inputRef.current?.focus();
     }
+  };
+
+  // Pause the in-flight build so the user can iterate: cancel its token, settle the
+  // working bubble, and re-enable the input. The discarded work resolves later but
+  // its result is dropped at the next checkpoint.
+  const pauseBuild = () => {
+    if (buildRef.current) buildRef.current.cancelled = true;
+    buildRef.current = null;
+    const wid = workIdRef.current;
+    workIdRef.current = null;
+    if (wid) setMessages((m) => m.map((x) => (x.id === wid ? { ...x, working: false, text: `${x.text} — paused. Tell me what to change.` } : x)));
+    setBusy(false);
+    inputRef.current?.focus();
   };
 
   const download = (m) => {
@@ -442,12 +467,17 @@ Decide what to do:
             className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
           <button
-            onClick={() => send(input)}
-            disabled={busy || !input.trim()}
-            className="px-4 rounded-xl bg-white text-black font-bold hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] disabled:opacity-40 transition-all"
-            aria-label="Send"
+            onClick={busy ? pauseBuild : () => send(input)}
+            disabled={!busy && !input.trim()}
+            className={`px-4 rounded-xl font-bold transition-all disabled:opacity-40 ${
+              busy
+                ? 'bg-amber-400/20 border border-amber-400/60 text-amber-300 hover:bg-amber-400/30'
+                : 'bg-white text-black hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]'
+            }`}
+            aria-label={busy ? 'Pause and iterate' : 'Send'}
+            title={busy ? 'Pause and iterate' : 'Send'}
           >
-            {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {busy ? <Pause className="w-5 h-5" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
       </div>
