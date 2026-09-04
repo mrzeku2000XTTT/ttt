@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
+import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
 import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
@@ -54,6 +55,7 @@ export default function NicheAutoStudio({ niches }) {
   const [musicUrl, setMusicUrl] = useState('');
   const [hideRecent, setHideRecent] = useState(false);
   const [m1Copied, setM1Copied] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(false);
   const scrollRef = useRef(null);
   const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
@@ -427,6 +429,7 @@ Decide what to do:
             ))}
           </div>
         )}
+        {showPrompts && <NichePromptsPanel />}
         <div className="flex gap-2">
           <button
             onClick={() => setVoxMode((v) => !v)}
@@ -461,6 +464,20 @@ Decide what to do:
           >
             {m1Copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             <span className="text-xs font-semibold hidden sm:inline">M1</span>
+          </button>
+          <button
+            onClick={() => setShowPrompts((s) => !s)}
+            disabled={busy}
+            title="Prompt library — master prompts to use in your niche"
+            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
+              showPrompts
+                ? 'border-violet-400/60 bg-violet-400/15 text-violet-300'
+                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+            aria-label="Prompts"
+          >
+            <ScrollText className="w-4 h-4" />
+            <span className="text-xs font-semibold hidden sm:inline">Prompts</span>
           </button>
           <button
             onClick={() => setCaptionMode((m) => (m === 'summary' ? 'tts' : 'summary'))}
