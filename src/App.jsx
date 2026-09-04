@@ -155,6 +155,11 @@ import OutfitAIPage from './pages/OutfitAI';
 import PlantDocPage from './pages/PlantDoc';
 import RoomRaterPage from './pages/RoomRater';
 import ResumeRevivePage from './pages/ResumeRevive';
+import AutoDocPage from './pages/AutoDoc';
+import PetVetPage from './pages/PetVet';
+import ReceiptSplitPage from './pages/ReceiptSplit';
+import PackPalPage from './pages/PackPal';
+import GiftGeniusPage from './pages/GiftGenius';
 import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
@@ -386,6 +391,11 @@ const AuthenticatedApp = () => {
       <Route path="/PlantDoc" element={<PlantDocPage />} />
       <Route path="/RoomRater" element={<RoomRaterPage />} />
       <Route path="/ResumeRevive" element={<ResumeRevivePage />} />
+      <Route path="/AutoDoc" element={<AutoDocPage />} />
+      <Route path="/PetVet" element={<PetVetPage />} />
+      <Route path="/ReceiptSplit" element={<ReceiptSplitPage />} />
+      <Route path="/PackPal" element={<PackPalPage />} />
+      <Route path="/GiftGenius" element={<GiftGeniusPage />} />
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />

@@ -4,6 +4,11 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "AutoDoc", path: "AutoDoc", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/fe796cdc2_generated_image.png", desc: "Car dashboard or damage photo · diagnosis, urgency & rough repair cost" },
+  { name: "PetVet", path: "PetVet", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/69222f34d_generated_image.png", desc: "Pet photo + symptoms · calm triage, home care & vet questions" },
+  { name: "ReceiptSplit", path: "ReceiptSplit", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c2ce1aceb_generated_image.png", desc: "Receipt photo · itemized read + per-person split with tip" },
+  { name: "PackPal", path: "PackPal", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/872a7dba0_generated_image.png", desc: "Trip details · smart categorized packing list + don't-forget essentials" },
+  { name: "GiftGenius", path: "GiftGenius", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/50eec4208_generated_image.png", desc: "Describe a person · 5 thoughtful gift ideas with reasons & prices" },
   { name: "PlatePal", path: "PlatePal", cat: "Lifestyle", logo: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop", desc: "Snap your fridge · get recipes you can cook tonight + a shopping list" },
   { name: "OutfitAI", path: "OutfitAI", cat: "Lifestyle", logo: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=200&h=200&fit=crop", desc: "Photograph your closet · get a daily outfit picked for the occasion" },
   { name: "PlantDoc", path: "PlantDoc", cat: "Lifestyle", logo: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=200&h=200&fit=crop", desc: "Photo of a sick plant · diagnosis, treatment & care plan" },
