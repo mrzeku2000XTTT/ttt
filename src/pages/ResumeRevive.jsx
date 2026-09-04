@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { FileText, Loader2, Copy, Check } from "lucide-react";
+import BackToStore from "@/components/BackToStore";
 
 export default function ResumeRevive() {
   const [resume, setResume] = useState("");
@@ -41,6 +42,7 @@ export default function ResumeRevive() {
 
   return (
     <div className="min-h-screen bg-black text-white flex justify-center">
+      <BackToStore />
       <div className="w-full max-w-md px-5 py-8">
         <div className="flex items-center gap-2 mb-8">
           <FileText className="w-6 h-6" />
