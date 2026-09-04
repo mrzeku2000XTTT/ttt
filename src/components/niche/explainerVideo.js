@@ -296,6 +296,14 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   const player = ac.createBufferSource();
   player.buffer = mixed;
   player.connect(dest);
+  // iOS Safari only keeps a Web Audio graph running when it reaches the real output.
+  // A source connected only to a MediaStreamAudioDestinationNode sits idle on phones,
+  // so the recorded file ends up with no audio. Route a silent (0-gain) monitor to the
+  // output so the graph stays live while the MediaStreamDestination captures the audio.
+  const monitor = ac.createGain();
+  monitor.gain.value = 0;
+  player.connect(monitor);
+  monitor.connect(ac.destination);
 
   // Ken Burns camera moves + crossfade transitions bring the stills to life.
   // The AI picks a camera move per scene; if absent, autoCameras() varies them.
