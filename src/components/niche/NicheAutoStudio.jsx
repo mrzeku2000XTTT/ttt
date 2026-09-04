@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
@@ -53,10 +53,13 @@ export default function NicheAutoStudio({ niches }) {
   const [captionMode, setCaptionMode] = useState('summary'); // 'summary' = short label, 'tts' = real narration
   const [soundtrack, setSoundtrack] = useState(false);
   const [musicUrl, setMusicUrl] = useState('');
-  const [hideRecent, setHideRecent] = useState(false);
+  const [showRecentChips, setShowRecentChips] = useState(false);
+  const [showTools, setShowTools] = useState(false);
   const [m1Copied, setM1Copied] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
+  const [attachments, setAttachments] = useState([]);
   const scrollRef = useRef(null);
+  const fileInputRef = useRef(null);
   const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
   const inputRef = useRef(null);
@@ -121,10 +124,68 @@ export default function NicheAutoStudio({ niches }) {
     } catch {}
   }, [messages]);
 
+  // Attach images/files (or paste them) so the AI can ingest them as references,
+  // analyze and fact-check them, and ask focused questions before building.
+  const addFiles = (fileList) => {
+    Array.from(fileList).forEach((file) => {
+      const id = uid();
+      const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+      setAttachments((a) => [...a, { id, file, previewUrl, uploadedUrl: null, status: 'uploading' }]);
+      base44.integrations.Core.UploadFile({ file })
+        .then((up) => setAttachments((a) => a.map((x) => (x.id === id ? { ...x, uploadedUrl: up.file_url, status: 'done' } : x))))
+        .catch(() => setAttachments((a) => a.map((x) => (x.id === id ? { ...x, status: 'error' } : x))));
+    });
+  };
+
+  const removeAttachment = (id) => {
+    setAttachments((a) => {
+      const att = a.find((x) => x.id === id);
+      if (att?.previewUrl) URL.revokeObjectURL(att.previewUrl);
+      return a.filter((x) => x.id !== id);
+    });
+  };
+
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files = [];
+    for (const item of items) {
+      if (item.kind === 'file') {
+        const f = item.getAsFile();
+        if (f) files.push(f);
+      }
+    }
+    if (files.length) {
+      e.preventDefault();
+      addFiles(files);
+    }
+  };
+
   const send = async (raw) => {
-    const text = raw.trim();
-    if (!text || busy) return;
+    const text = (raw ?? input).trim();
+    if (busy) return;
+    let attachmentUrls = [];
+    let attachmentPreviews = [];
+    if (attachments.length) {
+      attachmentUrls = await Promise.all(
+        attachments.map(async (a) => {
+          if (a.uploadedUrl) return a.uploadedUrl;
+          if (a.file) {
+            try {
+              const up = await base44.integrations.Core.UploadFile({ file: a.file });
+              setAttachments((prev) => prev.map((x) => (x.id === a.id ? { ...x, uploadedUrl: up.file_url, status: 'done' } : x)));
+              return up.file_url;
+            } catch { return null; }
+          }
+          return null;
+        })
+      ).then((r) => r.filter(Boolean));
+      attachmentPreviews = attachments.map((a) => a.previewUrl).filter(Boolean);
+    }
+    const userText = text || (attachmentUrls.length ? 'Analyze the attached reference(s) and tell me what you see — fact-check anything claim-like, and ask me one focused question about what I want built.' : '');
+    if (!userText) return;
     setInput('');
+    setAttachments([]);
     setBusy(true);
     // must be created synchronously inside the tap — iOS blocks audio otherwise
     const audioContext = createAudioContext();
@@ -135,7 +196,7 @@ export default function NicheAutoStudio({ niches }) {
     const history = [...messages];
     setMessages((m) => [
       ...m,
-      { id: uid(), role: 'user', text },
+      { id: uid(), role: 'user', text: userText, attachments: attachmentPreviews.length ? attachmentPreviews : undefined },
       { id: workId, role: 'ai', working: true, text: 'Thinking', startedAt: Date.now() }
     ]);
 
@@ -161,6 +222,7 @@ Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (
 "vox" (Vox Documentary) is the documentary style — use it for documentary topics: history, wars, famous people, true stories, business mysteries, major world events, or anything that reads like a mini-documentary. It produces an archival cinematic photographic look with muted color grading, consistent across every scene. Match casual names ("documentary", "vox style", "explainer documentary") to "vox".
 ${learnedStyles.length ? `Styles the user personally taught you from their own videos or images (style ids): ${learnedStyles.map((s) => `${s.id} ("${s.name}")`).join(', ')}. If they ask to use one of these, use its id.` : ''}
 ${voxMode ? `MOTION V1 IS ON: the user selected the Vox documentary style. Always use style "vox" — do NOT ask about the animation style, and skip style from the things you ask for. You may still ask about scene_count and color_mode if unknown (default color_mode "color" for vox, 10 scenes).` : ''}
+${attachmentUrls.length ? `The user attached ${attachmentUrls.length} reference file(s) — they are provided as file_urls (images and/or documents). Look at them carefully and use them as context for the video or your answer. Analyze and fact-check any claim-like content in them against live sources. If, after looking, the user's intent for a video is still genuinely unclear, ask ONE concise question (kind "ask").` : ''}
 
 First, carefully extract the user's intent from their message and the conversation so far:
 - topic: what the video is about
@@ -186,6 +248,7 @@ Decide what to do:
   - reply: one warm sentence announcing the video and its topic
 - Otherwise return kind "chat" and reply conversationally like a top-shelf niche strategist — sharp, creative, specific to their niche, never generic. Do NOT build a video unless it's clearly wanted.`,
         add_context_from_internet: true,
+        file_urls: attachmentUrls.length ? attachmentUrls : undefined,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -373,6 +436,13 @@ Decide what to do:
                 </>
               ) : (
                 <>
+                  {m.attachments?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {m.attachments.map((src, i) => (
+                        <img key={i} src={src} alt="" className="w-16 h-16 rounded-lg object-cover border border-black/10" />
+                      ))}
+                    </div>
+                  )}
                   <p className="whitespace-pre-line">{m.text}</p>
                   {m.video && (
                     <div className="mt-3 space-y-3">
@@ -404,21 +474,44 @@ Decide what to do:
 
       {/* Input stays pinned — it never scrolls away */}
       <div className="pt-3 pb-1 border-t border-white/10 mt-2">
-        {niches?.length > 0 && (
-          <div className="flex flex-wrap gap-2 pb-2 items-center">
-            <button
-              onClick={() => setHideRecent((h) => !h)}
-              className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/30 hover:text-white/60 transition-colors mr-1"
-              title={hideRecent ? 'Show recent niches' : 'Hide recent niches'}
-            >
-              {hideRecent ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-              Recent
-            </button>
-            {!hideRecent && niches.slice(0, 6).map((n) => (
+        {/* Attached references preview */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 pb-2">
+            {attachments.map((a) => (
+              <div key={a.id} className="relative">
+                {a.previewUrl ? (
+                  <img src={a.previewUrl} alt="" className="w-14 h-14 rounded-lg object-cover border border-white/15" />
+                ) : (
+                  <div className="w-14 h-14 rounded-lg border border-white/15 bg-white/5 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-white/40" />
+                  </div>
+                )}
+                {a.status === 'uploading' && (
+                  <div className="absolute inset-0 rounded-lg bg-black/50 flex items-center justify-center">
+                    <Loader2 className="w-4 h-4 animate-spin text-white/80" />
+                  </div>
+                )}
+                <button
+                  onClick={() => removeAttachment(a.id)}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black border border-white/25 flex items-center justify-center text-white/70 hover:text-white hover:bg-red-500/50 transition-colors"
+                  title="Remove"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Recent niches — collapsible */}
+        {showRecentChips && niches?.length > 0 && (
+          <div className="flex flex-wrap gap-2 pb-2">
+            {niches.slice(0, 6).map((n) => (
               <button
                 key={n.id}
                 onClick={() => {
                   setInput(`Make an explainer video for my niche: ${n.niche_name}`);
+                  setShowRecentChips(false);
                   inputRef.current?.focus();
                 }}
                 disabled={busy}
@@ -429,93 +522,137 @@ Decide what to do:
             ))}
           </div>
         )}
-        {showPrompts && <NichePromptsPanel />}
-        <div className="flex gap-2">
+
+        {/* Tools — collapsible */}
+        {showTools && (
+          <div className="pb-2 space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setVoxMode((v) => !v)}
+                disabled={busy}
+                title="Motion V1 — Vox documentary style"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  voxMode ? 'border-amber-400/60 bg-amber-400/15 text-amber-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Clapperboard className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Motion V1</span>
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(VOX_MASTER_PROMPT);
+                    setM1Copied(true);
+                    setTimeout(() => setM1Copied(false), 2000);
+                  } catch {}
+                }}
+                disabled={busy}
+                title="Vox M1 — copy the master prompt to use anywhere"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  m1Copied ? 'border-emerald-400/60 bg-emerald-400/15 text-emerald-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                {m1Copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="text-xs font-medium">M1</span>
+              </button>
+              <button
+                onClick={() => setShowPrompts((s) => !s)}
+                disabled={busy}
+                title="Prompt library — master prompts to use in your niche"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  showPrompts ? 'border-violet-400/60 bg-violet-400/15 text-violet-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <ScrollText className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Prompts</span>
+              </button>
+              <button
+                onClick={() => setCaptionMode((m) => (m === 'summary' ? 'tts' : 'summary'))}
+                disabled={busy}
+                title="Caption mode — Summary label or real TTS narration"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  captionMode === 'tts' ? 'border-cyan-400/60 bg-cyan-400/15 text-cyan-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Captions className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">{captionMode === 'tts' ? 'Real TTS' : 'Summary'}</span>
+              </button>
+              <button
+                onClick={() => setSoundtrack((s) => !s)}
+                disabled={busy}
+                title="Background soundtrack — paste a royalty-free audio URL"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  soundtrack ? 'border-emerald-400/60 bg-emerald-400/15 text-emerald-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Music className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Music</span>
+              </button>
+              <button
+                onClick={() => setShowLearner(true)}
+                disabled={busy}
+                title="Teach me a style from a video or images"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-white/40 transition-all disabled:opacity-40"
+              >
+                <Film className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Style</span>
+              </button>
+            </div>
+            {soundtrack && (
+              <input
+                value={musicUrl}
+                onChange={(e) => setMusicUrl(e.target.value)}
+                disabled={busy}
+                placeholder="Paste a direct .mp3/.wav URL (royalty-free, e.g. a Pixabay download link)"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
+              />
+            )}
+            {showPrompts && <NichePromptsPanel />}
+          </div>
+        )}
+
+        {/* Main compact row */}
+        <div className="flex gap-2 items-center">
+          {niches?.length > 0 && (
+            <button
+              onClick={() => setShowRecentChips((s) => !s)}
+              disabled={busy}
+              title="Recent niches"
+              className={`flex items-center gap-1.5 px-3 py-3 rounded-xl border transition-all disabled:opacity-40 ${
+                showRecentChips ? 'border-white/40 bg-white/10 text-white' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+              }`}
+            >
+              <Compass className="w-4 h-4" />
+              <span className="text-xs font-semibold hidden sm:inline">Recent</span>
+            </button>
+          )}
           <button
-            onClick={() => setVoxMode((v) => !v)}
+            onClick={() => setShowTools((s) => !s)}
             disabled={busy}
-            title="Motion V1 — Vox documentary style"
-            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
-              voxMode
-                ? 'border-amber-400/60 bg-amber-400/15 text-amber-300'
-                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            title="Tools — style, captions, music, prompts"
+            className={`flex items-center gap-1.5 px-3 py-3 rounded-xl border transition-all disabled:opacity-40 ${
+              showTools ? 'border-white/40 bg-white/10 text-white' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
             }`}
-            aria-label="Motion V1 — Vox style"
           >
-            <Clapperboard className="w-4 h-4" />
-            <span className="text-xs font-semibold hidden sm:inline">Motion V1</span>
+            <SlidersHorizontal className="w-4 h-4" />
+            <span className="text-xs font-semibold hidden sm:inline">Tools</span>
           </button>
           <button
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(VOX_MASTER_PROMPT);
-                setM1Copied(true);
-                setTimeout(() => setM1Copied(false), 2000);
-              } catch {}
-            }}
+            onClick={() => fileInputRef.current?.click()}
             disabled={busy}
-            title="Vox M1 — copy the master prompt to use anywhere"
-            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
-              m1Copied
-                ? 'border-emerald-400/60 bg-emerald-400/15 text-emerald-300'
-                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
-            }`}
-            aria-label="Vox M1 master prompt"
+            title="Attach images or files for the AI to analyze"
+            className="flex items-center justify-center px-3 py-3 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-white/40 transition-all disabled:opacity-40"
           >
-            {m1Copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            <span className="text-xs font-semibold hidden sm:inline">M1</span>
+            <Paperclip className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setShowPrompts((s) => !s)}
-            disabled={busy}
-            title="Prompt library — master prompts to use in your niche"
-            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
-              showPrompts
-                ? 'border-violet-400/60 bg-violet-400/15 text-violet-300'
-                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
-            }`}
-            aria-label="Prompts"
-          >
-            <ScrollText className="w-4 h-4" />
-            <span className="text-xs font-semibold hidden sm:inline">Prompts</span>
-          </button>
-          <button
-            onClick={() => setCaptionMode((m) => (m === 'summary' ? 'tts' : 'summary'))}
-            disabled={busy}
-            title="Caption mode — Summary label or real TTS narration"
-            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
-              captionMode === 'tts'
-                ? 'border-cyan-400/60 bg-cyan-400/15 text-cyan-300'
-                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
-            }`}
-            aria-label="Caption mode"
-          >
-            <Captions className="w-4 h-4" />
-            <span className="text-xs font-semibold hidden sm:inline">{captionMode === 'tts' ? 'Real TTS' : 'Summary'}</span>
-          </button>
-          <button
-            onClick={() => setSoundtrack((s) => !s)}
-            disabled={busy}
-            title="Background soundtrack — paste a royalty-free audio URL (e.g. a Pixabay download link)"
-            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
-              soundtrack
-                ? 'border-emerald-400/60 bg-emerald-400/15 text-emerald-300'
-                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
-            }`}
-            aria-label="Soundtrack"
-          >
-            <Music className="w-4 h-4" />
-            <span className="text-xs font-semibold hidden sm:inline">Music</span>
-          </button>
-          <button
-            onClick={() => setShowLearner(true)}
-            disabled={busy}
-            title="Teach me a style from a video or images"
-            className="px-3 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-white/40 transition-all disabled:opacity-40"
-            aria-label="Teach me a style"
-          >
-            <Film className="w-4 h-4" />
-          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            multiple
+            accept="image/*,.pdf,.txt,.csv,.json,.md"
+            onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
+            className="hidden"
+          />
           <input
             ref={inputRef}
             value={input}
@@ -526,17 +663,16 @@ Decide what to do:
                 send(input);
               }
             }}
-            placeholder={voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or tell me what to build…'}
+            onPaste={handlePaste}
+            placeholder={voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
             disabled={busy}
             className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
           <button
             onClick={busy ? pauseBuild : () => send(input)}
-            disabled={!busy && !input.trim()}
-            className={`px-4 rounded-xl font-bold transition-all disabled:opacity-40 ${
-              busy
-                ? 'bg-amber-400/20 border border-amber-400/60 text-amber-300 hover:bg-amber-400/30'
-                : 'bg-white text-black hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]'
+            disabled={!busy && !input.trim() && attachments.length === 0}
+            className={`px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-40 ${
+              busy ? 'bg-amber-400/20 border border-amber-400/60 text-amber-300 hover:bg-amber-400/30' : 'bg-white text-black hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]'
             }`}
             aria-label={busy ? 'Pause and iterate' : 'Send'}
             title={busy ? 'Pause and iterate' : 'Send'}
@@ -544,15 +680,6 @@ Decide what to do:
             {busy ? <Pause className="w-5 h-5" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
-        {soundtrack && (
-          <input
-            value={musicUrl}
-            onChange={(e) => setMusicUrl(e.target.value)}
-            disabled={busy}
-            placeholder="Paste a direct .mp3/.wav URL (royalty-free, e.g. a Pixabay download link)"
-            className="w-full mt-2 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
-          />
-        )}
       </div>
 
       {showLearner && (
