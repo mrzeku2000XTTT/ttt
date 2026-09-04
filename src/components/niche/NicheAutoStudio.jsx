@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
 import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
@@ -48,6 +48,7 @@ export default function NicheAutoStudio({ niches }) {
   const [learnedStyles, setLearnedStyles] = useState([]);
   const [showLearner, setShowLearner] = useState(false);
   const [voxMode, setVoxMode] = useState(false);
+  const [captionMode, setCaptionMode] = useState('summary'); // 'summary' = short label, 'tts' = real narration
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -257,7 +258,7 @@ Decide what to do:
         const blob = await compileExplainerVideo({
           images,
           audios,
-          captions: scenes.map((s) => s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')),
+          captions: scenes.map((s) => (captionMode === 'tts' ? (s.voiceover || s.caption || '') : (s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
           style: styleId,
           cameras: scenes.map((s) => s.camera),
           onProgress: setWork,
@@ -402,6 +403,20 @@ Decide what to do:
           >
             <Clapperboard className="w-4 h-4" />
             <span className="text-xs font-semibold hidden sm:inline">Motion V1</span>
+          </button>
+          <button
+            onClick={() => setCaptionMode((m) => (m === 'summary' ? 'tts' : 'summary'))}
+            disabled={busy}
+            title="Caption mode — Summary label or real TTS narration"
+            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
+              captionMode === 'tts'
+                ? 'border-cyan-400/60 bg-cyan-400/15 text-cyan-300'
+                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+            aria-label="Caption mode"
+          >
+            <Captions className="w-4 h-4" />
+            <span className="text-xs font-semibold hidden sm:inline">{captionMode === 'tts' ? 'Real TTS' : 'Summary'}</span>
           </button>
           <button
             onClick={() => setShowLearner(true)}
