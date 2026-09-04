@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import YouTubeDeploy from './YouTubeDeploy';
 import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
@@ -51,6 +52,8 @@ export default function NicheAutoStudio({ niches }) {
   const [captionMode, setCaptionMode] = useState('summary'); // 'summary' = short label, 'tts' = real narration
   const [soundtrack, setSoundtrack] = useState(false);
   const [musicUrl, setMusicUrl] = useState('');
+  const [hideRecent, setHideRecent] = useState(false);
+  const [m1Copied, setM1Copied] = useState(false);
   const scrollRef = useRef(null);
   const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
@@ -401,8 +404,15 @@ Decide what to do:
       <div className="pt-3 pb-1 border-t border-white/10 mt-2">
         {niches?.length > 0 && (
           <div className="flex flex-wrap gap-2 pb-2 items-center">
-            <span className="text-[10px] uppercase tracking-wider text-white/30 mr-1">Recent</span>
-            {niches.slice(0, 6).map((n) => (
+            <button
+              onClick={() => setHideRecent((h) => !h)}
+              className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/30 hover:text-white/60 transition-colors mr-1"
+              title={hideRecent ? 'Show recent niches' : 'Hide recent niches'}
+            >
+              {hideRecent ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              Recent
+            </button>
+            {!hideRecent && niches.slice(0, 6).map((n) => (
               <button
                 key={n.id}
                 onClick={() => {
@@ -431,6 +441,26 @@ Decide what to do:
           >
             <Clapperboard className="w-4 h-4" />
             <span className="text-xs font-semibold hidden sm:inline">Motion V1</span>
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(VOX_MASTER_PROMPT);
+                setM1Copied(true);
+                setTimeout(() => setM1Copied(false), 2000);
+              } catch {}
+            }}
+            disabled={busy}
+            title="Vox M1 — copy the master prompt to use anywhere"
+            className={`flex items-center gap-1.5 px-3 rounded-xl border transition-all disabled:opacity-40 ${
+              m1Copied
+                ? 'border-emerald-400/60 bg-emerald-400/15 text-emerald-300'
+                : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+            }`}
+            aria-label="Vox M1 master prompt"
+          >
+            {m1Copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <span className="text-xs font-semibold hidden sm:inline">M1</span>
           </button>
           <button
             onClick={() => setCaptionMode((m) => (m === 'summary' ? 'tts' : 'summary'))}
