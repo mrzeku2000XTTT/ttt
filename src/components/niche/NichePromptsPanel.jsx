@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, Check, Copy, Plus, Trash2, X, FileText } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import { STICKMAN_MASTER_PROMPT } from './stickmanMasterPrompt';
 
@@ -41,17 +42,30 @@ export default function NichePromptsPanel({ onUse }) {
   const [name, setName] = useState('');
   const [docUrl, setDocUrl] = useState('');
   const [prompt, setPrompt] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+
+  const storageKey = () => (userEmail ? `${CUSTOM_KEY}_${userEmail}` : CUSTOM_KEY);
 
   useEffect(() => {
-    try {
-      setCustom(JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]') || []);
-    } catch {}
+    (async () => {
+      let key = CUSTOM_KEY;
+      try {
+        const me = await base44.auth.me();
+        if (me?.email) {
+          setUserEmail(me.email);
+          key = `${CUSTOM_KEY}_${me.email}`;
+        }
+      } catch {}
+      try {
+        setCustom(JSON.parse(localStorage.getItem(key) || '[]') || []);
+      } catch {}
+    })();
   }, []);
 
   const persist = (next) => {
     setCustom(next);
     try {
-      localStorage.setItem(CUSTOM_KEY, JSON.stringify(next));
+      localStorage.setItem(storageKey(), JSON.stringify(next));
     } catch {}
   };
 
