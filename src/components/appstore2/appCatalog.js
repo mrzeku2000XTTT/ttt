@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "HYPER", path: "Hyper", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c44e4a998_generated_image.png", desc: "Motion-graphics chatbot · describe a shot, get a real MP4 — black, cinematic, no Higgsfield needed" },
   { name: "MealPlan", path: "MealPlan", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0d385409d_generated_image.png", desc: "Goal + diet · a week of dinners with calories & one grocery list" },
   { name: "FitForge", path: "FitForge", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f5fc8763a_generated_image.png", desc: "Goal + equipment · a weekly workout plan built for your days" },
   { name: "BudgetCoach", path: "BudgetCoach", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/37aec0b29_generated_image.png", desc: "Paste income & expenses · an honest budget plan with smart cuts" },

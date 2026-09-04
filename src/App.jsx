@@ -171,6 +171,7 @@ import StudyBuddyPage from './pages/StudyBuddy';
 import NameLabPage from './pages/NameLab';
 import MsgCraftPage from './pages/MsgCraft';
 import ColorPullPage from './pages/ColorPull';
+import HyperPage from './pages/Hyper';
 import AWASignerPage from './pages/AWASigner';
 import KasSignerPage from './pages/KasSigner';
 import SignerPage from './pages/Signer';
@@ -418,6 +419,7 @@ const AuthenticatedApp = () => {
       <Route path="/NameLab" element={<NameLabPage />} />
       <Route path="/MsgCraft" element={<MsgCraftPage />} />
       <Route path="/ColorPull" element={<ColorPullPage />} />
+      <Route path="/Hyper" element={<HyperPage />} />
       <Route path="/AWASigner" element={<AdminRoute><AWASignerPage /></AdminRoute>} />
       <Route path="/KasSigner" element={<AdminRoute><KasSignerPage /></AdminRoute>} />
       <Route path="/Signer" element={<SignerPage />} />
