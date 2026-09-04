@@ -161,6 +161,8 @@ function playNarration(url, ac, dest) {
   return new Promise((resolve) => {
     let done = false;
     const finish = () => { if (!done) { done = true; resolve(); } };
+    // absolute ceiling — armed before any await so nothing can hang the build
+    setTimeout(finish, 90000);
     (async () => {
       let buf = null;
       try {
@@ -208,7 +210,9 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   onProgress?.('Preparing narration…');
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const ac = new AudioCtx();
-  try { await ac.resume(); } catch {} // keep audio alive even if the tab is backgrounded
+  // resume() can never settle when the browser hasn't granted audio yet —
+  // never let it stall the build.
+  await Promise.race([ac.resume().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
   const dest = ac.createMediaStreamDestination();
 
   const stream = canvas.captureStream(25);
