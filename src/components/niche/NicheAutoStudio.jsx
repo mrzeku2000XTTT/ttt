@@ -164,6 +164,8 @@ Decide what to do:
   - title: click-worthy, under 60 characters
   - scenes: EXACTLY scene_count scenes. Each scene: "action" = describes ONLY what is seen (typing at a desk, plugging in a cable, celebrating) — never commands, URLs, code or step text in the action, those go only in the voiceover, "caption" = an on-screen caption of at most 8 words matching the scene, "voiceover" = 2–4 spoken sentences, written the way a person talks.
   - The script must actually teach: for how-to topics it includes the real technical steps — which website to open, which buttons or menus to click, which commands to run — in chronological order, using real URLs, commands and requirements you have verified from live research. No vague generalities, no invented details.
+  - camera: pick one per scene from zoom-in, zoom-out, pan-left, pan-right, pan-up, pan-down, static — match the scene's energy, never repeat the same move twice in a row, use static sparingly. This drives a Ken Burns camera move on the still image during stitching so the video feels alive.
+  - When style is "vox": write the script in Fern documentary DNA — cold open on a precise date, location or name plus one concrete detail; calm precise documentary tone; one self-contained idea per sentence; factual restraint (never invent names, dates or numbers); and a cliffhanger final line of 12 words or fewer ending on a noun, name, date or short declarative. The art is a hand-cut documentary paper collage: aged newsprint and archival maps, halftone photo cutouts with scissor-cut edges, torn tape, typewriter strips, stamps, red string and brass pins, desaturated tan/ink-black/halftone-gray palette with one hot red accent and mustard yellow secondary.
   - description: 2 short paragraphs for YouTube; tags: 8–10 SEO tags
   - reply: one warm sentence announcing the video and its topic
 - Otherwise return kind "chat" and reply conversationally like a top-shelf niche strategist — sharp, creative, specific to their niche, never generic. Do NOT build a video unless it's clearly wanted.`,
@@ -190,7 +192,8 @@ Decide what to do:
                     properties: {
                       action: { type: 'string' },
                       caption: { type: 'string' },
-                      voiceover: { type: 'string' }
+                      voiceover: { type: 'string' },
+                      camera: { type: 'string', enum: ['zoom-in', 'zoom-out', 'pan-left', 'pan-right', 'pan-up', 'pan-down', 'static'] }
                     }
                   }
                 }
@@ -256,6 +259,7 @@ Decide what to do:
           audios,
           captions: scenes.map((s) => s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')),
           style: styleId,
+          cameras: scenes.map((s) => s.camera),
           onProgress: setWork,
           audioContext
         });

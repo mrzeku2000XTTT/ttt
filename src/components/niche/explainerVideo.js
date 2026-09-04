@@ -43,15 +43,19 @@ export const ANIMATION_STYLES = [
       `Chalkboard illustration showing: ${action}. One simple character sketched in white chalk mid-action on a dark blackboard background, rough chalk strokes, faint chalk dust texture, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   },
   {
-    // Vox-style documentary — taught from the Mark Ai Guy "Vox Style Animation" workflow.
-    // Archival cinematic photographic look, consistent across every scene, for documentary
-    // topics: history, wars, famous people, true stories, business mysteries, world events.
+    // Vox Documentary — taught from the "Fern" paper-collage documentary engine doc.
+    // Hand-cut paper collage on aged newsprint + archival maps, halftone photo cutouts,
+    // red string, brass pins, stamps, typewriter strips; desaturated tan/ink/halftone-gray
+    // with one hot red accent + mustard yellow secondary. For documentary topics.
     id: 'vox',
     name: 'Vox Documentary',
     bg: '#0e0d0b',
     ink: '#f2ece0',
-    prompt: (action) =>
-      `Vox-style documentary illustration, archival cinematic aesthetic: ${action}. Realistic semi-photographic documentary scene like a high-quality explainer-documentary still, muted cinematic color grading, dramatic natural lighting, historical archival mood, rich texture and film depth, subtle film grain, wide 16:9 documentary composition, consistent documentary visual style across every scene. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+    selfColor: true,
+    prompt: (action, colorMode) =>
+      colorMode === 'mono'
+        ? `Hand-cut documentary paper collage illustration, archival grayscale: ${action}. Aged newsprint and archival map surfaces, black and white halftone photograph cutouts with rough scissor-cut edges and offset accent strokes, torn paper edges, masking tape fragments, typewriter caption strips, rubber stamp marks, red string and brass pins where the story calls for connections, desaturated grayscale palette of ink black, halftone gray and aged paper tan with no color accents, visible print grain and paper fiber, matte, flat even documentary lighting with soft cutout drop shadows. One hero element with 2-3 supporting elements, generous negative space, 16:9 composition. Every element must appear physically hand-cut and layered from real paper, with visible cutout edges, halftone print texture, and soft shadow separation between layers. NOT digital illustration, NOT cartoon, NOT 3D render, NOT glossy, no gradients, no clutter, no watermark, no logos. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+        : `Hand-cut documentary paper collage illustration: ${action}. Aged newsprint and archival map surfaces, black and white halftone photograph cutouts with rough scissor-cut edges and offset accent strokes, torn paper edges, masking tape fragments, typewriter caption strips, rubber stamp marks, red string and brass pins where the story calls for connections, desaturated archival palette of tan, ink black, and halftone gray with ONE hot red signal accent and a restrained mustard yellow secondary, visible print grain and paper fiber, matte, flat even documentary lighting with soft cutout drop shadows. One hero element with 2-3 supporting elements, generous negative space, 16:9 composition. Every element must appear physically hand-cut and layered from real paper, with visible cutout edges, halftone print texture, and soft shadow separation between layers. NOT digital illustration, NOT cartoon, NOT 3D render, NOT glossy, no gradients, no clutter, no watermark, no logos. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   },
   {
     id: 'real-ui',
@@ -76,7 +80,11 @@ export const COLOR_MODES = [
 ];
 
 export const stylePrompt = (styleId, action, colorMode) => {
-  const base = styleById(styleId).prompt(action);
+  const s = styleById(styleId);
+  // vox manages its own color grading (archival palette vs grayscale) so the
+  // generic "vivid full color" clause would wreck it — let it handle colorMode.
+  if (s.selfColor) return s.prompt(action, colorMode);
+  const base = s.prompt(action);
   return colorMode === 'color' ? `${base}${COLOR_MODES[1].clause}` : base;
 };
 
@@ -112,6 +120,35 @@ export async function researchAppUi(appName) {
 export function realUiPrompt(appName, uiDesc, action, colorMode) {
   return `High-fidelity vertical phone screenshot faithfully cloning the real UI of the mobile app "${appName}". ${uiDesc}. Depict this scene as a realistic, pixel-perfect, modern, premium app interface showing: ${action}. Render as a clean 9:19.5 phone screen, sharp, professional, the actual app's real color palette and typography. Realistic UI text and labels (buttons, balances, menu items, headings) belong in the frame — this is a UI clone, not a cartoon. No watermark, no mockup frame, no stick figures — just the screen content.${colorMode === 'color' ? '' : ''}`;
 }
+
+// Camera moves for the Ken Burns motion added to still scenes during stitching.
+// The AI picks one per scene; if it doesn't, autoCameras() varies them so the
+// video never feels static.
+export const CAMERA_MOVES = ['zoom-in', 'zoom-out', 'pan-left', 'pan-right', 'pan-up', 'pan-down', 'static'];
+
+export const autoCameras = (n) => {
+  const pool = ['zoom-in', 'pan-left', 'zoom-out', 'pan-right', 'pan-up', 'zoom-in', 'pan-down', 'zoom-out'];
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    let m = pool[i % pool.length];
+    if (i && out[i - 1] === m) m = pool[(i + 1) % pool.length];
+    out.push(m);
+  }
+  return out;
+};
+
+const kenBurns = (move, p) => {
+  const e = Math.min(1, Math.max(0, p));
+  switch (move) {
+    case 'zoom-in':  return { z: 1 + 0.12 * e, dx: 0, dy: 0 };
+    case 'zoom-out': return { z: 1.12 - 0.12 * e, dx: 0, dy: 0 };
+    case 'pan-left':  return { z: 1.12, dx: 0.5 - e, dy: 0 };
+    case 'pan-right': return { z: 1.12, dx: -0.5 + e, dy: 0 };
+    case 'pan-up':    return { z: 1.12, dx: 0, dy: 0.5 - e };
+    case 'pan-down':  return { z: 1.12, dx: 0, dy: -0.5 + e };
+    default:          return { z: 1, dx: 0, dy: 0 };
+  }
+};
 
 // "mp4" for MP4 blobs, "webm" only if the browser truly can't record MP4
 export const videoExt = (type = '') => (type.includes('mp4') ? 'mp4' : 'webm');
@@ -163,7 +200,7 @@ export function createAudioContext() {
   return ac;
 }
 
-export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, onProgress, audioContext }) {
+export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], onProgress, audioContext }) {
   const style = styleById(styleId);
   const W = 1280;
   const H = 720;
@@ -236,14 +273,29 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   player.buffer = mixed;
   player.connect(dest);
 
-  const drawFrame = (seg) => {
-    ctx.fillStyle = style.bg;
-    ctx.fillRect(0, 0, W, H);
+  // Ken Burns camera moves + crossfade transitions bring the stills to life.
+  // The AI picks a camera move per scene; if absent, autoCameras() varies them.
+  const XFADE = 0.35;
+  const cams = (cameras && cameras.length === segments.length) ? cameras : autoCameras(segments.length);
+  const isUi = styleId === 'real-ui';
+  const drawH = H - 100;
+
+  const drawContent = (idx, p, alpha) => {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const seg = segments[idx];
     const { img } = seg;
-    const r = Math.min(W / img.width, (H - 100) / img.height);
-    const dw = img.width * r;
-    const dh = img.height * r;
-    ctx.drawImage(img, (W - dw) / 2, (H - 100 - dh) / 2, dw, dh);
+    const move = isUi ? 'static' : (cams[idx] || 'static');
+    const { z, dx, dy } = kenBurns(move, p);
+    // UI clones stay contained (full phone screen visible, never cropped); every
+    // other style uses cover so there is always overflow to pan and zoom into.
+    const baseFit = isUi ? Math.min(W / img.width, drawH / img.height) : Math.max(W / img.width, drawH / img.height);
+    const scale = baseFit * z;
+    const dw = img.width * scale;
+    const dh = img.height * scale;
+    const panX = dx * Math.max(0, dw - W) / 2;
+    const panY = dy * Math.max(0, dh - drawH) / 2;
+    ctx.drawImage(img, (W - dw) / 2 + panX, (drawH - dh) / 2 + panY, dw, dh);
     const lines = wrapCaption(seg.caption);
     ctx.font = 'bold 34px "Nunito", sans-serif';
     ctx.fillStyle = style.ink;
@@ -251,10 +303,18 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     lines.forEach((line, li) => {
       ctx.fillText(line, W / 2, H - 56 + li * 42);
     });
+    ctx.restore();
+  };
+
+  const clear = () => {
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = style.bg;
+    ctx.fillRect(0, 0, W, H);
   };
 
   onProgress?.('Stitching your video…');
-  drawFrame(segments[0]);
+  clear();
+  drawContent(0, 0, 1);
 
   // Start the narration and the recording together, then follow the audio clock
   const t0 = ac.currentTime + 0.1;
@@ -268,8 +328,21 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   await new Promise((resolve) => {
     const tick = () => {
       const elapsed = ac.currentTime - t0;
-      const seg = segments.find((s) => elapsed >= s.start && elapsed < s.end) || segments[segments.length - 1];
-      drawFrame(seg);
+      let idx = segments.findIndex((s) => elapsed >= s.start && elapsed < s.end);
+      if (idx === -1) idx = elapsed >= totalDur ? segments.length - 1 : 0;
+      const seg = segments[idx];
+      const segDur = seg.end - seg.start;
+      const localP = segDur > 0 ? (elapsed - seg.start) / segDur : 0;
+      const xfadeStart = seg.end - XFADE;
+      clear();
+      if (idx < segments.length - 1 && elapsed >= xfadeStart && elapsed < seg.end) {
+        // crossfade the next scene in during the breath gap between narration lines
+        const t = Math.min(1, (elapsed - xfadeStart) / XFADE);
+        drawContent(idx, localP, 1 - t);
+        drawContent(idx + 1, 0, t);
+      } else {
+        drawContent(idx, localP, 1);
+      }
       // wall-clock guard: finish even if the audio clock stalls
       if (elapsed >= totalDur || Date.now() - wallStart > guardMs) {
         clearInterval(timer);
