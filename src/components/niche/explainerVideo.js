@@ -143,7 +143,16 @@ const RECORDER_TYPES = [
 
 // Stitches scene images + narration audio into one downloadable video,
 // drawing each scene's caption at the bottom in the chosen style's palette.
-export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, onProgress }) {
+// Create the AudioContext synchronously inside a user tap/click — iOS Safari
+// refuses to start audio (and stalls forever) if it is created later in an async chain.
+export function createAudioContext() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const ac = new AudioCtx();
+  ac.resume?.().catch(() => {});
+  return ac;
+}
+
+export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, onProgress, audioContext }) {
   const style = styleById(styleId);
   const W = 1280;
   const H = 720;
@@ -156,14 +165,17 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   const imgEls = await Promise.all(images.map(loadImage));
 
   onProgress?.('Preparing narration…');
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  const ac = new AudioCtx();
-  try { await ac.resume(); } catch {} // keep audio alive even if the tab is backgrounded
+  const ac = audioContext || createAudioContext();
+  // never hang here — iOS can leave resume() pending forever
+  await Promise.race([ac.resume().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
+  if (ac.state !== 'running') {
+    throw new Error('Audio could not start on this device — tap the screen once, then try again.');
+  }
   const dest = ac.createMediaStreamDestination();
   const buffers = await Promise.all(
     audios.map(async (u) => {
       const buf = await (await fetch(u)).arrayBuffer();
-      return ac.decodeAudioData(buf);
+      return new Promise((resolve, reject) => ac.decodeAudioData(buf, resolve, reject));
     })
   );
 
@@ -210,12 +222,15 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   onProgress?.('Stitching your video…');
   // setInterval (not requestAnimationFrame) so the capture loop keeps drawing
   // even when the user leaves the tab — rAF is paused in background tabs.
+  const wallStart = Date.now();
+  const totalMs = (t - ac.currentTime + 2) * 1000;
   await new Promise((resolve) => {
     const tick = () => {
       const now = ac.currentTime;
       const seg = segments.find((s) => now >= s.start && now < s.end) || segments[segments.length - 1];
       if (seg) drawFrame(seg);
-      if (now >= t + 0.3) {
+      // wall-clock guard: finish even if the audio clock stalls
+      if (now >= t + 0.3 || Date.now() - wallStart > totalMs) {
         clearInterval(timer);
         resolve();
       }

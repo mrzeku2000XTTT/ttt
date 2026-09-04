@@ -3,7 +3,7 @@ import { PenTool, Loader2, Mic, Download, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
-import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt } from './explainerVideo';
+import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
@@ -159,6 +159,8 @@ Narration must total about 60–120 seconds when spoken.`,
   };
 
   const downloadVideo = async () => {
+    // must be created synchronously inside the tap — iOS blocks audio otherwise
+    const audioContext = createAudioContext();
     setBusy('Stitching your video…');
     try {
       const blob = await compileExplainerVideo({
@@ -166,7 +168,8 @@ Narration must total about 60–120 seconds when spoken.`,
         audios,
         captions: scenes.map((s) => s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')),
         style: styleId,
-        onProgress: setBusy
+        onProgress: setBusy,
+        audioContext
       });
       // best effort — save the finished video to the user's Library
       (async () => {

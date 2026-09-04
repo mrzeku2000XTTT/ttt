@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Download, Compass, Film, Lightbulb } from 'lucide-react';
 import YouTubeDeploy from './YouTubeDeploy';
-import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt } from './explainerVideo';
+import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 
@@ -115,6 +115,8 @@ export default function NicheAutoStudio({ niches }) {
     if (!text || busy) return;
     setInput('');
     setBusy(true);
+    // must be created synchronously inside the tap — iOS blocks audio otherwise
+    const audioContext = createAudioContext();
     const workId = uid();
     const history = [...messages];
     setMessages((m) => [
@@ -221,32 +223,38 @@ Decide what to do:
           const r = await researchAppUi(v.app || v.title);
           uiDesc = r.description;
         }
-        const images = [];
-        const audios = [];
-        for (let i = 0; i < n; i++) {
-          setWork(`Drawing · scene ${i + 1}/${n}`);
-          const img = await base44.integrations.Core.GenerateImage({
-            prompt:
-              styleId === 'real-ui'
-                ? realUiPrompt(v.app || v.title, uiDesc, scenes[i].action, v.color_mode)
-                : learned
-                  ? customStylePrompt(learned.description, scenes[i].action, v.color_mode)
-                  : stylePrompt(styleId, scenes[i].action, v.color_mode)
-          });
-          images.push(img.url);
-        }
-        for (let i = 0; i < n; i++) {
-          setWork(`Recording narration · scene ${i + 1}/${n}`);
-          const sp = await base44.integrations.Core.GenerateSpeech({ text: scenes[i].voiceover, voice: 'storm' });
-          audios.push(sp.url);
-        }
+        // draw every scene and record every narration in parallel — far faster than one by one
+        let done = 0;
+        const total = n * 2;
+        const step = () => setWork(`Drawing & narrating · ${++done}/${total}`);
+        setWork(`Drawing & narrating · 0/${total}`);
+        const [images, audios] = await Promise.all([
+          Promise.all(
+            scenes.map((s) =>
+              base44.integrations.Core.GenerateImage({
+                prompt:
+                  styleId === 'real-ui'
+                    ? realUiPrompt(v.app || v.title, uiDesc, s.action, v.color_mode)
+                    : learned
+                      ? customStylePrompt(learned.description, s.action, v.color_mode)
+                      : stylePrompt(styleId, s.action, v.color_mode)
+              }).then((r) => (step(), r.url))
+            )
+          ),
+          Promise.all(
+            scenes.map((s) =>
+              base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }).then((r) => (step(), r.url))
+            )
+          )
+        ]);
         setWork('Stitching your video');
         const blob = await compileExplainerVideo({
           images,
           audios,
           captions: scenes.map((s) => s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')),
           style: styleId,
-          onProgress: setWork
+          onProgress: setWork,
+          audioContext
         });
         // best effort — save the finished video to the user's Library
         (async () => {
@@ -283,6 +291,7 @@ Decide what to do:
           }
         });
       } else {
+        audioContext.close().catch(() => {});
         finish({ text: res.reply || "Tell me a topic or paste your niche and I'll build the video." });
       }
     } catch (e) {
