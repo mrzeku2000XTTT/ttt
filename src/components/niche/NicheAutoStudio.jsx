@@ -280,7 +280,7 @@ export default function NicheAutoStudio({ niches }) {
 ${convo ? `Conversation so far:\n${convo}\n\n` : ''}User's saved niches: ${(niches || []).map((n) => n.niche_name).join(', ') || 'none yet'}.
 
 User's new message: """${text}"""
-${linkContext ? `\nThe user pasted a link. Its actual fetched content:\n"""${linkContext}"""\nWhen the message contains a pasted link, the video topic MUST be based on this exact fetched content — for an X/Twitter post, the post's own words — never on the URL, the account name, or assumptions about it.` : ''}
+${linkContext ? `\nThe user pasted a link. Its actual fetched content:\n"""${linkContext}"""\nHARD RULE for pasted links: the video's topic is exactly the subject of this fetched content — never the URL, the account name, one of the user's saved niches, or anything found in web search that is not this content. If it is an X/Twitter post: build a structured, scene-by-scene explainer OF THE POST ITSELF — its subject (the project, character, update or event the post announces), its points in the order the post makes them, and every claim in the script traceable to the post text. 1:1 accuracy with the post. Do NOT pivot to a generic explainer, an ecosystem overview, a competitor or loosely related project, or a random niche — derive the video's angle and niche from the post's own content.` : ''}
 
 Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (${s.name})`).join(', ')}. Default style: neutral.
 "real-ui" (Real UI Clone) is special: use it when the topic is about a REAL app (e.g. "Kaspium wallet", "Cash App", "Binance", "Kaspa wallet", "Kaspa node dashboard"). It researches the app's actual UI from the web and clones it faithfully — premium modern UI, not stick-man. When you pick "real-ui" you MUST also set the app field to the app's name.
@@ -291,7 +291,7 @@ ${attachmentUrls.length ? `The user attached ${attachmentUrls.length} reference 
 
 First, carefully extract the user's intent from their message and the conversation so far:
 - topic: what the video is about
-- style: a style id from the lists above — match casual names ("stick man"→neutral, "comic"→comic, "documentary"/"vox"→vox); if they name a style you don't have, offer the closest one from the list instead of using it
+- style: the video's default style — a style id from the lists above; match casual names ("stick man"→neutral, "comic"→comic, "documentary"/"vox"→vox); if they name a style you don't have, offer the closest one instead of using it. No style is ever forced — not even for X links — pick whatever the content itself calls for. STYLE REMIX: you may also give any scene its own "style" field to switch the look mid-video whenever it genuinely helps that moment (documentary beat → vox, app/UI moment → real-ui + set the scene's "app" field, plain explainer beat → neutral, comic beat → comic, isometric diagram → isometric). Remix freely scene by scene — but only when it serves the content; a consistent look is also fine.
 - scene_count: any number 6–15 they mention ("7 scenes", "10 steps")
 - color_mode: "color" if they want a colored animation, "mono" for black & white
 
@@ -305,7 +305,7 @@ Decide what to do:
   - scene_count: the number of scenes they chose
   - color_mode: "mono" or "color"
   - title: click-worthy, under 60 characters
-  - scenes: EXACTLY scene_count scenes. Each scene: "action" = describes ONLY what is seen (typing at a desk, plugging in a cable, celebrating) — never commands, URLs, code or step text in the action, those go only in the voiceover, "caption" = an on-screen caption of at most 8 words matching the scene, "voiceover" = 2–4 spoken sentences, written the way a person talks.
+  - scenes: EXACTLY scene_count scenes. Each scene: "action" = describes ONLY what is seen (typing at a desk, plugging in a cable, celebrating) — never commands, URLs, code or step text in the action, those go only in the voiceover, "caption" = an on-screen caption of at most 8 words matching the scene, "voiceover" = 2–4 spoken sentences, written the way a person talks, "style" (optional) = a style id overriding the video's default for that scene (remix), "app" (optional) = the app name when that scene uses real-ui.
   - The script must actually teach: for how-to topics it includes the real technical steps — which website to open, which buttons or menus to click, which commands to run — in chronological order, using real URLs, commands and requirements you have verified from live research. No vague generalities, no invented details.
   - camera: pick one per scene from zoom-in, zoom-out, pan-left, pan-right, pan-up, pan-down, static — match the scene's energy, never repeat the same move twice in a row, use static sparingly. This drives a Ken Burns camera move on the still image during stitching so the video feels alive.
   - When style is "vox": write the script in Fern documentary DNA — cold open on a precise date, location or name plus one concrete detail; calm precise documentary tone; one self-contained idea per sentence; factual restraint (never invent names, dates or numbers); and a cliffhanger final line of 12 words or fewer ending on a noun, name, date or short declarative. The art is a hand-cut documentary paper collage: aged newsprint and archival maps, halftone photo cutouts with scissor-cut edges, torn tape, typewriter strips, stamps, red string and brass pins, desaturated tan/ink-black/halftone-gray palette with one hot red accent and mustard yellow secondary.
@@ -335,6 +335,8 @@ Decide what to do:
                     type: 'object',
                     properties: {
                       action: { type: 'string' },
+                      style: { type: 'string', description: 'Optional per-scene style id (remix)' },
+                      app: { type: 'string', description: 'App name when this scene uses real-ui' },
                       caption: { type: 'string' },
                       voiceover: { type: 'string' },
                       camera: { type: 'string', enum: ['zoom-in', 'zoom-out', 'pan-left', 'pan-right', 'pan-up', 'pan-down', 'static'] }
@@ -369,11 +371,17 @@ Decide what to do:
           .then((r) => setMessages((m) => m.map((x) => (x.id === workId ? { ...x, tips: r.tips || [] } : x))))
           .catch(() => {});
 
-        // Real UI Clone: research the actual app's UI once, then clone it per scene
+        // Per-scene style resolution — the AI can remix styles scene by scene;
+        // anything it names that we don't have falls back to the video default
+        const validStyle = (sid) => ANIMATION_STYLES.some((x) => x.id === sid) || learnedStyles.some((x) => x.id === sid);
+        const sceneStyles = scenes.map((s) => (s.style && validStyle(s.style) ? s.style : styleId));
+        // Real UI Clone: research the actual app's UI once — needed when the whole
+        // video OR any single remixed scene uses the real-ui style
         let uiDesc = '';
-        if (styleId === 'real-ui') {
-          setWork(`Researching the real ${v.app || v.title} UI from the web`);
-          const r = await researchAppUi(v.app || v.title);
+        const realUiScene = scenes.find((s, i) => sceneStyles[i] === 'real-ui');
+        if (realUiScene) {
+          setWork(`Researching the real ${realUiScene.app || v.app || v.title} UI from the web`);
+          const r = await researchAppUi(realUiScene.app || v.app || v.title);
           uiDesc = r.description;
         }
         // draw every scene and record every narration in parallel — far faster than one by one
@@ -383,14 +391,15 @@ Decide what to do:
         setWork(`Drawing & narrating · 0/${total}`);
         const [images, audios] = await Promise.all([
           Promise.all(
-            scenes.map((s) =>
+            scenes.map((s, i) =>
               base44.integrations.Core.GenerateImage({
-                prompt:
-                  styleId === 'real-ui'
-                    ? realUiPrompt(v.app || v.title, uiDesc, s.action, v.color_mode)
-                    : learned
-                      ? customStylePrompt(learned.description, s.action, v.color_mode)
-                      : stylePrompt(styleId, s.action, v.color_mode)
+                prompt: (() => {
+                  const sid = sceneStyles[i];
+                  if (sid === 'real-ui') return realUiPrompt(s.app || v.app || v.title, uiDesc, s.action, v.color_mode);
+                  const ls = learnedStyles.find((x) => x.id === sid);
+                  if (ls) return customStylePrompt(ls.description, s.action, v.color_mode);
+                  return stylePrompt(sid, s.action, v.color_mode);
+                })()
               }).then((r) => (step(), r.url))
             )
           ),
