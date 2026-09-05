@@ -74,6 +74,7 @@ export default function NicheAutoStudio({ niches }) {
   const [attachments, setAttachments] = useState([]);
   const [masterMode, setMasterMode] = useState(false);
   const scrollRef = useRef(null);
+  const lastScrollSigRef = useRef(null);
   const fileInputRef = useRef(null);
   const masterPromptRef = useRef(null);
   const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
@@ -102,7 +103,15 @@ export default function NicheAutoStudio({ niches }) {
     ]);
   }, []);
 
+  // Auto-scroll ONLY when a new message arrives or the working bubble settles —
+  // not on the 1-second elapsed timer updates, which would yank the user back
+  // to the bottom every second while they're reading up the thread.
   useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last) return;
+    const sig = `${last.id}:${last.working ? 'w' : 's'}`;
+    if (sig === lastScrollSigRef.current) return;
+    lastScrollSigRef.current = sig;
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
