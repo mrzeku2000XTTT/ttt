@@ -20,7 +20,7 @@ ${listing}
 ${source
   ? `SOURCE-GROUNDED MODE — the script must retell the SOURCE CONTENT 1:1:
 - The topic NEVER changes. The script stays about exactly what the source is about. Anything you find on the web — including tools, coins or projects with SIMILAR NAMES — never replaces or expands the subject. The source wins over the web, always.
-- Verify each scene against the source: anything the script claims that the source does not say gets fixed or cut; anything central to the source that the script misses gets woven in (keep the scene count if possible).
+- Verify each scene against the source: anything the script claims that the source does not say gets fixed; anything central to the source that the script misses gets woven into the matching scene. Keep EXACTLY the same number of scenes, in the same order — never cut, merge or add scenes.
 - A narrative source (a post, build update, story, report) STAYS a narrative — never rewrite it into a how-to tutorial with steps, buttons or commands.
 - Use live web research ONLY to double-check concrete facts the script states (dates, numbers, names). If the web seems to contradict the source, the source wins. If a detail is not in the source and cannot be verified, remove it rather than guess.`
   : `Verify the script's claims with live web research. If the script is genuinely a how-to/tutorial, correct the steps so they ACTUALLY work for real: exact chronological order, real URLs, real commands, real requirements — no invented ones; if you cannot verify a detail, remove it rather than guess. If the script is narrative/explainer content instead, keep its topic and structure — only fix factual errors and vague or wrong claims; do not turn it into a tutorial.`}
@@ -29,7 +29,7 @@ Editing rules (both modes):
 - Each voiceover stays 2–4 spoken sentences; each caption max 8 words and never empty; each action describes ONLY what is visually seen — move commands, URLs, code or step text out of the action and into the voiceover.
 - Preserve each scene's "style", "app" and "camera" fields EXACTLY as given — copy them through unchanged.
 
-Return the corrected scenes (same count or fewer if a scene had to be cut) and a one-sentence "note" naming the most important fix you made.`,
+Return EXACTLY the same number of scenes as the draft, in the same order — never cut, merge or add scenes; correct each scene in place. Also return a one-sentence "note" naming the most important fix you made.`,
     add_context_from_internet: true,
     response_json_schema: {
       type: 'object',
