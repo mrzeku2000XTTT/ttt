@@ -14,6 +14,43 @@ export default async function(req) {
     let normalized = url.trim();
     if (!/^https?:\/\//i.test(normalized)) normalized = `https://${normalized}`;
 
+    // X/Twitter post links: the page is JS-only and returns generic metadata.
+    // Use the public oEmbed endpoint to get the exact post text instead.
+    const xMatch = normalized.match(/(?:x|twitter)\.com\/[^/]+\/status(?:es)?\/(\d+)/i);
+    if (xMatch) {
+      try {
+        const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(`https://twitter.com/i/status/${xMatch[1]}`)}&omit_script=1&dnt=true`;
+        const ores = await fetch(oembedUrl, { signal: AbortSignal.timeout(12000) });
+        if (ores.ok) {
+          const o = await ores.json();
+          const tweetText = String(o?.html || '')
+            .split('&mdash;')[0]
+            .replace(/<br\s*\/?>/gi, ' ')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (tweetText) {
+            return Response.json({
+              url: normalized,
+              host: 'x.com',
+              status: 200,
+              title: `Post by ${o?.author_name || 'X user'}`,
+              metaDescription: tweetText,
+              siteName: 'X (Twitter)',
+              headings: [],
+              textContent: tweetText,
+              contentLength: tweetText.length,
+              isXPost: true,
+              authorName: o?.author_name || '',
+            });
+          }
+        }
+      } catch { /* fall through to the generic fetch below */ }
+    }
+
     const strategies = [
       {
         name: 'Desktop',

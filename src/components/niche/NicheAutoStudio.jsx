@@ -252,12 +252,35 @@ export default function NicheAutoStudio({ niches }) {
         return;
       }
 
+      // If the user pasted a link, read its actual content first — X posts and
+      // articles can't be read from the URL alone, and the video must be about
+      // what the post actually says, not a guess from the link.
+      let linkContext = '';
+      const pastedUrls = text.match(/https?:\/\/[^\s]+/gi) || [];
+      if (pastedUrls.length) {
+        setWork('Reading the link you pasted');
+        const fetched = await Promise.all(
+          pastedUrls.slice(0, 2).map((u) => base44.functions.invoke('fetchUrlContent', { url: u }).catch(() => null))
+        );
+        linkContext = fetched
+          .map((r, i) => {
+            const d = r?.textContent ? r : r?.data;
+            if (!d) return '';
+            const content = String(d.textContent || d.metaDescription || '').trim();
+            if (!content) return '';
+            return `Link: ${pastedUrls[i]}\nTitle: ${d.title || ''}\nContent: ${content.slice(0, 3000)}`;
+          })
+          .filter(Boolean)
+          .join('\n\n');
+      }
+
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the NICHE Studio auto-pilot — a creative content director that builds animated explainer videos for creators, inside a chat.
 
 ${convo ? `Conversation so far:\n${convo}\n\n` : ''}User's saved niches: ${(niches || []).map((n) => n.niche_name).join(', ') || 'none yet'}.
 
 User's new message: """${text}"""
+${linkContext ? `\nThe user pasted a link. Its actual fetched content:\n"""${linkContext}"""\nWhen the message contains a pasted link, the video topic MUST be based on this exact fetched content — for an X/Twitter post, the post's own words — never on the URL, the account name, or assumptions about it.` : ''}
 
 Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (${s.name})`).join(', ')}. Default style: neutral.
 "real-ui" (Real UI Clone) is special: use it when the topic is about a REAL app (e.g. "Kaspium wallet", "Cash App", "Binance", "Kaspa wallet", "Kaspa node dashboard"). It researches the app's actual UI from the web and clones it faithfully — premium modern UI, not stick-man. When you pick "real-ui" you MUST also set the app field to the app's name.
