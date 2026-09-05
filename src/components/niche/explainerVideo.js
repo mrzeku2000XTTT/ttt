@@ -356,8 +356,13 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   // setInterval (not requestAnimationFrame) so the capture loop keeps drawing
   // even when the user leaves the tab — rAF is paused in background tabs.
   const wallStart = Date.now();
-  const guardMs = (totalDur + 5) * 1000;
+  const guardMs = (totalDur + 12) * 1000; // generous: mobile audio clocks can drift
   await new Promise((resolve) => {
+    let settled = false;
+    const done = () => { if (!settled) { settled = true; clearInterval(timer); resolve(); } };
+    // Backup: resolve the moment the mixed narration actually finishes playing,
+    // so the recorder never stops before the last line is spoken.
+    player.onended = done;
     const tick = () => {
       const elapsed = ac.currentTime - t0;
       let idx = segments.findIndex((s) => elapsed >= s.start && elapsed < s.end);
@@ -377,8 +382,7 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
       }
       // wall-clock guard: finish even if the audio clock stalls
       if (elapsed >= totalDur || Date.now() - wallStart > guardMs) {
-        clearInterval(timer);
-        resolve();
+        done();
       }
     };
     const timer = setInterval(tick, 40);

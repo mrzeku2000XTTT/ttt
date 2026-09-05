@@ -384,37 +384,40 @@ Decide what to do:
           const r = await researchAppUi(realUiScene.app || v.app || v.title);
           uiDesc = r.description;
         }
-        // draw every scene and record every narration in parallel — far faster than one by one.
-        // Each call retries once; a scene that still fails is dropped instead of killing the
-        // whole build, so the video always finishes (with a note about any dropped scenes).
+        // Generate every scene's image and narration in small batches with retry, so a
+        // transient failure on one scene doesn't drop it (and doesn't kill the build).
         let done = 0;
         const total = n * 2;
         const step = () => setWork(`Drawing & narrating · ${++done}/${total}`);
         setWork(`Drawing & narrating · 0/${total}`);
         const withRetry = async (fn) => {
-          for (let attempt = 0; attempt < 2; attempt++) {
-            try { return await fn(); } catch (e) { if (attempt === 1) return null; }
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try { return await fn(); } catch (e) { if (attempt === 2) return null; await new Promise((r) => setTimeout(r, 800 * (attempt + 1))); }
           }
         };
+        const mapBatch = async (items, concurrency, fn) => {
+          const out = new Array(items.length).fill(null);
+          let idx = 0;
+          await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+            while (idx < items.length) { const i = idx++; if (i < items.length) out[i] = await fn(items[i], i); }
+          }));
+          return out;
+        };
         const [images, audios] = await Promise.all([
-          Promise.all(
-            scenes.map((s, i) =>
-              withRetry(() => base44.integrations.Core.GenerateImage({
-                prompt: (() => {
-                  const sid = sceneStyles[i];
-                  if (sid === 'real-ui') return realUiPrompt(s.app || v.app || v.title, uiDesc, s.action, v.color_mode);
-                  const ls = learnedStyles.find((x) => x.id === sid);
-                  if (ls) return customStylePrompt(ls.description, s.action, v.color_mode);
-                  return stylePrompt(sid, s.action, v.color_mode);
-                })()
-              })).then((r) => { step(); return r?.url || null; })
-            )
+          mapBatch(scenes, 3, (s, i) =>
+            withRetry(() => base44.integrations.Core.GenerateImage({
+              prompt: (() => {
+                const sid = sceneStyles[i];
+                if (sid === 'real-ui') return realUiPrompt(s.app || v.app || v.title, uiDesc, s.action, v.color_mode);
+                const ls = learnedStyles.find((x) => x.id === sid);
+                if (ls) return customStylePrompt(ls.description, s.action, v.color_mode);
+                return stylePrompt(sid, s.action, v.color_mode);
+              })()
+            })).then((r) => { step(); return r?.url || null; })
           ),
-          Promise.all(
-            scenes.map((s) =>
-              withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }))
-                .then((r) => { step(); return r?.url || null; })
-            )
+          mapBatch(scenes, 3, (s) =>
+            withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }))
+              .then((r) => { step(); return r?.url || null; })
           )
         ]);
         if (token.cancelled) { audioContext.close().catch(() => {}); return; }
