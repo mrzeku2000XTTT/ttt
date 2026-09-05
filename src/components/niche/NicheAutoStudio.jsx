@@ -384,15 +384,22 @@ Decide what to do:
           const r = await researchAppUi(realUiScene.app || v.app || v.title);
           uiDesc = r.description;
         }
-        // draw every scene and record every narration in parallel — far faster than one by one
+        // draw every scene and record every narration in parallel — far faster than one by one.
+        // Each call retries once; a scene that still fails is dropped instead of killing the
+        // whole build, so the video always finishes (with a note about any dropped scenes).
         let done = 0;
         const total = n * 2;
         const step = () => setWork(`Drawing & narrating · ${++done}/${total}`);
         setWork(`Drawing & narrating · 0/${total}`);
+        const withRetry = async (fn) => {
+          for (let attempt = 0; attempt < 2; attempt++) {
+            try { return await fn(); } catch (e) { if (attempt === 1) return null; }
+          }
+        };
         const [images, audios] = await Promise.all([
           Promise.all(
             scenes.map((s, i) =>
-              base44.integrations.Core.GenerateImage({
+              withRetry(() => base44.integrations.Core.GenerateImage({
                 prompt: (() => {
                   const sid = sceneStyles[i];
                   if (sid === 'real-ui') return realUiPrompt(s.app || v.app || v.title, uiDesc, s.action, v.color_mode);
@@ -400,23 +407,31 @@ Decide what to do:
                   if (ls) return customStylePrompt(ls.description, s.action, v.color_mode);
                   return stylePrompt(sid, s.action, v.color_mode);
                 })()
-              }).then((r) => (step(), r.url))
+              })).then((r) => { step(); return r?.url || null; })
             )
           ),
           Promise.all(
             scenes.map((s) =>
-              base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }).then((r) => (step(), r.url))
+              withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }))
+                .then((r) => { step(); return r?.url || null; })
             )
           )
         ]);
         if (token.cancelled) { audioContext.close().catch(() => {}); return; }
+        // A scene needs both its image and its narration to make the cut.
+        const kept = scenes.map((s, i) => ({ s, img: images[i], aud: audios[i] })).filter((x) => x.img && x.aud);
+        const dropped = n - kept.length;
+        if (!kept.length) throw new Error('Every scene failed to generate — try again in a moment.');
+        const finalScenes = kept.map((x) => x.s);
+        const finalImages = kept.map((x) => x.img);
+        const finalAudios = kept.map((x) => x.aud);
         setWork('Stitching your video');
         const blob = await compileExplainerVideo({
-          images,
-          audios,
-          captions: scenes.map((s) => (captionMode === 'tts' ? (s.voiceover || s.caption || '') : (s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
+          images: finalImages,
+          audios: finalAudios,
+          captions: finalScenes.map((s) => (captionMode === 'tts' ? (s.voiceover || s.caption || '') : (s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
           style: styleId,
-          cameras: scenes.map((s) => s.camera),
+          cameras: finalScenes.map((s) => s.camera),
           musicUrl: soundtrack ? musicUrl.trim() : '',
           onProgress: setWork,
           audioContext
@@ -440,13 +455,13 @@ Decide what to do:
               tags: v.tags || [],
               style_name: learned ? learned.name : (ANIMATION_STYLES.find((s) => s.id === styleId) || {}).name || 'Neutral',
               video_url: up.file_url,
-              scenes: scenes.map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
+              scenes: finalScenes.map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
               fact_note: checked.note || ''
             });
           } catch {}
         })();
         finish({
-          text: `${res.reply || `Your explainer is ready — ${n} scenes, narrated, captioned, stitched. Saved to your Library.`}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
+          text: `${res.reply || `Your explainer is ready — ${finalScenes.length} scenes, narrated, captioned, stitched. Saved to your Library.`}${dropped ? ` ⚠️ ${dropped} scene(s) were dropped because their image or narration failed to generate (the rest finished).` : ''}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
           video: {
             url: URL.createObjectURL(blob),
             type: blob.type,
