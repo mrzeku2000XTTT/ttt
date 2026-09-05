@@ -1,22 +1,33 @@
 import { base44 } from '@/api/base44Client';
 
-// Second-pass fact-check: verifies a generated explainer script against live
-// web sources and returns corrected scenes BEFORE the user sees anything.
-export async function factCheckExplainer({ topic, title, scenes }) {
+// Second-pass accuracy edit: verifies a generated explainer script BEFORE the
+// user sees anything. When the video retells pasted SOURCE content (an X post,
+// an article), that source is the absolute ground truth — this pass fixes
+// factual slips, it never rewrites the topic. Without a source, it verifies a
+// how-to script's steps against live web research.
+export async function factCheckExplainer({ topic, title, scenes, source }) {
   const listing = (scenes || [])
     .map((s, i) => `Scene ${i + 1} — action: ${s.action}\nvoiceover: ${s.voiceover}`)
     .join('\n\n');
 
   const res = await base44.integrations.Core.InvokeLLM({
-    prompt: `You are a strict technical fact-checker for explainer videos. Topic: "${topic}". Here is the draft script:
+    prompt: `You are a strict accuracy editor for explainer videos. Topic: "${topic}".
+${source ? `\nThis script retells the following SOURCE CONTENT, which is the absolute ground truth for its topic, facts and claims:\n"""${String(source).slice(0, 4000)}"""\n` : ''}
+Here is the draft script:
 
 ${listing}
 
-Research the topic live on the web and verify every technical claim. Then correct the script so it ACTUALLY teaches the viewer how to do the thing for real:
-- Exact steps in chronological order: which website to open, which buttons or menus to click, which commands to run.
-- Real URLs, real command lines, real requirements (RAM, disk, versions) — no invented ones. If you cannot verify a detail, remove it rather than guess.
-- Each voiceover stays 2–4 spoken sentences; each caption stays max 8 words and is never empty; each action describes ONLY what is visually seen — move any commands, URLs, code or step text out of the action and into the voiceover.
-- Fix or cut anything vague, generic, or wrong.
+${source
+  ? `SOURCE-GROUNDED MODE — the script must retell the SOURCE CONTENT 1:1:
+- The topic NEVER changes. The script stays about exactly what the source is about. Anything you find on the web — including tools, coins or projects with SIMILAR NAMES — never replaces or expands the subject. The source wins over the web, always.
+- Verify each scene against the source: anything the script claims that the source does not say gets fixed or cut; anything central to the source that the script misses gets woven in (keep the scene count if possible).
+- A narrative source (a post, build update, story, report) STAYS a narrative — never rewrite it into a how-to tutorial with steps, buttons or commands.
+- Use live web research ONLY to double-check concrete facts the script states (dates, numbers, names). If the web seems to contradict the source, the source wins. If a detail is not in the source and cannot be verified, remove it rather than guess.`
+  : `Verify the script's claims with live web research. If the script is genuinely a how-to/tutorial, correct the steps so they ACTUALLY work for real: exact chronological order, real URLs, real commands, real requirements — no invented ones; if you cannot verify a detail, remove it rather than guess. If the script is narrative/explainer content instead, keep its topic and structure — only fix factual errors and vague or wrong claims; do not turn it into a tutorial.`}
+
+Editing rules (both modes):
+- Each voiceover stays 2–4 spoken sentences; each caption max 8 words and never empty; each action describes ONLY what is visually seen — move commands, URLs, code or step text out of the action and into the voiceover.
+- Preserve each scene's "style", "app" and "camera" fields EXACTLY as given — copy them through unchanged.
 
 Return the corrected scenes (same count or fewer if a scene had to be cut) and a one-sentence "note" naming the most important fix you made.`,
     add_context_from_internet: true,
@@ -30,8 +41,11 @@ Return the corrected scenes (same count or fewer if a scene had to be cut) and a
             type: 'object',
             properties: {
               action: { type: 'string' },
+              style: { type: 'string' },
+              app: { type: 'string' },
               caption: { type: 'string' },
-              voiceover: { type: 'string' }
+              voiceover: { type: 'string' },
+              camera: { type: 'string' }
             }
           }
         }
@@ -40,5 +54,11 @@ Return the corrected scenes (same count or fewer if a scene had to be cut) and a
   });
 
   const checked = Array.isArray(res.scenes) && res.scenes.length ? res.scenes : scenes;
-  return { scenes: checked, note: res.note || '' };
+  // Carry per-scene style/app/camera through when the model left them out
+  const original = scenes || [];
+  const merged = checked.map((s, i) => {
+    const o = checked.length === original.length ? original[i] || {} : {};
+    return { ...o, ...s, style: s.style || o.style, app: s.app || o.app, camera: s.camera || o.camera };
+  });
+  return { scenes: merged, note: res.note || '' };
 }
