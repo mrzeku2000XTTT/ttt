@@ -44,7 +44,7 @@ export default function HyperLanding({ onEnterStudio }) {
 
       {/* Nav */}
       <header className="relative z-10 border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto pl-5 pr-14 sm:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <HyperLogo size={38} />
             <span className="text-lg font-black tracking-tight">HYPER</span>

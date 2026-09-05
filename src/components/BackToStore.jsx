@@ -29,10 +29,11 @@ export default function BackToStore() {
   return (
     <button
       onClick={handleBack}
-      className="fixed top-3 right-3 z-[120] flex items-center gap-1.5 px-3 py-2 rounded-full bg-zinc-900/90 backdrop-blur-md text-white text-[12px] font-medium border border-white/15 shadow-lg shadow-black/30 hover:bg-zinc-800 transition-colors active:scale-95"
+      className="fixed top-3 right-3 z-[120] flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-full bg-zinc-900/90 backdrop-blur-md text-white text-[12px] font-medium border border-white/15 shadow-lg shadow-black/30 hover:bg-zinc-800 transition-colors active:scale-95"
+      title="Exit to Store"
     >
       <Store className="w-3.5 h-3.5" />
-      <span>Exit to Store</span>
+      <span className="hidden sm:inline">Exit to Store</span>
     </button>
   );
 }

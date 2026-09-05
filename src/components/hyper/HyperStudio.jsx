@@ -196,7 +196,7 @@ export default function HyperStudio({ onBack }) {
     <div className="flex flex-col h-screen">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto pl-4 pr-14 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <HyperLogo size={36} />
             <div className="flex items-center gap-2">
