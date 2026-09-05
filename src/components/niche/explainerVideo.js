@@ -58,6 +58,101 @@ export const ANIMATION_STYLES = [
         : `Hand-cut documentary paper collage illustration: ${action}. Aged newsprint and archival map surfaces, black and white halftone photograph cutouts with rough scissor-cut edges and offset accent strokes, torn paper edges, masking tape fragments, typewriter caption strips, rubber stamp marks, red string and brass pins where the story calls for connections, desaturated archival palette of tan, ink black, and halftone gray with ONE hot red signal accent and a restrained mustard yellow secondary, visible print grain and paper fiber, matte, flat even documentary lighting with soft cutout drop shadows. One hero element with 2-3 supporting elements, generous negative space, 16:9 composition. Every element must appear physically hand-cut and layered from real paper, with visible cutout edges, halftone print texture, and soft shadow separation between layers. NOT digital illustration, NOT cartoon, NOT 3D render, NOT glossy, no gradients, no clutter, no watermark, no logos. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
   },
   {
+    // Traditional (Cel) Animation — classic hand-drawn, painted-background look
+    id: 'cel',
+    name: 'Traditional Cel',
+    bg: '#f3ead9',
+    ink: '#1a1a1a',
+    prompt: (action) =>
+      `Classic hand-drawn traditional cel animation film still showing: ${action}. One expressive cartoon character mid-action with organic hand-inked outlines and soft painted gouache background, warm storybook colors, subtle celluloid paint texture, the fluid artistic feel of golden-age hand-drawn animation, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // Digital 2D Animation — flat rigged vector characters
+    id: 'digital-2d',
+    name: 'Digital 2D',
+    bg: '#ffffff',
+    ink: '#111111',
+    prompt: (action) =>
+      `Modern digital 2D animation still showing: ${action}. One flat vector character mid-action built with clean digital ink-and-paint shapes, smooth curves, bold outlines, flat bright palette, simple gradient-free background shapes, crisp TV-animation look, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // 3D CGI Animation — Pixar-style computer-generated render
+    id: 'cgi-3d',
+    name: '3D CGI',
+    bg: '#0d1117',
+    ink: '#f5f5f5',
+    selfColor: true,
+    prompt: (action, colorMode) =>
+      `High-quality 3D CGI animated film still showing: ${action}. One appealing stylized 3D character mid-action with smooth subsurface-scattering skin, detailed textures, soft cinematic three-point lighting, shallow depth of field, rich colors and lifelike physics, polished feature-animation render, wide 16:9 composition. ${colorMode === 'mono' ? 'Rendered in elegant desaturated near-monochrome grading with one subtle accent.' : ''} Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // Anime — Japanese stylized aesthetics, cinematic composition
+    id: 'anime',
+    name: 'Anime',
+    bg: '#101418',
+    ink: '#f5f5f5',
+    selfColor: true,
+    prompt: (action, colorMode) =>
+      `Japanese anime film still showing: ${action}. One anime character mid-action with large expressive eyes, detailed stylized hair, dramatic rim lighting and atmospheric color grading, cinematic composition with depth and negative space, crisp cel shading, hand-painted background art, wide 16:9 composition. ${colorMode === 'mono' ? 'Rendered in moody grayscale manga-screen tone.' : ''} Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // Claymation — stop-motion clay figures
+    id: 'claymation',
+    name: 'Claymation',
+    bg: '#efe8dc',
+    ink: '#1a1a1a',
+    prompt: (action) =>
+      `Stop-motion claymation film still showing: ${action}. One handmade plasticine clay character mid-action with visible fingerprints and thumb marks, wire armature poses, tactile clay texture, miniature handcrafted set with soft studio lighting, shallow depth of field, charming imperfect handmade quality, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // Cutout Animation — flat paper shapes, simple graphic look
+    id: 'cutout',
+    name: 'Paper Cutout Simple',
+    bg: '#fdf8ef',
+    ink: '#1a1a1a',
+    prompt: (action) =>
+      `Flat paper cutout animation still showing: ${action}. One character built from simple flat colored paper shapes with crisp die-cut edges, minimalist geometric construction, bold solid colors, collage background of flat paper shapes, playful childlike charm, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // Motion Graphics — abstract kinetic design, no characters
+    id: 'motion-graphics',
+    name: 'Motion Graphics',
+    bg: '#0a0a0a',
+    ink: '#f5f5f5',
+    selfColor: true,
+    prompt: (action, colorMode) =>
+      `Premium motion graphics design frame depicting: ${action}. Abstract geometric shapes, flowing curves, spheres and ribbons in motion, sleek gradient meshes, glossy 3D elements floating in space, clean tech-commercial aesthetic, dramatic lighting, generous negative space, wide 16:9 composition. ${colorMode === 'mono' ? 'Strict black, white and gray minimalist palette.' : 'Rich modern color palette.'} Purely visual symbolism, no characters. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // Rotoscope — traced-over live action, realistic fluid movement
+    id: 'rotoscope',
+    name: 'Rotoscope',
+    bg: '#14161a',
+    ink: '#f5f5f5',
+    selfColor: true,
+    prompt: (action, colorMode) =>
+      `Rotoscoped animation film still showing: ${action}. One character drawn with traced-over-live-action linework, realistic fluid human proportions and natural weight, painterly fills with soft smudged edges, moody adult-animation atmosphere, dreamlike halos of light, wide 16:9 composition. ${colorMode === 'mono' ? 'Muted grayscale with a single glowing accent.' : 'Muted cinematic color grading.'} Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // Rubber Hose — 1920s/30s bouncy vintage cartoon
+    id: 'rubber-hose',
+    name: 'Rubber Hose',
+    bg: '#f2f2f2',
+    ink: '#111111',
+    prompt: (action) =>
+      `Vintage 1930s rubber hose cartoon film still showing: ${action}. One cheerful character drawn with simple round head, pie-cut eyes, gloved hands and loose bendy rubber-hose limbs without elbows or knees, mid-action with a bouncy chaotic energy, film grain, aged monochrome cartoon aesthetic with a flickering vintage film feel, wide 16:9 composition. Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
+    // Stylized Hybrid (2.5D / NPR) — 3D rendered with comic/2D line work
+    id: 'hybrid-2d',
+    name: '2.5D Hybrid',
+    bg: '#101014',
+    ink: '#f5f5f5',
+    selfColor: true,
+    prompt: (action, colorMode) =>
+      `Stylized hybrid 2.5D animated film still showing: ${action}. One 3D-rendered character mid-action flattened with non-photorealistic comic-book treatment — bold inked outlines, halftone dot shading, chromatic aberration edges, hand-drawn smear-frame energy, graphic novel color blocking, dramatic perspective, wide 16:9 composition. ${colorMode === 'mono' ? 'High-contrast black-and-white ink treatment with one accent.' : 'Vivid comic color palette.'} Depict the scene purely as artwork. The frame must contain no written language of any kind — no words, letters, numbers, labels, signs, logos, captions or typography anywhere. Never transcribe any part of this description into the image.`
+  },
+  {
     id: 'real-ui',
     name: 'Real UI Clone',
     bg: '#0a0a0a',
