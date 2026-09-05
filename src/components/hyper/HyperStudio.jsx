@@ -245,7 +245,7 @@ export default function HyperStudio({ onBack }) {
               return (
                 <button
                   key={q.label}
-                  onClick={() => send(q.text)}
+                  onClick={() => { setInput(q.text); inputRef.current?.focus(); }}
                   disabled={busy}
                   className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/[0.03] text-white/60 hover:text-white hover:border-white/40 text-xs font-semibold transition-all disabled:opacity-40"
                 >
