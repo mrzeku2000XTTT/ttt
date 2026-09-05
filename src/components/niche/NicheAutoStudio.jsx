@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Code2 } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
 import { ANIMATION_STYLES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
+import { sceneCodePrompt, buildFramezDoc, fallbackScene } from '@/components/framez/framezKit';
+import FramezStage from '@/components/framez/studio/FramezStage';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -68,6 +70,9 @@ export default function NicheAutoStudio({ niches }) {
   const [soundtrack, setSoundtrack] = useState(false);
   const [motionFx, setMotionFx] = useState(() => {
     try { return JSON.parse(localStorage.getItem('niche_motionfx') || 'false'); } catch { return false; }
+  });
+  const [framezMode, setFramezMode] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('niche_framez') || 'false'); } catch { return false; }
   });
   const [musicUrl, setMusicUrl] = useState('');
   const [showRecentChips, setShowRecentChips] = useState(false);
@@ -374,6 +379,49 @@ Decide what to do:
           .then((r) => setMessages((m) => m.map((x) => (x.id === workId ? { ...x, tips: r.tips || [] } : x))))
           .catch(() => {});
 
+        // Framez mode: render the same researched script as a coded HTML motion
+        // film (HyperFrames style) instead of drawn scenes. Exports a real MP4.
+        if (framezMode) {
+          setWork('Directing coded shots');
+          const film = {
+            title: v.title,
+            aspect: '16:9',
+            W: 1280, H: 720,
+            bg: v.color_mode === 'color' ? '#0b0b12' : '#050507',
+            ink: '#f5f5f7',
+            accent: '#22d3ee',
+            shots: scenes.map((s, i) => ({ label: s.caption || `Shot ${i + 1}`, summary: s.action, duration: 1.8, motion: s.camera || 'your choice' }))
+          };
+          const genFz = async (shot, i) => {
+            for (let a = 0; a < 2; a++) {
+              try {
+                const r = await base44.integrations.Core.InvokeLLM({
+                  prompt: sceneCodePrompt(film, shot, i, scenes.length),
+                  response_json_schema: { type: 'object', properties: { html: { type: 'string' }, js: { type: 'string' } }, required: ['html', 'js'] }
+                });
+                if (r?.html && r?.js) return r;
+              } catch {}
+            }
+            return fallbackScene(shot);
+          };
+          const results = new Array(scenes.length);
+          for (let b = 0; b < scenes.length; b += 3) {
+            const batch = scenes.slice(b, b + 3).map((s, i) => ({ i: b + i }));
+            const got = await Promise.all(batch.map(({ i }) => genFz(film.shots[i], i)));
+            batch.forEach(({ i }, k) => { results[i] = got[k]; });
+            setWork(`Coding shots · ${Math.min(scenes.length, b + 3)}/${scenes.length}`);
+            if (token.cancelled) { audioContext.close().catch(() => {}); return; }
+          }
+          audioContext.close().catch(() => {});
+          const fzScenes = scenes.map((s, i) => ({ html: results[i].html, js: results[i].js, dur: 1.8 }));
+          const doc = buildFramezDoc(fzScenes, { W: film.W, H: film.H, bg: film.bg, ink: film.ink });
+          finish({
+            text: res.reply || `Your coded film "${v.title}" is ready — ${scenes.length} shots, rendered live. Hit export for a real MP4.`,
+            framez: { doc, film }
+          });
+          return;
+        }
+
         // Per-scene style resolution — the AI can remix styles scene by scene;
         // anything it names that we don't have falls back to the video default
         const validStyle = (sid) => ANIMATION_STYLES.some((x) => x.id === sid) || learnedStyles.some((x) => x.id === sid);
@@ -560,6 +608,11 @@ Decide what to do:
                       <YouTubeDeploy title={m.video.title} description={m.video.description} tags={m.video.tags} />
                     </div>
                   )}
+                  {m.framez && (
+                    <div className="mt-3">
+                      <FramezStage doc={m.framez.doc} film={m.framez.film} />
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -704,6 +757,23 @@ Decide what to do:
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span className="text-xs font-medium">Motion FX</span>
+              </button>
+              <button
+                onClick={() =>
+                  setFramezMode((s) => {
+                    const next = !s;
+                    try { localStorage.setItem('niche_framez', JSON.stringify(next)); } catch {}
+                    return next;
+                  })
+                }
+                disabled={busy}
+                title="Framez — render this video as a coded HTML motion film (HyperFrames style) instead of drawn scenes. Exports a real MP4."
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  framezMode ? 'border-cyan-400/60 bg-cyan-400/15 text-cyan-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Framez</span>
               </button>
               <button
                 onClick={() => setShowLearner(true)}

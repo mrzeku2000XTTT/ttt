@@ -44,9 +44,8 @@ export async function exportFilm(iframe, onProgress) {
   octx.fillStyle = '#000';
   octx.fillRect(0, 0, W, H);
   const stream = out.captureStream(fps);
-  const mime = window.MediaRecorder?.isTypeSupported?.('video/mp4;codecs=avc1')
-    ? 'video/mp4;codecs=avc1'
-    : 'video/webm;codecs=vp9';
+  const mp4Types = ['video/mp4;codecs=avc1', 'video/mp4'];
+  const mime = mp4Types.find((c) => window.MediaRecorder?.isTypeSupported?.(c)) || 'video/mp4';
   const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
   const chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -67,5 +66,5 @@ export async function exportFilm(iframe, onProgress) {
   await new Promise((r) => setTimeout(r, 300));
   rec.stop();
   await stopped;
-  return { blob: new Blob(chunks, { type: mime }), ext: mime.includes('mp4') ? 'mp4' : 'webm' };
+  return { blob: new Blob(chunks, { type: mime }), ext: 'mp4' };
 }
