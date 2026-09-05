@@ -1,4 +1,5 @@
 // Explainer video utilities — shared by the Manual lab and the Automatic chat studio
+import { assignMotionFx } from './motionFx';
 
 // 5 animation styles the user can pick from — "neutral" is the default
 export const ANIMATION_STYLES = [
@@ -295,7 +296,7 @@ export function createAudioContext() {
   return ac;
 }
 
-export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext }) {
+export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false }) {
   const style = styleById(styleId);
   const W = 1280;
   const H = 720;
@@ -406,23 +407,31 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   const cams = (cameras && cameras.length === segments.length) ? cameras : autoCameras(segments.length);
   const isUi = styleId === 'real-ui';
   const drawH = H - 100;
+  // Motion FX mode: each scene gets a varied After Effects-style treatment
+  // (eased cameras, cutout entrances, drift, sweeps, particles). UI clones
+  // stay static — cloned screens should never be sliced or shaken.
+  const fxs = motion && !isUi ? assignMotionFx(segments.length) : null;
 
-  const drawContent = (idx, p, alpha) => {
+  const drawContent = (idx, p, alpha, absT = 0) => {
     ctx.save();
     ctx.globalAlpha = alpha;
     const seg = segments[idx];
     const { img } = seg;
-    const move = isUi ? 'static' : (cams[idx] || 'static');
-    const { z, dx, dy } = kenBurns(move, p);
-    // UI clones stay contained (full phone screen visible, never cropped); every
-    // other style uses cover so there is always overflow to pan and zoom into.
-    const baseFit = isUi ? Math.min(W / img.width, drawH / img.height) : Math.max(W / img.width, drawH / img.height);
-    const scale = baseFit * z;
-    const dw = img.width * scale;
-    const dh = img.height * scale;
-    const panX = dx * Math.max(0, dw - W) / 2;
-    const panY = dy * Math.max(0, dh - drawH) / 2;
-    ctx.drawImage(img, (W - dw) / 2 + panX, (drawH - dh) / 2 + panY, dw, dh);
+    if (fxs) {
+      fxs[idx].draw(ctx, img, p, absT, { W, H: drawH, style });
+    } else {
+      const move = isUi ? 'static' : (cams[idx] || 'static');
+      const { z, dx, dy } = kenBurns(move, p);
+      // UI clones stay contained (full phone screen visible, never cropped); every
+      // other style uses cover so there is always overflow to pan and zoom into.
+      const baseFit = isUi ? Math.min(W / img.width, drawH / img.height) : Math.max(W / img.width, drawH / img.height);
+      const scale = baseFit * z;
+      const dw = img.width * scale;
+      const dh = img.height * scale;
+      const panX = dx * Math.max(0, dw - W) / 2;
+      const panY = dy * Math.max(0, dh - drawH) / 2;
+      ctx.drawImage(img, (W - dw) / 2 + panX, (drawH - dh) / 2 + panY, dw, dh);
+    }
     const lines = wrapCaption(seg.caption);
     ctx.font = 'bold 34px "Nunito", sans-serif';
     ctx.fillStyle = style.ink;
@@ -470,10 +479,10 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
       if (idx < segments.length - 1 && elapsed >= xfadeStart && elapsed < seg.end) {
         // crossfade the next scene in during the breath gap between narration lines
         const t = Math.min(1, (elapsed - xfadeStart) / XFADE);
-        drawContent(idx, localP, 1 - t);
-        drawContent(idx + 1, 0, t);
+        drawContent(idx, localP, 1 - t, elapsed);
+        drawContent(idx + 1, 0, t, elapsed);
       } else {
-        drawContent(idx, localP, 1);
+        drawContent(idx, localP, 1, elapsed);
       }
       // wall-clock guard: finish even if the audio clock stalls
       if (elapsed >= totalDur || Date.now() - wallStart > guardMs) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
@@ -66,6 +66,9 @@ export default function NicheAutoStudio({ niches }) {
   const [voxMode, setVoxMode] = useState(false);
   const [captionMode, setCaptionMode] = useState('summary'); // 'summary' = short label, 'tts' = real narration
   const [soundtrack, setSoundtrack] = useState(false);
+  const [motionFx, setMotionFx] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('niche_motionfx') || 'false'); } catch { return false; }
+  });
   const [musicUrl, setMusicUrl] = useState('');
   const [showRecentChips, setShowRecentChips] = useState(false);
   const [showTools, setShowTools] = useState(false);
@@ -428,7 +431,7 @@ Decide what to do:
         const finalScenes = kept.map((x) => x.s);
         const finalImages = kept.map((x) => x.img);
         const finalAudios = kept.map((x) => x.aud);
-        setWork('Stitching your video');
+        setWork(motionFx ? 'Animating scenes with Motion FX' : 'Stitching your video');
         const blob = await compileExplainerVideo({
           images: finalImages,
           audios: finalAudios,
@@ -437,7 +440,8 @@ Decide what to do:
           cameras: finalScenes.map((s) => s.camera),
           musicUrl: soundtrack ? musicUrl.trim() : '',
           onProgress: setWork,
-          audioContext
+          audioContext,
+          motion: motionFx
         });
         // best effort — save the finished video to the user's Library
         (async () => {
@@ -683,6 +687,23 @@ Decide what to do:
               >
                 <Music className="w-3.5 h-3.5" />
                 <span className="text-xs font-medium">Music</span>
+              </button>
+              <button
+                onClick={() =>
+                  setMotionFx((s) => {
+                    const next = !s;
+                    try { localStorage.setItem('niche_motionfx', JSON.stringify(next)); } catch {}
+                    return next;
+                  })
+                }
+                disabled={busy}
+                title="Motion FX — turn still scenes into moving motion graphics: eased camera moves, cutout slide entrances, parallax drift, light sweeps, particles, shake, pop and tile reveals. Off = classic Ken Burns look."
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  motionFx ? 'border-fuchsia-400/60 bg-fuchsia-400/15 text-fuchsia-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Motion FX</span>
               </button>
               <button
                 onClick={() => setShowLearner(true)}
