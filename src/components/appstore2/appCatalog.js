@@ -4,7 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
-  { name: "Kinezma", path: "Kinezma", cat: "Creative", logo: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&h=200&fit=crop", desc: "Image → living motion · AI splits your image into editable components, chat writes the keyframes, export MP4" },
+  { name: "Kinezma", path: "Kinezma", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1090987fa_generated_image.png", desc: "Image → living motion · AI splits your image into editable components, chat writes the keyframes, export MP4" },
   { name: "FrameMimic", path: "FrameMimic", cat: "Dev Tools", logo: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&h=200&fit=crop", desc: "Video → frame-by-frame HTML clones · capture every frame, 1:1 clone & replay as HTML, export MP4" },
   { name: "HYPER", path: "Hyper", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d87c0d602_generated_image.png", desc: "Crypto marketing intelligence · GPT-5.6 brain, YouTube ad research, organic growth strategies & cinematic MP4 renders" },
   { name: "MealPlan", path: "MealPlan", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0d385409d_generated_image.png", desc: "Goal + diet · a week of dinners with calories & one grocery list" },
@@ -29,7 +29,7 @@ export const APPS = [
   { name: "RoomRater", path: "RoomRater", cat: "Lifestyle", logo: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop", desc: "Photo of your room · honest roast + 5 redesign fixes" },
   { name: "ResumeRevive", path: "ResumeRevive", cat: "Productivity", logo: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=200&h=200&fit=crop", desc: "Old resume + job link · tailored resume, cover letter & keywords" },
   { name: "NICHE", path: "Niche", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9b60f0292_generated_image.png", desc: "Instant niche finder · know what you're good at & exactly what to post" },
-  { name: "NICHE Studio", path: "NicheStudio", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9b60f0292_generated_image.png", desc: "Your saved niches · generate thumbnails & video scripts, deploy to YouTube" },
+  { name: "NICHE Studio", path: "NicheStudio", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8881384ed_generated_image.png", desc: "Your saved niches · generate thumbnails & video scripts, deploy to YouTube" },
   { name: "Narrate", path: "Narrate", cat: "Education", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/cd9921ac6_generated_image.png", desc: "Scan or search any book · listen with live word-by-word captions" },
   { name: "iFilm", path: "IFilm", cat: "Media", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/77074ab57_generated_image.png", desc: "Search & watch videos · trending feed, instant playback" },
   { name: "Spatial", path: "Spatial", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9889bbc28_image.jpeg", desc: "Room transform prompt studio · upload a room photo, get a consistent image-gen prompt" },
