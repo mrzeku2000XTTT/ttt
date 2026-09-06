@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Wand2, Code2 } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Wand2, Code2, Crosshair } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
@@ -11,6 +11,7 @@ import { sceneCodePrompt, buildFramezDoc, fallbackScene } from '@/components/fra
 import FramezStage from '@/components/framez/studio/FramezStage';
 import { cloneVideoToFile } from './videoClone';
 import { enhanceAnimationPrompt } from './promptoEnhance';
+import NicheMimicCard from './NicheMimicCard';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -64,6 +65,7 @@ const TipRotator = ({ tips }) => {
 // stitches the stick-man explainer and hands it back ready to deploy.
 export default function NicheAutoStudio({ niches }) {
   const [messages, setMessages] = useState([]);
+  const [userEmail, setUserEmail] = useState('');
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [learnedStyles, setLearnedStyles] = useState([]);
@@ -79,6 +81,9 @@ export default function NicheAutoStudio({ niches }) {
   });
   const [cloneMode, setCloneMode] = useState(() => {
     try { return JSON.parse(localStorage.getItem('niche_clone') || 'false'); } catch { return false; }
+  });
+  const [mimicMode, setMimicMode] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('niche_mimic') || 'false'); } catch { return false; }
   });
   const [promptoMode, setPromptoMode] = useState(() => {
     try { return JSON.parse(localStorage.getItem('niche_prompto') || 'false'); } catch { return false; }
@@ -97,6 +102,13 @@ export default function NicheAutoStudio({ niches }) {
   const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
   const inputRef = useRef(null);
+  // per-user session memory — each user's chat history, attachments and clones
+  // live under their own key, so the agent remembers everything they said
+  const chatKey = userEmail ? `${CHAT_KEY}:${userEmail}` : CHAT_KEY;
+
+  useEffect(() => {
+    base44.auth.me().then((u) => { if (u?.email) setUserEmail(u.email); }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const names = (niches || []).map((n) => n.niche_name);
@@ -105,7 +117,11 @@ export default function NicheAutoStudio({ niches }) {
       : `Paste a topic, an X link, or a prompt and I'll take it from there — or just talk to me.`;
     // refresh survival — restore the chat if there is one
     try {
-      const saved = (JSON.parse(localStorage.getItem(CHAT_KEY) || '[]') || []).filter((m) => m && m.role && m.text);
+      let saved = (JSON.parse(localStorage.getItem(chatKey) || '[]') || []).filter((m) => m && m.role && m.text);
+      // migrate the very first time — an older chat may live under the shared key
+      if (!saved.length && chatKey !== CHAT_KEY) {
+        saved = (JSON.parse(localStorage.getItem(CHAT_KEY) || '[]') || []).filter((m) => m && m.role && m.text);
+      }
       if (saved.length && saved.some((m) => m.role === 'user')) {
         setMessages(saved);
         return;
@@ -118,7 +134,7 @@ export default function NicheAutoStudio({ niches }) {
         text: `Hey — I'm your NICHE auto-pilot. Give me a topic, an X link, or a prompt — I'll ask you to pick the animation style, how many scenes you want, and whether you want it black & white or colored. Then I research live, write the script, draw every scene, narrate, caption and stitch the MP4 — ready to deploy to YouTube.\n\n${intro}`
       }
     ]);
-  }, []);
+  }, [chatKey]);
 
   // Auto-scroll ONLY when a new message arrives or the working bubble settles —
   // not on the 1-second elapsed timer updates, which would yank the user back
@@ -146,25 +162,30 @@ export default function NicheAutoStudio({ niches }) {
     base44.entities.NicheStyle.list().then(setLearnedStyles).catch(() => {});
   }, []);
 
-  // keep the chat on disk so a refresh doesn't wipe it
+  // keep the chat on disk (per user) so a refresh doesn't wipe it — including
+  // their attachments, references and the latest Mimic clone
   useEffect(() => {
     if (!messages.length) return;
+    const rows = messages
+      .filter((m) => !m.working)
+      .map((m) => ({
+        id: m.id,
+        role: m.role,
+        text: m.text,
+        video: m.video ? { title: m.video.title, description: m.video.description, tags: m.video.tags } : undefined,
+        attachments: Array.isArray(m.attachments) ? m.attachments.filter((s) => !String(s).startsWith('blob:')) : undefined,
+        mimic: m.mimic ? { html: m.mimic.html } : undefined
+      }));
     try {
-      localStorage.setItem(
-        CHAT_KEY,
-        JSON.stringify(
-          messages
-            .filter((m) => !m.working)
-            .map((m) => ({
-              id: m.id,
-              role: m.role,
-              text: m.text,
-              video: m.video ? { title: m.video.title, description: m.video.description, tags: m.video.tags } : undefined
-            }))
-        )
-      );
-    } catch {}
-  }, [messages]);
+      localStorage.setItem(chatKey, JSON.stringify(rows));
+    } catch {
+      // clone HTML can be heavy — keep only the newest clone's code
+      const lastMimicId = [...rows].reverse().find((r) => r.mimic?.html)?.id;
+      try {
+        localStorage.setItem(chatKey, JSON.stringify(rows.map((r) => (r.mimic?.html && r.id !== lastMimicId ? { ...r, mimic: undefined } : r))));
+      } catch {}
+    }
+  }, [messages, chatKey]);
 
   // Attach images/files (or paste them) so the AI can ingest them as references,
   // analyze and fact-check them, and ask focused questions before building.
@@ -204,12 +225,13 @@ export default function NicheAutoStudio({ niches }) {
   };
 
   const send = async (raw) => {
-    const text = (raw ?? input).trim();
+    let text = (raw ?? input).trim();
     if (busy) return;
     let attachmentUrls = [];
     let attachmentPreviews = [];
     let videoFile = null;
     let videoUrl = null;
+    let imageUploadUrl = null;
     if (attachments.length) {
       const uploaded = await Promise.all(
         attachments.map(async (a) => {
@@ -228,8 +250,10 @@ export default function NicheAutoStudio({ niches }) {
       attachmentPreviews = attachments.map((a) => a.previewUrl).filter(Boolean);
       const vid = uploaded.find((u) => u.a.file?.type?.startsWith('video/') && u.url);
       if (vid) { videoFile = vid.a.file; videoUrl = vid.url; }
+      const img = uploaded.find((u) => u.a.file?.type?.startsWith('image/') && u.url);
+      if (img) imageUploadUrl = img.url;
     }
-    const userText = text || (attachmentUrls.length ? 'Analyze the attached reference(s) and tell me what you see — fact-check anything claim-like, and ask me one focused question about what I want built.' : '');
+    const userText = text || (mimicMode && imageUploadUrl ? 'Clone this screenshot 1:1' : attachmentUrls.length ? 'Analyze the attached reference(s) and tell me what you see — fact-check anything claim-like, and ask me one focused question about what I want built.' : '');
     if (!userText) return;
     setInput('');
     setAttachments([]);
@@ -240,10 +264,11 @@ export default function NicheAutoStudio({ niches }) {
     const token = { cancelled: false };
     buildRef.current = token;
     workIdRef.current = workId;
+    const shownAtts = attachmentUrls.length ? attachmentUrls : attachmentPreviews;
     const history = [...messages];
     setMessages((m) => [
       ...m,
-      { id: uid(), role: 'user', text: userText, attachments: attachmentPreviews.length ? attachmentPreviews : undefined },
+      { id: uid(), role: 'user', text: userText, attachments: shownAtts.length ? shownAtts : undefined },
       { id: workId, role: 'ai', working: true, text: 'Thinking', startedAt: Date.now() }
     ]);
 
@@ -331,6 +356,46 @@ export default function NicheAutoStudio({ niches }) {
             : `Your browser couldn't re-render that .mov, so I saved the reference itself as your clone (1:1 identical). Attach an .mp4 to get a re-rendered MP4 clone.`,
           video: { url: outUrl, type: outType, title, description: '', tags: [] },
         });
+        return;
+      }
+      // Mimic mode: clone an attached screenshot into pixel-faithful HTML (the
+      // same engine MetaMimic uses) right inside the chat — then edit it by
+      // just saying the change. The clone lives in the session, so follow-up
+      // "I want to change…" messages keep editing the same clone.
+      if (mimicMode) {
+        audioContext.close().catch(() => {});
+        const lastMimic = [...history].reverse().find((m) => m.mimic?.html);
+        if (imageUploadUrl) {
+          setWork('Mimicking your screenshot 1:1');
+          let html = '';
+          try {
+            const r = await base44.functions.invoke('metaMimicClone', { imageUrl: imageUploadUrl, cloneMode: true });
+            html = r?.data?.html || '';
+          } catch {}
+          if (token.cancelled) return;
+          finish(
+            html
+              ? { text: 'Cloned 1:1 — preview it below. Tell me any change ("make the button red", "swap the headline…") and I\'ll edit the clone.', mimic: { html } }
+              : { text: "I couldn't clone that screenshot — try a clearer PNG/JPG of the UI." }
+          );
+          return;
+        }
+        if (lastMimic && userText) {
+          setWork('Applying your change to the clone');
+          let html = '';
+          try {
+            const r = await base44.functions.invoke('metaMimicClone', { currentHtml: lastMimic.mimic.html, instruction: userText });
+            html = r?.data?.html || '';
+          } catch {}
+          if (token.cancelled) return;
+          finish(
+            html
+              ? { text: 'Done — the clone is updated below.', mimic: { html } }
+              : { text: "That edit didn't go through — try rephrasing the change." }
+          );
+          return;
+        }
+        finish({ text: 'Mimic is on — attach or paste a screenshot of the UI you want cloned, and I\'ll rebuild it as pixel-perfect HTML you can preview, download and edit by just telling me.' });
         return;
       }
       if (promptoMode && text.trim()) {
@@ -627,7 +692,7 @@ Decide what to do:
         {messages.map((m) => (
           <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
             <div
-              className={`${m.framez ? 'w-full' : 'max-w-[85%]'} rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              className={`${m.framez || m.mimic ? 'w-full' : 'max-w-[85%]'} rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 m.role === 'user'
                   ? 'bg-white text-black rounded-br-sm'
                   : 'bg-white/[0.04] border border-white/10 text-white rounded-bl-sm'
@@ -675,6 +740,11 @@ Decide what to do:
                   {m.framez && (
                     <div className="mt-3">
                       <FramezStage doc={m.framez.doc} film={m.framez.film} />
+                    </div>
+                  )}
+                  {m.mimic && (
+                    <div className="mt-3">
+                      <NicheMimicCard html={m.mimic.html} />
                     </div>
                   )}
                 </>
@@ -874,6 +944,23 @@ Decide what to do:
                 <span className="text-xs font-medium">Auto Clone</span>
               </button>
               <button
+                onClick={() =>
+                  setMimicMode((s) => {
+                    const next = !s;
+                    try { localStorage.setItem('niche_mimic', JSON.stringify(next)); } catch {}
+                    return next;
+                  })
+                }
+                disabled={busy}
+                title="Mimic — attach a screenshot and I'll clone it 1:1 into previewable HTML, then edit it by just telling me what to change."
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  mimicMode ? 'border-sky-400/60 bg-sky-400/15 text-sky-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Mimic</span>
+              </button>
+              <button
                 onClick={() => setShowLearner(true)}
                 disabled={busy}
                 title="Teach me a style from a video or images"
@@ -962,7 +1049,7 @@ Decide what to do:
               }
             }}
             onPaste={handlePaste}
-            placeholder={cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : promptoMode ? 'Prompto is on — type anything, I will amplify it into a detailed animation brief…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
+            placeholder={mimicMode ? 'Mimic is on — attach a screenshot to clone it, or tell me what to change…' : cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : promptoMode ? 'Prompto is on — type anything, I will amplify it into a detailed animation brief…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
             disabled={busy}
             className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
