@@ -9,12 +9,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { imageUrl, instructions } = await req.json();
+    const { imageUrl, instructions, cloneMode } = await req.json();
     if (!imageUrl) {
       return Response.json({ error: 'imageUrl is required' }, { status: 400 });
     }
 
-    const prompt = `You are MetaMimic, a world-class front-end engineer and motion designer. Study the attached screenshot/image of a web page or UI and recreate it as a single, self-contained, premium-quality HTML file that looks like a polished, animated production website (think Framer / motion-design landing pages).
+    const clonePrompt = `You are MetaMimic in EXACT 1:1 CLONE mode. Study the attached image and reproduce it in HTML as a strict, pixel-faithful 1:1 clone — nothing else.
+
+OUTPUT RULES:
+- Output ONE complete HTML document (<!DOCTYPE html> ... </html>).
+- Inline ALL CSS inside a <style> tag in the <head>. No external stylesheets or frameworks (a Google Fonts <link> is allowed if the image shows a distinctive font).
+- Return ONLY the raw HTML. No markdown fences, no explanation.
+
+ABSOLUTE 1:1 RULES:
+- Render ONLY what is actually visible in the image. If the image shows a single pill button, the HTML contains ONLY that pill button — no hero, no headline, no paragraph, no nav, no footer, no extra sections.
+- NEVER add, guess, invent, or "complete" content. Any element or text not present in the image is FORBIDDEN.
+- Copy the image's text EXACTLY, character for character, preserving per-word colors, weights and emphasis spans.
+- Match exact geometry: element width/height ratios, padding, border-radius, font-size, font-weight, letter-spacing, line-height, exact hex colors, borders, shadows. Estimate proportions carefully from the image.
+- Position elements exactly as in the image (centering, spacing, and the image's own background color).
+- NO animations, NO hover effects, NO scroll effects, NO JavaScript. Static, exact reproduction only.
+- If the image shows only a fragment of a page, clone only that fragment.
+${instructions ? `\nEXTRA USER INSTRUCTIONS: ${instructions}` : ''}
+
+Return ONLY the raw HTML document.`;
+
+    const prompt = cloneMode ? clonePrompt : `You are MetaMimic, a world-class front-end engineer and motion designer. Study the attached screenshot/image of a web page or UI and recreate it as a single, self-contained, premium-quality HTML file that looks like a polished, animated production website (think Framer / motion-design landing pages).
 
 OUTPUT RULES:
 - Output ONE complete HTML document (<!DOCTYPE html> ... </html>).

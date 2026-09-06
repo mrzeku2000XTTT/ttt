@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Upload, Loader2, Code2, Eye, Copy, Download, Check, AlertCircle } from "lucide-react";
+import { Upload, Loader2, Code2, Eye, Copy, Download, Check, AlertCircle, Crosshair } from "lucide-react";
 
 export default function MetaMimicStudio() {
   const fileInputRef = useRef(null);
@@ -12,6 +12,9 @@ export default function MetaMimicStudio() {
   const [tab, setTab] = useState("preview");
   const [copied, setCopied] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [cloneMode, setCloneMode] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('metamimic_clone') || 'false'); } catch { return false; }
+  });
 
   const pickFile = () => fileInputRef.current?.click();
 
@@ -37,7 +40,7 @@ export default function MetaMimicStudio() {
     setElapsed(0);
     const tick = setInterval(() => setElapsed((s) => s + 1), 1000);
     try {
-      const res = await base44.functions.invoke("metaMimicClone", { imageUrl });
+      const res = await base44.functions.invoke("metaMimicClone", { imageUrl, cloneMode });
       if (res?.data?.html) {
         setHtml(res.data.html);
         setTab("preview");
@@ -104,6 +107,24 @@ export default function MetaMimicStudio() {
                   <span className="text-xs text-white/50">PNG, JPG — a UI or web page works best</span>
                 </>
               )}
+            </button>
+
+            <button
+              onClick={() =>
+                setCloneMode((s) => {
+                  const next = !s;
+                  try { localStorage.setItem('metamimic_clone', JSON.stringify(next)); } catch {}
+                  return next;
+                })
+              }
+              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-xs font-bold transition ${
+                cloneMode
+                  ? 'border-[#4A90E2] bg-[#4A90E2]/15 text-[#7ab3ff]'
+                  : 'border-white/15 text-white/50 hover:border-white/35 hover:text-white'
+              }`}
+            >
+              <Crosshair className="h-4 w-4" />
+              {cloneMode ? "1:1 Clone ON — exact reproduction, nothing added" : "1:1 Clone — exact image, no extras"}
             </button>
 
             <button
