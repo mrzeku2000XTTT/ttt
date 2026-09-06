@@ -418,7 +418,7 @@ Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (
 "vox" (Vox Documentary) is the documentary style — use it for documentary topics: history, wars, famous people, true stories, business mysteries, major world events, or anything that reads like a mini-documentary. It produces an archival cinematic photographic look with muted color grading, consistent across every scene. Match casual names ("documentary", "vox style", "explainer documentary") to "vox". But do NOT default an entire video to vox just because a post or update reads serious — unless the user asked for documentary/vox, remix per scene.
 ${learnedStyles.length ? `Styles the user personally taught you from their own videos or images (style ids): ${learnedStyles.map((s) => `${s.id} ("${s.name}")`).join(', ')}. If they ask to use one of these, use its id.` : ''}
 ${voxMode ? `MOTION V1 IS ON: the user selected the Vox documentary style. Always use style "vox" — do NOT ask about the animation style, and skip style from the things you ask for. You may still ask about scene_count and color_mode if unknown (default color_mode "color" for vox, 10 scenes).` : ''}
-${attachmentUrls.length ? `The user attached ${attachmentUrls.length} reference file(s) — they are provided as file_urls (images and/or documents). Look at them carefully and use them as context for the video or your answer. Analyze and fact-check any claim-like content in them against live sources. If, after looking, the user's intent for a video is still genuinely unclear, ask ONE concise question (kind "ask").` : ''}
+${attachmentUrls.length ? `The user attached ${attachmentUrls.length} reference file(s) — they are provided as file_urls (images and/or documents). Look at them carefully. If any attached image is a STYLE REFERENCE (an art style, characters, or palette), the ENTIRE video must copy that exact style 1:1: same animation/illustration type, same line quality, same character design and proportions, same color palette. HARD RULE: if the reference is black-and-white or grayscale, set color_mode to "mono" and describe every scene so it stays strictly black-and-white — never add color, never reinterpret it as painterly, realistic, vintage, or more detailed than the reference. Also use the attachments as content context, and analyze and fact-check any claim-like content in them against live sources. If, after looking, the user's intent for a video is still genuinely unclear, ask ONE concise question (kind "ask").` : ''}
 
 First, carefully extract the user's intent from their message and the conversation so far:
 - topic: what the video is about
@@ -585,15 +585,25 @@ Decide what to do:
         };
         const [images, audios] = await Promise.all([
           mapBatch(scenes, 3, (s, i) =>
-            withRetry(() => base44.integrations.Core.GenerateImage({
-              prompt: (() => {
-                const sid = sceneStyles[i];
+            withRetry(() => {
+              const sid = sceneStyles[i];
+              const basePrompt = (() => {
                 if (sid === 'real-ui') return realUiPrompt(s.app || v.app || v.title, uiDesc, s.action, v.color_mode);
                 const ls = learnedStyles.find((x) => x.id === sid);
                 if (ls) return customStylePrompt(ls.description, s.action, v.color_mode);
                 return stylePrompt(sid, s.action, v.color_mode);
-              })()
-            })).then((r) => { step(); return r?.url || null; })
+              })();
+              // STYLE LOCK: when the user attached reference image(s), they define
+              // the exact look — copy them 1:1 instead of restyling. A grayscale
+              // reference means a strictly black-and-white scene, never recolored.
+              const prompt = attachmentUrls.length
+                ? `${basePrompt}\n\nSTYLE LOCK — the attached reference image(s) define the exact art style for this scene: copy them 1:1. Same illustration/animation type, same line weight and clean flat shapes, same character design and proportions as the reference (a character in the reference stays the SAME character here). CRITICAL PALETTE RULE: if the reference is black-and-white or grayscale, the output must be strictly black-and-white — NEVER add any color, no sepia, no painterly or realistic rendering. Replicate the reference's exact look, do not reinterpret it.`
+                : basePrompt;
+              return base44.integrations.Core.GenerateImage({
+                prompt,
+                ...(attachmentUrls.length ? { existing_image_urls: attachmentUrls } : {})
+              });
+            }).then((r) => { step(); return r?.url || null; })
           ),
           mapBatch(scenes, 3, (s) =>
             withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }))
