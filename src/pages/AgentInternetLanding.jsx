@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Settings as SettingsIcon, LayoutGrid, Search, Database } from "lucide-react";
+import { Lock, Settings as SettingsIcon, LayoutGrid, Search, Database, Cpu } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
 import PowerConsole from "@/components/agentinternet/PowerConsole";
@@ -17,6 +17,7 @@ import WebSearchBrowser from "@/components/agentinternet/WebSearchBrowser";
 import KaspaSearchBrowser from "@/components/agentinternet/KaspaSearchBrowser";
 import CryptoSearchBrowser from "@/components/agentinternet/CryptoSearchBrowser";
 import HotTopicsTicker from "@/components/agentinternet/HotTopicsTicker";
+import SuperComputerChat from "@/components/agentinternet/SuperComputerChat";
 
 /**
  * AgentInternetLanding — the published landing for all users (Gen Z).
@@ -36,6 +37,7 @@ export default function AgentInternetLanding() {
   const [guestOpen, setGuestOpen] = useState(false);
   const [onboard, setOnboard] = useState(null); // null | "agent" | "ttt"
   const [viewAsGuest, setViewAsGuest] = useState(false); // admin-only preview toggle
+  const [superMode, setSuperMode] = useState(false); // admin-only supercomputer chat
   const [showBrowser, setShowBrowser] = useState(false); // browse-all-live-pages directory
   const [showWebSearch, setShowWebSearch] = useState(false); // search-any-site iframe
   const [showKaspaSearch, setShowKaspaSearch] = useState(false); // search kaspahub index
@@ -110,6 +112,9 @@ export default function AgentInternetLanding() {
     else setDenied(true);
   };
 
+  // ── Supercomputer mode — ChatGPT-style chat, every TTT app as backend ──
+  if (superMode) return <SuperComputerChat onExit={() => setSuperMode(false)} />;
+
   return (
     <div className="fixed inset-0 bg-black text-white overflow-hidden select-none">
       {settings.galaxy !== false && <GalaxyVideoBg />}
@@ -130,12 +135,24 @@ export default function AgentInternetLanding() {
 
         <div className="flex-1" />
 
-        <button
-          onClick={() => setShowSettings(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-black/70 backdrop-blur-xl text-white/70 hover:text-white transition-colors"
-        >
-          <SettingsIcon className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <button
+              onClick={() => setSuperMode(true)}
+              title="Super Computer — the entire TTT suite as one backend"
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-white/20 bg-gradient-to-r from-white/[0.08] to-white/[0.02] backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/80 hover:text-white hover:border-white/50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              Super Computer
+            </button>
+          )}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-black/70 backdrop-blur-xl text-white/70 hover:text-white transition-colors"
+          >
+            <SettingsIcon className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Scrollable content */}
