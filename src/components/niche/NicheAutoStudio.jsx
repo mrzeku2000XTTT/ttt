@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Code2 } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Wand2, Code2 } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
@@ -10,6 +10,7 @@ import { factCheckExplainer } from './explainerFactCheck';
 import { sceneCodePrompt, buildFramezDoc, fallbackScene } from '@/components/framez/framezKit';
 import FramezStage from '@/components/framez/studio/FramezStage';
 import { cloneVideoToFile } from './videoClone';
+import { enhanceAnimationPrompt } from './promptoEnhance';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -78,6 +79,9 @@ export default function NicheAutoStudio({ niches }) {
   });
   const [cloneMode, setCloneMode] = useState(() => {
     try { return JSON.parse(localStorage.getItem('niche_clone') || 'false'); } catch { return false; }
+  });
+  const [promptoMode, setPromptoMode] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('niche_prompto') || 'false'); } catch { return false; }
   });
   const [musicUrl, setMusicUrl] = useState('');
   const [showRecentChips, setShowRecentChips] = useState(false);
@@ -328,6 +332,13 @@ export default function NicheAutoStudio({ niches }) {
           video: { url: outUrl, type: outType, title, description: '', tags: [] },
         });
         return;
+      }
+      if (promptoMode && text.trim()) {
+        setWork('Prompto is amplifying your prompt');
+        try {
+          const enhanced = await enhanceAnimationPrompt({ text, linkContext, attachmentUrls });
+          if (enhanced && typeof enhanced === 'string' && enhanced.trim()) text = enhanced;
+        } catch {}
       }
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the NICHE Studio auto-pilot — a creative content director that builds animated explainer videos for creators, inside a chat.
@@ -830,6 +841,23 @@ Decide what to do:
               </button>
               <button
                 onClick={() =>
+                  setPromptoMode((s) => {
+                    const next = !s;
+                    try { localStorage.setItem('niche_prompto', JSON.stringify(next)); } catch {}
+                    return next;
+                  })
+                }
+                disabled={busy}
+                title="Prompto inline — expand your short input into a detailed animation brief (consistent with your topic + any reference/URL) before the director builds the video."
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  promptoMode ? 'border-violet-400/60 bg-violet-400/15 text-violet-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Prompto</span>
+              </button>
+              <button
+                onClick={() =>
                   setCloneMode((s) => {
                     const next = !s;
                     try { localStorage.setItem('niche_clone', JSON.stringify(next)); } catch {}
@@ -934,7 +962,7 @@ Decide what to do:
               }
             }}
             onPaste={handlePaste}
-            placeholder={cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
+            placeholder={cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : promptoMode ? 'Prompto is on — type anything, I will amplify it into a detailed animation brief…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
             disabled={busy}
             className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
