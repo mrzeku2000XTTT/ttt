@@ -343,11 +343,15 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const LEAD = 0.25;
   const GAP = 0.45;
+  // never let a rushed narration line shrink a scene below this hold time —
+  // a 14-second video for 8 scenes means the lines came back far too short
+  const MIN_SCENE = 3.5;
   const timeline = [];
   let cursor = LEAD;
   buffers.forEach((buf, i) => {
-    timeline.push({ at: cursor, dur: buf.duration, buf, img: imgEls[i], caption: captions[i] || '' });
-    cursor += buf.duration + GAP;
+    const hold = Math.max(buf.duration, MIN_SCENE);
+    timeline.push({ at: cursor, dur: hold, buf, img: imgEls[i], caption: captions[i] || '' });
+    cursor += hold + GAP;
   });
   const totalDur = cursor + 0.4;
   const offline = new OfflineCtx(2, Math.ceil(totalDur * ac.sampleRate), ac.sampleRate);

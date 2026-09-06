@@ -18,6 +18,35 @@ export default async function(req) {
     // Use the public oEmbed endpoint to get the exact post text instead.
     const xMatch = normalized.match(/(?:x|twitter)\.com\/[^/]+\/status(?:es)?\/(\d+)/i);
     if (xMatch) {
+      // Public JSON mirrors of the post — full text and author without a login
+      // wall. Try them before the oEmbed endpoint, which often rate-limits.
+      for (const apiUrl of [
+        `https://api.fxtwitter.com/status/${xMatch[1]}`,
+        `https://api.vxtwitter.com/status/${xMatch[1]}`,
+      ]) {
+        try {
+          const mres = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
+          if (!mres.ok) continue;
+          const j = await mres.json();
+          const t = j?.tweet || j?.data || {};
+          const tweetText = String(t?.text || '').replace(/\s+/g, ' ').trim();
+          if (tweetText) {
+            return Response.json({
+              url: normalized,
+              host: 'x.com',
+              status: 200,
+              title: `Post by ${t?.author?.name || t?.user?.name || 'X user'}`,
+              metaDescription: tweetText,
+              siteName: 'X (Twitter)',
+              headings: [],
+              textContent: tweetText,
+              contentLength: tweetText.length,
+              isXPost: true,
+              authorName: t?.author?.name || t?.user?.name || '',
+            });
+          }
+        } catch { /* try the next mirror */ }
+      }
       try {
         const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(`https://twitter.com/i/status/${xMatch[1]}`)}&omit_script=1&dnt=true`;
         const ores = await fetch(oembedUrl, { signal: AbortSignal.timeout(12000) });

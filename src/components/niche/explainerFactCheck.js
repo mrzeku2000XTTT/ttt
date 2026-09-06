@@ -26,7 +26,7 @@ ${source
   : `Verify the script's claims with live web research. If the script is genuinely a how-to/tutorial, correct the steps so they ACTUALLY work for real: exact chronological order, real URLs, real commands, real requirements — no invented ones; if you cannot verify a detail, remove it rather than guess. If the script is narrative/explainer content instead, keep its topic and structure — only fix factual errors and vague or wrong claims; do not turn it into a tutorial.`}
 
 Editing rules (both modes):
-- Each voiceover stays 2–4 spoken sentences; each caption max 8 words and never empty; each action describes ONLY what is visually seen — move commands, URLs, code or step text out of the action and into the voiceover.
+- Each voiceover stays 2–4 spoken sentences and 25–45 words — never shorten one below its draft length; each caption max 8 words and never empty; each action describes ONLY what is visually seen — move commands, URLs, code or step text out of the action and into the voiceover.
 - Preserve each scene's "style", "app" and "camera" fields EXACTLY as given — copy them through unchanged.
 
 Return EXACTLY the same number of scenes as the draft, in the same order — never cut, merge or add scenes; correct each scene in place. Also return a one-sentence "note" naming the most important fix you made.`,
