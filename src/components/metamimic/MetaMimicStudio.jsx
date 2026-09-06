@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Upload, Loader2, Code2, Eye, Copy, Download, Check, AlertCircle, Crosshair } from "lucide-react";
+import { Upload, Loader2, Code2, Eye, Copy, Download, Check, AlertCircle, Crosshair, Send } from "lucide-react";
 
 export default function MetaMimicStudio() {
   const fileInputRef = useRef(null);
@@ -15,6 +15,7 @@ export default function MetaMimicStudio() {
   const [cloneMode, setCloneMode] = useState(() => {
     try { return JSON.parse(localStorage.getItem('metamimic_clone') || 'false'); } catch { return false; }
   });
+  const [instruction, setInstruction] = useState("");
 
   const pickFile = () => fileInputRef.current?.click();
 
@@ -49,6 +50,31 @@ export default function MetaMimicStudio() {
       }
     } catch (err) {
       setError(err?.response?.data?.error || "Generation failed. Please try again.");
+    }
+    clearInterval(tick);
+    setGenerating(false);
+  };
+
+  const refine = async () => {
+    if (!html || !instruction.trim() || generating) return;
+    setError("");
+    setGenerating(true);
+    setElapsed(0);
+    const tick = setInterval(() => setElapsed((s) => s + 1), 1000);
+    try {
+      const res = await base44.functions.invoke("metaMimicClone", {
+        currentHtml: html,
+        instruction: instruction.trim(),
+      });
+      if (res?.data?.html) {
+        setHtml(res.data.html);
+        setInstruction("");
+        setTab("preview");
+      } else {
+        setError(res?.data?.error || "Could not apply that change.");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.error || "Edit failed. Please try again.");
     }
     clearInterval(tick);
     setGenerating(false);
@@ -195,6 +221,30 @@ export default function MetaMimicStudio() {
                     <code>{html}</code>
                   </pre>
                 )}
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    refine();
+                  }}
+                  className="mt-2 flex items-center gap-2 px-1"
+                >
+                  <input
+                    value={instruction}
+                    onChange={(e) => setInstruction(e.target.value)}
+                    placeholder="Change the text, color, font, background…"
+                    disabled={generating}
+                    className="flex-1 rounded-full border border-white/15 bg-black/30 px-4 py-2.5 text-xs text-white placeholder-white/35 outline-none transition focus:border-[#4A90E2] disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={generating || !instruction.trim()}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4A90E2] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    title="Apply this edit"
+                  >
+                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </button>
+                </form>
               </>
             )}
           </div>

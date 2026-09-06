@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { imageUrl, instructions, cloneMode } = await req.json();
+    const { imageUrl, instructions, cloneMode, currentHtml, instruction } = await req.json();
     if (!imageUrl) {
       return Response.json({ error: 'imageUrl is required' }, { status: 400 });
     }
@@ -27,13 +27,34 @@ ABSOLUTE 1:1 RULES:
 - Copy the image's text EXACTLY, character for character, preserving per-word colors, weights and emphasis spans.
 - Match exact geometry: element width/height ratios, padding, border-radius, font-size, font-weight, letter-spacing, line-height, exact hex colors, borders, shadows. Estimate proportions carefully from the image.
 - Position elements exactly as in the image (centering, spacing, and the image's own background color).
+- Fully responsive: every element must fit and wrap within a 390px-wide mobile viewport — NO horizontal clipping or overflow. Text must wrap or scale, never get cut off.
 - NO animations, NO hover effects, NO scroll effects, NO JavaScript. Static, exact reproduction only.
 - If the image shows only a fragment of a page, clone only that fragment.
 ${instructions ? `\nEXTRA USER INSTRUCTIONS: ${instructions}` : ''}
 
 Return ONLY the raw HTML document.`;
 
-    const prompt = cloneMode ? clonePrompt : `You are MetaMimic, a world-class front-end engineer and motion designer. Study the attached screenshot/image of a web page or UI and recreate it as a single, self-contained, premium-quality HTML file that looks like a polished, animated production website (think Framer / motion-design landing pages).
+    const refinePrompt = `You are MetaMimic's edit mode. You are given an existing self-contained HTML document (a UI clone) and ONE edit instruction from the user.
+
+EDIT RULES:
+- Apply ONLY the requested change (text, color, background, font, gradient, size, layout, etc.).
+- Do NOT change anything else: keep every other element, style, text, size and structure exactly as it is.
+- Do NOT add new sections or content beyond what the instruction asks.
+- Keep it ONE complete self-contained HTML document with inline CSS, no external frameworks. Return ONLY the raw HTML, no markdown fences, no explanation.
+- Make sure the result is fully responsive and never clips horizontally on a 390px-wide mobile viewport.
+
+CURRENT HTML:
+${currentHtml}
+
+USER EDIT INSTRUCTION: ${instruction}
+
+Return the full updated HTML document.`;
+
+    const prompt = currentHtml && instruction
+      ? refinePrompt
+      : cloneMode
+        ? clonePrompt
+        : `You are MetaMimic, a world-class front-end engineer and motion designer. Study the attached screenshot/image of a web page or UI and recreate it as a single, self-contained, premium-quality HTML file that looks like a polished, animated production website (think Framer / motion-design landing pages).
 
 OUTPUT RULES:
 - Output ONE complete HTML document (<!DOCTYPE html> ... </html>).
@@ -67,7 +88,12 @@ Return ONLY the raw HTML document.`;
       const raw = typeof r === 'string' ? r : (r?.html || '');
       const stripped = raw.replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
       const start = stripped.search(/<!DOCTYPE|<html/i);
-      return start >= 0 ? stripped.slice(start) : '';
+      let out = start >= 0 ? stripped.slice(start) : '';
+      // Guarantee a mobile viewport so the clone always fits phone screens.
+      if (out && !/name=["']viewport/i.test(out)) {
+        out = out.replace(/<head([^>]*)>/i, '<head$1>\n  <meta name="viewport" content="width=device-width, initial-scale=1">');
+      }
+      return out;
     };
 
     // Fast model first; only fall back to the slower, higher-fidelity model if it fails.
