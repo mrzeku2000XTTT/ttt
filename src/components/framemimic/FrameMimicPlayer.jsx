@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
 import {
-  Play, Pause, Repeat, Download, Loader2, SkipBack, SkipForward, FileCode2, PenLine,
+  Play, Pause, Repeat, Download, Loader2, SkipBack, SkipForward, FileCode2, PenLine, Layers,
 } from "lucide-react";
+import { buildCombinedHtml } from "./frameMimicHtmlExport";
 
 // Renders each cloned HTML frame in a sandboxed-free same-origin iframe and
 // exports the sequence as MP4 by rasterizing every frame (html2canvas) onto
@@ -11,11 +12,18 @@ import {
 
 const setDoc = (iframe, html) =>
   new Promise((resolve) => {
-    iframe.onload = () => setTimeout(resolve, 250); // let fonts/images settle
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setTimeout(resolve, 250); // let fonts/images settle
+    };
+    iframe.onload = finish;
     iframe.srcdoc = html;
+    setTimeout(finish, 5000); // safety: identical consecutive frames may not re-fire load
   });
 
-export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate }) {
+export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate, seekIndex, onCurrentChange }) {
   const [current, setCurrent] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(true);
@@ -51,7 +59,19 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate 
   const goTo = (n) => {
     if (editMode) saveEdits();
     setCurrent(n);
+    onCurrentChange?.(frames[n]?.index);
   };
+
+  // Follow the frame strip's selection so the preview, refine input and
+  // exports always act on the same frame.
+  useEffect(() => {
+    if (seekIndex == null) return;
+    const pos = frames.findIndex((f) => f.index === seekIndex);
+    if (pos >= 0 && pos !== current) {
+      if (editMode) saveEdits();
+      setCurrent(pos);
+    }
+  }, [seekIndex]);
 
   const toggleEdit = () => {
     if (editMode) { saveEdits(); setEditMode(false); }
@@ -63,10 +83,14 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate 
     const id = setInterval(() => {
       setCurrent((c) => {
         if (c + 1 >= frames.length) {
-          if (loop) return 0;
+          if (loop) {
+            onCurrentChange?.(frames[0]?.index);
+            return 0;
+          }
           setPlaying(false);
           return c;
         }
+        onCurrentChange?.(frames[c + 1]?.index);
         return c + 1;
       });
     }, 1000 / fps);
@@ -85,55 +109,96 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate 
     URL.revokeObjectURL(url);
   };
 
+  const downloadCombinedHtml = () => {
+    const exportFrames = framesRef.current.filter((f) => f.html);
+    if (!exportFrames.length) return;
+    const html = buildCombinedHtml(exportFrames, fps, width, height);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "framemimic.html";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("All frames exported as one animated HTML");
+  };
+
   const exportMp4 = async () => {
     if (exporting || !frames.length) return;
     if (editMode) { saveEdits(); setEditMode(false); await new Promise((r) => setTimeout(r, 200)); }
     const exportFrames = framesRef.current;
-    if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported?.("video/mp4")) {
-      toast.error("MP4 export needs Chrome or Edge.");
+    const mimeType = [
+      "video/mp4;codecs=avc1.42E01E",
+      "video/mp4;codecs=avc1",
+      "video/mp4",
+    ].find((t) => MediaRecorder.isTypeSupported?.(t));
+    if (!mimeType) {
+      toast.error("This browser can't record MP4 — try Chrome or Edge.");
       return;
     }
+
     setExporting(true);
     setExportMsg("Preparing…");
     setVideoUrl(null);
 
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, width, height);
-
-    const stream = canvas.captureStream(fps);
-    const chunks = [];
-    const rec = new MediaRecorder(stream, { mimeType: "video/mp4" });
-    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-    const stopped = new Promise((r) => { rec.onstop = r; });
-    rec.start();
-
     try {
+      // Phase 1 — rasterize every frame first, so the recording phase can run
+      // at exact real-time pacing (same length & smoothness as the source).
+      const shots = [];
       for (let i = 0; i < exportFrames.length; i++) {
         await setDoc(exportIframeRef.current, exportFrames[i].html);
         const doc = exportIframeRef.current.contentDocument;
         const shot = await html2canvas(doc.body, {
           width, height, scale: 1, backgroundColor: "#000", logging: false,
         });
-        ctx.drawImage(shot, 0, 0, width, height);
+        const blob = await new Promise((res) => shot.toBlob(res, "image/jpeg", 0.92));
+        if (!blob) throw new Error(`Frame ${i + 1} could not be rendered`);
+        const img = new Image();
+        await new Promise((res, rej) => {
+          img.onload = res;
+          img.onerror = () => rej(new Error(`Frame ${i + 1} could not be loaded`));
+          img.src = URL.createObjectURL(blob);
+        });
+        shots.push({ img, url: img.src });
         setExportMsg(`Rendering ${i + 1}/${exportFrames.length}…`);
+      }
+
+      // Phase 2 — record the pre-rendered frames to MP4 at exact pacing.
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, width, height);
+
+      const stream = canvas.captureStream(30);
+      const chunks = [];
+      const rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+      rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
+      const stopped = new Promise((r) => { rec.onstop = r; });
+      rec.start(500);
+
+      for (let i = 0; i < shots.length; i++) {
+        ctx.drawImage(shots[i].img, 0, 0, width, height);
+        setExportMsg(`Recording ${i + 1}/${shots.length}…`);
         await new Promise((r) => setTimeout(r, 1000 / fps));
+      }
+
+      await new Promise((r) => setTimeout(r, 200));
+      rec.stop();
+      await stopped;
+      stream.getTracks().forEach((t) => t.stop());
+      shots.forEach((s) => URL.revokeObjectURL(s.url));
+
+      if (chunks.length) {
+        const blob = new Blob(chunks, { type: mimeType });
+        setVideoUrl(URL.createObjectURL(blob));
+        toast.success("HTML video exported as MP4");
+      } else {
+        toast.error("No MP4 was recorded — try Chrome or Edge.");
       }
     } catch (err) {
       toast.error("Export failed: " + (err?.message || "unknown"));
-    }
-
-    rec.stop();
-    await stopped;
-    stream.getTracks().forEach((t) => t.stop());
-
-    if (chunks.length) {
-      const blob = new Blob(chunks, { type: "video/mp4" });
-      setVideoUrl(URL.createObjectURL(blob));
-      toast.success("HTML video exported as MP4");
     }
     setExportMsg("");
     setExporting(false);
@@ -243,6 +308,13 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate 
           title="Download this frame's HTML"
         >
           <FileCode2 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={downloadCombinedHtml}
+          className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white"
+          title="Download ALL frames as ONE animated HTML"
+        >
+          <Layers className="w-4 h-4" />
         </button>
         <button
           onClick={exportMp4}

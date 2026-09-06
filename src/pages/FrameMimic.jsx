@@ -6,6 +6,8 @@ import { extractFrames, MAX_VIDEO_SECONDS } from "@/components/framemimic/frameC
 import { cloneFrames, cloneFrame, refineFrame } from "@/components/framemimic/frameCloneEngine";
 import FrameStrip from "@/components/framemimic/FrameStrip";
 import FrameMimicPlayer from "@/components/framemimic/FrameMimicPlayer";
+import FrameMimicLibrary from "@/components/framemimic/FrameMimicLibrary";
+import { saveProject, getProject, genProjectId } from "@/components/framemimic/frameMimicStore";
 
 const FPS_OPTIONS = [2, 4, 6, 8];
 
@@ -25,6 +27,8 @@ export default function FrameMimicPage() {
   const [instruction, setInstruction] = useState("");
   const [refining, setRefining] = useState(false);
   const [videoName, setVideoName] = useState("");
+  const [projectId, setProjectId] = useState(null);
+  const [libKey, setLibKey] = useState(0);
 
   useEffect(() => {
     if (stage !== "cloning") return;
@@ -32,6 +36,27 @@ export default function FrameMimicPage() {
     const id = setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, [stage]);
+
+  // Auto-save to the library (debounced) so work survives refresh.
+  useEffect(() => {
+    if (!meta || !frames.some((f) => f.html)) return;
+    const id = setTimeout(() => {
+      const pid = projectId ?? genProjectId();
+      if (projectId == null) setProjectId(pid);
+      saveProject({
+        id: pid,
+        name: videoName || "Untitled clone",
+        videoName,
+        fps,
+        meta,
+        frames,
+        savedAt: Date.now(),
+      })
+        .then(() => setLibKey((k) => k + 1))
+        .catch(() => {});
+    }, 1200);
+    return () => clearTimeout(id);
+  }, [frames, meta, fps, videoName, projectId]);
 
   const handleVideo = async (e) => {
     const file = e.target.files?.[0];
@@ -120,6 +145,23 @@ export default function FrameMimicPage() {
     }
   };
 
+  const loadProject = async (p) => {
+    try {
+      const full = await getProject(p.id);
+      if (!full) return;
+      setProjectId(full.id);
+      setVideoName(full.videoName || full.name);
+      setFps(full.fps || 4);
+      setMeta(full.meta);
+      setFrames(full.frames || []);
+      setSelected(0);
+      setStage("done");
+      toast.success("Project loaded — everything is back.");
+    } catch {
+      toast.error("Couldn't open that project.");
+    }
+  };
+
   const clonedFrames = frames.filter((f) => f.html);
 
   return (
@@ -172,6 +214,7 @@ export default function FrameMimicPage() {
                 Every frame gets captured & cloned into HTML — {fps} fps ≈ {Math.floor(MAX_VIDEO_SECONDS * fps)} frames at {MAX_VIDEO_SECONDS}s
               </span>
             </button>
+            <FrameMimicLibrary refreshKey={libKey} onLoad={loadProject} />
           </div>
         )}
 
@@ -275,6 +318,8 @@ export default function FrameMimicPage() {
                   onUpdate={(idx, html) =>
                     setFrames((prev) => prev.map((f) => (f.index === idx ? { ...f, html } : f)))
                   }
+                  seekIndex={selected}
+                  onCurrentChange={(idx) => setSelected(idx)}
                 />
               </div>
             )}
