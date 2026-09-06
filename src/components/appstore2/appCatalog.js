@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Kinezma", path: "Kinezma", cat: "Creative", logo: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&h=200&fit=crop", desc: "Image → living motion · AI splits your image into editable components, chat writes the keyframes, export MP4" },
   { name: "FrameMimic", path: "FrameMimic", cat: "Dev Tools", logo: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&h=200&fit=crop", desc: "Video → frame-by-frame HTML clones · capture every frame, 1:1 clone & replay as HTML, export MP4" },
   { name: "HYPER", path: "Hyper", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d87c0d602_generated_image.png", desc: "Crypto marketing intelligence · GPT-5.6 brain, YouTube ad research, organic growth strategies & cinematic MP4 renders" },
   { name: "MealPlan", path: "MealPlan", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0d385409d_generated_image.png", desc: "Goal + diet · a week of dinners with calories & one grocery list" },
