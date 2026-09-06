@@ -37,7 +37,7 @@ export default function PromptPage() {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState([]); // numbered references [{num, url}] — max 10
   const [uploading, setUploading] = useState(false);
   const [autoAnalyze, setAutoAnalyze] = useState(true);
   const [copiedIdx, setCopiedIdx] = useState(null);
@@ -368,15 +368,22 @@ export default function PromptPage() {
   };
 
   // ── Image upload ───────────────────────────────────────────────
-  const handleImageUpload = async (file) => {
-    if (!file || !file.type.startsWith("image/")) return;
+  const handleImageUpload = async (files) => {
+    const list = Array.from(files || []).filter(f => f.type?.startsWith("image/"));
+    if (!list.length) return;
+    const room = 10 - uploadedImages.length;
+    if (room <= 0) { toast.error("Reference limit reached — 10 max."); return; }
+    const batch = list.slice(0, room);
+    if (list.length > room) toast.error(`Only ${room} more fit (10 max) — added ${batch.length}.`);
     setUploading(true);
-    const preview = URL.createObjectURL(file);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setUploadedImage({ url: file_url, preview: file_url });
-      toast.success("Image attached and ready to analyze!");
-    } catch { URL.revokeObjectURL(preview); toast.error("Upload failed."); }
+      const uploaded = await Promise.all(batch.map(async (file) => {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        return { url: file_url };
+      }));
+      setUploadedImages(prev => [...prev, ...uploaded].map((img, i) => ({ ...img, num: i + 1 })));
+      toast.success(`${uploaded.length} reference${uploaded.length > 1 ? 's' : ''} attached & numbered!`);
+    } catch { toast.error("Upload failed."); }
     finally { setUploading(false); }
   };
 
@@ -384,18 +391,21 @@ export default function PromptPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthorized) { toast.error('Connect wallet and create your agent first.'); return; }
-    if (!prompt.trim() && !uploadedImage) return;
+    if (!prompt.trim() && !uploadedImages.length) return;
 
     const currentPrompt = prompt;
-    const currentImage = uploadedImage;
-    const isAnalyzeRun = autoAnalyze && !!currentImage;
+    const currentImages = uploadedImages;
+    const isAnalyzeRun = autoAnalyze && currentImages.length > 0;
     const streamId = Date.now() + 1;
 
     const userMsg = {
       id: Date.now(), role: "user",
-      content: isAnalyzeRun ? `[Image Analysis] ${currentPrompt || 'Analyze and generate replication prompt'}` : currentPrompt,
-      imagePreview: currentImage?.preview || currentImage?.url,
-      imageUrl: currentImage?.url || null
+      content: isAnalyzeRun
+        ? `[Image Analysis · ${currentImages.length} numbered ref${currentImages.length > 1 ? 's' : ''}] ${currentPrompt || 'Analyze and generate replication prompt'}`
+        : currentPrompt,
+      images: currentImages,
+      imagePreview: null,
+      imageUrl: null
     };
     const streamMsg = { id: streamId, role: "assistant", content: "", streaming: true };
 
@@ -417,7 +427,7 @@ export default function PromptPage() {
     });
     if (!activeSessionId) setActiveSessionId(sessionId);
 
-    setPrompt(""); setUploadedImage(null); setShowSuggestions(false); setLoading(true);
+    setPrompt(""); setUploadedImages([]); setShowSuggestions(false); setLoading(true);
 
     try {
       const kb = getKnowledgeContext();
@@ -432,7 +442,10 @@ export default function PromptPage() {
       const historySlice = allMsgs.slice(-20);
       const historyStr = historySlice.map(m => {
         if (m.role === 'user') {
-          return `User: ${m.content}${m.imagePreview ? ' [sent an image]' : ''}`;
+          const refNote = Array.isArray(m.images) && m.images.length
+            ? ` [attached numbered reference images: ${m.images.map(im => `[${im.num}]`).join(' ')}]`
+            : (m.imagePreview ? ' [sent an image]' : '');
+          return `User: ${m.content}${refNote}`;
         }
         // Truncate long assistant messages to keep context manageable
         const content = m.content?.length > 500 ? m.content.slice(0, 500) + '...' : m.content;
@@ -441,9 +454,10 @@ export default function PromptPage() {
 
       let aiResponse;
       if (isAnalyzeRun) {
+        const refList = currentImages.map(im => `[${im.num}]`).join(' ');
         aiResponse = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are PROMPTO, an elite-tier AI image prompt engineer.${kb}\n\n--- Conversation so far ---\n${historyStr}\n--- End ---\n\nThe attached image is the primary source. Analyze the image directly with extreme precision. Do not say you cannot analyze it unless the file is genuinely unreadable. Output:\n1. **Visual Analysis**: Exhaustively describe every element — subject, composition, camera angle, lighting, color palette, background/environment, mood/atmosphere, textures, typography if visible, and any artifacts.\n2. **3 Replication Prompts** (each minimum 150 words in code blocks):\n   - **Exact Match**: Faithful recreation with maximum detail\n   - **Enhanced Cinematic**: Elevated with dramatic lighting and film-grade quality\n   - **Alternative Artistic**: Creative reinterpretation with a distinct aesthetic\n3. **3 Refinement Tips**: Specific ways to customize the output further.${currentPrompt ? `\n\nUser goal: ${currentPrompt}` : ''}`,
-          file_urls: [currentImage.url],
+          prompt: `You are PROMPTO, an elite-tier AI image prompt engineer.${kb}\n\n--- Conversation so far ---\n${historyStr}\n--- End ---\n\nThe attached images are a numbered multi-omni reference set: ${refList} — the file order matches the numbers. Treat them as one consistent reference universe. Analyze each image individually with extreme precision — subject, composition, camera angle, lighting, color palette, background/environment, mood/atmosphere, textures, typography if visible, and any artifacts. Do not say you cannot analyze unless the files are genuinely unreadable. When the user references a number (e.g. "use [3]'s lighting"), honor it exactly and keep subjects/style consistent across the set. Output:\n1. **Visual Analysis (per reference)**: Exhaustively describe every element of each numbered image, then add a **Consistency Map**: the subjects, style and palette elements shared across the references.\n2. **3 Replication Prompts** (each minimum 150 words in code blocks):\n   - **Exact Match**: Faithful recreation of the full reference set with maximum detail\n   - **Enhanced Cinematic**: Elevated with dramatic lighting and film-grade quality\n   - **Alternative Artistic**: Creative reinterpretation with a distinct aesthetic\n3. **3 Refinement Tips**: Specific ways to customize the output further.${currentPrompt ? `\n\nUser goal: ${currentPrompt}` : ''}`,
+          file_urls: currentImages.map(im => im.url),
           model: "gpt_5_4"
         });
       } else {
@@ -454,6 +468,7 @@ CORE RULES:
 - CAREFULLY READ what the user is actually asking for. Do NOT force the 3-image-prompt format onto every request.
 - If the user asks for something OTHER than image prompts — such as a voiceover/narrator script, ad copy, a multi-slide script, captions, a numbered list per slide, marketing copy, taglines, or any writing task — FULFILL THAT EXACT REQUEST. Follow every rule and constraint they specify (tone, word limits, numbering, paraphrasing, pacing, which items get which treatment, output format). Match the requested numbered list / per-slide structure exactly. Do NOT add image prompts unless they ask for them.
 - Only generate the 3 image-prompt variations (below) when the user describes an image idea or explicitly asks for image prompt help.
+- When reference images are attached, they are a numbered set ([1], [2], … in file order). The user may reference them by number — honor those references exactly and keep subjects, style and palette consistent across them (multi-omni-shot prompting).
 
 WHEN GENERATING IMAGE PROMPTS:
 You MUST produce 3 highly detailed prompt variations, each in a code block. Every prompt must be EXTREMELY DETAILED — minimum 150 words each. Follow this structure for EVERY prompt:
@@ -479,13 +494,12 @@ QUALITY STANDARD — Here's the level of detail expected (excerpt):
 
 NEVER produce short, vague, or generic prompts. Every single prompt must read like a professional art director's brief.${kb}`;
 
-        // Collect file_urls from recent messages that had images
+        // Collect numbered reference file_urls from recent messages (multi-omni memory)
         const recentImageUrls = [];
-        // Check last few user messages for uploaded images
         for (const m of allMsgs.slice(-6)) {
-          if (m.imageUrl) recentImageUrls.push(m.imageUrl);
+          if (Array.isArray(m.images)) recentImageUrls.push(...m.images.map(im => im.url));
+          else if (m.imageUrl) recentImageUrls.push(m.imageUrl);
         }
-        if (currentImage) recentImageUrls.push(currentImage.url);
 
         const fullPrompt = `${system}\n\n--- Conversation ---\n${historyStr}\n--- End ---\n\nRespond to the user's latest message. Keep the conversation context in mind.`;
 
@@ -861,6 +875,16 @@ NEVER produce short, vague, or generic prompts. Every single prompt must read li
                     ? "bg-purple-600/30 border border-purple-500/30 text-white"
                     : "bg-white/5 border border-white/10 text-white/90"
                 }`}>
+                  {Array.isArray(msg.images) && msg.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {msg.images.map(im => (
+                        <div key={im.num} className="relative">
+                          <img src={im.url} alt={`ref ${im.num}`} className="h-20 w-20 object-cover rounded-xl border border-white/15" />
+                          <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-purple-600 border border-white/30 text-[10px] font-bold flex items-center justify-center text-white">{im.num}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {msg.imagePreview && (
                     <img src={msg.imagePreview || msg.imageUrl} alt="uploaded" className="h-28 rounded-xl object-cover mb-2 border border-white/10" />
                   )}
@@ -975,18 +999,24 @@ NEVER produce short, vague, or generic prompts. Every single prompt must read li
 
         {/* Image preview + auth warning */}
         <div className="px-4 max-w-3xl w-full mx-auto">
-          {uploadedImage && (
-            <div className="mt-2 flex items-center gap-3">
-              <div className="relative inline-block">
-                <img src={uploadedImage.preview} alt="upload" className="h-12 w-12 object-cover rounded-xl border border-white/20" />
-                <button onClick={() => setUploadedImage(null)} className="absolute -top-1 -right-1 w-4 h-4 bg-black border border-white/20 rounded-full flex items-center justify-center text-white/70">
-                  <X className="w-2.5 h-2.5" />
-                </button>
-              </div>
+          {uploadedImages.length > 0 && (
+            <div className="mt-2 flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
+              {uploadedImages.map(im => (
+                <div key={im.num} className="relative flex-shrink-0">
+                  <img src={im.url} alt={`ref ${im.num}`} className="h-14 w-14 object-cover rounded-xl border border-white/20" />
+                  <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-purple-600 border border-white/30 text-[10px] font-bold flex items-center justify-center text-white">{im.num}</span>
+                  <button
+                    onClick={() => setUploadedImages(prev => prev.filter(p => p.num !== im.num).map((p, i) => ({ ...p, num: i + 1 })))}
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-black border border-white/20 rounded-full flex items-center justify-center text-white/70 hover:text-red-400">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              ))}
+              <span className="text-white/30 text-[10px] font-mono px-1 flex-shrink-0">{uploadedImages.length}/10</span>
               <button onClick={() => setAutoAnalyze(v => !v)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all ${autoAnalyze ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all flex-shrink-0 ${autoAnalyze ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
                 <Eye className="w-3 h-3" />
-                {autoAnalyze ? 'Analyze Image ON' : 'Analyze Image OFF'}
+                {autoAnalyze ? 'Analyze ON' : 'Analyze OFF'}
               </button>
             </div>
           )}
@@ -1006,12 +1036,14 @@ NEVER produce short, vague, or generic prompts. Every single prompt must read li
         {/* Input bar */}
         <div className="px-4 pb-4 pt-2 max-w-3xl w-full mx-auto">
           <form onSubmit={handleSubmit} className="flex gap-2 items-center">
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-              onChange={e => { if (e.target.files[0]) handleImageUpload(e.target.files[0]); e.target.value = ''; }} />
+            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+              onChange={e => { if (e.target.files?.length) handleImageUpload(e.target.files); e.target.value = ''; }} />
 
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !isAuthorized}
-              className={`w-10 h-10 disabled:opacity-40 border rounded-full flex items-center justify-center flex-shrink-0 transition-all ${uploadedImage ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60'}`}>
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !isAuthorized || uploadedImages.length >= 10}
+              title={`Add numbered reference images (${uploadedImages.length}/10)`}
+              className={`relative w-10 h-10 disabled:opacity-40 border rounded-full flex items-center justify-center flex-shrink-0 transition-all ${uploadedImages.length ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60'}`}>
               {uploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+              {uploadedImages.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan-500 text-black text-[9px] font-bold flex items-center justify-center">{uploadedImages.length}</span>}
             </button>
 
             <button type="button" onClick={() => setShowToolkit(v => !v)} disabled={!isAuthorized}
@@ -1021,7 +1053,7 @@ NEVER produce short, vague, or generic prompts. Every single prompt must read li
 
             <input type="text" value={prompt} onChange={e => setPrompt(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
-              placeholder={!isAuthorized ? 'Wallet + agent required...' : uploadedImage && autoAnalyze ? 'Optional note...' : 'Any idea → 3 prompt variations'}
+              placeholder={!isAuthorized ? 'Wallet + agent required...' : uploadedImages.length && autoAnalyze ? `Optional note — reference images as [1]…[${uploadedImages.length}]...` : 'Any idea → 3 prompt variations'}
               disabled={!isAuthorized}
               className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-all disabled:opacity-40 text-sm" />
 
@@ -1030,7 +1062,7 @@ NEVER produce short, vague, or generic prompts. Every single prompt must read li
               <Wand2 className="w-4 h-4 text-white" />
             </button>
 
-            <button type="submit" disabled={loading || (!prompt.trim() && !uploadedImage) || !isAuthorized}
+            <button type="submit" disabled={loading || (!prompt.trim() && !uploadedImages.length) || !isAuthorized}
               className="w-10 h-10 bg-purple-600/40 hover:bg-purple-600/60 disabled:opacity-40 border border-purple-500/30 rounded-full flex items-center justify-center flex-shrink-0 transition-all">
               <Send className="w-4 h-4 text-white" />
             </button>
