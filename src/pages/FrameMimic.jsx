@@ -267,7 +267,15 @@ export default function FrameMimicPage() {
             {clonedFrames.length > 0 && (
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                 <p className="text-[10px] uppercase tracking-widest text-white/40 mb-3">HTML replay</p>
-                <FrameMimicPlayer frames={clonedFrames} fps={fps} width={meta.width} height={meta.height} />
+                <FrameMimicPlayer
+                  frames={clonedFrames}
+                  fps={fps}
+                  width={meta.width}
+                  height={meta.height}
+                  onUpdate={(idx, html) =>
+                    setFrames((prev) => prev.map((f) => (f.index === idx ? { ...f, html } : f)))
+                  }
+                />
               </div>
             )}
 

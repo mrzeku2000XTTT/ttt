@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
 import {
-  Play, Pause, Repeat, Download, Loader2, SkipBack, SkipForward, FileCode2,
+  Play, Pause, Repeat, Download, Loader2, SkipBack, SkipForward, FileCode2, PenLine,
 } from "lucide-react";
 
 // Renders each cloned HTML frame in a sandboxed-free same-origin iframe and
@@ -15,14 +15,48 @@ const setDoc = (iframe, html) =>
     iframe.srcdoc = html;
   });
 
-export default function FrameMimicPlayer({ frames, fps, width, height }) {
+export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate }) {
   const [current, setCurrent] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [exportMsg, setExportMsg] = useState("");
   const [videoUrl, setVideoUrl] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const exportIframeRef = useRef(null);
+  const liveRef = useRef(null);
+  const framesRef = useRef(frames);
+
+  useEffect(() => { framesRef.current = frames; }, [frames]);
+
+  // ── Live text editing — click any text in the preview and retype it ──
+  const applyEditable = () => {
+    const doc = liveRef.current?.contentDocument;
+    if (!doc?.body || !editMode) return;
+    doc.body.contentEditable = "true";
+    doc.body.style.outline = "none";
+  };
+  useEffect(applyEditable, [editMode, current]);
+
+  const saveEdits = () => {
+    const doc = liveRef.current?.contentDocument;
+    const frame = framesRef.current[current];
+    if (!doc?.documentElement || !frame?.html) return;
+    doc.body.removeAttribute("contenteditable");
+    doc.body.style.outline = "";
+    const html = "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+    if (html !== frame.html) onUpdate?.(frame.index, html);
+  };
+
+  const goTo = (n) => {
+    if (editMode) saveEdits();
+    setCurrent(n);
+  };
+
+  const toggleEdit = () => {
+    if (editMode) { saveEdits(); setEditMode(false); }
+    else { setPlaying(false); setEditMode(true); }
+  };
 
   useEffect(() => {
     if (!playing) return;
@@ -53,6 +87,8 @@ export default function FrameMimicPlayer({ frames, fps, width, height }) {
 
   const exportMp4 = async () => {
     if (exporting || !frames.length) return;
+    if (editMode) { saveEdits(); setEditMode(false); await new Promise((r) => setTimeout(r, 200)); }
+    const exportFrames = framesRef.current;
     if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported?.("video/mp4")) {
       toast.error("MP4 export needs Chrome or Edge.");
       return;
@@ -76,14 +112,14 @@ export default function FrameMimicPlayer({ frames, fps, width, height }) {
     rec.start();
 
     try {
-      for (let i = 0; i < frames.length; i++) {
-        await setDoc(exportIframeRef.current, frames[i].html);
+      for (let i = 0; i < exportFrames.length; i++) {
+        await setDoc(exportIframeRef.current, exportFrames[i].html);
         const doc = exportIframeRef.current.contentDocument;
         const shot = await html2canvas(doc.body, {
           width, height, scale: 1, backgroundColor: "#000", logging: false,
         });
         ctx.drawImage(shot, 0, 0, width, height);
-        setExportMsg(`Rendering ${i + 1}/${frames.length}…`);
+        setExportMsg(`Rendering ${i + 1}/${exportFrames.length}…`);
         await new Promise((r) => setTimeout(r, 1000 / fps));
       }
     } catch (err) {
@@ -123,8 +159,10 @@ export default function FrameMimicPlayer({ frames, fps, width, height }) {
         {frame?.html ? (
           <iframe
             key={current}
+            ref={liveRef}
             title={`frame ${current + 1}`}
             srcDoc={frame.html}
+            onLoad={() => editMode && applyEditable()}
             className="w-full h-full bg-white"
           />
         ) : (
@@ -134,24 +172,34 @@ export default function FrameMimicPlayer({ frames, fps, width, height }) {
         )}
       </div>
 
+      {editMode && (
+        <p className="text-[11px] text-white/50 flex items-center gap-1.5">
+          <PenLine className="w-3 h-3" />
+          Text editing is ON — click any text in the preview and retype it. Toggle the pen off to save.
+        </p>
+      )}
+
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2">
         <button
-          onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+          onClick={() => goTo(Math.max(0, current - 1))}
           className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70"
           title="Previous frame"
         >
           <SkipBack className="w-4 h-4" />
         </button>
         <button
-          onClick={() => setPlaying((p) => !p)}
+          onClick={() => {
+            if (editMode) { saveEdits(); setEditMode(false); }
+            setPlaying((p) => !p);
+          }}
           className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center"
           title={playing ? "Pause" : "Play"}
         >
           {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
         </button>
         <button
-          onClick={() => setCurrent((c) => Math.min(frames.length - 1, c + 1))}
+          onClick={() => goTo(Math.min(frames.length - 1, current + 1))}
           className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70"
           title="Next frame"
         >
@@ -167,12 +215,22 @@ export default function FrameMimicPlayer({ frames, fps, width, height }) {
           <Repeat className="w-4 h-4" />
         </button>
 
+        <button
+          onClick={toggleEdit}
+          className={`w-9 h-9 rounded-full border flex items-center justify-center ${
+            editMode ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-white/60 hover:text-white"
+          }`}
+          title={editMode ? "Turn off text editing (saves)" : "Edit text on this frame"}
+        >
+          <PenLine className="w-4 h-4" />
+        </button>
+
         <input
           type="range"
           min={0}
           max={Math.max(0, frames.length - 1)}
           value={current}
-          onChange={(e) => { setPlaying(false); setCurrent(Number(e.target.value)); }}
+          onChange={(e) => { setPlaying(false); goTo(Number(e.target.value)); }}
           className="flex-1 min-w-[120px] accent-white"
         />
         <span className="text-[11px] font-mono text-white/50 tabular-nums">
