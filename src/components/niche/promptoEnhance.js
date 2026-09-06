@@ -19,8 +19,9 @@ HARD RULES:
 
 User input: """${text}"""
 ${linkContext ? `Pasted reference/URL content (the video MUST be about THIS):\n"""${linkContext.slice(0, 1500)}"""` : ''}
-${attachmentUrls.length ? `The user attached ${attachmentUrls.length} reference file(s) — honor what they show in the brief.` : ''}`,
+${attachmentUrls.length ? `The user attached ${attachmentUrls.length} reference file(s) — look at them and honor their visual style and content in the brief.` : ''}`,
     add_context_from_internet: false,
+    file_urls: attachmentUrls.length ? attachmentUrls : undefined,
   });
   const out = typeof r === 'string' ? r : r?.text || r?.reply || r?.content || '';
   return String(out || '').trim();
