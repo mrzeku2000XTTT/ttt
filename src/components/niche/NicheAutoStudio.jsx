@@ -9,6 +9,7 @@ import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 import { sceneCodePrompt, buildFramezDoc, fallbackScene } from '@/components/framez/framezKit';
 import FramezStage from '@/components/framez/studio/FramezStage';
+import { buildClonePlan } from './videoClone';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -20,6 +21,7 @@ const fileKind = (file) => {
   const name = (file?.name || '').toLowerCase();
   const type = file?.type || '';
   if (type.startsWith('image/')) return { label: 'IMG', Icon: FileImage, color: 'text-sky-300' };
+  if (type.startsWith('video/')) return { label: 'VID', Icon: Film, color: 'text-fuchsia-300' };
   if (type === 'application/pdf' || name.endsWith('.pdf')) return { label: 'PDF', Icon: FileText, color: 'text-red-300' };
   if (name.endsWith('.csv') || type === 'text/csv') return { label: 'CSV', Icon: FileSpreadsheet, color: 'text-emerald-300' };
   if (name.endsWith('.json') || type === 'application/json') return { label: 'JSON', Icon: FileJson, color: 'text-amber-300' };
@@ -73,6 +75,9 @@ export default function NicheAutoStudio({ niches }) {
   });
   const [framezMode, setFramezMode] = useState(() => {
     try { return JSON.parse(localStorage.getItem('niche_framez') || 'false'); } catch { return false; }
+  });
+  const [cloneMode, setCloneMode] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('niche_clone') || 'false'); } catch { return false; }
   });
   const [musicUrl, setMusicUrl] = useState('');
   const [showRecentChips, setShowRecentChips] = useState(false);
@@ -199,21 +204,26 @@ export default function NicheAutoStudio({ niches }) {
     if (busy) return;
     let attachmentUrls = [];
     let attachmentPreviews = [];
+    let videoFile = null;
+    let videoUrl = null;
     if (attachments.length) {
-      attachmentUrls = await Promise.all(
+      const uploaded = await Promise.all(
         attachments.map(async (a) => {
-          if (a.uploadedUrl) return a.uploadedUrl;
+          if (a.uploadedUrl) return { a, url: a.uploadedUrl };
           if (a.file) {
             try {
               const up = await base44.integrations.Core.UploadFile({ file: a.file });
               setAttachments((prev) => prev.map((x) => (x.id === a.id ? { ...x, uploadedUrl: up.file_url, status: 'done' } : x)));
-              return up.file_url;
-            } catch { return null; }
+              return { a, url: up.file_url };
+            } catch { return { a, url: null }; }
           }
-          return null;
+          return { a, url: null };
         })
-      ).then((r) => r.filter(Boolean));
+      );
+      attachmentUrls = uploaded.map((u) => u.url).filter(Boolean);
       attachmentPreviews = attachments.map((a) => a.previewUrl).filter(Boolean);
+      const vid = uploaded.find((u) => u.a.file?.type?.startsWith('video/') && u.url);
+      if (vid) { videoFile = vid.a.file; videoUrl = vid.url; }
     }
     const userText = text || (attachmentUrls.length ? 'Analyze the attached reference(s) and tell me what you see — fact-check anything claim-like, and ask me one focused question about what I want built.' : '');
     if (!userText) return;
@@ -282,7 +292,14 @@ export default function NicheAutoStudio({ niches }) {
           .join('\n\n');
       }
 
-      const res = await base44.integrations.Core.InvokeLLM({
+      let res = null;
+      if (cloneMode && videoFile && videoUrl) {
+        const clone = await buildClonePlan({ file: videoFile, videoUrl, setWork });
+        if (token.cancelled) { audioContext.close().catch(() => {}); return; }
+        res = clone.res;
+        if (clone.transcript) linkContext = clone.transcript;
+      }
+      if (!res) res = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the NICHE Studio auto-pilot — a creative content director that builds animated explainer videos for creators, inside a chat.
 
 ${convo ? `Conversation so far:\n${convo}\n\n` : ''}User's saved niches: ${(niches || []).map((n) => n.niche_name).join(', ') || 'none yet'}.
@@ -782,6 +799,23 @@ Decide what to do:
                 <span className="text-xs font-medium">Framez</span>
               </button>
               <button
+                onClick={() =>
+                  setCloneMode((s) => {
+                    const next = !s;
+                    try { localStorage.setItem('niche_clone', JSON.stringify(next)); } catch {}
+                    return next;
+                  })
+                }
+                disabled={busy}
+                title="Auto Clone — attach a video and I'll clone it 1:1, using every tool needed (transcribe, keyframes, vision, draw, narrate, stitch) automatically. No toggles required."
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  cloneMode ? 'border-rose-400/60 bg-rose-400/15 text-rose-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Auto Clone</span>
+              </button>
+              <button
                 onClick={() => setShowLearner(true)}
                 disabled={busy}
                 title="Teach me a style from a video or images"
@@ -855,7 +889,7 @@ Decide what to do:
             type="file"
             ref={fileInputRef}
             multiple
-            accept="image/*,.pdf,.txt,.csv,.json,.md"
+            accept="image/*,video/*,.pdf,.txt,.csv,.json,.md"
             onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
             className="hidden"
           />
@@ -870,7 +904,7 @@ Decide what to do:
               }
             }}
             onPaste={handlePaste}
-            placeholder={voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
+            placeholder={cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
             disabled={busy}
             className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
