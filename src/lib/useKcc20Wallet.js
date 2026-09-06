@@ -133,6 +133,9 @@ export async function connectKcc20() {
   if (_loading) return;
   _loading = true; _error = null; emit();
   try {
+    // Remember where the user was so we can return them here if the wallet
+    // handoff reloads the page to root (mobile dApp browsers do this).
+    try { sessionStorage.setItem("ttt_wallet_return", JSON.stringify({ path: location.pathname + location.search, at: Date.now() })); } catch {}
     await ensureInit();
     const w = kcc20Provider();
     if (!w) throw new Error("KCC20 Wallet not detected — open TTT from KCC20 → Profile → TTT");
@@ -147,6 +150,7 @@ export async function connectKcc20() {
     const addr = Array.isArray(accounts) ? accounts[0] : (accounts?.address || accounts?.accounts?.[0] || null);
     if (!addr) throw new Error("KCC20 Wallet did not return an address");
     setAddress(addr);
+    try { sessionStorage.removeItem("ttt_wallet_return"); } catch {}
     try { const state = await w.getState?.(); applyState(state); } catch {}
   } catch (e) {
     _error = e?.message || "Connection rejected";

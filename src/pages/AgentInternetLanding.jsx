@@ -41,6 +41,23 @@ export default function AgentInternetLanding() {
   const [showKaspaSearch, setShowKaspaSearch] = useState(false); // search kaspahub index
   const [showCryptoSearch, setShowCryptoSearch] = useState(false); // crypto coin search
 
+  // If the Scorpion wallet handoff reloaded us to the landing page, send the
+  // user back to where they were (e.g. the App Store) so a successful connect
+  // doesn't strand them on the landing.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("ttt_wallet_return");
+      if (!raw || location.pathname !== "/") return;
+      const r = JSON.parse(raw);
+      if (r && r.path && r.path !== "/" && Date.now() - (r.at || 0) < 5 * 60 * 1000) {
+        sessionStorage.removeItem("ttt_wallet_return");
+        navigate(r.path, { replace: true });
+      } else if (r) {
+        sessionStorage.removeItem("ttt_wallet_return");
+      }
+    } catch {}
+  }, [navigate]);
+
   const openChat = (command) => {
     setChatCommand(command);
     if (isAdmin && !viewAsGuest) setChatOpen(true); // admin → real Agent Internet chat
