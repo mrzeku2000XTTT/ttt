@@ -211,6 +211,7 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate,
       rec.start(); // NO timeslice — one single valid MP4 at stop
 
       const TICK = 1000 / 120; // 120 pushes per second
+      let pushed = 0; // total video frames pushed to the recorder
       const D = 1000 / fps; // real-time duration per captured frame
       const pushesPerSlot = Math.max(4, Math.round(D / TICK));
       const fadePushes = Math.max(1, Math.round(pushesPerSlot / 2));
@@ -230,6 +231,7 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate,
         tPush += TICK;
         await sleepUntil(tPush); // drift-corrected real-time pacing
         track?.requestFrame?.();
+        pushed++;
       };
 
       for (let i = 0; i < shots.length; i++) {
@@ -257,12 +259,14 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate,
       stream.getTracks().forEach((t) => t.stop());
       shots.forEach((s) => URL.revokeObjectURL(s.url));
 
-      if (chunks.length) {
+      const totalSec = ((shots.length * 1000) / fps / 1000).toFixed(1);
+      const totalBytes = chunks.reduce((a, c) => a + c.size, 0);
+      if (totalBytes > 10000) {
         const blob = new Blob(chunks, { type: mimeType });
         setVideoUrl(URL.createObjectURL(blob));
-        toast.success("HTML video exported as MP4");
+        toast.success(`MP4 exported — all ${shots.length} frames · ${totalSec}s · ${pushed} video frames`);
       } else {
-        toast.error("No MP4 was recorded — try Chrome or Edge.");
+        toast.error("Recording came out empty — try Chrome or Edge.");
       }
     } catch (err) {
       toast.error("Export failed: " + (err?.message || "unknown"));
