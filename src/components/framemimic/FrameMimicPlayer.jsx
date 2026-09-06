@@ -32,22 +32,34 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate,
   const [videoUrl, setVideoUrl] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const exportIframeRef = useRef(null);
-  const liveRef = useRef(null);
+  const refA = useRef(null);
+  const refB = useRef(null);
   const framesRef = useRef(frames);
+
+  // Crossfade layers — the previous frame stays visible (and opaque) while
+  // the next one loads, so the preview never flashes white between frames.
+  const [layerA, setLayerA] = useState(0);
+  const [layerB, setLayerB] = useState(-1);
+  const [topLayer, setTopLayer] = useState("A");
+  const [fadeIn, setFadeIn] = useState(false);
+  const [backVisible, setBackVisible] = useState(true);
+  const fadeTimerRef = useRef(null);
+
+  const docOf = (layer) => (layer === "A" ? refA : refB).current?.contentDocument;
 
   useEffect(() => { framesRef.current = frames; }, [frames]);
 
   // ── Live text editing — click any text in the preview and retype it ──
   const applyEditable = () => {
-    const doc = liveRef.current?.contentDocument;
+    const doc = docOf(topLayer);
     if (!doc?.body || !editMode) return;
     doc.body.contentEditable = "true";
     doc.body.style.outline = "none";
   };
-  useEffect(applyEditable, [editMode, current]);
+  useEffect(applyEditable, [editMode, current, topLayer, fadeIn]);
 
   const saveEdits = () => {
-    const doc = liveRef.current?.contentDocument;
+    const doc = docOf(topLayer);
     const frame = framesRef.current[current];
     if (!doc?.documentElement || !frame?.html) return;
     doc.body.removeAttribute("contenteditable");
@@ -72,6 +84,18 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate,
       setCurrent(pos);
     }
   }, [seekIndex]);
+
+  // Assign each frame to the back layer and fade it in once loaded —
+  // the old frame stays fully visible underneath until then (no white flash).
+  useEffect(() => {
+    const shown = topLayer === "A" ? layerA : layerB;
+    if (current === shown) return;
+    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    setFadeIn(false);
+    setBackVisible(true); // keep the old frame visible under the new one
+    if (topLayer === "A") { setLayerB(current); setTopLayer("B"); }
+    else { setLayerA(current); setTopLayer("A"); }
+  }, [current]);
 
   const toggleEdit = () => {
     if (editMode) { saveEdits(); setEditMode(false); }
@@ -218,20 +242,49 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate,
 
       {/* Stage */}
       <div
-        className="w-full overflow-hidden rounded-xl border border-white/10 bg-black"
+        className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-black"
         style={{ aspectRatio: `${width} / ${height}` }}
       >
-        {frame?.html ? (
+        {frames[layerA]?.html && (
           <iframe
-            key={current}
-            ref={liveRef}
-            title={`frame ${current + 1}`}
-            srcDoc={frame.html}
-            onLoad={() => editMode && applyEditable()}
-            className="w-full h-full bg-white"
+            key={`a-${layerA}`}
+            ref={refA}
+            title="frame preview A"
+            srcDoc={frames[layerA].html}
+            onLoad={() => {
+              if (topLayer !== "A") return;
+              setFadeIn(true);
+              if (editMode) applyEditable();
+              fadeTimerRef.current = setTimeout(() => setBackVisible(false), 170);
+            }}
+            className="absolute inset-0 w-full h-full transition-opacity duration-150"
+            style={{
+              opacity: topLayer === "A" ? (fadeIn ? 1 : 0) : backVisible ? 1 : 0,
+              zIndex: topLayer === "A" ? 2 : 1,
+            }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+        )}
+        {layerB >= 0 && frames[layerB]?.html && (
+          <iframe
+            key={`b-${layerB}`}
+            ref={refB}
+            title="frame preview B"
+            srcDoc={frames[layerB].html}
+            onLoad={() => {
+              if (topLayer !== "B") return;
+              setFadeIn(true);
+              if (editMode) applyEditable();
+              fadeTimerRef.current = setTimeout(() => setBackVisible(false), 170);
+            }}
+            className="absolute inset-0 w-full h-full transition-opacity duration-150"
+            style={{
+              opacity: topLayer === "B" ? (fadeIn ? 1 : 0) : backVisible ? 1 : 0,
+              zIndex: topLayer === "B" ? 2 : 1,
+            }}
+          />
+        )}
+        {!frame?.html && (
+          <div className="absolute inset-0 flex items-center justify-center text-white/30 text-xs">
             No frame
           </div>
         )}
