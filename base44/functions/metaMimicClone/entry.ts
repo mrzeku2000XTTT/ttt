@@ -10,7 +10,8 @@ Deno.serve(async (req) => {
     }
 
     const { imageUrl, instructions, cloneMode, currentHtml, instruction } = await req.json();
-    if (!imageUrl) {
+    const isRefine = !!(currentHtml && instruction);
+    if (!imageUrl && !isRefine) {
       return Response.json({ error: 'imageUrl is required' }, { status: 400 });
     }
 
@@ -98,9 +99,11 @@ Return ONLY the raw HTML document.`;
 
     // Fast model first; only fall back to the slower, higher-fidelity model if it fails.
     let html = '';
+    const params: any = { prompt };
+    if (!isRefine) params.file_urls = [imageUrl];
     try {
       html = clean(await withTimeout(
-        base44.integrations.Core.InvokeLLM({ prompt, file_urls: [imageUrl], model: 'gemini_3_flash' }),
+        base44.integrations.Core.InvokeLLM({ ...params, model: 'gemini_3_flash' }),
         90_000,
       ));
     } catch { /* fall through */ }
@@ -108,7 +111,7 @@ Return ONLY the raw HTML document.`;
     if (!html) {
       try {
         html = clean(await withTimeout(
-          base44.integrations.Core.InvokeLLM({ prompt, file_urls: [imageUrl], model: 'claude_sonnet_4_6' }),
+          base44.integrations.Core.InvokeLLM({ ...params, model: 'claude_sonnet_4_6' }),
           150_000,
         ));
       } catch { /* fall through */ }
