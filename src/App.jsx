@@ -89,6 +89,7 @@ import TTTCodexPage from './pages/TTTCodex';
 import WalletHubPage from './pages/WalletHub';
 import KasthleticsPage from './pages/Kasthletics';
 import MetaMimicPage from './pages/MetaMimic';
+import FrameMimicPage from './pages/FrameMimic';
 import ARCPage from './pages/ARC';
 import DoubleOPage from './pages/DoubleO';
 import DoubleONotesPage from './pages/DoubleONotes';
@@ -346,6 +347,7 @@ const AuthenticatedApp = () => {
       <Route path="/WalletHub" element={<WalletLockGate><WalletHubPage /></WalletLockGate>} />
       <Route path="/Kasthletics" element={<KasthleticsPage />} />
       <Route path="/MetaMimic" element={<MetaMimicPage />} />
+      <Route path="/FrameMimic" element={<FrameMimicPage />} />
       <Route path="/ARC" element={<ARCPage />} />
       <Route path="/DoubleO" element={<DoubleOPage />} />
       <Route path="/DoubleONotes" element={<DoubleONotesPage />} />
