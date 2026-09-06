@@ -392,11 +392,17 @@ Decide what to do:
             accent: '#22d3ee',
             shots: scenes.map((s, i) => ({ label: s.caption || `Shot ${i + 1}`, summary: s.action, duration: 1.8, motion: s.camera || 'your choice' }))
           };
+          // one generated hero image from the topic, offered to every shot
+          let heroImg = '';
+          try {
+            const ir = await base44.integrations.Core.GenerateImage({ prompt: `A premium cinematic hero visual for "${v.title}": bold, minimal, dark background, high contrast, no text. Suitable as a launch-film backdrop.` });
+            if (ir?.url) heroImg = ir.url;
+          } catch {}
           const genFz = async (shot, i) => {
             for (let a = 0; a < 2; a++) {
               try {
                 const r = await base44.integrations.Core.InvokeLLM({
-                  prompt: sceneCodePrompt(film, shot, i, scenes.length),
+                  prompt: sceneCodePrompt(film, shot, i, scenes.length, heroImg),
                   response_json_schema: { type: 'object', properties: { html: { type: 'string' }, js: { type: 'string' } }, required: ['html', 'js'] }
                 });
                 if (r?.html && r?.js) return r;

@@ -28,7 +28,9 @@ const PLAN_SCHEMA = {
           label: { type: 'string' },
           summary: { type: 'string' },
           duration: { type: 'number' },
-          motion: { type: 'string' }
+          motion: { type: 'string' },
+          beat: { type: 'string' },
+          image: { type: 'string', description: 'Optional prompt for a generated hero visual' }
         },
         required: ['label', 'summary', 'duration']
       }
@@ -73,11 +75,11 @@ export default function FramezStudio() {
   const pushMsg = (role, content) => setMessages((m) => [...m, { role, content }]);
 
   // Smart token use: one small call per shot, batches of 3, one retry each.
-  const genScene = async (filmObj, shot, i, n) => {
+  const genScene = async (filmObj, shot, i, n, imageUrl) => {
     for (let a = 0; a < 2; a++) {
       try {
         const r = await base44.integrations.Core.InvokeLLM({
-          prompt: sceneCodePrompt(filmObj, shot, i, n),
+          prompt: sceneCodePrompt(filmObj, shot, i, n, imageUrl),
           response_json_schema: CODE_SCHEMA
         });
         if (r?.html && r?.js) return r;
@@ -117,10 +119,24 @@ export default function FramezStudio() {
       patchStep('plan', { status: 'done' });
       setSteps((prev) => [...prev, ...shots.map((s, i) => ({ id: 's' + i, label: `Shot ${i + 1} — ${s.label}`, status: 'thinking' }))]);
 
+      // Generate hero images for shots that request one (batched, best-effort)
+      const imageUrls = {};
+      const imgJobs = shots.map((s, i) => ({ i, prompt: s.image })).filter((x) => x.prompt);
+      if (imgJobs.length) {
+        setSteps((prev) => [...prev, { id: 'imgs', label: `Generating ${imgJobs.length} hero image${imgJobs.length > 1 ? 's' : ''}`, status: 'thinking' }]);
+        for (let b = 0; b < imgJobs.length; b += 3) {
+          const batch = imgJobs.slice(b, b + 3);
+          await Promise.all(batch.map(async (j) => {
+            try { const r = await base44.integrations.Core.GenerateImage({ prompt: j.prompt }); if (r?.url) imageUrls[j.i] = r.url; } catch (e) {}
+          }));
+        }
+        patchStep('imgs', { status: 'done' });
+      }
+
       const results = new Array(shots.length);
       for (let b = 0; b < shots.length; b += 3) {
         const batch = shots.slice(b, b + 3).map((shot, k) => ({ shot, i: b + k }));
-        const got = await Promise.all(batch.map(({ shot, i }) => genScene(filmObj, shot, i, shots.length)));
+        const got = await Promise.all(batch.map(({ shot, i }) => genScene(filmObj, shot, i, shots.length, imageUrls[i])));
         batch.forEach(({ i, shot }, k) => {
           results[i] = got[k];
           patchStep('s' + i, { status: 'typing', code: (got[k].js || '').slice(0, 460) });
