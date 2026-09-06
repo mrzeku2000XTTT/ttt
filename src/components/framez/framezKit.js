@@ -1,3 +1,4 @@
+import { FRAMEZ_HOOK_SCRIPT, FRAMEZ_TEMPLATE_CATALOG, pickHook } from './framezTemplates';
 // Framez kit — the "HyperFrames for everyone" runtime + teacher.
 // Films are coded as HTML scenes with a time-driven JS function per scene,
 // rendered in a same-origin srcdoc iframe (pixel-crisp real DOM, not AI pixels)
@@ -128,10 +129,17 @@ The runtime fades the whole shot in/out — do NOT animate scene-level exit; onl
 QUALITY BAR
 - Premium, restrained, Apple-launch-film taste. Dark glass depth (bg layers slightly lighter than the stage bg), one accent color used sparingly. Match the film's theme colors exactly.
 - js: one statement per line, MAX 50 lines. html: MAX 34 lines. No lorem, no placeholders, no comments.
-- Every animated element must exist in your html. Return JSON only.`;
+- Every animated element must exist in your html. Return JSON only.
+
+${FRAMEZ_HOOK_SCRIPT}
+
+${FRAMEZ_TEMPLATE_CATALOG}`;
 
 // ——— Prompts ———
-export const planFilmPrompt = (userPrompt) => `You are the FRAMEZ DIRECTOR. Turn the user's request into a shot plan for a short coded motion film (total 10-18 seconds, 4-9 shots).
+export const planFilmPrompt = (userPrompt) => `${FRAMEZ_HOOK_SCRIPT}
+
+You are the FRAMEZ DIRECTOR. Turn the user's request into a shot plan for a short coded motion film (total 10-18 seconds, 4-9 shots).
+RULE: The FIRST shot MUST be beat:"hook" — a high-retention kinetic-text opener (≤6 words) using one of the hook templates (word-punch, mask-wipe, gradient, glitch, typewriter, scroll-snap). Suggested hook for this topic: ${pickHook(userPrompt)}.
 Each shot needs:
 - label: short shot name
 - summary: one concrete visual line — what we SEE (real composition, shapes, layout), not abstract
@@ -147,7 +155,7 @@ export const sceneCodePrompt = (film, shot, i, n, imageUrl) => `${FRAMEZ_TEACHER
 
 FILM: "${film.title}" — stage ${film.W}x${film.H}px, theme: bg ${film.bg}, ink ${film.ink}, accent ${film.accent}.
 SHOT LIST for continuity (do NOT render other shots): ${film.shots.map((s, x) => `${x + 1}. ${s.label}`).join(' | ')}
-NOW WRITE SHOT ${i + 1} of ${n}: "${shot.label}" — ${shot.summary}. Motion intent: ${shot.motion || 'your choice, tasteful'}. Duration ${shot.duration}s.${imageUrl ? `\nA generated hero image is available at: ${imageUrl}\nUse it as <img src="${imageUrl}" style="position:absolute;...;object-fit:cover"> for this shot's key visual. Animate it (parallax drift, scale-in via Fz.back, or a mask-wipe). If it genuinely doesn't fit, omit it.` : ''}
+NOW WRITE SHOT ${i + 1} of ${n}: "${shot.label}" — ${shot.summary}. Motion intent: ${shot.motion || 'your choice, tasteful'}. Duration ${shot.duration}s.${i === 0 ? `\nThis is the OPENING HOOK SHOT — grab attention in the first 1.5s. Use a kinetic-text hook template (word-punch / mask-wipe / gradient / glitch / typewriter / scroll-snap). State the value in ≤6 words. Premium only.` : ''}${imageUrl ? `\nA generated hero image is available at: ${imageUrl}\nUse it as <img src="${imageUrl}" style="position:absolute;...;object-fit:cover"> for this shot's key visual. Animate it (parallax drift, scale-in via Fz.back, or a mask-wipe). If it genuinely doesn't fit, omit it.` : ''}
 Return JSON only: {"html": "...", "js": "..."}`;
 
 // ——— Fallback so a failed shot never kills the build ———
