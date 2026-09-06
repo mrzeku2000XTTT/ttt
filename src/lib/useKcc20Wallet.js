@@ -150,13 +150,16 @@ export async function connectKcc20() {
     const addr = Array.isArray(accounts) ? accounts[0] : (accounts?.address || accounts?.accounts?.[0] || null);
     if (!addr) throw new Error("KCC20 Wallet did not return an address");
     setAddress(addr);
-    try { sessionStorage.removeItem("ttt_wallet_return"); } catch {}
     try { const state = await w.getState?.(); applyState(state); } catch {}
   } catch (e) {
     _error = e?.message || "Connection rejected";
     emit();
     throw e;
   } finally {
+    // Clear the return marker once the connect attempt settles in-page. If the
+    // page was reloaded mid-connect (mobile wallet handoff), the marker persists
+    // and main.jsx restores the route before the landing renders.
+    try { sessionStorage.removeItem("ttt_wallet_return"); } catch {}
     _loading = false; emit();
   }
 }
