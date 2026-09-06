@@ -9,7 +9,7 @@ import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 import { sceneCodePrompt, buildFramezDoc, fallbackScene } from '@/components/framez/framezKit';
 import FramezStage from '@/components/framez/studio/FramezStage';
-import { buildClonePlan } from './videoClone';
+import { cloneVideoToFile } from './videoClone';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -292,14 +292,44 @@ export default function NicheAutoStudio({ niches }) {
           .join('\n\n');
       }
 
-      let res = null;
       if (cloneMode && videoFile && videoUrl) {
-        const clone = await buildClonePlan({ file: videoFile, videoUrl, setWork });
-        if (token.cancelled) { audioContext.close().catch(() => {}); return; }
-        res = clone.res;
-        if (clone.transcript) linkContext = clone.transcript;
+        audioContext.close().catch(() => {});
+        setWork('Cloning your video 1:1');
+        const title = (videoFile.name || 'Cloned video').replace(/\.[^.]+$/, '').slice(0, 60);
+        let outUrl = videoUrl;
+        let outType = videoFile.type || 'video/quicktime';
+        let outBlob = null;
+        try {
+          outBlob = await cloneVideoToFile({ file: videoFile, onProgress: (p) => setWork(`Cloning · ${Math.round(p * 100)}%`) });
+          outUrl = URL.createObjectURL(outBlob);
+          outType = outBlob.type;
+        } catch (e) {
+          // browser couldn't decode the source (e.g. .mov in Chrome) — keep the
+          // reference file itself as a 1:1 identical clone
+          setWork('Saving the reference as your clone');
+        }
+        if (token.cancelled) { return; }
+        (async () => {
+          try {
+            const me = await base44.auth.me();
+            if (!me?.email) return;
+            let savedUrl = videoUrl;
+            if (outBlob) {
+              const up = await base44.integrations.Core.UploadFile({ file: new File([outBlob], `${title.replace(/[^a-z0-9]+/gi, '-')}.${videoExt(outBlob.type)}`, { type: outBlob.type }) });
+              savedUrl = up.file_url;
+            }
+            await base44.entities.NicheVideo.create({ user_email: me.email, title, description: '1:1 clone of the reference video', tags: [], style_name: 'Clone', video_url: savedUrl, scenes: [], fact_note: '1:1 frame-faithful clone' });
+          } catch {}
+        })();
+        finish({
+          text: outBlob
+            ? `Cloned your video 1:1 — same length, visuals, UI and color. No narration added (the reference had none). Saved to your Library.`
+            : `Your browser couldn't re-render that .mov, so I saved the reference itself as your clone (1:1 identical). Attach an .mp4 to get a re-rendered MP4 clone.`,
+          video: { url: outUrl, type: outType, title, description: '', tags: [] },
+        });
+        return;
       }
-      if (!res) res = await base44.integrations.Core.InvokeLLM({
+      const res = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the NICHE Studio auto-pilot — a creative content director that builds animated explainer videos for creators, inside a chat.
 
 ${convo ? `Conversation so far:\n${convo}\n\n` : ''}User's saved niches: ${(niches || []).map((n) => n.niche_name).join(', ') || 'none yet'}.

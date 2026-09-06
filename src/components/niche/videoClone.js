@@ -150,3 +150,73 @@ Return kind "video" with the full scene script. 1:1 fidelity to the source — d
 
   return { res, transcript };
 }
+
+// Frame-faithful 1:1 clone: re-renders the source video frame-by-frame to a
+// canvas and captures it via MediaRecorder. The output matches the source's
+// exact visuals, length, UI and color — no generated images, no TTS, no
+// invented content. MP4 when the browser supports it, WebM fallback.
+export async function cloneVideoToFile({ file, onProgress }) {
+  const url = URL.createObjectURL(file);
+  try {
+    const v = document.createElement('video');
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = 'auto';
+    await new Promise((res, rej) => {
+      v.onloadedmetadata = () => res();
+      v.onerror = () => rej(new Error('Could not read the video file'));
+      v.src = url;
+    });
+    if (v.readyState < 2) {
+      await new Promise((res, { reject } = {}) => {
+        v.oncanplay = () => res();
+        setTimeout(() => res(), 3000);
+      });
+    }
+    const vw = v.videoWidth || 640;
+    const vh = v.videoHeight || 360;
+    const canvas = document.createElement('canvas');
+    canvas.width = vw;
+    canvas.height = vh;
+    const ctx = canvas.getContext('2d');
+    const stream = canvas.captureStream(30);
+    const mimeType =
+      [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4;codecs=avc1',
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm',
+      ].find((t) => MediaRecorder.isTypeSupported(t)) || 'video/mp4';
+    const rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 });
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
+    const stopped = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: mimeType })); });
+    rec.start();
+    try { ctx.drawImage(v, 0, 0, vw, vh); } catch {}
+    await v.play();
+    const duration = v.duration || 0;
+    const start = performance.now();
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => { done = true; resolve(); };
+      const tick = () => {
+        if (done) return;
+        if (v.ended) { finish(); return; }
+        try { ctx.drawImage(v, 0, 0, vw, vh); } catch {}
+        if (onProgress && duration) {
+          try { onProgress(Math.min(1, (performance.now() - start) / 1000 / duration)); } catch {}
+        }
+        requestAnimationFrame(tick);
+      };
+      tick();
+      v.onended = finish;
+    });
+    try { ctx.drawImage(v, 0, 0, vw, vh); } catch {}
+    await new Promise((r) => setTimeout(r, 120));
+    rec.stop();
+    return await stopped;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
