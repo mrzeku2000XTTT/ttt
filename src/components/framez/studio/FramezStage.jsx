@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Download, RotateCw, Loader2 } from 'lucide-react';
 import { exportFilm } from '../framezExport';
 
@@ -10,6 +10,21 @@ export default function FramezStage({ doc, film }) {
   const [phase, setPhase] = useState('');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
+  const wrapRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  // Render the iframe at full internal resolution (W×H) and CSS-scale it to
+  // fit the column — keeps the preview crisp on any width AND lets html2canvas
+  // capture full-res frames for a real MP4 export.
+  useEffect(() => {
+    if (!wrapRef.current || !film?.W) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      if (w > 0) setScale(w / film.W);
+    });
+    ro.observe(wrapRef.current);
+    return () => ro.disconnect();
+  }, [film?.W]);
 
   const replay = () => iframeRef.current?.contentWindow?.FzReplay?.();
 
@@ -73,15 +88,15 @@ export default function FramezStage({ doc, film }) {
       </div>
 
       <div
+        ref={wrapRef}
         className="rounded-xl overflow-hidden bg-black mx-auto border border-white/10"
-        style={film.aspect === '9:16' ? { height: '60vh', aspectRatio: '9 / 16' } : { width: '100%', aspectRatio: '16 / 9' }}
+        style={film.aspect === '9:16' ? { height: '56vh', aspectRatio: '9 / 16' } : { width: '100%', aspectRatio: '16 / 9' }}
       >
         <iframe
           ref={iframeRef}
           srcDoc={doc}
           title="Framez film"
-          className="w-full h-full"
-          style={{ border: 0 }}
+          style={{ border: 0, width: film.W, height: film.H, transform: `scale(${scale})`, transformOrigin: 'top left' }}
         />
       </div>
 

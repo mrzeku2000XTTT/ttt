@@ -563,7 +563,7 @@ Decide what to do:
         {messages.map((m) => (
           <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              className={`${m.framez ? 'w-full' : 'max-w-[85%]'} rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 m.role === 'user'
                   ? 'bg-white text-black rounded-br-sm'
                   : 'bg-white/[0.04] border border-white/10 text-white rounded-bl-sm'
