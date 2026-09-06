@@ -187,28 +187,71 @@ export default function FrameMimicPlayer({ frames, fps, width, height, onUpdate,
         setExportMsg(`Rendering ${i + 1}/${exportFrames.length}…`);
       }
 
-      // Phase 2 — record the pre-rendered frames to MP4 at exact pacing.
+      // Phase 2 — record to MP4 at 120fps. Every frame is pushed manually
+      // (one requestFrame per tick), so the recorder can't skip frames, and
+      // consecutive frames crossfade — same smooth feel as the HTML export.
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, width, height);
 
-      const stream = canvas.captureStream(30);
-      const chunks = [];
-      const rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
-      rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
-      const stopped = new Promise((r) => { rec.onstop = r; });
-      rec.start(500);
-
-      for (let i = 0; i < shots.length; i++) {
-        ctx.drawImage(shots[i].img, 0, 0, width, height);
-        setExportMsg(`Recording ${i + 1}/${shots.length}…`);
-        await new Promise((r) => setTimeout(r, 1000 / fps));
+      let stream = canvas.captureStream(0); // 0 = manual frame capture
+      let track = stream.getVideoTracks()[0];
+      if (typeof track?.requestFrame !== "function") {
+        // Fallback: auto-capturing stream at 120fps
+        stream.getTracks().forEach((t) => t.stop());
+        stream = canvas.captureStream(120);
+        track = null;
       }
 
-      await new Promise((r) => setTimeout(r, 200));
+      const chunks = [];
+      const rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 });
+      rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
+      const stopped = new Promise((r) => { rec.onstop = r; });
+      rec.start(); // NO timeslice — one single valid MP4 at stop
+
+      const TICK = 1000 / 120; // 120 pushes per second
+      const D = 1000 / fps; // real-time duration per captured frame
+      const pushesPerSlot = Math.max(4, Math.round(D / TICK));
+      const fadePushes = Math.max(1, Math.round(pushesPerSlot / 2));
+
+      let tPush = performance.now();
+      const sleepUntil = (target) =>
+        new Promise((r) => setTimeout(r, Math.max(0, target - performance.now())));
+
+      const push = async (baseImg, overlayImg, p) => {
+        ctx.globalAlpha = 1;
+        ctx.drawImage(baseImg, 0, 0, width, height);
+        if (overlayImg && p > 0) {
+          ctx.globalAlpha = p;
+          ctx.drawImage(overlayImg, 0, 0, width, height);
+          ctx.globalAlpha = 1;
+        }
+        tPush += TICK;
+        await sleepUntil(tPush); // drift-corrected real-time pacing
+        track?.requestFrame?.();
+      };
+
+      for (let i = 0; i < shots.length; i++) {
+        setExportMsg(`Recording ${i + 1}/${shots.length}…`);
+        const nextImg = i + 1 < shots.length ? shots[i + 1].img : null;
+        // hold the current frame
+        for (let k = 0; k < pushesPerSlot - fadePushes; k++) {
+          await push(shots[i].img);
+        }
+        if (nextImg) {
+          // crossfade into the next frame at 120fps
+          for (let k = 1; k <= fadePushes; k++) {
+            await push(shots[i].img, nextImg, k / fadePushes);
+          }
+        } else {
+          for (let k = 1; k < fadePushes; k++) {
+            await push(shots[i].img);
+          }
+        }
+      }
+
+      await new Promise((r) => setTimeout(r, 150));
       rec.stop();
       await stopped;
       stream.getTracks().forEach((t) => t.stop());
