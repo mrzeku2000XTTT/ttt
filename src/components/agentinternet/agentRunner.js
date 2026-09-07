@@ -49,7 +49,7 @@ const withTimeout = (promise, ms, label) =>
  * onStep(steps) receives the full live step array after every change.
  */
 export async function runAgent({ text, history, onStep }) {
-  const ctx = {};
+  const ctx = { request: text };
 
   // Never burn a render on guesses — settle size, length, background and cuts first.
   if (isVideoRequest(text)) {
@@ -84,6 +84,7 @@ ${TOOL_MENU}
 
 Rules:
 - Pick only the tools the request genuinely needs, in a sensible order (capture/research first, prompt_lab before any render, storyboard before video for anything narrative).
+- SUBJECT LOCK: if the user names what to draw / generate / illustrate (a character, person, object, coin, logo…), that EXACT subject is non-negotiable. Pass it verbatim in prompt_lab's intent and make sure the final rendered image depicts it. A bare follow-up like "pikachu" means: draw THAT — do NOT reuse the subject, prompt or aesthetic from any earlier turn.
 - Always pass concrete args. If the user named a website, pass its url to brand_capture.
 - A "launch video" / "promo" means: brand_capture → deep_research → storyboard → prompt_lab → generate_image (pass "prompts": an array of 3 background plate / key frame prompts, one per major beat) → motion_launcher.
 - NEVER try to render video here. Every video/motion request ends with motion_launcher, which hands the brief to the K6ix app so the user generates it inside the chat.

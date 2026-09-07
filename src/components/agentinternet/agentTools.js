@@ -61,6 +61,9 @@ Brand context: ${JSON.stringify(ctx.brand || {}).slice(0, 1500)}
 Research: ${ctx.research || "none"}
 Live data: ${ctx.price ? JSON.stringify(ctx.price) : "none"}
 Storyboard: ${ctx.beats ? JSON.stringify(ctx.beats).slice(0, 1200) : "none"}
+User's request: ${ctx.request || args.intent}
+
+SUBJECT LOCK: the intent below IS the subject the user asked for — the image MUST clearly depict exactly that (if they said "pikachu", the prompt and final picture show Pikachu). A single-word intent like "pikachu" is the subject itself, not a theme to reinterpret. Craft the style, camera, lighting and mood AROUND the subject — never replace, abstract or replace it with a concept piece.
 
 Write ONE dense prompt (max 90 words) for: ${args.intent}. Include subject, camera move, lighting, palette (use the brand's real colours if known), texture, mood and pacing. No preamble, prompt only.`,
         model: "gemini_3_flash",
