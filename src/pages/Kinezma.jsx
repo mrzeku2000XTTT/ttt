@@ -5,7 +5,7 @@ import KinezmaStage from '@/components/kinezma/KinezmaStage';
 import KinezmaChat from '@/components/kinezma/KinezmaChat';
 import { decomposeImage, motionFromChat, buildCutouts, loadImage, buildAsset } from '@/components/kinezma/kinezmaEngine';
 import { exportKinezmaMp4 } from '@/components/kinezma/kinezmaExport';
-import { Loader2, Play, Download, Upload, Library as LibraryIcon, Plus } from 'lucide-react';
+import { Loader2, Play, Download, Upload, Library as LibraryIcon, Plus, Trash2 } from 'lucide-react';
 import KinezmaLibrary from '@/components/kinezma/KinezmaLibrary';
 import { saveProject, getProject, listProjects, deleteProject, genProjectId, setActiveId, getActiveId } from '@/components/kinezma/kinezmaStore';
 
@@ -168,7 +168,7 @@ export default function Kinezma() {
       setMessages([
         {
           role: 'assistant',
-          text: `Split your image into ${sc.components.length} components. Click any component to drag it around — then tell me the motion, e.g. "make the title drop in and bounce, background slowly pans left". Or ask me to generate a brand-new asset — a logo, icon, or b-roll — premium quality, fully controllable.`
+          text: `Split your image into ${sc.components.length} components. Every asset wears a number badge — tell me "make 3 spin" or "delete asset 2" and I'll target it directly. Describe the motion you want, or ask me to generate a brand-new asset — a logo, icon, or b-roll — premium quality, fully controllable.`
         }
       ]);
     } catch (e) {
@@ -185,6 +185,16 @@ export default function Kinezma() {
     setBusyStart(Date.now());
     try {
       const m = await motionFromChat({ request: text, scene, currentMotion: motionRef.current });
+      if (m.deletes?.length) {
+        setScene((s) => ({ ...s, components: s.components.filter((c) => !m.deletes.includes(c.id)) }));
+        setCutouts((c) => { const n = { ...c }; m.deletes.forEach((id) => delete n[id]); return n; });
+        if (motionRef.current) {
+          const purged = { ...motionRef.current, tracks: motionRef.current.tracks.filter((t) => !m.deletes.includes(t.component)) };
+          motionRef.current = purged;
+          setMotion(purged);
+        }
+        if (m.deletes.includes(selected)) setSelected(null);
+      }
       if (m.asset) {
         const built = await buildAsset(m.asset, scene);
         setScene((s) => ({ ...s, components: [...s.components, built.component] }));
@@ -203,7 +213,7 @@ export default function Kinezma() {
       }
       if (m.tracks.length) playMotion({ tracks: m.tracks, duration: m.duration, loop: m.loop });
       setMessages((msgs) =>
-        msgs.map((x) => (x.working ? { ...x, working: false, text: m.reply + (m.asset ? ' — added to the stage, animating in. Drag it into place or tell me what to change.' : m.tracks.length ? ' — playing now.' : '') } : x))
+        msgs.map((x) => (x.working ? { ...x, working: false, text: m.reply + (m.asset ? ' — added to the stage, animating in. Drag it into place or tell me what to change.' : m.deletes.length ? ' — removed from the stage.' : m.tracks.length ? ' — playing now.' : '') } : x))
       );
     } catch (e) {
       setMessages((msgs) =>
@@ -220,6 +230,17 @@ export default function Kinezma() {
 
   const editComponent = (id, patch) => {
     setScene((s) => ({ ...s, components: s.components.map((c) => (c.id === id ? { ...c, ...patch } : c)) }));
+  };
+
+  const deleteComponent = (id) => {
+    setScene((s) => ({ ...s, components: s.components.filter((c) => c.id !== id) }));
+    setCutouts((c) => { const n = { ...c }; delete n[id]; return n; });
+    if (motionRef.current) {
+      const purged = { ...motionRef.current, tracks: motionRef.current.tracks.filter((t) => t.component !== id) };
+      motionRef.current = purged;
+      setMotion(purged);
+    }
+    setSelected(null);
   };
 
   const doExport = async () => {
@@ -302,6 +323,7 @@ export default function Kinezma() {
                   selected={selected}
                   onSelect={setSelected}
                   onMove={moveComponent}
+                  showBadges={!playing}
                 />
               </div>
 
@@ -355,6 +377,12 @@ export default function Kinezma() {
                       />
                     </label>
                   )}
+                  <button
+                    onClick={() => deleteComponent(selectedComp.id)}
+                    className="flex items-center gap-1.5 border border-red-900 text-red-400 text-xs font-semibold rounded-lg px-2.5 py-1.5 hover:border-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                  </button>
                   <span className="text-xs text-zinc-600">drag on stage to reposition</span>
                 </div>
               )}

@@ -84,6 +84,10 @@ export const MOTION_SCHEMA = {
         }
       }
     },
+    delete_ids: {
+      type: 'array',
+      items: { type: 'string' }
+    },
     tracks: {
       type: 'array',
       items: {
@@ -254,12 +258,12 @@ export function stateAt(tracks, time) {
 
 export async function motionFromChat({ request, scene, currentMotion }) {
   const comps = scene.components
-    .map((c) => `${c.id} — ${c.name} (${c.kind}${c.text ? `, text "${c.text}"` : ''}; ${Math.round(c.w)}x${Math.round(c.h)} at ${Math.round(c.x)},${Math.round(c.y)})`)
+    .map((c, i) => `#${i + 1} ${c.id} — ${c.name} (${c.kind}${c.text ? `, text "${c.text}"` : ''}; ${Math.round(c.w)}x${Math.round(c.h)} at ${Math.round(c.x)},${Math.round(c.y)})`)
     .join('\n');
   const res = await base44.integrations.Core.InvokeLLM({
     prompt: `You are Kinezma's motion director. Kinezma animates the components of an image the user uploaded — they describe what should move, you write the keyframes.
 
-COMPONENTS (ids are sacred — a keyframe track only works on one of these ids):
+COMPONENTS (each line starts with the #N badge the user sees on that asset on stage — users refer to assets by number like "delete asset 2" or "make 3 spin", or by name; map both to the id. ids are sacred — a keyframe track or edit only works on one of these ids):
 ${comps}
 ${currentMotion ? `\nCURRENT MOTION (iterate on it when the user asks for changes — "slower", "less bouncy" etc. — keep what they liked, adjust what they named):\n${JSON.stringify(currentMotion)}` : ''}
 
@@ -271,6 +275,8 @@ Produce keyframe tracks:
 - Use 2–5 purposeful keyframes per component. Only give tracks to components that actually move — leave static ones out entirely.
 - duration: 2–8 seconds (default 4). loop: true only when the motion reads as seamless.
 - If the user asks to change a component's CONTENT (text, color, size, font), also return "edits" (edits may set text, color, bg, fontSize, fontFamily — any hex color, any font family). Motion is the main job — never refuse motion work.
+- NEVER SPAWN UNREQUESTED ASSETS: return "asset" ONLY when the user EXPLICITLY asks to create/add/generate a NEW element that is not in the scene. Any effect or styling on an EXISTING component (zoom, blur, glow, shake, echo, trails, emphasis, duplicate look) is MOTION/EDITS ONLY — NEVER create a new asset, ghost text, or "echo" text to fake an effect. When in doubt, animate what is already there.
+- DELETION: if the user asks to delete/remove/clear an asset (by number like "delete asset 2", or by name), return "delete_ids" with those component ids and nothing else — no tracks, no edits, no asset.
 - STYLE: default to smooth, cinematic After Effects-style motion — ease everything (outCubic for entrances, inOutCubic for moves, outBack for playful settles, outBounce only when the user asks for "bouncy"); linear only for continuous pans/drifts. Layer properties together (move + fade + subtle scale/rotate) for premium flowing results rather than single-property steps.
 - ASSET CREATION: if the user asks you to CREATE or ADD something that is not in the scene yet, return "asset" (and give it an entrance — see intro_keyframes below). Two kinds:
   - kind "text" — headlines, taglines, captions, wordmarks, subheads: set "text" (exact words), "color" (any hex — match the user's request or the scene's palette), "bg" (hex for a chip/pill, omit for transparent), "fontSize_pct" (3-30, size as % of scene height), "width_pct" (5-95, box width as % of scene width), "x_pct"/"y_pct" (0-100, center position), "align" ("center" or "left"), "fontFamily" (any, e.g. "Georgia, serif", "Impact, sans-serif", "Courier New, monospace"), "fontWeight", "prompt": one short line describing the text you chose.
@@ -284,12 +290,14 @@ Produce keyframe tracks:
     (t) => ids.has(t.component) && Array.isArray(t.keyframes) && t.keyframes.length
   );
   const edits = (res.edits || []).filter((e) => ids.has(e.component));
+  const deletes = (res.delete_ids || []).filter((id) => ids.has(id));
   return {
     reply: res.reply || 'Motion set.',
     duration: Math.max(1, Math.min(10, res.duration || 4)),
     loop: !!res.loop,
     tracks,
     edits,
+    deletes,
     asset: res.asset || null
   };
 }

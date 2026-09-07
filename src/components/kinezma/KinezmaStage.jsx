@@ -6,7 +6,7 @@ import { stateAt } from './kinezmaEngine';
  * fit the container. Supports click-to-select, drag-to-move, and applies the
  * interpolated motion state on top of each component while playing.
  */
-export default function KinezmaStage({ scene, cutouts, motion, time, selected, onSelect, onMove }) {
+export default function KinezmaStage({ scene, cutouts, motion, time, selected, onSelect, onMove, showBadges = true }) {
   const wrapRef = useRef(null);
   const [scale, setScale] = useState(1);
 
@@ -23,6 +23,8 @@ export default function KinezmaStage({ scene, cutouts, motion, time, selected, o
   }, [scene.width, scene.height]);
 
   const state = motion ? stateAt(motion.tracks, time) : {};
+  const numbers = {};
+  scene.components.forEach((c, i) => { numbers[c.id] = i + 1; });
 
   const startDrag = (e, c) => {
     if (e.button !== 0) return;
@@ -77,6 +79,14 @@ export default function KinezmaStage({ scene, cutouts, motion, time, selected, o
                 outlineOffset: 2
               }}
             >
+              {showBadges && (
+                <div
+                  className="absolute -top-3 -left-3 flex items-center justify-center rounded-full bg-white text-black font-black pointer-events-none"
+                  style={{ width: 36, height: 36, fontSize: 20, lineHeight: 1 }}
+                >
+                  {numbers[c.id]}
+                </div>
+              )}
               {c.kind === 'cutout' ? (
                 <img
                   src={cutouts[c.id]}
