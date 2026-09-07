@@ -123,13 +123,27 @@ export default function DezMessages() {
           {/* Preview */}
           <div className="flex-1 min-h-0 flex flex-col gap-2">
             <div className="flex-1 min-h-0 flex items-center justify-center">
-              <div className="relative h-full max-h-full rounded-[40px] border border-zinc-800 overflow-hidden bg-white" style={{ aspectRatio: `${W}/${H}` }}>
-                <canvas ref={canvasRef} width={W} height={H} className="w-full h-full" />
-                {!messages.length && (
-                  <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
-                    <p className="text-zinc-400 text-sm">Plan a conversation with AI — it plays out here, typing like a real phone.</p>
-                  </div>
-                )}
+              {/* 3D phone — dark titanium bezel, side buttons, rounded screen */}
+              <div
+                className="relative h-full max-h-full rounded-[52px] p-[11px]"
+                style={{
+                  aspectRatio: `${W}/${H}`,
+                  background: 'linear-gradient(160deg, #4a4a4e 0%, #2a2a2e 30%, #101012 65%, #000 100%)',
+                  boxShadow: '0 30px 80px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 2px 3px rgba(255,255,255,0.1)'
+                }}
+              >
+                <div className="relative h-full w-full rounded-[41px] overflow-hidden bg-white">
+                  <canvas ref={canvasRef} width={W} height={H} className="w-full h-full block" />
+                  {!messages.length && (
+                    <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
+                      <p className="text-zinc-400 text-sm">Plan a conversation with AI — it plays out here, typing like a real phone.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="absolute -right-[2px] top-[16%] w-[3px] h-14 rounded-r-sm bg-gradient-to-b from-zinc-600 to-zinc-800" />
+                <div className="absolute -right-[2px] top-[30%] w-[3px] h-24 rounded-r-sm bg-gradient-to-b from-zinc-600 to-zinc-800" />
+                <div className="absolute -left-[2px] top-[22%] w-[3px] h-10 rounded-l-sm bg-gradient-to-b from-zinc-600 to-zinc-800" />
+                <div className="absolute -left-[2px] top-[34%] w-[3px] h-16 rounded-l-sm bg-gradient-to-b from-zinc-600 to-zinc-800" />
               </div>
             </div>
 

@@ -7,6 +7,7 @@ export const W = 390;
 export const H = 780;
 
 const MARGIN = 14;
+const TOP = 56; // first bubble sits below the Dynamic Island
 const GAP = 5;
 const MAX_BW = 246;
 const PAD_X = 14;
@@ -59,7 +60,7 @@ const countTyped = (it, t) => {
 // What is on screen at time t: bubbles + typing dots with their y positions.
 const collect = (ctx, tl, t) => {
   const list = [];
-  let y = MARGIN;
+  let y = TOP;
   for (const it of tl.items) {
     if (it.side === 'incoming') {
       if (t >= it.show) {
@@ -84,17 +85,18 @@ const collect = (ctx, tl, t) => {
   return { list, bottom: y };
 };
 
-const drawTail = (ctx, x, y, h, side, color) => {
+// xEdge = the bubble edge the tail hugs (left edge for incoming, right edge for
+// outgoing). The chord starts above the corner-radius zone so the tail merges
+// flush with the body — no detached fragments.
+const drawTail = (ctx, xEdge, y, h, side, color) => {
   ctx.fillStyle = color;
   ctx.beginPath();
   if (side === 'incoming') {
-    ctx.moveTo(x + 5, y + h - 9);
-    ctx.quadraticCurveTo(x - 2, y + h + 7, x - 7, y + h + 8);
-    ctx.quadraticCurveTo(x + 4, y + h + 9, x + 14, y + h - 2);
+    ctx.moveTo(xEdge, y + h - 20);
+    ctx.quadraticCurveTo(xEdge - 1, y + h + 7, xEdge + 12, y + h - 0.5);
   } else {
-    ctx.moveTo(x - 5, y + h - 9);
-    ctx.quadraticCurveTo(x + 2, y + h + 7, x + 7, y + h + 8);
-    ctx.quadraticCurveTo(x - 4, y + h + 9, x - 14, y + h - 2);
+    ctx.moveTo(xEdge, y + h - 20);
+    ctx.quadraticCurveTo(xEdge + 1, y + h + 7, xEdge - 12, y + h - 0.5);
   }
   ctx.closePath();
   ctx.fill();
@@ -117,7 +119,7 @@ const drawBubble = (ctx, d, t) => {
     ctx.translate(-ax, -(d.y + ay));
   }
   ctx.fillStyle = bg;
-  drawTail(ctx, x, d.y, h, d.side, bg);
+  drawTail(ctx, incoming ? x : x + d.g.w, d.y, h, d.side, bg);
   rr(ctx, x, d.y, d.g.w, h, RADIUS);
   ctx.fill();
 
@@ -153,16 +155,60 @@ const drawDots = (ctx, y, t) => {
   }
 };
 
+// composer input bar + home indicator — part of the frame, drawn into exports too
+const drawComposer = (ctx) => {
+  const x = 10, y = H - 64, w = W - 20, h = 40;
+  ctx.fillStyle = '#FFFFFF';
+  rr(ctx, x, y, w, h, 20);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.14)';
+  ctx.lineWidth = 1;
+  rr(ctx, x + 0.5, y + 0.5, w - 1, h - 1, 19.5);
+  ctx.stroke();
+  ctx.fillStyle = '#8E8E93';
+  ctx.font = '400 15px -apple-system, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  ctx.fillText('iMessage', x + 16, y + 11);
+  // blue send arrow
+  const cx = x + w - 26, cy = y + 20;
+  ctx.fillStyle = OUT_BG;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - 5.5, cy + 1.5);
+  ctx.lineTo(cx, cy - 4.5);
+  ctx.lineTo(cx + 5.5, cy + 1.5);
+  ctx.stroke();
+  // home indicator
+  ctx.fillStyle = '#000000';
+  rr(ctx, W / 2 - 67, H - 10, 134, 5, 2.5);
+  ctx.fill();
+};
+
+const drawIsland = (ctx) => {
+  ctx.fillStyle = '#000000';
+  rr(ctx, W / 2 - 48, 14, 96, 27, 13.5);
+  ctx.fill();
+};
+
 export function drawFrame(ctx, tl, t) {
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, W, H);
   ctx.font = FONT;
   ctx.textBaseline = 'top';
-  if (!tl || !tl.items.length) return;
+  if (!tl || !tl.items.length) {
+    drawComposer(ctx);
+    drawIsland(ctx);
+    return;
+  }
 
   // pass 1 — collect; pass 2 — draw with autoscroll applied
   const { list, bottom } = collect(ctx, tl, t);
-  const scroll = Math.max(0, bottom - GAP - (H - 16));
+  const scroll = Math.max(0, bottom - GAP - (H - 76));
   ctx.save();
   ctx.translate(0, -scroll);
   for (const d of list) {
@@ -170,4 +216,6 @@ export function drawFrame(ctx, tl, t) {
     else drawBubble(ctx, d, t);
   }
   ctx.restore();
+  drawComposer(ctx);
+  drawIsland(ctx);
 }

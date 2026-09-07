@@ -22,10 +22,34 @@ const blip = (ctx, dest, freq, at, dur, gain, type = 'sine') => {
   o.stop(at + dur + 0.05);
 };
 
-// iMessage send "swoosh"-ish double blip
+// short percussive noise burst — the raw material for key clicks / swishes
+const noiseBuf = (ctx) => {
+  if (!ctx._nb) {
+    const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.03), ctx.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+    ctx._nb = b;
+  }
+  return ctx._nb;
+};
+
+// iMessage send — soft airy "swish" (downward noise sweep), not a chime
 export const playSend = (ctx, dest, at) => {
-  blip(ctx, dest, 1318.51, at, 0.16, 0.18);
-  blip(ctx, dest, 1567.98, at + 0.07, 0.2, 0.14);
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuf(ctx);
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = 0.8;
+  bp.frequency.setValueAtTime(3200, at);
+  bp.frequency.exponentialRampToValueAtTime(900, at + 0.12);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(0.35, at + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + 0.13);
+  src.connect(bp);
+  bp.connect(g);
+  g.connect(dest);
+  src.start(at);
 };
 
 // iMessage receive tri-tone
@@ -33,7 +57,18 @@ export const playReceive = (ctx, dest, at) => {
   [622.25, 830.61, 1046.5].forEach((f, i) => blip(ctx, dest, f, at + i * 0.13, 0.3, 0.16, 'triangle'));
 };
 
-// quiet keyboard tick
+// keyboard key click — a tiny bandpassed noise tick, like real phone typing
 export const playTick = (ctx, dest, at) => {
-  blip(ctx, dest, 3400, at, 0.03, 0.04, 'square');
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuf(ctx);
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 2100 + Math.random() * 800;
+  bp.Q.value = 1.4;
+  const g = ctx.createGain();
+  g.gain.value = 0.18;
+  src.connect(bp);
+  bp.connect(g);
+  g.connect(dest);
+  src.start(at);
 };
