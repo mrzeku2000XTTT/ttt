@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Wand2, Code2, Crosshair } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Wand2, Code2, Crosshair, Camera } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
@@ -12,6 +12,8 @@ import FramezStage from '@/components/framez/studio/FramezStage';
 import { cloneVideoToFile } from './videoClone';
 import { enhanceAnimationPrompt } from './promptoEnhance';
 import NicheMimicCard from './NicheMimicCard';
+import { ANIMATION_KNOWLEDGE } from './animationKnowledge';
+import { POSES_PER_SCENE, posePlanPrompt, generateStopMotionFrames, compileStopMotionVideo } from './stopMotion';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -87,6 +89,9 @@ export default function NicheAutoStudio({ niches }) {
   });
   const [promptoMode, setPromptoMode] = useState(() => {
     try { return JSON.parse(localStorage.getItem('niche_prompto') || 'false'); } catch { return false; }
+  });
+  const [smMode, setSmMode] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('niche_sm') || 'false'); } catch { return false; }
   });
   const [musicUrl, setMusicUrl] = useState('');
   const [showRecentChips, setShowRecentChips] = useState(false);
@@ -408,6 +413,8 @@ export default function NicheAutoStudio({ niches }) {
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the NICHE Studio auto-pilot — a creative content director that builds animated explainer videos for creators, inside a chat.
 
+${ANIMATION_KNOWLEDGE}
+
 ${convo ? `Conversation so far:\n${convo}\n\n` : ''}User's saved niches: ${(niches || []).map((n) => n.niche_name).join(', ') || 'none yet'}.
 
 User's new message: """${text}"""
@@ -418,6 +425,7 @@ Animation styles available (style ids): ${ANIMATION_STYLES.map((s) => `${s.id} (
 "vox" (Vox Documentary) is the documentary style — use it for documentary topics: history, wars, famous people, true stories, business mysteries, major world events, or anything that reads like a mini-documentary. It produces an archival cinematic photographic look with muted color grading, consistent across every scene. Match casual names ("documentary", "vox style", "explainer documentary") to "vox". But do NOT default an entire video to vox just because a post or update reads serious — unless the user asked for documentary/vox, remix per scene.
 ${learnedStyles.length ? `Styles the user personally taught you from their own videos or images (style ids): ${learnedStyles.map((s) => `${s.id} ("${s.name}")`).join(', ')}. If they ask to use one of these, use its id.` : ''}
 ${voxMode ? `MOTION V1 IS ON: the user selected the Vox documentary style. Always use style "vox" — do NOT ask about the animation style, and skip style from the things you ask for. You may still ask about scene_count and color_mode if unknown (default color_mode "color" for vox, 10 scenes).` : ''}
+      ${smMode ? `STOP MOTION (SM) IS ON: the final film is rendered as authentic stop motion. Write every scene's "action" as physical, posable stop-motion business — tangible handcrafted materials (clay puppets, felt, paper cutouts, miniature props on a tabletop set), subjects moving in small incremental steps an animator could expose frame by frame. Never call for visuals impossible in stop motion (morphing, flowing liquid gradients, smooth transformations) — every action must be something a physical set can perform. Do NOT ask about the animation style — the look is stop motion; you may still ask about scene_count and color_mode if unknown.` : ''}
 ${attachmentUrls.length ? `The user attached ${attachmentUrls.length} reference file(s) — they are provided as file_urls (images and/or documents). Look at them carefully. If any attached image is a STYLE REFERENCE (an art style, characters, or palette), the ENTIRE video must copy that exact style 1:1: same animation/illustration type, same line quality, same character design and proportions, same color palette. HARD RULE: if the reference is black-and-white or grayscale, set color_mode to "mono" and describe every scene so it stays strictly black-and-white — never add color, never reinterpret it as painterly, realistic, vintage, or more detailed than the reference. Also use the attachments as content context, and analyze and fact-check any claim-like content in them against live sources. If, after looking, the user's intent for a video is still genuinely unclear, ask ONE concise question (kind "ask").` : ''}
 
 First, carefully extract the user's intent from their message and the conversation so far:
@@ -583,6 +591,72 @@ Decide what to do:
           }));
           return out;
         };
+        // SM — Stop Motion mode: the same researched, fact-checked script, but
+        // every scene is planned as physical stop-motion poses, exposed frame by
+        // frame on a handcrafted miniature set, then compiled into a 60fps MP4.
+        if (smMode) {
+          const N = scenes.length;
+          const smFrames = new Array(N).fill(null);
+          const smAudios = new Array(N).fill(null);
+          for (let b = 0; b < N; b += 2) {
+            const batchIdx = [b, b + 1].filter((i) => i < N);
+            await Promise.all(batchIdx.map(async (i) => {
+              const s = scenes[i];
+              setWork(`Planning stop-motion poses · scene ${i + 1}/${N}`);
+              let poses = null;
+              try {
+                const plan = await base44.integrations.Core.InvokeLLM({
+                  prompt: posePlanPrompt(s, POSES_PER_SCENE, v.color_mode),
+                  response_json_schema: { type: 'object', properties: { poses: { type: 'array', items: { type: 'string' } } }, required: ['poses'] }
+                });
+                poses = (plan?.poses || []).slice(0, POSES_PER_SCENE);
+              } catch {}
+              const aud = await withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' })).then((r) => r?.url || null);
+              const frames = await generateStopMotionFrames({ scene: s, poses, colorMode: v.color_mode, attachmentUrls, onProgress: setWork });
+              smFrames[i] = frames;
+              smAudios[i] = aud;
+            }));
+            if (token.cancelled) { audioContext.close().catch(() => {}); return; }
+          }
+          const kept = scenes.map((s, i) => ({ s, frames: smFrames[i], aud: smAudios[i] })).filter((x) => x.frames?.length && x.aud);
+          if (!kept.length) throw new Error('Every scene failed to expose — try again in a moment.');
+          setWork('Compiling your 60fps stop-motion film');
+          const blob = await compileStopMotionVideo({
+            framesPerScene: kept.map((x) => x.frames),
+            audios: kept.map((x) => x.aud),
+            captions: kept.map((x) => (captionMode === 'tts' ? (x.s.voiceover || x.s.caption || '') : (x.s.caption || String(x.s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
+            colorMode: v.color_mode,
+            onProgress: setWork,
+            audioContext
+          });
+          if (token.cancelled) { return; }
+          const finalScenes = kept.map((x) => x.s);
+          (async () => {
+            try {
+              const me = await base44.auth.me();
+              if (!me?.email) return;
+              const up = await base44.integrations.Core.UploadFile({
+                file: new File([blob], `${(v.title || 'niche-stopmotion').replace(/[^a-z0-9]+/gi, '-')}.${videoExt(blob.type)}`, { type: blob.type })
+              });
+              await base44.entities.NicheVideo.create({
+                user_email: me.email,
+                title: v.title,
+                description: v.description || '',
+                tags: v.tags || [],
+                style_name: 'Stop Motion',
+                video_url: up.file_url,
+                scenes: finalScenes.map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
+                fact_note: checked.note || ''
+              });
+            } catch {}
+          })();
+          finish({
+            text: `${res.reply || `Your stop-motion film is ready — ${finalScenes.length} scenes, ${kept.reduce((a, x) => a + x.frames.length, 0)} handcrafted exposures, exported at 60fps.`}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
+            video: { url: URL.createObjectURL(blob), type: blob.type, title: v.title, description: v.description, tags: v.tags || [] }
+          });
+          return;
+        }
+
         const [images, audios] = await Promise.all([
           mapBatch(scenes, 3, (s, i) =>
             withRetry(() => {
@@ -904,6 +978,23 @@ Decide what to do:
               </button>
               <button
                 onClick={() =>
+                  setSmMode((s) => {
+                    const next = !s;
+                    try { localStorage.setItem('niche_sm', JSON.stringify(next)); } catch {}
+                    return next;
+                  })
+                }
+                disabled={busy}
+                title="SM — Stop Motion: I plan every scene as physical stop-motion poses, expose each frame on a handcrafted miniature set, and compile a 60fps exportable MP4."
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                  smMode ? 'border-orange-400/60 bg-orange-400/15 text-orange-300' : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">SM</span>
+              </button>
+              <button
+                onClick={() =>
                   setFramezMode((s) => {
                     const next = !s;
                     try { localStorage.setItem('niche_framez', JSON.stringify(next)); } catch {}
@@ -1059,7 +1150,7 @@ Decide what to do:
               }
             }}
             onPaste={handlePaste}
-            placeholder={mimicMode ? 'Mimic is on — attach a screenshot to clone it, or tell me what to change…' : cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : promptoMode ? 'Prompto is on — type anything, I will amplify it into a detailed animation brief…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
+            placeholder={mimicMode ? 'Mimic is on — attach a screenshot to clone it, or tell me what to change…' : cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : promptoMode ? 'Prompto is on — type anything, I will amplify it into a detailed animation brief…' : smMode ? 'SM is on — give me a topic and I will shoot it as a stop-motion film, exported at 60fps…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
             disabled={busy}
             className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
