@@ -28,7 +28,7 @@ export default function KinezmaChat({ messages, busy, elapsed, onSend }) {
 
   return (
     <div className="flex flex-col h-full border border-zinc-800 rounded-xl bg-zinc-950 overflow-hidden">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
             <div

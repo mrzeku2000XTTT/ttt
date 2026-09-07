@@ -13,12 +13,14 @@ export default function KinezmaStage({ scene, cutouts, motion, time, selected, o
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const update = () => setScale(el.clientWidth / scene.width);
+    // fit BOTH dimensions so tall images never overflow the viewport
+    const update = () =>
+      setScale(Math.min(el.clientWidth / scene.width, el.clientHeight / scene.height) || 0);
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [scene.width]);
+  }, [scene.width, scene.height]);
 
   const state = motion ? stateAt(motion.tracks, time) : {};
 
@@ -43,7 +45,8 @@ export default function KinezmaStage({ scene, cutouts, motion, time, selected, o
   };
 
   return (
-    <div ref={wrapRef} className="w-full select-none" style={{ aspectRatio: `${scene.width} / ${scene.height}` }}>
+    <div ref={wrapRef} className="w-full h-full flex items-center justify-center select-none overflow-hidden">
+      <div className="overflow-hidden" style={{ width: scene.width * scale, height: scene.height * scale }}>
       <div
         className="relative origin-top-left overflow-hidden"
         style={{
@@ -108,6 +111,7 @@ export default function KinezmaStage({ scene, cutouts, motion, time, selected, o
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

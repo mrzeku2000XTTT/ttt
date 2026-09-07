@@ -144,17 +144,19 @@ export default function Kinezma() {
   const selectedComp = scene?.components.find((c) => c.id === selected);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="h-[100dvh] overflow-hidden bg-black text-white flex flex-col">
       <BackToStore />
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-black tracking-tight">KINEZMA</h1>
-        <p className="text-zinc-500 text-sm mt-1">Image in · components split · motion from chat · MP4 out</p>
+      <div className="flex-1 min-h-0 flex flex-col px-4 pt-4 pb-3">
+        <div className="shrink-0">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-none">KINEZMA</h1>
+          <p className="text-zinc-500 text-[11px] sm:text-xs mt-1">Image in · components split · motion from chat · MP4 out</p>
+        </div>
 
         {!scene ? (
           <label
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
-            className="mt-10 flex flex-col items-center justify-center gap-3 border border-dashed border-zinc-800 rounded-2xl h-80 cursor-pointer hover:border-zinc-600 transition-colors"
+            className="mt-4 flex-1 min-h-0 flex flex-col items-center justify-center gap-3 border border-dashed border-zinc-800 rounded-2xl cursor-pointer hover:border-zinc-600 transition-colors"
           >
             <input
               ref={inputRef}
@@ -177,9 +179,9 @@ export default function Kinezma() {
             )}
           </label>
         ) : (
-          <div className="mt-6 grid lg:grid-cols-[1fr,360px] gap-6">
-            <div>
-              <div className="border border-zinc-800 rounded-xl overflow-hidden">
+          <div className="mt-4 flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
+            <div className="flex-1 min-h-0 flex flex-col gap-2">
+              <div className="flex-1 min-h-0 border border-zinc-800 rounded-xl overflow-hidden bg-zinc-950">
                 <KinezmaStage
                   scene={scene}
                   cutouts={cutouts}
@@ -191,7 +193,7 @@ export default function Kinezma() {
                 />
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <button
                   onClick={() => setPlayToken((t) => t + 1)}
                   disabled={!motion}
@@ -215,11 +217,11 @@ export default function Kinezma() {
               </div>
 
               {video && (
-                <video src={video} controls loop className="mt-3 w-full max-w-md rounded-xl border border-zinc-800" />
+                <video src={video} controls loop className="h-24 w-auto max-w-full rounded-lg border border-zinc-800 shrink-0" />
               )}
 
               {selectedComp && (
-                <div className="mt-4 border border-zinc-800 rounded-xl p-3 flex flex-wrap items-center gap-3">
+                <div className="shrink-0 border border-zinc-800 rounded-xl p-2 flex flex-wrap items-center gap-2">
                   <span className="text-xs text-zinc-500 uppercase tracking-wide">{selectedComp.name}</span>
                   {selectedComp.kind === 'text' && (
                     <input
@@ -246,7 +248,7 @@ export default function Kinezma() {
               )}
             </div>
 
-            <div className="h-[520px] lg:h-auto">
+            <div className="h-56 lg:h-auto lg:w-[340px] shrink-0 min-h-0">
               <KinezmaChat messages={messages} busy={!!busy} elapsed={elapsed} onSend={send} />
             </div>
           </div>
