@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import BackToStore from '@/components/BackToStore';
 import KinezmaStage from '@/components/kinezma/KinezmaStage';
 import KinezmaChat from '@/components/kinezma/KinezmaChat';
-import { decomposeImage, motionFromChat, buildCutouts, loadImage } from '@/components/kinezma/kinezmaEngine';
+import { decomposeImage, motionFromChat, buildCutouts, loadImage, generateAssetComponent } from '@/components/kinezma/kinezmaEngine';
 import { exportKinezmaMp4 } from '@/components/kinezma/kinezmaExport';
 import { Loader2, Play, Download, Upload, Library as LibraryIcon, Plus } from 'lucide-react';
 import KinezmaLibrary from '@/components/kinezma/KinezmaLibrary';
@@ -168,7 +168,7 @@ export default function Kinezma() {
       setMessages([
         {
           role: 'assistant',
-          text: `Split your image into ${sc.components.length} components. Click any component to drag it around — then tell me the motion, e.g. "make the title drop in and bounce, background slowly pans left".`
+          text: `Split your image into ${sc.components.length} components. Click any component to drag it around — then tell me the motion, e.g. "make the title drop in and bounce, background slowly pans left". Or ask me to generate a brand-new asset — a logo, icon, or b-roll — premium quality, fully controllable.`
         }
       ]);
     } catch (e) {
@@ -180,11 +180,16 @@ export default function Kinezma() {
 
   const send = async (text) => {
     if (!text.trim() || busy) return;
-    setMessages((m) => [...m, { role: 'user', text }, { role: 'assistant', text: 'Writing keyframes', working: true }]);
-    setBusy('Writing keyframes');
+    setMessages((m) => [...m, { role: 'user', text }, { role: 'assistant', text: 'Working on it', working: true }]);
+    setBusy('Directing the scene');
     setBusyStart(Date.now());
     try {
       const m = await motionFromChat({ request: text, scene, currentMotion: motionRef.current });
+      if (m.asset) {
+        const { component, dataUrl } = await generateAssetComponent({ asset: m.asset, scene });
+        setScene((s) => ({ ...s, components: [...s.components, component] }));
+        setCutouts((c) => ({ ...c, [component.id]: dataUrl }));
+      }
       if (m.edits.length) {
         setScene((s) => ({
           ...s,
@@ -197,7 +202,7 @@ export default function Kinezma() {
       }
       if (m.tracks.length) playMotion({ tracks: m.tracks, duration: m.duration, loop: m.loop });
       setMessages((msgs) =>
-        msgs.map((x) => (x.working ? { ...x, working: false, text: m.reply + (m.tracks.length ? ' — playing now.' : '') } : x))
+        msgs.map((x) => (x.working ? { ...x, working: false, text: m.reply + (m.asset ? ' — added to the stage. Drag it into place, then tell me the motion.' : m.tracks.length ? ' — playing now.' : '') } : x))
       );
     } catch (e) {
       setMessages((msgs) =>

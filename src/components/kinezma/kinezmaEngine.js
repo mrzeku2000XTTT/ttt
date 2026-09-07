@@ -106,6 +106,18 @@ export const MOTION_SCHEMA = {
         },
         required: ['component', 'keyframes']
       }
+    },
+    asset: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string' },
+        name: { type: 'string' },
+        width_pct: { type: 'number' },
+        x_pct: { type: 'number' },
+        y_pct: { type: 'number' },
+        remove_bg: { type: 'boolean' }
+      },
+      required: ['prompt', 'name']
     }
   },
   required: ['reply', 'duration', 'tracks']
@@ -234,6 +246,7 @@ Produce keyframe tracks:
 - Use 2–5 purposeful keyframes per component. Only give tracks to components that actually move — leave static ones out entirely.
 - duration: 2–8 seconds (default 4). loop: true only when the motion reads as seamless.
 - If the user asks to change a component's CONTENT (text, color, size), also return "edits". Motion is the main job — never refuse motion work.
+- ASSET CREATION: if the user asks you to CREATE or GENERATE something that is not in the scene yet — a logo, icon, emblem, character, prop, badge, or a b-roll image — return "asset": { "prompt": a detailed PREMIUM image-generation prompt (high-end, polished design; for logos/icons: single centered subject on a pure solid background), "name": short asset name, "width_pct": 5-90 (size as % of scene width), "x_pct"/"y_pct": 0-100 (center position in the scene), "remove_bg": true for logos/icons/emblems }. Leave "tracks" empty when the request is purely asset creation. The asset becomes a controllable component the user can drag and animate next.
 - "reply": one short sentence describing the motion you set up.`,
     response_json_schema: MOTION_SCHEMA
   });
@@ -247,6 +260,74 @@ Produce keyframe tracks:
     duration: Math.max(1, Math.min(10, res.duration || 4)),
     loop: !!res.loop,
     tracks,
-    edits
+    edits,
+    asset: res.asset || null
+  };
+}
+
+const imgToDataURL = (img) => {
+  const cv = document.createElement('canvas');
+  cv.width = img.naturalWidth;
+  cv.height = img.naturalHeight;
+  cv.getContext('2d').drawImage(img, 0, 0);
+  return cv.toDataURL('image/png');
+};
+
+// Key out a uniform white or black background so generated logos/assets land
+// on the stage as clean, transparent, controllable cutouts.
+const stripSolidBackground = (img) => {
+  const cv = document.createElement('canvas');
+  cv.width = img.naturalWidth;
+  cv.height = img.naturalHeight;
+  const c2 = cv.getContext('2d');
+  c2.drawImage(img, 0, 0);
+  const data = c2.getImageData(0, 0, cv.width, cv.height);
+  const px = data.data;
+  const w = cv.width, h = cv.height;
+  const corner = (ix) => [px[ix * 4], px[ix * 4 + 1], px[ix * 4 + 2]];
+  const corners = [corner(0), corner(w - 1), corner((h - 1) * w), corner(h * w - 1)];
+  const avg = corners.reduce((a, c) => [a[0] + c[0] / 4, a[1] + c[1] / 4, a[2] + c[2] / 4], [0, 0, 0]);
+  const isWhite = avg.every((v) => v > 235);
+  const isBlack = avg.every((v) => v < 20);
+  if (!isWhite && !isBlack) return cv.toDataURL('image/png');
+  const threshold = 255 - 45;
+  for (let i = 0; i < px.length; i += 4) {
+    const r = px[i], g = px[i + 1], b = px[i + 2];
+    const key = isWhite ? Math.min(r, g, b) : 255 - Math.max(r, g, b);
+    if (key >= threshold) px[i + 3] = 0;
+    else if (key >= threshold - 25) {
+      const t = (key - (threshold - 25)) / 25;
+      px[i + 3] = Math.round(px[i + 3] * (1 - t));
+    }
+  }
+  c2.putImageData(data, 0, 0);
+  return cv.toDataURL('image/png');
+};
+
+// Generate a brand-new asset (logo, icon, b-roll...) from a chat request and
+// return it as a scene component + persistent cutout data URL.
+export async function generateAssetComponent({ asset, scene }) {
+  const res = await base44.integrations.Core.GenerateImage({
+    prompt: `Premium, high-end, polished quality. ${asset.prompt}`
+  });
+  const img = await loadImage(res.url);
+  const w = Math.max(40, Math.round(((asset.width_pct || 30) / 100) * scene.width));
+  const h = Math.round((img.naturalHeight / img.naturalWidth) * w);
+  const x = Math.round(((asset.x_pct || 50) / 100) * scene.width - w / 2);
+  const y = Math.round(((asset.y_pct || 50) / 100) * scene.height - h / 2);
+  const dataUrl = asset.remove_bg === false ? imgToDataURL(img) : stripSolidBackground(img);
+  const id = 'a' + Date.now().toString(36) + Math.floor(Math.random() * 100);
+  return {
+    component: {
+      id,
+      name: asset.name || 'Asset',
+      kind: 'cutout',
+      x,
+      y,
+      w,
+      h,
+      z: 50
+    },
+    dataUrl
   };
 }

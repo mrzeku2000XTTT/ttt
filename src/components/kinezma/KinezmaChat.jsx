@@ -23,6 +23,7 @@ export default function KinezmaChat({ messages, busy, elapsed, onSend }) {
   const ideas = [
     'Drop the title in with a bounce',
     'Logo spins in, background pans right',
+    'Generate a premium gold bull logo',
     'Everything fades in one by one, slow zoom'
   ];
 
@@ -67,7 +68,7 @@ export default function KinezmaChat({ messages, busy, elapsed, onSend }) {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Describe the motion…"
+          placeholder="Describe motion — or ask for a new asset (logo, icon, b-roll)…"
           className="flex-1 bg-black border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
         />
         <button
