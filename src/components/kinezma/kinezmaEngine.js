@@ -79,7 +79,8 @@ export const MOTION_SCHEMA = {
           text: { type: 'string' },
           color: { type: 'string' },
           bg: { type: 'string' },
-          fontSize: { type: 'number' }
+          fontSize: { type: 'number' },
+          fontFamily: { type: 'string' }
         }
       }
     },
@@ -110,14 +111,38 @@ export const MOTION_SCHEMA = {
     asset: {
       type: 'object',
       properties: {
+        kind: { type: 'string', enum: ['image', 'text'] },
         prompt: { type: 'string' },
         name: { type: 'string' },
+        text: { type: 'string' },
+        color: { type: 'string' },
+        bg: { type: 'string' },
+        fontSize_pct: { type: 'number' },
+        align: { type: 'string', enum: ['center', 'left'] },
+        fontFamily: { type: 'string' },
+        fontWeight: { type: 'string' },
         width_pct: { type: 'number' },
         x_pct: { type: 'number' },
         y_pct: { type: 'number' },
-        remove_bg: { type: 'boolean' }
+        remove_bg: { type: 'boolean' },
+        intro_keyframes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              t: { type: 'number' },
+              x: { type: 'number' },
+              y: { type: 'number' },
+              scale: { type: 'number' },
+              rotate: { type: 'number' },
+              opacity: { type: 'number' },
+              ease: { type: 'string', enum: EASES }
+            },
+            required: ['t']
+          }
+        }
       },
-      required: ['prompt', 'name']
+      required: ['name']
     }
   },
   required: ['reply', 'duration', 'tracks']
@@ -245,8 +270,12 @@ Produce keyframe tracks:
 - Properties omitted from a keyframe hold their previous value. The first keyframe (usually t 0) sets the start state; the last keyframe should settle the component at rest (x 0, y 0, scale 1, rotate 0, opacity 1) unless the motion loops or the user wants a held pose.
 - Use 2–5 purposeful keyframes per component. Only give tracks to components that actually move — leave static ones out entirely.
 - duration: 2–8 seconds (default 4). loop: true only when the motion reads as seamless.
-- If the user asks to change a component's CONTENT (text, color, size), also return "edits". Motion is the main job — never refuse motion work.
-- ASSET CREATION: if the user asks you to CREATE or GENERATE something that is not in the scene yet — a logo, icon, emblem, character, prop, badge, or a b-roll image — return "asset": { "prompt": a detailed PREMIUM image-generation prompt (high-end, polished design; for logos/icons: single centered subject on a pure solid background), "name": short asset name, "width_pct": 5-90 (size as % of scene width), "x_pct"/"y_pct": 0-100 (center position in the scene), "remove_bg": true for logos/icons/emblems }. Leave "tracks" empty when the request is purely asset creation. The asset becomes a controllable component the user can drag and animate next.
+- If the user asks to change a component's CONTENT (text, color, size, font), also return "edits" (edits may set text, color, bg, fontSize, fontFamily — any hex color, any font family). Motion is the main job — never refuse motion work.
+- STYLE: default to smooth, cinematic After Effects-style motion — ease everything (outCubic for entrances, inOutCubic for moves, outBack for playful settles, outBounce only when the user asks for "bouncy"); linear only for continuous pans/drifts. Layer properties together (move + fade + subtle scale/rotate) for premium flowing results rather than single-property steps.
+- ASSET CREATION: if the user asks you to CREATE or ADD something that is not in the scene yet, return "asset" (and give it an entrance — see intro_keyframes below). Two kinds:
+  - kind "text" — headlines, taglines, captions, wordmarks, subheads: set "text" (exact words), "color" (any hex — match the user's request or the scene's palette), "bg" (hex for a chip/pill, omit for transparent), "fontSize_pct" (3-30, size as % of scene height), "width_pct" (5-95, box width as % of scene width), "x_pct"/"y_pct" (0-100, center position), "align" ("center" or "left"), "fontFamily" (any, e.g. "Georgia, serif", "Impact, sans-serif", "Courier New, monospace"), "fontWeight", "prompt": one short line describing the text you chose.
+  - kind "image" — logos, icons, emblems, characters, props, b-roll photos: set "prompt": a detailed PREMIUM image-generation prompt (high-end, polished; logos/icons: single centered subject on a pure solid background), "width_pct": 5-90 (size as % of scene width), "x_pct"/"y_pct": 0-100 (center position), "remove_bg": true for logos/icons/emblems.
+  - ALWAYS give a new asset an entrance: return "intro_keyframes" — a smooth After Effects-style entrance for the new asset (fade+rise, slide-in with outCubic, drop with outBack settle...) — and set "duration" to fit it. Existing components' "tracks" can stay empty when the request is purely asset creation. The new asset is fully controllable afterwards.
 - "reply": one short sentence describing the motion you set up.`,
     response_json_schema: MOTION_SCHEMA
   });
@@ -330,4 +359,45 @@ export async function generateAssetComponent({ asset, scene }) {
     },
     dataUrl
   };
+}
+
+// Build any asset the director asked for — generated image or live text —
+// plus its entrance track so it animates in on arrival.
+export async function buildAsset(asset, scene) {
+  const track =
+    (asset.intro_keyframes || []).length
+      ? { component: null, keyframes: asset.intro_keyframes }
+      : null;
+
+  if (asset.kind === 'text') {
+    const id = 't' + Date.now().toString(36) + Math.floor(Math.random() * 100);
+    const fontSize = Math.max(10, Math.round(((asset.fontSize_pct || 10) / 100) * scene.height));
+    const w = Math.max(40, Math.round(((asset.width_pct || 40) / 100) * scene.width));
+    const h = Math.round(fontSize * 1.4);
+    const x = Math.round(((asset.x_pct || 50) / 100) * scene.width - w / 2);
+    const y = Math.round(((asset.y_pct || 50) / 100) * scene.height - h / 2);
+    return {
+      component: {
+        id,
+        name: asset.name || 'Text',
+        kind: 'text',
+        x,
+        y,
+        w,
+        h,
+        z: 50,
+        text: asset.text || asset.name,
+        color: asset.color || '#ffffff',
+        bg: asset.bg,
+        align: asset.align || 'center',
+        fontSize,
+        fontFamily: asset.fontFamily || 'sans-serif',
+        fontWeight: asset.fontWeight || 800
+      },
+      track: track ? { ...track, component: id } : null
+    };
+  }
+
+  const gen = await generateAssetComponent({ asset, scene });
+  return { ...gen, track: track ? { ...track, component: gen.component.id } : null };
 }

@@ -27,7 +27,7 @@ const roundRect = (ctx, x, y, w, h, r) => {
 const drawText = (ctx, c) => {
   ctx.fillStyle = c.color || '#000';
   const size = c.fontSize || Math.round(c.h * 0.8);
-  const family = /serif|mono/i.test(c.fontFamily || '') ? c.fontFamily : 'sans-serif';
+  const family = c.fontFamily || 'sans-serif';
   ctx.font = `${Number(c.fontWeight) || 700} ${size}px ${family}`;
   ctx.textBaseline = 'middle';
   const left = c.align === 'left';

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import BackToStore from '@/components/BackToStore';
 import KinezmaStage from '@/components/kinezma/KinezmaStage';
 import KinezmaChat from '@/components/kinezma/KinezmaChat';
-import { decomposeImage, motionFromChat, buildCutouts, loadImage, generateAssetComponent } from '@/components/kinezma/kinezmaEngine';
+import { decomposeImage, motionFromChat, buildCutouts, loadImage, buildAsset } from '@/components/kinezma/kinezmaEngine';
 import { exportKinezmaMp4 } from '@/components/kinezma/kinezmaExport';
 import { Loader2, Play, Download, Upload, Library as LibraryIcon, Plus } from 'lucide-react';
 import KinezmaLibrary from '@/components/kinezma/KinezmaLibrary';
@@ -186,9 +186,10 @@ export default function Kinezma() {
     try {
       const m = await motionFromChat({ request: text, scene, currentMotion: motionRef.current });
       if (m.asset) {
-        const { component, dataUrl } = await generateAssetComponent({ asset: m.asset, scene });
-        setScene((s) => ({ ...s, components: [...s.components, component] }));
-        setCutouts((c) => ({ ...c, [component.id]: dataUrl }));
+        const built = await buildAsset(m.asset, scene);
+        setScene((s) => ({ ...s, components: [...s.components, built.component] }));
+        if (built.dataUrl) setCutouts((c) => ({ ...c, [built.component.id]: built.dataUrl }));
+        if (built.track) m.tracks = [...m.tracks, built.track];
       }
       if (m.edits.length) {
         setScene((s) => ({
@@ -196,13 +197,13 @@ export default function Kinezma() {
           components: s.components.map((c) => {
             const e = m.edits.find((x) => x.component === c.id);
             if (!e) return c;
-            return { ...c, text: e.text ?? c.text, color: e.color ?? c.color, bg: e.bg ?? c.bg, fontSize: e.fontSize ?? c.fontSize };
+            return { ...c, text: e.text ?? c.text, color: e.color ?? c.color, bg: e.bg ?? c.bg, fontSize: e.fontSize ?? c.fontSize, fontFamily: e.fontFamily ?? c.fontFamily };
           })
         }));
       }
       if (m.tracks.length) playMotion({ tracks: m.tracks, duration: m.duration, loop: m.loop });
       setMessages((msgs) =>
-        msgs.map((x) => (x.working ? { ...x, working: false, text: m.reply + (m.asset ? ' — added to the stage. Drag it into place, then tell me the motion.' : m.tracks.length ? ' — playing now.' : '') } : x))
+        msgs.map((x) => (x.working ? { ...x, working: false, text: m.reply + (m.asset ? ' — added to the stage, animating in. Drag it into place or tell me what to change.' : m.tracks.length ? ' — playing now.' : '') } : x))
       );
     } catch (e) {
       setMessages((msgs) =>
