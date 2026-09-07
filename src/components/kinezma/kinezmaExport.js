@@ -60,10 +60,15 @@ export async function exportKinezmaMp4({ scene, cutouts, motion, onProgress }) {
   const mime = pickMime();
   if (!mime) throw new Error('This browser cannot record MP4 — try Chrome, Edge or Safari.');
 
+  // 4K export: render at 3840px wide (proportional height), scene coords scaled up
+  const OUT_W = 3840;
+  const k = OUT_W / scene.width;
   const canvas = document.createElement('canvas');
-  canvas.width = scene.width;
-  canvas.height = scene.height;
+  canvas.width = OUT_W;
+  canvas.height = Math.round(scene.height * k);
   const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   const imgs = {};
   await Promise.all(
@@ -75,6 +80,7 @@ export async function exportKinezmaMp4({ scene, cutouts, motion, onProgress }) {
   const comps = [...scene.components].sort((a, b) => (a.z || 0) - (b.z || 0));
   const drawFrame = (time) => {
     const state = motion ? stateAt(motion.tracks, time) : {};
+    ctx.setTransform(k, 0, 0, k, 0, 0);
     ctx.fillStyle = scene.background || '#fff';
     ctx.fillRect(0, 0, scene.width, scene.height);
     for (const c of comps) {
@@ -96,10 +102,11 @@ export async function exportKinezmaMp4({ scene, cutouts, motion, onProgress }) {
       }
       ctx.restore();
     }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   };
 
   const stream = canvas.captureStream(30);
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 10_000_000 });
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 40_000_000 });
   const chunks = [];
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
   const done = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: 'video/mp4' })); });

@@ -5,7 +5,9 @@ import KinezmaStage from '@/components/kinezma/KinezmaStage';
 import KinezmaChat from '@/components/kinezma/KinezmaChat';
 import { decomposeImage, motionFromChat, buildCutouts, loadImage } from '@/components/kinezma/kinezmaEngine';
 import { exportKinezmaMp4 } from '@/components/kinezma/kinezmaExport';
-import { Loader2, Play, Download, Upload } from 'lucide-react';
+import { Loader2, Play, Download, Upload, Library as LibraryIcon, Plus } from 'lucide-react';
+import KinezmaLibrary from '@/components/kinezma/KinezmaLibrary';
+import { saveProject, getProject, listProjects, deleteProject, genProjectId, setActiveId, getActiveId } from '@/components/kinezma/kinezmaStore';
 
 export default function Kinezma() {
   const [scene, setScene] = useState(null);
@@ -21,6 +23,9 @@ export default function Kinezma() {
   const [selected, setSelected] = useState(null);
   const [exportPct, setExportPct] = useState(null);
   const [video, setVideo] = useState(null);
+  const [projectId, setProjectId] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const motionRef = useRef(null);
   const inputRef = useRef(null);
@@ -55,6 +60,87 @@ export default function Kinezma() {
     return () => cancelAnimationFrame(raf);
   }, [playToken]);
 
+  const restoreProject = (p) => {
+    setProjectId(p.id);
+    setActiveId(p.id);
+    setScene(p.scene);
+    setCutouts(p.cutouts || {});
+    setMessages(p.messages || []);
+    setSelected(null);
+    setVideo(null);
+    if (p.motion?.tracks?.length) {
+      motionRef.current = p.motion;
+      setMotion(p.motion);
+      setTime(p.motion.duration || 0);
+    }
+  };
+
+  // restore last active project on mount — survives refresh
+  useEffect(() => {
+    const activeId = getActiveId();
+    const load = (p) => {
+      if (p) restoreProject(p);
+      return listProjects();
+    };
+    (activeId ? getProject(activeId).then(load) : load(null))
+      .then(setProjects)
+      .catch(() => setProjects([]));
+  }, []);
+
+  // debounced autosave — users can always return to their work
+  useEffect(() => {
+    if (!scene) return;
+    const id = setTimeout(() => {
+      const firstAsk = (messages.find((m) => m.role === 'user')?.text || '').slice(0, 40);
+      const p = {
+        id: projectId || genProjectId(),
+        name: firstAsk || 'Untitled scene',
+        scene,
+        cutouts,
+        motion,
+        messages,
+        savedAt: Date.now()
+      };
+      saveProject(p)
+        .then(() => {
+          setProjectId(p.id);
+          setActiveId(p.id);
+          return listProjects();
+        })
+        .then(setProjects)
+        .catch(() => {});
+    }, 1200);
+    return () => clearTimeout(id);
+  }, [scene, cutouts, motion, messages, projectId]);
+
+  const newProject = () => {
+    setScene(null);
+    setCutouts({});
+    setMotion(null);
+    motionRef.current = null;
+    setMessages([]);
+    setVideo(null);
+    setSelected(null);
+    setProjectId(null);
+    setActiveId(null);
+  };
+
+  const openProject = (id) => {
+    getProject(id)
+      .then((p) => {
+        if (p) restoreProject(p);
+        setLibraryOpen(false);
+      })
+      .catch(() => {});
+  };
+
+  const removeProject = (id) => {
+    deleteProject(id)
+      .then(() => listProjects())
+      .then(setProjects)
+      .catch(() => {});
+  };
+
   const playMotion = (m) => {
     motionRef.current = m;
     setMotion(m);
@@ -77,6 +163,8 @@ export default function Kinezma() {
       setCutouts(cuts);
       setSelected(null);
       setVideo(null);
+      setProjectId(null);
+      setActiveId(null);
       setMessages([
         {
           role: 'assistant',
@@ -147,9 +235,27 @@ export default function Kinezma() {
     <div className="h-[100dvh] overflow-hidden bg-black text-white flex flex-col">
       <BackToStore />
       <div className="flex-1 min-h-0 flex flex-col px-4 pt-4 pb-3">
-        <div className="shrink-0">
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-none">KINEZMA</h1>
-          <p className="text-zinc-500 text-[11px] sm:text-xs mt-1">Image in · components split · motion from chat · MP4 out</p>
+        <div className="shrink-0 flex items-center justify-between gap-3 pr-28">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-none">KINEZMA</h1>
+            <p className="text-zinc-500 text-[11px] sm:text-xs mt-1">Image in · components split · motion from chat · 4K MP4 out</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {scene && (
+              <button
+                onClick={newProject}
+                className="flex items-center gap-1.5 border border-zinc-800 text-xs font-semibold rounded-lg px-2.5 py-1.5 hover:border-zinc-500 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> New
+              </button>
+            )}
+            <button
+              onClick={() => { listProjects().then(setProjects).catch(() => {}); setLibraryOpen(true); }}
+              className="flex items-center gap-1.5 border border-zinc-800 text-xs font-semibold rounded-lg px-2.5 py-1.5 hover:border-zinc-500 transition-colors"
+            >
+              <LibraryIcon className="w-3.5 h-3.5" /> Library{projects.length ? ` (${projects.length})` : ''}
+            </button>
+          </div>
         </div>
 
         {!scene ? (
@@ -207,7 +313,7 @@ export default function Kinezma() {
                   className="flex items-center gap-2 border border-zinc-700 text-sm font-semibold rounded-lg px-4 py-2 hover:border-zinc-400 disabled:opacity-30 transition-colors"
                 >
                   {exportPct !== null ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  {exportPct !== null ? `Recording ${Math.round(exportPct * 100)}%` : 'Export MP4'}
+                  {exportPct !== null ? `Recording 4K ${Math.round(exportPct * 100)}%` : 'Export 4K MP4'}
                 </button>
                 {motion && (
                   <span className="text-xs text-zinc-500">
@@ -254,6 +360,15 @@ export default function Kinezma() {
           </div>
         )}
       </div>
+      {libraryOpen && (
+        <KinezmaLibrary
+          projects={projects}
+          currentId={projectId}
+          onClose={() => setLibraryOpen(false)}
+          onOpen={openProject}
+          onDelete={removeProject}
+        />
+      )}
     </div>
   );
 }
