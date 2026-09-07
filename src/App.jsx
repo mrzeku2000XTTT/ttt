@@ -91,6 +91,8 @@ import KasthleticsPage from './pages/Kasthletics';
 import MetaMimicPage from './pages/MetaMimic';
 import FrameMimicPage from './pages/FrameMimic';
 import KinezmaPage from './pages/Kinezma';
+import DezPage from './pages/Dez';
+import DezMessagesPage from './pages/DezMessages';
 import ARCPage from './pages/ARC';
 import DoubleOPage from './pages/DoubleO';
 import DoubleONotesPage from './pages/DoubleONotes';
@@ -350,6 +352,8 @@ const AuthenticatedApp = () => {
       <Route path="/MetaMimic" element={<MetaMimicPage />} />
       <Route path="/FrameMimic" element={<FrameMimicPage />} />
       <Route path="/Kinezma" element={<KinezmaPage />} />
+      <Route path="/Dez" element={<DezPage />} />
+      <Route path="/DezMessages" element={<DezMessagesPage />} />
       <Route path="/ARC" element={<ARCPage />} />
       <Route path="/DoubleO" element={<DoubleOPage />} />
       <Route path="/DoubleONotes" element={<DoubleONotesPage />} />

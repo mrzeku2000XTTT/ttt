@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Dez", path: "Dez", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/40e1c9e96_generated_image.png", desc: "Everyday AI for design · one hub of design apps — first up: Messages, realistic texting animation with MP4 export" },
   { name: "Kinezma", path: "Kinezma", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1090987fa_generated_image.png", desc: "Image → living motion · AI splits your image into editable components, chat writes the keyframes, export MP4" },
   { name: "FrameMimic", path: "FrameMimic", cat: "Dev Tools", logo: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&h=200&fit=crop", desc: "Video → frame-by-frame HTML clones · capture every frame, 1:1 clone & replay as HTML, export MP4" },
   { name: "HYPER", path: "Hyper", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d87c0d602_generated_image.png", desc: "Crypto marketing intelligence · GPT-5.6 brain, YouTube ad research, organic growth strategies & cinematic MP4 renders" },
