@@ -1,15 +1,22 @@
 import { stateAt, loadImage, fitFontSize } from './kinezmaEngine';
 
-// Kinezma MP4 export — renders the scene deterministically onto a canvas and
-// records it in real time. MP4 only, per Kinezma's contract.
+// Kinezma MP4 export — renders the scene deterministically at 4K and pushes
+// frames one by one into the recorder, so every frame is captured exactly once
+// (no drops when the encoder is slow, no dependence on the tab staying lively).
 
+// 4K needs High-profile H.264 — Baseline (42E01E) tops out at 720p by spec and
+// produces broken output when asked for 3840px.
 const pickMime = () => {
   const mimes = [
+    'video/mp4;codecs=avc1.640033',
+    'video/mp4;codecs=avc1.640028',
+    'video/mp4;codecs=avc1.4D401F',
     'video/mp4;codecs=avc1.42E01E',
-    'video/mp4;codecs=avc1',
-    'video/mp4'
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm'
   ];
-  return mimes.find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+  return mimes.find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
 };
 
 const roundRect = (ctx, x, y, w, h, r) => {
@@ -56,9 +63,10 @@ const drawText = (ctx, c) => {
   }
 };
 
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export async function exportKinezmaMp4({ scene, cutouts, motion, onProgress }) {
-  const mime = pickMime();
-  if (!mime) throw new Error('This browser cannot record MP4 — try Chrome, Edge or Safari.');
+  if (!window.MediaRecorder) throw new Error('This browser cannot record video — try Chrome, Edge or Safari.');
 
   // 4K export: render at 3840px wide (proportional height), scene coords scaled up
   const OUT_W = 3840;
@@ -105,28 +113,64 @@ export async function exportKinezmaMp4({ scene, cutouts, motion, onProgress }) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   };
 
-  const stream = canvas.captureStream(30);
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 40_000_000 });
+  const dur = motion?.duration || 4;
+  const FPS = 30;
+  const frameMs = 1000 / FPS;
+  const mime = pickMime();
+
+  // Preferred path: manual frame push (captureStream(0) + requestFrame) —
+  // every drawn frame is captured exactly once.
+  const probeStream = canvas.captureStream(0);
+  const canPush = typeof probeStream.getVideoTracks()[0]?.requestFrame === 'function';
+  const stream = canPush ? probeStream : canvas.captureStream(FPS);
+  const track = stream.getVideoTracks()[0];
+
+  const rec = new MediaRecorder(
+    stream,
+    mime ? { mimeType: mime, videoBitsPerSecond: 20_000_000 } : undefined
+  );
   const chunks = [];
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-  const done = new Promise((res) => { rec.onstop = () => res(new Blob(chunks, { type: 'video/mp4' })); });
-  rec.start(100);
+  const stopped = new Promise((res) => { rec.onstop = res; });
 
-  const dur = motion?.duration || 4;
-  const start = performance.now();
-  await new Promise((resolve) => {
-    const loop = () => {
-      const t = (performance.now() - start) / 1000;
-      if (t >= dur) { drawFrame(dur); resolve(); return; }
-      drawFrame(t);
-      onProgress?.(t / dur);
+  drawFrame(0);
+  if (canPush) track.requestFrame();
+  rec.start();
+
+  if (canPush) {
+    // deterministic frame-by-frame: draw → push → pace to the exact 30fps slot
+    const totalFrames = Math.max(1, Math.round(dur * FPS));
+    const t0 = performance.now();
+    for (let f = 1; f <= totalFrames; f++) {
+      drawFrame(f / FPS);
+      track.requestFrame();
+      onProgress?.(f / totalFrames);
+      const target = t0 + f * frameMs;
+      while (performance.now() < target) {
+        await wait(Math.min(8, target - performance.now()));
+      }
+    }
+    // hold the last frame so the encoder flushes the tail cleanly
+    await wait(250);
+  } else {
+    // fallback: realtime capture
+    const start = performance.now();
+    await new Promise((resolve) => {
+      const loop = () => {
+        const t = (performance.now() - start) / 1000;
+        if (t >= dur) { drawFrame(dur); resolve(); return; }
+        drawFrame(t);
+        onProgress?.(t / dur);
+        requestAnimationFrame(loop);
+      };
       requestAnimationFrame(loop);
-    };
-    loop();
-  });
+    });
+  }
+
   rec.stop();
+  await stopped;
   stream.getTracks().forEach((t) => t.stop());
-  const blob = await done;
   onProgress?.(1);
-  return blob;
+  const type = rec.mimeType || mime || 'video/webm';
+  return new Blob(chunks, { type });
 }
