@@ -1,4 +1,4 @@
-import { stateAt, loadImage } from './kinezmaEngine';
+import { stateAt, loadImage, fitFontSize } from './kinezmaEngine';
 
 // Kinezma MP4 export — renders the scene deterministically onto a canvas and
 // records it in real time. MP4 only, per Kinezma's contract.
@@ -26,7 +26,7 @@ const roundRect = (ctx, x, y, w, h, r) => {
 
 const drawText = (ctx, c) => {
   ctx.fillStyle = c.color || '#000';
-  const size = c.fontSize || Math.round(c.h * 0.8);
+  const size = fitFontSize(c);
   const family = c.fontFamily || 'sans-serif';
   ctx.font = `${Number(c.fontWeight) || 700} ${size}px ${family}`;
   ctx.textBaseline = 'middle';

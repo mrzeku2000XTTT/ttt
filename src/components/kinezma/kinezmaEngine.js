@@ -17,6 +17,20 @@ const EASE_FN = {
   outBounce: (t) => { const n1 = 7.5625, d1 = 2.75; if (t < 1 / d1) return n1 * t * t; if (t < 2 / d1) return n1 * (t -= 1.5 / d1) * t + 0.75; if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375; return n1 * (t -= 2.625 / d1) * t + 0.984375; },
 };
 
+// Measure real text and shrink the font so it NEVER clips its box.
+// Width scales linearly with px size, so one proportional pass is exact.
+let fitCtx = null;
+export function fitFontSize(c) {
+  let size = c.fontSize || Math.round(c.h * 0.8);
+  if (!c.text || typeof document === 'undefined') return size;
+  if (!fitCtx) fitCtx = document.createElement('canvas').getContext('2d');
+  fitCtx.font = `${Number(c.fontWeight) || 700} ${size}px ${c.fontFamily || 'sans-serif'}`;
+  const w = fitCtx.measureText(c.text).width;
+  const maxW = Math.max(8, c.w * 0.99);
+  if (w > maxW) size = size * (maxW / w);
+  return Math.max(6, Math.min(Math.round(size), Math.round(c.h * 0.92)));
+}
+
 export const loadImage = (url) => new Promise((res, rej) => {
   const im = new Image();
   im.crossOrigin = 'anonymous';
@@ -159,7 +173,7 @@ The scene coordinate space is EXACTLY ${W} x ${H} pixels — the image scaled to
 Rules:
 - Cover the WHOLE image: every visible element belongs to exactly one component. The base background layer comes first (kind "box", z 0, covering the full canvas with its average color).
 - kind "cutout": photographic, organic or complex regions that cannot be flat text or a solid box — people, characters, illustrations, product photos, detailed art. Its rect crops that exact region from the source image, so make it tight but complete.
-- kind "text": any readable text — set text to the exact words, fontSize to fill the rect height, color to the text's color, bg only if it sits on a colored chip/pill, align "left" if the text starts at the rect's left edge, else "center".
+- kind "text": any readable text — set text to the exact words, fontSize to fill the rect height, color to the text's color, bg only if it sits on a colored chip/pill, align "left" if the text starts at the rect's left edge, else "center". The rect MUST span the full width of the rendered text with a few pixels of padding on each side — a rect narrower than the text gets it clipped.
 - kind "box": flat solid shapes — banners, circles, cards, pills (bg = its color, radius in px if rounded).
 - Use 4 to 14 components total. Give each a short name and a unique id "c1", "c2", ...
 - Rects must tile the image tightly (adjacent, no gaps) unless the image truly has empty space.

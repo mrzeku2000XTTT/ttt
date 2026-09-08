@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { stateAt } from './kinezmaEngine';
+import { stateAt, fitFontSize } from './kinezmaEngine';
 
 /**
  * The live scene: every component positioned in scene-pixel space, scaled to
@@ -102,15 +102,16 @@ export default function KinezmaStage({ scene, cutouts, motion, time, selected, o
                 />
               ) : (
                 <div
-                  className="w-full h-full flex pointer-events-none overflow-hidden"
+                  className="w-full h-full flex pointer-events-none"
                   style={{
                     alignItems: 'center',
                     justifyContent: c.align === 'left' ? 'flex-start' : 'center',
                     color: c.color || '#000',
-                    fontSize: c.fontSize || Math.round(c.h * 0.8),
+                    fontSize: fitFontSize(c),
                     fontWeight: Number(c.fontWeight) || 700,
                     fontFamily: c.fontFamily || 'sans-serif',
-                    lineHeight: 1.05,
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
                     textAlign: c.align === 'left' ? 'left' : 'center',
                     background: c.bg || 'transparent'
                   }}
