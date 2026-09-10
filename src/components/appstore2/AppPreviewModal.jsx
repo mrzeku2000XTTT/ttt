@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ExternalLink, Shield } from "lucide-react";
+import { X, ExternalLink } from "lucide-react";
 import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
 import AppAccessGate from "@/components/appstore2/AppAccessGate";
 
@@ -22,48 +22,43 @@ export default function AppPreviewModal({ app, onClose }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4"
+          className="fixed inset-0 z-[200] bg-black"
           onClick={(e) => e.target === e.currentTarget && onClose()}
         >
           <motion.div
-            initial={{ scale: 0.96, opacity: 0 }}
+            initial={{ scale: 0.98, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.96, opacity: 0 }}
-            className="bg-[#F5F5F7] rounded-2xl overflow-hidden w-full max-w-5xl h-[88vh] flex flex-col shadow-2xl"
+            exit={{ scale: 0.98, opacity: 0 }}
+            className="relative w-full h-full flex flex-col"
           >
-            {/* Toolbar */}
-            <div className="flex items-center justify-between gap-3 px-3 sm:px-4 h-12 bg-white border-b border-zinc-200 flex-shrink-0">
-              <div className="flex items-center gap-2 min-w-0">
+            {/* Floating controls over the full-screen preview */}
+            <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+              <div className="flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 flex-shrink-0">
                 {app.logo ? (
-                  <img src={app.logo} alt="" className="w-6 h-6 rounded-lg object-cover flex-shrink-0" />
+                  <img src={app.logo} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-6 h-6 rounded-lg bg-zinc-200 flex items-center justify-center text-[11px] font-bold text-zinc-500 flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">
                     {app.name?.[0]?.toUpperCase()}
                   </div>
                 )}
-                <span className="text-sm font-semibold text-zinc-900 truncate">{app.name}</span>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-zinc-400 ml-1">
-                  <Shield className="w-3 h-3" /> Kaspa app
-                </span>
+                <span className="text-sm font-semibold text-white truncate max-w-[140px]">{app.name}</span>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={guardedOpen}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-700 transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Open in new tab</span>
-                </button>
-                <button
-                  onClick={onClose}
-                  className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-900 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={guardedOpen}
+                className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-white text-xs font-semibold hover:bg-black transition-colors flex-shrink-0"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Open in new tab</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black transition-colors flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            {/* Iframe */}
-            <div className="flex-1 relative bg-white">
+            {/* Iframe — full screen */}
+            <div className="flex-1 relative bg-black">
               <iframe
                 src={app.externalUrl}
                 title={app.name}
