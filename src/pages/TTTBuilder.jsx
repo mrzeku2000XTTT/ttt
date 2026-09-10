@@ -42,6 +42,7 @@ import CloneBuilderRepoModal from "@/components/tttbuilder/CloneBuilderRepoModal
 import OnboardingModal, { isStandalone } from "@/components/tttbuilder/OnboardingModal";
 import { getLocalProviders, LOCAL_MODEL_PREFIX, isLocalModelId } from "@/components/tttbuilder/localLlm";
 import { persistBuild, guardUnload } from "@/components/tttbuilder/buildKeepAlive";
+import BuilderLanding from "@/components/tttbuilder/BuilderLanding";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 const STANDALONE = isStandalone();
@@ -751,8 +752,9 @@ function TTTBuilderStudio() {
           <span className={`font-black text-lg tracking-tight ${phase === "hero" ? "text-[#1a1614]" : "text-white"}`}>TTT</span>
           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${phase === "hero" ? "bg-[#1a1614] text-white" : "bg-[#70C7BA] text-black"}`}>BUILDER</span>
         </div>
-        <div className={`hidden sm:flex items-center gap-4 text-xs ${phase === "hero" ? "text-[#8a8580]" : "text-white/50"}`}>
-          <span>Built on Kaspa</span>
+        <div className={`hidden sm:flex items-center gap-1.5 text-xs font-semibold ${phase === "hero" ? "text-[#8a8580]" : "text-white/50"}`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00E68E]" />
+          Kaspa-native · BYO keys
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -780,7 +782,7 @@ function TTTBuilderStudio() {
         {html && (
           <button
             onClick={downloadHtml}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#70C7BA]/20 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/30 transition-colors"
+            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#1A1A1A] text-white text-xs font-bold hover:bg-black transition-colors"
           >
             <ExternalLink className="w-3 h-3" /> Export HTML
           </button>
@@ -789,136 +791,21 @@ function TTTBuilderStudio() {
 
       <AnimatePresence mode="wait">
         {phase === "hero" ? (
-          <motion.div
-            key="hero"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-5 bg-[#f5f2ed]"
-            style={{ paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))" }}
-          >
-            <div className="relative max-w-3xl mx-auto text-center w-full">
-              {/* Badge */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#e8e4df] text-[#5a554f] text-xs font-medium mb-6 sm:mb-10"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#8a8076]" />
-                AI Site Builder for Kaspa
-              </motion.div>
-
-              {/* Headline */}
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="text-4xl sm:text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05] mb-4 sm:mb-5 text-[#1a1614] font-heading"
-                style={{ letterSpacing: "-0.02em" }}
-              >
-                Build your site.
-                <br />
-                <span className="text-[#a8a29a]">Ship it now.</span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-[#6a655f] text-base sm:text-lg max-w-xl mx-auto mb-8 sm:mb-12 font-normal px-2"
-              >
-                Describe what you want. TTT Builder generates a complete, beautiful landing page — no code needed.
-              </motion.p>
-
-              {/* Main input */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="relative max-w-2xl mx-auto"
-              >
-                <div className="flex flex-wrap items-center gap-2 bg-white border border-[#e0dcd7] focus-within:border-[#c8c4be] focus-within:shadow-[0_0_0_4px_rgba(26,22,20,0.04)] rounded-2xl p-2 transition-all shadow-[0_2px_8px_rgba(26,22,20,0.04)]">
-                  <div className="min-w-0 max-w-[48%] sm:max-w-none overflow-hidden flex-shrink">
-                    <ModelSelector variant="light" value={model} onChange={changeModel} disabled={loading} onOpenSettings={() => navigate('/BuilderSettings')} />
-                  </div>
-                  <textarea
-                    value={prompt}
-                    onChange={e => setPrompt(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(prompt); } }}
-                    placeholder={chatMode === "plan" ? "Tell the builder your idea…" : "Describe your app — e.g. 'Kaspa staking dashboard'"}
-                    rows={3}
-                    className="flex-1 min-w-0 basis-full sm:basis-0 order-first sm:order-none bg-transparent outline-none text-[#1a1614] placeholder:text-[#aaa6a0] text-sm px-3 py-3 resize-none sm:[field-sizing:content]"
-                  />
-                  {/* Plan mode toggle — talk through the idea before building */}
-                  <button
-                    type="button"
-                    onClick={() => setChatMode(chatMode === "plan" ? "build" : "plan")}
-                    disabled={loading}
-                    title="Plan mode — talk through your idea before building"
-                    className={`flex items-center gap-1.5 h-10 px-3 rounded-xl text-xs font-bold transition-all disabled:opacity-40 flex-shrink-0 ${
-                      chatMode === "plan"
-                        ? "bg-[#1a1614] text-white"
-                        : "bg-[#f5f2ed] text-[#5a554f] hover:bg-[#ece9e4] border border-[#e0dcd7]"
-                    }`}
-                  >
-                    <ClipboardList className="w-3.5 h-3.5" />
-                    <span>Plan</span>
-                  </button>
-                  {/* Build orb — white background, icon only */}
-                  <button
-                    onClick={() => generate(prompt)}
-                    disabled={!prompt.trim() || loading}
-                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-white border border-[#e0dcd7] text-[#1a1614] hover:bg-[#f5f2ed] disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0"
-                    title={chatMode === "plan" ? "Send plan" : "Build"}
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  </button>
-                </div>
-              </motion.div>
-
-              {/* Standalone only: setup wizard */}
-              {STANDALONE && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="mt-3 flex items-center justify-center gap-2"
-                >
-                  <button
-                    onClick={() => window.dispatchEvent(new Event("ttt-open-onboarding"))}
-                    className="inline-flex items-center gap-2 h-8 px-3 rounded-full bg-[#70C7BA]/15 border border-[#70C7BA]/40 text-[#70C7BA] text-xs font-bold hover:bg-[#70C7BA]/25 transition-colors"
-                  >
-                    <KeyRound className="w-3.5 h-3.5" /> Setup wizard
-                  </button>
-                </motion.div>
-              )}
-
-              {/* Examples */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.35 }}
-                className="mt-5 flex flex-wrap gap-x-5 gap-y-2 justify-center"
-              >
-                {EXAMPLES.map((ex) => (
-                  <button
-                    key={ex}
-                    onClick={() => handleExampleClick(ex)}
-                    className="text-xs text-[#8a8580] hover:text-[#1a1614] transition-colors"
-                  >
-                    {ex.slice(0, 38)}…
-                  </button>
-                ))}
-              </motion.div>
-
-              {/* Recent projects — above the templates */}
-              <RecentProjects onOpen={loadProject} onSeeAll={() => setShowProjects(true)} />
-
-              {/* Kaspa app templates */}
-              <TemplateGallery onPick={(t) => generate(t.prompt)} disabled={loading} />
-              </div>
-              </motion.div>
+          <BuilderLanding
+            prompt={prompt}
+            setPrompt={setPrompt}
+            onGenerate={generate}
+            onExample={handleExampleClick}
+            examples={EXAMPLES}
+            loading={loading}
+            model={model}
+            onModelChange={changeModel}
+            chatMode={chatMode}
+            onChatModeChange={setChatMode}
+            onOpenProjects={() => setShowProjects(true)}
+            onOpenProject={loadProject}
+            standalone={STANDALONE}
+          />
         ) : (
           <motion.div
             key="studio"
