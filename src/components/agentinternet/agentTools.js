@@ -145,6 +145,24 @@ Each beat: shot (what the camera sees) + copy (on-screen text, max 6 words).`,
       return "brief handed to K6ix — motion launcher ready in chat";
     },
   },
+  kutt_edit: {
+    app: "Kutt · timeline editor",
+    desc: "Hand the whole production (brand, research, storyboard beats, rendered plates, motion brief) to the Kutt Director, who scripts scenes, dispatches editor agents and assembles a multi-track timeline (V1/V2/A1) with hyperframes — then opens the Kutt studio for preview and MP4 export. Call this LAST when the user wants an editable, exportable timeline instead of a one-shot render. args: { prompt }",
+    run: async (args, ctx) => {
+      const handoff = {
+        input: args.prompt || ctx.request || ctx.prompt || "",
+        brand: ctx.brand || null,
+        research: ctx.research || null,
+        beats: ctx.beats || null,
+        images: (ctx.images || []).map((i) => ({ url: i.url, name: (i.prompt || "").slice(0, 60) || "plate" })),
+        motion: ctx.k6ix || null,
+        from: "Agent Internet",
+      };
+      sessionStorage.setItem("kutt_agent_handoff", JSON.stringify(handoff));
+      setTimeout(() => { window.location.href = "/Kutt"; }, 1200);
+      return "Brief handed to the Kutt Director — opening the studio. The Director is absorbing the brief and dispatching its editor agents onto the timeline; press Export there when the cut looks right.";
+    },
+  },
 };
 
 export const TOOL_MENU = Object.entries(TOOLS)

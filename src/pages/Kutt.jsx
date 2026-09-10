@@ -13,6 +13,18 @@ const uid = () => `k_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 export default function KuttPage() {
   const [assets, setAssets] = useState([]);
   const [clips, setClips] = useState([]);
+
+  // Consume an Agent Internet handoff (kutt_edit tool) once, on mount
+  const [handoff] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem("kutt_agent_handoff");
+      if (raw) {
+        sessionStorage.removeItem("kutt_agent_handoff");
+        return JSON.parse(raw);
+      }
+    } catch {}
+    return null;
+  });
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
@@ -168,7 +180,7 @@ export default function KuttPage() {
 
         {/* Right: Director agent */}
         <div style={{ width: agentW }} className="flex-shrink-0 hidden sm:block">
-          <KuttAgent assets={assets} clips={clips} setClips={setClips} addAssets={addAssets} />
+          <KuttAgent assets={assets} clips={clips} setClips={setClips} addAssets={addAssets} autoHandoff={handoff} />
         </div>
       </div>
 

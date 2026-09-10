@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { Send, Loader2, Clapperboard, Check, Link2 } from "lucide-react";
 import { runKuttOrchestrator } from "./kuttOrchestrator";
 
-export default function KuttAgent({ assets, clips, setClips, addAssets }) {
+export default function KuttAgent({ assets, clips, setClips, addAssets, autoHandoff }) {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "🎬 I'm your **Director** — I orchestrate a team of AI sub-agents:\n\n- 🔎 **Researcher** scans the web\n- 📝 **Scriptwriter** drafts scenes\n- 🎨 **Media Agents** generate video/images\n- ✂️ **Editor Agents** (up to 10) cut, split & layer in parallel\n- 📊 **Analyst** reviews viral potential\n- 🎯 **Hyperframes** add text overlays & animations\n\nDrop a **URL** or tell me what to make. I'll absorb your intent, plan the production, and dispatch my agents." },
   ]);
@@ -11,8 +11,57 @@ export default function KuttAgent({ assets, clips, setClips, addAssets }) {
   const [busy, setBusy] = useState(false);
   const [steps, setSteps] = useState([]);
   const endRef = useRef(null);
+  const handoffRan = useRef(false);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, steps]);
+
+  // Agent Internet handoff — auto-run the Director with the handed-over context
+  useEffect(() => {
+    if (!autoHandoff || handoffRan.current) return;
+    handoffRan.current = true;
+    const h = autoHandoff;
+
+    const plates = (h.images || []).filter((i) => i.url).map((img, i) => ({
+      id: `k_handoff_${Date.now()}_${i}`,
+      type: "image",
+      url: img.url,
+      name: img.name || `Plate ${i + 1}`,
+      duration: 4,
+    }));
+    if (plates.length) addAssets(plates);
+
+    const ctxBlock = [
+      h.brand ? `Brand: ${h.brand.name || ""} — ${(h.brand.description || "").slice(0, 300)}${h.brand.url ? ` (${h.brand.url})` : ""}` : "",
+      h.research ? `Verified research:\n${String(h.research).slice(0, 1500)}` : "",
+      (h.beats || []).length ? `Storyboard beats:\n${h.beats.map((b, i) => `${i + 1}. ${b.shot}${b.copy ? ` — "${b.copy}"` : ""}`).join("\n")}` : "",
+      h.motion ? `Motion brief: ${JSON.stringify(h.motion).slice(0, 600)}` : "",
+      plates.length ? `${plates.length} already-rendered still plate${plates.length > 1 ? "s" : ""} from the session are in the asset library — reuse them as scene plates where they fit instead of regenerating.` : "",
+    ].filter(Boolean).join("\n\n");
+    const enrichedInput = `${h.input}\n\n---\nContext handed over from the Agent Internet session:\n${ctxBlock}`;
+
+    setMessages((m) => [
+      ...m,
+      { role: "user", content: `⤴️ From Agent Internet: **${(h.input || "").slice(0, 160) || "production brief"}` + (h.input?.length > 160 ? "…" : "") + "**" },
+      { role: "assistant", content: "🎬 Handoff received — absorbing the brief and dispatching my agents onto the timeline…" },
+    ]);
+    setBusy(true);
+    setSteps([]);
+    runKuttOrchestrator({
+      input: enrichedInput,
+      assets,
+      clips,
+      addAssets,
+      setClips,
+      onStep: (s) => setSteps((prev) => {
+        const i = prev.findIndex((p) => p.label === s.label);
+        if (i >= 0) { const next = [...prev]; next[i] = s; return next; }
+        return [...prev, s];
+      }),
+    })
+      .then((result) => setMessages((m) => [...m, { role: "assistant", content: result.message }]))
+      .catch((err) => setMessages((m) => [...m, { role: "assistant", content: `⚠️ ${err.message}` }]))
+      .finally(() => setBusy(false));
+  }, []);
 
   const send = async () => {
     const text = input.trim();
