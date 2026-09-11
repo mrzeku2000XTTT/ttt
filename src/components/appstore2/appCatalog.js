@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "KaspaCollab", path: "KaspaCollab", cat: "Builder", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f8c6c08fd_generated_image.png", desc: "Free secure collab for Kaspa builders · Scorpion wallet-gated shared notes, covenant-locked to two addresses" },
   { name: "KaspaPulse", path: null, externalUrl: "https://kaspapulse.com", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0a5594df9_image.png", desc: "Live Kaspa on-chain pulse · TVL, DEX volume, hashrate & whale watch" },
   { name: "Dez", path: "Dez", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/40e1c9e96_generated_image.png", desc: "Everyday AI for design · one hub of design apps — first up: Messages, realistic texting animation with MP4 export" },
   { name: "Kinezma", path: "Kinezma", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1090987fa_generated_image.png", desc: "Image → living motion · AI splits your image into editable components, chat writes the keyframes, export MP4" },
@@ -193,7 +194,6 @@ export const APPS = [
   // ── New ──
   { name: "Krust", path: "Krust", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e2e8601a9_generated_image.png", desc: "Web weaver" },
   { name: "OneShot", path: "UICloner", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/17316d6b3_generated_image.png", desc: "Clone & vibe-code any UI", admin: true },
-  { name: "KaspaCollab", path: "KaspaCollab", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9889bbc28_image.jpeg", desc: "Free secure collab for Kaspa builders · Scorpion wallet-gated shared notes, covenant-locked to two addresses" },
 ];
 
 // The 10 lifestyle AI-tool apps are grouped inside the "Everyday AI" hub
