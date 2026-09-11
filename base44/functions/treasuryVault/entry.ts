@@ -138,6 +138,9 @@ export default async function(req) {
     // blessing per wallet per day. The payout is signed with the vault seed
     // server-side via the shared sendKaspaTransaction function.
     if (action === 'claim_reward') {
+      // admin-only while BIBLIA is in testing — reopen to donors when it ships
+      const caller = await base44.auth.me();
+      if (caller?.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const wallet = String(body.wallet || '').replace(/^kaspa:/, '').trim();
       if (!wallet) return Response.json({ error: 'Connect your Scorpion wallet first' }, { status: 400 });
       const vault = await getActiveVault();
