@@ -28,10 +28,10 @@ export default function RecentProjects({ onOpen, onSeeAll }) {
   if (!projects.length) {
     return (
       <div className="mt-10 text-center">
-        <div className="inline-flex flex-col items-center gap-2 px-6 py-5 rounded-2xl bg-white border border-[#e0dcd7]">
+        <div className="inline-flex flex-col items-center gap-2 px-6 py-5 rounded-2xl bg-[#121212]/70 backdrop-blur-sm border border-[#00ff99]/15">
           <BuilderOrb size={36} />
-          <div className="text-sm font-semibold text-[#1a1614]">No builds yet</div>
-          <div className="text-xs text-[#8a8580]">Pick a template below to start your first project.</div>
+          <div className="text-sm font-semibold text-white">No builds yet</div>
+          <div className="text-xs text-white/40">Pick a template below to start your first project.</div>
         </div>
       </div>
     );
@@ -40,8 +40,8 @@ export default function RecentProjects({ onOpen, onSeeAll }) {
   return (
     <div className="mt-10 text-left">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#8a8580]">Recent projects</h3>
-        <button onClick={onSeeAll} className="text-xs font-semibold text-[#5a554f] hover:text-[#1a1614]">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-white/40">Recent projects</h3>
+        <button onClick={onSeeAll} className="text-xs font-semibold text-[#00ff99] hover:text-[#33ffb0]">
           See all
         </button>
       </div>
@@ -50,9 +50,9 @@ export default function RecentProjects({ onOpen, onSeeAll }) {
           <button
             key={p.id}
             onClick={() => onOpen(p)}
-            className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[#e0dcd7] hover:border-[#c8c4be] text-left transition-colors"
+            className="flex items-center gap-3 p-3 rounded-xl bg-[#121212]/70 backdrop-blur-sm border border-[#00ff99]/15 hover:border-[#00ff99]/50 text-left transition-colors"
           >
-            <div className="w-14 h-11 rounded-lg bg-[#f0ede8] overflow-hidden flex items-center justify-center flex-shrink-0 relative">
+            <div className="w-14 h-11 rounded-lg bg-black overflow-hidden flex items-center justify-center flex-shrink-0 relative">
               {thumbOf(p) ? (
                 <iframe
                   srcDoc={thumbOf(p)}
@@ -63,12 +63,12 @@ export default function RecentProjects({ onOpen, onSeeAll }) {
                   style={{ transform: "scale(0.14)", position: "absolute", top: 0, left: 0 }}
                 />
               ) : (
-                <FileCode2 className="w-4 h-4 text-[#5a554f]" />
+                <FileCode2 className="w-4 h-4 text-[#00ff99]" />
               )}
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-[#1a1614] truncate">{p.name}</div>
-              <div className="flex items-center gap-1.5 text-[10px] text-[#8a8580] mt-0.5">
+              <div className="text-sm font-semibold text-white truncate">{p.name}</div>
+              <div className="flex items-center gap-1.5 text-[10px] text-white/40 mt-0.5">
                 <Clock className="w-2.5 h-2.5" />
                 {timeAgo(p.savedAt)} · {p.files?.length || 0} files
               </div>

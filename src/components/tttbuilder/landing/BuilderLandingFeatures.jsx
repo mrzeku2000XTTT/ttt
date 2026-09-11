@@ -12,7 +12,7 @@ const FEATURES = [
 export default function BuilderLandingFeatures() {
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
-      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8">Build With AI Agents</h2>
+      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-8 text-white">Build With AI Agents</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {FEATURES.map((f, i) => {
           const Icon = f.icon;
@@ -23,13 +23,13 @@ export default function BuilderLandingFeatures() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
-              className="bg-white border border-[#e8e4de] rounded-2xl p-5 shadow-[0_2px_12px_rgba(26,26,26,0.04)] hover:shadow-[0_10px_32px_rgba(26,26,26,0.08)] hover:border-[#00E68E]/50 transition-all"
+              className="bg-[#121212]/70 backdrop-blur-sm border border-[#00ff99]/15 rounded-2xl p-5 hover:border-[#00ff99]/50 hover:shadow-[0_10px_36px_rgba(0,255,153,0.12)] transition-all"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center mb-4">
-                <Icon className="w-5 h-5 text-[#00E68E]" />
+              <div className="w-10 h-10 rounded-xl bg-[#00ff99]/10 flex items-center justify-center mb-4">
+                <Icon className="w-5 h-5 text-[#00ff99]" />
               </div>
-              <h3 className="font-bold mb-1.5">{f.title}</h3>
-              <p className="text-[13px] text-[#666] leading-relaxed">{f.desc}</p>
+              <h3 className="font-bold mb-1.5 text-white">{f.title}</h3>
+              <p className="text-[13px] text-[#a0a0a0] leading-relaxed">{f.desc}</p>
             </motion.div>
           );
         })}

@@ -37,10 +37,10 @@ export default function BuilderLandingBuilds({ onPick, onViewAll }) {
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Featured Builds</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Featured Builds</h2>
         <button
           onClick={onViewAll}
-          className="inline-flex items-center gap-1.5 text-sm font-bold text-[#00B36B] hover:text-[#00E68E] transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm font-bold text-[#00ff99] hover:text-[#33ffb0] transition-colors"
         >
           View All Projects <ArrowRight className="w-4 h-4" />
         </button>
@@ -53,21 +53,21 @@ export default function BuilderLandingBuilds({ onPick, onViewAll }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.06 }}
-            className="group bg-white border border-[#e8e4de] rounded-2xl overflow-hidden shadow-[0_2px_12px_rgba(26,26,26,0.04)] hover:shadow-[0_14px_40px_rgba(26,26,26,0.12)] transition-all"
+            className="group bg-[#121212]/70 backdrop-blur-sm border border-[#00ff99]/15 rounded-2xl overflow-hidden hover:border-[#00ff99]/50 hover:shadow-[0_14px_44px_rgba(0,255,153,0.14)] transition-all"
           >
-            <div className="relative aspect-[4/3] bg-[#1A1A1A] overflow-hidden">
+            <div className="relative aspect-[4/3] bg-black overflow-hidden">
               <img src={b.img} alt={b.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
-              <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-[#00E68E] text-[10px] font-bold uppercase tracking-wider">{b.badge}</span>
+              <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-[#00ff99]/30 text-[#00ff99] text-[10px] font-bold uppercase tracking-wider">{b.badge}</span>
             </div>
             <div className="p-4 flex items-start gap-3">
               <div className="min-w-0">
-                <h3 className="font-bold text-sm mb-1 truncate">{b.title}</h3>
-                <p className="text-[12px] text-[#666] leading-relaxed">{b.desc}</p>
+                <h3 className="font-bold text-sm mb-1 truncate text-white">{b.title}</h3>
+                <p className="text-[12px] text-[#a0a0a0] leading-relaxed">{b.desc}</p>
               </div>
               <button
                 onClick={() => onPick(b.prompt)}
                 title={`Build something like ${b.title}`}
-                className="ml-auto w-8 h-8 rounded-full bg-[#00E68E] text-[#1A1A1A] flex items-center justify-center flex-shrink-0 hover:bg-[#0ac97e] transition-colors"
+                className="ml-auto w-8 h-8 rounded-full bg-[#00ff99] text-black flex items-center justify-center flex-shrink-0 hover:bg-[#33ffb0] transition-colors"
               >
                 <ArrowUpRight className="w-4 h-4" />
               </button>

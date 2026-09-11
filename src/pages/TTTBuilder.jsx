@@ -43,6 +43,7 @@ import OnboardingModal, { isStandalone } from "@/components/tttbuilder/Onboardin
 import { getLocalProviders, LOCAL_MODEL_PREFIX, isLocalModelId } from "@/components/tttbuilder/localLlm";
 import { persistBuild, guardUnload } from "@/components/tttbuilder/buildKeepAlive";
 import BuilderLanding from "@/components/tttbuilder/BuilderLanding";
+import KaspaMark from "@/components/tttbuilder/landing/KaspaMark";
 
 const OUR_REPO = "TTT-Build/ttt-sites";
 const STANDALONE = isStandalone();
@@ -235,7 +236,7 @@ export default function TTTBuilderPage() {
   }, []);
 
   if (authLoading) {
-    return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#70C7BA]/40 border-t-[#70C7BA] rounded-full animate-spin" /></div>;
+    return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#00ff99]/40 border-t-[#00ff99] rounded-full animate-spin" /></div>;
   }
 
   if (!user || user.role !== "admin") {
@@ -734,46 +735,47 @@ function TTTBuilderStudio() {
   };
 
   return (
-    <div className={`min-h-screen overflow-x-hidden ${phase === "hero" ? "bg-[#f5f2ed] text-[#1a1614]" : "bg-[#0d1117] text-white"}`}>
+    <div className="min-h-screen overflow-x-hidden bg-[#0a0a0a] text-white">
 
       {/* Top nav */}
       <nav
-        className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 backdrop-blur-xl border-b transition-colors ${phase === "hero" ? "bg-[#f5f2ed]/80 border-[#e0dcd7]" : "bg-[#0d1117]/80 border-white/5"}`}
+        className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-3 sm:px-5 backdrop-blur-xl border-b border-white/5 bg-[#0a0a0a]/80 transition-colors"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)", minHeight: "calc(3rem + env(safe-area-inset-top, 0px))" }}
       >
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate("/AppStoreV2")}
-            className={`flex items-center gap-1.5 transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-black/5 ${phase === "hero" ? "text-[#8a8580] hover:text-[#1a1614]" : "text-white/60 hover:text-white"}`}
+            className="flex items-center gap-1.5 transition-colors px-2.5 py-2 min-h-[44px] -ml-1 rounded-lg active:bg-white/5 text-white/60 hover:text-white"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm font-medium">Back</span>
           </button>
-          <span className={`font-black text-lg tracking-tight ${phase === "hero" ? "text-[#1a1614]" : "text-white"}`}>TTT</span>
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${phase === "hero" ? "bg-[#1a1614] text-white" : "bg-[#70C7BA] text-black"}`}>BUILDER</span>
+          <KaspaMark size={22} />
+          <span className="font-black text-lg tracking-tight text-white">TTT</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#00ff99] text-black">BUILDER</span>
         </div>
-        <div className={`hidden sm:flex items-center gap-1.5 text-xs font-semibold ${phase === "hero" ? "text-[#8a8580]" : "text-white/50"}`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-[#00E68E]" />
+        <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-white/50">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00ff99]" />
           Kaspa-native · BYO keys
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowProjects(true)}
-            className={`flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            className={`flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-full border text-xs font-bold transition-colors bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white`}
             title="Saved projects"
           >
             <FolderOpen className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Projects</span>
           </button>
           <button
             onClick={() => navigate('/BuilderSettings')}
-            className={`flex items-center justify-center h-8 w-8 sm:w-auto sm:px-3 rounded-full border text-xs font-bold transition-colors ${phase === "hero" ? "bg-white border-[#e0dcd7] text-[#5a554f] hover:bg-[#f5f2ed]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            className={`flex items-center justify-center h-8 w-8 sm:w-auto sm:px-3 rounded-full border text-xs font-bold transition-colors bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white`}
             title="Builder settings"
           >
             <Settings className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Settings</span>
           </button>
           <button
             onClick={() => setShowCloneModal(true)}
-            className={`flex items-center justify-center h-8 w-8 rounded-full border transition-colors flex-shrink-0 ${phase === "hero" ? "bg-[#1a1614] border-[#1a1614] text-white hover:bg-[#2a2622]" : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"}`}
+            className={`flex items-center justify-center h-8 w-8 rounded-full border transition-colors flex-shrink-0 bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white`}
             title="Clone TTT Builder repo"
           >
             <Github className="w-4 h-4" />
