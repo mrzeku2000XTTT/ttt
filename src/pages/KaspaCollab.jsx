@@ -8,7 +8,7 @@ import CollabLanding from "@/components/kaspacollab/CollabLanding";
 import CollabDashboard from "@/components/kaspacollab/CollabDashboard";
 
 export default function KaspaCollabPage() {
-  const { address, kas, loading, error, connect } = useKcc20Wallet();
+  const { address, kas, loading, error, connect, disconnect } = useKcc20Wallet();
   const [user, setUser] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
@@ -87,6 +87,7 @@ export default function KaspaCollabPage() {
           loadingSessions={loadingSessions}
           onNew={() => setShowCreate(true)}
           onOpen={setActiveSession}
+          onHome={() => { setActiveSession(null); disconnect(); }}
         />
       )}
 

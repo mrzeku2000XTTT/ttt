@@ -5,17 +5,17 @@ import KaspaMark from '@/components/tttbuilder/landing/KaspaMark';
 import { shortKaspaAddress } from '@/lib/useKcc20Wallet';
 import '@/components/kaspacollab/landing.css';
 
-export default function CollabDashboard({ address, sessions, loadingSessions, onNew, onOpen }) {
+export default function CollabDashboard({ address, sessions, loadingSessions, onNew, onOpen, onHome }) {
   return (
     <div className="kaspa-collab-landing kc-page relative min-h-screen overflow-hidden bg-background text-foreground">
       <BackToStore />
       <div className="relative mx-auto max-w-[1240px] px-5 sm:px-10">
         {/* Header */}
         <header className="relative z-30 flex min-h-[88px] items-center justify-between gap-5 pr-12 sm:pr-36">
-          <div className="flex shrink-0 items-center gap-2.5">
+          <button onClick={onHome} className="flex shrink-0 items-center gap-2.5 transition hover:opacity-80" title="Back to landing">
             <KaspaMark size={25} />
             <span className="text-lg font-bold tracking-tight">Kaspa<span className="text-primary">Collab</span></span>
-          </div>
+          </button>
           <div className="kc-glass flex items-center gap-2 rounded-full px-4 py-2 text-[11px]">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
             <span className="font-mono text-muted-foreground">{shortKaspaAddress(address)}</span>
