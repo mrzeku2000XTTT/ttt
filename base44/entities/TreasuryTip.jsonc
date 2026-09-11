@@ -1,0 +1,54 @@
+{
+  "name": "TreasuryTip",
+  "type": "object",
+  "properties": {
+    "sender_wallet": {
+      "type": "string",
+      "description": "Tipper's Kaspa/Scorpion wallet address"
+    },
+    "sender_name": {
+      "type": "string",
+      "default": "",
+      "description": "Optional display name shown on the ledger"
+    },
+    "tick": {
+      "type": "string",
+      "description": "KCC-20 token tick (e.g. KKDAG, KRON)"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Token amount donated/tipped"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "On-chain tx id returned by the Scorpion wallet"
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 200,
+      "default": "",
+      "description": "Optional public note attached to the tip"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "donation",
+        "tip"
+      ],
+      "default": "donation",
+      "description": "Whether this was a donation to the treasury or a tip"
+    }
+  },
+  "required": [
+    "sender_wallet",
+    "tick",
+    "amount",
+    "tx_hash"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": false,
+    "delete": false
+  }
+}

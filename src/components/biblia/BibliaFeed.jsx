@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import BibliaMesh from './BibliaMesh';
+import BibliaGive from './BibliaGive';
 
 const fetchVerse = async () => {
   const res = await base44.functions.invoke('bibliaRandomVerse', {});
@@ -137,6 +138,8 @@ export default function BibliaFeed({ onHome }) {
           </AnimatePresence>
         )}
       </div>
+
+      <BibliaGive />
     </motion.section>
   );
 }

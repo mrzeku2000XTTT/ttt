@@ -1,0 +1,29 @@
+{
+  "name": "TreasuryRewardClaim",
+  "type": "object",
+  "properties": {
+    "wallet": {
+      "type": "string",
+      "description": "Blessed donor's wallet address (Scorpion/KCC20)"
+    },
+    "kas_amount": {
+      "type": "number",
+      "description": "KAS reward amount sent from the treasury vault"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Payout transaction id on Kaspa L1"
+    }
+  },
+  "required": [
+    "wallet",
+    "kas_amount",
+    "tx_hash"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": false,
+    "delete": false
+  }
+}

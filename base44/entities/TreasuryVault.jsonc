@@ -1,0 +1,95 @@
+{
+  "name": "TreasuryVault",
+  "type": "object",
+  "properties": {
+    "kaspa_address": {
+      "type": "string",
+      "description": "Treasury vault Kaspa address \u2014 receives KCC-20 donations"
+    },
+    "seed_phrase": {
+      "type": "string",
+      "description": "Vault wallet seed phrase \u2014 admin only, never returned by public endpoints"
+    },
+    "public_key_hex": {
+      "type": "string",
+      "description": "Vault x-only Schnorr pubkey hex \u2014 the covenant worker key"
+    },
+    "covenant_address": {
+      "type": "string",
+      "description": "Sentinel-x402 covenant P2SH address guarding the treasury funds"
+    },
+    "covenant_redeem_scripts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Redeem script hex per covenant hop"
+    },
+    "covenant_deadlines": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "CLTV deadline DAA score per hop"
+    },
+    "covenant_total_kas": {
+      "type": "number",
+      "description": "Total KAS locked by the covenant"
+    },
+    "covenant_increment_kas": {
+      "type": "number",
+      "description": "KAS released per check-in period"
+    },
+    "covenant_epochs": {
+      "type": "number",
+      "description": "Number of covenant epochs"
+    },
+    "covenant_period_seconds": {
+      "type": "number",
+      "description": "Seconds between covenant periods"
+    },
+    "covenant_cltv_base_daa": {
+      "type": "number",
+      "description": "DAA score when the covenant was locked"
+    },
+    "covenant_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "locked"
+      ],
+      "default": "none",
+      "description": "Covenant guard status"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this is the active treasury vault"
+    }
+  },
+  "required": [
+    "kaspa_address"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
