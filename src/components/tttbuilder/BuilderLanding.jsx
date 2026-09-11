@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, ClipboardList, ArrowRight, Zap, Coins, Infinity as InfinityIcon, KeyRound } from "lucide-react";
+import { Sparkles, Loader2, ClipboardList, ArrowRight, KeyRound } from "lucide-react";
 import ModelSelector from "@/components/tttbuilder/ModelSelector";
 import RecentProjects from "@/components/tttbuilder/RecentProjects";
 import TemplateGallery from "@/components/tttbuilder/TemplateGallery";
@@ -14,10 +14,10 @@ const HERO_IMAGE = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2
 const MOUNTAIN_BG = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/b33822334_generated_image.png";
 
 const STATS = [
-  { icon: Zap, label: "L1 Speed", value: "1 Sec", sub: "Block Time" },
-  { icon: Coins, label: "Low Fees", value: "< $0.01", sub: "Per Tx" },
-  { icon: InfinityIcon, label: "Scalable", value: "∞", sub: "BlockDAG" },
-  { icon: KeyRound, label: "Full Control", value: "Your Keys", sub: "BYO & Secure" },
+  { img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/c0230fe4f_generated_image.png", label: "L1 Speed", value: "1 Sec", sub: "Block Time" },
+  { img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ec28de474_generated_image.png", label: "Low Fees", value: "< $0.01", sub: "Per Tx" },
+  { img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/6133bedbf_generated_image.png", label: "Scalable", value: "∞", sub: "BlockDAG" },
+  { img: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9c15a05f3_generated_image.png", label: "Full Control", value: "Your Keys", sub: "BYO & Secure" },
 ];
 
 // The full TTT Builder landing — dark Kaspa theme with a global mountain
@@ -190,7 +190,6 @@ export default function BuilderLanding({
         <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-14">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {STATS.map((s, i) => {
-              const Icon = s.icon;
               return (
                 <motion.div
                   key={s.label}
@@ -200,8 +199,8 @@ export default function BuilderLanding({
                   transition={{ delay: i * 0.05 }}
                   className="bg-[#121212]/70 backdrop-blur-sm border border-[#00ff99]/15 rounded-2xl p-4 sm:p-5 flex items-start gap-3 hover:border-[#00ff99]/40 transition-colors"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-[#00ff99]/10 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-4 h-4 text-[#00ff99]" />
+                  <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-[#00ff99]/10">
+                    <img src={s.img} alt={s.label} className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">{s.label}</p>
