@@ -10,6 +10,10 @@
   -webkit-font-smoothing: antialiased;
 }
 .bl-verse { font-size: clamp(1.4rem, 4vw, 2.2rem); line-height: 1.75; font-weight: 500; color: var(--bl-ink); }
+/* length tiers — longer passages step down so every verse fits on any device */
+.bl-verse.bl-verse-m { font-size: clamp(1.05rem, 2.6vw, 1.45rem); line-height: 1.65; }
+.bl-verse.bl-verse-s { font-size: clamp(0.88rem, 2vw, 1.1rem); line-height: 1.5; }
+.bl-verse.bl-verse-xs { font-size: clamp(0.78rem, 1.7vw, 0.95rem); line-height: 1.42; }
 .bl-card {
   background: rgba(253, 251, 246, 0.35);
   border: 1px solid rgba(197, 176, 133, 0.35);

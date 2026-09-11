@@ -97,6 +97,11 @@ export default function BibliaFeed({ onHome }) {
     };
   }, [advance]);
 
+  // scale verse type by length so even the longest passages fit on any screen
+  const verseSize = verse
+    ? (verse.text.length > 900 ? 'bl-verse-xs' : verse.text.length > 480 ? 'bl-verse-s' : verse.text.length > 220 ? 'bl-verse-m' : '')
+    : '';
+
   return (
     <motion.section
       className="bl-page relative h-[100dvh] overflow-hidden"
@@ -107,13 +112,21 @@ export default function BibliaFeed({ onHome }) {
       <BibliaMesh faint />
 
       <header className="absolute inset-x-0 top-0 z-20 flex items-start justify-between p-5 sm:p-8">
-        <button onClick={onHome} className="text-[10px] uppercase tracking-[0.3em] opacity-60 transition hover:opacity-100 sm:text-[11px]">
-          The Bible
+        <div className="flex items-baseline gap-3 sm:gap-4">
+          <button onClick={onHome} className="text-[10px] uppercase tracking-[0.3em] opacity-60 transition hover:opacity-100 sm:text-[11px]">
+            The Bible
+          </button>
+          <span className="select-none text-[10px] tracking-[0.25em] opacity-40">no. {count + 1}</span>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); window.location.href = '/AppStoreV2'; }}
+          className="text-[10px] uppercase tracking-[0.3em] opacity-60 transition hover:opacity-100 sm:text-[11px]"
+        >
+          Exit to Store
         </button>
-        <span className="select-none text-[10px] tracking-[0.25em] opacity-40">no. {count + 1}</span>
       </header>
 
-      <div className="relative z-10 flex h-full items-center justify-center px-6" onClick={() => advance()}>
+      <div className="relative z-10 flex h-full items-center justify-center overflow-y-auto px-6 py-24" onClick={() => advance()}>
         {loading ? (
           <div className="flex flex-col items-center gap-3">
             <span className="bl-node h-2 w-2 rounded-full" style={{ background: '#c5b085', animationDuration: '2s' }} />
@@ -132,7 +145,7 @@ export default function BibliaFeed({ onHome }) {
                 className="max-w-2xl text-center"
               >
                 <p className="mb-8 text-[11px] uppercase tracking-[0.35em] opacity-50 sm:text-xs">{verse.reference}</p>
-                <p className="bl-verse">{verse.text}</p>
+                <p className={`bl-verse ${verseSize}`}>{verse.text}</p>
               </motion.article>
             )}
           </AnimatePresence>

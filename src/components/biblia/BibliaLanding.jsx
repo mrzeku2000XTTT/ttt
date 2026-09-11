@@ -64,10 +64,10 @@ export default function BibliaLanding({ onEnter, leaving }) {
         <p className="mt-3 text-sm font-light tracking-[0.12em] opacity-60 sm:text-base">Scroll. Read. Reflect.</p>
       </div>
 
-      {/* footer */}
+      {/* native top-right exit */}
       <button
         onClick={(e) => { e.stopPropagation(); window.location.href = '/AppStoreV2'; }}
-        className="absolute bottom-6 left-6 z-20 text-[10px] tracking-[0.3em] opacity-40 transition hover:opacity-80"
+        className="absolute right-6 top-8 z-30 text-[10px] uppercase tracking-[0.3em] opacity-40 transition hover:opacity-80 sm:right-12 sm:top-12"
       >Exit to Store</button>
       <div className="absolute bottom-6 right-6 z-20 text-[10px] tracking-[0.3em] opacity-60">Built for Kaspa</div>
     </motion.section>

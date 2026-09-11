@@ -7,6 +7,7 @@ const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d2
 export default function KanvasLanding({ onConnect, onEnter, loading, error, hasWallet, onExit }) {
   return (
     <section className="kv-page relative grid min-h-screen items-center lg:grid-cols-2">
+      <button onClick={onExit} className="absolute right-6 top-6 z-30 text-[10px] uppercase tracking-[0.25em] text-[hsl(var(--kv-muted))] transition hover:text-white">Exit to Store</button>
       <div className="relative z-10 px-6 pb-10 pt-28 sm:px-12 lg:py-24">
         <div className="mb-7 flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-[hsl(var(--kv-accent))]">
           <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--kv-accent))]" /> Image editing for Kaspa builders
@@ -62,7 +63,6 @@ export default function KanvasLanding({ onConnect, onEnter, loading, error, hasW
         {[['01', 'Connect', 'Link your Scorpion wallet'], ['02', 'Upload', 'Drop, paste or pick an image'], ['03', 'Edit', 'Markup, crop & export PNG']].map((s) => (
           <div key={s[0]} className="flex items-start gap-2.5"><span className="kv-display text-sm text-[hsl(var(--kv-accent))]">{s[0]}</span><div><p className="text-xs font-medium text-white">{s[1]}</p><p className="text-[11px]">{s[2]}</p></div></div>
         ))}
-        <button onClick={onExit} className="ml-auto kv-btn">Exit to Store</button>
       </div>
     </section>
   );
