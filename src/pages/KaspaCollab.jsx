@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useKcc20Wallet, shortKaspaAddress } from "@/lib/useKcc20Wallet";
 import CollabSession from "@/components/kaspacollab/CollabSession";
 import BackToStore from "@/components/BackToStore";
+import CollabLanding from "@/components/kaspacollab/CollabLanding";
 
 export default function KaspaCollabPage() {
   const { address, kas, loading, error, connect } = useKcc20Wallet();
@@ -60,46 +61,9 @@ export default function KaspaCollabPage() {
     }
   };
 
-  // ── Not connected: wallet gate ──
+  // ── Not connected: landing with the existing wallet connection flow ──
   if (!address) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center px-6">
-        <BackToStore />
-        <div className="max-w-md w-full text-center space-y-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#00ff99]/10 border border-[#00ff99]/30">
-            <Users className="w-8 h-8 text-[#00ff99]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">KaspaCollab</h1>
-            <p className="text-white/50 text-sm mt-1.5">Free secure collab for Kaspa builders · covenant-locked sessions</p>
-          </div>
-          <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-left space-y-2">
-            <div className="flex items-center gap-2 text-xs text-white/70">
-              <Shield className="w-3.5 h-3.5 text-[#00ff99] flex-shrink-0" />
-              <span>Connect your Scorpion wallet to prove ownership</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-white/70">
-              <Shield className="w-3.5 h-3.5 text-[#00ff99] flex-shrink-0" />
-              <span>Sessions are locked to exactly two wallet addresses</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-white/70">
-              <Shield className="w-3.5 h-3.5 text-[#00ff99] flex-shrink-0" />
-              <span>Only you and your partner can read or write</span>
-            </div>
-          </div>
-          <button
-            onClick={() => connect().catch(() => {})}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-[#00ff99] text-black font-bold hover:opacity-90 disabled:opacity-50 transition"
-          >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
-            Connect Scorpion Wallet
-          </button>
-          {error && <p className="text-red-400 text-xs">{error}</p>}
-          <p className="text-white/30 text-[11px]">Free · No KAS required · Powered by KCC20 covenants</p>
-        </div>
-      </div>
-    );
+    return <CollabLanding onConnect={() => connect().catch(() => {})} loading={loading} error={error} />;
   }
 
   // ── Connected: session list + active session ──
