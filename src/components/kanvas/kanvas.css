@@ -2,7 +2,7 @@
 :root .kv-page, .dark .kv-page {
   --kv-bg: 240 10% 4%;
   --kv-fg: 120 20% 96%;
-  --kv-muted: 120 8% 62%;
+  --kv-muted: 120 10% 74%;
   --kv-accent: 152 100% 50%;
   --kv-card: 240 8% 9%;
   --kv-border: 120 15% 22%;

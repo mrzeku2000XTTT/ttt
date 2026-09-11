@@ -12,11 +12,14 @@
 - Never reuse another app's logo or hero.
 
 ## 2. Landing page (required for every new app)
+- **LANDING FIRST — non-negotiable.** Opening the app's route must always show the landing page first, even if the wallet is already connected. Gate the studio behind a `sessionStorage` flag (e.g. `kanvas_entered`): until the user clicks the CTA, keep the landing on screen. CTA reads "Connect Scorpion" with no wallet, "Enter Studio / Enter workspace" when the wallet is already connected.
 - Unique landing page with: topic headline, blended hero image, logo, and a short description.
 - **Connect Scorpion wallet** button (use `useKcc20Wallet` from `@/lib/useKcc20Wallet`).
 - **Back to landing** button (logo click returns to landing; studio has a "Home" button).
 - **Exit to Store** button (navigates to `/AppStoreV2`).
 - Apply the scoped dark theme (charcoal/black + `#00ff99` green accents). Reuse the `.kc-page` pattern or a scoped CSS block — do not leak colors to other apps.
+- **Readability:** muted/secondary text must stay light (≥70% lightness) on dark backgrounds — never dark gray on black.
+- **No overlapping UI:** hero stat cards, pills and badges must use normal flex/grid flow (or sit in a container with an explicit height) — never stacked absolutes inside a zero-height column, they collapse and pile on top of each other.
 
 ## 3. Studio / workspace (the actual app)
 - Gated behind wallet connection — landing shows until connected, studio shows after.

@@ -19,6 +19,8 @@ export default function KaspaCollabPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [initialPartner, setInitialPartner] = useState("");
   const [walletSaved, setWalletSaved] = useState(false);
+  // Landing-first: show the landing on open even if the wallet is already connected
+  const [entered, setEntered] = useState(() => sessionStorage.getItem("collab_entered") === "1");
 
   // Open the create modal pre-filled when navigated with ?partner=
   useEffect(() => {
@@ -86,9 +88,18 @@ export default function KaspaCollabPage() {
     }
   };
 
-  // ── Not connected: landing with the existing wallet connection flow ──
-  if (!address) {
-    return <CollabLanding onConnect={() => connect().catch(() => {})} loading={loading} error={error} />;
+  const enter = () => { sessionStorage.setItem("collab_entered", "1"); setEntered(true); };
+
+  // ── Landing first: shows until the user connects or clicks Enter workspace ──
+  if (!address || !entered) {
+    return (
+      <CollabLanding
+        hasWallet={!!address}
+        onConnect={address ? enter : () => connect().catch(() => {})}
+        loading={loading}
+        error={error}
+      />
+    );
   }
 
   // ── Connected: themed dashboard + active session ──

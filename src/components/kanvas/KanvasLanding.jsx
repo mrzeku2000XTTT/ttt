@@ -4,7 +4,7 @@ import { ArrowUpRight, ArrowRight, Loader2, Wallet, Link2 } from 'lucide-react';
 const HERO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/a8e474d8b_generated_image.png';
 const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d2f7f5ac1_generated_image.png';
 
-export default function KanvasLanding({ onConnect, loading, error, onExit }) {
+export default function KanvasLanding({ onConnect, onEnter, loading, error, hasWallet, onExit }) {
   return (
     <section className="kv-page relative grid min-h-screen items-center lg:grid-cols-2">
       <div className="relative z-10 px-6 pb-10 pt-28 sm:px-12 lg:py-24">
@@ -19,9 +19,9 @@ export default function KanvasLanding({ onConnect, loading, error, onExit }) {
           Drop in any image, mark it up with brushes, shapes, arrows and text, clip and crop it down, then export a clean PNG — all in your browser, gated by your Scorpion wallet.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-6">
-          <button onClick={onConnect} disabled={loading} className="kv-btn kv-btn-primary">
+          <button onClick={hasWallet ? onEnter : onConnect} disabled={loading} className="kv-btn kv-btn-primary">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
-            {loading ? 'Connecting…' : 'Connect Scorpion'} <ArrowUpRight className="w-4 h-4" />
+            {loading ? 'Connecting…' : hasWallet ? 'Enter Studio' : 'Connect Scorpion'} <ArrowUpRight className="w-4 h-4" />
           </button>
           <a href="#how" className="inline-flex items-center gap-2 text-xs font-medium">See how it works <ArrowRight className="w-4 h-4" /></a>
         </div>
@@ -34,15 +34,27 @@ export default function KanvasLanding({ onConnect, loading, error, onExit }) {
           </div>
         </div>
       </div>
-      <div className="relative hidden min-w-0 lg:block" aria-label="Kanvas artwork">
+      <div className="relative hidden min-w-0 self-stretch lg:block" aria-label="Kanvas artwork">
         <img src={HERO} alt="Futuristic designer editing an image on a glowing glass canvas" className="kv-portrait" fetchPriority="high" />
-        <div className="kv-glass absolute right-0 top-[18%] rounded-lg px-4 py-3 text-xs"><span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-[hsl(var(--kv-accent))]" />Wallet-connected</div>
-        <div className="kv-glass absolute left-0 top-[46%] rounded-lg px-4 py-3"><p className="text-lg font-semibold">Your image.</p><p className="text-[10px] text-[hsl(var(--kv-muted))]">Mark it up. Crop it. Export.</p></div>
-        <div className="kv-glass absolute bottom-[22%] right-0 rounded-lg px-4 py-3 text-xs">Brushes · Shapes · Text · Crop</div>
-        <div className="absolute bottom-8 right-2 flex gap-3">
-          {[['06', 'Tools'], ['∞', 'Undos'], ['0', 'KAS to start']].map(([v, l]) => (
-            <div key={l} className="kv-glass min-w-[80px] rounded-lg px-3 py-3 text-center"><p className="text-xl font-medium">{v}</p><p className="mt-1 text-[8px] uppercase tracking-wider text-[hsl(var(--kv-muted))]">{l}</p></div>
-          ))}
+        {/* Flow layout (not stacked absolutes) so cards can never collapse & overlap */}
+        <div className="absolute inset-0 z-10 flex flex-col justify-between py-28 pl-16 pr-10">
+          <div className="flex justify-end">
+            <div className="kv-glass inline-flex items-center gap-2 rounded-lg px-4 py-3 text-xs"><span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--kv-accent))]" />Wallet-connected</div>
+          </div>
+          <div className="flex items-end justify-between gap-6">
+            <div className="kv-glass rounded-lg px-4 py-3">
+              <p className="text-lg font-semibold">Your image.</p>
+              <p className="text-[10px] text-[hsl(var(--kv-muted))]">Mark it up. Crop it. Export.</p>
+            </div>
+            <div className="flex flex-col items-end gap-3">
+              <div className="flex gap-3">
+                {[['06', 'Tools'], ['∞', 'Undos'], ['0', 'KAS to start']].map(([v, l]) => (
+                  <div key={l} className="kv-glass min-w-[80px] rounded-lg px-3 py-3 text-center"><p className="text-xl font-medium">{v}</p><p className="mt-1 text-[8px] uppercase tracking-wider text-[hsl(var(--kv-muted))]">{l}</p></div>
+                ))}
+              </div>
+              <div className="kv-glass rounded-lg px-4 py-3 text-xs">Brushes · Shapes · Text · Crop</div>
+            </div>
+          </div>
         </div>
       </div>
       <div id="how" className="absolute bottom-6 left-6 right-6 z-20 flex flex-wrap items-center gap-x-7 gap-y-3 text-xs text-[hsl(var(--kv-muted))]">
