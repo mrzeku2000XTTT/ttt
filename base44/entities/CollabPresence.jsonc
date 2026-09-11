@@ -1,0 +1,35 @@
+{
+  "name": "CollabPresence",
+  "type": "object",
+  "properties": {
+    "wallet_address": {
+      "type": "string",
+      "description": "Collaborator's Kaspa wallet address"
+    },
+    "display_name": {
+      "type": "string",
+      "default": "",
+      "description": "Optional display name"
+    },
+    "last_heartbeat": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last presence ping timestamp"
+    }
+  },
+  "required": [
+    "wallet_address"
+  ],
+  "rls": {
+    "create": {
+      "data.wallet_address": "{{user.data.created_wallet_address}}"
+    },
+    "read": true,
+    "update": {
+      "data.wallet_address": "{{user.data.created_wallet_address}}"
+    },
+    "delete": {
+      "data.wallet_address": "{{user.data.created_wallet_address}}"
+    }
+  }
+}

@@ -209,6 +209,7 @@ import SectorVIPage from './pages/SectorVI';
 import Sector6Page from './pages/Sector6';
 import LaunchReelPage from './pages/LaunchReel';
 import KaspaCollabPage from './pages/KaspaCollab';
+import CollabCollaboratorsPage from './pages/CollabCollaborators';
 import AdminRoute from '@/components/AdminRoute';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -462,6 +463,7 @@ const AuthenticatedApp = () => {
       <Route path="/Sector6" element={<Sector6Page />} />
       <Route path="/LaunchReel" element={<AdminRoute><LaunchReelPage /></AdminRoute>} />
       <Route path="/KaspaCollab" element={<KaspaCollabPage />} />
+      <Route path="/CollabCollaborators" element={<CollabCollaboratorsPage />} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
       <Route path="/KaspaNations/:slug" element={<KaspaNationPage />} />

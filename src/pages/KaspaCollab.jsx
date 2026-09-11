@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Wallet, Plus, Loader2, Shield, X, Users, Link2, Copy, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useKcc20Wallet, shortKaspaAddress } from "@/lib/useKcc20Wallet";
+import { heartbeatPresence } from "@/lib/collabPresence";
 import CollabSession from "@/components/kaspacollab/CollabSession";
 import BackToStore from "@/components/BackToStore";
 import CollabLanding from "@/components/kaspacollab/CollabLanding";
@@ -9,12 +11,26 @@ import CollabDashboard from "@/components/kaspacollab/CollabDashboard";
 
 export default function KaspaCollabPage() {
   const { address, kas, loading, error, connect, disconnect } = useKcc20Wallet();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [activeSession, setActiveSession] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [initialPartner, setInitialPartner] = useState("");
   const [walletSaved, setWalletSaved] = useState(false);
+
+  // Open the create modal pre-filled when navigated with ?partner=
+  useEffect(() => {
+    const partner = searchParams.get("partner");
+    if (partner && address) {
+      setInitialPartner(partner.replace(/^kaspa:/, ""));
+      setShowCreate(true);
+      searchParams.delete("partner");
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line
+  }, [address]);
 
   // Load user + save wallet to profile when connected
   useEffect(() => {
@@ -50,6 +66,14 @@ export default function KaspaCollabPage() {
     const unsub = base44.entities.KaspaCollab.subscribe(() => { loadSessions(); });
     return unsub;
   }, [loadSessions]);
+
+  // Presence heartbeat — ping every 30s while connected
+  useEffect(() => {
+    if (!address || !walletSaved) return;
+    heartbeatPresence(address, user?.username || "");
+    const iv = setInterval(() => heartbeatPresence(address, user?.username || ""), 30000);
+    return () => clearInterval(iv);
+  }, [address, walletSaved, user]);
 
   const handleDelete = async (session) => {
     if (!confirm(`Delete "${session.title}"? This removes it for both wallets.`)) return;
@@ -95,17 +119,18 @@ export default function KaspaCollabPage() {
       {showCreate && (
         <CreateSessionModal
           myWallet={address}
-          onClose={() => setShowCreate(false)}
-          onCreated={(s) => { setShowCreate(false); setActiveSession(s); loadSessions(); }}
+          initialPartner={initialPartner}
+          onClose={() => { setShowCreate(false); setInitialPartner(""); }}
+          onCreated={(s) => { setShowCreate(false); setInitialPartner(""); setActiveSession(s); loadSessions(); }}
         />
       )}
     </div>
   );
 }
 
-function CreateSessionModal({ myWallet, onClose, onCreated }) {
+function CreateSessionModal({ myWallet, initialPartner, onClose, onCreated }) {
   const [title, setTitle] = useState("");
-  const [partner, setPartner] = useState("");
+  const [partner, setPartner] = useState(initialPartner || "");
   const [creating, setCreating] = useState(false);
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(false);
