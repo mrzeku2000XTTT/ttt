@@ -3,6 +3,7 @@ import { Wallet, Plus, Loader2, Shield, X, Users, Link2, Copy, Check } from "luc
 import { base44 } from "@/api/base44Client";
 import { useKcc20Wallet, shortKaspaAddress } from "@/lib/useKcc20Wallet";
 import CollabSession from "@/components/kaspacollab/CollabSession";
+import BackToStore from "@/components/BackToStore";
 
 export default function KaspaCollabPage() {
   const { address, kas, loading, error, connect } = useKcc20Wallet();
@@ -63,6 +64,7 @@ export default function KaspaCollabPage() {
   if (!address) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center px-6">
+        <BackToStore />
         <div className="max-w-md w-full text-center space-y-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#00ff99]/10 border border-[#00ff99]/30">
             <Users className="w-8 h-8 text-[#00ff99]" />
@@ -103,6 +105,7 @@ export default function KaspaCollabPage() {
   // ── Connected: session list + active session ──
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      <BackToStore />
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/80 backdrop-blur sticky top-0 z-30">
         <div className="flex items-center gap-2">
