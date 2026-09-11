@@ -1,0 +1,30 @@
+/* Scoped BIBLIA theme — warm ivory cream + muted gold. Does not leak to other apps. */
+.bl-page {
+  --bl-ink: #3a3630;
+  --bl-gold: #c5b085;
+  --bl-gold-soft: #dcd0b8;
+  --bl-cream: #fdfbf6;
+  font-family: 'Fraunces', Georgia, serif;
+  background: linear-gradient(180deg, #f2ede4 0%, #e8e0d2 100%);
+  color: var(--bl-ink);
+  -webkit-font-smoothing: antialiased;
+}
+.bl-verse { font-size: clamp(1.4rem, 4vw, 2.2rem); line-height: 1.75; font-weight: 500; color: var(--bl-ink); }
+.bl-card {
+  background: rgba(253, 251, 246, 0.35);
+  border: 1px solid rgba(197, 176, 133, 0.35);
+  border-radius: 5px;
+  box-shadow: 0 10px 34px rgba(58, 54, 48, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.bl-card-line { height: 2px; border-radius: 1px; background: rgba(58, 54, 48, 0.18); }
+.bl-node { animation: bl-pulse 4s ease-in-out infinite; }
+@keyframes bl-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+.bl-ring-glow { animation: bl-breathe 5s ease-in-out infinite; }
+@keyframes bl-breathe {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(197, 176, 133, 0.45)); }
+  50% { filter: drop-shadow(0 0 16px rgba(197, 176, 133, 0.85)); }
+}
+.bl-figure-img {
+  -webkit-mask-image: radial-gradient(ellipse 60% 66% at 50% 46%, black 52%, transparent 100%);
+  mask-image: radial-gradient(ellipse 60% 66% at 50% 46%, black 52%, transparent 100%);
+}

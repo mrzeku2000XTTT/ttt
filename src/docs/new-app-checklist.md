@@ -46,3 +46,4 @@
 ## Apps built with this checklist
 - **Kanvas** (`/Kanvas`) — image markup, clip, crop & annotate studio, Scorpion-wallet-gated. Logo + hero generated 2026-09-11.
 - **CAM** (`/CAM`) — cinematic camera controller: 10 camera moves over any image, shot sequences & storyboard export, Scorpion-wallet-gated. Logo + hero generated 2026-09-11.
+- **BIBLIA** (`/Biblia`) — "The Bible: Scroll. Read. Reflect." infinite KJV verse feed; buttonless cream/gold landing that enters on any input; no wallet gate by explicit app spec (quiet by design). Logo + hero generated 2026-09-11. Verses served factually from bible-api.com (public-domain KJV) via `bibliaRandomVerse` function.

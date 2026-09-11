@@ -211,6 +211,7 @@ import LaunchReelPage from './pages/LaunchReel';
 import KaspaCollabPage from './pages/KaspaCollab';
 import KanvasPage from './pages/Kanvas';
 import CAMPage from './pages/CAM';
+import BibliaPage from './pages/Biblia';
 import CollabCollaboratorsPage from './pages/CollabCollaborators';
 import AdminRoute from '@/components/AdminRoute';
 
@@ -467,6 +468,7 @@ const AuthenticatedApp = () => {
       <Route path="/KaspaCollab" element={<KaspaCollabPage />} />
       <Route path="/Kanvas" element={<KanvasPage />} />
       <Route path="/CAM" element={<CAMPage />} />
+      <Route path="/Biblia" element={<BibliaPage />} />
       <Route path="/CollabCollaborators" element={<CollabCollaboratorsPage />} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
