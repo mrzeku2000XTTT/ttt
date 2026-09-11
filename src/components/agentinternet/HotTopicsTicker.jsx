@@ -20,6 +20,12 @@ export default function HotTopicsTicker() {
   const [kaspaApps, setKaspaApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [utcTime, setUtcTime] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Topic links are admin-only
+  useEffect(() => {
+    base44.auth.me().then((u) => setIsAdmin(u?.role === "admin")).catch(() => setIsAdmin(false));
+  }, []);
 
   // Live UTC clock — updates every second so users know it's live
   useEffect(() => {
@@ -107,8 +113,8 @@ export default function HotTopicsTicker() {
             {items.map((topic, i) => (
               <button
                 key={i}
-                onClick={() => topic.tweet_url && window.open(topic.tweet_url, "_blank", "noopener,noreferrer")}
-                className="flex items-center gap-1.5 text-[10px] text-white/50 hover:text-white transition-colors flex-shrink-0"
+                onClick={isAdmin && topic.tweet_url ? () => window.open(topic.tweet_url, "_blank", "noopener,noreferrer") : undefined}
+                className={`flex items-center gap-1.5 text-[10px] flex-shrink-0 ${isAdmin ? "text-white/50 hover:text-white cursor-pointer transition-colors" : "text-white/50 cursor-default"}`}
               >
                 {/* Category indicator dot */}
                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${CATEGORY_DOT[topic.category] || "bg-white/40"}`} />

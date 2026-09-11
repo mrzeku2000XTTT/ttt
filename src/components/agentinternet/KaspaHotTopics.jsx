@@ -35,6 +35,12 @@ export default function KaspaHotTopics() {
   const [failed, setFailed] = useState(false);
   const [summaries, setSummaries] = useState({});
   const [summarizing, setSummarizing] = useState({});
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Topic links are admin-only
+  useEffect(() => {
+    base44.auth.me().then((u) => setIsAdmin(u?.role === "admin")).catch(() => setIsAdmin(false));
+  }, []);
 
   useEffect(() => {
     loadTopics();
@@ -60,6 +66,7 @@ export default function KaspaHotTopics() {
   };
 
   const openTopic = (topic) => {
+    if (!isAdmin) return;
     window.open(topic.tweet_url, "_blank", "noopener,noreferrer");
   };
 
@@ -132,7 +139,7 @@ export default function KaspaHotTopics() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
               onClick={() => openTopic(topic)}
-              className="flex-shrink-0 w-44 rounded-xl bg-white/5 border border-white/10 hover:border-white/25 p-3 transition-colors cursor-pointer"
+              className={`flex-shrink-0 w-44 rounded-xl bg-white/5 border border-white/10 p-3 transition-colors ${isAdmin ? "hover:border-white/25 cursor-pointer" : "cursor-default"}`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <TopicAvatar topic={topic} />
