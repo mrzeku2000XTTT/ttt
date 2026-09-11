@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, Users, Link2, ArrowUpRight, Home, Radio } from 'lucide-react';
-import BackToStore from '@/components/BackToStore';
 import KaspaMark from '@/components/tttbuilder/landing/KaspaMark';
 import { shortKaspaAddress } from '@/lib/useKcc20Wallet';
 import '@/components/kaspacollab/landing.css';
@@ -26,7 +25,6 @@ export default function CollabDashboard({ address, sessions, loadingSessions, on
 
   return (
     <div className="kaspa-collab-landing kc-page relative h-screen overflow-hidden bg-background text-foreground">
-      <BackToStore />
       <div className="relative mx-auto flex h-full max-w-[1240px] flex-col px-5 sm:px-10">
         {/* Header */}
         <header className="relative z-30 flex min-h-[72px] shrink-0 items-center justify-between gap-5 pr-12 sm:pr-36">
