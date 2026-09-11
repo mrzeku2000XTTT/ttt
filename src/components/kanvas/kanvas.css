@@ -1,0 +1,24 @@
+/* Scoped Kanvas theme — charcoal/black + neon green, does not leak to other apps. */
+:root .kv-page, .dark .kv-page {
+  --kv-bg: 240 10% 4%;
+  --kv-fg: 120 20% 96%;
+  --kv-muted: 120 8% 62%;
+  --kv-accent: 152 100% 50%;
+  --kv-card: 240 8% 9%;
+  --kv-border: 120 15% 22%;
+  --font-display: 'Syncopate', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+}
+.kv-page { font-family: var(--font-body); background: radial-gradient(ellipse at 85% 12%, hsl(var(--kv-accent)/.10), transparent 36%), radial-gradient(ellipse at 8% 70%, hsl(var(--kv-accent)/.08), transparent 30%), hsl(var(--kv-bg)); color: hsl(var(--kv-fg)); }
+.kv-page::before { content:''; position:absolute; inset:0; pointer-events:none; background-image:radial-gradient(circle,hsl(var(--kv-fg)/.10) 1px,transparent 1.5px); background-size:240px 280px; }
+.kv-display { font-family: var(--font-display); font-weight:400; letter-spacing:.02em; }
+.kv-outline { color:transparent; -webkit-text-stroke:1px hsl(var(--kv-fg)/.85); }
+.kv-glass { background:linear-gradient(115deg,hsl(var(--kv-fg)/.08),hsl(var(--kv-fg)/.03)); border:1px solid hsl(var(--kv-border)); backdrop-filter:blur(18px); box-shadow:0 20px 60px hsl(var(--kv-bg)/.4), inset 0 1px 0 hsl(var(--kv-fg)/.06); }
+.kv-btn { display:inline-flex; align-items:center; gap:.5rem; padding:.6rem 1.1rem; border:1px solid hsl(var(--kv-border)); border-radius:9999px; font-size:.72rem; font-weight:500; color:hsl(var(--kv-fg)); background:hsl(var(--kv-card)/.6); transition:.15s; }
+.kv-btn:hover { background:hsl(var(--kv-card)); border-color:hsl(var(--kv-accent)/.6); }
+.kv-btn-primary { border-color:hsl(var(--kv-accent)); background:hsl(var(--kv-accent)/.14); box-shadow:0 0 18px hsl(var(--kv-accent)/.18); }
+.kv-tool { display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:10px; border:1px solid hsl(var(--kv-border)); background:hsl(var(--kv-card)/.5); color:hsl(var(--kv-muted)); transition:.15s; }
+.kv-tool:hover { color:hsl(var(--kv-fg)); border-color:hsl(var(--kv-accent)/.5); }
+.kv-tool-active { color:hsl(var(--kv-accent)); border-color:hsl(var(--kv-accent)); background:hsl(var(--kv-accent)/.12); }
+.kv-portrait { position:absolute; height:112%; width:128%; max-width:none; left:-14%; top:-3%; object-fit:cover; object-position:50% 30%; -webkit-mask-image:linear-gradient(to bottom,transparent,black 8%,black 78%,transparent 100%),linear-gradient(to right,transparent,black 16%,black 100%); mask-image:linear-gradient(to bottom,transparent,black 8%,black 78%,transparent 100%),linear-gradient(to right,transparent,black 16%,black 100%); -webkit-mask-composite:source-in; mask-composite:intersect; }
+@media(max-width:1023px){ .kv-portrait{ height:110%; width:100%; left:0; } }
