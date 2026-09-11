@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Menu, X, Folder } from "lucide-react";
+import { Menu, X, Folder, Copy, Check } from "lucide-react";
 import BlueprintProjects, { saveProject, loadProjects } from "./BlueprintProjects";
 import { COLORS, ELEMENT_TYPES, createElement, createPage } from "./blueprintConstants";
 import BlueprintCanvas from "./BlueprintCanvas";
@@ -45,6 +45,7 @@ export default function BlueprintBuilder({ idea, concept }) {
   const [landingLoading, setLandingLoading] = useState(false);
   const [selectedContext, setSelectedContext] = useState(null);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [projectId, setProjectId] = useState(() => {
     // New concept from Idea Lab → start a fresh project; otherwise resume the last one.
     if (concept?.name) return `bp_${Date.now()}`;
@@ -355,7 +356,19 @@ Return ONLY the HTML. No markdown, no backticks, no explanation.`,
         )}
 
         {codeMode ? (
-          <div className="absolute inset-0 overflow-auto p-4" style={{ background: '#1e1e1e' }}>
+          <div className="absolute inset-0 overflow-auto p-4 pt-16" style={{ background: '#1e1e1e' }}>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(codeOutput);
+                setCopiedCode(true);
+                setTimeout(() => setCopiedCode(false), 2000);
+              }}
+              className="absolute top-14 right-3 z-40 flex items-center gap-1.5 px-3 h-9 rounded-lg text-[12px] font-semibold transition-colors"
+              style={{ background: copiedCode ? '#059669' : '#fff', color: copiedCode ? '#fff' : '#111', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+            >
+              {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedCode ? 'Copied' : 'Copy code'}
+            </button>
             <pre className="text-[11px] text-green-400 font-mono whitespace-pre-wrap">{codeOutput}</pre>
           </div>
         ) : landingMode ? (

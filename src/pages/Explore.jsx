@@ -354,7 +354,7 @@ Ground everything in real data from the live web. Be punchy, visionary, and prac
       </nav>
 
       {view === 'blueprint' ? (
-        <div className="px-3 lg:px-5 pt-16 pb-4 relative z-10">
+        <div className="px-3 lg:px-5 pt-16 pb-4 relative">
           <BlueprintBuilder idea={idea} concept={result} />
         </div>
       ) : view === 'kron' ? (
