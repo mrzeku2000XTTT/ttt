@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import {
   Home, UserRound, Sparkles, LayoutGrid, FolderClosed, Search, Share2,
   Loader2, Plus, Film, ArrowLeft, Image as ImageIcon, X, Heart, Code2,
-  PanelLeftClose, PanelLeftOpen, Brain, ChevronDown,
+  PanelLeftClose, PanelLeftOpen, Brain, ChevronDown, Paperclip,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { STORYBOARD_PRESETS } from "@/components/storyboard/storyboardPresets";
 import MotionCutPrompt from "@/components/storyboard/MotionCutPrompt";
 import AgentChecks from "@/components/storyboard/AgentChecks";
 import PresetDropdown from "@/components/storyboard/PresetDropdown";
+import StoryboardAttachments from "@/components/storyboard/StoryboardAttachments";
 
 const STYLES = ["Kaspa Explainer", "DAG Flow", "KAS Wallet", "KRC20 Launch", "Miner Story", "TTT Agent"];
 
@@ -55,6 +56,8 @@ export default function StoryboardStudio({ onClose }) {
   const [panelCount, setPanelCount] = useState(0);
   const resultRef = useRef(null);
   const thoughtsRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [attachments, setAttachments] = useState([]);
 
   useEffect(() => {
     base44.entities.StoryboardProject.list("-created_date", 25).then(setHistory).catch(() => {});
@@ -80,9 +83,41 @@ export default function StoryboardStudio({ onClose }) {
     if (preset) { setIdea(preset.idea); setStyle(""); }
   };
 
+  // Upload each pasted/selected file and pin it as a reference chip.
+  const addFiles = async (fileList) => {
+    const files = [...fileList].slice(0, 4);
+    if (!files.length) return;
+    const pending = files.map((f) => ({
+      id: `${f.name}_${Date.now()}_${Math.random()}`,
+      name: f.name,
+      preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+      url: "",
+    }));
+    setAttachments((a) => [...a, ...pending].slice(0, 6));
+    for (let i = 0; i < files.length; i++) {
+      try {
+        const { file_url } = await base44.integrations.Core.UploadPublicFile({ file: files[i] });
+        setAttachments((a) => a.map((att) => (att.id === pending[i].id ? { ...att, url: file_url } : att)));
+      } catch {
+        setAttachments((a) => a.filter((att) => att.id !== pending[i].id));
+      }
+    }
+  };
+
+  const removeAttachment = (id) => setAttachments((a) => a.filter((att) => att.id !== id));
+
+  // Uploaded reference URLs that are ready to be sent with a generation.
+  const referenceUrls = () => attachments.filter((a) => a.url).map((a) => a.url);
+  const referenceLine = () => {
+    const urls = referenceUrls();
+    return urls.length
+      ? `\n\nREFERENCE ATTACHMENTS: The user attached ${urls.length} reference file(s). Study them closely and use them as the visual/creative reference — keep characters, style, colors and details consistent with what the attachments show. If they depict a character or reference sheet, build the storyboard around that exact subject.`
+      : "";
+  };
+
   const runPrompt = async () => {
     const finalIdea = idea.trim();
-    if (!finalIdea || thinking) return;
+    if ((!finalIdea && !referenceUrls().length) || thinking) return;
     setThinking(true);
     setShowThoughts(true);
     setThoughts(null);
@@ -90,7 +125,8 @@ export default function StoryboardStudio({ onClose }) {
 
     const out = await base44.integrations.Core.InvokeLLM({
       model: "gpt_5_mini",
-      prompt: `You are a senior prompt engineer for a Kaspa storyboard studio. The user's rough idea: "${finalIdea}".
+      file_urls: referenceUrls().length ? referenceUrls() : undefined,
+      prompt: `You are a senior prompt engineer for a Kaspa storyboard studio. The user's rough idea: "${finalIdea || "Create a storyboard based on the attached reference images."}".${referenceLine()}
 
 Think out loud about how to improve it, then produce a fully restructured, production-ready prompt. Be concise but show your reasoning.`,
       response_json_schema: {
@@ -108,7 +144,9 @@ Think out loud about how to improve it, then produce a fully restructured, produ
   };
 
   const generate = async (overrideIdea) => {
-    const finalIdea = (overrideIdea ?? idea).trim();
+    const refUrls = referenceUrls();
+    const finalIdea = (overrideIdea ?? idea).trim() ||
+      (refUrls.length ? "Create a storyboard based on the attached reference images." : "");
     if (!finalIdea) return;
     setIdea(finalIdea);
     setLoading(true);
@@ -121,7 +159,8 @@ Think out loud about how to improve it, then produce a fully restructured, produ
     const plan = await base44.integrations.Core.InvokeLLM({
       model: "gpt_5_mini",
       add_context_from_internet: false,
-      prompt: `Transform this rough user idea into a production storyboard plan: "${finalIdea}".
+      file_urls: refUrls.length ? refUrls : undefined,
+      prompt: `Transform this rough user idea into a production storyboard plan: "${finalIdea}".${referenceLine()}
 
 Break the story into exactly 6 sequential scene panels. Each panel gets its own clean illustration prompt for ONE single scene (not a sheet of panels).
 
@@ -172,7 +211,10 @@ Keep visual style consistent across all 6 panels (same characters, palette, ligh
 STRICT: Pure visual storytelling only. NO text, NO words, NO letters, NO numbers, NO captions, NO labels, NO speech bubbles, NO signs, NO logos, NO watermark anywhere in the image. Real-world physics, believable gravity, consistent scale, correct perspective, natural anatomy, clean hands, grounded shadows, coherent lighting, accurate material behavior. Family-safe, no copyrighted characters.`;
       let url = "";
       try {
-        const res = await base44.integrations.Core.GenerateImage({ prompt: imgPrompt });
+        const res = await base44.integrations.Core.GenerateImage({
+          prompt: imgPrompt,
+          existing_image_urls: refUrls.length ? refUrls : undefined,
+        });
         url = res.url;
       } catch (e) { /* leave blank, panel shows placeholder */ }
       rendered.push({ ...p, image_url: url });
@@ -220,7 +262,7 @@ STRICT: Pure visual storytelling only. NO text, NO words, NO letters, NO numbers
       <aside className={`hidden flex-col overflow-hidden border-r border-white/5 bg-[#0d0f14] transition-all duration-300 ease-in-out md:flex ${sidebarOpen ? "w-[230px]" : "w-0 border-r-0"}`}>
         <div className="w-[230px] flex-shrink-0">
           <div className="flex items-center gap-2 p-3">
-            <button onClick={() => { setProject(null); setIdea(""); setStyle(""); }} className="flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-2.5 text-sm font-bold text-white/90 transition hover:bg-white/10">
+            <button onClick={() => { setProject(null); setIdea(""); setStyle(""); setAttachments([]); }} className="flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-2.5 text-sm font-bold text-white/90 transition hover:bg-white/10">
               <Plus className="h-4 w-4" /> Create New
             </button>
             <button onClick={() => setSidebarOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/50 transition hover:bg-white/10" title="Hide recent">
@@ -277,9 +319,14 @@ STRICT: Pure visual storytelling only. NO text, NO words, NO letters, NO numbers
             <textarea
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              placeholder="Ask for a storyboard, a character sheet, or anything in between… I can get you started."
+              onPaste={(e) => {
+                const files = [...(e.clipboardData?.files || [])];
+                if (files.length) { e.preventDefault(); addFiles(files); }
+              }}
+              placeholder="Ask for a storyboard, a character sheet, or anything in between… paste or attach an image as reference. I can get you started."
               className="min-h-[72px] w-full resize-none bg-transparent px-2 text-sm text-white placeholder-white/40 outline-none"
             />
+            <StoryboardAttachments attachments={attachments} onRemove={removeAttachment} />
             <div className="flex items-center justify-between gap-2 px-1">
               <div className="flex flex-wrap gap-1.5">
                 {STYLES.map((s) => (
@@ -287,11 +334,21 @@ STRICT: Pure visual storytelling only. NO text, NO words, NO letters, NO numbers
                 ))}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={runPrompt} disabled={thinking || !idea.trim()} className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 text-sm font-bold text-white/85 transition hover:bg-white/10 disabled:opacity-40" title="Let AI show its thoughts & restructure your prompt">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
+                />
+                <button onClick={() => fileInputRef.current?.click()} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-white/10" title="Attach an image or file">
+                  <Paperclip className="h-4 w-4" />
+                </button>
+                <button onClick={runPrompt} disabled={thinking || (!idea.trim() && !attachments.length)} className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 text-sm font-bold text-white/85 transition hover:bg-white/10 disabled:opacity-40" title="Let AI show its thoughts & restructure your prompt">
                   {thinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
                   Prompt
                 </button>
-                <button onClick={() => generate()} disabled={loading || !idea.trim()} className="flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition hover:opacity-95 disabled:opacity-40">
+                <button onClick={() => generate()} disabled={loading || (!idea.trim() && !attachments.length)} className="flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition hover:opacity-95 disabled:opacity-40">
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   {loading ? "Creating…" : "Generate"}
                 </button>
