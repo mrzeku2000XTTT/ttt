@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "CAM", path: "CAM", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/154c8ae70_generated_image.png", desc: "Cinematic camera controller · drop any image and drive 10 real camera moves — dolly, orbit, vertigo, crane — chain shots & export a storyboard — Scorpion wallet-gated" },
   { name: "Kanvas", path: "Kanvas", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/d2f7f5ac1_generated_image.png", desc: "Image markup & crop studio · drop any image, annotate with brushes/shapes/text, clip, crop & export PNG — Scorpion wallet-gated" },
   { name: "KaspaCollab", path: "KaspaCollab", cat: "Builder", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f8c6c08fd_generated_image.png", desc: "Free secure collab for Kaspa builders · Scorpion wallet-gated shared notes, covenant-locked to two addresses" },
   { name: "KaspaPulse", path: null, externalUrl: "https://kaspapulse.com", cat: "Kaspa", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/0a5594df9_image.png", desc: "Live Kaspa on-chain pulse · TVL, DEX volume, hashrate & whale watch" },

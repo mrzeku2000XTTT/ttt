@@ -1,0 +1,24 @@
+/* Scoped CAM theme — charcoal/black + neon green, does not leak to other apps. */
+:root .cm-page, .dark .cm-page {
+  --cm-bg: 240 10% 4%;
+  --cm-fg: 120 20% 96%;
+  --cm-muted: 120 10% 74%;
+  --cm-accent: 152 100% 50%;
+  --cm-card: 240 8% 9%;
+  --cm-border: 120 15% 22%;
+  --font-display: 'Syncopate', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+}
+.cm-page { font-family: var(--font-body); background: radial-gradient(ellipse at 85% 12%, hsl(var(--cm-accent)/.10), transparent 36%), radial-gradient(ellipse at 8% 70%, hsl(var(--cm-accent)/.08), transparent 30%), hsl(var(--cm-bg)); color: hsl(var(--cm-fg)); }
+.cm-page::before { content:''; position:absolute; inset:0; pointer-events:none; background-image:radial-gradient(circle,hsl(var(--cm-fg)/.10) 1px,transparent 1.5px); background-size:240px 280px; }
+.cm-display { font-family: var(--font-display); font-weight:400; letter-spacing:.02em; }
+.cm-outline { color:transparent; -webkit-text-stroke:1px hsl(var(--cm-fg)/.85); }
+.cm-glass { background:linear-gradient(115deg,hsl(var(--cm-fg)/.08),hsl(var(--cm-fg)/.03)); border:1px solid hsl(var(--cm-border)); backdrop-filter:blur(18px); box-shadow:0 20px 60px hsl(var(--cm-bg)/.4), inset 0 1px 0 hsl(var(--cm-fg)/.06); }
+.cm-btn { display:inline-flex; align-items:center; gap:.5rem; padding:.6rem 1.1rem; border:1px solid hsl(var(--cm-border)); border-radius:9999px; font-size:.72rem; font-weight:500; color:hsl(var(--cm-fg)); background:hsl(var(--cm-card)/.6); transition:.15s; }
+.cm-btn:hover { background:hsl(var(--cm-card)); border-color:hsl(var(--cm-accent)/.6); }
+.cm-btn-primary { border-color:hsl(var(--cm-accent)); background:hsl(var(--cm-accent)/.14); box-shadow:0 0 18px hsl(var(--cm-accent)/.18); }
+.cm-tool { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:.15rem; padding:.45rem .6rem; border-radius:10px; border:1px solid hsl(var(--cm-border)); background:hsl(var(--cm-card)/.5); transition:.15s; text-align:left; }
+.cm-tool:hover { border-color:hsl(var(--cm-accent)/.5); }
+.cm-tool-active { border-color:hsl(var(--cm-accent)); background:hsl(var(--cm-accent)/.12); }
+.cm-portrait { position:absolute; height:112%; width:128%; max-width:none; left:-14%; top:-3%; object-fit:cover; object-position:50% 30%; -webkit-mask-image:linear-gradient(to bottom,transparent,black 8%,black 78%,transparent 100%),linear-gradient(to right,transparent,black 16%,black 100%); mask-image:linear-gradient(to bottom,transparent,black 8%,black 78%,transparent 100%),linear-gradient(to right,transparent,black 16%,black 100%); -webkit-mask-composite:source-in; mask-composite:intersect; }
+@media(max-width:1023px){ .cm-portrait{ height:110%; width:100%; left:0; } }

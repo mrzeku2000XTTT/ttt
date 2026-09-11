@@ -45,3 +45,4 @@
 
 ## Apps built with this checklist
 - **Kanvas** (`/Kanvas`) — image markup, clip, crop & annotate studio, Scorpion-wallet-gated. Logo + hero generated 2026-09-11.
+- **CAM** (`/CAM`) — cinematic camera controller: 10 camera moves over any image, shot sequences & storyboard export, Scorpion-wallet-gated. Logo + hero generated 2026-09-11.

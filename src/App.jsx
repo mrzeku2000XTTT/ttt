@@ -210,6 +210,7 @@ import Sector6Page from './pages/Sector6';
 import LaunchReelPage from './pages/LaunchReel';
 import KaspaCollabPage from './pages/KaspaCollab';
 import KanvasPage from './pages/Kanvas';
+import CAMPage from './pages/CAM';
 import CollabCollaboratorsPage from './pages/CollabCollaborators';
 import AdminRoute from '@/components/AdminRoute';
 
@@ -465,6 +466,7 @@ const AuthenticatedApp = () => {
       <Route path="/LaunchReel" element={<AdminRoute><LaunchReelPage /></AdminRoute>} />
       <Route path="/KaspaCollab" element={<KaspaCollabPage />} />
       <Route path="/Kanvas" element={<KanvasPage />} />
+      <Route path="/CAM" element={<CAMPage />} />
       <Route path="/CollabCollaborators" element={<CollabCollaboratorsPage />} />
       <Route path="/KaspaCommand" element={<KaspaCommandPage />} />
       <Route path="/KaspaNations" element={<KaspaNationsPage />} />
