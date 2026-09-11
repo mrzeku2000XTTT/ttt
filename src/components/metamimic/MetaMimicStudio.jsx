@@ -1,10 +1,13 @@
 import React, { useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
+import ClonePreview from "@/components/metamimic/ClonePreview";
 import { Upload, Loader2, Code2, Eye, Copy, Download, Check, AlertCircle, Crosshair, Send } from "lucide-react";
 
 export default function MetaMimicStudio() {
   const fileInputRef = useRef(null);
   const [imageUrl, setImageUrl] = useState(null);
+  const [imageSize, setImageSize] = useState({ width: 1200, height: 800 });
+  const [sourceData, setSourceData] = useState('');
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [html, setHtml] = useState("");
@@ -26,8 +29,21 @@ export default function MetaMimicStudio() {
     setHtml("");
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setImageUrl(file_url);
+      setImageUrl(null);
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const image = new Image();
+      image.src = dataUrl;
+      await image.decode();
+      setImageSize({ width: image.naturalWidth, height: image.naturalHeight });
+      setSourceData(dataUrl);
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 86400 });
+      setImageUrl(signed_url);
     } catch (err) {
       setError("Upload failed. Please try another image.");
     }
@@ -41,7 +57,7 @@ export default function MetaMimicStudio() {
     setElapsed(0);
     const tick = setInterval(() => setElapsed((s) => s + 1), 1000);
     try {
-      const res = await base44.functions.invoke("metaMimicClone", { imageUrl, cloneMode });
+      const res = await base44.functions.invoke("metaMimicClone", { imageUrl, cloneMode, imageWidth: imageSize.width, imageHeight: imageSize.height });
       if (res?.data?.html) {
         setHtml(res.data.html);
         setTab("preview");
@@ -65,6 +81,7 @@ export default function MetaMimicStudio() {
       const res = await base44.functions.invoke("metaMimicClone", {
         currentHtml: html,
         instruction: instruction.trim(),
+        imageUrl, cloneMode, imageWidth: imageSize.width, imageHeight: imageSize.height,
       });
       if (res?.data?.html) {
         setHtml(res.data.html);
@@ -80,14 +97,15 @@ export default function MetaMimicStudio() {
     setGenerating(false);
   };
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(html);
+  const portableHtml = imageUrl && sourceData ? html.replaceAll(imageUrl.replaceAll('&', '&amp;'), sourceData).replaceAll(imageUrl, sourceData) : html;
+  const copyCode = async () => {
+    await navigator.clipboard.writeText(portableHtml);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
   const download = () => {
-    const blob = new Blob([html], { type: "text/html" });
+    const blob = new Blob([portableHtml], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -150,7 +168,7 @@ export default function MetaMimicStudio() {
               }`}
             >
               <Crosshair className="h-4 w-4" />
-              {cloneMode ? "1:1 Clone ON — exact reproduction, nothing added" : "1:1 Clone — exact image, no extras"}
+              {cloneMode ? "1:1 Clone ON — preserve source layout & artwork" : "1:1 Clone — preserve source layout"}
             </button>
 
             <button
@@ -211,11 +229,7 @@ export default function MetaMimicStudio() {
                 </div>
 
                 {tab === "preview" ? (
-                  <iframe
-                    title="clone preview"
-                    srcDoc={html}
-                    className="h-[420px] w-full rounded-xl border border-white/10 bg-white"
-                  />
+                  <ClonePreview html={html} width={imageSize.width} height={imageSize.height} />
                 ) : (
                   <pre className="h-[420px] w-full overflow-auto rounded-xl border border-white/10 bg-black/40 p-4 text-[11px] leading-relaxed text-green-200">
                     <code>{html}</code>

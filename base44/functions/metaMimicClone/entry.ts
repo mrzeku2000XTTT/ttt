@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
 
@@ -9,7 +9,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { imageUrl, instructions, cloneMode, currentHtml, instruction } = await req.json();
+    const { imageUrl, instructions, cloneMode, currentHtml, instruction, imageWidth, imageHeight } = await req.json();
+    const width = Number(imageWidth);
+    const height = Number(imageHeight);
+    const hasDimensions = Number.isFinite(width) && width > 0 && width <= 20000 && Number.isFinite(height) && height > 0 && height <= 50000;
     const isRefine = !!(currentHtml && instruction);
     if (!imageUrl && !isRefine) {
       return Response.json({ error: 'imageUrl is required' }, { status: 400 });
@@ -28,7 +31,8 @@ ABSOLUTE 1:1 RULES:
 - Copy the image's text EXACTLY, character for character, preserving per-word colors, weights and emphasis spans.
 - Match exact geometry: element width/height ratios, padding, border-radius, font-size, font-weight, letter-spacing, line-height, exact hex colors, borders, shadows. Estimate proportions carefully from the image.
 - Position elements exactly as in the image (centering, spacing, and the image's own background color).
-- Fully responsive: every element must fit and wrap within a 390px-wide mobile viewport — NO horizontal clipping or overflow. Text must wrap or scale, never get cut off.
+- Preserve the SOURCE layout, columns and aspect ratio. Do NOT rearrange this desktop screenshot into a mobile layout. The preview scales the source canvas to fit smaller screens.
+- Put all content in a single source-sized canvas with position:relative and every visible section retained top to bottom. Never hide the lower content with overflow:hidden on body.
 - NO animations, NO hover effects, NO scroll effects, NO JavaScript. Static, exact reproduction only.
 - If the image shows only a fragment of a page, clone only that fragment.
 ${instructions ? `\nEXTRA USER INSTRUCTIONS: ${instructions}` : ''}
@@ -42,7 +46,7 @@ EDIT RULES:
 - Do NOT change anything else: keep every other element, style, text, size and structure exactly as it is.
 - Do NOT add new sections or content beyond what the instruction asks.
 - Keep it ONE complete self-contained HTML document with inline CSS, no external frameworks. Return ONLY the raw HTML, no markdown fences, no explanation.
-- Make sure the result is fully responsive and never clips horizontally on a 390px-wide mobile viewport.
+- Preserve the existing source canvas dimensions, section markers and artwork crops. Do not force a new mobile layout. Use the attached original image as reference when available.
 
 CURRENT HTML:
 ${currentHtml}
@@ -82,47 +86,59 @@ ${instructions ? `\nEXTRA USER INSTRUCTIONS: ${instructions}` : ''}
 
 Return ONLY the raw HTML document.`;
 
-    const withTimeout = (p: Promise<any>, ms: number) =>
-      Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
-
-    const clean = (r: any) => {
-      const raw = typeof r === 'string' ? r : (r?.html || '');
-      const stripped = raw.replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
-      const start = stripped.search(/<!DOCTYPE|<html/i);
-      let out = start >= 0 ? stripped.slice(start) : '';
-      // Guarantee a mobile viewport so the clone always fits phone screens.
-      if (out && !/name=["']viewport/i.test(out)) {
-        out = out.replace(/<head([^>]*)>/i, '<head$1>\n  <meta name="viewport" content="width=device-width, initial-scale=1">');
-      }
-      return out;
+    const fidelityRules = `
+SOURCE REFERENCE:
+${hasDimensions ? `The screenshot is ${width}px wide by ${height}px high. In exact mode use a canvas of precisely these dimensions; use these coordinates for artwork crops.` : 'Infer the source canvas dimensions from the attached screenshot.'}
+${imageUrl ? `The actual source image URL is: ${JSON.stringify(imageUrl)}. For photographic artwork, hero illustrations, and card images, reuse the ORIGINAL pixels: crop regions of this URL with overflow-hidden containers and an absolutely positioned source image sized to the screenshot dimensions (offset by negative crop x/y). Do not invent image URLs, substitute gradients/emojis, or omit the artwork. Do not stretch the whole screenshot into each image slot. Crop only artwork regions, keeping the rest of the UI as editable HTML/CSS. Never use the entire screenshot as the page or as a full-page background.` : ''}
+COMPLETENESS:
+Inspect the ENTIRE screenshot, including its bottom edge, before writing HTML. Inventory every visible section, every card in each row, header, hero artwork, floating badge, timer and lower grid. Recreate ALL visible content, not just the first viewport. Keep CSS compact and shared across repeated cards so the complete document fits. No placeholders, ellipses, TODOs or omitted sections. Keep text and controls editable.
+For each source section, supply an id (letters/numbers/hyphens only), label and itemCount (number of repeated cards/items, zero if none). Its HTML container MUST have data-source-section="id". Inside it mark each repeated item with data-source-item="id-1", "id-2", etc. Include every source card, not only a sample. In edit mode inventory the retained sections of the existing HTML.
+OUTPUT FORMAT OVERRIDE: Return a JSON object with sections (the inventory), usesSourceArtwork (boolean), and html (the entire document including closing body/html tags). Do not return markdown.`;
+    const responseSchema = {
+      type: 'object',
+      properties: {
+        sections: { type: 'array', items: { type: 'object', properties: {
+          id: { type: 'string' }, label: { type: 'string' }, itemCount: { type: 'integer' }
+        }, required: ['id', 'label', 'itemCount'] } },
+        usesSourceArtwork: { type: 'boolean' }, html: { type: 'string' }
+      }, required: ['sections', 'usesSourceArtwork', 'html']
     };
-
-    // Fast model first; only fall back to the slower, higher-fidelity model if it fails.
-    let html = '';
-    const params: any = { prompt };
-    if (!isRefine) params.file_urls = [imageUrl];
-    try {
-      html = clean(await withTimeout(
-        base44.integrations.Core.InvokeLLM({ ...params, model: 'gemini_3_flash' }),
-        90_000,
-      ));
-    } catch { /* fall through */ }
-
-    if (!html) {
+    const clean = (raw) => String(raw || '').replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const validate = (result) => {
+      const html = clean(result?.html);
+      if (!/^<!doctype html>/i.test(html) || !/<head[\s>]/i.test(html) || !/<\/head>/i.test(html) || !/<body[\s>]/i.test(html) || !/<\/body>\s*<\/html>\s*$/i.test(html)) return 'HTML document is incomplete.';
+      if (!Array.isArray(result.sections) || !result.sections.length) return 'Source section inventory is missing.';
+      const ids = new Set();
+      for (const section of result.sections) {
+        if (!/^[a-z0-9-]+$/i.test(section.id) || ids.has(section.id) || !Number.isInteger(section.itemCount) || section.itemCount < 0 || section.itemCount > 500) return 'Invalid source section inventory.';
+        ids.add(section.id);
+        if (!new RegExp(`data-source-section=["']${section.id}["']`).test(html)) return `Missing section: ${section.label}`;
+        for (let i = 1; i <= section.itemCount; i++) {
+          if (!new RegExp(`data-source-item=["']${section.id}-${i}["']`).test(html)) return `Missing item ${i} in ${section.label}`;
+        }
+      }
+      if (result.usesSourceArtwork && imageUrl && !html.includes(imageUrl.replace(/&/g, '&amp;')) && !html.includes(imageUrl)) return 'Original artwork is missing.';
+      return '';
+    };
+    let failure = '';
+    for (const model of ['claude-sonnet-5', 'gpt_5_6_luna']) {
       try {
-        html = clean(await withTimeout(
-          base44.integrations.Core.InvokeLLM({ ...params, model: 'claude_sonnet_4_6' }),
-          150_000,
-        ));
-      } catch { /* fall through */ }
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: prompt + fidelityRules + (failure ? `\nPrevious attempt was rejected: ${failure}. Return a fresh COMPLETE document, not a continuation.` : ''),
+          model,
+          ...(imageUrl ? { file_urls: [imageUrl] } : {}),
+          response_json_schema: responseSchema
+        });
+        failure = validate(result);
+        if (failure) { console.warn('Clone rejected:', failure); continue; }
+        return Response.json({ html: clean(result.html), sections: result.sections, imageWidth: hasDimensions ? width : null, imageHeight: hasDimensions ? height : null });
+      } catch (error) {
+        failure = error.message || 'Generation failed.';
+        console.warn('Clone attempt failed:', failure);
+      }
     }
-
-    if (!html) {
-      return Response.json({ error: 'The model took too long or returned no HTML. Try a smaller / simpler screenshot.' }, { status: 502 });
-    }
-
-    return Response.json({ html });
+    return Response.json({ error: 'A complete clone could not be produced. Please retry; no partial result was accepted.' }, { status: 502 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}
