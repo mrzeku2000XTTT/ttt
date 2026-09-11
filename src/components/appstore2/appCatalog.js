@@ -193,6 +193,7 @@ export const APPS = [
   // ── New ──
   { name: "Krust", path: "Krust", cat: "Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e2e8601a9_generated_image.png", desc: "Web weaver" },
   { name: "OneShot", path: "UICloner", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/17316d6b3_generated_image.png", desc: "Clone & vibe-code any UI", admin: true },
+  { name: "KaspaCollab", path: "KaspaCollab", cat: "Dev Tools", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/9889bbc28_image.jpeg", desc: "Free secure collab for Kaspa builders · Scorpion wallet-gated shared notes, covenant-locked to two addresses" },
 ];
 
 // The 10 lifestyle AI-tool apps are grouped inside the "Everyday AI" hub

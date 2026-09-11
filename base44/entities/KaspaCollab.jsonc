@@ -1,0 +1,88 @@
+{
+  "name": "KaspaCollab",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Session title"
+    },
+    "wallet_a": {
+      "type": "string",
+      "description": "Creator's Kaspa wallet address (Scorpion/KCC20)"
+    },
+    "wallet_b": {
+      "type": "string",
+      "description": "Partner's Kaspa wallet address (Scorpion/KCC20)"
+    },
+    "pad_content": {
+      "type": "string",
+      "default": "",
+      "description": "Shared notepad content \u2014 real-time synced between both wallets"
+    },
+    "notes": {
+      "type": "array",
+      "default": [],
+      "description": "Structured notes between the two collaborators",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "author_wallet": {
+            "type": "string"
+          },
+          "created_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active",
+      "description": "Session status"
+    }
+  },
+  "required": [
+    "title",
+    "wallet_a",
+    "wallet_b"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.wallet_a": "{{user.data.created_wallet_address}}"
+        },
+        {
+          "data.wallet_b": "{{user.data.created_wallet_address}}"
+        }
+      ]
+    },
+    "create": {
+      "data.wallet_a": "{{user.data.created_wallet_address}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.wallet_a": "{{user.data.created_wallet_address}}"
+        },
+        {
+          "data.wallet_b": "{{user.data.created_wallet_address}}"
+        }
+      ]
+    },
+    "delete": {
+      "data.wallet_a": "{{user.data.created_wallet_address}}"
+    }
+  }
+}
