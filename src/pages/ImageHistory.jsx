@@ -49,6 +49,34 @@ export default function ImageHistoryPage() {
     resumeGenerationIfNeeded();
   }, []);
 
+  // Allow pasting an image directly into a Reference box: fills the first empty
+  // reference slot (or Reference 1 if both are full). Ignored when the user is
+  // pasting into a text field so normal prompt/chat pastes still work.
+  useEffect(() => {
+    const onPaste = (e) => {
+      const items = e.clipboardData?.items || [];
+      let imgFile = null;
+      for (const it of items) {
+        if (it.type.startsWith('image/')) { imgFile = it.getAsFile(); break; }
+      }
+      if (!imgFile) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+      const emptyIdx = referenceImages.findIndex((r) => !r);
+      const idx = emptyIdx === -1 ? 0 : emptyIdx;
+      uploadFile(imgFile, setUploadingReference, (file_url) => {
+        setReferenceImages((prev) => {
+          const next = [...prev];
+          next[idx] = file_url;
+          return next;
+        });
+      });
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [referenceImages]);
+
   const resumeGenerationIfNeeded = () => {
     const savedGen = localStorage.getItem('rmx_active_generation');
     if (savedGen) {
@@ -962,7 +990,7 @@ export default function ImageHistoryPage() {
                 }}
                 uploading={uploadingReference}
                 label={`Reference ${idx + 1}`}
-                hint="click or drop"
+                hint="click, drop or paste"
                 className="h-32 bg-zinc-900/50"
                 iconSlot={<ImageIcon className="w-8 h-8 text-zinc-700" />}
               />
