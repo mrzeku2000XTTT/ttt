@@ -257,11 +257,21 @@ button:focus-visible {
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: ttt-input-orbit 6s linear infinite;
+  animation: ttt-input-orbit 3s linear infinite paused;
+  opacity: 0.15;
+  transition: opacity 450ms ease;
 }
 .ttt-glowing-input::after {
   filter: blur(3px);
-  opacity: 0.7;
+  opacity: 0;
+}
+.ttt-glowing-input-typing::before,
+.ttt-glowing-input-typing::after {
+  animation-play-state: running;
+  opacity: 1;
+}
+.ttt-glowing-input-typing::after {
+  opacity: 0.85;
 }
 @keyframes ttt-input-orbit {
   to { --ttt-input-angle: 360deg; }
