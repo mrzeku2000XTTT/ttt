@@ -16,6 +16,8 @@ import CamEditorPanel from '@/components/cam/CamEditorPanel';
 import useCamTimeline from '@/components/cam/useCamTimeline';
 import { captureScene } from '@/components/cam/camTimelineModel';
 import renderCamScene from '@/components/cam/camSceneRender';
+import { edgeSmartCrop } from '@/components/cam/camSmartCrop';
+import { findAnimationPreset } from '@/components/cam/camAnimationLibrary';
 
 const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/154c8ae70_generated_image.png';
 const CW = 1280, CH = 720;
@@ -65,7 +67,7 @@ export default function CAMStudio({ address, onHome }) {
   const scene = timeline.enabled ? timeline.scene : null;
   const primaryPose = scene?.assets.find((a) => a.id === 'primary');
   const previewOffset = scene && !timeline.recording ? { x: (primaryPose?.x || 0) / 2.4, y: (primaryPose?.y || 0) / 1.6, z: (primaryPose?.z || 0) / 2.2 } : manualOffset;
-  const previewMedia = scene && !timeline.recording ? media.flatMap((m) => { const pose = scene.assets.find((a) => a.id === m.id); return pose ? [{ ...m, pos: { x: pose.x, y: pose.y, z: pose.z }, scale: pose.scale }] : []; }) : media;
+  const previewMedia = scene && !timeline.recording ? media.flatMap((m) => { const pose = scene.assets.find((a) => a.id === m.id); return pose ? [{ ...m, pos: { x: pose.x, y: pose.y, z: pose.z }, scale: pose.scale, rotation: pose.rotation, opacity: pose.opacity, glow: pose.glow }] : []; }) : media;
   useEffect(() => { if (scene && !fusionOn) renderCamScene(canvasRef.current, scene, media, viewZoom); }, [scene, media, viewZoom, fusionOn]);
 
   // refs mirrored for the animation loop
@@ -160,13 +162,13 @@ export default function CAMStudio({ address, onHome }) {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const ni = new Image();
-      ni.onload = () => {
-        const id = `media-${Date.now()}`;
+      ni.onload = async () => {
+        const crop = await edgeSmartCrop(ni), id = `media-${Date.now()}`;
         setMedia((prev) => {
-          const extras = prev.filter((m) => m.id !== 'primary');
-          const idx = extras.length;
-          return [...prev, { id, img: ni, url: ev.target.result, name: `Asset ${idx + 1}`, pos: { x: (idx % 2 ? 1.7 : -1.7), y: (idx < 2 ? 0.7 : -0.7), z: -0.6 * (idx + 1) }, scale: 0.6 }];
+          const extras = prev.filter((m) => m.id !== 'primary'), idx = extras.length;
+          return [...prev, { id, img: crop.image, url: crop.url, sourceUrl: ev.target.result, name: `Cutout ${idx + 1}`, pos: { x: (idx % 2 ? 1.7 : -1.7), y: (idx < 2 ? 0.7 : -0.7), z: -0.6 * (idx + 1) }, scale: 0.6, aspect: crop.width / crop.height, edgeCropped: crop.cropped }];
         });
+        setRefId(id);
       };
       ni.src = ev.target.result;
     };
@@ -187,6 +189,16 @@ export default function CAMStudio({ address, onHome }) {
   const onBeginAssetMove = () => {
     if (timeline.enabled && !timeline.recording) timeline.leave();
     setPlaying(false);
+  };
+  const applyAssetAnimation = (preset, assetId = refId, amount = 1) => {
+    const target = assetId || media.find((m) => m.id !== 'primary')?.id || 'primary';
+    const match = findAnimationPreset(preset);
+    setRefId(target); timeline.applyAnimation(target, match.id, Math.min(1.5, Math.max(0.1, amount)));
+  };
+  const smartCropAsset = async (id = refId) => {
+    const source = media.find((m) => m.id === id); if (!source || id === 'primary') return;
+    const crop = await edgeSmartCrop(source.img);
+    setMedia((items) => items.map((m) => m.id === id ? { ...m, img: crop.image, url: crop.url, aspect: crop.width / crop.height, edgeCropped: crop.cropped } : m));
   };
   const onMoveAsset = (id, axis, value) => {
     if (id === 'primary') {
@@ -300,8 +312,8 @@ export default function CAMStudio({ address, onHome }) {
       case 'set_intensity': setIntensity(Math.min(1, Math.max(0.05, a.value || 0.6))); break;
       case 'set_duration': setDuration(Math.min(30, Math.max(0.5, a.value || 4))); break;
       case 'add_shot': setShots((prev) => [...prev, { id: Date.now(), move: a.move || moveId, intensity: a.intensity ?? intensity, duration: a.duration ?? duration }]); break;
-      case 'play': if (img) setPlaying(true); break;
-      case 'pause': setPlaying(false); break;
+      case 'play': if (img) { if (timeline.isEnabled()) timeline.play(); else setPlaying(true); } break;
+      case 'pause': if (timeline.isEnabled()) timeline.setRunning(false); else setPlaying(false); break;
       case 'play_sequence': playSequence(); break;
       case 'open_rig': setMaxPane('camera'); break;
       case 'open_nodes': setMaxPane('nodes'); break;
@@ -322,6 +334,8 @@ export default function CAMStudio({ address, onHome }) {
         break;
       }
       case 'select_ref': setRefId(a.asset_id || null); break;
+      case 'animate_asset': applyAssetAnimation(a.preset || 'cinematic-rise-fade', a.asset_id || refId, a.intensity || 1); break;
+      case 'smart_crop_asset': smartCropAsset(a.asset_id || refId); break;
       case 'set_offset': if (['x', 'y', 'z'].includes(a.axis)) setManualOffset((o) => ({ ...o, [a.axis]: a.value })); break;
       case 'set_fov': setCamRig((c) => ({ ...c, fov: a.value })); break;
       case 'set_distance': setCamRig((c) => ({ ...c, distance: a.value })); break;
@@ -370,7 +384,7 @@ export default function CAMStudio({ address, onHome }) {
             <CamEditorPanel timeline={timeline} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
           </div>
         </main>
-        <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={camRig} setCamRig={setCamRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} axisOffset={axisOffset} axisRange={axisRange} axisTargetName={axisTargetName} onAxis={onAxis} onAxisReset={onAxisReset} />
+        <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={camRig} setCamRig={setCamRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} onApplyAnimation={applyAssetAnimation} onSmartCrop={smartCropAsset} activeAnimation={timeline.project.tracks.find((t) => t.assetId === refId)?.clips.find((c) => c.id === timeline.selected)?.animationId} axisOffset={axisOffset} axisRange={axisRange} axisTargetName={axisTargetName} onAxis={onAxis} onAxisReset={onAxisReset} />
         <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} media={media} refId={refId} onClearRef={() => setRefId(null)} />
       </div>
     </div>

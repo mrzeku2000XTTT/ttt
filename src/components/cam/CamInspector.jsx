@@ -2,12 +2,13 @@ import React from 'react';
 import { Film, Layers, Camera as CameraIcon, Plus, MousePointerClick, Sliders, Move } from 'lucide-react';
 import { MOVES } from './camMoves';
 import CamAxisTool from './CamAxisTool';
+import CamAnimationPanel from '@/components/cam/CamAnimationPanel';
 
 export default function CamInspector({
   moveId, onMovePick, autoKey, setAutoKey,
   intensity, setIntensity, duration, setDuration,
   camRig, setCamRig,
-  media, onAddMedia, onSelectAsset, refId,
+  media, onAddMedia, onSelectAsset, refId, onApplyAnimation, onSmartCrop, activeAnimation,
   axisOffset, axisRange, axisTargetName, onAxis, onAxisReset,
 }) {
   const pick = (id) => onMovePick?.(id);
@@ -56,17 +57,23 @@ export default function CamInspector({
 
       <details open>
         <summary><Layers size={11} /> Media <span className="cm-insp-count">{media?.length || 0}</span></summary>
-        <button className="cm-add-media" onClick={onAddMedia}><Plus size={12} /> Add image media to the rig</button>
+        <button className="cm-add-media" onClick={onAddMedia}><Plus size={12} /> Add edge-cut component</button>
         <div className="cm-media-list">
           {media?.map((m) => (
             <button key={m.id} className={`cm-media-item ${refId === m.id ? 'is-ref' : ''}`} onClick={() => onSelectAsset?.(m.id)}>
               <img src={m.url} alt={m.name} />
-              <span>{m.name}</span>
+              <span>{m.name}{m.edgeCropped ? ' · smart crop' : ''}</span>
               {refId === m.id && <MousePointerClick size={12} />}
             </button>
           ))}
           {!media?.length && <span className="cm-media-empty">Upload an image to begin, then add more assets here.</span>}
         </div>
+      </details>
+
+      <details open>
+        <summary><Film size={11} /> Component Animation</summary>
+        {refId && refId !== 'primary' && <button className="cm-smart-crop" onClick={() => onSmartCrop?.(refId)}>Re-detect component edges</button>}
+        <CamAnimationPanel assetName={media?.find((m) => m.id === refId)?.name || 'Select an asset'} activeId={activeAnimation} disabled={!refId} onApply={(id) => onApplyAnimation?.(id, refId)} />
       </details>
 
       {['Visibility', 'Lighting', 'Material', 'Blending', 'Normals', 'Object ID'].map((name) => <details key={name}><summary>{name}</summary></details>)}

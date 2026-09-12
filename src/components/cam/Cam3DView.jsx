@@ -21,19 +21,19 @@ function MediaPlane({ item, selected, onSelect }) {
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
   }, [item.img]);
-  const w = PLANE_W * (item.scale || 1);
   const h = PLANE_H * (item.scale || 1);
+  const w = PLANE_H * (item.aspect || 1) * (item.scale || 1);
   const edges = useMemo(() => new THREE.EdgesGeometry(new THREE.PlaneGeometry(w, h)), [w, h]);
   return (
-    <group position={[item.pos.x, item.pos.y, item.pos.z]} onClick={(e) => { e.stopPropagation(); onSelect?.(item.id); }}>
+    <group position={[item.pos.x, item.pos.y, item.pos.z]} rotation={[0, 0, ((item.rotation || 0) * Math.PI) / 180]} onClick={(e) => { e.stopPropagation(); onSelect?.(item.id); }}>
       <mesh>
         <planeGeometry args={[w, h]} />
         {tex
-          ? <meshBasicMaterial map={tex} toneMapped={false} side={THREE.DoubleSide} transparent opacity={0.96} />
+          ? <meshBasicMaterial map={tex} toneMapped={false} side={THREE.DoubleSide} transparent opacity={item.opacity ?? 0.96} />
           : <meshBasicMaterial color="#1a2620" transparent opacity={0.6} side={THREE.DoubleSide} />}
       </mesh>
       <lineSegments geometry={edges}>
-        <lineBasicMaterial color={selected ? '#00ff9d' : '#3a4a40'} />
+        <lineBasicMaterial color={selected || item.glow ? '#00ff9d' : '#3a4a40'} transparent opacity={item.opacity ?? 1} />
       </lineSegments>
       <Html position={[0, h / 2 + 0.12, 0]} center style={{ pointerEvents: 'none' }}>
         <span className="cm3d-label" style={{ color: selected ? '#00ff9d' : '#9aa8a0' }}>{item.name}</span>

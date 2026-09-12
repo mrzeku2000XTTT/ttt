@@ -54,7 +54,11 @@ TOOLS you can call (emit them in "actions", they run in order):
 - set_offset: drag the background plane (axis x/y/z; value -1 to 1)
 - set_fov / set_distance / set_roll: camera rig controls (value)
 - auto_orbit: toggle rig auto-orbit (value = true/false)
+- animate_asset: apply a non-destructive DaVinci-style animation modifier to the referenced asset (asset_id, preset, intensity). There are 168 preset ids formed as style-path-effect: style soft/cinematic/punchy; path rise/fall/left/right/orbit/arc/spiral/bounce; effect clean/fade/blur/glow/shake/pulse/spin. Example: cinematic-orbit-glow.
+- smart_crop_asset: edge-detect and tightly crop the referenced component (asset_id). Added media is smart-cropped automatically.
 - add_nodes: build node chains in the graph (nodes = ordered list of MediaIn / Transform / Camera3D / Renderer3D / MediaOut; attach_to = an existing node type to link the chain into the graph)
+
+ANIMATION WORKFLOW: Behave like DaVinci Resolve/Fusion. Apply animation non-destructively to the selected asset's active timeline clip; do not replace source media. Use animate_asset whenever the user asks a component, logo, cutout, layer, or referenced subject to animate, enter, reveal, orbit, bounce, glow, shake, blur, spin, or follow a path. Choose the closest style-path-effect preset id and then call play to preview when requested.
 
 ASSETS: the studio can hold several image media at once. The user can click any asset in the 3D rig to reference it — when STUDIO STATE shows ref=<name>, the user has selected that asset as the subject; tailor the brief to it. If the user attaches an image and says "add this to the rig", call add_media.
 
@@ -70,7 +74,7 @@ const SCHEMA = {
     reply: { type: 'string' },
     director_prompt: { type: 'string' },
     actions: { type: 'array', items: { type: 'object', properties: {
-      tool: { type: 'string', enum: ['set_move', 'set_intensity', 'set_duration', 'add_shot', 'play', 'pause', 'play_sequence', 'open_rig', 'open_nodes', 'restore_view', 'fusion_on', 'fusion_off', 'decompose', 'move_layer', 'set_image', 'add_media', 'move_media', 'select_ref', 'set_offset', 'set_fov', 'set_distance', 'set_roll', 'auto_orbit', 'add_nodes'] },
+      tool: { type: 'string', enum: ['set_move', 'set_intensity', 'set_duration', 'add_shot', 'play', 'pause', 'play_sequence', 'open_rig', 'open_nodes', 'restore_view', 'fusion_on', 'fusion_off', 'decompose', 'move_layer', 'set_image', 'add_media', 'move_media', 'select_ref', 'set_offset', 'set_fov', 'set_distance', 'set_roll', 'auto_orbit', 'animate_asset', 'smart_crop_asset', 'add_nodes'] },
       move: { type: 'string', enum: ['pan', 'tilt', 'roll', 'dolly', 'zoom', 'dollyzoom', 'truck', 'pedestal', 'orbit', 'crane'] },
       value: { type: 'number' },
       intensity: { type: 'number' },
@@ -78,6 +82,7 @@ const SCHEMA = {
       axis: { type: 'string', enum: ['x', 'y', 'z'] },
       layer: { type: 'number' },
       asset_id: { type: 'string' },
+      preset: { type: 'string' },
       nodes: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['MediaIn', 'Transform', 'Camera3D', 'Renderer3D', 'MediaOut'] }, attach_to: { type: 'string' } }, required: ['type'] } },
     } } },
   },
