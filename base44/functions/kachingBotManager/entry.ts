@@ -1,23 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
-import * as bip39 from 'npm:@scure/bip39@1.3.0';
-import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
-import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@2.4.9';
+import { getAdminUser } from '../../shared/requestAuth.ts';
 
 const KASPA_API = 'https://api.kaspa.org';
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await getAdminUser(base44);
+    if (!user) {
+      return Response.json({ error: 'Admin only' }, { status: 403 });
+    }
     const body = await req.json().catch(() => ({}));
     const { action } = body;
-    const isAutomation = !!body.automation;
-
-    if (!isAutomation) {
-      const user = await base44.auth.me();
-      if (!user || user.role !== 'admin') {
-        return Response.json({ error: 'Admin only' }, { status: 403 });
-      }
-    }
 
     // Helper: strip sensitive fields from bot data
     const safeBotData = (b) => ({
@@ -57,11 +51,11 @@ Deno.serve(async (req) => {
         const alreadyExists = existing.find(b => b.bot_name === cfg.name);
         if (alreadyExists) { created.push(alreadyExists); continue; }
 
-        const mnemonic = bip39.generateMnemonic(wordlist, 128);
-        const wallet = new KaspaWallet();
-        const privateKey = await wallet.getDerivedPrivateKey({ mnemonic, hdPath: "m/44'/111111'/0'/0/0" });
-        const { address } = await wallet.getNewAddress({ privateKey });
-        const cleanAddress = address.startsWith('kaspa:') ? address.slice(6) : address;
+        const walletRes = await base44.asServiceRole.functions.invoke('createKaspaWallet', { wordCount: 12 });
+        const walletData = walletRes?.data || walletRes;
+        if (!walletData?.address || !walletData?.mnemonic) throw new Error(walletData?.error || 'Wallet creation failed');
+        const mnemonic = walletData.mnemonic;
+        const cleanAddress = walletData.address.startsWith('kaspa:') ? walletData.address.slice(6) : walletData.address;
 
         const bot = await base44.asServiceRole.entities.KaChingBot.create({
           bot_name: cfg.name,
@@ -264,4 +258,4 @@ Deno.serve(async (req) => {
     console.error('kachingBotManager error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}

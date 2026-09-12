@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { getRequestUser } from '../../shared/requestAuth.ts';
 
 const KASPA_API = 'https://api.kaspa.org';
 
@@ -58,12 +59,15 @@ async function verifyTxOnChain(txHash, escrowAddress) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await getRequestUser(base44);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { game_id, side, tx_hash_in, bot_email, bot_wallet, pacman_amount, tx_hash_pacman_in } = await req.json();
 
-    // Support bot bets with explicit email/wallet override
+    // Bot identity and payout overrides are privileged because they change who receives winnings.
+    if ((bot_email || bot_wallet) && user.role !== 'admin') {
+      return Response.json({ error: 'Bot bet overrides are admin only' }, { status: 403 });
+    }
     const betEmail = bot_email || user.email || '';
     const betWalletOverride = bot_wallet || null;
 

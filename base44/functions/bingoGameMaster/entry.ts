@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { getRequestUser } from '../../shared/requestAuth.ts';
 
 /**
  * PROVABLY FAIR BINGO NUMBER GENERATOR
@@ -59,10 +60,12 @@ async function hashPool(pool) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-Deno.serve(async (req) => {
+export default async function(req) {
     const base44 = createClientFromRequest(req);
     
     try {
+        const user = await getRequestUser(base44);
+        if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
         const body = await req.json();
         const { game_code, action } = body;
 
@@ -96,6 +99,16 @@ Deno.serve(async (req) => {
 
         const game = games[0];
         console.log(`✅ [GameMaster] Found game:`, game.game_id);
+
+        const isAdmin = user.role === 'admin';
+        const isCreator = user.email === game.created_by_admin || user.id === game.created_by_id;
+        const isPlayer = (game.players || []).some((player) => player.email === user.email);
+        if (action === 'start' && !isAdmin && !isCreator) {
+            return Response.json({ error: 'Only the game host can start this game' }, { status: 403 });
+        }
+        if (action === 'tick' && !isAdmin && !isCreator && !isPlayer) {
+            return Response.json({ error: 'Only game participants can advance this game' }, { status: 403 });
+        }
 
         let gameMaster = game.game_master || {};
 
@@ -277,4 +290,4 @@ Deno.serve(async (req) => {
             timestamp: new Date().toISOString()
         }, { status: 500 });
     }
-});
+}

@@ -1,21 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { getAdminUser } from '../../shared/requestAuth.ts';
 
 // Sends KAS from the PACMAN reward wallet to a recipient
 // The bot calls this after settlement to distribute bonus rewards
 // KRC-20 token transfers require a different mechanism (inscriptions),
 // so this handles KAS gas/bonus payouts from the reward wallet
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const body = await req.json().catch(() => ({}));
-    const isAutomation = !!body.automation;
-
-    if (!isAutomation) {
-      const user = await base44.auth.me();
-      if (!user || user.role !== 'admin') {
-        return Response.json({ error: 'Admin only' }, { status: 403 });
-      }
+    const user = await getAdminUser(base44);
+    if (!user) {
+      return Response.json({ error: 'Admin only' }, { status: 403 });
     }
+    const body = await req.json().catch(() => ({}));
 
     const { recipient_address, amount_kas } = body;
     if (!recipient_address || !amount_kas || amount_kas <= 0) {
@@ -67,4 +64,4 @@ Deno.serve(async (req) => {
     console.error('sendPacmanReward error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}

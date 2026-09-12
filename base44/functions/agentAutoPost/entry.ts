@@ -1,8 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAdminUser } from '../../shared/requestAuth.ts';
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await getAdminUser(base44);
+    if (!user) {
+      return Response.json({ error: 'Admin only' }, { status: 403 });
+    }
     
     // Get all active agents (using service role)
     const agents = await base44.asServiceRole.entities.AgentConfig.filter({ is_active: true });
@@ -273,4 +278,4 @@ ${agent.voice_tone} tone, ${style}, under 280 chars.`
       error: error.message 
     }, { status: 500 });
   }
-});
+}

@@ -1,20 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { getAdminUser } from '../../shared/requestAuth.ts';
 
 // Judge + Settlement: determines winner, calculates payouts, sends KAS + PACMAN
 // PACMAN is peer-to-peer: losers' PACMAN goes to winners proportionally
 // If one-sided (no losers), admin can optionally send bonus PACMAN from reward wallet
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const body = await req.json().catch(() => ({}));
-    const isAutomation = !!body.automation;
-    
-    if (!isAutomation) {
-      const user = await base44.auth.me();
-      if (!user || user.role !== 'admin') {
-        return Response.json({ error: 'Admin only' }, { status: 403 });
-      }
+    const user = await getAdminUser(base44);
+    if (!user) {
+      return Response.json({ error: 'Admin only' }, { status: 403 });
     }
+    const body = await req.json().catch(() => ({}));
 
     const { game_id, force_result } = body;
 
@@ -351,7 +348,7 @@ Deno.serve(async (req) => {
     console.error('kachingSettleGame error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}
 
 // Normalize address to always have kaspa: prefix
 function normalizeAddress(addr) {

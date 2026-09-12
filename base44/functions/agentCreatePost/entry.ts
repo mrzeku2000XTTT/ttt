@@ -1,8 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAdminUser } from '../../shared/requestAuth.ts';
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await getAdminUser(base44);
+    if (!user) {
+      return Response.json({ error: 'Admin only' }, { status: 403 });
+    }
     const body = await req.json();
     const { agent_name, generate_image = false } = body;
     
@@ -100,4 +105,4 @@ ${sourceUrl ? `- Reference this source: ${sourceUrl}` : ''}`;
       error: error.message 
     }, { status: 500 });
   }
-});
+}
