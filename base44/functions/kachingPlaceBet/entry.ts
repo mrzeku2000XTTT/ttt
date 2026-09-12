@@ -56,7 +56,7 @@ async function verifyTxOnChain(txHash, escrowAddress) {
 
 // User places a bet by providing a real Kaspa TX hash
 // The system verifies the TX on-chain to extract: sender wallet, amount, escrow match
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await getRequestUser(base44);
@@ -187,4 +187,4 @@ Deno.serve(async (req) => {
     console.error('kachingPlaceBet error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}
