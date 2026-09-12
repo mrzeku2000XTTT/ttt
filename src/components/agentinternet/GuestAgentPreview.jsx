@@ -4,8 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Sparkles, Copy, Check, Rocket, Loader2, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useKcc20Wallet, connectKcc20, shortKaspaAddress } from "@/lib/useKcc20Wallet";
-import { signMessageKcc20 } from "@/lib/kcc20Pwa";
-import { LIVE_PAGES } from "@/components/agentinternet/livePages";
+import { signMessageKcc20, isKcc20Detected } from "@/lib/kcc20Pwa";
+import { visibleLivePages } from "@/components/agentinternet/livePages";
+
+// Only pages a guest can actually open — admin-gated apps are excluded so
+// search never routes a guest into an AdminRoute wall.
+const GUEST_PAGES = visibleLivePages(false);
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 
 /**
@@ -67,10 +71,10 @@ export default function GuestAgentPreview({ open, command, onClose }) {
       const names = Array.isArray(res?.matches) ? res.matches : [];
       const relNames = Array.isArray(res?.related) ? res.related : [];
       const found = names
-        .map((n) => LIVE_PAGES.find((a) => a.name.toLowerCase() === n.toLowerCase()))
+        .map((n) => GUEST_PAGES.find((a) => a.name.toLowerCase() === n.toLowerCase()))
         .filter(Boolean);
       const rel = relNames
-        .map((n) => LIVE_PAGES.find((a) => a.name.toLowerCase() === n.toLowerCase()))
+        .map((n) => GUEST_PAGES.find((a) => a.name.toLowerCase() === n.toLowerCase()))
         .filter(Boolean)
         .filter((a) => !found.some((m) => m.name === a.name));
       const novel = !!res?.is_novel;
@@ -96,13 +100,20 @@ export default function GuestAgentPreview({ open, command, onClose }) {
     onClose?.();
   };
 
-  // Guest launch is wallet-bound: connect Scorpion, let the user sign the
-  // intent in the wallet, then route into the app with the intent attached.
+  // Guest launch: when a Scorpion wallet is present, connect and let the user
+  // sign the intent so the app opens with an authorized launch. When no wallet
+  // is detected (plain browser / preview), launch directly — guests are never
+  // blocked, signing is simply skipped.
   const goToApp = async (app) => {
     if (signedIntent) return launch(app);
     setWalletBusy(true);
     setWalletMsg("");
     try {
+      if (!isKcc20Detected()) {
+        setWalletMsg("no scorpion detected · launching as guest…");
+        launch(app);
+        return;
+      }
       let address = wallet.address;
       if (!address) {
         setWalletMsg("connect your scorpion wallet…");
@@ -118,7 +129,9 @@ export default function GuestAgentPreview({ open, command, onClose }) {
       setWalletMsg(signature ? "intent signed ✓ launching…" : "intent authorized by scorpion ✓ launching…");
       launch(app);
     } catch (e) {
-      setWalletMsg(e?.message || "scorpion sign cancelled — try again");
+      // Wallet cancelled / unreachable — never strand the guest; launch anyway.
+      setWalletMsg("scorpion unavailable · launching as guest…");
+      launch(app);
     } finally {
       setWalletBusy(false);
     }
@@ -203,12 +216,14 @@ export default function GuestAgentPreview({ open, command, onClose }) {
                             ? `${signedIntent.signature ? "intent signed" : "intent authorized"} · ${shortKaspaAddress(signedIntent.address)}`
                             : wallet.address
                               ? `scorpion connected · ${shortKaspaAddress(wallet.address)}`
-                              : "scorpion sign required to launch"}
+                              : isKcc20Detected()
+                                ? "scorpion sign required to launch"
+                                : "guest launch · scorpion optional"}
                           {walletBusy && <Loader2 className="w-3 h-3 animate-spin ml-auto text-cyan-300" />}
                         </div>
                         {walletMsg && <div className={`text-[10px] font-mono ${signedIntent ? "text-emerald-400" : "text-cyan-200/80"}`}>{walletMsg}</div>}
                         {!wallet.address && !walletBusy && !signedIntent && (
-                          <div className="text-[10px] text-white/40">tap an app to connect scorpion, sign your intent, and launch.</div>
+                          <div className="text-[10px] text-white/40">tap an app to launch — scorpion signs your intent when connected.</div>
                         )}
                       </div>
                       <div className="text-[9px] font-mono uppercase tracking-widest text-white/50">tap to open</div>
