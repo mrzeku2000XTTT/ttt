@@ -1,14 +1,15 @@
 import React from 'react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import CamNode from './CamNode';
 import CamNodeToolbar from './CamNodeToolbar';
 import useCamNodes from './useCamNodes';
 
-export default function CamNodeGraph({ image, moveLabel, intensity, duration }) {
+export default function CamNodeGraph({ image, moveLabel, intensity, duration, isMax, onMax }) {
   const graph = useCamNodes();
   const detail = (type) => ({ MediaIn: image ? 'Source ready' : 'No source', Transform: `${Math.round(intensity * 100)}% · ${duration}s`, Camera3D: moveLabel, Renderer3D: 'Perspective render', MediaOut: 'CAM output' }[type]);
   return (
     <section id="cam-nodes" className="cm-node-panel">
-      <div className="cm-panel-heading"><strong>Nodes</strong><span>{graph.nodes.length} tools · {graph.edges.length} links</span></div>
+      <div className="cm-panel-heading"><strong>Nodes</strong><span className="cm-panel-tools"><span>{graph.nodes.length} tools · {graph.edges.length} links</span><button onClick={onMax} title={isMax ? 'Restore workspace' : 'Fullscreen nodes'}>{isMax ? <Minimize2 /> : <Maximize2 />}</button></span></div>
       <CamNodeToolbar onAdd={graph.addNode} onDelete={graph.deleteSelected} onConnect={() => graph.selected && graph.beginConnection(graph.selected)} connecting={graph.connecting} />
       <div className="cm-node-scroll">
         <div className="cm-node-canvas" onClick={() => graph.setSelected(null)}>

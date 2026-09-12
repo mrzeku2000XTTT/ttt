@@ -28,6 +28,8 @@ export default function CAMStudio({ address, onHome }) {
   const [playing, setPlaying] = useState(false);
   const [mode, setMode] = useState('move'); // 'move' | 'seq'
   const [viewZoom, setViewZoom] = useState(0.85); // framing zoom — zoomed out a touch by default
+  const [splitPct, setSplitPct] = useState(50); // viewer split — 2D vs 3D pane sizes
+  const [maxPane, setMaxPane] = useState(null); // 'media' | 'camera' | 'nodes' | null
   const [seqIdx, setSeqIdx] = useState(0);
   const [shots, setShots] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`cam_shots_${address}`)) || []; } catch { return []; }
@@ -161,7 +163,12 @@ export default function CAMStudio({ address, onHome }) {
   };
 
   // Fusion mode — explode the uploaded image into individual 3D layers
-  const toggleFusion = () => { if (!fusionOn) setPlaying(false); setFusionOn(!fusionOn); };
+  const toggleFusion = () => { setMaxPane(null); if (!fusionOn) setPlaying(false); setFusionOn(!fusionOn); };
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') setMaxPane(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const decompose = async () => {
     const file = fusionFileRef.current;
     if (!file || fusionBusy) return;
@@ -212,16 +219,16 @@ export default function CAMStudio({ address, onHome }) {
   }
 
   return (
-    <div className="cm-page cm-fusion-shell">
+    <div className={`cm-page cm-fusion-shell ${maxPane === 'nodes' ? 'is-max-nodes' : ''}`}>
       <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} />
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} />
+          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} />
           <CamTransport playing={playing} canPlay={!!img} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
-            <CamNodeGraph image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} />
+            <CamNodeGraph image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
           </div>
         </main>
         <CamInspector moveId={moveId} setMoveId={setMoveId} setMode={setMode} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} />
