@@ -19,6 +19,20 @@ export default function useCamTimelineEdits(setProject, snapshot, time) {
       return cut ? { ...part, takeId: cut.id } : part;
     })) })) };
   });
+  const splitSelected = (id) => setProject((p) => {
+    const scene = p.cuts.find((c) => c.id === id);
+    if (!scene) return { ...p, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.flatMap((c) => c.id === id ? splitClip(c, time) : [c]) })) };
+    const scenes = splitClip(scene, time); if (scenes.length === 1) return p;
+    return { cuts: p.cuts.flatMap((c) => c.id === id ? scenes : [c]), tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.flatMap((c) => c.takeId !== id ? [c] : splitClip(c, time).map((part) => ({ ...part, takeId: scenes.find((s) => part.start >= s.start && part.start < s.start + s.duration)?.id || id }))) })) };
+  });
+  const duplicate = (id) => setProject((p) => {
+    const scene = p.cuts.find((c) => c.id === id);
+    if (scene) {
+      const insert = scene.start + scene.duration, newId = uid(), clone = { ...scene, id: newId, start: insert, keys: scene.keys.map((k) => ({ ...k })) };
+      return { cuts: [...p.cuts.map((c) => c.id !== id && c.start >= insert ? { ...c, start: c.start + scene.duration } : c), clone], tracks: p.tracks.map((t) => ({ ...t, clips: [...t.clips.map((c) => c.takeId !== id && c.start >= insert ? { ...c, start: c.start + scene.duration } : c), ...t.clips.filter((c) => c.takeId === id).map((c) => ({ ...c, id: uid(), takeId: newId, start: c.start + scene.duration, keys: c.keys.map((k) => ({ ...k })) }))] })) };
+    }
+    return { ...p, tracks: p.tracks.map((t) => ({ ...t, clips: t.clips.flatMap((c) => c.id === id ? [c, { ...c, id: uid(), takeId: undefined, start: c.start + c.duration, keys: c.keys.map((k) => ({ ...k })) }] : [c]) })) };
+  });
   const hide = (id) => setProject((p) => ({ ...p, tracks: p.tracks.map((t) => t.id === id ? { ...t, hidden: !t.hidden } : t) }));
   const applyAnimation = (assetId, animationId, intensity = 1, selectedId) => setProject((p) => ({ ...p, tracks: p.tracks.map((track) => {
     if (track.assetId !== assetId) return track;
@@ -27,5 +41,5 @@ export default function useCamTimelineEdits(setProject, snapshot, time) {
     if (!chosen && asset) return { ...track, clips: [...track.clips, { id: uid(), start: time, duration: snapshot.duration, animationId, animationIntensity: intensity, keys: [{ t: 0, x: asset.x, y: asset.y, z: asset.z, scale: asset.scale, aspect: asset.aspect }] }] };
     return { ...track, clips: track.clips.map((c) => c.id === chosen?.id ? { ...c, animationId, animationIntensity: intensity } : c) };
   }) }));
-  return { add, addClip, update, remove, split, hide, applyAnimation };
+  return { add, addClip, update, remove, split, splitSelected, duplicate, hide, applyAnimation };
 }
