@@ -151,6 +151,7 @@ export async function connectKcc20() {
     if (!addr) throw new Error("KCC20 Wallet did not return an address");
     setAddress(addr);
     try { const state = await w.getState?.(); applyState(state); } catch {}
+    return { address: String(addr).replace(/^kaspa:/, "") };
   } catch (e) {
     _error = e?.message || "Connection rejected";
     emit();

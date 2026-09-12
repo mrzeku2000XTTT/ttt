@@ -95,6 +95,19 @@ export async function signWithKcc20(txJsonString, signInputs = []) {
   throw new Error("KCC20 Wallet does not support signPskt");
 }
 
+// Sign a plain-text intent message with the connected wallet (optional —
+// wallet builds may not expose signMessage; callers fall back to the
+// connect approval as the user's authorization).
+export async function signMessageKcc20(message) {
+  const p = kcc20Provider() || (await loadKcc20Sdk());
+  if (typeof p.signMessage === "function") return p.signMessage({ message });
+  if (typeof p.request === "function") {
+    const r = await p.request("signMessage", { message });
+    return r?.signature ?? r ?? null;
+  }
+  return null;
+}
+
 // ── KCC20 token APIs (BUILD 141+) ──
 // The parent wallet signs and broadcasts; TTT never sees keys.
 

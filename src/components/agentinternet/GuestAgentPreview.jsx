@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight, Sparkles, Copy, Check, Rocket } from "lucide-react";
+import { X, ArrowRight, Sparkles, Copy, Check, Rocket, Loader2, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useKcc20Wallet, connectKcc20, shortKaspaAddress } from "@/lib/useKcc20Wallet";
+import { signMessageKcc20 } from "@/lib/kcc20Pwa";
 import { LIVE_PAGES } from "@/components/agentinternet/livePages";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
 
@@ -21,6 +23,10 @@ export default function GuestAgentPreview({ open, command, onClose }) {
   const [buildPrompt, setBuildPrompt] = useState("");
   const [copied, setCopied] = useState(false);
   const [phase, setPhase] = useState("building"); // building | ready
+  const wallet = useKcc20Wallet();
+  const [signedIntent, setSignedIntent] = useState(null);
+  const [walletMsg, setWalletMsg] = useState("");
+  const [walletBusy, setWalletBusy] = useState(false);
 
   useEffect(() => {
     if (!open || !command) return;
@@ -83,10 +89,39 @@ export default function GuestAgentPreview({ open, command, onClose }) {
     }
   };
 
-  const goToApp = (app) => {
-    if (app.externalUrl) window.open(app.externalUrl, "_blank");
-    else if (app.path) navigate(`/${app.path}`);
+  const launch = (app) => {
+    const q = `?intent=${encodeURIComponent(command.slice(0, 300))}`;
+    if (app.externalUrl) window.open(app.externalUrl + q, "_blank");
+    else if (app.path) navigate(`/${app.path}${q}`);
     onClose?.();
+  };
+
+  // Guest launch is wallet-bound: connect Scorpion, let the user sign the
+  // intent in the wallet, then route into the app with the intent attached.
+  const goToApp = async (app) => {
+    if (signedIntent) return launch(app);
+    setWalletBusy(true);
+    setWalletMsg("");
+    try {
+      let address = wallet.address;
+      if (!address) {
+        setWalletMsg("connect your scorpion wallet…");
+        address = (await connectKcc20()).address;
+      }
+      const message = `TTT Agent Internet · Signed Intent\nApp: ${app.name}\nRequest: ${command}\nWallet: ${address}\nTime: ${new Date().toISOString()}`;
+      setWalletMsg("sign your intent in scorpion…");
+      let signature = null;
+      try { const s = await signMessageKcc20(message); signature = s?.signature ?? s ?? null; } catch {}
+      const intent = { address, app: app.name, command, signedAt: new Date().toISOString(), signature, authorized: true };
+      try { sessionStorage.setItem("ttt_signed_intent", JSON.stringify(intent)); } catch {}
+      setSignedIntent(intent);
+      setWalletMsg(signature ? "intent signed ✓ launching…" : "intent authorized by scorpion ✓ launching…");
+      launch(app);
+    } catch (e) {
+      setWalletMsg(e?.message || "scorpion sign cancelled — try again");
+    } finally {
+      setWalletBusy(false);
+    }
   };
 
   const handleCopy = async () => {
@@ -160,12 +195,29 @@ export default function GuestAgentPreview({ open, command, onClose }) {
                 >
                   {matches.length > 0 && (
                     <>
+                      {/* Scorpion wallet — connect & sign before launch */}
+                      <div className="mb-3 px-3 py-2.5 rounded-xl border border-cyan-400/20 bg-cyan-500/[0.05] space-y-1">
+                        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-white/60">
+                          <Wallet className="w-3.5 h-3.5 text-cyan-300" />
+                          {signedIntent
+                            ? `${signedIntent.signature ? "intent signed" : "intent authorized"} · ${shortKaspaAddress(signedIntent.address)}`
+                            : wallet.address
+                              ? `scorpion connected · ${shortKaspaAddress(wallet.address)}`
+                              : "scorpion sign required to launch"}
+                          {walletBusy && <Loader2 className="w-3 h-3 animate-spin ml-auto text-cyan-300" />}
+                        </div>
+                        {walletMsg && <div className={`text-[10px] font-mono ${signedIntent ? "text-emerald-400" : "text-cyan-200/80"}`}>{walletMsg}</div>}
+                        {!wallet.address && !walletBusy && !signedIntent && (
+                          <div className="text-[10px] text-white/40">tap an app to connect scorpion, sign your intent, and launch.</div>
+                        )}
+                      </div>
                       <div className="text-[9px] font-mono uppercase tracking-widest text-white/50">tap to open</div>
                       {matches.map((app) => (
                         <button
                           key={app.name}
                           onClick={() => goToApp(app)}
-                          className="w-full flex items-center gap-3 p-3 rounded-2xl border border-white/10 bg-white/[0.03] hover:border-cyan-400/40 hover:bg-cyan-500/5 transition-colors text-left"
+                          disabled={walletBusy}
+                          className="w-full flex items-center gap-3 p-3 rounded-2xl border border-white/10 bg-white/[0.03] hover:border-cyan-400/40 hover:bg-cyan-500/5 transition-colors text-left disabled:opacity-50"
                         >
                           <img src={app.logo} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
                           <div className="min-w-0 flex-1">
