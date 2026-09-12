@@ -170,6 +170,14 @@ export default function CAMStudio({ address, onHome }) {
   };
   const onOffset = (axis, value) => setManualOffset((o) => ({ ...o, [axis]: value }));
   const onSelectAsset = (id) => setRefId(id);
+  const onMoveAsset = (id, axis, value) => {
+    if (id === 'primary') {
+      const units = { x: 2.4, y: 1.6, z: 2.2 };
+      setManualOffset((o) => ({ ...o, [axis]: value / units[axis] }));
+    } else {
+      setMedia((items) => items.map((m) => m.id === id ? { ...m, pos: { ...m.pos, [axis]: value } } : m));
+    }
+  };
 
   // Per-asset axis tool — the Inspector XYZ sliders edit whichever asset is
   // currently selected. The background ('primary') uses the normalized offset
@@ -334,7 +342,7 @@ export default function CAMStudio({ address, onHome }) {
       <input ref={mediaInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => Array.from(e.target.files || []).forEach(addMedia)} />
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} />
+          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} />
           <CamTransport playing={playing} canPlay={!!img} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />

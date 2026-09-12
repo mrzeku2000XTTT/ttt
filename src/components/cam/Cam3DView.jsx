@@ -6,6 +6,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Grid, Html, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
 import { moveAt } from './camMoves';
+import CamAssetAxes from '@/components/cam/CamAssetAxes';
 
 // Rig dimensions — the image plane the virtual camera films.
 const PLANE_W = 3.4;
@@ -41,7 +42,10 @@ function MediaPlane({ item, selected, onSelect }) {
   );
 }
 
-function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFrame }) {
+function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFrame, onMoveAsset }) {
+  const dragging = useRef(false);
+  const selected = media?.find((m) => m.id === refId && m.id !== 'primary');
+  const assetPosition = selected?.pos || { x: (manualOffset?.x || 0) * 2.4, y: (manualOffset?.y || 0) * 1.6, z: (manualOffset?.z || 0) * 2.2 };
   const bodyRef = useRef();
   const rigRef = useRef();       // auto-orbit spins this group
   const planeGroupRef = useRef(); // background plane — follows the XYZ drag
@@ -113,7 +117,7 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
     });
 
     // auto-orbit spins the whole rig world
-    if (camRig?.autoOrbit && rigRef.current) rigRef.current.rotation.y += dt * 0.25;
+    if (camRig?.autoOrbit && rigRef.current && !dragging.current) rigRef.current.rotation.y += dt * 0.25;
 
     // the background image asset follows the XYZ drag
     if (planeGroupRef.current) {
@@ -156,13 +160,8 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
       <Html position={[-PLANE_W / 2 - 0.36, 0, 0]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label">Height</span></Html>
       <Html position={[PLANE_W / 2 + 0.42, -PLANE_H / 2, BASE_DIST / 2]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label">Depth</span></Html>
 
-      {/* labeled XYZ tripod */}
-      <group position={[-PLANE_W / 2 - 0.42, 0, 0]}>
-        <axesHelper args={[0.55]} />
-        <Html position={[0.62, 0, 0]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label" style={{ color: '#ff5f56' }}>X</span></Html>
-        <Html position={[0, 0.62, 0]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label" style={{ color: '#8dff6a' }}>Y</span></Html>
-        <Html position={[0, 0, 0.62]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label" style={{ color: '#4d9fff' }}>Z</span></Html>
-      </group>
+      {/* Axis handles follow and translate the selected asset in rig space. */}
+      <CamAssetAxes key={selected?.id || 'primary'} id={selected?.id || 'primary'} position={assetPosition} scale={selected?.scale || 1} onSelect={onSelectAsset} onMove={onMoveAsset} dragging={dragging} />
 
       {/* projection lines + frustum */}
       {cornerLines.map((l, i) => <primitive key={i} object={l} />)}
@@ -186,13 +185,13 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
 }
 
 // After Effects-style 3D rig view — same virtual camera, seen from the outside.
-export default function Cam3DView({ image, media, manualOffset, camRig, onSelectAsset, refId, onOffset, getFrame, label }) {
+export default function Cam3DView({ image, media, manualOffset, camRig, onSelectAsset, refId, onOffset, onMoveAsset, getFrame, label }) {
   return (
     <div className="relative h-full w-full">
       <Canvas camera={{ position: [2.7, 1.4, 4.9], fov: 42 }} dpr={[1, 2]}>
         <color attach="background" args={['#0c0e0d']} />
         <fog attach="fog" args={['#0c0e0d', 14, 32]} />
-        <Rig image={image} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} getFrame={getFrame} />
+        <Rig image={image} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} getFrame={getFrame} onMoveAsset={onMoveAsset} />
         <OrbitControls makeDefault target={[0, 0, 0]} minDistance={2.2} maxDistance={14} />
         <GizmoHelper alignment="bottom-right" margin={[70, 70]}>
           <GizmoViewport axisColors={['#ff5f56', '#8dff6a', '#4d9fff']} labelColor="#0c0e0d" />
@@ -208,7 +207,7 @@ export default function Cam3DView({ image, media, manualOffset, camRig, onSelect
         <div className="cm3d-hud bottom-4 left-4 text-[10px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">{label}</div>
       )}
       <div className="cm3d-hud top-4 right-4 text-[9px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">Click an asset to reference it</div>
-      <div className="cm3d-hud bottom-4 right-4 text-[9px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">Drag to orbit · scroll to dolly</div>
+      <div className="cm3d-hud bottom-4 right-4 text-[9px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">Drag colored axes to move asset · drag empty space to orbit</div>
       <div className="cm3d-ring" />
       <div className="cm3d-corner left-2 top-2 border-b-0 border-r-0" />
       <div className="cm3d-corner right-2 top-2 border-b-0 border-l-0" />

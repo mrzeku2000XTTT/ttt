@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import Cam3DView from './Cam3DView';
 
-export default function CamViewerDeck({ canvasRef, image, getFrame, label, onUpload, onFile, split, onSplit, max, onMax, media, manualOffset, camRig, onSelectAsset, refId, onOffset }) {
+export default function CamViewerDeck({ canvasRef, image, getFrame, label, onUpload, onFile, split, onSplit, max, onMax, media, manualOffset, camRig, onSelectAsset, refId, onOffset, onMoveAsset }) {
   const deck = useRef(null);
   const dragging = useRef(false);
   const startDrag = (e) => { dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); };
@@ -32,7 +32,7 @@ export default function CamViewerDeck({ canvasRef, image, getFrame, label, onUpl
           <span>Camera3D1</span>
           <span className="cm-panel-tools"><span>Perspective</span>{maxBtn('camera')}</span>
         </div>
-        <div className="cm-viewer-body"><Cam3DView image={image} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} getFrame={getFrame} label={label} /></div>
+        <div className="cm-viewer-body"><Cam3DView image={image} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} getFrame={getFrame} label={label} /></div>
       </section>
     </div>
   );
