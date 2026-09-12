@@ -1,6 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { moveById, drawInto } from './camMoves';
+import { base44 } from '@/api/base44Client';
+import CamFusionScene from './CamFusionScene';
+import CamFusionPanel from './CamFusionPanel';
+import { extractLayers } from './fusionExtract';
 import CamTopBar from './CamTopBar';
 import CamViewerDeck from './CamViewerDeck';
 import CamTransport from './CamTransport';
@@ -10,6 +14,7 @@ import CamNodeGraph from './CamNodeGraph';
 
 const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/154c8ae70_generated_image.png';
 const CW = 1280, CH = 720;
+const FUSION_W = 4.8;
 
 export default function CAMStudio({ address, onHome }) {
   const navigate = useNavigate();
@@ -27,6 +32,16 @@ export default function CAMStudio({ address, onHome }) {
   const [shots, setShots] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`cam_shots_${address}`)) || []; } catch { return []; }
   });
+  const [fusionOn, setFusionOn] = useState(false);
+  const [fusionBusy, setFusionBusy] = useState(false);
+  const [fusionElapsed, setFusionElapsed] = useState(0);
+  const [fusionError, setFusionError] = useState('');
+  const [fusionSel, setFusionSel] = useState(null);
+  const [fusionLayers, setFusionLayers] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`cam_fusion_${address}`)) || []; } catch { return []; }
+  });
+  const fusionFileRef = useRef(null);
+  const [imgSize, setImgSize] = useState({ w: 1280, h: 720 });
 
   // refs mirrored for the animation loop
   const playingRef = useRef(false); playingRef.current = playing;
@@ -49,6 +64,9 @@ export default function CAMStudio({ address, onHome }) {
   useEffect(() => {
     try { localStorage.setItem(`cam_shots_${address}`, JSON.stringify(shots)); } catch {}
   }, [shots, address]);
+  useEffect(() => {
+    try { localStorage.setItem(`cam_fusion_${address}`, JSON.stringify(fusionLayers)); } catch {}
+  }, [fusionLayers, address]);
 
   const drawStill = useCallback(() => {
     const canvas = canvasRef.current;
@@ -89,10 +107,12 @@ export default function CAMStudio({ address, onHome }) {
 
   const handleFile = (file) => {
     if (!file) return;
+    fusionFileRef.current = file;
+    setFusionLayers([]); setFusionSel(null);
     const reader = new FileReader();
     reader.onload = (ev) => {
       const ni = new Image();
-      ni.onload = () => { setImg(ni); pRef.current = 0; };
+      ni.onload = () => { setImg(ni); setImgSize({ w: ni.naturalWidth, h: ni.naturalHeight }); pRef.current = 0; };
       ni.src = ev.target.result;
     };
     reader.readAsDataURL(file);
@@ -140,11 +160,60 @@ export default function CAMStudio({ address, onHome }) {
     a.click();
   };
 
+  // Fusion mode — explode the uploaded image into individual 3D layers
+  const toggleFusion = () => { if (!fusionOn) setPlaying(false); setFusionOn(!fusionOn); };
+  const decompose = async () => {
+    const file = fusionFileRef.current;
+    if (!file || fusionBusy) return;
+    setFusionError(''); setFusionBusy(true); setFusionElapsed(0);
+    const tick = setInterval(() => setFusionElapsed((s) => s + 1), 1000);
+    try {
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 86400 });
+      const res = await base44.functions.invoke('metaMimicClone', { imageUrl: signed_url, cloneMode: true, imageWidth: imgSize.w, imageHeight: imgSize.h });
+      const html = res?.data?.html;
+      if (!html) throw new Error(res?.data?.error || 'Could not decompose this image.');
+      const raw = await extractLayers(html, imgSize.w, imgSize.h);
+      const scale = FUSION_W / imgSize.w;
+      const layers = raw.map((l, i) => {
+        const pos = { x: (l.x + l.w / 2 - imgSize.w / 2) * scale, y: -(l.y + l.h / 2 - imgSize.h / 2) * scale, z: 0.014 * i };
+        return { ...l, id: `f${i}`, scale, pos, base: pos };
+      });
+      setFusionLayers(layers); setFusionSel(null);
+    } catch (err) {
+      setFusionError(err?.message || 'Decomposition failed. Please try again.');
+    }
+    clearInterval(tick); setFusionBusy(false);
+  };
+  const commitFusionPos = (id, pos) => setFusionLayers((items) => items.map((l) => (l.id === id ? { ...l, pos } : l)));
+  const setFusionPos = (id, axis, value) => setFusionLayers((items) => items.map((l) => (l.id === id ? { ...l, pos: { ...l.pos, [axis]: value } } : l)));
+  const resetFusionPos = (id) => setFusionLayers((items) => items.map((l) => (l.id === id ? { ...l, pos: { ...l.base } } : l)));
+
   const currentMove = moveById(mode === 'seq' && shots.length ? shots[seqIdx % shots.length]?.move || moveId : moveId);
+
+  if (fusionOn) {
+    return (
+      <div className="cm-page cm-fusion-shell">
+        <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} />
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
+        <div className="cm-fusion-work">
+          <main className="cm-fusion-center">
+            <section className="cm-viewer" style={{ flex: 1 }}>
+              <div className="cm-viewer-title"><span>Fusion1</span><span>3D Composite</span></div>
+              <div className="cm-viewer-body">
+                <CamFusionScene image={img} layers={fusionLayers} selectedId={fusionSel} onSelect={setFusionSel} onCommit={commitFusionPos} />
+              </div>
+            </section>
+          </main>
+          <CamFusionPanel hasImage={!!img} busy={fusionBusy} elapsed={fusionElapsed} error={fusionError} layers={fusionLayers} selectedId={fusionSel} onSelect={setFusionSel} onDecompose={decompose} onPos={setFusionPos} onReset={resetFusionPos} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="cm-page cm-fusion-shell">
-      <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} />
+      <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} />
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
