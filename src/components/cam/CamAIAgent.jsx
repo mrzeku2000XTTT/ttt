@@ -48,7 +48,15 @@ TOOLS you can call (emit them in "actions", they run in order):
 - decompose: explode the loaded image into individual 3D asset layers
 - move_layer: move a Fusion layer in 3D (layer = index, or -1 for the currently selected layer; axis x/y/z; value = world units, small ranges like -3 to 3)
 - set_image: load the user's attached image as the studio media source
+- add_media: drop the user's attached image into the 3D rig world as a new movable asset plane
+- move_media: reposition a media asset in the 3D world (asset_id = "primary" or a media id; axis x/y/z; value = world units, small ranges like -3 to 3)
+- select_ref: mark a clicked asset as the reference subject (asset_id)
+- set_offset: drag the background plane (axis x/y/z; value -1 to 1)
+- set_fov / set_distance / set_roll: camera rig controls (value)
+- auto_orbit: toggle rig auto-orbit (value = true/false)
 - add_nodes: build node chains in the graph (nodes = ordered list of MediaIn / Transform / Camera3D / Renderer3D / MediaOut; attach_to = an existing node type to link the chain into the graph)
+
+ASSETS: the studio can hold several image media at once. The user can click any asset in the 3D rig to reference it — when STUDIO STATE shows ref=<name>, the user has selected that asset as the subject; tailor the brief to it. If the user attaches an image and says "add this to the rig", call add_media.
 
 PROMPTO PASS — for EVERY request you also write director_prompt: a long, precise, 90-150 word cinematography brief that names the exact moves, speed ramps, easing, framing, focus feel, composition and emotional intent, written so any camera operator could execute it shot-for-shot. Never write a generic description — encode the concrete camera language you selected in the actions.
 
@@ -62,13 +70,14 @@ const SCHEMA = {
     reply: { type: 'string' },
     director_prompt: { type: 'string' },
     actions: { type: 'array', items: { type: 'object', properties: {
-      tool: { type: 'string', enum: ['set_move', 'set_intensity', 'set_duration', 'add_shot', 'play', 'pause', 'play_sequence', 'open_rig', 'open_nodes', 'restore_view', 'fusion_on', 'fusion_off', 'decompose', 'move_layer', 'set_image', 'add_nodes'] },
+      tool: { type: 'string', enum: ['set_move', 'set_intensity', 'set_duration', 'add_shot', 'play', 'pause', 'play_sequence', 'open_rig', 'open_nodes', 'restore_view', 'fusion_on', 'fusion_off', 'decompose', 'move_layer', 'set_image', 'add_media', 'move_media', 'select_ref', 'set_offset', 'set_fov', 'set_distance', 'set_roll', 'auto_orbit', 'add_nodes'] },
       move: { type: 'string', enum: ['pan', 'tilt', 'roll', 'dolly', 'zoom', 'dollyzoom', 'truck', 'pedestal', 'orbit', 'crane'] },
       value: { type: 'number' },
       intensity: { type: 'number' },
       duration: { type: 'number' },
       axis: { type: 'string', enum: ['x', 'y', 'z'] },
       layer: { type: 'number' },
+      asset_id: { type: 'string' },
       nodes: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['MediaIn', 'Transform', 'Camera3D', 'Renderer3D', 'MediaOut'] }, attach_to: { type: 'string' } }, required: ['type'] } },
     } } },
   },
@@ -78,8 +87,9 @@ const SCHEMA = {
 // CAM AI Agent floater — full studio copilot with real camera-move detection,
 // a Prompto-style director brief on every request, pasted-image vision, and
 // per-user chat history that survives refresh.
-export default function CamAIAgent({ address, context, onAction, onGraph }) {
+export default function CamAIAgent({ address, context, onAction, onGraph, media, refId, onClearRef }) {
   const [open, setOpen] = useState(true);
+  const refItem = refId ? (refId === 'primary' ? media?.[0] : media?.find((m) => m.id === refId)) : null;
   const [prompt, setPrompt] = useState('');
   const [busy, setBusy] = useState(false);
   const [attach, setAttach] = useState(null); // { file, url }
@@ -111,15 +121,27 @@ export default function CamAIAgent({ address, context, onAction, onGraph }) {
     setMessages((m) => [...m, { r: 'u', t: msg, img: !!attach }]);
     setPrompt(''); setAttach(null); setBusy(true);
     try {
-      let fileUrls;
+      const fileUrls = [];
       if (file) {
         const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
         const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
-        fileUrls = signed_url;
+        fileUrls.push(signed_url);
+      }
+      // the asset the user clicked to reference — upload it so the model can see it
+      const ref = refId ? (refId === 'primary' ? media?.[0] : media?.find((m) => m.id === refId)) : null;
+      let refLine = '';
+      if (ref) {
+        try {
+          const blob = await (await fetch(ref.url)).blob();
+          const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: blob });
+          const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
+          fileUrls.push(signed_url);
+          refLine = `\n\nREFERENCED ASSET: "${ref.name}" — the user clicked this asset in the 3D rig as the reference subject. Build the director_prompt around it and let its composition drive framing and focus.`;
+        } catch {}
       }
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM}\n\nSTUDIO STATE: move=${context.move} intensity=${context.intensity} duration=${context.duration}s mode=${context.mode} image=${context.hasImage ? 'loaded' : 'none'} shots=${context.shotCount} fusion=${context.fusionOn ? 'on' : 'off'} layers=${context.layerCount}\n\nDETECTED CAMERA LANGUAGE: moves=[${det.moves.join(', ') || 'none'}] intensity=${det.intensity ?? 'unspecified'} duration=${det.duration ?? 'unspecified'} playback=${det.wantsPlay}\n\nUSER: ${msg}`,
-        ...(fileUrls ? { file_urls: [fileUrls] } : {}),
+        prompt: `${SYSTEM}\n\nSTUDIO STATE: move=${context.move} intensity=${context.intensity} duration=${context.duration}s mode=${context.mode} image=${context.hasImage ? 'loaded' : 'none'} shots=${context.shotCount} fusion=${context.fusionOn ? 'on' : 'off'} layers=${context.layerCount} media=${context.mediaCount || 0} ref=${refId || 'none'} fov=${context.fov || 48}\n\nDETECTED CAMERA LANGUAGE: moves=[${det.moves.join(', ') || 'none'}] intensity=${det.intensity ?? 'unspecified'} duration=${det.duration ?? 'unspecified'} playback=${det.wantsPlay}${refLine}\n\nUSER: ${msg}`,
+        ...(fileUrls.length ? { file_urls: fileUrls } : {}),
         response_json_schema: SCHEMA,
       });
       const acts = (res.actions || []).filter(Boolean);
@@ -136,6 +158,7 @@ export default function CamAIAgent({ address, context, onAction, onGraph }) {
         if (!a?.tool) return;
         if (a.tool === 'add_nodes') onGraph(a.nodes || []);
         else if (a.tool === 'set_image') onAction({ ...a, file });
+        else if (a.tool === 'add_media') onAction({ ...a, file });
         else onAction(a);
       });
       const next = [...messages, { r: 'u', t: msg, img: !!file }];
@@ -166,6 +189,13 @@ export default function CamAIAgent({ address, context, onAction, onGraph }) {
           <img src={attach.url} alt="attached" />
           <span>Image attached — I can see and analyze it.</span>
           <button onClick={() => setAttach(null)} title="Remove"><X /></button>
+        </div>
+      )}
+      {refItem && (
+        <div className="cm-ai-ref">
+          <img src={refItem.url} alt={refItem.name} />
+          <span><b>REFERENCING</b> {refItem.name}</span>
+          <button onClick={onClearRef} title="Clear reference"><X /></button>
         </div>
       )}
       <div className="cm-ai-row">

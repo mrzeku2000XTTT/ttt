@@ -49,6 +49,15 @@ export default function CAMStudio({ address, onHome }) {
   // node graph — restored from the user's persisted project so it survives refresh
   const graph = useCamNodes(() => { try { return JSON.parse(localStorage.getItem(`cam_graph_${address}`)); } catch { return null; } });
 
+  // multi-media 3D rig — the first item (id 'primary') is the filmed background;
+  // the rest are extra asset planes the user drops into the world.
+  const [media, setMedia] = useState([]);
+  const [manualOffset, setManualOffset] = useState({ x: 0, y: 0, z: 0 });
+  const [autoKey, setAutoKey] = useState(false);
+  const [camRig, setCamRig] = useState({ fov: 48, distance: 4.2, roll: 0, autoOrbit: false });
+  const [refId, setRefId] = useState(null);
+  const mediaInputRef = useRef(null);
+
   // refs mirrored for the animation loop
   const playingRef = useRef(false); playingRef.current = playing;
   const modeRef = useRef(mode); modeRef.current = mode;
@@ -120,12 +129,47 @@ export default function CAMStudio({ address, onHome }) {
     setFusionLayers([]); setFusionSel(null);
     const reader = new FileReader();
     reader.onload = (ev) => {
+      const url = ev.target.result;
       const ni = new Image();
-      ni.onload = () => { setImg(ni); setImgSize({ w: ni.naturalWidth, h: ni.naturalHeight }); pRef.current = 0; };
+      ni.onload = () => {
+        setImg(ni); setImgSize({ w: ni.naturalWidth, h: ni.naturalHeight }); pRef.current = 0;
+        // the uploaded image is the rig's background plane (media[0])
+        const primary = { id: 'primary', img: ni, url, name: 'Background', pos: { x: 0, y: 0, z: 0 }, scale: 1 };
+        setMedia((prev) => (prev.length && prev[0].id === 'primary' ? [primary, ...prev.slice(1)] : [primary, ...prev]));
+      };
+      ni.src = url;
+    };
+    reader.readAsDataURL(file);
+  };
+  // drop another image into the 3D world as a movable asset plane
+  const addMedia = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const ni = new Image();
+      ni.onload = () => {
+        const id = `media-${Date.now()}`;
+        setMedia((prev) => {
+          const extras = prev.filter((m) => m.id !== 'primary');
+          const idx = extras.length;
+          return [...prev, { id, img: ni, url: ev.target.result, name: `Asset ${idx + 1}`, pos: { x: (idx % 2 ? 1.7 : -1.7), y: (idx < 2 ? 0.7 : -0.7), z: -0.6 * (idx + 1) }, scale: 0.6 }];
+        });
+      };
       ni.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   };
+  const onMovePick = (id) => {
+    if (autoKey) {
+      // auto keyframe — append a shot and spawn a node for each clicked move
+      setShots((prev) => [...prev, { id: Date.now(), move: id, intensity, duration }]);
+      graph.addNode('Camera3D');
+    } else {
+      setMoveId(id); setMode('move');
+    }
+  };
+  const onOffset = (axis, value) => setManualOffset((o) => ({ ...o, [axis]: value }));
+  const onSelectAsset = (id) => setRefId(id);
   useEffect(() => {
     const onPaste = (e) => {
       const items = e.clipboardData?.items || [];
@@ -226,10 +270,22 @@ export default function CAMStudio({ address, onHome }) {
         break;
       }
       case 'set_image': if (a.file) handleFile(a.file); break;
+      case 'add_media': if (a.file) addMedia(a.file); break;
+      case 'move_media': {
+        const m = a.asset_id === 'primary' ? media[0] : media.find((x) => x.id === a.asset_id);
+        if (m && ['x', 'y', 'z'].includes(a.axis)) setMedia((prev) => prev.map((x) => (x.id === m.id ? { ...x, pos: { ...x.pos, [a.axis]: a.value } } : x)));
+        break;
+      }
+      case 'select_ref': setRefId(a.asset_id || null); break;
+      case 'set_offset': if (['x', 'y', 'z'].includes(a.axis)) setManualOffset((o) => ({ ...o, [a.axis]: a.value })); break;
+      case 'set_fov': setCamRig((c) => ({ ...c, fov: a.value })); break;
+      case 'set_distance': setCamRig((c) => ({ ...c, distance: a.value })); break;
+      case 'set_roll': setCamRig((c) => ({ ...c, roll: a.value })); break;
+      case 'auto_orbit': setCamRig((c) => ({ ...c, autoOrbit: !!a.value })); break;
       default: break;
     }
   };
-  const aiContext = { move: moveId, intensity: Math.round(intensity * 100) / 100, duration, mode, hasImage: !!img, shotCount: shots.length, fusionOn, layerCount: fusionLayers.length };
+  const aiContext = { move: moveId, intensity: Math.round(intensity * 100) / 100, duration, mode, hasImage: !!img, shotCount: shots.length, fusionOn, layerCount: fusionLayers.length, mediaCount: media.length, refId, fov: camRig.fov };
 
   const currentMove = moveById(mode === 'seq' && shots.length ? shots[seqIdx % shots.length]?.move || moveId : moveId);
 
@@ -249,7 +305,8 @@ export default function CAMStudio({ address, onHome }) {
           </main>
           <CamFusionPanel hasImage={!!img} busy={fusionBusy} elapsed={fusionElapsed} error={fusionError} layers={fusionLayers} selectedId={fusionSel} onSelect={setFusionSel} onDecompose={decompose} onPos={setFusionPos} onReset={resetFusionPos} />
         </div>
-        <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} />
+        <input ref={mediaInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => Array.from(e.target.files || []).forEach(addMedia)} />
+        <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} media={media} refId={refId} onClearRef={() => setRefId(null)} />
       </div>
     );
   }
@@ -258,17 +315,18 @@ export default function CAMStudio({ address, onHome }) {
     <div className={`cm-page cm-fusion-shell ${maxPane === 'nodes' ? 'is-max-nodes' : ''}`}>
       <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} />
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
+      <input ref={mediaInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => Array.from(e.target.files || []).forEach(addMedia)} />
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} />
+          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} />
           <CamTransport playing={playing} canPlay={!!img} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
             <CamNodeGraph graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
           </div>
         </main>
-        <CamInspector moveId={moveId} setMoveId={setMoveId} setMode={setMode} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} />
-        <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} />
+        <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={camRig} setCamRig={setCamRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} />
+        <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} media={media} refId={refId} onClearRef={() => setRefId(null)} />
       </div>
     </div>
   );

@@ -141,3 +141,37 @@
   .cm-fusion-head nav button{font-size:9px}
   .cm-fus-decompose{width:calc(100% - 12px);margin:6px}
 }
+
+/* Draggable XYZ gizmo — touch + mouse, moves the background plane in the rig */
+.cmxyz{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 9px 6px;border:1px solid hsl(var(--cm-border));border-radius:7px;background:hsl(var(--cm-card)/.82);backdrop-filter:blur(10px);pointer-events:auto;user-select:none;touch-action:none}
+.cmxyz-row{display:flex;gap:9px}
+.cmxyz-axis{display:flex;flex-direction:column;align-items:center;gap:3px}
+.cmxyz-label{font:9px var(--font-body);letter-spacing:.2em;font-weight:700}
+.cmxyz-track{position:relative;width:13px;height:104px;border-radius:7px;background:hsl(var(--cm-bg));border:1px solid hsl(var(--cm-border));touch-action:none;cursor:pointer}
+.cmxyz-mid{position:absolute;left:0;right:0;top:50%;height:1px;background:hsl(var(--cm-fg)/.18)}
+.cmxyz-knob{position:absolute;left:50%;width:15px;height:15px;margin-left:-7.5px;margin-top:-7.5px;border-radius:50%;border:2px solid hsl(var(--cm-bg))}
+.cmxyz-val{font:7.5px monospace;color:hsl(var(--cm-muted));min-height:9px}
+.cmxyz-reset{font:8px var(--font-body);padding:2px 8px;border:1px solid hsl(var(--cm-border));border-radius:4px;background:hsl(var(--cm-bg));color:hsl(var(--cm-muted));letter-spacing:.1em;text-transform:uppercase}
+.cmxyz-reset:hover{color:hsl(var(--cm-accent));border-color:hsl(var(--cm-accent)/.6)}
+.cmxyz-hint{font:7.5px var(--font-body);color:hsl(var(--cm-muted));letter-spacing:.06em;white-space:nowrap}
+
+/* Inspector — auto-keyframe, camera rig, media list */
+.cm-autokey{display:flex;align-items:center;gap:6px;margin:7px 0 2px;font-size:9px;color:hsl(var(--cm-muted));cursor:pointer}
+.cm-autokey input{width:auto;accent-color:hsl(var(--cm-accent))}
+.cm-insp-count{margin-left:auto;background:hsl(var(--cm-accent)/.16);color:hsl(var(--cm-accent));font:8px monospace;padding:0 5px;border-radius:6px}
+.cm-add-media{display:flex;align-items:center;gap:5px;width:100%;margin-top:7px;padding:6px 7px;border:1px dashed hsl(var(--cm-accent)/.6);border-radius:4px;background:hsl(var(--cm-accent)/.08);color:hsl(var(--cm-accent));font-size:9px;font-weight:600}
+.cm-add-media svg{width:11px;height:11px}
+.cm-media-list{display:flex;flex-direction:column;gap:3px;margin-top:6px;max-height:150px;overflow:auto}
+.cm-media-item{display:flex;align-items:center;gap:6px;padding:4px;border:1px solid hsl(var(--cm-border));border-radius:3px;font-size:9px;color:hsl(var(--cm-muted))}
+.cm-media-item.is-ref{border-color:hsl(var(--cm-accent));background:hsl(var(--cm-accent)/.1);color:hsl(var(--cm-fg))}
+.cm-media-item img{width:24px;height:18px;object-fit:cover;border-radius:2px;flex:none}
+.cm-media-item span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cm-media-item svg{width:11px;height:11px;color:hsl(var(--cm-accent))}
+.cm-media-empty{font-size:9px;color:hsl(var(--cm-muted));padding:8px 4px;line-height:1.4}
+
+/* AI reference chip — the asset the user clicked to reference in the prompt */
+.cm-ai-ref{display:flex;align-items:center;gap:6px;margin:0 11px 5px;padding:4px 6px;border:1px solid hsl(var(--cm-accent)/.5);border-radius:4px;background:hsl(var(--cm-accent)/.08);font-size:8.5px;color:hsl(var(--cm-fg))}
+.cm-ai-ref img{width:24px;height:24px;object-fit:cover;border-radius:3px;flex:none}
+.cm-ai-ref span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cm-ai-ref b{color:hsl(var(--cm-accent));font-size:7.5px;letter-spacing:.16em}
+.cm-ai-ref button{color:hsl(var(--cm-muted))}.cm-ai-ref button:hover{color:hsl(var(--cm-fg))}.cm-ai-ref svg{width:10px;height:10px}
