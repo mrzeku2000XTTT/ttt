@@ -114,7 +114,7 @@ Now output your next single action as JSON matching the schema.`;
 
           let action;
           try {
-            const response = await base44.integrations.Core.InvokeLLM({
+            const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
               prompt,
               response_json_schema: ACTION_SCHEMA,
               model: MODEL

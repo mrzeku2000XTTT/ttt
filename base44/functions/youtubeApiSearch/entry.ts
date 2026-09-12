@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
 
         // Use LLM with web search to find YouTube videos
         // This is more robust than direct API for "scalping" channels from URLs
-        const response = await base44.integrations.Core.InvokeLLM({
+        const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt: `Search YouTube (and Google) for "${query}".
 
 CRITICAL INSTRUCTIONS:

@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     // ── STEP 1: RESEARCH ───────────────────────────────────────────────
     if (step === 'research') {
       const { vibe, media_type } = state;
-      const research = await base44.integrations.Core.InvokeLLM({
+      const research = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are researching modern professional motion ads to inform a new edit.
 
 USER VIBE: "${vibe || 'cinematic premium product reveal'}"
@@ -170,7 +170,7 @@ Return JSON:
       };
       if (!isVideo) analysisArgs.file_urls = [media_url];
 
-      const analysis = await base44.integrations.Core.InvokeLLM(analysisArgs);
+      const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM(analysisArgs);
 
       return Response.json({ step: 'analyze_media', output: analysis, next_step: 'plan' });
     }
@@ -179,7 +179,7 @@ Return JSON:
     if (step === 'plan') {
       const { vibe, research, analysis, target_duration, segment_count } = state;
 
-      const plan = await base44.integrations.Core.InvokeLLM({
+      const plan = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are designing v1 of a motion ad. Use the research and media analysis below.
 
 USER VIBE: "${vibe || 'premium and alive'}"
@@ -231,7 +231,7 @@ Return JSON:
     if (step === 'critique') {
       const { plan, research, analysis, vibe } = state;
 
-      const critique = await base44.integrations.Core.InvokeLLM({
+      const critique = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are a senior motion-design director reviewing a junior's motion ad plan. Be honest, sharp, and specific.
 
 GOAL VIBE: "${vibe}"
@@ -288,7 +288,7 @@ Return JSON:
       const segLen = totalDur / segCount;
       const kfPerSeg = Math.max(1, Math.min(6, parseInt(keyframes_per_segment) || 3));
 
-      const scriptWriter = await base44.integrations.Core.InvokeLLM({
+      const scriptWriter = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are the COPYWRITER for a ${totalDur}-second motion ad. Write ${segCount} short lines that together tell a complete story arc for this product.
 
 PRODUCT: ${analysis?.subject || ''} (${analysis?.product_category || ''})
@@ -381,7 +381,7 @@ Return JSON: { "lines": ["line1", "line2", ...] }  with exactly ${segCount} entr
       const myLine = script_lines[i] || '';
       const shouldOfferImage = (i % 4 === 0) && i > 0;
 
-      const subAgent = await base44.integrations.Core.InvokeLLM({
+      const subAgent = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are sub-agent #${i + 1} of ${segCount} choreographing one beat of a motion ad. Make it distinct from the recent beats.
 
 OVERALL VIBE: "${vibe}"
@@ -611,7 +611,7 @@ Return JSON with: preset_ids, intent, camera_preset, text_animation, font_weight
         });
       });
 
-      const directorOutput = await base44.integrations.Core.InvokeLLM({
+      const directorOutput = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are the MASTER director of a long-form motion ad. Decide the best GLOBAL order for all ${flat.length} chained presets to give a coherent narrative arc.
 
 VIBE: "${vibe}"
@@ -706,7 +706,7 @@ Return JSON:
       // How many camera cuts? ~1 cut per ~5s, min 4, max 8
       const cutCount = Math.max(4, Math.min(8, Math.round(totalDur / 4)));
 
-      const director = await base44.integrations.Core.InvokeLLM({
+      const director = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are the CINEMATOGRAPHER for a ${totalDur}-second motion ad. Design a professional ${cutCount}-cut camera plan.
 
 VIBE: "${vibe}"
@@ -796,7 +796,7 @@ The cuts must be in PLAYBACK ORDER and their durations must sum to ${totalDur}s.
     if (step === 'refine') {
       const { plan, critique, vibe, choreograph, target_duration } = state;
 
-      const refined = await base44.integrations.Core.InvokeLLM({
+      const refined = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `Apply the director's critique and produce v2 of the plan.
 
 ORIGINAL PLAN:

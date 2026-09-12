@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       `${w.product_name} (${w.category}, $${w.price_usd})`
     ).join(', ');
 
-    const trendResponse = await base44.integrations.Core.InvokeLLM({
+    const trendResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `What are the top 5 trending products in 2025 for ${occasion || 'general gifting'}? List product names and categories.`,
       add_context_from_internet: true
     });
@@ -75,7 +75,7 @@ Provide creative, personalized gift suggestions with:
 IMPORTANT: Always include valid product_url using store search URLs.
 Focus on items that complement their existing wishlist and match recipient profile.`;
 
-    const response = await base44.integrations.Core.InvokeLLM({
+    const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
       add_context_from_internet: true,
       response_json_schema: {

@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: "prompt is required" }, { status: 400 });
     }
 
-    const res = await base44.integrations.Core.InvokeLLM({
+    const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: buildPrompt(prompt.trim()),
       response_json_schema: LYRICS_SCHEMA,
       model: "gemini_3_flash",

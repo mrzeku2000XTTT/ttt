@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     }
 
     // Use AI to extract data from receipt
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `Analyze this receipt image and extract the following information:
       - Vendor/Store name
       - Date of purchase

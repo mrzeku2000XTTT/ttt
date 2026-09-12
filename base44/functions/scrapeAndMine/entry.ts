@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
         **Style:** Professional, objective, comprehensive, and well-structured Markdown.
         `;
 
-        const result = await base44.integrations.Core.InvokeLLM({
+        const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt: prompt,
             add_context_from_internet: true
         });

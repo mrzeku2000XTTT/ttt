@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 2) Deep-research + image-prompt drafting ──────────────────────────
-    const research = await base44.integrations.Core.InvokeLLM({
+    const research = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You are an art director researching a URL deeply to generate 10 cinematic images for a motion ad.
 
 URL: ${normalized}
@@ -184,7 +184,7 @@ Return JSON:
       prompts.map(async (p, idx) => {
         try {
           const fullPrompt = `${p.prompt} High-resolution, cinematic, advertising-grade, ${p.role} shot. NO text, NO logos, NO watermarks, NO captions.`;
-          const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+          const res = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: fullPrompt });
           return {
             url: res?.url || '',
             prompt: p.prompt,

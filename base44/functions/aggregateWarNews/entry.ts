@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
         {
             console.log('Fetching war news via LLM web search...');
             try {
-                const llmResponse = await base44.integrations.Core.InvokeLLM({
+                const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
                     prompt: `Search for the LATEST global war, conflict, and humanitarian crisis news from the last 24 hours. Include:
 - Ukraine-Russia war updates
 - Middle East conflicts (Gaza, Syria, Yemen)

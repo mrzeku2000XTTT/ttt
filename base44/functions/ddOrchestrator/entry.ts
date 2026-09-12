@@ -274,7 +274,7 @@ export default async function(req) {
       const callCredits = MODEL_CREDITS[useModel] || 1;
       totalCredits += callCredits;
 
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: conversation,
         model: useModel,
         response_json_schema: {

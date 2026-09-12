@@ -89,7 +89,7 @@ export default async function (req) {
     let llmNotes = [];
     let llmVerdict = 'verified';
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are an AUDITOR agent. Compare a claim against verified on-chain facts.
 
 ON-CHAIN FACTS (ground truth):

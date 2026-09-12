@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
         console.log('🔍 YouTube Search Query:', query);
 
         // Use LLM with web search to find YouTube videos
-        const response = await base44.integrations.Core.InvokeLLM({
+        const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt: `Search YouTube for "${query}" and find the top 12 most relevant videos. 
             
 Return a JSON array with:

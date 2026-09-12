@@ -49,7 +49,7 @@ Analyze these images and provide:
 
 Provide detailed analysis and scores.`;
 
-        const imageAnalysis = await base44.integrations.Core.InvokeLLM({
+        const imageAnalysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: imageAnalysisPrompt,
           file_urls: photos,
           response_json_schema: {
@@ -166,7 +166,7 @@ Provide detailed analysis and scores.`;
               }
 
               // Analyze link content relevance
-              const linkContentAnalysis = await base44.integrations.Core.InvokeLLM({
+              const linkContentAnalysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
                 prompt: `Analyze if this web content is relevant proof for the task.
 
 **Task:** ${task.description}
@@ -268,7 +268,7 @@ Rate relevance (0-1) and explain if this link demonstrates task completion.`,
     
     if (description && description.length > 20) {
       try {
-        const semanticAnalysis = await base44.integrations.Core.InvokeLLM({
+        const semanticAnalysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: `You are an expert work validator. Analyze if this worker's description demonstrates task completion.
 
 **Task Requirements:**
@@ -375,7 +375,7 @@ Also identify:
     
     if ((photos && photos.length > 0) && description) {
       try {
-        const crossValidation = await base44.integrations.Core.InvokeLLM({
+        const crossValidation = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: `Cross-validate all evidence for consistency and coherence.
 
 **Task:** ${task.description}

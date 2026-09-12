@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
     if (!prompt) return Response.json({ error: 'Missing prompt' }, { status: 400 });
 
     const fullPrompt = `${prompt}. Cinematic, photorealistic, dark moody atmosphere, high contrast, dramatic lighting, film grain, 35mm photography, no text, no watermarks.`;
-    const res = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+    const res = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: fullPrompt });
 
     return Response.json({ url: res?.url || null });
   } catch (error) {

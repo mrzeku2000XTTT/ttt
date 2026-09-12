@@ -123,7 +123,7 @@ OUTPUT FORMAT OVERRIDE: Return a JSON object with sections (the inventory), uses
     let failure = '';
     for (const model of ['claude-sonnet-5', 'gpt_5_6_luna']) {
       try {
-        const result = await base44.integrations.Core.InvokeLLM({
+        const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: prompt + fidelityRules + (failure ? `\nPrevious attempt was rejected: ${failure}. Return a fresh COMPLETE document, not a continuation.` : ''),
           model,
           ...(imageUrl ? { file_urls: [imageUrl] } : {}),

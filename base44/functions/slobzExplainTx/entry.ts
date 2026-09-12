@@ -269,7 +269,7 @@ Deno.serve(async (req) => {
     covenant: covenantFacts,
   };
 
-  const llm = await base44.integrations.Core.InvokeLLM({
+  const llm = await base44.asServiceRole.integrations.Core.InvokeLLM({
     prompt: 'You are Slobz, the smartest Kaspa transaction reader. Explain this Kaspa L1 transaction in plain, friendly English for a non-technical user. If it involves a COVENANT (P2SH / scripthash / redeem script), explain WHAT KIND of covenant it is, the TIME-LOCK (how long), how many PEOPLE/keys (escrow M-of-N), the AMOUNT locked, and WHO can spend it under which conditions. Use ONLY the facts in the JSON below. If a value is null or unknown, say "unknown" plainly - do NOT invent numbers, addresses, or durations. Keep the story to 3-5 sentences. Facts JSON:\n' + JSON.stringify(facts),
     response_json_schema: {
       type: 'object',

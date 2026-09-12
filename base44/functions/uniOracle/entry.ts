@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
         
         User says: "${message}"`;
 
-        const response = await base44.integrations.Core.InvokeLLM({
+        const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt: prompt,
             model: "gpt-4o"
         });

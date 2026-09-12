@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     // Use Gemini with web context to get detailed kaspa.news articles
-    const response = await base44.integrations.Core.InvokeLLM({
+    const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `Go to kaspa.news and extract the latest 5 articles with ALL details:
       - Article title
       - Author name (who posted it)

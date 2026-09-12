@@ -48,7 +48,7 @@ For each fact, also write a short cinematic image prompt (12-20 words) describin
 
 Return JSON.`;
 
-    const llmRes = await base44.integrations.Core.InvokeLLM({
+    const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: basePrompt,
       add_context_from_internet: usedFallback || !sourceContent,
       model: usedFallback ? 'gemini_3_flash' : undefined,

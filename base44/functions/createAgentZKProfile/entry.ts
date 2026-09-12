@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
         let careerAnalysis;
         
         try {
-            careerAnalysis = await base44.integrations.Core.InvokeLLM({
+            careerAnalysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
                 prompt: `Analyze this career/background and extract key information:
 
 Career Input: "${career}"

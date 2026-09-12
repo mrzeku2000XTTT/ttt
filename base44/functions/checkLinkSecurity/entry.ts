@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     console.log('✅ Security checks completed:', checks);
 
     // Use AI with internet context for comprehensive analysis
-    const aiAnalysis = await base44.integrations.Core.InvokeLLM({
+    const aiAnalysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You are a cybersecurity expert analyzing a URL for security threats. Perform a thorough analysis of this URL: ${url}
 
 IMPORTANT: Do NOT automatically flag .xyz domains as suspicious. Many legitimate businesses use .xyz domains. Analyze the ACTUAL content and reputation, not just the TLD.

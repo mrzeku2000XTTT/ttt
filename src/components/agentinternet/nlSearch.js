@@ -12,19 +12,8 @@ export async function translateQuery(q) {
   if (words.length < 4 && !text.includes("?")) return null;
 
   try {
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `A user searched a Kaspa app directory with this natural-language query: "${text}"
-
-Return the 1-3 best short keywords to match against app names, descriptions and tags, and the single best matching category from this list (or empty string if none fits): ${CATEGORIES.join(", ")}.
-Keywords must be plain single words or short phrases, no punctuation.`,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          keywords: { type: "array", items: { type: "string" } },
-          category: { type: "string" },
-        },
-      },
-    });
+    const fn = await base44.functions.invoke("agentInternetDirectorySearch", { query: text });
+    const res = fn?.data || fn;
 
     const keywords = (res?.keywords || []).filter(Boolean).slice(0, 3).join(" ");
     const category = CATEGORIES.includes(res?.category) ? res.category : null;

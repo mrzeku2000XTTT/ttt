@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
     if (!media_url) return Response.json({ error: 'Missing media_url' }, { status: 400 });
 
     // Ask the LLM to design the edit
-    const plan = await base44.integrations.Core.InvokeLLM({
+    const plan = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You are Katagami's AI motion editor. The user uploaded a ${media_type || 'media'} file and wants it auto-edited into a cinematic short MP4.
 
 User vibe hint: "${vibe || 'surprise me — make it feel premium and alive'}"

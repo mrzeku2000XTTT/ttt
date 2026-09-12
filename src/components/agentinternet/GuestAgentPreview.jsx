@@ -12,8 +12,6 @@ import OrganicOrb from "@/components/agentinternet/OrganicOrb";
  * "building in real time" log, detects the user's intent via LLM, and
  * recommends the correct TTT app to route to — like how KAI opens apps.
  */
-const CATALOG_TEXT = LIVE_PAGES.map((a) => `- ${a.name}: ${a.desc}`).join("\n");
-
 export default function GuestAgentPreview({ open, command, onClose }) {
   const navigate = useNavigate();
   const [lines, setLines] = useState([]);
@@ -58,27 +56,8 @@ export default function GuestAgentPreview({ open, command, onClose }) {
 
   const runIntent = async (q) => {
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt:
-          `A user typed a natural-language command into the TTT Agent Internet. Their input (may be long-form) is:\n"""${q}"""\n\n` +
-          `Below is the catalog of available apps, listed as "name: description".\n\n` +
-          `${CATALOG_TEXT}\n\n` +
-          `Your job:\n` +
-          `1. "matches" — up to 3 app NAMES that EXACTLY appear in the catalog and best fit the user's intent, best-first. If none fit, return [].\n` +
-          `2. "related" — up to 3 app NAMES that EXACTLY appear in the catalog and are the closest semantic neighbors to the intent even if not a direct fit (for inspiration).\n` +
-          `3. "is_novel" — true if the input describes a SPECIFIC, concrete app idea or product that does NOT already exist in the catalog (i.e. the user is describing an app they wish existed and could build). false if it is a generic command, greeting, or maps to an existing app.\n` +
-          `4. "build_prompt" — if is_novel is true, write a complete, detailed app-building prompt (200-400 words) that the user could paste into base44.com to build this app. Start with "Build an app that..." and include: the core purpose, main features as a bulleted list, target users, key screens/pages, and any Kaspa/crypto integration if relevant. Write it ready-to-paste. If is_novel is false, return an empty string.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            matches: { type: "array", items: { type: "string" } },
-            related: { type: "array", items: { type: "string" } },
-            is_novel: { type: "boolean" },
-            build_prompt: { type: "string" },
-          },
-          required: ["matches", "related", "is_novel", "build_prompt"],
-        },
-      });
+      const fn = await base44.functions.invoke("agentInternetRouteIntent", { command: q });
+      const res = fn?.data || fn;
       const names = Array.isArray(res?.matches) ? res.matches : [];
       const relNames = Array.isArray(res?.related) ? res.related : [];
       const found = names

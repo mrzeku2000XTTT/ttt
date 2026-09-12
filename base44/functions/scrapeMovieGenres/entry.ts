@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
 
     const { genre } = await req.json();
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `Search for top movies in the ${genre} genre.
       
       Return a list of popular ${genre} movies with their details.

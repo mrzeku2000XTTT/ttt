@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
         {
             console.log('Fetching news via LLM web search...');
             try {
-                const llmResponse = await base44.integrations.Core.InvokeLLM({
+                const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
                     prompt: `Search X (Twitter), Reddit, and crypto news for the LATEST Kaspa (KAS) updates from the last 2 hours. Find:
 - Breaking news and announcements
 - Price movements and market analysis

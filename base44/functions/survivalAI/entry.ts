@@ -120,7 +120,7 @@ Be concise. Lives depend on it.`;
     // Call AI with better error handling
     let response;
     try {
-      response = await base44.integrations.Core.InvokeLLM({
+      response = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `${systemPrompt}
 
 Recent conversation:

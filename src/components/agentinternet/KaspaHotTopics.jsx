@@ -81,10 +81,13 @@ export default function KaspaHotTopics() {
     }
     setSummarizing((prev) => ({ ...prev, [topic.id]: true }));
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Summarize this content about Kaspa in 1-2 clear sentences. Focus on the key point or announcement:\n\nTitle: ${topic.author_name}\nContent: ${topic.content}\nSource: ${topic.author_handle}`,
+      const fn = await base44.functions.invoke("agentInternetTopicSummary", {
+        title: topic.author_name,
+        content: topic.content,
+        source: topic.author_handle,
       });
-      const summary = typeof res === "string" ? res : res?.text || "";
+      const res = fn?.data || fn;
+      const summary = res?.summary || "";
       setSummaries((prev) => ({ ...prev, [topic.id]: summary }));
     } catch (e) {
       console.error(e);

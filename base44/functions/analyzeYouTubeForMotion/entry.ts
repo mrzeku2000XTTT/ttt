@@ -95,7 +95,7 @@ Rules:
 - NEVER include render_mp4 in agent_plan.
 - Keep agent_plan short (3-6 calls max).`;
 
-        const response = await base44.integrations.Core.InvokeLLM({
+        const response = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt,
             file_urls: thumbs,
             add_context_from_internet: true,

@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
 
     const { query } = await req.json();
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `Find an embeddable music URL for: "${query}"
       
       Search for this song on YouTube and return a direct embed URL.

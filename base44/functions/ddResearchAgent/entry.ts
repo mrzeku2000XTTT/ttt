@@ -48,7 +48,7 @@ export default async function(req) {
       ? `You are a research assistant. Using ONLY the following web search results, provide a comprehensive answer to the user's question. Include inline citations like [1], [2] referencing the sources. Be thorough and factual.\n\nSEARCH RESULTS:\n${context}\n\nUSER QUESTION: ${query}`
       : `You are a research assistant. Answer the user's question as thoroughly as possible. If you're unsure, say so.\n\nUSER QUESTION: ${query}`;
 
-    const gptRes = await base44.integrations.Core.InvokeLLM({
+    const gptRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: prompt,
       model: "gpt_5_4", // Real ChatGPT (OpenAI GPT model)
     });
