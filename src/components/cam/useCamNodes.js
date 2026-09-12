@@ -8,6 +8,14 @@ const START_NODES = [
   { id: 'output', type: 'MediaOut', x: 810, y: 105 },
 ];
 const START_EDGES = [['media', 'transform'], ['transform', 'camera'], ['camera', 'renderer'], ['renderer', 'output']];
+// Which ports each node type physically has — connections must respect these
+const PORT_TYPES = {
+  MediaIn: { input: false, output: true },
+  Transform: { input: true, output: true },
+  Camera3D: { input: true, output: true },
+  Renderer3D: { input: true, output: true },
+  MediaOut: { input: true, output: false },
+};
 
 export default function useCamNodes() {
   const [nodes, setNodes] = useState(START_NODES);
@@ -28,10 +36,40 @@ export default function useCamNodes() {
     setSelected(null);
   };
   const moveNode = (id, x, y) => setNodes((items) => items.map((node) => node.id === id ? { ...node, x: Math.max(8, x), y: Math.max(8, y) } : node));
-  const beginConnection = (id) => setConnecting(id);
+  const beginConnection = (id) => { if (PORT_TYPES[nodeMap[id]?.type]?.output) setConnecting(id); };
+  const cancelConnection = () => setConnecting(null);
   const finishConnection = (id) => {
-    if (connecting && connecting !== id) setEdges((items) => items.some(([a, b]) => a === connecting && b === id) ? items : [...items, [connecting, id]]);
+    if (connecting && connecting !== id && PORT_TYPES[nodeMap[id]?.type]?.input) {
+      setEdges((items) => (items.some(([a, b]) => a === connecting && b === id) ? items : [...items, [connecting, id]]));
+    }
     setConnecting(null);
   };
-  return { nodes, edges, nodeMap, selected, connecting, setSelected, addNode, deleteSelected, moveNode, beginConnection, finishConnection };
+  // CAM AI Agent — build a node chain from a natural-language spec
+  const addAINodes = (spec) => {
+    const safe = (spec || []).filter((s) => s && PORT_TYPES[s.type]);
+    if (!safe.length) return { added: 0 };
+    const stamp = Date.now();
+    const base = nodes.length;
+    const created = safe.map((s, i) => ({ id: `${s.type.toLowerCase()}-ai${stamp}-${i}`, type: s.type, x: 290 + ((base + i) % 3) * 170, y: 30 + ((base + i) % 2) * 125 }));
+    const pool = [...nodes, ...created];
+    const newEdges = [];
+    created.forEach((n, i) => {
+      if (i > 0) newEdges.push([created[i - 1].id, n.id]);
+      const target = safe[i].attach_to;
+      const src = target && pool.find((nd) => nd.id === target || nd.type === target);
+      if (src && src.id !== n.id) newEdges.push([src.id, n.id]);
+    });
+    const seen = new Set();
+    const unique = newEdges.filter(([f, t]) => {
+      const key = `${f}->${t}`;
+      if (f === t || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    setNodes((items) => [...items, ...created]);
+    setEdges((items) => [...items, ...unique.filter(([f, t]) => !items.some(([a, b]) => a === f && b === t))]);
+    setSelected(created[0].id);
+    return { added: created.length };
+  };
+  return { nodes, edges, nodeMap, selected, connecting, setSelected, addNode, deleteSelected, moveNode, beginConnection, cancelConnection, finishConnection, addAINodes };
 }

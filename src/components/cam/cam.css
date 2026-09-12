@@ -58,6 +58,27 @@
 .cm-fusion-lower{display:grid;grid-template-columns:185px minmax(0,1fr);height:245px;border-top:1px solid hsl(var(--cm-border))}.cm-shot-strip{overflow:hidden;background:hsl(var(--cm-card));border-right:1px solid hsl(var(--cm-border))}.cm-shot-actions{display:flex;gap:4px;padding:6px}.cm-shot-actions button,.cm-node-toolbar button{display:flex;align-items:center;gap:4px;padding:5px 7px;border:1px solid hsl(var(--cm-border));border-radius:3px;font-size:8px}.cm-shot-actions svg,.cm-node-toolbar svg{width:11px;height:11px}.cm-shot-list{display:flex;flex-direction:column;gap:3px;padding:0 6px;overflow:auto}.cm-shot-list>span{padding:20px 5px;font-size:9px;color:hsl(var(--cm-muted))}.cm-shot-list>button{display:flex;align-items:center;gap:5px;padding:6px;border:1px solid hsl(var(--cm-border));border-radius:3px;font-size:8px}.cm-shot-list>button.active{border-color:hsl(var(--cm-accent))}.cm-shot-list i{color:hsl(var(--cm-accent))}.cm-shot-list small{margin-left:auto;color:hsl(var(--cm-muted))}.cm-shot-list em svg{width:10px;height:10px}
 .cm-node-panel{min-width:0;background:#0a0d0b}.cm-node-toolbar{height:31px;display:flex;align-items:center;gap:5px;padding:3px 8px;border-bottom:1px solid hsl(var(--cm-border));background:hsl(var(--cm-card))}.cm-node-toolbar button:hover,.cm-node-toolbar button.is-active{border-color:hsl(var(--cm-accent));color:hsl(var(--cm-accent))}.cm-node-menu{position:absolute;bottom:31px;z-index:20;display:flex;flex-direction:column;width:120px;padding:4px;background:hsl(var(--cm-card));border:1px solid hsl(var(--cm-border));box-shadow:0 8px 24px #000}.cm-node-scroll{height:185px;overflow:auto}.cm-node-canvas{position:relative;width:1020px;height:300px;background-image:linear-gradient(hsl(var(--cm-fg)/.035) 1px,transparent 1px),linear-gradient(90deg,hsl(var(--cm-fg)/.035) 1px,transparent 1px);background-size:24px 24px}.cm-node-lines{position:absolute;inset:0;width:1020px;height:300px;pointer-events:none}.cm-node-lines path{fill:none;stroke:hsl(var(--cm-accent)/.8);stroke-width:2}.cm-node{position:absolute;width:148px;touch-action:none;user-select:none;border:1px solid hsl(var(--cm-border));border-radius:4px;background:hsl(var(--cm-card));box-shadow:0 6px 15px #0008}.cm-node-selected{border-color:hsl(var(--cm-accent));box-shadow:0 0 0 1px hsl(var(--cm-accent)/.25)}.cm-node-title{display:flex;justify-content:space-between;padding:6px 8px;background:hsl(var(--cm-fg)/.06);font-size:9px;font-weight:600}.cm-node p{padding:7px 8px;font-size:8px;color:hsl(var(--cm-muted))}.cm-node-dot{width:6px;height:6px;border-radius:50%;background:hsl(var(--cm-accent))}.cm-node-port{position:absolute;top:29px;width:10px;height:10px;border:2px solid hsl(var(--cm-bg));border-radius:50%;background:hsl(var(--cm-accent));z-index:2}.cm-node-port-in{left:-6px}.cm-node-port-out{right:-6px}
 
+/* Pending connection wire — dashed, follows the pointer until it lands on an input port */
+.cm-node-wire-live{fill:none;stroke:hsl(var(--cm-accent)/.9);stroke-width:2;stroke-dasharray:6 5;filter:drop-shadow(0 0 3px hsl(var(--cm-accent)/.6))}
+/* CAM AI Agent floater — collapses to a white camera dot */
+.cm-ai-dot{position:fixed;right:22px;bottom:26px;z-index:60;width:46px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#fff;color:#0b0d0c;box-shadow:0 8px 24px #000a;transition:transform .15s}
+.cm-ai-dot:hover{transform:scale(1.07)}
+.cm-ai-dot svg{width:20px;height:20px}
+.cm-ai-floater{position:fixed;right:22px;bottom:26px;z-index:60;width:290px;background:hsl(var(--cm-card));border:1px solid hsl(var(--cm-border));border-radius:8px;box-shadow:0 18px 44px #000c;overflow:hidden}
+.cm-ai-head{display:flex;align-items:center;gap:7px;padding:9px 11px;background:hsl(var(--cm-fg)/.05);border-bottom:1px solid hsl(var(--cm-border));font-size:10px}
+.cm-ai-head svg{width:13px;height:13px;color:hsl(var(--cm-accent))}
+.cm-ai-head button{margin-left:auto;color:hsl(var(--cm-muted))}
+.cm-ai-head button:hover{color:hsl(var(--cm-fg))}
+.cm-ai-note{padding:9px 11px;font-size:9px;line-height:1.5;color:hsl(var(--cm-muted))}
+.cm-ai-row{display:flex;gap:6px;padding:0 11px 11px}
+.cm-ai-input-wrap{position:relative;flex:1;border-radius:4px;padding:1px;overflow:hidden;background:hsl(var(--cm-border))}
+.cm-ai-input-wrap::before{content:'';position:absolute;inset:-120%;background:conic-gradient(from 0deg,transparent 0 70%,hsl(var(--cm-accent)) 86%,transparent 100%);animation:cm-ai-spin 2.2s linear infinite}
+.cm-ai-input-wrap input{position:relative;width:100%;padding:7px 9px;border:0;outline:0;background:hsl(var(--cm-bg));color:hsl(var(--cm-fg));font-size:10px}
+.cm-ai-row button{display:flex;padding:0 9px;border-radius:4px;background:hsl(var(--cm-accent)/.15);color:hsl(var(--cm-accent))}
+.cm-ai-row button:disabled{opacity:.4}
+.cm-ai-row svg{width:12px;height:12px}
+@keyframes cm-ai-spin{to{transform:rotate(1turn)}}
+
 /* Fusion 3D composite — individual exploded asset layers */
 .cm-fus-wrap{pointer-events:auto}
 .cm-fus-el{cursor:pointer;pointer-events:auto}
