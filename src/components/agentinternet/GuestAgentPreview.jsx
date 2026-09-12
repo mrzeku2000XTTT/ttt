@@ -66,15 +66,33 @@ export default function GuestAgentPreview({ open, command, onClose }) {
 
   const runIntent = async (q) => {
     try {
-      const fn = await base44.functions.invoke("agentInternetRouteIntent", { command: q });
+      const fn = await base44.functions.invoke("agentInternetRouteIntent", {
+        command: q,
+        // Send the live guest-visible store catalog so the router ranks the
+        // same apps the store grid shows (the server registry can lag behind).
+        catalog: GUEST_PAGES.map((a) => ({ name: a.name, desc: a.desc || "" })),
+      });
       const res = fn?.data || fn;
       const names = Array.isArray(res?.matches) ? res.matches : [];
       const relNames = Array.isArray(res?.related) ? res.related : [];
-      const found = names
-        .map((n) => GUEST_PAGES.find((a) => a.name.toLowerCase() === n.toLowerCase()))
-        .filter(Boolean);
+      // Exact name first, then tolerant substring match so "NICHE" resolves
+      // even if the router returns a loose variant of the app name.
+      const findPage = (n) => {
+        const q2 = String(n || "").trim().toLowerCase();
+        if (!q2) return undefined;
+        return (
+          GUEST_PAGES.find((a) => a.name.toLowerCase() === q2) ||
+          (q2.length >= 3
+            ? GUEST_PAGES.find(
+                (a) => a.name.length >= 3 &&
+                  (a.name.toLowerCase().includes(q2) || q2.includes(a.name.toLowerCase()))
+              )
+            : undefined)
+        );
+      };
+      const found = names.map(findPage).filter(Boolean);
       const rel = relNames
-        .map((n) => GUEST_PAGES.find((a) => a.name.toLowerCase() === n.toLowerCase()))
+        .map(findPage)
         .filter(Boolean)
         .filter((a) => !found.some((m) => m.name === a.name));
       const novel = !!res?.is_novel;

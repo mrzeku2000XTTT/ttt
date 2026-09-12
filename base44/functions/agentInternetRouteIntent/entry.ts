@@ -7,6 +7,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 const MAX_COMMAND = 2000;
+const MAX_CLIENT_CATALOG = 400;
 
 // Top-level entry pages that aren't listed as apps in the registry
 const EXTRA_PAGES = [
@@ -24,10 +25,28 @@ export default async function(req) {
     if (!command) return Response.json({ error: 'command required' }, { status: 400 });
 
     const apps = await base44.asServiceRole.entities.TTTAppRegistry.list('-created_date', 500);
-    const catalog = [
-      ...EXTRA_PAGES.map((p) => `- ${p.name}: ${p.desc}`),
-      ...(apps || []).filter((a) => a?.app_name).map((a) => `- ${a.app_name}: ${a.description || a.category || ''}`),
-    ].join('\n');
+
+    // The guest search must see the SAME catalog the App Store grid renders.
+    // The client sends its live guest-visible app list (name + desc only);
+    // the registry may lag behind it. Merge both, deduped by name.
+    const clientCatalog = Array.isArray(body.catalog) ? body.catalog : [];
+    const seen = new Set();
+    const addLine = (name, desc) => {
+      const n = String(name || '').trim();
+      if (!n) return;
+      const key = n.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      catalogLines.push(`- ${n.slice(0, 80)}: ${String(desc || '').slice(0, 160)}`);
+    };
+    const catalogLines = [];
+    EXTRA_PAGES.forEach((p) => addLine(p.name, p.desc));
+    (apps || []).filter((a) => a?.app_name).forEach((a) => addLine(a.app_name, a.description || a.category || ''));
+    clientCatalog
+      .filter((c) => c && typeof c.name === 'string')
+      .slice(0, MAX_CLIENT_CATALOG)
+      .forEach((c) => addLine(c.name, c.desc));
+    const catalog = catalogLines.join('\n');
     if (!catalog) return Response.json({ error: 'catalog unavailable' }, { status: 503 });
 
     const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
@@ -38,7 +57,7 @@ export default async function(req) {
         `Your job:\n` +
         `1. "matches" — up to 3 app NAMES that EXACTLY appear in the catalog and best fit the user's intent, best-first. If none fit, return [].\n` +
         `2. "related" — up to 3 app NAMES that EXACTLY appear in the catalog and are the closest semantic neighbors to the intent even if not a direct fit (for inspiration).\n` +
-        `3. "is_novel" — true if the input describes a SPECIFIC, concrete app idea or product that does NOT already exist in the catalog (i.e. the user is describing an app they wish existed and could build). false if it is a generic command, greeting, or maps to an existing app.\n` +
+        `3. "is_novel" — true ONLY if the input describes a SPECIFIC, concrete app idea or product that does NOT already exist in the catalog (i.e. the user is describing an app they wish existed and could build). A single word or short phrase (like "niche", "video editor", "wallet") is a SEARCH QUERY, not an idea — treat it as is_novel=false and match it to the closest catalog apps, including fuzzy/semantic matches (e.g. "niche" matches an app named "NICHE"). is_novel must also be false for generic commands, greetings, or anything that maps to an existing app.\n` +
         `4. "build_prompt" — if is_novel is true, write a complete, detailed app-building prompt (200-400 words) that the user could paste into base44.com to build this app. Start with "Build an app that..." and include: the core purpose, main features as a bulleted list, target users, key screens/pages, and any Kaspa/crypto integration if relevant. Write it ready-to-paste. If is_novel is false, return an empty string.`,
       response_json_schema: {
         type: 'object',
