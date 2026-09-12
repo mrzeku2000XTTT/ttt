@@ -2,15 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import CamNode from './CamNode';
 import CamNodeToolbar from './CamNodeToolbar';
-import CamAIAgent from './CamAIAgent';
-import useCamNodes from './useCamNodes';
 
 // Port centers on a 148px-wide node: out = right edge +1, in = left edge -1, y = +34
 const portOut = (n) => ({ x: n.x + 149, y: n.y + 34 });
 const portIn = (n) => ({ x: n.x - 1, y: n.y + 34 });
 
-export default function CamNodeGraph({ image, moveLabel, intensity, duration, isMax, onMax }) {
-  const graph = useCamNodes();
+export default function CamNodeGraph({ graph, image, moveLabel, intensity, duration, isMax, onMax }) {
   const canvasEl = useRef(null);
   const [wire, setWire] = useState(null);
   const detail = (type) => ({ MediaIn: image ? 'Source ready' : 'No source', Transform: `${Math.round(intensity * 100)}% · ${duration}s`, Camera3D: moveLabel, Renderer3D: 'Perspective render', MediaOut: 'CAM output' }[type]);
@@ -47,7 +44,6 @@ export default function CamNodeGraph({ image, moveLabel, intensity, duration, is
           {graph.nodes.map((node) => <CamNode key={node.id} node={node} detail={detail(node.type)} selected={graph.selected === node.id} onSelect={graph.setSelected} onMove={graph.moveNode} onOutput={graph.beginConnection} onInput={graph.finishConnection} />)}
         </div>
       </div>
-      <CamAIAgent onGraph={graph.addAINodes} />
     </section>
   );
 }

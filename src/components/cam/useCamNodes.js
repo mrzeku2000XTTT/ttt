@@ -17,9 +17,11 @@ const PORT_TYPES = {
   MediaOut: { input: true, output: false },
 };
 
-export default function useCamNodes() {
-  const [nodes, setNodes] = useState(START_NODES);
-  const [edges, setEdges] = useState(START_EDGES);
+// `initial` restores a persisted project graph so nodes survive refresh
+export default function useCamNodes(initial) {
+  const restored = initial && Array.isArray(initial.nodes) && initial.nodes.length;
+  const [nodes, setNodes] = useState(restored ? initial.nodes : START_NODES);
+  const [edges, setEdges] = useState(restored ? (initial.edges || []) : START_EDGES);
   const [selected, setSelected] = useState('camera');
   const [connecting, setConnecting] = useState(null);
 

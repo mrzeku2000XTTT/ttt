@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { moveById, drawInto } from './camMoves';
+import { MOVES, moveById, drawInto } from './camMoves';
 import { base44 } from '@/api/base44Client';
 import CamFusionScene from './CamFusionScene';
 import CamFusionPanel from './CamFusionPanel';
+import CamAIAgent from './CamAIAgent';
+import useCamNodes from './useCamNodes';
 import { extractLayers } from './fusionExtract';
 import CamTopBar from './CamTopBar';
 import CamViewerDeck from './CamViewerDeck';
@@ -44,6 +46,8 @@ export default function CAMStudio({ address, onHome }) {
   });
   const fusionFileRef = useRef(null);
   const [imgSize, setImgSize] = useState({ w: 1280, h: 720 });
+  // node graph — restored from the user's persisted project so it survives refresh
+  const graph = useCamNodes(() => { try { return JSON.parse(localStorage.getItem(`cam_graph_${address}`)); } catch { return null; } });
 
   // refs mirrored for the animation loop
   const playingRef = useRef(false); playingRef.current = playing;
@@ -69,6 +73,9 @@ export default function CAMStudio({ address, onHome }) {
   useEffect(() => {
     try { localStorage.setItem(`cam_fusion_${address}`, JSON.stringify(fusionLayers)); } catch {}
   }, [fusionLayers, address]);
+  useEffect(() => {
+    try { localStorage.setItem(`cam_graph_${address}`, JSON.stringify({ nodes: graph.nodes, edges: graph.edges })); } catch {}
+  }, [graph.nodes, graph.edges, address]);
 
   const drawStill = useCallback(() => {
     const canvas = canvasRef.current;
@@ -196,6 +203,34 @@ export default function CAMStudio({ address, onHome }) {
   const setFusionPos = (id, axis, value) => setFusionLayers((items) => items.map((l) => (l.id === id ? { ...l, pos: { ...l.pos, [axis]: value } } : l)));
   const resetFusionPos = (id) => setFusionLayers((items) => items.map((l) => (l.id === id ? { ...l, pos: { ...l.base } } : l)));
 
+  // CAM AI Agent — executes the tools the agent calls across the whole studio
+  const runAgentAction = (a) => {
+    if (!a?.tool) return;
+    switch (a.tool) {
+      case 'set_move': if (MOVES.some((m) => m.id === a.move)) { setMode('move'); setMoveId(a.move); } break;
+      case 'set_intensity': setIntensity(Math.min(1, Math.max(0.05, a.value || 0.6))); break;
+      case 'set_duration': setDuration(Math.min(30, Math.max(0.5, a.value || 4))); break;
+      case 'add_shot': setShots((prev) => [...prev, { id: Date.now(), move: a.move || moveId, intensity: a.intensity ?? intensity, duration: a.duration ?? duration }]); break;
+      case 'play': if (img) setPlaying(true); break;
+      case 'pause': setPlaying(false); break;
+      case 'play_sequence': playSequence(); break;
+      case 'open_rig': setMaxPane('camera'); break;
+      case 'open_nodes': setMaxPane('nodes'); break;
+      case 'restore_view': setMaxPane(null); break;
+      case 'fusion_on': if (!fusionOn) toggleFusion(); break;
+      case 'fusion_off': if (fusionOn) toggleFusion(); break;
+      case 'decompose': if (!fusionOn) toggleFusion(); decompose(); break;
+      case 'move_layer': {
+        const l = a.layer === -1 ? fusionLayers.find((x) => x.id === fusionSel) : fusionLayers[a.layer];
+        if (l && ['x', 'y', 'z'].includes(a.axis)) setFusionPos(l.id, a.axis, a.value || 0);
+        break;
+      }
+      case 'set_image': if (a.file) handleFile(a.file); break;
+      default: break;
+    }
+  };
+  const aiContext = { move: moveId, intensity: Math.round(intensity * 100) / 100, duration, mode, hasImage: !!img, shotCount: shots.length, fusionOn, layerCount: fusionLayers.length };
+
   const currentMove = moveById(mode === 'seq' && shots.length ? shots[seqIdx % shots.length]?.move || moveId : moveId);
 
   if (fusionOn) {
@@ -214,6 +249,7 @@ export default function CAMStudio({ address, onHome }) {
           </main>
           <CamFusionPanel hasImage={!!img} busy={fusionBusy} elapsed={fusionElapsed} error={fusionError} layers={fusionLayers} selectedId={fusionSel} onSelect={setFusionSel} onDecompose={decompose} onPos={setFusionPos} onReset={resetFusionPos} />
         </div>
+        <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} />
       </div>
     );
   }
@@ -228,10 +264,11 @@ export default function CAMStudio({ address, onHome }) {
           <CamTransport playing={playing} canPlay={!!img} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
-            <CamNodeGraph image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
+            <CamNodeGraph graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
           </div>
         </main>
         <CamInspector moveId={moveId} setMoveId={setMoveId} setMode={setMode} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} />
+        <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} />
       </div>
     </div>
   );

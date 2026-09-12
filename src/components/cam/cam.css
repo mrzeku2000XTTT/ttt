@@ -70,6 +70,16 @@
 .cm-ai-head button{margin-left:auto;color:hsl(var(--cm-muted))}
 .cm-ai-head button:hover{color:hsl(var(--cm-fg))}
 .cm-ai-note{padding:9px 11px;font-size:9px;line-height:1.5;color:hsl(var(--cm-muted))}
+.cm-ai-chat{display:flex;flex-direction:column;gap:6px;max-height:230px;overflow-y:auto;padding:8px 11px}
+.cm-ai-msg{max-width:88%;padding:6px 8px;border-radius:6px;font-size:9px;line-height:1.45;white-space:pre-wrap}
+.cm-ai-msg.u{align-self:flex-end;background:hsl(var(--cm-accent)/.12);color:hsl(var(--cm-fg))}
+.cm-ai-msg.a{align-self:flex-start;background:hsl(var(--cm-fg)/.06);color:hsl(var(--cm-muted))}
+.cm-ai-chip{display:flex;align-items:center;gap:6px;margin:0 11px 6px;padding:4px 6px;border:1px solid hsl(var(--cm-border));border-radius:4px;font-size:8px;color:hsl(var(--cm-muted))}
+.cm-ai-chip img{width:26px;height:26px;object-fit:cover;border-radius:3px;flex:none}
+.cm-ai-chip span{flex:1}
+.cm-ai-chip button{color:hsl(var(--cm-muted))}.cm-ai-chip button:hover{color:hsl(var(--cm-fg))}.cm-ai-chip svg{width:10px;height:10px}
+.cm-fus-hit{cursor:grab;touch-action:none}
+.cm-fus-hit:active{cursor:grabbing}
 .cm-ai-row{display:flex;gap:6px;padding:0 11px 11px}
 .cm-ai-input-wrap{position:relative;flex:1;border-radius:4px;padding:1px;overflow:hidden;background:hsl(var(--cm-border))}
 .cm-ai-input-wrap::before{content:'';position:absolute;inset:-120%;background:conic-gradient(from 0deg,transparent 0 70%,hsl(var(--cm-accent)) 86%,transparent 100%);animation:cm-ai-spin 2.2s linear infinite}
