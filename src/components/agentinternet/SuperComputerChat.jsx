@@ -298,7 +298,7 @@ export default function SuperComputerChat({ onExit }) {
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-4">
-          <div className="flex items-end gap-2 rounded-3xl border border-white/12 bg-white/[0.03] px-4 py-2.5 focus-within:border-white/30 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+          <div className="ttt-glowing-input flex items-end gap-2 rounded-3xl bg-white/[0.03] px-4 py-2.5">
             <textarea
               ref={taRef}
               value={input}

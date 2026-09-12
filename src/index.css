@@ -225,6 +225,51 @@ button:focus-visible {
   width: max-content;
 }
 
+/* Thin traveling light confined to the Supercomputer input outline. */
+@property --ttt-input-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+:root .ttt-glowing-input, .dark .ttt-glowing-input {
+  --input-edge: 215 45% 40%;
+  --input-glow: 207 100% 72%;
+  --input-highlight: 195 100% 96%;
+}
+.ttt-glowing-input {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid hsl(var(--input-edge) / 0.5);
+}
+.ttt-glowing-input::before,
+.ttt-glowing-input::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(from var(--ttt-input-angle),
+    transparent 0%, hsl(var(--input-edge) / 0.45) 15%,
+    hsl(var(--input-glow)) 22%, hsl(var(--input-highlight)) 24%,
+    transparent 28%, transparent 50%, hsl(var(--input-edge) / 0.45) 65%,
+    hsl(var(--input-glow)) 72%, hsl(var(--input-highlight)) 74%, transparent 78%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: ttt-input-orbit 6s linear infinite;
+}
+.ttt-glowing-input::after {
+  filter: blur(3px);
+  opacity: 0.7;
+}
+@keyframes ttt-input-orbit {
+  to { --ttt-input-angle: 360deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ttt-glowing-input::before, .ttt-glowing-input::after { animation: none; }
+}
+
 /* Scoped KaspaCollab landing theme; other apps retain their existing colors. */
 :root .kaspa-collab-landing, .dark .kaspa-collab-landing {
   --background: 270 48% 5%;
