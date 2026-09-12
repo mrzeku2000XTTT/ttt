@@ -22,14 +22,35 @@
   ],
   "rls": {
     "create": {
-      "data.wallet_address": "{{user.data.created_wallet_address}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.wallet_address": "{{user.data.kaspa_address}}"
+        }
+      ]
     },
-    "read": true,
+    "read": null,
     "update": {
-      "data.wallet_address": "{{user.data.created_wallet_address}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.wallet_address": "{{user.data.kaspa_address}}"
+        }
+      ]
     },
     "delete": {
-      "data.wallet_address": "{{user.data.created_wallet_address}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.wallet_address": "{{user.data.kaspa_address}}"
+        }
+      ]
     }
   }
 }

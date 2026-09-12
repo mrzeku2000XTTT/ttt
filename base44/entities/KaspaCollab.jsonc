@@ -58,31 +58,51 @@
     "wallet_b"
   ],
   "rls": {
-    "read": {
+    "create": {
       "$or": [
         {
-          "data.wallet_a": "{{user.data.created_wallet_address}}"
+          "created_by_id": "{{user.id}}"
         },
         {
-          "data.wallet_b": "{{user.data.created_wallet_address}}"
+          "data.wallet_a": "{{user.data.kaspa_address}}"
         }
       ]
     },
-    "create": {
-      "data.wallet_a": "{{user.data.created_wallet_address}}"
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.wallet_a": "{{user.data.kaspa_address}}"
+        },
+        {
+          "data.wallet_b": "{{user.data.kaspa_address}}"
+        }
+      ]
     },
     "update": {
       "$or": [
         {
-          "data.wallet_a": "{{user.data.created_wallet_address}}"
+          "created_by_id": "{{user.id}}"
         },
         {
-          "data.wallet_b": "{{user.data.created_wallet_address}}"
+          "data.wallet_a": "{{user.data.kaspa_address}}"
+        },
+        {
+          "data.wallet_b": "{{user.data.kaspa_address}}"
         }
       ]
     },
     "delete": {
-      "data.wallet_a": "{{user.data.created_wallet_address}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.wallet_a": "{{user.data.kaspa_address}}"
+        }
+      ]
     }
   }
 }
