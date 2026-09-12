@@ -1,6 +1,6 @@
 import React, { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Grid, Html, Line, GizmoHelper, GizmoViewport } from '@react-three/drei';
+import { OrbitControls, Grid, Html, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
 import { moveAt } from './camMoves';
 
@@ -40,6 +40,22 @@ function Rig({ image, getFrame }) {
       return new THREE.Line(g, m);
     })
   ), []);
+
+  // dimension guides — built manually (no drei <Line> prop spread → no R3F 'source' collision)
+  const dimLines = useMemo(() => {
+    const segs = [
+      [[-PLANE_W / 2, -PLANE_H / 2 - 0.14, 0], [PLANE_W / 2, -PLANE_H / 2 - 0.14, 0]],
+      [[-PLANE_W / 2 - 0.14, -PLANE_H / 2, 0], [-PLANE_W / 2 - 0.14, PLANE_H / 2, 0]],
+      [[PLANE_W / 2 + 0.16, -PLANE_H / 2, 0], [PLANE_W / 2 + 0.16, -PLANE_H / 2, BASE_DIST]],
+    ];
+    return segs.map(([a, b]) => {
+      const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]);
+      const m = new THREE.LineDashedMaterial({ color: 0x9aa8a0, transparent: true, opacity: 0.7, dashSize: 0.05, gapSize: 0.04 });
+      const l = new THREE.Line(g, m);
+      l.computeLineDistances();
+      return l;
+    });
+  }, []);
 
   useFrame(() => {
     const f = getFrame ? getFrame() : null;
@@ -81,16 +97,18 @@ function Rig({ image, getFrame }) {
       )}
 
       {/* dimension guides */}
-      <Line points={[[-PLANE_W / 2, -PLANE_H / 2 - 0.14, 0], [PLANE_W / 2, -PLANE_H / 2 - 0.14, 0]]} color="#9aa8a0" dashed dashSize={0.05} gapSize={0.04} transparent opacity={0.7} />
-      <Line points={[[-PLANE_W / 2 - 0.14, -PLANE_H / 2, 0], [-PLANE_W / 2 - 0.14, PLANE_H / 2, 0]]} color="#9aa8a0" dashed dashSize={0.05} gapSize={0.04} transparent opacity={0.7} />
-      <Line points={[[PLANE_W / 2 + 0.16, -PLANE_H / 2, 0], [PLANE_W / 2 + 0.16, -PLANE_H / 2, BASE_DIST]]} color="#9aa8a0" dashed dashSize={0.05} gapSize={0.04} transparent opacity={0.7} />
+      {dimLines.map((l, i) => <primitive key={`dim-${i}`} object={l} />)}
       <Html position={[0, -PLANE_H / 2 - 0.32, 0]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label">Width</span></Html>
       <Html position={[-PLANE_W / 2 - 0.36, 0, 0]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label">Height</span></Html>
       <Html position={[PLANE_W / 2 + 0.42, -PLANE_H / 2, BASE_DIST / 2]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label">Depth</span></Html>
-      <Html position={[-PLANE_W / 2 + 0.05, PLANE_H / 2 + 0.26, 0]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label">x · y · z</span></Html>
 
-      {/* axes at the plane's near corner */}
-      <axesHelper args={[0.6]} position={[-PLANE_W / 2, -PLANE_H / 2, 0]} />
+      {/* labeled XYZ tripod — directly beside the asset, left of the plane */}
+      <group position={[-PLANE_W / 2 - 0.42, 0, 0]}>
+        <axesHelper args={[0.55]} />
+        <Html position={[0.62, 0, 0]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label" style={{ color: '#ff5f56' }}>X</span></Html>
+        <Html position={[0, 0.62, 0]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label" style={{ color: '#8dff6a' }}>Y</span></Html>
+        <Html position={[0, 0, 0.62]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label" style={{ color: '#4d9fff' }}>Z</span></Html>
+      </group>
 
       {/* projection lines + frustum */}
       {cornerLines.map((l, i) => <primitive key={i} object={l} />)}
