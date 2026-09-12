@@ -74,6 +74,8 @@
 .cm-ai-msg{max-width:88%;padding:6px 8px;border-radius:6px;font-size:9px;line-height:1.45;white-space:pre-wrap}
 .cm-ai-msg.u{align-self:flex-end;background:hsl(var(--cm-accent)/.12);color:hsl(var(--cm-fg))}
 .cm-ai-msg.a{align-self:flex-start;background:hsl(var(--cm-fg)/.06);color:hsl(var(--cm-muted))}
+.cm-ai-msg.d{align-self:stretch;background:hsl(var(--cm-accent)/.07);border:1px solid hsl(var(--cm-accent)/.4);color:hsl(var(--cm-fg));font-size:8.5px}
+.cm-ai-msg.d b{display:block;margin-bottom:3px;font-size:7.5px;letter-spacing:.22em;color:hsl(var(--cm-accent))}
 .cm-ai-chip{display:flex;align-items:center;gap:6px;margin:0 11px 6px;padding:4px 6px;border:1px solid hsl(var(--cm-border));border-radius:4px;font-size:8px;color:hsl(var(--cm-muted))}
 .cm-ai-chip img{width:26px;height:26px;object-fit:cover;border-radius:3px;flex:none}
 .cm-ai-chip span{flex:1}
@@ -113,4 +115,29 @@
 .cm-fus-transform>button{display:flex;align-items:center;gap:5px;margin-top:8px;padding:4px 8px;border:1px solid hsl(var(--cm-border));border-radius:3px;font-size:9px;color:hsl(var(--cm-muted))}
 .cm-fus-transform svg{width:10px;height:10px}
 @media(max-width:900px){.cm-fusion-center .cm-viewer{min-height:380px}}
-@media(max-width:900px){.cm-fusion-shell{height:auto;min-height:100vh;overflow:auto}.cm-fusion-head nav,.cm-head-actions>span,.cm-menu-row{display:none}.cm-head-actions button{padding:6px}.cm-fusion-work{display:flex;height:auto;flex-direction:column}.cm-view-deck{flex-direction:column;height:680px;flex:none}.cm-view-split{display:none}.cm-viewer{flex:none!important;min-height:330px}.cm-fusion-lower{height:430px;grid-template-columns:1fr}.cm-shot-strip{height:180px}.cm-inspector{max-height:none;border-left:0}.cm-fusion-head{position:sticky;top:0;z-index:30}}
+@media(max-width:900px){
+  .cm-fusion-shell{height:auto;min-height:100vh;overflow:auto}
+  .cm-head-actions>span,.cm-menu-row{display:none}
+  .cm-head-actions button{padding:6px}
+  .cm-fusion-work{display:flex;height:auto;flex-direction:column}
+  .cm-view-deck{flex-direction:column;height:680px;flex:none}
+  .cm-view-split{display:none}
+  .cm-viewer{flex:none!important;min-height:330px}
+  .cm-fusion-lower{height:430px;grid-template-columns:1fr}
+  .cm-shot-strip{height:180px}
+  .cm-inspector{max-height:none;border-left:0}
+  .cm-fusion-head{position:sticky;top:0;z-index:30;flex-wrap:wrap;height:auto;min-height:43px;padding:6px 10px;gap:4px 10px}
+  /* keep every workspace tool reachable — nav becomes its own full-width scrollable row */
+  .cm-fusion-head nav{order:3;display:flex!important;width:100%;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .cm-fusion-head nav::-webkit-scrollbar{display:none}
+  .cm-fusion-head nav button{flex:none;white-space:nowrap;padding:7px 8px}
+  .cm-head-actions{flex:none}
+}
+@media(max-width:640px){
+  .cm-ai-floater{right:10px;bottom:12px;width:calc(100vw - 20px);max-width:340px}
+  .cm-ai-dot{right:14px;bottom:16px;width:52px;height:52px}
+  .cm-ai-chat{max-height:24vh}
+  .cm-head-actions button{padding:6px 7px;font-size:9px}
+  .cm-fusion-head nav button{font-size:9px}
+  .cm-fus-decompose{width:calc(100% - 12px);margin:6px}
+}
