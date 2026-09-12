@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { APPS } from "@/components/appstore2/appCatalog";
 import OrganicOrb from "@/components/agentinternet/OrganicOrb";
+import TypingEdgeGlow from "@/components/agentinternet/TypingEdgeGlow";
 
 const CHAT_KEY = "ttt_super_chat_v1";
 
@@ -120,10 +121,7 @@ export default function SuperComputerChat({ onExit }) {
   const [error, setError] = useState("");
   const scrollRef = useRef(null);
   const taRef = useRef(null);
-  const typingTimer = useRef(null);
-  const [isTyping, setIsTyping] = useState(false);
-
-  useEffect(() => () => clearTimeout(typingTimer.current), []);
+  const [typingPulse, setTypingPulse] = useState(0);
 
   useEffect(() => {
     try { localStorage.setItem(CHAT_KEY, JSON.stringify(messages.slice(-40))); } catch {}
@@ -302,15 +300,14 @@ export default function SuperComputerChat({ onExit }) {
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-4">
-          <div className={`ttt-glowing-input ${isTyping ? "ttt-glowing-input-typing" : ""} flex items-end gap-2 rounded-3xl bg-white/[0.03] px-4 py-2.5`}>
+          <div className="ttt-glowing-input flex items-end gap-2 rounded-3xl bg-white/[0.03] px-4 py-2.5">
+            <TypingEdgeGlow pulse={typingPulse} />
             <textarea
               ref={taRef}
               value={input}
               onChange={(e) => {
                 setInput(e.target.value);
-                setIsTyping(true);
-                clearTimeout(typingTimer.current);
-                typingTimer.current = setTimeout(() => setIsTyping(false), 1200);
+                setTypingPulse(value => value + 1);
                 e.target.style.height = "auto";
                 e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
               }}

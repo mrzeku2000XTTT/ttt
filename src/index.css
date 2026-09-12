@@ -225,59 +225,37 @@ button:focus-visible {
   width: max-content;
 }
 
-/* Thin traveling light confined to the Supercomputer input outline. */
-@property --ttt-input-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
+/* SVG lights follow the real input perimeter, independent of gradient-angle support. */
 :root .ttt-glowing-input, .dark .ttt-glowing-input {
   --input-edge: 215 45% 40%;
-  --input-glow: 207 100% 72%;
-  --input-highlight: 195 100% 96%;
+  --input-glow: 195 100% 70%;
+  --input-violet: 250 100% 78%;
+  --input-blue: 218 100% 72%;
+  --input-highlight: 195 100% 97%;
 }
-.ttt-glowing-input {
-  position: relative;
-  isolation: isolate;
-  border: 1px solid hsl(var(--input-edge) / 0.5);
-}
-.ttt-glowing-input::before,
-.ttt-glowing-input::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  pointer-events: none;
-  background: conic-gradient(from var(--ttt-input-angle),
-    transparent 0%, hsl(var(--input-edge) / 0.45) 15%,
-    hsl(var(--input-glow)) 22%, hsl(var(--input-highlight)) 24%,
-    transparent 28%, transparent 50%, hsl(var(--input-edge) / 0.45) 65%,
-    hsl(var(--input-glow)) 72%, hsl(var(--input-highlight)) 74%, transparent 78%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: ttt-input-orbit 3s linear infinite paused;
-  opacity: 0.15;
-  transition: opacity 450ms ease;
-}
-.ttt-glowing-input::after {
-  filter: blur(3px);
-  opacity: 0;
-}
-.ttt-glowing-input-typing::before,
-.ttt-glowing-input-typing::after {
-  animation-play-state: running;
-  opacity: 1;
-}
-.ttt-glowing-input-typing::after {
-  opacity: 0.85;
-}
-@keyframes ttt-input-orbit {
-  to { --ttt-input-angle: 360deg; }
-}
+.ttt-glowing-input { position: relative; isolation: isolate; border: 1px solid hsl(var(--input-edge) / 0.5); }
+.ttt-edge-glow { position: absolute; inset: -1px; width: calc(100% + 2px); height: calc(100% + 2px); overflow: visible; pointer-events: none; z-index: 2; }
+.ttt-edge-color-0 { color: hsl(var(--input-glow)); }
+.ttt-edge-color-1 { color: hsl(var(--input-violet)); }
+.ttt-edge-color-2 { color: hsl(var(--input-blue)); }
+.ttt-edge-glow rect { stroke-linecap: round; }
+.ttt-edge-halo { stroke: currentColor; stroke-width: 7; filter: blur(5px); opacity: 0.8; }
+.ttt-edge-trail { stroke: currentColor; stroke-width: 2; filter: drop-shadow(0 0 3px currentColor); }
+.ttt-edge-core { stroke: hsl(var(--input-highlight)); stroke-width: 2; }
+.ttt-edge-runner { opacity: 0; transition: opacity 650ms ease; }
+.ttt-edge-runner rect { animation: ttt-edge-lap 2.4s linear infinite; animation-delay: var(--edge-delay); animation-play-state: paused; }
+.ttt-edge-active .ttt-edge-runner { opacity: 1; }
+.ttt-edge-active .ttt-edge-runner rect { animation-play-state: running; }
+.ttt-edge-spark { animation: ttt-edge-flash 1.4s ease-out both; }
+.ttt-edge-spark rect { animation: ttt-edge-dash 1.4s ease-out both; }
+@keyframes ttt-edge-lap { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -1000; } }
+@keyframes ttt-edge-dash { from { stroke-dashoffset: var(--edge-start); } to { stroke-dashoffset: var(--edge-end); } }
+@keyframes ttt-edge-flash { 0% { opacity: 0.8; } 12% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .ttt-glowing-input::before, .ttt-glowing-input::after { animation: none; }
+  .ttt-edge-runner rect, .ttt-edge-spark, .ttt-edge-spark rect { animation: none; }
+  .ttt-edge-spark { display: none; }
+  .ttt-edge-runner { transition: none; }
+  .ttt-edge-runner rect { stroke-dashoffset: -250; }
 }
 
 /* Scoped KaspaCollab landing theme; other apps retain their existing colors. */
