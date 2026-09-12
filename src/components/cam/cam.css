@@ -155,6 +155,21 @@
 .cmxyz-reset:hover{color:hsl(var(--cm-accent));border-color:hsl(var(--cm-accent)/.6)}
 .cmxyz-hint{font:7.5px var(--font-body);color:hsl(var(--cm-muted));letter-spacing:.06em;white-space:nowrap}
 
+/* Inspector axis tool — native draggable XYZ sliders for the selected asset */
+.cmaxis{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 2px;user-select:none;touch-action:none}
+.cmaxis-head{width:100%;display:flex;justify-content:center}
+.cmaxis-target{font:8.5px var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:hsl(var(--cm-accent));border:1px solid hsl(var(--cm-accent)/.4);border-radius:4px;padding:2px 7px;background:hsl(var(--cm-accent)/.08);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmaxis-row{display:flex;gap:12px}
+.cmaxis-axis{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cmaxis-label{font:9px var(--font-body);letter-spacing:.2em;font-weight:700}
+.cmaxis-track{position:relative;width:14px;height:108px;border-radius:7px;background:hsl(var(--cm-bg));border:1px solid hsl(var(--cm-border));touch-action:none;cursor:pointer}
+.cmaxis-mid{position:absolute;left:0;right:0;top:50%;height:1px;background:hsl(var(--cm-fg)/.18)}
+.cmaxis-knob{position:absolute;left:50%;width:16px;height:16px;margin-left:-8px;margin-top:-8px;border-radius:50%;border:2px solid hsl(var(--cm-bg))}
+.cmaxis-val{font:7.5px monospace;color:hsl(var(--cm-muted));min-height:9px}
+.cmaxis-reset{font:8px var(--font-body);padding:3px 10px;border:1px solid hsl(var(--cm-border));border-radius:4px;background:hsl(var(--cm-bg));color:hsl(var(--cm-muted));letter-spacing:.1em;text-transform:uppercase}
+.cmaxis-reset:hover{color:hsl(var(--cm-accent));border-color:hsl(var(--cm-accent)/.6)}
+.cmaxis-hint{font:7.5px var(--font-body);color:hsl(var(--cm-muted));letter-spacing:.06em;text-align:center}
+
 /* Inspector — auto-keyframe, camera rig, media list */
 .cm-autokey{display:flex;align-items:center;gap:6px;margin:7px 0 2px;font-size:9px;color:hsl(var(--cm-muted));cursor:pointer}
 .cm-autokey input{width:auto;accent-color:hsl(var(--cm-accent))}

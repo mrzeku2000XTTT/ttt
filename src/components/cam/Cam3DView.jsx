@@ -3,7 +3,6 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Grid, Html, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
 import { moveAt } from './camMoves';
-import CamXYZGizmo from './CamXYZGizmo';
 
 // Rig dimensions — the image plane the virtual camera films.
 const PLANE_W = 3.4;
@@ -207,7 +206,6 @@ export default function Cam3DView({ image, media, manualOffset, camRig, onSelect
       )}
       <div className="cm3d-hud top-4 right-4 text-[9px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">Click an asset to reference it</div>
       <div className="cm3d-hud bottom-4 right-4 text-[9px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">Drag to orbit · scroll to dolly</div>
-      <CamXYZGizmo offset={manualOffset} onChange={onOffset} onReset={() => onOffset && ['x', 'y', 'z'].forEach((a) => onOffset(a, 0))} />
       <div className="cm3d-ring" />
       <div className="cm3d-corner left-2 top-2 border-b-0 border-r-0" />
       <div className="cm3d-corner right-2 top-2 border-b-0 border-l-0" />

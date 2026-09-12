@@ -1,12 +1,14 @@
 import React from 'react';
-import { Film, Layers, Camera as CameraIcon, Plus, MousePointerClick, Sliders } from 'lucide-react';
+import { Film, Layers, Camera as CameraIcon, Plus, MousePointerClick, Sliders, Move } from 'lucide-react';
 import { MOVES } from './camMoves';
+import CamAxisTool from './CamAxisTool';
 
 export default function CamInspector({
   moveId, onMovePick, autoKey, setAutoKey,
   intensity, setIntensity, duration, setDuration,
   camRig, setCamRig,
   media, onAddMedia, onSelectAsset, refId,
+  axisOffset, axisRange, axisTargetName, onAxis, onAxisReset,
 }) {
   const pick = (id) => onMovePick?.(id);
   return (
@@ -34,6 +36,11 @@ export default function CamInspector({
         <input type="range" min=".1" max="1" step=".05" value={intensity} onChange={(e) => setIntensity(+e.target.value)} />
         <label><span>Duration</span><b>{duration}s</b></label>
         <input type="range" min="1" max="10" step=".5" value={duration} onChange={(e) => setDuration(+e.target.value)} />
+      </details>
+
+      <details open>
+        <summary><Move size={11} /> Position <span className="cm-insp-count">{axisTargetName || 'Background'}</span></summary>
+        <CamAxisTool offset={axisOffset} range={axisRange} targetName={axisTargetName} onChange={onAxis} onReset={onAxisReset} />
       </details>
 
       <details open>

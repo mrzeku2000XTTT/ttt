@@ -170,6 +170,22 @@ export default function CAMStudio({ address, onHome }) {
   };
   const onOffset = (axis, value) => setManualOffset((o) => ({ ...o, [axis]: value }));
   const onSelectAsset = (id) => setRefId(id);
+
+  // Per-asset axis tool — the Inspector XYZ sliders edit whichever asset is
+  // currently selected. The background ('primary') uses the normalized offset
+  // the rig scales; every other asset edits its world-space position directly.
+  const selectedMedia = refId && refId !== 'primary' ? media.find((m) => m.id === refId) : null;
+  const axisOffset = selectedMedia ? selectedMedia.pos : manualOffset;
+  const axisRange = selectedMedia ? 3 : 1;
+  const axisTargetName = selectedMedia ? selectedMedia.name : 'Background';
+  const onAxis = (axis, value) => {
+    if (selectedMedia) setMedia((prev) => prev.map((m) => (m.id === selectedMedia.id ? { ...m, pos: { ...m.pos, [axis]: value } } : m)));
+    else setManualOffset((o) => ({ ...o, [axis]: value }));
+  };
+  const onAxisReset = () => {
+    if (selectedMedia) setMedia((prev) => prev.map((m) => (m.id === selectedMedia.id ? { ...m, pos: { x: 0, y: 0, z: 0 } } : m)));
+    else setManualOffset({ x: 0, y: 0, z: 0 });
+  };
   useEffect(() => {
     const onPaste = (e) => {
       const items = e.clipboardData?.items || [];
@@ -325,7 +341,7 @@ export default function CAMStudio({ address, onHome }) {
             <CamNodeGraph graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
           </div>
         </main>
-        <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={camRig} setCamRig={setCamRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} />
+        <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={camRig} setCamRig={setCamRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} axisOffset={axisOffset} axisRange={axisRange} axisTargetName={axisTargetName} onAxis={onAxis} onAxisReset={onAxisReset} />
         <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} media={media} refId={refId} onClearRef={() => setRefId(null)} />
       </div>
     </div>
