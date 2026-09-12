@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Download, Play, Pause, RotateCcw, Plus, Trash2, Store, Film } from 'lucide-react';
+import { Upload, Download, Play, Pause, RotateCcw, Plus, Trash2, Store, Film, Boxes, ZoomIn, ZoomOut } from 'lucide-react';
 import { shortKaspaAddress } from '@/lib/useKcc20Wallet';
 import { MOVES, moveById, drawInto } from './camMoves';
+import Cam3DView from './Cam3DView';
 
 const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/154c8ae70_generated_image.png';
 const CW = 1280, CH = 720;
@@ -18,6 +19,8 @@ export default function CAMStudio({ address, onHome }) {
   const [duration, setDuration] = useState(4);
   const [playing, setPlaying] = useState(false);
   const [mode, setMode] = useState('move'); // 'move' | 'seq'
+  const [view3D, setView3D] = useState(false); // After Effects-style 3D rig view
+  const [viewZoom, setViewZoom] = useState(0.85); // framing zoom — zoomed out a touch by default
   const [seqIdx, setSeqIdx] = useState(0);
   const [shots, setShots] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`cam_shots_${address}`)) || []; } catch { return []; }
@@ -30,6 +33,17 @@ export default function CAMStudio({ address, onHome }) {
   const seqIdxRef = useRef(0);
   const pRef = useRef(0);
   const curRef = useRef({}); curRef.current = { moveId, intensity, duration };
+  const view3DRef = useRef(false); view3DRef.current = view3D;
+  const viewZoomRef = useRef(0.85); viewZoomRef.current = viewZoom;
+
+  // shared frame reader — the 3D rig view animates from the exact same virtual camera state
+  const getFrame = useCallback(() => {
+    const seqMode = modeRef.current === 'seq' && shotsRef.current.length > 0;
+    const active = seqMode
+      ? shotsRef.current[seqIdxRef.current % shotsRef.current.length]
+      : curRef.current;
+    return { move: moveById(active.move), intensity: active.intensity, p: pRef.current };
+  }, []);
 
   useEffect(() => {
     try { localStorage.setItem(`cam_shots_${address}`, JSON.stringify(shots)); } catch {}
@@ -40,13 +54,13 @@ export default function CAMStudio({ address, onHome }) {
     if (!canvas || !img) return;
     if (modeRef.current === 'seq' && shotsRef.current.length) {
       const shot = shotsRef.current[seqIdxRef.current % shotsRef.current.length];
-      drawInto(canvas.getContext('2d'), CW, CH, img, moveById(shot.move), pRef.current, shot.intensity);
+      drawInto(canvas.getContext('2d'), CW, CH, img, moveById(shot.move), pRef.current, shot.intensity, viewZoomRef.current);
     } else {
-      drawInto(canvas.getContext('2d'), CW, CH, img, moveById(curRef.current.moveId), pRef.current, curRef.current.intensity);
+      drawInto(canvas.getContext('2d'), CW, CH, img, moveById(curRef.current.moveId), pRef.current, curRef.current.intensity, viewZoomRef.current);
     }
   }, [img]);
 
-  useEffect(() => { if (!playing) { pRef.current = 0; drawStill(); } }, [img, moveId, intensity, mode, seqIdx, playing, drawStill]);
+  useEffect(() => { if (!playing) { pRef.current = 0; drawStill(); } }, [img, moveId, intensity, mode, seqIdx, playing, drawStill, viewZoom, view3D]);
 
   // animation loop — advances the virtual camera through the active move / sequence
   useEffect(() => {
@@ -54,8 +68,7 @@ export default function CAMStudio({ address, onHome }) {
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       const dt = Math.min((now - last) / 1000, 0.1); last = now;
-      const canvas = canvasRef.current;
-      if (!playingRef.current || !img || !canvas) return;
+      if (!playingRef.current || !img) return;
       const seqMode = modeRef.current === 'seq' && shotsRef.current.length > 0;
       const active = seqMode
         ? shotsRef.current[seqIdxRef.current % shotsRef.current.length]
@@ -65,7 +78,11 @@ export default function CAMStudio({ address, onHome }) {
         pRef.current = 0;
         if (seqMode) { seqIdxRef.current = (seqIdxRef.current + 1) % shotsRef.current.length; setSeqIdx(seqIdxRef.current); }
       }
-      drawInto(canvas.getContext('2d'), CW, CH, img, moveById(active.move), pRef.current, active.intensity);
+      // the timeline keeps rolling in 3D mode — the rig view reads the same state
+      if (!view3DRef.current) {
+        const canvas = canvasRef.current;
+        if (canvas) drawInto(canvas.getContext('2d'), CW, CH, img, moveById(active.move), pRef.current, active.intensity, viewZoomRef.current);
+      }
       if (barRef.current) barRef.current.style.width = `${pRef.current * 100}%`;
     };
     raf = requestAnimationFrame(tick);
@@ -116,7 +133,7 @@ export default function CAMStudio({ address, onHome }) {
       ctx.save();
       ctx.translate(fw * k, 0);
       ctx.beginPath(); ctx.rect(0, 0, fw, fh); ctx.clip();
-      drawInto(ctx, fw, fh, img, move, k / 3, intensity);
+      drawInto(ctx, fw, fh, img, move, k / 3, intensity, viewZoomRef.current);
       ctx.restore();
     });
     const a = document.createElement('a');
@@ -151,7 +168,15 @@ export default function CAMStudio({ address, onHome }) {
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-3 p-4"
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files?.[0]); }}>
-          <canvas ref={canvasRef} width={CW} height={CH} className="max-h-full max-w-full rounded-xl border border-white/10 shadow-2xl" />
+          <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
+            {view3D ? (
+              <div className="cm3d-wrap relative h-full max-h-[560px] w-full overflow-hidden rounded-xl border border-white/10 shadow-2xl">
+                <Cam3DView image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} />
+              </div>
+            ) : (
+              <canvas ref={canvasRef} width={CW} height={CH} className="max-h-full max-w-full rounded-xl border border-white/10 shadow-2xl" />
+            )}
+          </div>
           {!img && (
             <button onClick={() => fileRef.current?.click()} className="absolute flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-white/15 bg-black/60 px-12 py-16 text-center transition hover:border-[hsl(var(--cm-accent))]/60 hover:bg-black/70">
               <span className="text-3xl">🎬</span>
@@ -165,6 +190,14 @@ export default function CAMStudio({ address, onHome }) {
               {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />} {playing ? 'Pause' : 'Play'}
             </button>
             <button onClick={restart} disabled={!img} className="cm-btn disabled:opacity-40"><RotateCcw className="w-4 h-4" /> Restart</button>
+            <button onClick={() => setView3D((v) => !v)} className={`cm-btn ${view3D ? 'cm-btn-primary' : ''}`} title="Toggle the After Effects-style 3D rig view">
+              <Boxes className="w-4 h-4" /> 3D
+            </button>
+            <div className="cm-glass flex items-center gap-1 rounded-full px-2 py-1" title="Framing zoom — zoom out to see more of the image">
+              <button onClick={() => setViewZoom((v) => Math.max(0.4, Math.round((v - 0.05) * 100) / 100))} className="rounded p-1 text-[hsl(var(--cm-muted))] transition hover:text-[hsl(var(--cm-fg))]" title="Zoom out"><ZoomOut className="h-4 w-4" /></button>
+              <span className="w-9 text-center text-[11px] text-[hsl(var(--cm-fg))]">{Math.round(viewZoom * 100)}%</span>
+              <button onClick={() => setViewZoom((v) => Math.min(1.5, Math.round((v + 0.05) * 100) / 100))} className="rounded p-1 text-[hsl(var(--cm-muted))] transition hover:text-[hsl(var(--cm-fg))]" title="Zoom in"><ZoomIn className="h-4 w-4" /></button>
+            </div>
             <div className="cm-glass min-w-[140px] flex-1 overflow-hidden rounded-full">
               <div ref={barRef} className="h-1.5 rounded-full bg-[hsl(var(--cm-accent))] transition-none" style={{ width: '0%' }} />
             </div>

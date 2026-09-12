@@ -22,3 +22,12 @@
 .cm-tool-active { border-color:hsl(var(--cm-accent)); background:hsl(var(--cm-accent)/.12); }
 .cm-portrait { position:absolute; height:112%; width:128%; max-width:none; left:-14%; top:-3%; object-fit:cover; object-position:50% 30%; -webkit-mask-image:linear-gradient(to bottom,transparent,black 8%,black 78%,transparent 100%),linear-gradient(to right,transparent,black 16%,black 100%); mask-image:linear-gradient(to bottom,transparent,black 8%,black 78%,transparent 100%),linear-gradient(to right,transparent,black 16%,black 100%); -webkit-mask-composite:source-in; mask-composite:intersect; }
 @media(max-width:1023px){ .cm-portrait{ height:110%; width:100%; left:0; } }
+
+/* 3D rig view — After Effects-style HUD */
+.cm3d-wrap { background:#0c0e0d; }
+.cm3d-label { font-size:9px; letter-spacing:.28em; text-transform:uppercase; color:hsl(var(--cm-muted)); white-space:nowrap; font-family:var(--font-body); }
+.cm3d-hud { position:absolute; pointer-events:none; z-index:5; }
+.cm3d-corner { position:absolute; width:16px; height:16px; border:1px solid hsl(var(--cm-fg)/.45); pointer-events:none; z-index:5; }
+.cm3d-ring { position:absolute; left:50%; top:50%; width:120px; height:120px; margin:-60px 0 0 -60px; border:1px solid hsl(var(--cm-fg)/.22); border-radius:50%; pointer-events:none; z-index:4; }
+.cm3d-ring::before { content:''; position:absolute; left:50%; top:-14px; bottom:-14px; width:1px; background:hsl(var(--cm-fg)/.16); }
+.cm3d-ring::after { content:''; position:absolute; top:50%; left:-14px; right:-14px; height:1px; background:hsl(var(--cm-fg)/.16); }

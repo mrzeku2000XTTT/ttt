@@ -37,10 +37,11 @@ export function moveAt(move, progress, intensity) {
 }
 
 // Render one frame of a move into any 2D context (preview canvas or storyboard strip).
-export function drawInto(ctx, W, H, image, move, p, intensity) {
+export function drawInto(ctx, W, H, image, move, p, intensity, frame = 1) {
   const c = moveAt(move, p, intensity);
-  // cover-fit with headroom proportional to intensity so pans never show edges
-  const base = Math.max(W / image.naturalWidth, H / image.naturalHeight) * (1 + 0.45 * intensity);
+  // cover-fit with headroom proportional to intensity so pans never show edges;
+  // `frame` is the framing zoom — <1 zooms out (letterbox edges may show)
+  const base = Math.max(W / image.naturalWidth, H / image.naturalHeight) * (1 + 0.45 * intensity) * frame;
   const s = base * c.zoom;
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
