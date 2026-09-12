@@ -58,7 +58,7 @@ export default function CAMLanding({ onConnect, onEnter, loading, error, hasWall
           </div>
         </div>
       </div>
-      <div id="how" className="absolute bottom-6 left-6 right-6 z-20 flex flex-wrap items-center gap-x-7 gap-y-3 text-xs text-[hsl(var(--cm-muted))]">
+      <div id="how" className="relative z-20 flex flex-wrap items-center gap-x-7 gap-y-3 px-6 pb-10 text-xs text-[hsl(var(--cm-muted))] lg:absolute lg:bottom-6 lg:left-6 lg:right-6 lg:px-0 lg:pb-0">
         <span className="text-[10px] uppercase tracking-[0.2em] text-[hsl(var(--cm-accent))]">How it works</span>
         {[['01', 'Connect', 'Link your Scorpion wallet'], ['02', 'Upload', 'Drop, paste or pick an image'], ['03', 'Direct', 'Pick a move, play & export storyboard']].map((s) => (
           <div key={s[0]} className="flex items-start gap-2.5"><span className="cm-display text-sm text-[hsl(var(--cm-accent))]">{s[0]}</span><div><p className="text-xs font-medium text-white">{s[1]}</p><p className="text-[11px]">{s[2]}</p></div></div>
