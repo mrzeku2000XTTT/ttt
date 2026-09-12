@@ -12,7 +12,10 @@ import CamViewerDeck from './CamViewerDeck';
 import CamTransport from './CamTransport';
 import CamInspector from './CamInspector';
 import CamShotStrip from './CamShotStrip';
-import CamNodeGraph from './CamNodeGraph';
+import CamEditorPanel from '@/components/cam/CamEditorPanel';
+import useCamTimeline from '@/components/cam/useCamTimeline';
+import { captureScene } from '@/components/cam/camTimelineModel';
+import renderCamScene from '@/components/cam/camSceneRender';
 
 const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/154c8ae70_generated_image.png';
 const CW = 1280, CH = 720;
@@ -57,6 +60,13 @@ export default function CAMStudio({ address, onHome }) {
   const [camRig, setCamRig] = useState({ fov: 48, distance: 4.2, roll: 0, autoOrbit: false });
   const [refId, setRefId] = useState(null);
   const mediaInputRef = useRef(null);
+  const timeline = useCamTimeline(address, captureScene(media, manualOffset, camRig, moveId, intensity, duration));
+  const timelineRef = useRef(timeline); timelineRef.current = timeline;
+  const scene = timeline.enabled ? timeline.scene : null;
+  const primaryPose = scene?.assets.find((a) => a.id === 'primary');
+  const previewOffset = scene ? { x: (primaryPose?.x || 0) / 2.4, y: (primaryPose?.y || 0) / 1.6, z: (primaryPose?.z || 0) / 2.2 } : manualOffset;
+  const previewMedia = scene ? media.flatMap((m) => { const pose = scene.assets.find((a) => a.id === m.id); return pose ? [{ ...m, pos: { x: pose.x, y: pose.y, z: pose.z }, scale: pose.scale }] : []; }) : media;
+  useEffect(() => { if (scene && !fusionOn) renderCamScene(canvasRef.current, scene, media, viewZoom); }, [scene, media, viewZoom, fusionOn]);
 
   // refs mirrored for the animation loop
   const playingRef = useRef(false); playingRef.current = playing;
@@ -69,6 +79,8 @@ export default function CAMStudio({ address, onHome }) {
 
   // shared frame reader — the 3D rig view animates from the exact same virtual camera state
   const getFrame = useCallback(() => {
+    const timeline = timelineRef.current;
+    if (timeline.enabled) { const s = timeline.scene; return { move: moveById(s.camera.moveId), intensity: s.camera.intensity, p: s.progress, visibleAssets: s.assets.map((a) => a.id) }; }
     const seqMode = modeRef.current === 'seq' && shotsRef.current.length > 0;
     const active = seqMode
       ? shotsRef.current[seqIdxRef.current % shotsRef.current.length]
@@ -88,7 +100,7 @@ export default function CAMStudio({ address, onHome }) {
 
   const drawStill = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !img) return;
+    if (!canvas || !img || timelineRef.current.enabled) return;
     if (modeRef.current === 'seq' && shotsRef.current.length) {
       const shot = shotsRef.current[seqIdxRef.current % shotsRef.current.length];
       drawInto(canvas.getContext('2d'), CW, CH, img, moveById(shot.move), pRef.current, shot.intensity, viewZoomRef.current);
@@ -105,6 +117,7 @@ export default function CAMStudio({ address, onHome }) {
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       const dt = Math.min((now - last) / 1000, 0.1); last = now;
+      if (timelineRef.current.enabled) { if (barRef.current) barRef.current.style.width = `${timelineRef.current.total ? timelineRef.current.time / timelineRef.current.total * 100 : 0}%`; return; }
       if (!playingRef.current || !img) return;
       const seqMode = modeRef.current === 'seq' && shotsRef.current.length > 0;
       const active = seqMode
@@ -160,6 +173,7 @@ export default function CAMStudio({ address, onHome }) {
     reader.readAsDataURL(file);
   };
   const onMovePick = (id) => {
+    if (!timeline.recording) timeline.leave();
     if (autoKey) {
       // auto keyframe — append a shot and spawn a node for each clicked move
       setShots((prev) => [...prev, { id: Date.now(), move: id, intensity, duration }]);
@@ -203,18 +217,21 @@ export default function CAMStudio({ address, onHome }) {
     return () => window.removeEventListener('paste', onPaste);
   }, []);
 
-  const togglePlay = () => { if (img) setPlaying((v) => !v); };
+  const togglePlay = () => { if (timeline.enabled) { if (!timeline.recording) timeline.play(); return; } if (img) setPlaying((v) => !v); };
   const restart = () => {
+    if (timeline.enabled) { timeline.seek(0); return; }
     pRef.current = 0; seqIdxRef.current = 0; setSeqIdx(0);
     if (!playing) drawStill();
     if (barRef.current) barRef.current.style.width = '0%';
   };
   const playSequence = () => {
     if (!img || !shots.length) return;
+    timeline.leave();
     setMode('seq'); pRef.current = 0; seqIdxRef.current = 0; setSeqIdx(0); setPlaying(true);
   };
   const addShot = () => setShots((prev) => [...prev, { id: Date.now(), move: moveId, intensity, duration }]);
   const loadShot = (shot) => {
+    timeline.leave();
     setMode('move'); setMoveId(shot.move); setIntensity(shot.intensity); setDuration(shot.duration);
   };
   const downloadStoryboard = () => {
@@ -342,11 +359,11 @@ export default function CAMStudio({ address, onHome }) {
       <input ref={mediaInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => Array.from(e.target.files || []).forEach(addMedia)} />
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} />
-          <CamTransport playing={playing} canPlay={!!img} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
+          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={scene?.camera || camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} />
+          <CamTransport currentTime={timeline.enabled ? timeline.time : undefined} totalTime={timeline.enabled ? timeline.total : undefined} onPrevious={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => b - a).find((t) => t < timeline.time - 0.01) ?? 0) : undefined} onNext={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => a - b).find((t) => t > timeline.time + 0.01) ?? timeline.total) : undefined} playing={timeline.enabled ? timeline.running : playing} canPlay={!!img && !timeline.recording} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
-            <CamNodeGraph graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
+            <CamEditorPanel timeline={timeline} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
           </div>
         </main>
         <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={camRig} setCamRig={setCamRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} axisOffset={axisOffset} axisRange={axisRange} axisTargetName={axisTargetName} onAxis={onAxis} onAxisReset={onAxisReset} />

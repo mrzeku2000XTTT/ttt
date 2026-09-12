@@ -121,6 +121,7 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
 
     // the background image asset follows the XYZ drag
     if (planeGroupRef.current) {
+      planeGroupRef.current.visible = !f?.visibleAssets || f.visibleAssets.includes('primary');
       planeGroupRef.current.position.set(
         (manualOffset?.x || 0) * 2.4,
         (manualOffset?.y || 0) * 1.6,

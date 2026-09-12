@@ -37,7 +37,7 @@ export default function useCamNodes(initial) {
     setEdges((items) => items.filter(([from, to]) => from !== selected && to !== selected));
     setSelected(null);
   };
-  const moveNode = (id, x, y) => setNodes((items) => items.map((node) => node.id === id ? { ...node, x: Math.max(8, x), y: Math.max(8, y) } : node));
+  const moveNode = (id, x, y) => setNodes((items) => items.map((node) => node.id === id ? { ...node, x, y } : node));
   const beginConnection = (id) => { if (PORT_TYPES[nodeMap[id]?.type]?.output) setConnecting(id); };
   const cancelConnection = () => setConnecting(null);
   const finishConnection = (id) => {

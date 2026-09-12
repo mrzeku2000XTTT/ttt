@@ -1,16 +1,17 @@
 import React, { useRef } from 'react';
 
-export default function CamNode({ node, selected, detail, onSelect, onMove, onOutput, onInput }) {
+export default function CamNode({ node, selected, detail, onSelect, onMove, onOutput, onInput, zoom = 1 }) {
   const drag = useRef(null);
   const down = (e) => {
     if (e.target.dataset.port) return;
+    e.stopPropagation();
     drag.current = { sx: e.clientX, sy: e.clientY, x: node.x, y: node.y };
     e.currentTarget.setPointerCapture(e.pointerId);
     onSelect(node.id);
   };
   const move = (e) => {
     if (!drag.current) return;
-    onMove(node.id, drag.current.x + e.clientX - drag.current.sx, drag.current.y + e.clientY - drag.current.sy);
+    onMove(node.id, drag.current.x + (e.clientX - drag.current.sx) / zoom, drag.current.y + (e.clientY - drag.current.sy) / zoom);
   };
   return (
     <div className={`cm-node ${selected ? 'cm-node-selected' : ''}`} style={{ left: node.x, top: node.y }} onClick={(e) => e.stopPropagation()} onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null; }}>
