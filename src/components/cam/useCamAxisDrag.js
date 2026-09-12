@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
-export default function useCamAxisDrag({ axis, value, onChange, onSelect, dragging }) {
+export default function useCamAxisDrag({ axis, value, onChange, onSelect, onDragStart, dragging }) {
   const { camera, gl, controls } = useThree();
   const cleanup = useRef(null);
   useEffect(() => () => cleanup.current?.(), []);
@@ -10,6 +10,7 @@ export default function useCamAxisDrag({ axis, value, onChange, onSelect, draggi
     if (event.button !== 0) return;
     event.stopPropagation();
     cleanup.current?.();
+    onDragStart?.();
     onSelect();
     const parent = event.object.parent;
     parent.updateWorldMatrix(true, false);

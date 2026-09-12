@@ -10,9 +10,9 @@ const axes = {
   y: { color: '#8dff6a', position: [0, 0.4, 0], rotation: [0, 0, 0], label: [0, 0.9, 0] },
   z: { color: '#4d9fff', position: [0, 0, 0.4], rotation: [Math.PI / 2, 0, 0], label: [0, 0, 0.9] },
 };
-export default function CamDragAxis({ axis, value, active, onChange, onSelect, dragging }) {
+export default function CamDragAxis({ axis, value, active, onChange, onSelect, onDragStart, dragging }) {
   const spec = axes[axis];
-  const start = useCamAxisDrag({ axis, value, onChange, onSelect, dragging });
+  const start = useCamAxisDrag({ axis, value, onChange, onSelect, onDragStart, dragging });
   return <group>
     <mesh position={spec.position} rotation={spec.rotation} renderOrder={1001} onPointerDown={start} onClick={(e) => { e.stopPropagation(); onSelect(); }}>
       <cylinderGeometry args={[active ? 0.02 : 0.012, active ? 0.02 : 0.012, 0.8, 8]} />

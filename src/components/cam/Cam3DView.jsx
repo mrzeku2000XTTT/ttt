@@ -42,7 +42,7 @@ function MediaPlane({ item, selected, onSelect }) {
   );
 }
 
-function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFrame, onMoveAsset }) {
+function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFrame, onMoveAsset, onBeginAssetMove }) {
   const dragging = useRef(false);
   const selected = media?.find((m) => m.id === refId && m.id !== 'primary');
   const assetPosition = selected?.pos || { x: (manualOffset?.x || 0) * 2.4, y: (manualOffset?.y || 0) * 1.6, z: (manualOffset?.z || 0) * 2.2 };
@@ -162,7 +162,7 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
       <Html position={[PLANE_W / 2 + 0.42, -PLANE_H / 2, BASE_DIST / 2]} center style={{ pointerEvents: 'none' }}><span className="cm3d-label">Depth</span></Html>
 
       {/* Axis handles follow and translate the selected asset in rig space. */}
-      <CamAssetAxes key={selected?.id || 'primary'} id={selected?.id || 'primary'} position={assetPosition} scale={selected?.scale || 1} onSelect={onSelectAsset} onMove={onMoveAsset} dragging={dragging} />
+      <CamAssetAxes key={selected?.id || 'primary'} id={selected?.id || 'primary'} position={assetPosition} scale={selected?.scale || 1} onSelect={onSelectAsset} onMove={onMoveAsset} onDragStart={onBeginAssetMove} dragging={dragging} />
 
       {/* projection lines + frustum */}
       {cornerLines.map((l, i) => <primitive key={i} object={l} />)}
@@ -186,13 +186,13 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
 }
 
 // After Effects-style 3D rig view — same virtual camera, seen from the outside.
-export default function Cam3DView({ image, media, manualOffset, camRig, onSelectAsset, refId, onOffset, onMoveAsset, getFrame, label }) {
+export default function Cam3DView({ image, media, manualOffset, camRig, onSelectAsset, refId, onOffset, onMoveAsset, onBeginAssetMove, getFrame, label }) {
   return (
     <div className="relative h-full w-full">
       <Canvas camera={{ position: [2.7, 1.4, 4.9], fov: 42 }} dpr={[1, 2]}>
         <color attach="background" args={['#0c0e0d']} />
         <fog attach="fog" args={['#0c0e0d', 14, 32]} />
-        <Rig image={image} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} getFrame={getFrame} onMoveAsset={onMoveAsset} />
+        <Rig image={image} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} getFrame={getFrame} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
         <OrbitControls makeDefault target={[0, 0, 0]} minDistance={2.2} maxDistance={14} />
         <GizmoHelper alignment="bottom-right" margin={[70, 70]}>
           <GizmoViewport axisColors={['#ff5f56', '#8dff6a', '#4d9fff']} labelColor="#0c0e0d" />

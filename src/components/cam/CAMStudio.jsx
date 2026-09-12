@@ -64,8 +64,8 @@ export default function CAMStudio({ address, onHome }) {
   const timelineRef = useRef(timeline); timelineRef.current = timeline;
   const scene = timeline.enabled ? timeline.scene : null;
   const primaryPose = scene?.assets.find((a) => a.id === 'primary');
-  const previewOffset = scene ? { x: (primaryPose?.x || 0) / 2.4, y: (primaryPose?.y || 0) / 1.6, z: (primaryPose?.z || 0) / 2.2 } : manualOffset;
-  const previewMedia = scene ? media.flatMap((m) => { const pose = scene.assets.find((a) => a.id === m.id); return pose ? [{ ...m, pos: { x: pose.x, y: pose.y, z: pose.z }, scale: pose.scale }] : []; }) : media;
+  const previewOffset = scene && !timeline.recording ? { x: (primaryPose?.x || 0) / 2.4, y: (primaryPose?.y || 0) / 1.6, z: (primaryPose?.z || 0) / 2.2 } : manualOffset;
+  const previewMedia = scene && !timeline.recording ? media.flatMap((m) => { const pose = scene.assets.find((a) => a.id === m.id); return pose ? [{ ...m, pos: { x: pose.x, y: pose.y, z: pose.z }, scale: pose.scale }] : []; }) : media;
   useEffect(() => { if (scene && !fusionOn) renderCamScene(canvasRef.current, scene, media, viewZoom); }, [scene, media, viewZoom, fusionOn]);
 
   // refs mirrored for the animation loop
@@ -184,6 +184,10 @@ export default function CAMStudio({ address, onHome }) {
   };
   const onOffset = (axis, value) => setManualOffset((o) => ({ ...o, [axis]: value }));
   const onSelectAsset = (id) => setRefId(id);
+  const onBeginAssetMove = () => {
+    if (timeline.enabled && !timeline.recording) timeline.leave();
+    setPlaying(false);
+  };
   const onMoveAsset = (id, axis, value) => {
     if (id === 'primary') {
       const units = { x: 2.4, y: 1.6, z: 2.2 };
@@ -359,7 +363,7 @@ export default function CAMStudio({ address, onHome }) {
       <input ref={mediaInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => Array.from(e.target.files || []).forEach(addMedia)} />
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={scene?.camera || camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} />
+          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={scene?.camera || camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
           <CamTransport currentTime={timeline.enabled ? timeline.time : undefined} totalTime={timeline.enabled ? timeline.total : undefined} onPrevious={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => b - a).find((t) => t < timeline.time - 0.01) ?? 0) : undefined} onNext={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => a - b).find((t) => t > timeline.time + 0.01) ?? timeline.total) : undefined} playing={timeline.enabled ? timeline.running : playing} canPlay={!!img && !timeline.recording} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
