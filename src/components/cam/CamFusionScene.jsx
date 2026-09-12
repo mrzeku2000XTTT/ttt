@@ -1,4 +1,7 @@
+/** @jsxRuntime classic */
+/** @jsx camSceneElement */
 import React, { useMemo, useRef } from 'react';
+import camSceneElement from '@/components/cam/camSceneElement';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, Html, TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
