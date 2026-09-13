@@ -1,0 +1,24 @@
+export function buildETAComponentRules(components) {
+  return `AVAILABLE ETA COMPONENTS
+Choose only from: ${components.join(', ')}.
+TitleCard: concise opening, chapter, statement, or payoff. NumberDisplay: metrics and proof. Glass: layered premium depth. BrowserWindow: websites, dashboards, web workflows. PhoneWindow: simple mobile demos. IPhoneAnimated: cinematic 3D phone and camera choreography. MacBookAnimated: cinematic laptop, lid, camera, and screen choreography. Cards: clean collections. Cards2: energetic spatial cards. Cards3: halo depth and center drift. Cards4: camera focus and zoom-out cards. DivMorph: structural geometric transformation. SearchAnimation/SearchAnimation1: expanding typed search with cursor and zoom. SearchAnimation2: spring search entrance with typing and cursor. LogoAnimation/LogoAnimation1: circle, icon, slide, and letters. LogoAnimation2: blur, scale, shift, and text slide. UIAnimation: dashboard/interface assembly with selector zoom. Video: supplied footage only.
+
+COMPONENT AUTO-FILL
+BrowserWindow: fill url, pageTitle, pageSubtitle, ctaLabel, exactly 3 browserRows, 2–4 browserKeyframes, 1–3 zoomKeyframes, and 1–3 cursorSteps targeting visible controls. Browser keyframes contain time, content, amplitude, speed, x, y, z, offset, scrollY, and rotate.
+PhoneWindow: fill phoneModel, phoneCount, deviceColor, lightStrength, believable content, media when supplied, and relevant zoom/cursor behavior.
+IPhoneAnimated: fill phoneModel, phoneCount, deviceColor, lightStrength, 2–4 phoneKeyframes, 1–3 cameraKeyframes, 1–3 deviceTexts with keyframes, supplied screen media, and Match Cut. Device keyframes contain time, x/y/z, rotateX/Y/Z, scale, easing, curve. Camera frames contain time, x/y/z, rotateX/Y/Z, fov, easing, curve. Static media always receives pan, zoom, orbit, or parallax.
+MacBookAnimated: fill openingEnabled/start/speed, deviceColor, lightStrength, 2–4 macbookKeyframes, 1–3 cameraKeyframes, deviceTexts, supplied screen media, and Match Cut. Coordinate lid, camera, and text.
+Cards: fill centerHeadline, cardColor, cardFont/Size/Weight, cardTextDepth, cardRadius/Width/Height, textTransform, and 2–4 ringKeyframes. Ring frames contain time, speed, radius, tiltX, tiltZ, textDepth, easing.
+Cards2: fill all Cards values plus spinPeriodFrames, spinSpeed, sphereRadius, sphereTiltX/Z, headlineOrbitRadius/speed/incline, spinDirection, cardPerspective, satelliteX/Y/Z, satelliteRotateX/Y/Z, and spinPhase.
+Cards3: fill card dimensions/perspective, haloX/Y/Z, depthStrength, maxBlur, centerHeadline, centerTextColor, card typography, centerDriftStrength/Min/Max, haloBaseX/Y/Z, and 2–4 haloMoveKeyframes with time, x/y/z, easing. Do not add browser zoom frames.
+Cards4: fill card and halo values, floatRotation, floatSpeed, and 2–4 cardZoomKeyframes with time, focusCard, zoomOut, x/y, easing; alternate focused and wide states.
+DivMorph: fill 2–5 morphBoxes with holdFrames and morphSpeed, 3–5 zoomKeyframes, and 1–3 cursorSteps when interactive.
+SearchAnimation/SearchAnimation1: fill searchText, typingStartFrame, framesPerCharacter, pillStartFrame/endFrame, searchBackground, cursor delay/move/click timing, click state, start/end coordinates, size, 3 zoomKeyframes, and 2 cursorSteps targeting .search-text. Use a wide → .search-bar focus → wide camera path scaled to duration.
+SearchAnimation2: fill searchText, typingSpeed, entranceStartScale/EndScale/Stiffness/Damping, all cursor values, 3 zoomKeyframes, and 2 cursorSteps. Use coherent spring values and settle before exit.
+LogoAnimation/LogoAnimation1: fill logoText, supplied logo URL only, background/text/circle colors, typography, icon size, scale, gap, circle radius, slide offset, circle/icon/slide timing, textStartFrame, letterStagger, revealDuration, and logoSlideDistance. Fit reveal inside duration.
+LogoAnimation2: fill logo text/media, deterministic motion style, colors, typography, icon/layout, blur/scale/shift timing, textStartFrame, textSlideDuration, and textSlideDistance.
+UIAnimation: fill pageTitle, pageSubtitle, ctaLabel, browserRows, and zoomKeyframes. Use wide at 0, .main-panel focus near 0.8 seconds, and wide near 2 seconds, proportionally scaled for short scenes; include x/y, scale, speed, duration, easing, and curve.
+Video: fill videoMedia only from supplied accessible media and videoObjectFit as cover, contain, or fill. Use cover for cinematic footage, contain to preserve the full frame, and fill only when stretching is acceptable. Never invent media URLs; choose another component if no video exists.
+
+All component Match Cuts use 0.25-second outgoing and 0.5-second incoming defaults unless continuity demands a valid intentional adjustment.`;
+}

@@ -50,7 +50,7 @@ export async function createETAPlan(brief, files, onStatus) {
   for (let passIndex = 1; passIndex <= maxPasses; passIndex += 1) {
     onStatus(`Pass ${passIndex}/${maxPasses}: ${PASS_LABELS[passIndex - 1]}`);
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: buildETADirectorPrompt(brief, { passIndex, maxPasses, currentPlan }),
+      prompt: buildETADirectorPrompt(brief, { passIndex, maxPasses, currentPlan, referenceMediaCount: uploads.length }),
       file_urls: uploads.length ? uploads : undefined,
       response_json_schema: {
         type: "object",
@@ -58,7 +58,7 @@ export async function createETAPlan(brief, files, onStatus) {
         required: ["title", "narrative", "scenes"],
       },
     });
-    currentPlan = { ...result, scenes: result.scenes.map((scene) => ({ ...scene, advanced: scene.advanced || {} })) };
+    currentPlan = { ...result, format: brief.format, fps: 60, scenes: result.scenes.map((scene) => ({ ...scene, advanced: scene.advanced || {} })) };
   }
   return currentPlan;
 }

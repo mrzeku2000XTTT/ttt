@@ -2,7 +2,7 @@ import React from 'react';
 import { AbsoluteFill, Sequence } from 'remotion';
 import ETAFrameScene from './ETAFrameScene';
 
-export const ETA_FPS = 30;
+export const ETA_FPS = 60;
 export default function ETAComposition({ plan }) {
   let start = 0;
   return <AbsoluteFill className="bg-background">{plan.scenes.map((scene, index) => {

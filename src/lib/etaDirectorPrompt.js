@@ -1,52 +1,15 @@
 import { ETA_COMPONENTS } from './etaComponents';
+import { buildETADirectorCore } from './etaDirectorCorePrompt';
+import { buildETAComponentRules } from './etaDirectorComponentPrompt';
 
-export function buildETADirectorPrompt(brief, { passIndex = 1, maxPasses = 1, currentPlan = null } = {}) {
-  return `You are ETA Director, a senior motion director and interaction animator. Convert ANY free-form request into a production-ready, deterministic Remotion scene plan. Infer product, audience, story, visual language, and missing details. Never reject a vague prompt and never return placeholder scenes.
-
-INPUT
-Prompt: ${brief.description}
-Optional product: ${brief.name || 'infer'}
-Optional URL: ${brief.url || 'infer from prompt'}
-Optional audience: ${brief.audience || 'infer'}
-Optional style: ${brief.style || 'infer'}
-Runtime: ${brief.duration} seconds. Canvas: ${brief.format}.
-Generation pass: ${passIndex} of ${maxPasses}.
-Existing plan from the previous pass: ${currentPlan ? JSON.stringify(currentPlan) : 'none'}.
-
-MULTI-PASS CONTRACT
-Every pass must return a complete, immediately usable plan—not notes, a patch, or partial work. If this is the only pass, perform intent analysis, direction, keyframing, continuity, validation, and repair internally before returning. If an existing plan is supplied, preserve strong valid work, fill missing fields, repair weak or contradictory values, and never reduce completeness.
-Pass 1 analyzes intent and establishes the full narrative and scene plan. Pass 2 strengthens component choices and fills component-specific values. Pass 3 completes deterministic motion and keyframes. Pass 4 coordinates Match Cuts and scene continuity. Pass 5 validates every field and repairs all remaining omissions. When fewer passes are requested, combine the remaining responsibilities into the final available pass.
-
-IMPLEMENTED COMPONENT REGISTRY
-${ETA_COMPONENTS.join(', ')}
-- TitleCard: word-by-word reveal; use a short cinematic hook.
-- NumberDisplay: count or metric reveal with underline growth.
-- Glass: layered translucent cards with depth and parallax.
-- BrowserWindow: real browser chrome, address bar, sidebar, search, CTA, dashboard cards, scroll, cursor, click, 3D rotation, and zoom.
-- PhoneWindow/IPhoneAnimated: device entrance, floating motion, and scrolling interface; set phoneModel.
-- MacBookAnimated: hinged screen entrance and staggered interface cards.
-- Cards/Cards2/Cards3/Cards4: dimensional card choreography; set complete ringKeyframes and card styling.
-- DivMorph: geometric morphing, rotation, and scale rhythm.
-- SearchAnimation/SearchAnimation1: expanding pill search field with typed searchText.
-- SearchAnimation2: spring entrance search field with configurable typing speed.
-- LogoAnimation/LogoAnimation1: circle, icon-scale, slide, and letter reveal.
-- LogoAnimation2: blur/scale/shift logo reveal with selectable motion style.
-- Video: uploaded video media with object fit set to cover, contain, or fill.
-- UIAnimation: real dashboard/sidebar/chart assembly.
-- Video: media-player reveal with deterministic progress.
-
-DIRECTION RULES
-Create a clear hook → proof/demo → payoff arc. Use 4–9 scenes depending on runtime. Scene durations must total approximately ${brief.duration} seconds and each scene must be 1–8 seconds. Vary component, framing, scale, entrance, and rhythm; do not repeat the same component consecutively. Motion descriptions must name the visible action, timing order, direction, camera behavior, and exit—not generic phrases like “animate in.” Keep important action inside the ${brief.format} safe area. Voiceover carries narrative; visual describes only what moves on screen.
-
-ADVANCED MOTION REQUIREMENTS
-Every scene must populate advanced with useful component-specific values plus subtitle, animatedBorder, showShell, backgroundColor, textContent, typography, and at least two textKeyframes. Every scene must include a complete matchCut: enabled true, direction Left, outgoing duration 0.25/distance 0.5/drift 0.15/driftDuration 2.5, and incoming Golden ratio (1:2)/duration 0.5/distance 0.5/opacity 0/scale 1. Keyframe times must be inside that scene’s duration and chronologically ordered. Choose one hyperframe_animation from fade_in, fade_out, slide_up, slide_left, pop, typewriter, zoom, shake.
-BrowserWindow: provide url, pageTitle, pageSubtitle, ctaLabel, exactly 3 browserRows, 2–4 browserKeyframes with changing scroll/rotation, 1–3 zoomKeyframes, and 1–3 cursorSteps that target visible controls and describe Click/Type/Scroll actions.
-Cards/Cards2: build a Fibonacci-sphere satellite composition and provide centerHeadline, cardColor, cardRadius, cardWidth, cardHeight, cardFont, cardFontSize, cardFontWeight, cardTextDepth, textTransform, spinPeriodFrames, spinSpeed, sphereRadius, sphereTiltX/Z, headlineOrbitRadius/speed/incline, spinDirection, cardPerspective, satelliteX/Y/Z, satelliteRotateX/Y/Z, spinPhase, and 2–4 ringKeyframes.
-Cards3: build a cinematic halo with cardWidth/Height, cardPerspective, haloX/Y/Z, depthStrength, maxBlur, centerHeadline, centerTextColor, cardFont/Size/Weight, centerDriftStrength/Min/Max, haloBaseX/Y/Z, and 2–4 haloMoveKeyframes. Do not provide browser zoomKeyframes.
-Cards4: build a camera-driven halo with cardWidth/Height, cardPerspective, haloX/Y/Z, depthStrength, maxBlur, floatRotation, floatSpeed, and 2–4 cardZoomKeyframes that alternate focused cards and wide zoom-outs.
-PhoneWindow: provide a valid phoneModel and believable screen content. IPhoneAnimated: provide phoneCount, deviceColor, lightStrength, 2–4 phoneKeyframes, 1–3 deviceTexts each with text keyframes, 1–3 cameraKeyframes, and a device match cut using 0.25s outgoing and 0.5s incoming durations. MacBookAnimated: provide deviceColor, lightStrength, openingEnabled/start/speed, 2–4 macbookKeyframes, deviceTexts with text keyframes, 1–3 cameraKeyframes, and a device match cut using 0.25s outgoing and 0.5s incoming durations. DivMorph: provide 3–5 zoomKeyframes, 1–3 cursorSteps using frame durations, and 2–5 morphBoxes with holdFrames and morphSpeed. SearchAnimation/SearchAnimation1: provide searchText, typingStartFrame, framesPerCharacter, pillStartFrame/pillEndFrame, searchBackground, complete built-in cursor timing/coordinates/size, 3 zoomKeyframes, and 2 cursorSteps. SearchAnimation2: provide searchText, typingSpeed, entranceStartScale/EndScale/Stiffness/Damping, cursor values, 3 zoomKeyframes, and 2 cursorSteps. LogoAnimation/LogoAnimation1: provide logoText/image URL, colors, typography, layout, circle/icon/slide timing, and letter reveal values. LogoAnimation2: provide logoText/image URL, motion style, colors, typography, blur/scale/shift timing, and text slide values. These components use match cuts with 0.25s outgoing and 0.5s incoming durations. UIAnimation: pageTitle, pageSubtitle, ctaLabel, browserRows, and zoomKeyframes at 0, 0.8, and 2 seconds targeting .main-panel.
-FINAL VALIDATION
-Before returning, silently verify that every scene uses an implemented component; all top-level fields and advanced component fields are populated; keyframes are chronological, visible, and inside scene duration; selectors target plausible rendered elements; static media receives camera motion; adjacent exits and entrances are coherent; and no placeholders, null required values, runtime randomness, or unsupported fields remain. Repair every failure before responding. Return the entire plan as schema-valid data only.
-
-Use original motion language and implemented capabilities only. Output no commentary outside the schema.`;
+export function buildETADirectorPrompt(brief, {
+  passIndex = 1,
+  maxPasses = 1,
+  currentPlan = null,
+  referenceMediaCount = 0,
+} = {}) {
+  return [
+    buildETADirectorCore({ brief, passIndex, maxPasses, currentPlan, referenceMediaCount }),
+    buildETAComponentRules(ETA_COMPONENTS),
+  ].join('\n\n');
 }
