@@ -23,12 +23,35 @@
     "file_uri": {
       "type": "string"
     },
+    "original_file_uri": {
+      "type": "string"
+    },
     "youtube_id": {
       "type": "string"
     },
     "caption": {
       "type": "string",
       "maxLength": 500
+    },
+    "duration_seconds": {
+      "type": "number",
+      "maximum": 60
+    },
+    "edit_start_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "edit_end_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "ai_edit_summary": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "ai_edited": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
