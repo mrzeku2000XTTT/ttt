@@ -12,10 +12,11 @@ const camera3DKeyframe = { type:'object', properties:{ time:number, x:number, y:
 const text3DKeyframe = { type:'object', properties:{ time:number, x:number, y:number, scale:number, opacity:number, easing:string, curve:string }, required:['time','x','y','scale','opacity','easing'] };
 const deviceText = { type:'object', properties:{ content:string, fontSize:string, fontWeight:number, fontFamily:string, color:string, left:string, zIndex:string, keyframes:{type:'array',items:text3DKeyframe} }, required:['content','fontSize','fontWeight','fontFamily','color','left','zIndex','keyframes'] };
 const cutSide = { type:'object', properties:{ duration:number, distance:number, drift:number, driftDuration:number, curve:string, ratio:string, opacity:number, scale:number, easing:string, direction:string } };
+const videoMedia = { type:'object', properties:{ url:string, type:string, name:string } };
 const matchCut = { type:'object', properties:{ enabled:{type:'boolean'}, direction:string, outgoing:cutSide, incoming:cutSide }, required:['enabled','direction','outgoing','incoming'] };
 
 export const etaAdvancedSchema = { type:'object', properties:{
-  subtitle:string, searchText:string, url:string, pageTitle:string, pageSubtitle:string, ctaLabel:string, browserRows:{type:'array',items:string},
+  subtitle:string, searchText:string, url:string, pageTitle:string, pageSubtitle:string, ctaLabel:string, browserRows:{type:'array',items:string}, videoMedia, videoObjectFit:string,
   browserKeyframes:{type:'array',items:browserKeyframe}, zoomKeyframes:{type:'array',items:zoomKeyframe}, cursorSteps:{type:'array',items:cursorStep}, textKeyframes:{type:'array',items:textKeyframe}, ringKeyframes:{type:'array',items:ringKeyframe}, haloMoveKeyframes:{type:'array',items:haloMoveKeyframe}, cardZoomKeyframes:{type:'array',items:cardZoomKeyframe}, matchCut,
   animatedBorder:{type:'boolean'}, showShell:{type:'boolean'}, backgroundColor:string, boxShadow:string, pillBackground:string, pillTextColor:string,
   textContent:string, fontSize:string, fontWeight:number, fontFamily:string, textColor:string, zIndex:number, textLeft:number, framesPerCharacter:number, typingStartFrame:number, pillStartFrame:number, pillEndFrame:number, searchBackground:string,

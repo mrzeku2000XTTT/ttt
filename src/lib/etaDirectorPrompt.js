@@ -25,6 +25,7 @@ ${ETA_COMPONENTS.join(', ')}
 - SearchAnimation2: spring entrance search field with configurable typing speed.
 - LogoAnimation/LogoAnimation1: circle, icon-scale, slide, and letter reveal.
 - LogoAnimation2: blur/scale/shift logo reveal with selectable motion style.
+- Video: uploaded video media with object fit set to cover, contain, or fill.
 - UIAnimation: real dashboard/sidebar/chart assembly.
 - Video: media-player reveal with deterministic progress.
 
