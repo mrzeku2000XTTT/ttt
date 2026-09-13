@@ -1,7 +1,8 @@
 const number = { type: 'number' }, string = { type: 'string' };
 const browserKeyframe = { type: 'object', properties: { time:number, content:string, amplitude:number, speed:number, x:number, y:number, z:number, offset:number, scrollY:number, rotate:{type:'boolean'} }, required:['time','content'] };
-const zoomKeyframe = { type:'object', properties:{ time:number, selector:string, x:number, y:number, scale:number, duration:number, easing:string }, required:['time','scale','easing'] };
-const cursorStep = { type:'object', properties:{ time:number, selector:string, duration:number, action:string }, required:['time','selector','duration','action'] };
+const zoomKeyframe = { type:'object', properties:{ time:number, selector:string, x:number, y:number, scale:number, speed:number, duration:number, easing:string, curve:string }, required:['time','scale','easing'] };
+const cursorStep = { type:'object', properties:{ time:number, selector:string, duration:number, action:string, click:{type:'boolean'}, clickDuration:number, hideAfterClick:{type:'boolean'} }, required:['time','selector','duration'] };
+const morphBox = { type:'object', properties:{ holdFrames:number, morphSpeed:number }, required:['holdFrames','morphSpeed'] };
 const textKeyframe = { type:'object', properties:{ time:number, opacity:number, scale:number }, required:['time','opacity','scale'] };
 const ringKeyframe = { type:'object', properties:{ time:number, speed:number, radius:number, tiltX:number, tiltZ:number, textDepth:number, easing:string }, required:['time','speed','radius','tiltX','tiltZ','textDepth','easing'] };
 const haloMoveKeyframe = { type:'object', properties:{ time:number, x:number, y:number, z:number, easing:string }, required:['time','x','y','z','easing'] };
@@ -17,7 +18,8 @@ export const etaAdvancedSchema = { type:'object', properties:{
   subtitle:string, searchText:string, url:string, pageTitle:string, pageSubtitle:string, ctaLabel:string, browserRows:{type:'array',items:string},
   browserKeyframes:{type:'array',items:browserKeyframe}, zoomKeyframes:{type:'array',items:zoomKeyframe}, cursorSteps:{type:'array',items:cursorStep}, textKeyframes:{type:'array',items:textKeyframe}, ringKeyframes:{type:'array',items:ringKeyframe}, haloMoveKeyframes:{type:'array',items:haloMoveKeyframe}, cardZoomKeyframes:{type:'array',items:cardZoomKeyframe}, matchCut,
   animatedBorder:{type:'boolean'}, showShell:{type:'boolean'}, backgroundColor:string, boxShadow:string, pillBackground:string, pillTextColor:string,
-  textContent:string, fontSize:string, fontWeight:number, fontFamily:string, textColor:string, zIndex:number, textLeft:number, framesPerCharacter:number,
+  textContent:string, fontSize:string, fontWeight:number, fontFamily:string, textColor:string, zIndex:number, textLeft:number, framesPerCharacter:number, typingStartFrame:number, pillStartFrame:number, pillEndFrame:number, searchBackground:string,
+  cursorDelay:number, cursorMoveDuration:number, cursorClickDuration:number, cursorClick:{type:'boolean'}, cursorStartX:number, cursorStartY:number, cursorEndX:number, cursorEndY:number, cursorSize:number, morphBoxes:{type:'array',items:morphBox},
   phoneModel:string, phoneCount:number, deviceColor:string, lightStrength:number, phoneKeyframes:{type:'array',items:device3DKeyframe}, macbookKeyframes:{type:'array',items:device3DKeyframe}, cameraKeyframes:{type:'array',items:camera3DKeyframe}, deviceTexts:{type:'array',items:deviceText}, openingEnabled:{type:'boolean'}, openingStart:number, openingSpeed:number,
   centerHeadline:string, cardColor:string, cardFont:string, cardFontSize:number, cardFontWeight:number, cardTextDepth:number, cardRadius:number, cardWidth:number, cardHeight:number, textTransform:string,
   spinPeriodFrames:number, spinSpeed:number, sphereRadius:number, sphereTiltX:number, sphereTiltZ:number, headlineOrbitRadius:number, headlineOrbitSpeed:number, headlineOrbitIncline:number, spinDirection:string, cardPerspective:number, satelliteX:number, satelliteY:number, satelliteZ:number, satelliteRotateX:number, satelliteRotateY:number, satelliteRotateZ:number, spinPhase:number,
