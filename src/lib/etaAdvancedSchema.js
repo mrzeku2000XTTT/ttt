@@ -12,5 +12,6 @@ export const etaAdvancedSchema = { type:'object', properties:{
   browserKeyframes:{type:'array',items:browserKeyframe}, zoomKeyframes:{type:'array',items:zoomKeyframe}, cursorSteps:{type:'array',items:cursorStep}, textKeyframes:{type:'array',items:textKeyframe}, ringKeyframes:{type:'array',items:ringKeyframe}, matchCut,
   animatedBorder:{type:'boolean'}, showShell:{type:'boolean'}, backgroundColor:string, boxShadow:string, pillBackground:string, pillTextColor:string,
   textContent:string, fontSize:string, fontWeight:number, fontFamily:string, textColor:string, zIndex:number, textLeft:number, framesPerCharacter:number,
-  phoneModel:string, centerHeadline:string, cardColor:string, cardFont:string, cardFontSize:number, cardFontWeight:number, cardTextDepth:number, cardRadius:number, cardWidth:number, cardHeight:number, textTransform:string
+  phoneModel:string, centerHeadline:string, cardColor:string, cardFont:string, cardFontSize:number, cardFontWeight:number, cardTextDepth:number, cardRadius:number, cardWidth:number, cardHeight:number, textTransform:string,
+  spinPeriodFrames:number, spinSpeed:number, sphereRadius:number, sphereTiltX:number, sphereTiltZ:number, headlineOrbitRadius:number, headlineOrbitSpeed:number, headlineOrbitIncline:number, spinDirection:string, cardPerspective:number, satelliteX:number, satelliteY:number, satelliteZ:number, satelliteRotateX:number, satelliteRotateY:number, satelliteRotateZ:number, spinPhase:number
 } };
