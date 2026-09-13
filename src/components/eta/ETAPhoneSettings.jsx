@@ -1,0 +1,10 @@
+import React from 'react';
+import { ImagePlus } from 'lucide-react';
+import ETAFormField, { etaInput } from './ETAFormField';
+
+const MODELS = ['iPhone 15 (393×852)', 'iPhone 15 Pro (393×852)', 'iPhone 14 Pro (393×852)', 'Pixel 8 (412×915)'];
+export default function ETAPhoneSettings({ advanced, setAdvanced }) {
+  const choose = (key) => (event) => { const file = event.target.files?.[0]; if (file) setAdvanced(key, { url: URL.createObjectURL(file), type: file.type }); };
+  return <section className="space-y-4 rounded-2xl border border-border bg-card p-4"><div><h2 className="text-sm font-semibold">PhoneWindow</h2><p className="text-xs text-muted-foreground">Phone appearance and media</p></div><ETAFormField label="Phone model"><select className={etaInput} value={advanced.phoneModel || MODELS[0]} onChange={(e) => setAdvanced('phoneModel', e.target.value)}>{MODELS.map((model) => <option key={model}>{model}</option>)}</select></ETAFormField><p className="text-xs text-muted-foreground">Viewport {advanced.phoneModel?.match(/\((.+)\)/)?.[1] || '393×852'} CSS px</p><MediaPicker label="Screen media" value={advanced.screenMedia} onChange={choose('screenMedia')} help="Add a screenshot or screen recording inside the phone." /><MediaPicker label="Scene background" value={advanced.backgroundMedia} onChange={choose('backgroundMedia')} help="Image or video fills the composition behind the phone." /></section>;
+}
+function MediaPicker({ label, value, onChange, help }) { return <div><p className="text-xs font-semibold">{label}</p><p className="mt-1 text-[11px] text-muted-foreground">{help}</p><label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border p-4 text-xs font-semibold"><ImagePlus className="h-4 w-4" />{value?.url ? 'Replace media' : 'Choose media'}<input type="file" accept="image/*,video/*" className="hidden" onChange={onChange} /></label></div>; }
