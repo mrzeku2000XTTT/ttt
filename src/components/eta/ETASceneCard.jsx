@@ -3,13 +3,13 @@ import { Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ETA_COMPONENTS } from "@/lib/etaPlan";
 
-const field = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring";
+const field = "eta-scene-field w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring";
 export default function ETASceneCard({ scene, index, onChange, onDelete }) {
   const set = (key) => (event) => onChange({ ...scene, [key]: key === "duration" ? Number(event.target.value) : event.target.value });
   return (
-    <motion.article initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.12, duration: 0.45 }} className="rounded-2xl border border-border bg-card p-5">
+    <motion.article initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.12, duration: 0.45 }} className="eta-scene-card rounded-2xl border border-border bg-card p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Scene {String(index + 1).padStart(2, "0")}</p>
+        <p className="eta-scene-index text-xs font-semibold uppercase tracking-[0.22em]">Scene {String(index + 1).padStart(2, "0")}</p>
         <div className="flex items-center gap-2"><input className="w-20 rounded-lg border border-border bg-background px-2 py-1 text-right text-xs" type="number" min="1" step="0.5" value={scene.duration} onChange={set("duration")} aria-label="Scene duration in seconds" /><button onClick={onDelete} className="text-muted-foreground hover:text-destructive" aria-label="Delete scene"><Trash2 className="h-4 w-4" /></button></div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
