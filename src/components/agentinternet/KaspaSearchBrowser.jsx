@@ -246,7 +246,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                 alt="Kaspa"
                 className="w-8 h-8 rounded-full flex-shrink-0"
               />
-              <span className="text-white font-bold text-sm tracking-tight hidden sm:inline">Combined <span className="text-cyan-300">Search</span></span>
+              <span className="text-white font-bold text-sm tracking-tight hidden sm:inline">Search <span className="text-cyan-300">Kaspa</span></span>
             </div>
 
             <form onSubmit={submit} className="flex-1 min-w-[200px] flex items-center gap-2 px-4 h-11 rounded-full bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50 focus-within:shadow-[0_0_0_4px_rgba(6,182,212,0.1)] transition-all max-w-2xl">
