@@ -1,0 +1,40 @@
+{
+  "name": "ClutchClip",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "creator_name": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "creator_wallet": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "upload",
+        "youtube"
+      ]
+    },
+    "file_uri": {
+      "type": "string"
+    },
+    "youtube_id": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "title",
+    "creator_name",
+    "creator_wallet",
+    "source_type"
+  ]
+}

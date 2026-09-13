@@ -1,0 +1,7 @@
+import React,{useState} from 'react';
+import { Heart, X } from 'lucide-react';
+import { validTip } from '@/components/clutchkas/clutchMedia';
+export default function ClutchTipSettings({amount,onSave,onClose}){
+  const [value,setValue]=useState(amount||'');
+  return <div className="clutch-modal" role="dialog" aria-modal="true" aria-label="Your heart amount"><form className="clutch-sheet" onSubmit={e=>{e.preventDefault();if(validTip(value))onSave(value);}}><div className="clutch-sheet-head"><Heart/><button type="button" onClick={onClose} aria-label="Close"><X/></button></div><h2>Make your heart count.</h2><p>Choose how much KAS each heart requests. Every tap opens Scorpion for approval — nothing is sent automatically.</p><label>KAS per heart<input autoFocus type="number" min="0.00000001" step="0.00000001" required value={value} onChange={e=>setValue(e.target.value)} placeholder="Your amount"/></label><div className="clutch-presets">{['0.1','1','5','10'].map(n=><button type="button" key={n} onClick={()=>setValue(n)}>{n} KAS</button>)}</div><p className="clutch-small">Network fees are additional. Tips cannot be undone. Saved on this device for your connected wallet.</p><button disabled={!validTip(value)} className="clutch-primary">Save heart amount</button></form></div>;
+}

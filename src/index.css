@@ -258,6 +258,13 @@ button:focus-visible {
   .ttt-edge-runner rect { stroke-dashoffset: -250; }
 }
 
+/* ClutchKAS stays isolated from the other apps. */
+:root .clutch-page, .dark .clutch-page {
+  --background: 250 15% 5%; --foreground: 0 0% 98%; --card: 250 12% 9%; --card-foreground: 0 0% 98%;
+  --primary: 156 100% 50%; --primary-foreground: 250 15% 5%; --muted: 250 12% 13%; --muted-foreground: 250 8% 75%;
+  --border: 250 10% 22%; --destructive: 0 90% 76%; --font-heading: 'Space Grotesk', sans-serif; --font-body: 'Space Grotesk', sans-serif;
+}
+
 /* Scoped KaspaCollab landing theme; other apps retain their existing colors. */
 :root .kaspa-collab-landing, .dark .kaspa-collab-landing {
   --background: 270 48% 5%;
