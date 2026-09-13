@@ -3,8 +3,8 @@ import { TitleScene, NumberScene, SearchScene, LogoScene, MorphScene, UIScene } 
 import { BrowserScene, PhoneScene, LaptopScene, VideoScene } from './ETADeviceScenes';
 import ETACardsScene from './ETACardsScene';
 
-export default function ETAAnimatedVisual({ scene, advanced, browser }) {
-  const props = { scene, advanced };
+export default function ETAAnimatedVisual({ scene, advanced, browser, frameProgress }) {
+  const props = { scene, advanced, frameProgress };
   if (scene.component === 'TitleCard') return <TitleScene {...props} />;
   if (scene.component === 'NumberDisplay') return <NumberScene {...props} />;
   if (['Glass', 'SearchAnimation'].includes(scene.component)) return <SearchScene {...props} />;
