@@ -214,7 +214,7 @@ export default function AgentInternetLanding() {
                 </div>
 
                 {/* Mobile/tablet controls — preserve the existing layout */}
-                <div className="lg:hidden contents">
+                <div className="md:hidden contents">
                   {isAdmin && (
                     <div className="mt-4 flex items-center justify-center gap-1 p-1 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
                       <span className="px-2 text-[10px] font-mono tracking-widest uppercase text-white/40">view as</span>
@@ -256,6 +256,24 @@ export default function AgentInternetLanding() {
                       <img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="w-4 h-4 rounded-full" /> Search Crypto
                     </button>
                   </div>
+                </div>
+
+                {/* Tablet Compact Grid */}
+                <div className="mt-5 hidden w-full max-w-2xl grid-cols-4 gap-2 md:grid lg:hidden">
+                  <div className="col-span-4 flex h-12 items-center justify-center gap-3 rounded-2xl border border-white/15 bg-black/70 px-4 backdrop-blur-xl">
+                    <OrganicOrb size={24} colors={["#ffffff", "#22d3ee", "#0891b2"]} />
+                    {isAdmin && <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/35">View as</span>}
+                    <button onClick={() => setViewAsGuest(false)} className={`rounded-full px-3 py-1.5 text-[11px] font-mono uppercase tracking-widest transition-colors ${!viewAsGuest ? "bg-white/10 text-white" : "text-white/40"}`}>TTT A.I</button>
+                    {isAdmin && <button onClick={() => setViewAsGuest(true)} className={`rounded-full px-3 py-1.5 text-[11px] font-mono uppercase tracking-widest transition-colors ${viewAsGuest ? "bg-white/10 text-amber-300" : "text-white/40"}`}>Guest</button>}
+                  </div>
+
+                  <button onClick={() => guardLaunch("agent")} className="col-span-2 flex h-14 items-center justify-center rounded-2xl border border-white/30 bg-black/75 px-4 text-[11px] font-mono uppercase tracking-widest text-white transition-colors hover:bg-white hover:text-black">Launch Agent Internet</button>
+                  <button onClick={() => guardLaunch("ttt")} className="col-span-2 flex h-14 items-center justify-center rounded-2xl border border-white/30 bg-black/75 px-4 text-[11px] font-mono uppercase tracking-widest text-white transition-colors hover:bg-white hover:text-black">Launch TTT</button>
+
+                  <button onClick={() => setShowBrowser(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-2 text-center text-[9px] font-mono uppercase tracking-wide text-white/70 hover:border-white/30 hover:text-white"><LayoutGrid className="h-4 w-4" /> Browse live pages</button>
+                  <button onClick={() => setShowWebSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-2 text-center text-[9px] font-mono uppercase tracking-wide text-white/70 hover:border-white/30 hover:text-white"><Search className="h-4 w-4" /> Search the web</button>
+                  <button onClick={() => setShowKaspaSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-cyan-500/25 bg-cyan-500/[0.07] px-2 text-center text-[9px] font-mono uppercase tracking-wide text-cyan-200 hover:border-cyan-400/50 hover:text-white"><Database className="h-4 w-4" /> Search Kaspa</button>
+                  <button onClick={() => setShowCryptoSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] px-2 text-center text-[9px] font-mono uppercase tracking-wide text-amber-200 hover:border-amber-400/50 hover:text-white"><img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="h-4 w-4 rounded-full" /> Search Crypto</button>
                 </div>
 
                 {/* Desktop Action Rail */}
