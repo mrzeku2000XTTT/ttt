@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "ETA", path: "ETA", cat: "Creative", desc: "Enhanced Timeline Animator · product brief to an editable AI-directed scene plan with motion, pacing, voiceover, and transitions", maturity: 70 },
   { name: "ClutchKAS", path: "ClutchKAS", cat: "Games", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e9d1c80d2_generated_image.png", desc: "VALORANT highlights, real fan support · upload clips or link YouTube, swipe the reel, and heart-to-tip your chosen KAS amount through Scorpion" },
   { name: "BIBLIA", path: "Biblia", cat: "Education", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/83ed839d0_generated_image.png", desc: "The Bible: Scroll. Read. Reflect. · an infinite quiet feed of random KJV verses and short passages — no gamification, just God's word · Built for Kaspa" },
   { name: "CAM", path: "CAM", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/154c8ae70_generated_image.png", desc: "Cinematic camera controller · drop any image and drive 10 real camera moves — dolly, orbit, vertigo, crane — chain shots & export a storyboard — Scorpion wallet-gated" },

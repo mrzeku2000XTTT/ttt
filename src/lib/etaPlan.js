@@ -1,0 +1,35 @@
+import { base44 } from "@/api/base44Client";
+
+export const ETA_COMPONENTS = [
+  "TitleCard", "NumberDisplay", "Glass", "BrowserWindow", "PhoneWindow",
+  "Cards", "Cards2", "Cards3", "Cards4", "IPhoneAnimated", "MacBookAnimated",
+  "DivMorph", "SearchAnimation", "LogoAnimation", "UIAnimation", "Video",
+];
+
+const sceneSchema = {
+  type: "object",
+  properties: {
+    component: { type: "string" }, purpose: { type: "string" },
+    duration: { type: "number" }, headline: { type: "string" },
+    voiceover: { type: "string" }, visual: { type: "string" },
+    motion: { type: "string" }, transition: { type: "string" },
+  },
+  required: ["component", "purpose", "duration", "headline", "voiceover", "visual", "motion", "transition"],
+};
+
+export async function createETAPlan(brief, files, onStatus) {
+  onStatus("Preparing reference media");
+  const uploads = await Promise.all(files.map((file) =>
+    base44.integrations.Core.UploadPrivateFile({ file }).then((result) => result.file_uri)
+  ));
+  onStatus("Directing scenes, pacing, and motion");
+  return base44.integrations.Core.InvokeLLM({
+    prompt: `You are the creative director for ETA, Enhanced Timeline Animator. Create an original ${brief.duration}-second ${brief.format} product animation plan. Product: ${brief.name}. Link: ${brief.url || "none"}. Audience: ${brief.audience}. Style: ${brief.style}. Brief: ${brief.description}. Use only these components: ${ETA_COMPONENTS.join(", ")}. Build a concise narrative with purposeful camera motion, readable pacing, useful voiceover, and directional transitions. Never mention or imitate another named product.`,
+    file_urls: uploads.length ? uploads : undefined,
+    response_json_schema: {
+      type: "object",
+      properties: { title: { type: "string" }, narrative: { type: "string" }, scenes: { type: "array", items: sceneSchema } },
+      required: ["title", "narrative", "scenes"],
+    },
+  });
+}

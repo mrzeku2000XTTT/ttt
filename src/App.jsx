@@ -99,6 +99,7 @@ import DoubleONotesPage from './pages/DoubleONotes';
 import DoubleOWorkshopPage from './pages/DoubleOWorkshop';
 import WorldWalkerPage from './pages/WorldWalker';
 import MotionFlyPage from './pages/MotionFly';
+import ETAPage from './pages/ETA';
 import ORINLandingPage from './pages/ORINLanding';
 import ORINPage from './pages/ORIN';
 import PingguoPage from './pages/Pingguo';
@@ -366,6 +367,7 @@ const AuthenticatedApp = () => {
       <Route path="/DoubleOWorkshop" element={<DoubleOWorkshopPage />} />
       <Route path="/WorldWalker" element={<WorldWalkerPage />} />
       <Route path="/MotionFly" element={<MotionFlyPage />} />
+      <Route path="/ETA" element={<ETAPage />} />
       <Route path="/ORINLanding" element={<ORINLandingPage />} />
       <Route path="/ORIN" element={<ORINPage />} />
       <Route path="/Pingguo" element={<PingguoPage />} />
