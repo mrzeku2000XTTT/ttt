@@ -1,22 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe2, Laptop, Search, Smartphone } from 'lucide-react';
+import ETAAnimatedVisual from './ETAAnimatedVisual';
 
 export default function ETAMotionCard({ scene, compact = false, entrance }) {
   const a = scene.advanced || {};
   const browser = a.browserKeyframes?.[0] || {};
   const zoom = a.zoomKeyframes?.[0] || {};
   const media = typeof a.backgroundMedia === 'string' ? { url: a.backgroundMedia, type: 'image' } : a.backgroundMedia;
-  let visual = <p className="font-heading text-3xl font-semibold">{scene.component === 'LogoAnimation' ? '◉' : scene.headline}</p>;
-  if (scene.component === 'NumberDisplay') visual = <p className="font-heading text-6xl font-semibold tabular-nums">{scene.headline}</p>;
-  if (scene.component === 'MacBookAnimated') visual = <div className="text-center"><Laptop className="mx-auto h-20 w-20" /><div className="mx-auto h-1 w-28 rounded-full bg-muted" /></div>;
-  if (scene.component === 'Glass') visual = <div style={{ backgroundColor: a.pillBackground, color: a.pillTextColor }} className="flex w-full max-w-sm items-center gap-2 rounded-full border border-border bg-background/70 px-4 py-3 shadow-lg backdrop-blur"><Search className="h-4 w-4" /><span className="text-sm">{a.searchText || scene.headline}</span></div>;
-  if (scene.component === 'PhoneWindow') visual = <PhoneVisual media={a.screenMedia} />;
-  if (['Cards', 'Cards2', 'Cards3', 'Cards4'].includes(scene.component)) visual = <CardsVisual advanced={a} />;
-  if (scene.component === 'BrowserWindow') {
-    const content = <div className="grid h-32 place-items-center px-4 text-center text-xs text-muted-foreground">{browser.content || scene.visual}</div>;
-    visual = a.showShell === false ? content : <div className="w-full max-w-md overflow-hidden rounded-xl border border-border bg-background shadow-lg"><div className="flex items-center gap-1 border-b border-border px-3 py-2"><i className="h-2 w-2 rounded-full bg-muted-foreground/40" /><i className="h-2 w-2 rounded-full bg-muted-foreground/40" /><Globe2 className="ml-auto h-3 w-3 text-muted-foreground" /></div>{content}</div>;
-  }
+  const visual = <ETAAnimatedVisual scene={scene} advanced={a} browser={browser} />;
   const transform = { x: Number(zoom.x || 0), y: Number(zoom.y || 0), scale: Number(zoom.scale || 1), rotateX: browser.rotate ? Number(browser.x || 0) : 0, rotateY: browser.rotate ? Number(browser.y || 0) : 0, rotateZ: browser.rotate ? Number(browser.z || 0) : 0 };
   const incoming = entrance?.incoming || {}, outgoing = a.matchCut?.outgoing || {};
   const offset = (direction, amount) => ({ x: direction === 'Left' ? amount : direction === 'Right' ? -amount : 0, y: direction === 'Up' ? amount : direction === 'Down' ? -amount : 0 });
@@ -29,12 +20,4 @@ export default function ETAMotionCard({ scene, compact = false, entrance }) {
       {a.textContent && <motion.p initial={{ opacity: 0 }} animate={{ opacity: a.textKeyframes?.[0]?.opacity ?? 1, scale: a.textKeyframes?.[0]?.scale ?? 1 }} className="absolute top-8 z-20" style={{ left: Number(a.textLeft || 24), color: a.textColor, fontSize: a.fontSize, fontWeight: a.fontWeight || 700, fontFamily: a.fontFamily }}>{a.textContent}</motion.p>}
     </motion.div>
   );
-}
-
-function PhoneVisual({ media }) {
-  return <div className="relative h-60 w-28 overflow-hidden rounded-[1.6rem] border-4 border-foreground bg-background shadow-xl">{media?.url ? (String(media.type).startsWith('video') ? <video src={media.url} autoPlay muted loop playsInline className="h-full w-full object-cover" /> : <img src={media.url} alt="Phone screen" className="h-full w-full object-cover" />) : <div className="grid h-full place-items-center"><Smartphone className="h-8 w-8 text-muted-foreground" /></div>}<i className="absolute left-1/2 top-1 h-3 w-10 -translate-x-1/2 rounded-full bg-foreground" /></div>;
-}
-function CardsVisual({ advanced }) {
-  const images = advanced.cardImages || [], ring = advanced.ringKeyframes?.[0] || {};
-  return <motion.div animate={{ rotate: Number(ring.speed || 8) }} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }} className="relative h-36 w-44">{[0,1,2].map((i) => <div key={i} className="absolute left-10 top-5 h-28 w-20 overflow-hidden border border-border bg-background shadow-lg" style={{ borderRadius: Number(advanced.cardRadius || 14), transform: `rotate(${(i - 1) * 18}deg) translateX(${(i - 1) * 24}px)`, backgroundColor: advanced.cardColor }}>{images[i]?.url && <img src={images[i].url} alt="Card" className="h-full w-full object-cover" />}</div>)}<p className="absolute inset-x-0 top-14 z-10 text-center" style={{ fontFamily: advanced.cardFont, fontSize: Number(advanced.cardFontSize || 16), fontWeight: Number(advanced.cardFontWeight || 700), color: advanced.cardColor }}>{advanced.centerHeadline || 'Made this on Motionfly.co'}</p></motion.div>;
 }
