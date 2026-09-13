@@ -11,7 +11,7 @@ const steps = [
 export default function ClutchLanding({wallet,onEnter,error}){
   return <main className="clutch-viral">
     <section className="clutch-viral-grid">
-      <article className="viral-copy"><p className="clutch-eyebrow">VALORANT HIGHLIGHTS. REAL FAN SUPPORT.</p><h1>Your clutch.<br/>Their hype.<br/><span>Real Kaspa.</span></h1><p>That ace deserves more than a like. Share your best plays, discover the next one, and send KAS straight to the player behind it.</p></article>
+      <article className="viral-copy"><p className="clutch-eyebrow">VALORANT HIGHLIGHTS. REAL FAN SUPPORT.</p><h1>Your clutch. <br/>Their hype. <br/><span>Real Kaspa.</span></h1><p>That ace deserves more than a like. Share your best plays, discover the next one, and send KAS straight to the player behind it.</p></article>
       <div className="viral-image viral-image-small" style={{backgroundImage:`url(${CLUTCH_HERO})`}} aria-label="Tactical esports highlight artwork"/>
       <article className="viral-step viral-step-one"><strong>{steps[0][0]}</strong><h2>{steps[0][1]}</h2><p>{steps[0][2]}</p></article>
       <button className="viral-image viral-image-wide" style={{backgroundImage:`url(${CLUTCH_HERO})`}} onClick={onEnter} aria-label="Enter highlights"><span><Heart fill="currentColor"/>Watch highlights</span></button>

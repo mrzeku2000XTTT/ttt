@@ -1,5 +1,5 @@
 export const CLUTCH_LOGO='https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/e9d1c80d2_generated_image.png';
-export const CLUTCH_HERO='https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/181d0f663_generated_image.png';
+export const CLUTCH_HERO='https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/36e5a1501_generated_image.png';
 export function youtubeId(value){
   let url;try{url=new URL(value);}catch{return null;}
   if(url.protocol!=='https:'&&url.protocol!=='http:')return null;
