@@ -48,6 +48,7 @@
 .cm-panel-tools button{display:flex;padding:3px;border-radius:3px;color:hsl(var(--cm-muted))}
 .cm-panel-tools button:hover{color:hsl(var(--cm-accent));background:hsl(var(--cm-fg)/.07)}
 .cm-panel-tools svg{width:11px;height:11px}
+.cm-panel-tools .cm-separate-layers{display:flex;align-items:center;gap:4px;padding:3px 6px;border:1px solid hsl(var(--cm-accent)/.45);border-radius:3px;color:hsl(var(--cm-accent));white-space:nowrap}.cm-panel-tools .cm-separate-layers:disabled{opacity:.4;color:hsl(var(--cm-muted));border-color:hsl(var(--cm-border))}.cm-separate-error{position:absolute;left:8px;right:8px;bottom:8px;padding:6px 8px;border:1px solid hsl(var(--cm-destructive)/.5);border-radius:3px;background:hsl(var(--cm-card)/.95);color:hsl(var(--cm-destructive));font-size:9px;z-index:8}
 /* Fullscreen nodes — node workspace takes the whole editor */
 .cm-fusion-shell.is-max-nodes .cm-view-deck,.cm-fusion-shell.is-max-nodes .cm-transport,.cm-fusion-shell.is-max-nodes .cm-shot-strip{display:none}
 .cm-fusion-shell.is-max-nodes .cm-fusion-lower{height:auto;flex:1;grid-template-columns:1fr}
@@ -134,6 +135,7 @@
   .cm-head-actions{flex:none}
 }
 @media(max-width:640px){
+  .cm-panel-tools .cm-separate-layers{padding:4px 5px;font-size:7.5px}
   .cm-ai-floater{right:10px;bottom:12px;width:calc(100vw - 20px);max-width:340px}
   .cm-ai-dot{right:14px;bottom:16px;width:52px;height:52px}
   .cm-ai-chat{max-height:24vh}

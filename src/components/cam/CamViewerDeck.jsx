@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import Cam3DView from './Cam3DView';
+import CamSeparateLayersButton from './CamSeparateLayersButton';
 
-export default function CamViewerDeck({ canvasRef, image, hasLayers, getFrame, label, onUpload, onFile, split, onSplit, max, onMax, media, manualOffset, camRig, onCameraRigMove, onCameraNavigate, onSelectAsset, refId, onOffset, onMoveAsset, onBeginAssetMove }) {
+export default function CamViewerDeck({ canvasRef, image, hasLayers, onSeparate, separating, separateElapsed, separateError, getFrame, label, onUpload, onFile, split, onSplit, max, onMax, media, manualOffset, camRig, onCameraRigMove, onCameraNavigate, onSelectAsset, refId, onOffset, onMoveAsset, onBeginAssetMove }) {
   const deck = useRef(null);
   const dragging = useRef(false);
   const startDrag = (e) => { dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); };
@@ -22,9 +23,9 @@ export default function CamViewerDeck({ canvasRef, image, hasLayers, getFrame, l
       <section className={`cm-viewer ${max === 'camera' ? 'is-hidden' : ''}`} style={max === 'media' ? { flex: '1 1 auto' } : { flex: `0 0 calc(${split}% - 3px)` }}>
         <div className="cm-viewer-title">
           <span>MediaIn1</span>
-          <span className="cm-panel-tools"><span>2D Preview</span>{maxBtn('media')}</span>
+          <span className="cm-panel-tools"><span>2D Preview</span><CamSeparateLayersButton disabled={!image} busy={separating} elapsed={separateElapsed} onClick={onSeparate}/>{maxBtn('media')}</span>
         </div>
-        <div className="cm-viewer-body"><canvas ref={canvasRef} width="1280" height="720" />{!image && !hasLayers && <button onClick={onUpload} className="cm-empty-view">Drop, paste, or upload an image</button>}</div>
+        <div className="cm-viewer-body"><canvas ref={canvasRef} width="1280" height="720" />{!image && !hasLayers && <button onClick={onUpload} className="cm-empty-view">Drop, paste, or upload an image</button>}{separateError&&<div className="cm-separate-error">{separateError}</div>}</div>
       </section>
       <div className={`cm-view-split ${max ? 'is-hidden' : ''}`} onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} title="Drag to resize the split"><i /></div>
       <section className={`cm-viewer ${max === 'media' ? 'is-hidden' : ''}`} style={max === 'camera' ? { flex: '1 1 auto' } : { flex: `0 0 calc(${100 - split}% - 3px)` }}>

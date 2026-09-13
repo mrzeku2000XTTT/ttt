@@ -21,6 +21,7 @@ import { findAnimationPreset } from '@/components/cam/camAnimationLibrary';
 import useCamTextLayers from '@/components/cam/useCamTextLayers';
 import CamTextTools from '@/components/cam/CamTextTools';
 import CamMobileViews from '@/components/cam/CamMobileViews';
+import { separateIntoCamLayers } from '@/components/cam/kinezmaToCam';
 import '@/components/cam/camLayerEditor.css';
 
 const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/154c8ae70_generated_image.png';
@@ -49,6 +50,9 @@ export default function CAMStudio({ address, onHome }) {
   const [fusionBusy, setFusionBusy] = useState(false);
   const [fusionElapsed, setFusionElapsed] = useState(0);
   const [fusionError, setFusionError] = useState('');
+  const [separateBusy,setSeparateBusy]=useState(false);
+  const [separateElapsed,setSeparateElapsed]=useState(0);
+  const [separateError,setSeparateError]=useState('');
   const [fusionSel, setFusionSel] = useState(null);
   const [fusionLayers, setFusionLayers] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`cam_fusion_${address}`)) || []; } catch { return []; }
@@ -176,6 +180,19 @@ export default function CAMStudio({ address, onHome }) {
       ni.src = ev.target.result;
     };
     reader.readAsDataURL(file);
+  };
+  const separateLayers=async()=>{
+    if(!img||separateBusy)return;
+    setPlaying(false);setSeparateBusy(true);setSeparateElapsed(0);setSeparateError('');
+    const tick=setInterval(()=>setSeparateElapsed(value=>value+1),1000);
+    try{
+      const {file_uri}=await base44.integrations.Core.UploadPrivateFile({file:fusionFileRef.current});
+      const {signed_url}=await base44.integrations.Core.CreateFileSignedUrl({file_uri,expires_in:3600});
+      const result=await separateIntoCamLayers({imageUrl:signed_url,width:imgSize.w,height:imgSize.h});
+      setImg(result.primary.img);setMedia([result.primary,...result.layers]);setManualOffset({x:0,y:0,z:0});
+      setRefId(result.layers[0]?.id||'primary');
+    }catch(error){setSeparateError(error?.message||'Could not separate this image.');}
+    clearInterval(tick);setSeparateBusy(false);
   };
   const onMovePick = (id) => {
     if (!timeline.recording) timeline.leave();
@@ -400,7 +417,7 @@ export default function CAMStudio({ address, onHome }) {
       <CamTextTools selected={media.find(m=>m.id===refId)} onAdd={addTextLayer} onEdit={textLayers.edit}/>
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} hasLayers={media.length>0} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={{...(scene?.camera||camRig),position:camRig.position,pivot:camRig.pivot}} onCameraRigMove={onCameraRigMove} onCameraNavigate={onCameraNavigate} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
+          <CamViewerDeck canvasRef={canvasRef} hasLayers={media.length>0} image={img} onSeparate={separateLayers} separating={separateBusy} separateElapsed={separateElapsed} separateError={separateError} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={{...(scene?.camera||camRig),position:camRig.position,pivot:camRig.pivot}} onCameraRigMove={onCameraRigMove} onCameraNavigate={onCameraNavigate} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
           <CamTransport currentTime={timeline.enabled ? timeline.time : undefined} totalTime={timeline.enabled ? timeline.total : undefined} onPrevious={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => b - a).find((t) => t < timeline.time - 0.01) ?? 0) : undefined} onNext={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => a - b).find((t) => t > timeline.time + 0.01) ?? timeline.total) : undefined} playing={timeline.enabled ? timeline.running : playing} canPlay={(timeline.enabled ? media.length>0 : !!img) && !timeline.recording} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
