@@ -4,7 +4,7 @@ import { drawMotionUI } from "./motionUIRender";
 
 // Real video export: renders the timeline to a canvas in real time and records
 // it (video + audio) with MediaRecorder. Returns a downloadable webm Blob URL.
-export async function exportTimeline({ clips, assets, width = 1280, height = 720, fps = 30, onProgress }) {
+export async function exportTimeline({ clips, assets, width = 1280, height = 720, fps = 30, onProgress, drawVideoFrame }) {
   const videoClips = clips.filter((c) => c.track <= 1 && c.assetId).sort((a, b) => a.start - b.start);
   const audioClips = clips.filter((c) => c.track === 2);
   const total = Math.max(...clips.map((c) => c.start + c.duration), 1);
@@ -137,7 +137,8 @@ export async function exportTimeline({ clips, assets, width = 1280, height = 720
               m.el.currentTime = (active.trimIn || 0) + (t - active.start);
               m.el.play().catch(() => {});
             }
-            drawCover(m.el, width, height);
+            if (drawVideoFrame) drawVideoFrame(ctx, m.el, active);
+            else drawCover(m.el, width, height);
           } else {
             drawCover(m.el, width, height);
           }
