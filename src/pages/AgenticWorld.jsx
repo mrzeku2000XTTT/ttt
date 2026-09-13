@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Sparkles, Globe, Shield, Eye } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Globe, Shield, Eye } from "lucide-react";
 import AgentTransactionsFeed from "@/components/agenticworld/AgentTransactionsFeed";
 import AgenticCityScene from "@/components/agenticworld/AgenticCityScene";
 import WorldZoomOut from "@/components/landing/WorldZoomOut";
@@ -51,6 +51,16 @@ export default function AgenticWorld() {
             backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
             color: "rgba(150,225,255,0.85)", fontFamily: "monospace" }}>
           <ArrowLeft className="w-3.5 h-3.5" /> SECTORS
+        </motion.button>
+
+        {/* Instant forward travel to the next sector */}
+        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
+          onClick={() => navigate(WORLDS[SELF + 1].path)}
+          className="fixed top-5 right-5 z-20 flex items-center gap-2 px-4 py-2.5 text-[10px] tracking-[0.3em] uppercase focus:outline-none rounded-full"
+          style={{ border: "1px solid rgba(120,220,255,0.25)", background: "rgba(10,20,28,0.55)",
+            backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+            color: "rgba(150,225,255,0.85)", fontFamily: "monospace" }}>
+          SECTOR 03 <ArrowRight className="w-3.5 h-3.5" />
         </motion.button>
 
         <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-20">
