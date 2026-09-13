@@ -12,6 +12,8 @@ const AWA_LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2
 export default function AWA() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [authed, setAuthed] = useState(false);
+  const [campaignCount, setCampaignCount] = useState(null);
+  const [purchaseCount, setPurchaseCount] = useState(null);
 
   useEffect(() => {
     import("@/api/base44Client").then(({ base44 }) =>
@@ -25,7 +27,10 @@ export default function AWA() {
         <Link to="/AgenticWorld" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3 w-3" /> Agentic World
         </Link>
-        <span className="hidden rounded border border-border px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground sm:inline-flex">SECTOR 05 · HTTP 402 · KASPA L1</span>
+        <div className="flex items-center gap-2">
+          <span className="rounded border border-primary/40 bg-primary/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-primary">{authed ? "Workspace active" : "Guest mode"}</span>
+          <span className="hidden rounded border border-border px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground sm:inline-flex">SECTOR 05 · HTTP 402 · KASPA L1</span>
+        </div>
       </header>
 
       <main className="mx-auto grid w-full max-w-7xl gap-3 p-3 sm:p-4 2xl:grid-cols-[1.05fr_0.95fr]">
@@ -39,25 +44,29 @@ export default function AWA() {
           <AWAChat onCampaignCreated={() => setRefreshKey((k) => k + 1)} />
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="min-h-36 rounded-xl bg-cover bg-[position:0%_0%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
+            <div className="hidden min-h-36 rounded-xl bg-cover bg-[position:0%_0%] grayscale md:block" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
             <div className="rounded-xl border border-border bg-card p-3"><h2 className="mb-2 text-sm font-black uppercase">Services</h2><AWAServiceChips /></div>
-            <div className="min-h-36 rounded-xl bg-cover bg-[position:100%_100%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
+            <div className="hidden min-h-36 rounded-xl bg-cover bg-[position:100%_100%] grayscale md:block" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
           </div>
         </section>
 
         <section className="min-w-0 space-y-3">
           <div className="rounded-xl border border-border bg-card p-3">
-            <h2 className="mb-3 text-sm font-black uppercase">My Covenants</h2>
-            <AWACampaignPanel refreshKey={refreshKey} />
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-black uppercase">My Covenants</h2>
+              {campaignCount !== null && <span className="rounded-full bg-secondary px-2 py-1 text-[9px] font-bold text-muted-foreground">{campaignCount} {campaignCount === 1 ? "campaign" : "campaigns"}</span>}
+            </div>
+            <AWACampaignPanel refreshKey={refreshKey} onCountChange={setCampaignCount} />
+            {campaignCount === 0 && <p className="rounded-lg bg-secondary px-3 py-3 text-[11px] leading-relaxed text-muted-foreground">No covenant campaigns yet. Describe a campaign above and AWA will prepare the terms here.</p>}
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <AWAPurchases refreshKey={refreshKey} />
-            <div className="min-h-36 rounded-xl bg-cover bg-[position:100%_0%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
+            <AWAPurchases refreshKey={refreshKey} onCountChange={setPurchaseCount} />
+            <div className={`hidden min-h-36 rounded-xl bg-cover bg-[position:100%_0%] grayscale md:block ${purchaseCount === 0 ? "md:col-span-2" : ""}`} style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
             {authed && <AWAWorkerPanel />}
             <div className="rounded-xl border border-border bg-card p-4">
-              <h2 className="text-sm font-black uppercase">Claim & Build Covenant</h2>
-              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">Worker covenant is held on-chain throughout each covenant period. Workers earn releases after verified check-ins or the marketer receives the remaining KAS after CLTV.</p>
+              <h2 className="text-sm font-black uppercase">{authed ? "Claim & Build Covenant" : "Worker Access"}</h2>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{authed ? "Worker covenant is held on-chain throughout each covenant period. Workers earn releases after verified check-ins or the marketer receives the remaining KAS after CLTV." : "Connect through your TTT account to open worker mode, claim available campaigns, and build covenant terms."}</p>
             </div>
           </div>
 

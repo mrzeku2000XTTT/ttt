@@ -8,13 +8,20 @@ const STATUS_COLORS = {
   failed: "text-red-300 border-red-500/40 bg-red-500/10",
 };
 
-export default function AWAPurchases({ refreshKey }) {
+export default function AWAPurchases({ refreshKey, onCountChange }) {
   const [invoices, setInvoices] = useState(null);
 
   useEffect(() => {
     base44.functions.invoke("awaX402", { action: "invoices" })
-      .then((res) => setInvoices(res.data.invoices || []))
-      .catch(() => setInvoices([]));
+      .then((res) => {
+        const nextInvoices = res.data.invoices || [];
+        setInvoices(nextInvoices);
+        onCountChange?.(nextInvoices.length);
+      })
+      .catch(() => {
+        setInvoices([]);
+        onCountChange?.(0);
+      });
   }, [refreshKey]);
 
   if (!invoices || invoices.length === 0) return null;

@@ -13,7 +13,7 @@ const STATUS_STYLE = {
   expired: "text-red-300 border-red-500/40 bg-red-500/10",
 };
 
-export default function AWACampaignPanel({ refreshKey }) {
+export default function AWACampaignPanel({ refreshKey, onCountChange }) {
   const [campaigns, setCampaigns] = useState(null);
   const [busy, setBusy] = useState(null);
   const [fundTx, setFundTx] = useState({});
@@ -21,8 +21,15 @@ export default function AWACampaignPanel({ refreshKey }) {
 
   const load = () => {
     base44.functions.invoke("awaCovenant", { action: "campaigns" })
-      .then((res) => setCampaigns(res.data.campaigns || []))
-      .catch(() => setCampaigns([]));
+      .then((res) => {
+        const nextCampaigns = res.data.campaigns || [];
+        setCampaigns(nextCampaigns);
+        onCountChange?.(nextCampaigns.length);
+      })
+      .catch(() => {
+        setCampaigns([]);
+        onCountChange?.(0);
+      });
   };
   useEffect(load, [refreshKey]);
 
