@@ -283,6 +283,26 @@ button:focus-visible {
   --font-body: 'Space Grotesk', sans-serif;
 }
 
+/* Scoped AWA editorial ledger theme. */
+:root .awa-ledger, .dark .awa-ledger {
+  --background: 48 20% 94%;
+  --foreground: 0 0% 7%;
+  --card: 48 16% 92%;
+  --card-foreground: 0 0% 7%;
+  --primary: 0 0% 7%;
+  --primary-foreground: 48 20% 96%;
+  --secondary: 45 11% 86%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 45 10% 88%;
+  --muted-foreground: 0 0% 34%;
+  --border: 42 9% 68%;
+  --input: 42 9% 68%;
+  --ring: 0 0% 12%;
+  --destructive: 0 60% 36%;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+}
+
 /* Scoped KaspaCollab landing theme; other apps retain their existing colors. */
 :root .kaspa-collab-landing, .dark .kaspa-collab-landing {
   --background: 270 48% 5%;

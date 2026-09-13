@@ -24,28 +24,26 @@ export default function AWAPurchases({ refreshKey, onCountChange }) {
       });
   }, [refreshKey]);
 
-  if (!invoices || invoices.length === 0) return null;
+  if (!invoices) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3">
-      <div className="mb-3 flex items-center gap-2">
-        <Receipt className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-black uppercase text-card-foreground">MY 402 RECEIPTS</h2>
+    <section className="mt-4">
+      <h2 className="mb-1.5 text-base font-black">My 402 Receipts</h2>
+      <div className="overflow-x-auto rounded-md border border-border bg-card">
+        <table className="w-full min-w-[560px] border-collapse text-left text-[8px]">
+          <thead><tr className="border-b border-border">{["Service Name", "Input", "KAS Amount", "Payment Status"].map((label) => <th key={label} className="px-2 py-1 font-black">{label}</th>)}</tr></thead>
+          <tbody>
+            {invoices.length === 0 ? <tr><td colSpan="4" className="px-2 py-2 text-center font-medium">No 402 receipts yet.</td></tr> : invoices.map((inv) => (
+              <tr key={inv.id} className="border-b border-border last:border-0">
+                <td className="px-2 py-1 font-bold">{inv.service_name}</td>
+                <td className="max-w-[260px] truncate px-2 py-1 font-mono">{inv.input}</td>
+                <td className="px-2 py-1 font-bold">{inv.amount_kas} KAS</td>
+                <td className="px-2 py-1 font-bold">{(inv.status || "").toUpperCase().replace("_", " ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      <div className="space-y-2">
-        {invoices.map((inv) => (
-          <div key={inv.id} className="flex flex-wrap items-center gap-2 border-b border-border py-2 last:border-0 sm:flex-nowrap">
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-bold text-card-foreground">{inv.service_name}</div>
-              <div className="truncate font-mono text-[9px] text-muted-foreground">{inv.input}</div>
-            </div>
-            <span className="whitespace-nowrap font-mono text-[10px] font-bold text-primary">{inv.amount_kas} KAS</span>
-            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black tracking-widest whitespace-nowrap ${STATUS_COLORS[inv.status] || ""}`}>
-              {(inv.status || "").toUpperCase().replace("_", " ")}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }

@@ -45,46 +45,27 @@ export default function AWAWorkerPanel() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-black text-card-foreground">WORKER MODE</h3>
-        </div>
-        <button onClick={() => setMode((m) => !m)} className="rounded-full bg-primary px-2 py-1 text-[9px] font-bold text-primary-foreground">{mode ? "hide" : "open"}</button>
+    <div>
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-2 py-1.5">
+        {!wallet && <button onClick={() => setWallet(generateWallet())} className="rounded border border-border bg-background px-2 py-1 text-[9px] font-bold">Create Wallet</button>}
+        {!wallet && <><input value={importKey} onChange={(e) => setImportKey(e.target.value)} placeholder="import private key" className="min-w-0 flex-1 rounded border border-border bg-background px-2 py-1 font-mono text-[9px] outline-none" /><button onClick={doImport} disabled={!importKey.trim()} className="rounded border border-border bg-background px-2 py-1 text-[9px] font-bold disabled:opacity-40">Import</button></>}
+        {wallet && <span className="max-w-full truncate rounded border border-border bg-background px-2 py-1 font-mono text-[8px]">{wallet.address}</span>}
+        <button onClick={() => setMode((m) => !m)} className="rounded border border-border bg-secondary px-2 py-1 text-[9px] font-bold">{mode ? "Close Campaigns" : "Open Campaigns"}</button>
       </div>
-
-      {!mode ? null : (
-        <div className="space-y-3">
-          {/* Worker wallet */}
-          <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px]">
-            <Wallet className="w-3.5 h-3.5 text-white/40" />
-            {wallet ? (
-              <span className="text-white/60 font-mono truncate">{wallet.address}</span>
-            ) : (
-              <>
-                <button onClick={() => setWallet(generateWallet())} className="px-2 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-[10px]">Create wallet</button>
-                <input value={importKey} onChange={(e) => setImportKey(e.target.value)} placeholder="import priv key" className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded px-2 py-1 text-white font-mono text-[10px] outline-none" />
-                <button onClick={doImport} disabled={!importKey.trim()} className="px-2 py-1 rounded bg-white/10 text-white text-[10px] disabled:opacity-40">Import</button>
-              </>
-            )}
-          </div>
-
-          {/* Claimable jobs */}
-          <div className="text-[10px] text-white/40 font-bold tracking-widest pt-1">OPEN CAMPAIGNS</div>
-          {!jobs ? <Loader2 className="w-4 h-4 animate-spin text-emerald-400" /> : jobs.length === 0 ? (
-            <div className="text-[11px] text-white/40">No open campaigns. Marketers post campaigns via the chat above.</div>
+      {mode && (
+        <div className="space-y-2 p-2">
+          {!jobs ? <Loader2 className="h-4 w-4 animate-spin" /> : jobs.length === 0 ? (
+            <div className="text-[9px] font-medium">No open campaigns. Marketers post campaigns via the chat above.</div>
           ) : jobs.map((j) => (
-            <div key={j.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
-              <div className="text-white text-xs font-bold">{j.description}</div>
-              <div className="text-white/40 text-[10px] mt-0.5">{j.platform} · {j.total_kas} KAS · {j.increment_kas} KAS × {j.num_epochs}</div>
-              <button onClick={() => claim(j)} disabled={busy === j.id || !wallet}
-                className="mt-2 w-full py-1.5 rounded-lg bg-emerald-500 text-black font-black text-[11px] hover:bg-emerald-400 disabled:opacity-40 flex items-center justify-center gap-1">
-                {busy === j.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Check className="w-3 h-3" /> CLAIM & BUILD COVENANT <ArrowRight className="w-3 h-3" /></>}
+            <div key={j.id} className="rounded border border-border bg-background p-2">
+              <div className="text-[10px] font-bold">{j.description}</div>
+              <div className="text-[8px]">{j.platform} · {j.total_kas} KAS · {j.increment_kas} KAS × {j.num_epochs}</div>
+              <button onClick={() => claim(j)} disabled={busy === j.id || !wallet} className="mt-1.5 rounded border border-border bg-primary px-2 py-1 text-[9px] font-black text-primary-foreground disabled:opacity-40">
+                {busy === j.id ? <Loader2 className="inline h-3 w-3 animate-spin" /> : <><Check className="mr-1 inline h-3 w-3" />CLAIM &amp; BUILD COVENANT <ArrowRight className="inline h-3 w-3" /></>}
               </button>
             </div>
           ))}
-          <p className="text-[9px] text-white/30">Claiming builds the real sentinel-x402 covenant with your wallet key — you sign each check-in client-side (non-custodial). The marketer funds the covenant address, then increments release to you each period the post stays up.</p>
+          <p className="text-[8px] leading-tight text-muted-foreground">Claiming builds the real sentinel-x402 covenant with your wallet key — you sign each check-in client-side (non-custodial). The marketer funds the covenant address, then increments release to you each period the post stays up.</p>
         </div>
       )}
     </div>
