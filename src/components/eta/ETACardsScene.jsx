@@ -6,10 +6,14 @@ export default function ETACardsScene({ scene, advanced, frameProgress }) {
   const parsedCount = Number(scene.component?.replace('Cards', ''));
   const count = Math.max(3, Math.min(6, parsedCount || 4));
   const radius = Number(advanced.cardRadius || 16);
+  const rings = [...(advanced.ringKeyframes || [])].sort((a,b) => a.time - b.time);
+  const ring = rings.filter((item) => Number(item.time || 0) <= Number(frameProgress || 0) * Number(scene.duration || 3)).at(-1) || rings[0];
   return (
     <div className="relative h-52 w-full max-w-md [perspective:900px]">
       {Array.from({ length: count }).map((_, i) => {
-        const x = (i - (count - 1) / 2) * 54;
+        const angle = i / count * Math.PI * 2 + Number(frameProgress || 0) * Number(scene.duration || 3) * Number(ring?.speed || 20) * Math.PI / 180;
+        const x = ring && Number.isFinite(frameProgress) ? Math.cos(angle) * 92 * Number(ring.radius || 1) : (i - (count - 1) / 2) * 54;
+        const ringY = ring && Number.isFinite(frameProgress) ? Math.sin(angle) * 25 * Number(ring.radius || 1) : 0;
         const rotate = (i - (count - 1) / 2) * 10;
         const duration = 3 + i * .25;
         return (
@@ -19,7 +23,7 @@ export default function ETACardsScene({ scene, advanced, frameProgress }) {
             animate={Number.isFinite(frameProgress) ? undefined : { x: [x, x + (i % 2 ? 8 : -8), x], y: [22, 8, 22], rotate: [rotate, rotate + (i % 2 ? 4 : -4), rotate], opacity: 1 }}
             transition={Number.isFinite(frameProgress) ? undefined : { opacity: { delay: i * .12 }, x: { duration, repeat: Infinity, ease: 'easeInOut' }, y: { duration, repeat: Infinity, ease: 'easeInOut' }, rotate: { duration, repeat: Infinity, ease: 'easeInOut' } }}
             className="absolute left-1/2 top-3 h-40 w-28 -translate-x-1/2 overflow-hidden border border-border bg-background p-2 shadow-2xl"
-            style={{ borderRadius: radius, backgroundColor: advanced.cardColor, ...(Number.isFinite(frameProgress) ? { opacity: Math.min(1, Math.max(0, (frameProgress - i * .06) * 5)), transform: `translateX(calc(-50% + ${x + Math.sin(frameProgress * Math.PI * 4 + i) * 8}px)) translateY(${22 + Math.cos(frameProgress * Math.PI * 4 + i) * 7}px) rotate(${rotate + Math.sin(frameProgress * Math.PI * 3 + i) * 3}deg)` } : {}) }}
+            style={{ borderRadius: radius, backgroundColor: advanced.cardColor, ...(Number.isFinite(frameProgress) ? { opacity: Math.min(1, Math.max(0, (frameProgress - i * .06) * 5)), transform: `translateX(calc(-50% + ${x}px)) translateY(${22 + ringY}px) rotateX(${Number(ring?.tiltX || 0)}deg) rotateZ(${Number(ring?.tiltZ || rotate)}deg)` } : {}) }}
           >
             {images[i]?.url ? <img src={images[i].url} alt="Animated card" className="h-full w-full object-cover" /> : <DefaultCard delay={i * .2} frameProgress={frameProgress} />}
           </motion.div>
