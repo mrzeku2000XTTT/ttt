@@ -1,16 +1,14 @@
 import React from 'react';
 
-const threeElements = new Set([
-  'group', 'mesh', 'lineSegments', 'primitive', 'color', 'fog', 'axesHelper',
-  'planeGeometry', 'boxGeometry', 'cylinderGeometry', 'meshBasicMaterial',
-  'lineBasicMaterial',
+const domElements = new Set([
+  'div', 'span', 'img', 'button', 'p', 'section', 'label', 'input', 'canvas',
 ]);
 
 // Visual editor markers describe DOM nodes. R3F instead interprets their
-// hyphens as paths (data.source.location) on a Three.js object.
-// This factory is scoped to CAM's two scene files; DOM labels stay editable.
+// hyphens as paths (data.source.location) on a Three.js object. Preserve those
+// markers only on real HTML tags and strip them from every R3F/custom element.
 export default function camSceneElement(type, props, ...children) {
-  if (props && (typeof type !== 'string' || threeElements.has(type))) {
+  if (props && (typeof type !== 'string' || !domElements.has(type))) {
     const clean = {};
     for (const key of Object.keys(props)) {
       if (!key.startsWith('data-')) clean[key] = props[key];
