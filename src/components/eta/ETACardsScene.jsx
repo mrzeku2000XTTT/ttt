@@ -21,7 +21,7 @@ export default function ETACardsScene({ scene, advanced, frameProgress }) {
             className="absolute left-1/2 top-3 h-40 w-28 -translate-x-1/2 overflow-hidden border border-border bg-background p-2 shadow-2xl"
             style={{ borderRadius: radius, backgroundColor: advanced.cardColor, ...(Number.isFinite(frameProgress) ? { opacity: Math.min(1, Math.max(0, (frameProgress - i * .06) * 5)), transform: `translateX(calc(-50% + ${x + Math.sin(frameProgress * Math.PI * 4 + i) * 8}px)) translateY(${22 + Math.cos(frameProgress * Math.PI * 4 + i) * 7}px) rotate(${rotate + Math.sin(frameProgress * Math.PI * 3 + i) * 3}deg)` } : {}) }}
           >
-            {images[i]?.url ? <img src={images[i].url} alt="Animated card" className="h-full w-full object-cover" /> : <DefaultCard delay={i * .2} />}
+            {images[i]?.url ? <img src={images[i].url} alt="Animated card" className="h-full w-full object-cover" /> : <DefaultCard delay={i * .2} frameProgress={frameProgress} />}
           </motion.div>
         );
       })}
@@ -30,6 +30,6 @@ export default function ETACardsScene({ scene, advanced, frameProgress }) {
   );
 }
 
-function DefaultCard({ delay }) {
-  return <><motion.i animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 2, repeat: Infinity, delay }} className="block h-20 rounded-lg bg-primary/25" /><i className="mt-3 block h-2 w-4/5 rounded bg-muted" /><i className="mt-2 block h-2 w-1/2 rounded bg-muted" /></>;
+function DefaultCard({ delay, frameProgress }) {
+  return <><motion.i animate={Number.isFinite(frameProgress)?undefined:{ scale: [1, 1.08, 1] }} transition={Number.isFinite(frameProgress)?undefined:{ duration: 2, repeat: Infinity, delay }} style={Number.isFinite(frameProgress)?{transform:`scale(${1+Math.sin(frameProgress*Math.PI*4+delay)*.06})`}:undefined} className="block h-20 rounded-lg bg-primary/25" /><i className="mt-3 block h-2 w-4/5 rounded bg-muted" /><i className="mt-2 block h-2 w-1/2 rounded bg-muted" /></>;
 }
