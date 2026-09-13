@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { X, Film, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, Film, Image as ImageIcon, Loader2, Youtube } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import NicheYouTubeLearner from './NicheYouTubeLearner';
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -41,7 +42,7 @@ const extractFrames = (file) =>
 // Teaches the NICHE AI a visual style from a video (up to 10 min) or images.
 // The learned style is saved to the user's account — forever.
 export default function NicheStyleLearner({ onClose, onLearned }) {
-  const [mode, setMode] = useState('video');
+  const [mode, setMode] = useState('youtube');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const videoInput = useRef(null);
@@ -136,18 +137,18 @@ Then write:
         }
       }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0a0a0a] p-6 relative">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#0a0a0a] p-6 relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white" aria-label="Close">
           <X className="w-5 h-5" />
         </button>
         <h3 className="text-lg font-black tracking-tight mb-1">Teach me a style</h3>
         <p className="text-white/50 text-xs leading-relaxed mb-4">
-          Upload a video (up to 10 minutes) or up to 4 images — or just paste images right here. I study every frame,
-          learn the style, and keep it forever for your videos.
+          Paste a YouTube URL, upload a video, or add reference images. I learn the animation language and story structure, then create original ideas in that style.
         </p>
 
         <div className="flex gap-2 mb-4">
           {[
+            ['youtube', 'YouTube', Youtube],
             ['video', 'Video', Film],
             ['image', 'Images', ImageIcon]
           ].map(([id, label, Icon]) => (
@@ -170,6 +171,8 @@ Then write:
           <p className="flex items-center gap-2 text-sm text-white/70 py-6 justify-center">
             <Loader2 className="w-4 h-4 animate-spin" /> {busy}
           </p>
+        ) : mode === 'youtube' ? (
+          <NicheYouTubeLearner onLearned={onLearned} onClose={onClose} />
         ) : mode === 'video' ? (
           <button
             onClick={() => videoInput.current?.click()}

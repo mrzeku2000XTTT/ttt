@@ -423,9 +423,10 @@ Narration must total about 60–120 seconds when spoken.`,
       {showLearner && (
         <NicheStyleLearner
           onClose={() => setShowLearner(false)}
-          onLearned={(s) => {
-            setLearnedStyles((prev) => [...prev, s]);
+          onLearned={(s, ideaPrompt) => {
+            setLearnedStyles((prev) => prev.some((item) => item.id === s.id) ? prev : [...prev, s]);
             setStyleId(`learned:${s.id}`);
+            if (ideaPrompt) setTopic(ideaPrompt);
           }}
         />
       )}

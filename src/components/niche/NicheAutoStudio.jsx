@@ -14,6 +14,9 @@ import { enhanceAnimationPrompt } from './promptoEnhance';
 import NicheMimicCard from './NicheMimicCard';
 import { ANIMATION_KNOWLEDGE } from './animationKnowledge';
 import { POSES_PER_SCENE, posePlanPrompt, generateStopMotionFrames, compileStopMotionVideo } from './stopMotion';
+import { analyzeYouTubeStyle } from '@/lib/youtubeStyleAnalysis';
+import NicheYouTubeResult from './NicheYouTubeResult';
+import { LEARNING_LESSONS } from './NicheLearningWait';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -100,6 +103,7 @@ export default function NicheAutoStudio({ niches }) {
   const [showPrompts, setShowPrompts] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [masterMode, setMasterMode] = useState(false);
+  const [queuedVideoPrompt, setQueuedVideoPrompt] = useState('');
   const scrollRef = useRef(null);
   const lastScrollSigRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -118,8 +122,8 @@ export default function NicheAutoStudio({ niches }) {
   useEffect(() => {
     const names = (niches || []).map((n) => n.niche_name);
     const intro = names.length
-      ? `Your saved niches: ${names.slice(0, 6).join(' · ')}. Tap one below to drop it in the box, then add any details — or paste a topic, an X link, or a prompt.`
-      : `Paste a topic, an X link, or a prompt and I'll take it from there — or just talk to me.`;
+      ? `Your saved niches: ${names.slice(0, 6).join(' · ')}. Tap one below, paste a topic, X link, or any public YouTube URL, and I’ll take it from there.`
+      : `Paste a topic, X link, or any public YouTube URL and I’ll take it from there — or just talk to me.`;
     // refresh survival — restore the chat if there is one
     try {
       let saved = (JSON.parse(localStorage.getItem(chatKey) || '[]') || []).filter((m) => m && m.role && m.text);
@@ -136,7 +140,7 @@ export default function NicheAutoStudio({ niches }) {
       {
         id: uid(),
         role: 'ai',
-        text: `Hey — I'm your NICHE auto-pilot. Give me a topic, an X link, or a prompt — I'll ask you to pick the animation style, how many scenes you want, and whether you want it black & white or colored. Then I research live, write the script, draw every scene, narrate, caption and stitch the MP4 — ready to deploy to YouTube.\n\n${intro}`
+        text: `Hey — I’m your NICHE auto-pilot. Give me a topic, X link, prompt, or public YouTube URL. I can study its animation language and story structure, invent original viral directions, then draw, animate, narrate, caption, and show you the finished video.\n\n${intro}`
       }
     ]);
   }, [chatKey]);
@@ -179,7 +183,8 @@ export default function NicheAutoStudio({ niches }) {
         text: m.text,
         video: m.video ? { title: m.video.title, description: m.video.description, tags: m.video.tags } : undefined,
         attachments: Array.isArray(m.attachments) ? m.attachments.filter((s) => !String(s).startsWith('blob:')) : undefined,
-        mimic: m.mimic ? { html: m.mimic.html } : undefined
+        mimic: m.mimic ? { html: m.mimic.html } : undefined,
+        youtubeLearning: m.youtubeLearning || undefined
       }));
     try {
       localStorage.setItem(chatKey, JSON.stringify(rows));
@@ -228,6 +233,13 @@ export default function NicheAutoStudio({ niches }) {
       addFiles(files);
     }
   };
+
+  useEffect(() => {
+    if (!queuedVideoPrompt || busy) return;
+    const prompt = queuedVideoPrompt;
+    setQueuedVideoPrompt('');
+    send(prompt);
+  }, [queuedVideoPrompt, learnedStyles]);
 
   const send = async (raw) => {
     let text = (raw ?? input).trim();
@@ -304,9 +316,21 @@ export default function NicheAutoStudio({ niches }) {
         return;
       }
 
-      // If the user pasted a link, read its actual content first — X posts and
-      // articles can't be read from the URL alone, and the video must be about
-      // what the post actually says, not a guess from the link.
+      // A pasted YouTube URL goes straight to the animation-language learner.
+      const youtubeUrl = text.match(/https?:\/\/(?:www\.|m\.)?(?:youtube\.com|youtu\.be)\/[^\s]+/i)?.[0];
+      if (youtubeUrl) {
+        setWork('Watching YouTube and learning the animation');
+        setMessages((m) => m.map((x) => x.id === workId ? { ...x, tips: LEARNING_LESSONS } : x));
+        const learning = await analyzeYouTubeStyle(youtubeUrl);
+        if (token.cancelled) { audioContext.close().catch(() => {}); return; }
+        audioContext.close().catch(() => {});
+        setLearnedStyles((prev) => prev.some((s) => s.id === learning.style.id) ? prev : [...prev, learning.style]);
+        finish({ text: `I learned “${learning.style.name}” without copying the source’s characters, words, or branding. Pick an original direction below.`, youtubeLearning: learning });
+        return;
+      }
+
+      // If the user pasted another link, read its actual content first — X posts
+      // and articles can't be read from the URL alone.
       let linkContext = '';
       const pastedUrls = text.match(/https?:\/\/[^\s]+/gi) || [];
       if (pastedUrls.length) {
@@ -831,6 +855,14 @@ Decide what to do:
                       <NicheMimicCard html={m.mimic.html} />
                     </div>
                   )}
+                  {m.youtubeLearning && (
+                    <div className="mt-3">
+                      <NicheYouTubeResult result={m.youtubeLearning} onMake={(idea) => {
+                        setLearnedStyles((prev) => prev.some((s) => s.id === m.youtubeLearning.style.id) ? prev : [...prev, m.youtubeLearning.style]);
+                        setQueuedVideoPrompt(`Create and render an original viral video using my learned animation language "${m.youtubeLearning.style.name}". ${idea.video_prompt}`);
+                      }} />
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -1064,7 +1096,7 @@ Decide what to do:
               <button
                 onClick={() => setShowLearner(true)}
                 disabled={busy}
-                title="Teach me a style from a video or images"
+                title="Learn animation language and story structure from YouTube, video, or images"
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-white/40 transition-all disabled:opacity-40"
               >
                 <Film className="w-3.5 h-3.5" />
@@ -1150,7 +1182,7 @@ Decide what to do:
               }
             }}
             onPaste={handlePaste}
-            placeholder={mimicMode ? 'Mimic is on — attach a screenshot to clone it, or tell me what to change…' : cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : promptoMode ? 'Prompto is on — type anything, I will amplify it into a detailed animation brief…' : smMode ? 'SM is on — give me a topic and I will shoot it as a stop-motion film, exported at 60fps…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, or prompt…' : 'Paste a topic, X link, or niche — or attach a file…'}
+            placeholder={mimicMode ? 'Mimic is on — attach a screenshot to clone it, or tell me what to change…' : cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : promptoMode ? 'Prompto is on — type anything, I will amplify it into a detailed animation brief…' : smMode ? 'SM is on — give me a topic and I will shoot it as a stop-motion film, exported at 60fps…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, YouTube URL, or prompt…' : 'Paste a topic, X link, YouTube URL, or niche — or attach a file…'}
             disabled={busy}
             className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
@@ -1171,9 +1203,9 @@ Decide what to do:
       {showLearner && (
         <NicheStyleLearner
           onClose={() => setShowLearner(false)}
-          onLearned={(s) => {
-            setLearnedStyles((prev) => [...prev, s]);
-            send(`I just taught you my style "${s.name}" — use it for my videos from now on`);
+          onLearned={(s, ideaPrompt) => {
+            setLearnedStyles((prev) => prev.some((item) => item.id === s.id) ? prev : [...prev, s]);
+            setQueuedVideoPrompt(`Create and render an original viral video using my learned animation language "${s.name}". ${ideaPrompt || 'Choose a strong topic for my niche and use the learned story blueprint.'}`);
           }}
         />
       )}
