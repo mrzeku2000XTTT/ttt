@@ -22,16 +22,16 @@ export default function AWAServiceChips() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        {(services || SERVICES.map((s) => ({ id: s.id, name: s.name, price_kas: 0.5 }))).map((s) => {
+      <div className="flex flex-col gap-1.5">
+        {(services?.length ? services : SERVICES.map((s) => ({ id: s.id, name: s.name, price_kas: 0.5 }))).map((s) => {
           const meta = SERVICES.find((m) => m.id === s.id) || SERVICES[0];
           const Icon = meta.icon;
           return (
             <button key={s.id} onClick={() => setBuying(s)}
-              className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-colors">
-              <Icon className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-[11px] text-white/70 group-hover:text-white font-medium">{meta.name}</span>
-              <span className="text-[10px] text-emerald-300/70 font-mono">{s.price_kas} KAS</span>
+              className="group flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-left transition-colors hover:border-primary/50">
+              <Icon className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] font-medium text-secondary-foreground">{meta.name}</span>
+              <span className="ml-auto font-mono text-[10px] text-primary">{s.price_kas} KAS</span>
             </button>
           );
         })}

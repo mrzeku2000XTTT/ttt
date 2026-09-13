@@ -45,13 +45,13 @@ export default function AWAWorkerPanel() {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-white font-bold text-sm tracking-wide">WORKER MODE</h3>
+          <Zap className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-black text-card-foreground">WORKER MODE</h3>
         </div>
-        <button onClick={() => setMode((m) => !m)} className="text-[10px] text-emerald-300 hover:text-emerald-200">{mode ? "hide" : "open"}</button>
+        <button onClick={() => setMode((m) => !m)} className="rounded-full bg-primary px-2 py-1 text-[9px] font-bold text-primary-foreground">{mode ? "hide" : "open"}</button>
       </div>
 
       {!mode ? null : (

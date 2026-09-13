@@ -53,77 +53,53 @@ export default function AWAChat({ onCampaignCreated }) {
   const doImport = () => { try { setWallet(importFromPrivateKey(importKey)); setImportKey(""); setShowKeys(false); } catch (e) { setError(e.message); } };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Wallet pill */}
-      <div className="flex items-center gap-2 justify-center mb-3">
-        <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+    <div className="grid w-full gap-3 sm:grid-cols-[2fr_1fr]">
+      <div className="mb-1 flex flex-wrap items-center justify-center gap-2 sm:col-span-2">
+        <Wallet className="h-3.5 w-3.5 text-primary" />
         {wallet ? (
-          <span className="text-[11px] text-white/50 font-mono">{wallet.address.slice(0, 14)}…{wallet.address.slice(-6)}</span>
+          <span className="font-mono text-[11px] text-muted-foreground">{wallet.address.slice(0, 14)}…{wallet.address.slice(-6)}</span>
         ) : (
           <>
-            <button onClick={() => setWallet(generateWallet())} className="text-[11px] px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-200">Connect TTT wallet</button>
-            <button onClick={() => setShowKeys((s) => !s)} className="text-[11px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/60"><KeyRound className="w-3 h-3 inline mr-1" />Import</button>
+            <button onClick={() => setWallet(generateWallet())} className="rounded-full bg-primary px-4 py-2 text-[11px] font-black text-primary-foreground">Connect TTT wallet</button>
+            <button onClick={() => setShowKeys((s) => !s)} className="rounded-full border border-border px-3 py-2 text-[11px] text-muted-foreground"><KeyRound className="mr-1 inline h-3 w-3" />Import</button>
           </>
         )}
       </div>
       {showKeys && !wallet && (
-        <div className="flex items-center gap-2 justify-center mb-3">
-          <input value={importKey} onChange={(e) => setImportKey(e.target.value)} placeholder="private key (64 hex)" className="w-64 bg-black/40 border border-white/10 rounded px-2 py-1 text-white font-mono text-[10px] outline-none" />
-          <button onClick={doImport} disabled={!importKey.trim()} className="text-[11px] px-2 py-1 rounded bg-emerald-500 text-black font-bold disabled:opacity-40">Import</button>
+        <div className="mb-1 flex items-center justify-center gap-2 sm:col-span-2">
+          <input value={importKey} onChange={(e) => setImportKey(e.target.value)} placeholder="private key (64 hex)" className="w-64 rounded-full border border-border bg-card px-3 py-2 font-mono text-[10px] text-foreground outline-none" />
+          <button onClick={doImport} disabled={!importKey.trim()} className="rounded-full bg-primary px-3 py-2 text-[11px] font-bold text-primary-foreground disabled:opacity-40">Import</button>
         </div>
       )}
 
-      {/* Apple-white chat card */}
-      <div className="rounded-3xl bg-white shadow-[0_8px_40px_rgba(0,255,179,0.12)] overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-zinc-100 flex items-center gap-3 bg-gradient-to-r from-emerald-50 to-white">
-          <img src={AWA_LOGO} alt="AWA" className="w-8 h-8 rounded-lg object-cover" />
-          <div>
-            <div className="text-zinc-900 font-bold text-sm tracking-tight">AWA</div>
-            <div className="text-zinc-400 text-[10px] -mt-0.5">sentinel-x402 covenant marketing</div>
-          </div>
-          <span className="ml-auto flex items-center gap-1 text-[9px] font-bold tracking-widest text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full"><Sparkles className="w-3 h-3" />HTTP 402</span>
-        </div>
+      <div className="flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-background sm:col-span-2">
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Describe your campaign…" className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-background/50" />
+        <button onClick={() => send()} disabled={busy || !input.trim()} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-background text-foreground disabled:opacity-40">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </button>
+      </div>
 
-        <div ref={scrollRef} className="px-5 py-4 space-y-3 max-h-[340px] overflow-y-auto bg-white">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <img src={AWA_LOGO} alt="AWA" className="h-7 w-7 rounded-full object-cover grayscale" />
+          <div><div className="text-sm font-bold text-card-foreground">AWA</div><div className="text-[9px] text-muted-foreground">sentinel-x402 covenant marketing</div></div>
+          <span className="ml-auto rounded border border-border px-2 py-1 text-[8px] font-bold text-muted-foreground"><Sparkles className="mr-1 inline h-3 w-3" />HTTP 402</span>
+        </div>
+        <div ref={scrollRef} className="max-h-[260px] space-y-3 overflow-y-auto px-4 py-3">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-line ${m.role === "user" ? "bg-zinc-900 text-white rounded-br-sm" : "bg-zinc-100 text-zinc-800 rounded-bl-sm"}`}>
+              <div className={`max-w-[88%] rounded-xl border border-border px-3 py-2 text-[11px] leading-relaxed whitespace-pre-line ${m.role === "user" ? "bg-foreground text-background" : "bg-secondary text-secondary-foreground"}`}>
                 {m.text}
-                {m.terms && (
-                  <div className="mt-2 pt-2 border-t border-zinc-200 grid grid-cols-2 gap-1.5 text-[11px]">
-                    <div className="text-zinc-500">Budget</div><div className="text-zinc-900 font-mono font-bold">{m.terms.total_kas} KAS</div>
-                    <div className="text-zinc-500">Per period</div><div className="text-zinc-900 font-mono">{m.terms.increment_kas} KAS</div>
-                    <div className="text-zinc-500">Check-ins</div><div className="text-zinc-900 font-mono">{m.terms.num_epochs} × {Math.round(m.terms.period_seconds / 3600)}h</div>
-                    <div className="col-span-2 text-[10px] text-emerald-600 font-semibold pt-1">✓ Campaign open for worker agents — see panel below to fund once claimed</div>
-                  </div>
-                )}
+                {m.terms && <div className="mt-2 grid grid-cols-2 gap-1 border-t border-border pt-2 text-[10px]"><div className="text-muted-foreground">Budget</div><div className="font-mono font-bold">{m.terms.total_kas} KAS</div><div className="text-muted-foreground">Per period</div><div className="font-mono">{m.terms.increment_kas} KAS</div><div className="text-muted-foreground">Check-ins</div><div className="font-mono">{m.terms.num_epochs} × {Math.round(m.terms.period_seconds / 3600)}h</div><div className="col-span-2 pt-1 font-semibold text-primary">Campaign open for worker agents — see panel to fund once claimed</div></div>}
               </div>
             </div>
           ))}
-          {busy && <div className="flex justify-start"><div className="bg-zinc-100 rounded-2xl px-3.5 py-2.5 text-[13px] text-zinc-500 flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" /> Encoding covenant terms…</div></div>}
+          {busy && <div className="flex justify-start"><div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2 text-[11px] text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> Encoding covenant terms…</div></div>}
+          {messages.length === 1 && <div className="flex flex-wrap gap-1.5">{SUGGESTIONS.map((s) => <button key={s} onClick={() => send(s)} className="rounded-full border border-border bg-secondary px-2.5 py-1 text-[9px] text-muted-foreground hover:text-foreground">{s}</button>)}</div>}
         </div>
-
-        {error && <div className="mx-5 mb-2 text-[11px] text-red-600 bg-red-50 rounded-lg px-3 py-1.5">{error}</div>}
-
-        <div className="px-5 py-3 border-t border-zinc-100 bg-white">
-          {messages.length === 1 && (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} onClick={() => send(s)} className="text-[10px] px-2.5 py-1 rounded-full bg-zinc-100 hover:bg-emerald-50 text-zinc-600 hover:text-emerald-700 border border-zinc-200">{s}</button>
-              ))}
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Describe your campaign…"
-              className="flex-1 bg-zinc-100 rounded-full px-4 py-2.5 text-[13px] text-zinc-900 placeholder:text-zinc-400 outline-none focus:bg-zinc-50 focus:ring-2 focus:ring-emerald-400/40" />
-            <button onClick={() => send()} disabled={busy || !input.trim()}
-              className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center hover:bg-emerald-600 disabled:opacity-40 transition-colors flex-shrink-0">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
+        {error && <div className="m-3 rounded-lg bg-destructive/10 px-3 py-2 text-[11px] text-destructive">{error}</div>}
       </div>
+      <div className="hidden min-h-48 rounded-xl bg-cover bg-[position:0%_100%] grayscale sm:block" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
     </div>
   );
 }

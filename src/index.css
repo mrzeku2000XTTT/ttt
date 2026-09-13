@@ -265,6 +265,24 @@ button:focus-visible {
   --border: 250 10% 22%; --destructive: 0 90% 76%; --font-heading: 'Space Grotesk', sans-serif; --font-body: 'Space Grotesk', sans-serif;
 }
 
+/* Scoped AWA Graphite Editorial theme. */
+:root .awa-graphite, .dark .awa-graphite {
+  --background: 0 0% 7%;
+  --foreground: 40 30% 94%;
+  --card: 0 0% 12%;
+  --card-foreground: 40 30% 94%;
+  --primary: 75 100% 64%;
+  --primary-foreground: 0 0% 6%;
+  --secondary: 0 0% 17%;
+  --secondary-foreground: 40 30% 94%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 40 6% 62%;
+  --border: 0 0% 23%;
+  --ring: 75 100% 64%;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+}
+
 /* Scoped KaspaCollab landing theme; other apps retain their existing colors. */
 :root .kaspa-collab-landing, .dark .kaspa-collab-landing {
   --background: 270 48% 5%;

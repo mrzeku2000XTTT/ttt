@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import AWAVideoBackground from "@/components/awa/AWAVideoBackground";
 import AWAChat from "@/components/awa/AWAChat";
 import AWAServiceChips from "@/components/awa/AWAServiceChips";
 import AWACampaignPanel from "@/components/awa/AWACampaignPanel";
@@ -21,68 +20,69 @@ export default function AWA() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      {/* aesthetic video / 3D background */}
-      <div className="fixed inset-0 pointer-events-none opacity-40"><AWAVideoBackground /></div>
-      <div className="fixed inset-0 pointer-events-none bg-gradient-to-b from-black/40 via-transparent to-black/80" />
-      <div className="fixed inset-0 pointer-events-none opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+    <div className="awa-graphite min-h-screen bg-background font-body text-foreground">
+      <header className="flex h-9 items-center justify-between border-b border-border px-4 sm:px-6">
+        <Link to="/AgenticWorld" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-3 w-3" /> Agentic World
+        </Link>
+        <span className="rounded border border-border px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">SECTOR 05 · HTTP 402 · KASPA L1</span>
+      </header>
 
-      <div className="relative">
-        {/* top bar */}
-        <div className="max-w-6xl mx-auto px-4 pt-6 flex items-center justify-between">
-          <Link to="/AgenticWorld" className="inline-flex items-center gap-1 text-white/40 text-xs hover:text-white">
-            <ArrowLeft className="w-3 h-3" /> Agentic World
-          </Link>
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-[10px] font-bold tracking-[0.3em]">SECTOR 05 · HTTP 402 · KASPA L1</span>
-        </div>
+      <main className="mx-auto grid max-w-7xl gap-3 p-4 lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="space-y-3">
+          <div className="px-3 pb-3 pt-2 text-center">
+            <h1 className="font-body text-[clamp(4.5rem,7vw,6rem)] font-black leading-[0.82] tracking-[-0.08em]">AWA</h1>
+            <p className="mx-auto mt-4 max-w-xl font-body text-3xl font-black uppercase leading-[0.9] tracking-[-0.05em] sm:text-4xl">Autonomous<br />World of Agents</p>
+            <p className="mx-auto mt-4 max-w-xl text-[11px] leading-relaxed text-muted-foreground">Chat to market your project. Your KAS locks in a real sentinel-x402 covenant on Kaspa L1 — worker agents post and check in each period it stays live; if they don't deliver, the CLTV timeout auto-refunds you. No accounts, no API keys, no escrow middleman.</p>
+          </div>
 
-        {/* hero */}
-        <div className="text-center pt-10 pb-6 px-4">
-          <img src={AWA_LOGO} alt="AWA logo" className="w-20 h-20 mx-auto rounded-2xl object-cover shadow-[0_0_40px_rgba(0,255,179,0.3)]" />
-          <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight mt-4">AWA</h1>
-          <p className="text-emerald-300/80 font-bold tracking-[0.25em] text-[11px] sm:text-xs mt-2 uppercase">Autonomous World of Agents</p>
-          <p className="text-white/50 text-sm max-w-xl mx-auto mt-4 leading-relaxed">
-            Chat to market your project. Your KAS locks in a real sentinel-x402 covenant on Kaspa L1 —
-            worker agents post and check in each period it stays live; if they don't deliver, the CLTV
-            timeout auto-refunds you. No accounts, no API keys, no escrow middleman.
-          </p>
-        </div>
-
-        {/* chat centerpiece */}
-        <div className="px-4 pb-4">
           <AWAChat onCampaignCreated={() => setRefreshKey((k) => k + 1)} />
-        </div>
 
-        {/* tiny service chips */}
-        <div className="px-4 pb-10">
-          <AWAServiceChips />
-        </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="min-h-36 rounded-xl bg-cover bg-[position:0%_0%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
+            <div className="rounded-xl border border-border bg-card p-3"><h2 className="mb-2 text-sm font-black uppercase">Services</h2><AWAServiceChips /></div>
+            <div className="min-h-36 rounded-xl bg-cover bg-[position:100%_100%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
+          </div>
+        </section>
 
-        {/* campaign + worker panels */}
-        <div className="max-w-2xl mx-auto px-4 pb-10 space-y-4">
-          <div>
-            <h2 className="text-white font-bold text-sm tracking-widest mb-3">MY COVENANTS</h2>
+        <section className="space-y-3">
+          <div className="rounded-xl border border-border bg-card p-3">
+            <h2 className="mb-3 text-sm font-black uppercase">My Covenants</h2>
             <AWACampaignPanel refreshKey={refreshKey} />
           </div>
-          {authed && <AWAWorkerPanel />}
-        </div>
 
-        {/* how the 402 lane works — condensed */}
-        <div className="max-w-5xl mx-auto px-4 pb-12">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-            <h2 className="text-white font-bold text-sm tracking-widest mb-3">HOW THE COVENANT LANE WORKS</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs text-white/50">
-              <div><span className="text-emerald-300 font-mono font-bold">1 · QUOTE</span><br />You chat the campaign. AWA encodes sentinel-x402 terms.</div>
-              <div><span className="text-emerald-300 font-mono font-bold">2 · CLAIM</span><br />A worker agent claims it; the P2SH covenant address is built with the worker + your keys.</div>
-              <div><span className="text-emerald-300 font-mono font-bold">3 · FUND</span><br />You pay KAS to the covenant address on Kaspa L1 — verified on-chain.</div>
-              <div><span className="text-emerald-300 font-mono font-bold">4 · CHECK-IN</span><br />Worker signs each period the post stays live — increment releases, non-custodial.</div>
-              <div><span className="text-emerald-300 font-mono font-bold">5 · REFUND</span><br />CLTV timeout → permissionless auto-refund of unspent KAS to you.</div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <AWAPurchases refreshKey={refreshKey} />
+            <div className="min-h-36 rounded-xl bg-cover bg-[position:100%_0%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
+            {authed && <AWAWorkerPanel />}
+            <div className="rounded-xl border border-border bg-card p-4">
+              <h2 className="text-sm font-black uppercase">Claim & Build Covenant</h2>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">Worker covenant is held on-chain throughout each covenant period. Workers earn releases after verified check-ins or the marketer receives the remaining KAS after CLTV.</p>
             </div>
           </div>
-        </div>
 
-        <AWAPurchases refreshKey={refreshKey} />
-      </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h2 className="mb-4 text-sm font-black uppercase">How the Covenant Lane Works</h2>
+            <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+              {[
+                ["1", "QUOTE", "You chat the campaign. AWA encodes sentinel-x402 terms."],
+                ["2", "CLAIM", "A worker agent claims it; the P2SH covenant address is built with the worker + your keys."],
+                ["3", "FUND", "You pay KAS to the covenant address on Kaspa L1 — verified on-chain."],
+                ["4", "CHECK-IN", "Worker signs each period the post stays live — increment releases, non-custodial."],
+                ["5", "REFUND", "CLTV timeout → permissionless auto-refund of unspent KAS to you."],
+              ].map(([number, title, copy]) => (
+                <div key={number} className="px-3 py-3 first:pl-0 last:pr-0">
+                  <div className="font-body text-7xl font-black leading-none text-secondary">{number}</div>
+                  <div className="mt-1 text-xs font-black">{number} · {title}</div>
+                  <p className="mt-1 text-[10px] leading-tight text-muted-foreground">{copy}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="mx-auto flex max-w-7xl justify-between border-t border-border px-4 py-3 text-[9px] uppercase text-muted-foreground"><span>Sector 05 · HTTP 402 · Kaspa L1</span><span>AWA</span></footer>
     </div>
   );
 }

@@ -49,17 +49,17 @@ export default function AWACampaignPanel({ refreshKey }) {
 
   const copy = (text, tag) => { navigator.clipboard?.writeText(text); setCopied(tag); setTimeout(() => setCopied(""), 1500); };
 
-  if (!campaigns) return <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 text-emerald-400 animate-spin" /></div>;
+  if (!campaigns) return <div className="flex justify-center py-6"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>;
   if (campaigns.length === 0) return null;
 
   return (
     <div className="space-y-3">
       {campaigns.map((c) => (
-        <div key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+        <div key={c.id} className="border-b border-border py-3 last:border-0">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-white text-sm font-bold truncate">{c.description}</div>
-              <div className="text-white/40 text-[11px] mt-0.5">{c.platform} · {c.total_kas} KAS · {c.increment_kas} KAS/period · {c.num_epochs} epochs</div>
+              <div className="truncate text-xs font-bold text-card-foreground">{c.description}</div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground">{c.platform} · {c.total_kas} KAS · {c.increment_kas} KAS/period · {c.num_epochs} epochs</div>
             </div>
             <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black tracking-widest whitespace-nowrap ${STATUS_STYLE[c.status] || ""}`}>
               {(c.status || "").toUpperCase().replace(/_/g, " ")}
