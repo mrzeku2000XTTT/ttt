@@ -277,7 +277,7 @@ export default function AgentInternetLanding() {
                 </div>
 
                 {/* Desktop Action Rail */}
-                <div className="hidden lg:flex mt-6 w-[min(94vw,980px)] min-h-32 items-center justify-between gap-4 border-y border-white/10 bg-black/80 px-7 py-5 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                <div className="liquid-glass hidden lg:flex mt-6 w-[min(94vw,980px)] min-h-32 items-center justify-between gap-4 rounded-3xl border border-white/15 bg-gradient-to-r from-white/[0.045] via-white/[0.012] to-white/[0.035] px-7 py-5 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(255,255,255,0.06),0_18px_50px_rgba(0,0,0,0.16)]">
                   <div className="relative flex min-w-[250px] items-center gap-3 border-l border-white/35 pl-4 pr-5">
                     <span className="absolute -left-px top-0 h-2 w-2 border-t border-white/35" />
                     <span className="absolute -left-px bottom-0 h-2 w-2 border-b border-white/35" />
