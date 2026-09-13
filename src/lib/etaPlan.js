@@ -9,6 +9,24 @@ export const createBlankETAScene = (component = "TitleCard") => ({
   motion: "Ease in", transition: "Match cut", hyperframe_animation: "slide_up", advanced: {},
 });
 
+const PASS_LABELS = [
+  "Analyzing intent and narrative",
+  "Filling component direction",
+  "Generating motion and keyframes",
+  "Coordinating scene continuity",
+  "Validating and repairing the plan",
+];
+
+const getETAPassCount = (brief, files) => {
+  const length = String(brief.description || "").trim().length;
+  let passes = 1;
+  if (length > 60 || brief.url || brief.style) passes = 2;
+  if (length > 180 || files.length > 0) passes = 3;
+  if (length > 400 || Number(brief.duration) > 30) passes = 4;
+  if (length > 800 || (files.length > 2 && Number(brief.duration) >= 60)) passes = 5;
+  return passes;
+};
+
 const sceneSchema = {
   type: "object",
   properties: {
@@ -27,15 +45,20 @@ export async function createETAPlan(brief, files, onStatus) {
   const uploads = await Promise.all(files.map((file) =>
     base44.integrations.Core.UploadPrivateFile({ file }).then((result) => result.file_uri)
   ));
-  onStatus("Directing real components and frame motion");
-  const result = await base44.integrations.Core.InvokeLLM({
-    prompt: buildETADirectorPrompt(brief),
-    file_urls: uploads.length ? uploads : undefined,
-    response_json_schema: {
-      type: "object",
-      properties: { title: { type: "string" }, narrative: { type: "string" }, scenes: { type: "array", items: sceneSchema } },
-      required: ["title", "narrative", "scenes"],
-    },
-  });
-  return { ...result, scenes: result.scenes.map((scene) => ({ ...scene, advanced: scene.advanced || {} })) };
+  const maxPasses = getETAPassCount(brief, files);
+  let currentPlan = null;
+  for (let passIndex = 1; passIndex <= maxPasses; passIndex += 1) {
+    onStatus(`Pass ${passIndex}/${maxPasses}: ${PASS_LABELS[passIndex - 1]}`);
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: buildETADirectorPrompt(brief, { passIndex, maxPasses, currentPlan }),
+      file_urls: uploads.length ? uploads : undefined,
+      response_json_schema: {
+        type: "object",
+        properties: { title: { type: "string" }, narrative: { type: "string" }, scenes: { type: "array", items: sceneSchema } },
+        required: ["title", "narrative", "scenes"],
+      },
+    });
+    currentPlan = { ...result, scenes: result.scenes.map((scene) => ({ ...scene, advanced: scene.advanced || {} })) };
+  }
+  return currentPlan;
 }
