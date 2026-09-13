@@ -8,8 +8,9 @@ export default function renderCamScene(canvas, scene, media, framing = 1) {
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
   const c = scene.camera, move = moveAt(moveById(c.moveId), scene.progress, c.intensity);
   const camera = new THREE.PerspectiveCamera(c.fov || 48, W / H, 0.05, 100);
-  camera.position.set(move.x * 3.4, -move.y * 1.9, (c.distance || 4.2) / Math.max(0.55, move.zoom));
-  camera.lookAt(0, 0, 0); camera.rotateZ((move.rot + (c.roll || 0)) * Math.PI / 180); camera.updateMatrixWorld();
+  const position=c.position||{x:0,y:0,z:0},pivot=c.pivot||{x:0,y:0,z:0};
+  camera.position.set(position.x+move.x*3.4,position.y-move.y*1.9,position.z+(c.distance||4.2)/Math.max(0.55,move.zoom));
+  camera.lookAt(pivot.x,pivot.y,pivot.z); camera.rotateZ((move.rot + (c.roll || 0)) * Math.PI / 180); camera.updateMatrixWorld();
   const assets = scene.assets.map((a) => { const source = media.find((m) => m.id === a.id); return { ...a, img: source?.img, aspect: source?.aspect || a.aspect }; }).filter((a) => a.img);
   assets.sort((a, b) => new THREE.Vector3(b.x, b.y, b.z).distanceToSquared(camera.position) - new THREE.Vector3(a.x, a.y, a.z).distanceToSquared(camera.position));
   for (const a of assets) {

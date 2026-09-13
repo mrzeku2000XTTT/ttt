@@ -7,6 +7,7 @@ import { OrbitControls, Grid, Html, GizmoHelper, GizmoViewport } from '@react-th
 import * as THREE from 'three';
 import { moveAt } from './camMoves';
 import CamAssetAxes from '@/components/cam/CamAssetAxes';
+import CamCameraRigControls from '@/components/cam/CamCameraRigControls';
 
 // Rig dimensions — the image plane the virtual camera films.
 const PLANE_W = 3.4;
@@ -42,7 +43,7 @@ function MediaPlane({ item, selected, onSelect }) {
   );
 }
 
-function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFrame, onMoveAsset, onBeginAssetMove }) {
+function Rig({ image, media, manualOffset, camRig, onCameraRigMove, onSelectAsset, refId, getFrame, onMoveAsset, onBeginAssetMove }) {
   const dragging = useRef(false);
   const selected = media?.find((m) => m.id === refId && m.id !== 'primary');
   const assetPosition = selected?.pos || { x: (manualOffset?.x || 0) * 2.4, y: (manualOffset?.y || 0) * 1.6, z: (manualOffset?.z || 0) * 2.2 };
@@ -100,8 +101,9 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
 
     const f = getFrame ? getFrame() : null;
     const s = f ? moveAt(f.move, f.p, f.intensity) : { zoom: 1, x: 0, y: 0, rot: 0 };
-    virtualCam.position.set(s.x * PLANE_W, -s.y * PLANE_H, baseDist / Math.max(0.55, s.zoom));
-    virtualCam.lookAt(0, 0, 0);
+    const rigPosition=camRig?.position||{x:0,y:0,z:0}, pivot=camRig?.pivot||{x:0,y:0,z:0};
+    virtualCam.position.set(rigPosition.x+s.x*PLANE_W,rigPosition.y-s.y*PLANE_H,rigPosition.z+baseDist/Math.max(0.55,s.zoom));
+    virtualCam.lookAt(pivot.x,pivot.y,pivot.z);
     virtualCam.rotateZ((s.rot * Math.PI) / 180 + ((camRig?.roll || 0) * Math.PI) / 180);
     virtualCam.updateMatrixWorld();
     helper.update();
@@ -167,6 +169,9 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
       {/* Axis handles follow and translate the selected asset in rig space. */}
       <CamAssetAxes key={selected?.id || 'primary'} id={selected?.id || 'primary'} position={assetPosition} scale={selected?.scale || 1} onSelect={onSelectAsset} onMove={onMoveAsset} onDragStart={onBeginAssetMove} dragging={dragging} />
 
+      {/* Camera origin and point-of-interest controls, matching Fusion's transform/pivot model. */}
+      <CamCameraRigControls cameraPosition={{x:camRig?.position?.x||0,y:camRig?.position?.y||0,z:(camRig?.distance??BASE_DIST)+(camRig?.position?.z||0)}} pivot={camRig?.pivot||{x:0,y:0,z:0}} onMove={onCameraRigMove}/>
+
       {/* projection lines + frustum */}
       {cornerLines.map((l, i) => <primitive key={i} object={l} />)}
       <primitive object={helper} />
@@ -189,13 +194,14 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
 }
 
 // After Effects-style 3D rig view — same virtual camera, seen from the outside.
-export default function Cam3DView({ image, media, manualOffset, camRig, onSelectAsset, refId, onOffset, onMoveAsset, onBeginAssetMove, getFrame, label }) {
+export default function Cam3DView({ image, media, manualOffset, camRig, onCameraRigMove, onCameraNavigate, onSelectAsset, refId, onOffset, onMoveAsset, onBeginAssetMove, getFrame, label }) {
+  const keyDown=(e)=>{if(!['w','a','s','d'].includes(e.key.toLowerCase()))return;e.preventDefault();onCameraNavigate?.(e.key.toLowerCase(),e.shiftKey);};
   return (
-    <div className="relative h-full w-full">
+    <div className="cm3d-interactive relative h-full w-full" tabIndex={0} onKeyDown={keyDown} onPointerEnter={e=>{if(e.pointerType==='mouse')e.currentTarget.focus({preventScroll:true});}} onPointerDown={e=>e.currentTarget.focus({preventScroll:true})}>
       <Canvas camera={{ position: [2.7, 1.4, 4.9], fov: 42 }} dpr={[1, 2]}>
         <color attach="background" args={['#0c0e0d']} />
         <fog attach="fog" args={['#0c0e0d', 14, 32]} />
-        <Rig image={image} media={media} manualOffset={manualOffset} camRig={camRig} onSelectAsset={onSelectAsset} refId={refId} getFrame={getFrame} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
+        <Rig image={image} media={media} manualOffset={manualOffset} camRig={camRig} onCameraRigMove={onCameraRigMove} onSelectAsset={onSelectAsset} refId={refId} getFrame={getFrame} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
         <OrbitControls makeDefault target={[0, 0, 0]} minDistance={2.2} maxDistance={14} />
         <GizmoHelper alignment="bottom-right" margin={[70, 70]}>
           <GizmoViewport axisColors={['#ff5f56', '#8dff6a', '#4d9fff']} labelColor="#0c0e0d" />
@@ -211,7 +217,7 @@ export default function Cam3DView({ image, media, manualOffset, camRig, onSelect
         <div className="cm3d-hud bottom-4 left-4 text-[10px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">{label}</div>
       )}
       <div className="cm3d-hud top-4 right-4 text-[9px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">Click an asset to reference it</div>
-      <div className="cm3d-hud bottom-4 right-4 text-[9px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">Drag colored axes to move asset · drag empty space to orbit</div>
+      <div className="cm3d-hud bottom-4 right-4 text-[9px] uppercase tracking-[0.22em] text-[hsl(var(--cm-muted))]">WASD moves camera · orange point = camera · white point = pivot · drag any colored axis</div>
       <div className="cm3d-ring" />
       <div className="cm3d-corner left-2 top-2 border-b-0 border-r-0" />
       <div className="cm3d-corner right-2 top-2 border-b-0 border-l-0" />

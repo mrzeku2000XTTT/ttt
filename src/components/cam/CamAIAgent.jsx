@@ -41,6 +41,7 @@ TOOLS you can call (emit them in "actions", they run in order):
 - add_text: create one editable text layer (text). Like After Effects, a text layer is a complete heading, not separate letters by default. Use $new_text as asset_id for subsequent actions targeting the newly created layer.
 - edit_text: update source text without replacing its keyframes (asset_id, text).
 - set_keyframe: set an individual property keyframe (asset_id, optional clip_id, property=x/y/z/scale/rotation/opacity, value, at=absolute timeline seconds, easing=linear/smooth/hold). Position uses world units; rotation uses degrees; scale 1 is 100%; opacity 0 to 1. Use two or more keyframes for motion. Read actual clip start/duration from TIMELINE; do not target times outside that clip. New text starts at timelineTime with current duration. These keys are editable by the user in expandable timeline rows. For exact property animation prefer this over presets. Do not change camera moves when asked to animate text or a layer. Per-character text animators are not supported yet; never claim to use them.
+- move_camera: move the actual 3D camera or its pivot (target=camera/pivot, axis=x/y/z, value=world coordinate). This is the same transform exposed by the orange camera point and white pivot point; WASD also moves the camera horizontally.
 - set_workspace_view: choose mobile view (view=preview/rig/timeline/layers/all); desktop keeps its full workspace.
 - set_move: pick the camera move (move id)
 - set_intensity: 0.05-1 (value)
@@ -78,7 +79,7 @@ const SCHEMA = {
     reply: { type: 'string' },
     director_prompt: { type: 'string' },
     actions: { type: 'array', items: { type: 'object', properties: {
-      tool: { type: 'string', enum: ['set_move', 'set_intensity', 'set_duration', 'add_shot', 'play', 'pause', 'play_sequence', 'open_rig', 'open_nodes', 'restore_view', 'fusion_on', 'fusion_off', 'decompose', 'move_layer', 'set_image', 'add_media', 'move_media', 'select_ref', 'set_offset', 'set_fov', 'set_distance', 'set_roll', 'auto_orbit', 'animate_asset', 'smart_crop_asset', 'add_nodes', 'add_text', 'edit_text', 'set_keyframe', 'set_workspace_view'] },
+      tool: { type: 'string', enum: ['set_move', 'set_intensity', 'set_duration', 'add_shot', 'play', 'pause', 'play_sequence', 'open_rig', 'open_nodes', 'restore_view', 'fusion_on', 'fusion_off', 'decompose', 'move_layer', 'set_image', 'add_media', 'move_media', 'select_ref', 'set_offset', 'set_fov', 'set_distance', 'set_roll', 'auto_orbit', 'animate_asset', 'smart_crop_asset', 'add_nodes', 'add_text', 'edit_text', 'set_keyframe', 'set_workspace_view', 'move_camera'] },
       move: { type: 'string', enum: ['pan', 'tilt', 'roll', 'dolly', 'zoom', 'dollyzoom', 'truck', 'pedestal', 'orbit', 'crane'] },
       value: { type: 'number' },
       intensity: { type: 'number' },
@@ -91,6 +92,7 @@ const SCHEMA = {
       property: { type: 'string', enum: ['x','y','z','scale','rotation','opacity'] },
       easing: { type: 'string', enum: ['linear','smooth','hold'] },
       view: { type: 'string', enum: ['preview','rig','timeline','layers','all'] },
+      target: { type: 'string', enum: ['camera','pivot'] },
       nodes: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['MediaIn', 'Transform', 'Camera3D', 'Renderer3D', 'MediaOut'] }, attach_to: { type: 'string' } }, required: ['type'] } },
     } } },
   },

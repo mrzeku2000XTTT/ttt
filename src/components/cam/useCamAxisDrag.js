@@ -9,6 +9,7 @@ export default function useCamAxisDrag({ axis, value, onChange, onSelect, onDrag
   return (event) => {
     if (event.button !== 0) return;
     event.stopPropagation();
+    event.nativeEvent?.preventDefault?.();
     cleanup.current?.();
     onDragStart?.();
     onSelect();
@@ -43,6 +44,9 @@ export default function useCamAxisDrag({ axis, value, onChange, onSelect, onDrag
       if (controls) controls.enabled = wasEnabled;
       dragging.current = false; cleanup.current = null;
     };
+    gl.domElement.style.touchAction='none';
+    gl.domElement.style.userSelect='none';
+    gl.domElement.style.webkitUserSelect='none';
     gl.domElement.setPointerCapture(pointerId);
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end); window.addEventListener('blur', end);
   };

@@ -19,7 +19,7 @@ export default function CamDragAxis({ axis, value, active, onChange, onSelect, o
       <meshBasicMaterial color={spec.color} depthTest={false} depthWrite={false} toneMapped={false} />
     </mesh>
     <mesh position={spec.position} rotation={spec.rotation} renderOrder={1002} onPointerDown={start} onClick={(e) => { e.stopPropagation(); onSelect(); }}>
-      <cylinderGeometry args={[0.065, 0.065, 0.8, 8]} />
+      <cylinderGeometry args={[0.12, 0.12, 0.95, 8]} />
       <meshBasicMaterial transparent opacity={0} depthTest={false} depthWrite={false} />
     </mesh>
     <Html position={spec.label} center style={{ pointerEvents: 'none' }}><span className="cm3d-label" style={{ color: spec.color }}>{axis.toUpperCase()}</span></Html>

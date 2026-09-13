@@ -65,7 +65,7 @@ export default function CAMStudio({ address, onHome }) {
   const [mobileView,setMobileView] = useState(()=>window.matchMedia('(max-width: 900px)').matches?'timeline':'all');
   const [manualOffset, setManualOffset] = useState({ x: 0, y: 0, z: 0 });
   const [autoKey, setAutoKey] = useState(false);
-  const [camRig, setCamRig] = useState({ fov: 48, distance: 4.2, roll: 0, autoOrbit: false });
+  const [camRig, setCamRig] = useState({ fov: 48, distance: 4.2, roll: 0, autoOrbit: false, position: { x: 0, y: 0, z: 0 }, pivot: { x: 0, y: 0, z: 0 } });
   const [refId, setRefId] = useState(null);
   const mediaInputRef = useRef(null);
   const timeline = useCamTimeline(address, captureScene(media, manualOffset, camRig, moveId, intensity, duration));
@@ -74,7 +74,7 @@ export default function CAMStudio({ address, onHome }) {
   const primaryPose = scene?.assets.find((a) => a.id === 'primary');
   const previewOffset = scene && !timeline.recording ? { x: (primaryPose?.x || 0) / 2.4, y: (primaryPose?.y || 0) / 1.6, z: (primaryPose?.z || 0) / 2.2 } : manualOffset;
   const previewMedia = scene && !timeline.recording ? media.flatMap((m) => { const pose = scene.assets.find((a) => a.id === m.id); return pose ? [{ ...m, pos: { x: pose.x, y: pose.y, z: pose.z }, scale: pose.scale, rotation: pose.rotation, opacity: pose.opacity, glow: pose.glow }] : []; }) : media;
-  useEffect(() => { if (scene && !fusionOn) renderCamScene(canvasRef.current, scene, media, viewZoom); }, [scene, media, viewZoom, fusionOn]);
+  useEffect(() => { if (scene && !fusionOn) renderCamScene(canvasRef.current, { ...scene, camera: { ...scene.camera, position: camRig.position, pivot: camRig.pivot } }, media, viewZoom); }, [scene, media, viewZoom, fusionOn, camRig.position, camRig.pivot]);
 
   // refs mirrored for the animation loop
   const playingRef = useRef(false); playingRef.current = playing;
@@ -109,13 +109,10 @@ export default function CAMStudio({ address, onHome }) {
   const drawStill = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !img || timelineRef.current.enabled) return;
-    if (modeRef.current === 'seq' && shotsRef.current.length) {
-      const shot = shotsRef.current[seqIdxRef.current % shotsRef.current.length];
-      drawInto(canvas.getContext('2d'), CW, CH, img, moveById(shot.move), pRef.current, shot.intensity, viewZoomRef.current);
-    } else {
-      drawInto(canvas.getContext('2d'), CW, CH, img, moveById(curRef.current.moveId), pRef.current, curRef.current.intensity, viewZoomRef.current);
-    }
-  }, [img]);
+    const shot = modeRef.current === 'seq' && shotsRef.current.length ? shotsRef.current[seqIdxRef.current % shotsRef.current.length] : curRef.current;
+    const snapshot=captureScene(media,manualOffset,camRig,shot.move||shot.moveId,shot.intensity,shot.duration);
+    renderCamScene(canvas,{...snapshot,progress:pRef.current},media,viewZoomRef.current);
+  }, [img,media,manualOffset,camRig]);
 
   useEffect(() => { if (!playing) { pRef.current = 0; drawStill(); } }, [img, moveId, intensity, mode, seqIdx, playing, drawStill, viewZoom]);
 
@@ -137,12 +134,12 @@ export default function CAMStudio({ address, onHome }) {
         if (seqMode) { seqIdxRef.current = (seqIdxRef.current + 1) % shotsRef.current.length; setSeqIdx(seqIdxRef.current); }
       }
       const canvas = canvasRef.current;
-      if (canvas) drawInto(canvas.getContext('2d'), CW, CH, img, moveById(active.move), pRef.current, active.intensity, viewZoomRef.current);
+      if (canvas) { const snapshot=captureScene(media,manualOffset,camRig,active.move||curRef.current.moveId,active.intensity,active.duration); renderCamScene(canvas,{...snapshot,progress:pRef.current},media,viewZoomRef.current); }
       if (barRef.current) barRef.current.style.width = `${pRef.current * 100}%`;
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [img]);
+  }, [img,media,manualOffset,camRig]);
 
   const handleFile = (file) => {
     if (!file) return;
@@ -191,6 +188,13 @@ export default function CAMStudio({ address, onHome }) {
     }
   };
   const onOffset = (axis, value) => setManualOffset((o) => ({ ...o, [axis]: value }));
+  const onCameraRigMove = (kind, axis, value) => setCamRig(rig=>({ ...rig, [kind==='camera'?'position':'pivot']:{ ...(rig[kind==='camera'?'position':'pivot']||{x:0,y:0,z:0}), [axis]:value-(kind==='camera'&&axis==='z'?rig.distance||4.2:0) } }));
+  const onCameraNavigate = (key, fast=false) => setCamRig(rig=>{
+    const position=rig.position||{x:0,y:0,z:0}, pivot=rig.pivot||{x:0,y:0,z:0}, step=fast?.35:.14;
+    const absolute={x:position.x,y:position.y,z:(rig.distance||4.2)+position.z}, dx=pivot.x-absolute.x,dz=pivot.z-absolute.z,length=Math.hypot(dx,dz)||1;
+    const forward={x:dx/length,z:dz/length}, right={x:-forward.z,z:forward.x}, vector=key==='w'?forward:key==='s'?{x:-forward.x,z:-forward.z}:key==='d'?right:{x:-right.x,z:-right.z};
+    return {...rig,position:{...position,x:position.x+vector.x*step,z:position.z+vector.z*step}};
+  });
   const onSelectAsset = (id) => setRefId(id);
   const addTextLayer = (text) => { const id=textLayers.add(text); if(!id)return;lastTextId.current=id;timeline.addTextTrack(id,text.slice(0,32));setRefId(id);timeline.enable();setMobileView('timeline'); };
   const changeMobileView = (view) => { setMaxPane(null);setMobileView(view); };
@@ -329,6 +333,7 @@ export default function CAMStudio({ address, onHome }) {
       case 'edit_text': textLayers.edit(a.asset_id==='$new_text'?lastTextId.current:(a.asset_id||refId),a.text); break;
       case 'set_keyframe': timeline.setProperty(a.asset_id==='$new_text'?lastTextId.current:(a.asset_id||refId),a.property,a.value,a.at??timeline.time,{clipId:a.clip_id,ease:a.easing||'linear'}); break;
       case 'set_workspace_view': if(['preview','rig','timeline','layers','all'].includes(a.view))changeMobileView(a.view); break;
+      case 'move_camera': if(['camera','pivot'].includes(a.target)&&['x','y','z'].includes(a.axis))onCameraRigMove(a.target,a.axis,a.value+(a.target==='camera'&&a.axis==='z'?(camRig.distance||4.2):0)); break;
       case 'pause': if (timeline.isEnabled()) timeline.setRunning(false); else setPlaying(false); break;
       case 'play_sequence': playSequence(); break;
       case 'open_rig': setMaxPane('camera'); break;
@@ -360,7 +365,7 @@ export default function CAMStudio({ address, onHome }) {
       default: break;
     }
   };
-  const aiContext = { move: moveId, intensity: Math.round(intensity * 100) / 100, duration, mode, hasImage: !!img, shotCount: shots.length, fusionOn, layerCount: fusionLayers.length, mediaCount: media.length, refId, fov: camRig.fov, timelineTime:timeline.time, selectedClip:timeline.selected, tracks:timeline.project.tracks.map(track=>({asset_id:track.assetId,name:media.find(m=>m.id===track.assetId)?.name||track.name,text:media.find(m=>m.id===track.assetId)?.text,clips:track.clips.map(c=>({id:c.id,start:c.start,duration:c.duration,channels:c.channels,keys:c.keys}))})) };
+  const aiContext = { move: moveId, intensity: Math.round(intensity * 100) / 100, duration, mode, hasImage: !!img, shotCount: shots.length, fusionOn, layerCount: fusionLayers.length, mediaCount: media.length, refId, fov: camRig.fov, cameraPosition:camRig.position, cameraPivot:camRig.pivot, timelineTime:timeline.time, selectedClip:timeline.selected, tracks:timeline.project.tracks.map(track=>({asset_id:track.assetId,name:media.find(m=>m.id===track.assetId)?.name||track.name,text:media.find(m=>m.id===track.assetId)?.text,clips:track.clips.map(c=>({id:c.id,start:c.start,duration:c.duration,channels:c.channels,keys:c.keys}))})) };
 
   const currentMove = moveById(mode === 'seq' && shots.length ? shots[seqIdx % shots.length]?.move || moveId : moveId);
 
@@ -395,7 +400,7 @@ export default function CAMStudio({ address, onHome }) {
       <CamTextTools selected={media.find(m=>m.id===refId)} onAdd={addTextLayer} onEdit={textLayers.edit}/>
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} hasLayers={media.length>0} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={scene?.camera || camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
+          <CamViewerDeck canvasRef={canvasRef} hasLayers={media.length>0} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={{...(scene?.camera||camRig),position:camRig.position,pivot:camRig.pivot}} onCameraRigMove={onCameraRigMove} onCameraNavigate={onCameraNavigate} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
           <CamTransport currentTime={timeline.enabled ? timeline.time : undefined} totalTime={timeline.enabled ? timeline.total : undefined} onPrevious={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => b - a).find((t) => t < timeline.time - 0.01) ?? 0) : undefined} onNext={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => a - b).find((t) => t > timeline.time + 0.01) ?? timeline.total) : undefined} playing={timeline.enabled ? timeline.running : playing} canPlay={(timeline.enabled ? media.length>0 : !!img) && !timeline.recording} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
