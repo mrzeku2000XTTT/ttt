@@ -13,6 +13,7 @@ import AgentBattleModal from "./AgentBattleModal";
 import TipListingModal from "./TipListingModal";
 import TipLeaderboardModal from "./TipLeaderboardModal";
 import { translateQuery } from "./nlSearch";
+import ParallelWebResults from "./ParallelWebResults";
 
 // "$KAS" is the Kaspian wall — same index, rendered as a profile grid.
 const KAS_TAB = "$KAS";
@@ -29,6 +30,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [submitted, setSubmitted] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [results, setResults] = useState([]);
+  const [webResults, setWebResults] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -54,13 +56,21 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     setLoading(true);
     setError(null);
     setNotIndexed(false);
+    setWebResults([]);
     setAi(null);
     setAiLoading(false);
     setVisible(PAGE_SIZE);
     try {
-      const raw = await base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000 });
-      const res = raw?.data ?? raw;
+      const [kaspaTask, webTask] = await Promise.allSettled([
+        base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000 }),
+        q ? base44.functions.invoke("openWebSearch", { query: q }) : Promise.resolve(null),
+      ]);
+      const kaspaRaw = kaspaTask.status === "fulfilled" ? kaspaTask.value : null;
+      const webRaw = webTask.status === "fulfilled" ? webTask.value : null;
+      const res = kaspaRaw?.data ?? kaspaRaw;
+      const web = webRaw?.data ?? webRaw;
       if (reqId.current !== myId) return;
+      if (web?.success) setWebResults(web.results || []);
       if (res?.success) {
         setResults(res.results || []);
         setTotal(res.total || 0);
@@ -76,8 +86,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             .catch(() => {})
             .finally(() => { if (reqId.current === myId) setAiLoading(false); });
         }
-      } else {
-        setError(res?.error || "Search failed");
+      } else if (!web?.success) {
+        setError(res?.error || web?.error || "Search failed");
       }
     } catch (e) {
       if (reqId.current !== myId) return;
@@ -130,7 +140,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   // Nothing is persisted — wipe the in-memory search trail when the user leaves.
   const closeAndWipe = () => {
     reqId.current++;
-    setQuery(""); setSubmitted(""); setResults([]); setTotal(0); setAi(null); setAgentApp(null);
+    setQuery(""); setSubmitted(""); setResults([]); setWebResults([]); setTotal(0); setAi(null); setAgentApp(null);
     onClose?.();
   };
 
@@ -236,7 +246,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                 alt="Kaspa"
                 className="w-8 h-8 rounded-full flex-shrink-0"
               />
-              <span className="text-white font-bold text-sm tracking-tight hidden sm:inline">Search <span className="text-cyan-300">Kaspa</span></span>
+              <span className="text-white font-bold text-sm tracking-tight hidden sm:inline">Combined <span className="text-cyan-300">Search</span></span>
             </div>
 
             <form onSubmit={submit} className="flex-1 min-w-[200px] flex items-center gap-2 px-4 h-11 rounded-full bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50 focus-within:shadow-[0_0_0_4px_rgba(6,182,212,0.1)] transition-all max-w-2xl">
@@ -245,7 +255,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                 ref={inputRef}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search all Kaspa apps, wallets, tools, merchants…"
+                placeholder="Search Kaspa and the open web in parallel…"
                 className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 focus:outline-none min-w-0"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -303,6 +313,10 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               }
             }}
           />
+
+          <div className="px-4 py-2 border-b border-white/5 text-center text-[9px] font-mono uppercase tracking-widest text-white/35">
+            Curated Kaspa directory + neural web index · privacy pattern inspired by <a href="https://github.com/Curious-being99/Kaspa-browser-" target="_blank" rel="noreferrer" className="text-violet-300/80 hover:text-violet-200">KaspaBrowser</a> · Apache 2.0
+          </div>
 
           <KaspaPulseBar />
 
@@ -364,24 +378,26 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           {/* Results meta */}
           <div className="px-4 py-1.5 text-[11px] text-white/40 font-mono border-b border-white/5 w-full max-w-4xl mx-auto">
             {loading ? "Searching…" : notIndexed
-              ? "Index not built yet — run the indexer"
-              : `${results.length} of ${total} apps in ${activeCategory}${submitted ? ` · results for "${submitted}"` : ""}`}
+              ? `Kaspa index not built · ${webResults.length} parallel web results`
+              : `${results.length} of ${total} Kaspa apps · ${webResults.length} web results${submitted ? ` · "${submitted}"` : ""}`}
           </div>
 
           {/* Results — Google-style */}
           <div className="flex-1 overflow-y-auto px-4 py-4">
             {error ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                <p className="text-white/60 text-sm mb-2">Search failed</p>
+                <p className="text-white/60 text-sm mb-2">Both search sources are unavailable</p>
                 <p className="text-white/30 text-xs">{error}</p>
               </div>
             ) : notIndexed ? (
-              <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
-                  <Database className="w-5 h-5 text-white/40" />
-                </div>
-                <p className="text-white/70 text-sm mb-1">No apps indexed yet</p>
-                <p className="text-white/30 text-xs max-w-xs">The KaspaHub index needs to be built first. An admin can run the indexer to populate ~600 apps.</p>
+              <div className="px-2">
+                {webResults.length ? <ParallelWebResults results={webResults} /> : <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                    <Database className="w-5 h-5 text-white/40" />
+                  </div>
+                  <p className="text-white/70 text-sm mb-1">No results indexed yet</p>
+                  <p className="text-white/30 text-xs max-w-xs">The Kaspa directory is waiting for its next admin refresh.</p>
+                </div>}
               </div>
             ) : isKasTab ? (
               <div className="space-y-4">
@@ -405,11 +421,11 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             ) : results.length === 0 && !loading ? (
               <div className="px-2">
                 <AiOverviewCard text={ai} loading={aiLoading} />
-                <div className="flex flex-col items-center justify-center text-center px-6 py-10">
+                {webResults.length ? <ParallelWebResults results={webResults} /> : <div className="flex flex-col items-center justify-center text-center px-6 py-10">
                   <Globe className="w-8 h-8 text-white/20 mb-3" />
-                  <p className="text-white/50 text-sm mb-1">No matching apps</p>
+                  <p className="text-white/50 text-sm mb-1">No matching results</p>
                   <p className="text-white/30 text-xs">Try a different keyword or category.</p>
-                </div>
+                </div>}
               </div>
             ) : (
               <div className="max-w-2xl mx-auto space-y-5">
@@ -488,6 +504,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                     Show more ({results.length - visible} remaining)
                   </button>
                 )}
+                <ParallelWebResults results={webResults} />
               </div>
             )}
           </div>
