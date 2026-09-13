@@ -3,14 +3,12 @@ import { Aperture } from "lucide-react";
 
 export default function ETAHeader() {
   return (
-    <header className="border-b border-border bg-background">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-foreground">
-          <Aperture className="h-4 w-4" />
-        </div>
+    <header className="eta-director-header">
+      <div className="eta-director-header-inner">
+        <div className="eta-director-mark"><Aperture className="h-3.5 w-3.5" /></div>
         <div>
-          <p className="font-heading text-lg font-semibold leading-none">ETA</p>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Enhanced Timeline Animator</p>
+          <p className="eta-director-brand">ETA</p>
+          <p className="eta-director-subtitle">Enhanced Timeline Animator</p>
         </div>
       </div>
     </header>
