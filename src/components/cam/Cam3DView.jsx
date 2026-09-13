@@ -122,6 +122,9 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
     // the background image asset follows the XYZ drag
     if (planeGroupRef.current) {
       planeGroupRef.current.visible = !f?.visibleAssets || f.visibleAssets.includes('primary');
+      const primary=media?.find(m=>m.id==='primary');
+      planeGroupRef.current.scale.setScalar(primary?.scale??1);
+      planeGroupRef.current.rotation.z=(primary?.rotation||0)*Math.PI/180;
       planeGroupRef.current.position.set(
         (manualOffset?.x || 0) * 2.4,
         (manualOffset?.y || 0) * 1.6,
@@ -137,7 +140,7 @@ function Rig({ image, media, manualOffset, camRig, onSelectAsset, refId, getFram
         <mesh>
           <planeGeometry args={[PLANE_W, PLANE_H]} />
           {texture
-            ? <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
+            ? <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} transparent opacity={media?.find(m=>m.id==='primary')?.opacity??1} />
             : <meshBasicMaterial color="#15201a" transparent opacity={0.5} side={THREE.DoubleSide} />}
         </mesh>
         <lineSegments geometry={planeEdges}>

@@ -3,6 +3,7 @@ import { activeClip, endTime, sampleKeys, uid } from '@/components/cam/camTimeli
 import useCamTimelineClock from '@/components/cam/useCamTimelineClock';
 import useCamTimelineEdits from '@/components/cam/useCamTimelineEdits';
 import { animationState } from '@/components/cam/camAnimationLibrary';
+import { propertyPose, editProperty } from '@/components/cam/camPropertyKeys';
 
 export default function useCamTimeline(address, snapshot) {
   const [project, setProject] = useState(() => JSON.parse(localStorage.getItem(`cam_timeline_${address}`) || 'null') || { cuts: [], tracks: [] });
@@ -24,14 +25,20 @@ export default function useCamTimeline(address, snapshot) {
     camera, progress: camera.progress ?? (cut ? (cut.fromProgress || 0) + ((cut.toProgress ?? 1) - (cut.fromProgress || 0)) * (t - cut.start) / cut.duration : 0),
     assets: project.tracks.filter((track) => !track.hidden).flatMap((track) => {
       const clip = activeClip(track.clips, t); if (!clip) return [];
-      const base = sampleKeys(clip.keys, t - clip.start), progress = (t - clip.start) / clip.duration;
+      const sampled = sampleKeys(clip.keys, t - clip.start), base = { ...sampled, ...propertyPose(clip,t-clip.start,sampled) }, progress = (t - clip.start) / clip.duration;
       const anim = clip.animationId ? animationState(clip.animationId, progress, clip.animationIntensity || 1) : { dx:0,dy:0,dz:0,scale:1,rot:0,opacity:1,blur:0,glow:0 };
-      return [{ id: track.assetId, ...base, x: base.x + anim.dx, y: base.y + anim.dy, z: base.z + anim.dz, scale: base.scale * anim.scale, rotation: anim.rot, opacity: anim.opacity, blur: anim.blur, glow: anim.glow, animationId: clip.animationId || '' }];
+      return [{ id: track.assetId, ...base, x: base.x + anim.dx, y: base.y + anim.dy, z: base.z + anim.dz, scale: base.scale * anim.scale, rotation: base.rotation + anim.rot, opacity: base.opacity * anim.opacity, blur: anim.blur, glow: anim.glow, animationId: clip.animationId || '' }];
     }),
   };
   const seek = (time) => { if (clock.recording) return; enabledRef.current = true; setEnabled(true); clock.setRunning(false); clock.seek(Math.min(total, Math.max(0, time))); };
   const play = () => { enabledRef.current = true; setEnabled(true); if (clock.time >= total) clock.seek(0); clock.setRunning(!clock.running); };
   const record = () => { enabledRef.current = true; setEnabled(true); clock.recording ? clock.stopRecording() : clock.startRecording(); };
   const leave = () => { clock.stopRecording(); clock.setRunning(false); enabledRef.current = false; setEnabled(false); };
-  return { ...clock, ...edits, applyAnimation: (assetId, preset, intensity) => { enabledRef.current = true; setEnabled(true); edits.applyAnimation(assetId, preset, intensity, selected); }, project, total, enabled, scene, selected, setSelected, seek, play, record, leave, isEnabled: () => enabledRef.current, enable: () => { enabledRef.current = true; setEnabled(true); } };
+  const setProperty = (assetId, property, value, at = clock.time, options = {}) => {
+    if (clock.recording) return;
+    enabledRef.current = true; setEnabled(true); clock.setRunning(false);
+    setProject(p=>editProperty(p,assetId,options.clipId||selected,property,at,value,options));
+  };
+  const addTextTrack = (assetId,name) => setProject(p=>({...p,tracks:[...p.tracks,{id:uid(),assetId,name,hidden:false,clips:[{id:uid(),start:clock.time,duration:snapshot.duration,keys:[{t:0,x:0,y:0,z:.1,scale:.35}]}]}]}));
+  return { ...clock, ...edits, setProperty, addTextTrack, applyAnimation: (assetId, preset, intensity) => { enabledRef.current = true; setEnabled(true); edits.applyAnimation(assetId, preset, intensity, selected); }, project, total, enabled, scene, selected, setSelected, seek, play, record, leave, isEnabled: () => enabledRef.current, enable: () => { enabledRef.current = true; setEnabled(true); } };
 }

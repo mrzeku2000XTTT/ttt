@@ -1,3 +1,4 @@
+import { sliceChannels } from '@/components/cam/camPropertyKeys';
 export const uid = () => crypto.randomUUID();
 export const endTime = (project) => Math.max(0, ...project.cuts.map((c) => c.start + c.duration), ...project.tracks.flatMap((t) => t.clips.map((c) => c.start + c.duration)));
 export const activeClip = (clips, time) => [...clips].reverse().find((c) => time >= c.start && time < c.start + c.duration);
@@ -33,5 +34,5 @@ export function splitClip(clip, time) {
   if (t <= 0.01 || t >= clip.duration - 0.01) return [clip];
   const boundary = sampleKeys(clip.keys, t);
   const mid = (clip.fromProgress || 0) + ((clip.toProgress ?? 1) - (clip.fromProgress || 0)) * t / clip.duration;
-  return [{ ...clip, ...(clip.fromProgress !== undefined ? { toProgress: mid } : {}), duration: t, keys: [...clip.keys.filter((k) => k.t < t), { t, ...boundary }] }, { ...clip, ...(clip.fromProgress !== undefined ? { fromProgress: mid } : {}), id: uid(), start: time, duration: clip.duration - t, keys: [{ t: 0, ...boundary }, ...clip.keys.filter((k) => k.t > t).map((k) => ({ ...k, t: k.t - t }))] }];
+  return [{ ...clip, channels: sliceChannels(clip.channels,0,t), ...(clip.fromProgress !== undefined ? { toProgress: mid } : {}), duration: t, keys: [...clip.keys.filter((k) => k.t < t), { t, ...boundary }] }, { ...clip, channels: sliceChannels(clip.channels,t,clip.duration), ...(clip.fromProgress !== undefined ? { fromProgress: mid } : {}), id: uid(), start: time, duration: clip.duration - t, keys: [{ t: 0, ...boundary }, ...clip.keys.filter((k) => k.t > t).map((k) => ({ ...k, t: k.t - t }))] }];
 }

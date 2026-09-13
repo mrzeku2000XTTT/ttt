@@ -38,6 +38,10 @@ const SYSTEM = `You are the CAM AI Agent, the built-in copilot of CAM — a DaVi
 CAMERA MOVES (ids): pan, tilt, roll, dolly, zoom, dollyzoom, truck, pedestal, orbit, crane. If the user asks for an angle or shot not on the list (e.g. "hero shot", "drop from above"), translate it into the closest move id plus tuned intensity/duration — say how you translated it.
 
 TOOLS you can call (emit them in "actions", they run in order):
+- add_text: create one editable text layer (text). Like After Effects, a text layer is a complete heading, not separate letters by default. Use $new_text as asset_id for subsequent actions targeting the newly created layer.
+- edit_text: update source text without replacing its keyframes (asset_id, text).
+- set_keyframe: set an individual property keyframe (asset_id, optional clip_id, property=x/y/z/scale/rotation/opacity, value, at=absolute timeline seconds, easing=linear/smooth/hold). Position uses world units; rotation uses degrees; scale 1 is 100%; opacity 0 to 1. Use two or more keyframes for motion. Read actual clip start/duration from TIMELINE; do not target times outside that clip. New text starts at timelineTime with current duration. These keys are editable by the user in expandable timeline rows. For exact property animation prefer this over presets. Do not change camera moves when asked to animate text or a layer. Per-character text animators are not supported yet; never claim to use them.
+- set_workspace_view: choose mobile view (view=preview/rig/timeline/layers/all); desktop keeps its full workspace.
 - set_move: pick the camera move (move id)
 - set_intensity: 0.05-1 (value)
 - set_duration: seconds (value)
@@ -74,7 +78,7 @@ const SCHEMA = {
     reply: { type: 'string' },
     director_prompt: { type: 'string' },
     actions: { type: 'array', items: { type: 'object', properties: {
-      tool: { type: 'string', enum: ['set_move', 'set_intensity', 'set_duration', 'add_shot', 'play', 'pause', 'play_sequence', 'open_rig', 'open_nodes', 'restore_view', 'fusion_on', 'fusion_off', 'decompose', 'move_layer', 'set_image', 'add_media', 'move_media', 'select_ref', 'set_offset', 'set_fov', 'set_distance', 'set_roll', 'auto_orbit', 'animate_asset', 'smart_crop_asset', 'add_nodes'] },
+      tool: { type: 'string', enum: ['set_move', 'set_intensity', 'set_duration', 'add_shot', 'play', 'pause', 'play_sequence', 'open_rig', 'open_nodes', 'restore_view', 'fusion_on', 'fusion_off', 'decompose', 'move_layer', 'set_image', 'add_media', 'move_media', 'select_ref', 'set_offset', 'set_fov', 'set_distance', 'set_roll', 'auto_orbit', 'animate_asset', 'smart_crop_asset', 'add_nodes', 'add_text', 'edit_text', 'set_keyframe', 'set_workspace_view'] },
       move: { type: 'string', enum: ['pan', 'tilt', 'roll', 'dolly', 'zoom', 'dollyzoom', 'truck', 'pedestal', 'orbit', 'crane'] },
       value: { type: 'number' },
       intensity: { type: 'number' },
@@ -83,6 +87,10 @@ const SCHEMA = {
       layer: { type: 'number' },
       asset_id: { type: 'string' },
       preset: { type: 'string' },
+      text: { type: 'string' }, clip_id: { type: 'string' }, at: { type: 'number' },
+      property: { type: 'string', enum: ['x','y','z','scale','rotation','opacity'] },
+      easing: { type: 'string', enum: ['linear','smooth','hold'] },
+      view: { type: 'string', enum: ['preview','rig','timeline','layers','all'] },
       nodes: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['MediaIn', 'Transform', 'Camera3D', 'Renderer3D', 'MediaOut'] }, attach_to: { type: 'string' } }, required: ['type'] } },
     } } },
   },
@@ -93,7 +101,7 @@ const SCHEMA = {
 // a Prompto-style director brief on every request, pasted-image vision, and
 // per-user chat history that survives refresh.
 export default function CamAIAgent({ address, context, onAction, onGraph, media, refId, onClearRef }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(()=>!window.matchMedia('(max-width: 900px)').matches);
   const refItem = refId ? (refId === 'primary' ? media?.[0] : media?.find((m) => m.id === refId)) : null;
   const [prompt, setPrompt] = useState('');
   const [busy, setBusy] = useState(false);
@@ -145,19 +153,20 @@ export default function CamAIAgent({ address, context, onAction, onGraph, media,
         } catch {}
       }
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM}\n\nSTUDIO STATE: move=${context.move} intensity=${context.intensity} duration=${context.duration}s mode=${context.mode} image=${context.hasImage ? 'loaded' : 'none'} shots=${context.shotCount} fusion=${context.fusionOn ? 'on' : 'off'} layers=${context.layerCount} media=${context.mediaCount || 0} ref=${refId || 'none'} fov=${context.fov || 48}\n\nDETECTED CAMERA LANGUAGE: moves=[${det.moves.join(', ') || 'none'}] intensity=${det.intensity ?? 'unspecified'} duration=${det.duration ?? 'unspecified'} playback=${det.wantsPlay}${refLine}\n\nUSER: ${msg}`,
+        prompt: `${SYSTEM}\n\nTIMELINE: ${JSON.stringify({timelineTime:context.timelineTime,selectedClip:context.selectedClip,tracks:context.tracks})}\n\nSTUDIO STATE: move=${context.move} intensity=${context.intensity} duration=${context.duration}s mode=${context.mode} image=${context.hasImage ? 'loaded' : 'none'} shots=${context.shotCount} fusion=${context.fusionOn ? 'on' : 'off'} layers=${context.layerCount} media=${context.mediaCount || 0} ref=${refId || 'none'} fov=${context.fov || 48}\n\nDETECTED CAMERA LANGUAGE: moves=[${det.moves.join(', ') || 'none'}] intensity=${det.intensity ?? 'unspecified'} duration=${det.duration ?? 'unspecified'} playback=${det.wantsPlay}${refLine}\n\nUSER: ${msg}`,
         ...(fileUrls.length ? { file_urls: fileUrls } : {}),
         response_json_schema: SCHEMA,
       });
       const acts = (res.actions || []).filter(Boolean);
       // Detector guarantee — if the model skipped spoken camera language, run it anyway
       const hasMoveAct = acts.some((a) => a.tool === 'set_move' || a.tool === 'add_shot');
-      if (det.moves.length && !hasMoveAct) {
+      const layerEdit=acts.some(a=>['add_text','edit_text','set_keyframe','animate_asset','move_media','move_layer'].includes(a.tool));
+      if (det.moves.length && !hasMoveAct && !layerEdit) {
         if (det.moves.length > 1) det.moves.forEach((mv) => acts.push({ tool: 'add_shot', move: mv }));
         else acts.push({ tool: 'set_move', move: det.moves[0] });
       }
-      if (det.intensity != null && !acts.some((a) => a.tool === 'set_intensity')) acts.push({ tool: 'set_intensity', value: det.intensity });
-      if (det.duration && !acts.some((a) => a.tool === 'set_duration')) acts.push({ tool: 'set_duration', value: det.duration });
+      if (!layerEdit && det.intensity != null && !acts.some((a) => a.tool === 'set_intensity')) acts.push({ tool: 'set_intensity', value: det.intensity });
+      if (!layerEdit && det.duration && !acts.some((a) => a.tool === 'set_duration')) acts.push({ tool: 'set_duration', value: det.duration });
       if (det.wantsPlay && !acts.some((a) => a.tool === 'play' || a.tool === 'play_sequence')) acts.push(acts.some((a) => a.tool === 'add_shot') ? { tool: 'play_sequence' } : { tool: 'play' });
       acts.forEach((a) => {
         if (!a?.tool) return;

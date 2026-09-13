@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import Cam3DView from './Cam3DView';
 
-export default function CamViewerDeck({ canvasRef, image, getFrame, label, onUpload, onFile, split, onSplit, max, onMax, media, manualOffset, camRig, onSelectAsset, refId, onOffset, onMoveAsset, onBeginAssetMove }) {
+export default function CamViewerDeck({ canvasRef, image, hasLayers, getFrame, label, onUpload, onFile, split, onSplit, max, onMax, media, manualOffset, camRig, onSelectAsset, refId, onOffset, onMoveAsset, onBeginAssetMove }) {
   const deck = useRef(null);
   const dragging = useRef(false);
   const startDrag = (e) => { dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); };
@@ -24,7 +24,7 @@ export default function CamViewerDeck({ canvasRef, image, getFrame, label, onUpl
           <span>MediaIn1</span>
           <span className="cm-panel-tools"><span>2D Preview</span>{maxBtn('media')}</span>
         </div>
-        <div className="cm-viewer-body"><canvas ref={canvasRef} width="1280" height="720" />{!image && <button onClick={onUpload} className="cm-empty-view">Drop, paste, or upload an image</button>}</div>
+        <div className="cm-viewer-body"><canvas ref={canvasRef} width="1280" height="720" />{!image && !hasLayers && <button onClick={onUpload} className="cm-empty-view">Drop, paste, or upload an image</button>}</div>
       </section>
       <div className={`cm-view-split ${max ? 'is-hidden' : ''}`} onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} title="Drag to resize the split"><i /></div>
       <section className={`cm-viewer ${max === 'media' ? 'is-hidden' : ''}`} style={max === 'camera' ? { flex: '1 1 auto' } : { flex: `0 0 calc(${100 - split}% - 3px)` }}>

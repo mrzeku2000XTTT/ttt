@@ -18,6 +18,10 @@ import { captureScene } from '@/components/cam/camTimelineModel';
 import renderCamScene from '@/components/cam/camSceneRender';
 import { edgeSmartCrop } from '@/components/cam/camSmartCrop';
 import { findAnimationPreset } from '@/components/cam/camAnimationLibrary';
+import useCamTextLayers from '@/components/cam/useCamTextLayers';
+import CamTextTools from '@/components/cam/CamTextTools';
+import CamMobileViews from '@/components/cam/CamMobileViews';
+import '@/components/cam/camLayerEditor.css';
 
 const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/154c8ae70_generated_image.png';
 const CW = 1280, CH = 720;
@@ -57,6 +61,8 @@ export default function CAMStudio({ address, onHome }) {
   // multi-media 3D rig — the first item (id 'primary') is the filmed background;
   // the rest are extra asset planes the user drops into the world.
   const [media, setMedia] = useState([]);
+  const textLayers = useCamTextLayers(address,setMedia), lastTextId = useRef(null);
+  const [mobileView,setMobileView] = useState(()=>window.matchMedia('(max-width: 900px)').matches?'timeline':'all');
   const [manualOffset, setManualOffset] = useState({ x: 0, y: 0, z: 0 });
   const [autoKey, setAutoKey] = useState(false);
   const [camRig, setCamRig] = useState({ fov: 48, distance: 4.2, roll: 0, autoOrbit: false });
@@ -186,8 +192,10 @@ export default function CAMStudio({ address, onHome }) {
   };
   const onOffset = (axis, value) => setManualOffset((o) => ({ ...o, [axis]: value }));
   const onSelectAsset = (id) => setRefId(id);
+  const addTextLayer = (text) => { const id=textLayers.add(text); if(!id)return;lastTextId.current=id;timeline.addTextTrack(id,text.slice(0,32));setRefId(id);timeline.enable();setMobileView('timeline'); };
+  const changeMobileView = (view) => { setMaxPane(null);setMobileView(view); };
   const onBeginAssetMove = () => {
-    if (timeline.enabled && !timeline.recording) timeline.leave();
+    if (timeline.enabled && !timeline.recording) timeline.setRunning(false);
     setPlaying(false);
   };
   const applyAssetAnimation = (preset, assetId = refId, amount = 1) => {
@@ -201,6 +209,7 @@ export default function CAMStudio({ address, onHome }) {
     setMedia((items) => items.map((m) => m.id === id ? { ...m, img: crop.image, url: crop.url, aspect: crop.width / crop.height, edgeCropped: crop.cropped } : m));
   };
   const onMoveAsset = (id, axis, value) => {
+    if(timeline.isEnabled() && !timeline.recording){timeline.setProperty(id,axis,value);return;}
     if (id === 'primary') {
       const units = { x: 2.4, y: 1.6, z: 2.2 };
       setManualOffset((o) => ({ ...o, [axis]: value / units[axis] }));
@@ -213,14 +222,17 @@ export default function CAMStudio({ address, onHome }) {
   // currently selected. The background ('primary') uses the normalized offset
   // the rig scales; every other asset edits its world-space position directly.
   const selectedMedia = refId && refId !== 'primary' ? media.find((m) => m.id === refId) : null;
-  const axisOffset = selectedMedia ? selectedMedia.pos : manualOffset;
+  const selectedPose = scene?.assets.find(a=>a.id===(refId||'primary'));
+  const axisOffset = selectedPose ? (selectedMedia ? {x:selectedPose.x,y:selectedPose.y,z:selectedPose.z} : {x:selectedPose.x/2.4,y:selectedPose.y/1.6,z:selectedPose.z/2.2}) : selectedMedia ? selectedMedia.pos : manualOffset;
   const axisRange = selectedMedia ? 3 : 1;
   const axisTargetName = selectedMedia ? selectedMedia.name : 'Background';
   const onAxis = (axis, value) => {
+    if(timeline.isEnabled()&&!timeline.recording){onMoveAsset(refId||'primary',axis,selectedMedia?value:value*({x:2.4,y:1.6,z:2.2}[axis]));return;}
     if (selectedMedia) setMedia((prev) => prev.map((m) => (m.id === selectedMedia.id ? { ...m, pos: { ...m.pos, [axis]: value } } : m)));
     else setManualOffset((o) => ({ ...o, [axis]: value }));
   };
   const onAxisReset = () => {
+    if(timeline.isEnabled()&&!timeline.recording){['x','y','z'].forEach(axis=>onMoveAsset(refId||'primary',axis,0));return;}
     if (selectedMedia) setMedia((prev) => prev.map((m) => (m.id === selectedMedia.id ? { ...m, pos: { x: 0, y: 0, z: 0 } } : m)));
     else setManualOffset({ x: 0, y: 0, z: 0 });
   };
@@ -312,7 +324,11 @@ export default function CAMStudio({ address, onHome }) {
       case 'set_intensity': setIntensity(Math.min(1, Math.max(0.05, a.value || 0.6))); break;
       case 'set_duration': setDuration(Math.min(30, Math.max(0.5, a.value || 4))); break;
       case 'add_shot': setShots((prev) => [...prev, { id: Date.now(), move: a.move || moveId, intensity: a.intensity ?? intensity, duration: a.duration ?? duration }]); break;
-      case 'play': if (img) { if (timeline.isEnabled()) timeline.play(); else setPlaying(true); } break;
+      case 'play': if (timeline.isEnabled()) timeline.play(); else if(img) setPlaying(true); break;
+      case 'add_text': addTextLayer(a.text); break;
+      case 'edit_text': textLayers.edit(a.asset_id==='$new_text'?lastTextId.current:(a.asset_id||refId),a.text); break;
+      case 'set_keyframe': timeline.setProperty(a.asset_id==='$new_text'?lastTextId.current:(a.asset_id||refId),a.property,a.value,a.at??timeline.time,{clipId:a.clip_id,ease:a.easing||'linear'}); break;
+      case 'set_workspace_view': if(['preview','rig','timeline','layers','all'].includes(a.view))changeMobileView(a.view); break;
       case 'pause': if (timeline.isEnabled()) timeline.setRunning(false); else setPlaying(false); break;
       case 'play_sequence': playSequence(); break;
       case 'open_rig': setMaxPane('camera'); break;
@@ -330,7 +346,7 @@ export default function CAMStudio({ address, onHome }) {
       case 'add_media': if (a.file) addMedia(a.file); break;
       case 'move_media': {
         const m = a.asset_id === 'primary' ? media[0] : media.find((x) => x.id === a.asset_id);
-        if (m && ['x', 'y', 'z'].includes(a.axis)) setMedia((prev) => prev.map((x) => (x.id === m.id ? { ...x, pos: { ...x.pos, [a.axis]: a.value } } : x)));
+        if (m && ['x', 'y', 'z'].includes(a.axis)) onMoveAsset(m.id,a.axis,a.value);
         break;
       }
       case 'select_ref': setRefId(a.asset_id || null); break;
@@ -344,7 +360,7 @@ export default function CAMStudio({ address, onHome }) {
       default: break;
     }
   };
-  const aiContext = { move: moveId, intensity: Math.round(intensity * 100) / 100, duration, mode, hasImage: !!img, shotCount: shots.length, fusionOn, layerCount: fusionLayers.length, mediaCount: media.length, refId, fov: camRig.fov };
+  const aiContext = { move: moveId, intensity: Math.round(intensity * 100) / 100, duration, mode, hasImage: !!img, shotCount: shots.length, fusionOn, layerCount: fusionLayers.length, mediaCount: media.length, refId, fov: camRig.fov, timelineTime:timeline.time, selectedClip:timeline.selected, tracks:timeline.project.tracks.map(track=>({asset_id:track.assetId,name:media.find(m=>m.id===track.assetId)?.name||track.name,text:media.find(m=>m.id===track.assetId)?.text,clips:track.clips.map(c=>({id:c.id,start:c.start,duration:c.duration,channels:c.channels,keys:c.keys}))})) };
 
   const currentMove = moveById(mode === 'seq' && shots.length ? shots[seqIdx % shots.length]?.move || moveId : moveId);
 
@@ -371,17 +387,19 @@ export default function CAMStudio({ address, onHome }) {
   }
 
   return (
-    <div className={`cm-page cm-fusion-shell ${maxPane === 'nodes' ? 'is-max-nodes' : ''}`}>
+    <div data-mobile-view={mobileView} className={`cm-page cm-fusion-shell cm-editing-shell ${maxPane === 'nodes' ? 'is-max-nodes' : ''}`}>
       <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} />
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
       <input ref={mediaInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => Array.from(e.target.files || []).forEach(addMedia)} />
+      <CamMobileViews view={mobileView} onChange={changeMobileView}/>
+      <CamTextTools selected={media.find(m=>m.id===refId)} onAdd={addTextLayer} onEdit={textLayers.edit}/>
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={scene?.camera || camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
-          <CamTransport currentTime={timeline.enabled ? timeline.time : undefined} totalTime={timeline.enabled ? timeline.total : undefined} onPrevious={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => b - a).find((t) => t < timeline.time - 0.01) ?? 0) : undefined} onNext={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => a - b).find((t) => t > timeline.time + 0.01) ?? timeline.total) : undefined} playing={timeline.enabled ? timeline.running : playing} canPlay={!!img && !timeline.recording} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
+          <CamViewerDeck canvasRef={canvasRef} hasLayers={media.length>0} image={img} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={scene?.camera || camRig} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
+          <CamTransport currentTime={timeline.enabled ? timeline.time : undefined} totalTime={timeline.enabled ? timeline.total : undefined} onPrevious={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => b - a).find((t) => t < timeline.time - 0.01) ?? 0) : undefined} onNext={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => a - b).find((t) => t > timeline.time + 0.01) ?? timeline.total) : undefined} playing={timeline.enabled ? timeline.running : playing} canPlay={(timeline.enabled ? media.length>0 : !!img) && !timeline.recording} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
-            <CamEditorPanel timeline={timeline} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
+            <CamEditorPanel mobileView={mobileView} timeline={timeline} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
           </div>
         </main>
         <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={camRig} setCamRig={setCamRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} onApplyAnimation={applyAssetAnimation} onSmartCrop={smartCropAsset} activeAnimation={timeline.project.tracks.find((t) => t.assetId === refId)?.clips.find((c) => c.id === timeline.selected)?.animationId} axisOffset={axisOffset} axisRange={axisRange} axisTargetName={axisTargetName} onAxis={onAxis} onAxisReset={onAxisReset} />
