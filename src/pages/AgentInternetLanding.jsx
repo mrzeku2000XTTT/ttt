@@ -213,71 +213,84 @@ export default function AgentInternetLanding() {
                   <PowerConsole onSubmit={openChat} />
                 </div>
 
-                {/* View-as toggle (admin only) */}
-                {isAdmin && (
-                  <div className="mt-4 flex items-center justify-center gap-1 p-1 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-                    <span className="px-2 text-[10px] font-mono tracking-widest uppercase text-white/40">view as</span>
-                    <button
-                      onClick={() => setViewAsGuest(false)}
-                      className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-white/10 text-white" : "text-white/50 hover:text-white/75"}`}
-                    >
-                      TTT A.I
+                {/* Mobile/tablet controls — preserve the existing layout */}
+                <div className="lg:hidden contents">
+                  {isAdmin && (
+                    <div className="mt-4 flex items-center justify-center gap-1 p-1 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+                      <span className="px-2 text-[10px] font-mono tracking-widest uppercase text-white/40">view as</span>
+                      <button
+                        onClick={() => setViewAsGuest(false)}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${!viewAsGuest ? "bg-white/10 text-white" : "text-white/50 hover:text-white/75"}`}
+                      >
+                        TTT A.I
+                      </button>
+                      <button
+                        onClick={() => setViewAsGuest(true)}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-white/10 text-white" : "text-white/50 hover:text-white/75"}`}
+                      >
+                        Guest
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                    <button onClick={() => guardLaunch("agent")} className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors">
+                      <span className="text-[11px] font-mono tracking-widest uppercase text-white/80">Launch Agent Internet</span>
                     </button>
-                    <button
-                      onClick={() => setViewAsGuest(true)}
-                      className={`px-3 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase transition-colors ${viewAsGuest ? "bg-white/10 text-white" : "text-white/50 hover:text-white/75"}`}
-                    >
-                      Guest
+                    <button onClick={() => guardLaunch("ttt")} className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors">
+                      <span className="text-[11px] font-mono tracking-widest uppercase text-white/80">Launch TTT</span>
                     </button>
                   </div>
-                )}
 
-                {/* Launch buttons */}
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    onClick={() => guardLaunch("agent")}
-                    className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
-                  >
-                    <span className="text-[11px] font-mono tracking-widest uppercase text-white/80">Launch Agent Internet</span>
-                  </button>
-                  <button
-                    onClick={() => guardLaunch("ttt")}
-                    className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-white/15 bg-black/70 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:bg-black/80 transition-colors"
-                  >
-                    <span className="text-[11px] font-mono tracking-widest uppercase text-white/80">Launch TTT</span>
-                  </button>
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                    <button onClick={() => setShowBrowser(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors">
+                      <LayoutGrid className="w-3.5 h-3.5" /> Browse live pages
+                    </button>
+                    <button onClick={() => setShowWebSearch(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors">
+                      <Search className="w-3.5 h-3.5" /> Search the web
+                    </button>
+                    <button onClick={() => setShowKaspaSearch(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-cyan-200 hover:text-white hover:border-cyan-400/60 transition-colors">
+                      <Database className="w-3.5 h-3.5" /> Search Kaspa
+                    </button>
+                    <button onClick={() => setShowCryptoSearch(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-amber-200 hover:text-white hover:border-amber-400/60 transition-colors">
+                      <img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="w-4 h-4 rounded-full" /> Search Crypto
+                    </button>
+                  </div>
                 </div>
 
-                {/* Browse all live pages + Search the web — guest discovery */}
-                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    onClick={() => setShowBrowser(true)}
-                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors"
-                  >
-                    <LayoutGrid className="w-3.5 h-3.5" /> Browse live pages
-                  </button>
-                  <button
-                    onClick={() => setShowWebSearch(true)}
-                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors"
-                  >
-                    <Search className="w-3.5 h-3.5" /> Search the web
-                  </button>
-                  <button
-                    onClick={() => setShowKaspaSearch(true)}
-                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-cyan-200 hover:text-white hover:border-cyan-400/60 transition-colors"
-                  >
-                    <Database className="w-3.5 h-3.5" /> Search Kaspa
-                  </button>
-                  <button
-                    onClick={() => setShowCryptoSearch(true)}
-                    className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-amber-200 hover:text-white hover:border-amber-400/60 transition-colors"
-                  >
-                    <img
-                      src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png"
-                      alt=""
-                      className="w-4 h-4 rounded-full"
-                    /> Search Crypto
-                  </button>
+                {/* Desktop Action Rail */}
+                <div className="hidden lg:flex mt-6 w-[min(94vw,980px)] min-h-32 items-center justify-between gap-4 border-y border-white/10 bg-black/80 px-7 py-5 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  <div className="relative flex min-w-[250px] items-center gap-3 border-l border-white/35 pl-4 pr-5">
+                    <span className="absolute -left-px top-0 h-2 w-2 border-t border-white/35" />
+                    <span className="absolute -left-px bottom-0 h-2 w-2 border-b border-white/35" />
+                    <OrganicOrb size={38} colors={["#ffffff", "#22d3ee", "#0891b2"]} />
+                    <div>
+                      {isAdmin && <div className="mb-1 text-center text-[9px] font-mono uppercase tracking-[0.2em] text-white/35">View as</div>}
+                      <div className="flex items-center gap-2 font-mono uppercase">
+                        <button onClick={() => setViewAsGuest(false)} className={`text-xl font-black tracking-tight transition-colors ${!viewAsGuest ? "text-white" : "text-white/35"}`}>TTT <span className="font-normal text-cyan-300">A.I</span></button>
+                        {isAdmin && <span className="h-5 w-px bg-white/20" />}
+                        {isAdmin && <button onClick={() => setViewAsGuest(true)} className={`text-lg transition-colors ${viewAsGuest ? "text-amber-300" : "text-white/40 hover:text-white/70"}`}>Guest</button>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-16 w-px shrink-0 bg-white/20" />
+
+                  <div className="flex shrink-0 items-center gap-3">
+                    <button onClick={() => guardLaunch("agent")} className="h-12 rounded-full border-2 border-white/85 px-6 text-[11px] font-mono uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black">Launch Agent Internet</button>
+                    <button onClick={() => guardLaunch("ttt")} className="h-12 rounded-full border-2 border-white/85 px-6 text-[11px] font-mono uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-black">Launch TTT</button>
+                  </div>
+
+                  <div className="relative min-w-[178px] space-y-1 border-x border-white/35 px-4 py-1">
+                    <span className="absolute -left-px top-0 h-2 w-2 border-t border-white/35" />
+                    <span className="absolute -left-px bottom-0 h-2 w-2 border-b border-white/35" />
+                    <span className="absolute -right-px top-0 h-2 w-2 border-t border-white/35" />
+                    <span className="absolute -right-px bottom-0 h-2 w-2 border-b border-white/35" />
+                    <button onClick={() => setShowBrowser(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-white"><LayoutGrid className="h-3.5 w-3.5" /> Browse live pages</button>
+                    <button onClick={() => setShowWebSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-white"><Search className="h-3.5 w-3.5" /> Search the web</button>
+                    <button onClick={() => setShowKaspaSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white hover:text-cyan-200"><Database className="h-3.5 w-3.5 text-cyan-300" /> Search Kaspa</button>
+                    <button onClick={() => setShowCryptoSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-amber-200"><img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="h-3.5 w-3.5 rounded-full" /> Search Crypto</button>
+                  </div>
                 </div>
 
                 {/* Footer status */}
