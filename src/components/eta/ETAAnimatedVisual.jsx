@@ -6,6 +6,8 @@ import ETARealBrowserScene from './ETARealBrowserScene';
 import ETAGlassScene from './ETAGlassScene';
 import ETACards3Scene from './ETACards3Scene';
 import ETACards4Scene from './ETACards4Scene';
+import ETAIPhone3DScene from './ETAIPhone3DScene';
+import ETAMacBook3DScene from './ETAMacBook3DScene';
 
 export default function ETAAnimatedVisual({ scene, advanced, browser, frameProgress }) {
   const props = { scene, advanced, frameProgress };
@@ -18,8 +20,9 @@ export default function ETAAnimatedVisual({ scene, advanced, browser, frameProgr
   if (scene.component === 'UIAnimation') return <UIScene {...props} />;
   if (scene.component === 'BrowserWindow' && Number.isFinite(frameProgress)) return <ETARealBrowserScene {...props} />;
   if (scene.component === 'BrowserWindow') return <BrowserScene {...props} browser={browser} />;
-  if (['PhoneWindow', 'IPhoneAnimated'].includes(scene.component)) return <PhoneScene {...props} />;
-  if (scene.component === 'MacBookAnimated') return <LaptopScene {...props} />;
+  if (scene.component === 'PhoneWindow') return <PhoneScene {...props} />;
+  if (scene.component === 'IPhoneAnimated') return <ETAIPhone3DScene {...props} />;
+  if (scene.component === 'MacBookAnimated') return <ETAMacBook3DScene {...props} />;
   if (scene.component === 'Video') return <VideoScene {...props} />;
   if (scene.component === 'Cards3') return <ETACards3Scene {...props} />;
   if (scene.component === 'Cards4') return <ETACards4Scene {...props} />;

@@ -1,0 +1,9 @@
+import React from 'react';
+import { Plus } from 'lucide-react';
+import ETA3DKeyframes from './ETA3DKeyframes';
+import ETADeviceTexts from './ETADeviceTexts';
+import ETADeviceMediaPicker from './ETADeviceMediaPicker';
+import ETAFormField, { etaInput } from './ETAFormField';
+
+const colors=['Natural Titanium','Blue Titanium','White Titanium','Black Titanium'];
+export default function ETAIPhoneSettings({ advanced, setAdvanced }) { const count=Number(advanced.phoneCount||1); return <section className="space-y-5 rounded-2xl border border-border bg-card p-4"><div><h2 className="text-sm font-semibold">iPhone 3D</h2><p className="text-xs text-muted-foreground">Phones</p></div><button onClick={()=>setAdvanced('phoneCount',count+1)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs"><Plus className="h-3 w-3"/> Add phone</button><ETAFormField label="Device color"><select className={etaInput} value={advanced.deviceColor||colors[0]} onChange={(e)=>setAdvanced('deviceColor',e.target.value)}>{colors.map((color)=><option key={color}>{color}</option>)}</select></ETAFormField><ETAFormField label="Light strength"><input className={etaInput} type="number" min="0" max="3" step=".1" value={advanced.lightStrength??1} onChange={(e)=>setAdvanced('lightStrength',Number(e.target.value))}/></ETAFormField><ETA3DKeyframes title="3D Phone Keyframes" value={advanced.phoneKeyframes} onChange={(next)=>setAdvanced('phoneKeyframes',next)}/><ETADeviceMediaPicker value={advanced.screenMedia} onChange={(next)=>setAdvanced('screenMedia',next)}/><ETADeviceTexts value={advanced.deviceTexts} onChange={(next)=>setAdvanced('deviceTexts',next)}/><ETA3DKeyframes title="Camera Keyframes" kind="camera" value={advanced.cameraKeyframes} onChange={(next)=>setAdvanced('cameraKeyframes',next)}/></section>; }

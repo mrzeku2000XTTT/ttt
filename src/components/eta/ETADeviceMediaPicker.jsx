@@ -1,0 +1,3 @@
+import React from 'react';
+import { ImagePlus } from 'lucide-react';
+export default function ETADeviceMediaPicker({ value, onChange }) { const choose=(e)=>{const file=e.target.files?.[0];if(file)onChange({url:URL.createObjectURL(file),type:file.type,name:file.name});}; return <div><p className="text-xs font-semibold">Screen Media</p><p className="mt-1 text-[11px] text-muted-foreground">{value?.name||'None'}</p><label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border p-4 text-xs font-semibold"><ImagePlus className="h-4 w-4"/> Choose Media<input type="file" accept="image/*,video/*" className="hidden" onChange={choose}/></label></div>; }
