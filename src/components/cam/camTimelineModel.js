@@ -7,7 +7,13 @@ export function sampleKeys(keys, time) {
   const a = [...keys].reverse().find((k) => k.t <= time) || keys[0];
   const b = keys.find((k) => k.t > time) || a;
   const p = b.t === a.t ? 0 : Math.max(0, Math.min(1, (time - a.t) / (b.t - a.t)));
-  return Object.fromEntries(Object.keys(a).filter((k) => k !== 't').map((k) => [k, typeof a[k] === 'number' && typeof b[k] === 'number' ? a[k] + (b[k] - a[k]) * p : a[k]]));
+  const interpolate = (left, right) => {
+    if (typeof left === 'number' && typeof right === 'number') return left + (right - left) * p;
+    if (left && right && typeof left === 'object' && !Array.isArray(left)) return Object.fromEntries(Object.keys(left).map(key => [key, interpolate(left[key], right[key])]));
+    return left;
+  };
+  // Preset changes are cuts, not blends between unrelated progress values.
+  return Object.fromEntries(Object.keys(a).filter(k => k !== 't').map(k => [k, a.moveId && b.moveId !== a.moveId ? a[k] : interpolate(a[k], b[k])]));
 }
 export function captureScene(media, offset, rig, moveId, intensity, duration) {
   return { duration, camera: { ...rig, moveId, intensity }, assets: media.map((m) => ({ id: m.id, name: m.name, x: m.id === 'primary' ? offset.x * 2.4 : m.pos.x, y: m.id === 'primary' ? offset.y * 1.6 : m.pos.y, z: m.id === 'primary' ? offset.z * 2.2 : m.pos.z, scale: m.scale || 1, aspect: m.aspect || (m.id === 'primary' ? 16/9 : 1), animationId: m.animationId || '' })) };

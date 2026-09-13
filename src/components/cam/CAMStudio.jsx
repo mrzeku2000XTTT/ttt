@@ -78,7 +78,7 @@ export default function CAMStudio({ address, onHome }) {
   const primaryPose = scene?.assets.find((a) => a.id === 'primary');
   const previewOffset = scene && !timeline.recording ? { x: (primaryPose?.x || 0) / 2.4, y: (primaryPose?.y || 0) / 1.6, z: (primaryPose?.z || 0) / 2.2 } : manualOffset;
   const previewMedia = scene && !timeline.recording ? media.flatMap((m) => { const pose = scene.assets.find((a) => a.id === m.id); return pose ? [{ ...m, pos: { x: pose.x, y: pose.y, z: pose.z }, scale: pose.scale, rotation: pose.rotation, opacity: pose.opacity, glow: pose.glow }] : []; }) : media;
-  useEffect(() => { if (scene && !fusionOn) renderCamScene(canvasRef.current, { ...scene, camera: { ...scene.camera, position: camRig.position, pivot: camRig.pivot } }, media, viewZoom); }, [scene, media, viewZoom, fusionOn, camRig.position, camRig.pivot]);
+  useEffect(() => { if (scene && !fusionOn) renderCamScene(canvasRef.current, scene, media, viewZoom); }, [scene, media, viewZoom, fusionOn]);
 
   // refs mirrored for the animation loop
   const playingRef = useRef(false); playingRef.current = playing;
@@ -195,18 +195,28 @@ export default function CAMStudio({ address, onHome }) {
     clearInterval(tick);setSeparateBusy(false);
   };
   const onMovePick = (id) => {
-    if (!timeline.recording) timeline.leave();
+    const next = captureScene(media, manualOffset, camRig, id, intensity, duration);
+    setMoveId(id); setMode('move'); pRef.current = 0;
+    if (timeline.recording) timeline.changeMove(next);
+    else if (autoKey) { timeline.appendMove(next); setPlaying(false); }
+    else timeline.leave();
     if (autoKey) {
-      // auto keyframe — append a shot and spawn a node for each clicked move
-      setShots((prev) => [...prev, { id: Date.now(), move: id, intensity, duration }]);
+      setShots(prev => [...prev, { id: crypto.randomUUID(), move: id, intensity, duration }]);
       graph.addNode('Camera3D');
-    } else {
-      setMoveId(id); setMode('move');
+    }
+  };
+  const changeRig = (update) => {
+    const current = timeline.enabled ? timeline.scene.camera : camRig;
+    const next = typeof update === 'function' ? update(current) : update;
+    setCamRig(next);
+    if (!timeline.recording) {
+      if (autoKey) timeline.setCamera(next);
+      else if (timeline.enabled) timeline.leave();
     }
   };
   const onOffset = (axis, value) => setManualOffset((o) => ({ ...o, [axis]: value }));
-  const onCameraRigMove = (kind, axis, value) => setCamRig(rig=>({ ...rig, [kind==='camera'?'position':'pivot']:{ ...(rig[kind==='camera'?'position':'pivot']||{x:0,y:0,z:0}), [axis]:value-(kind==='camera'&&axis==='z'?rig.distance||4.2:0) } }));
-  const onCameraNavigate = (key, fast=false) => setCamRig(rig=>{
+  const onCameraRigMove = (kind, axis, value) => changeRig(rig=>({ ...rig, [kind==='camera'?'position':'pivot']:{ ...(rig[kind==='camera'?'position':'pivot']||{x:0,y:0,z:0}), [axis]:value-(kind==='camera'&&axis==='z'?rig.distance||4.2:0) } }));
+  const onCameraNavigate = (key, fast=false) => changeRig(rig=>{
     const position=rig.position||{x:0,y:0,z:0}, pivot=rig.pivot||{x:0,y:0,z:0}, step=fast?.35:.14;
     const absolute={x:position.x,y:position.y,z:(rig.distance||4.2)+position.z}, dx=pivot.x-absolute.x,dz=pivot.z-absolute.z,length=Math.hypot(dx,dz)||1;
     const forward={x:dx/length,z:dz/length}, right={x:-forward.z,z:forward.x}, vector=key==='w'?forward:key==='s'?{x:-forward.x,z:-forward.z}:key==='d'?right:{x:-right.x,z:-right.z};
@@ -417,14 +427,14 @@ export default function CAMStudio({ address, onHome }) {
       <CamTextTools selected={media.find(m=>m.id===refId)} onAdd={addTextLayer} onEdit={textLayers.edit}/>
       <div className="cm-fusion-work">
         <main className="cm-fusion-center">
-          <CamViewerDeck canvasRef={canvasRef} hasLayers={media.length>0} image={img} onSeparate={separateLayers} separating={separateBusy} separateElapsed={separateElapsed} separateError={separateError} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={{...(scene?.camera||camRig),position:camRig.position,pivot:camRig.pivot}} onCameraRigMove={onCameraRigMove} onCameraNavigate={onCameraNavigate} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
+          <CamViewerDeck canvasRef={canvasRef} hasLayers={media.length>0} image={img} onSeparate={separateLayers} separating={separateBusy} separateElapsed={separateElapsed} separateError={separateError} getFrame={getFrame} label={`${currentMove.label} · ${Math.round(intensity * 100)}% · ${duration}s`} onUpload={() => fileRef.current?.click()} onFile={handleFile} split={splitPct} onSplit={setSplitPct} max={maxPane === 'media' || maxPane === 'camera' ? maxPane : null} onMax={setMaxPane} media={previewMedia} manualOffset={previewOffset} camRig={scene?.camera||camRig} onCameraRigMove={onCameraRigMove} onCameraNavigate={onCameraNavigate} onSelectAsset={onSelectAsset} refId={refId} onOffset={onOffset} onMoveAsset={onMoveAsset} onBeginAssetMove={onBeginAssetMove} />
           <CamTransport currentTime={timeline.enabled ? timeline.time : undefined} totalTime={timeline.enabled ? timeline.total : undefined} onPrevious={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => b - a).find((t) => t < timeline.time - 0.01) ?? 0) : undefined} onNext={timeline.enabled ? () => timeline.seek([...timeline.project.cuts].map((c) => c.start).sort((a, b) => a - b).find((t) => t > timeline.time + 0.01) ?? timeline.total) : undefined} playing={timeline.enabled ? timeline.running : playing} canPlay={(timeline.enabled ? media.length>0 : !!img) && !timeline.recording} onPlay={togglePlay} onRestart={restart} barRef={barRef} zoom={viewZoom} setZoom={setViewZoom} label={mode === 'seq' && shots.length ? `Shot ${seqIdx + 1}/${shots.length}` : `${duration}s`} />
           <div className="cm-fusion-lower">
             <CamShotStrip shots={shots} activeIndex={seqIdx} onAdd={addShot} onPlay={playSequence} onLoad={loadShot} onDelete={(id) => setShots((items) => items.filter((shot) => shot.id !== id))} canUse={!!img} />
             <CamEditorPanel mobileView={mobileView} timeline={timeline} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} graph={graph} image={img} moveLabel={currentMove.label} intensity={intensity} duration={duration} isMax={maxPane === 'nodes'} onMax={() => setMaxPane(maxPane === 'nodes' ? null : 'nodes')} />
           </div>
         </main>
-        <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={camRig} setCamRig={setCamRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} onApplyAnimation={applyAssetAnimation} onSmartCrop={smartCropAsset} activeAnimation={timeline.project.tracks.find((t) => t.assetId === refId)?.clips.find((c) => c.id === timeline.selected)?.animationId} axisOffset={axisOffset} axisRange={axisRange} axisTargetName={axisTargetName} onAxis={onAxis} onAxisReset={onAxisReset} />
+        <CamInspector moveId={moveId} onMovePick={onMovePick} autoKey={autoKey} setAutoKey={setAutoKey} intensity={intensity} setIntensity={setIntensity} duration={duration} setDuration={setDuration} camRig={scene?.camera||camRig} setCamRig={changeRig} media={media} onAddMedia={() => mediaInputRef.current?.click()} onSelectAsset={onSelectAsset} refId={refId} onApplyAnimation={applyAssetAnimation} onSmartCrop={smartCropAsset} activeAnimation={timeline.project.tracks.find((t) => t.assetId === refId)?.clips.find((c) => c.id === timeline.selected)?.animationId} axisOffset={axisOffset} axisRange={axisRange} axisTargetName={axisTargetName} onAxis={onAxis} onAxisReset={onAxisReset} />
         <CamAIAgent address={address} context={aiContext} onAction={runAgentAction} onGraph={graph.addAINodes} media={media} refId={refId} onClearRef={() => setRefId(null)} />
       </div>
     </div>

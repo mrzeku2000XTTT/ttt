@@ -20,7 +20,7 @@ export default function CamInspector({
         <summary><Film size={11} /> Camera Moves</summary>
         <label className="cm-autokey">
           <input type="checkbox" checked={!!autoKey} onChange={(e) => setAutoKey?.(e.target.checked)} />
-          <span>Auto Keyframe — each click appends a shot + node</span>
+          <span>Auto Keyframe — append timeline moves; record rig changes</span>
         </label>
         <div className="cm-inspector-grid">
           {MOVES.map((move) => (

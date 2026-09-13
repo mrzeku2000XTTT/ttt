@@ -11,7 +11,7 @@ export default function CamTimelineToolbar({ timeline: t, zoom, setZoom, onAddMe
   const stops = [...new Set([0, ...t.project.cuts.map((c) => c.start), t.total])].sort((a, b) => a - b);
   return <>
     <div className="cm-tl-tools">
-      <button className={t.recording ? 'is-active' : ''} onClick={t.record} disabled={!hasMedia} title="Record asset and camera changes as keyframes">{t.recording ? <Square /> : <Circle />}{t.recording ? 'Stop recording' : 'Record'}</button>
+      <button className={t.recording ? 'is-active' : ''} onClick={t.record} disabled={!hasMedia} title="Record camera and asset keyframes. Click different camera moves while recording to capture them in sequence.">{t.recording ? <Square /> : <Circle />}{t.recording ? 'Stop recording' : 'Record'}</button>
       <button onClick={() => t.seek([...stops].reverse().find((s) => s < t.time - 0.01) ?? 0)} disabled={t.recording} title="Previous cut"><SkipBack /></button>
       <button onClick={t.play} disabled={!t.total || t.recording} title="Play timeline">{t.running ? <Pause /> : <Play />}</button>
       <button onClick={() => t.seek(stops.find((s) => s > t.time + 0.01) ?? t.total)} disabled={t.recording} title="Next cut"><SkipForward /></button>

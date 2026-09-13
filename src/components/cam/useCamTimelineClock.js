@@ -13,8 +13,8 @@ export default function useCamTimelineClock(projectRef, snapshotRef, setProject)
     setProject((p) => recordSample(p, r.id, { ...snapshot, camera: { ...snapshot.camera, progress: Math.min(1, elapsed / r.duration) } }, elapsed));
     take.current = null; setRecording(false); seek(r.start + elapsed);
   };
-  const startRecording = () => {
-    const id = uid(), snapshot = snapshotRef.current, start = current.current;
+  const startRecording = (snapshot = snapshotRef.current) => {
+    const id = uid(), start = current.current;
     take.current = { id, start, wall: performance.now(), last: 0, duration: snapshot.duration };
     setProject((p) => addScene(p, { ...snapshot, camera: { ...snapshot.camera, progress: 0 } }, start, 0.1, id));
     setRunning(false); setRecording(true);
@@ -39,5 +39,11 @@ export default function useCamTimelineClock(projectRef, snapshotRef, setProject)
     };
     raf = requestAnimationFrame(tick); return () => cancelAnimationFrame(raf);
   }, []);
-  return { time, seek, running, setRunning, recording, startRecording, stopRecording, take };
+  const changeMove = (snapshot) => {
+    if (!take.current) return;
+    stopRecording(); // Finish the old move at its exact elapsed time.
+    snapshotRef.current = snapshot;
+    startRecording(snapshot); // New move, fresh progress; recording stays on.
+  };
+  return { time, seek, running, setRunning, recording, startRecording, stopRecording, changeMove, take };
 }
