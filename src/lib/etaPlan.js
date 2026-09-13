@@ -6,6 +6,12 @@ export const ETA_COMPONENTS = [
   "DivMorph", "SearchAnimation", "LogoAnimation", "UIAnimation", "Video",
 ];
 
+export const createBlankETAScene = (component = "TitleCard") => ({
+  component, purpose: "New scene", duration: 3, headline: "New scene",
+  voiceover: "Add the narration for this scene.", visual: "Describe the visual direction.",
+  motion: "Ease in", transition: "Match cut", advanced: {},
+});
+
 const sceneSchema = {
   type: "object",
   properties: {

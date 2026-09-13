@@ -1,0 +1,10 @@
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Pause, Play, RotateCcw } from 'lucide-react';
+import ETAMotionCard from './ETAMotionCard';
+
+export default function ETACompiledPreview({ plan, onBack, onEdit }) {
+  const [index, setIndex] = useState(0); const [playing, setPlaying] = useState(true);
+  useEffect(() => { if (!playing) return; const delay = Math.max(1, Number(plan.scenes[index]?.duration || 3)) * 1000; const timer = setTimeout(() => setIndex((i) => i + 1 < plan.scenes.length ? i + 1 : 0), delay); return () => clearTimeout(timer); }, [index, playing, plan.scenes]);
+  const scene = plan.scenes[index];
+  return <main className="mx-auto max-w-5xl px-5 py-8"><div className="mb-5 flex items-center justify-between gap-3"><button onClick={onBack} className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Scene plan</button><button onClick={onEdit} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold">Edit scenes</button></div><ETAMotionCard scene={scene} /><div className="mt-4 flex items-center gap-3"><button onClick={() => setPlaying((p) => !p)} className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground">{playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button><button onClick={() => setIndex(0)} className="grid h-10 w-10 place-items-center rounded-full border border-border"><RotateCcw className="h-4 w-4" /></button><div className="flex flex-1 gap-1">{plan.scenes.map((_, i) => <button key={i} onClick={() => setIndex(i)} className={`h-1.5 flex-1 rounded-full ${i === index ? 'bg-primary' : 'bg-muted'}`} aria-label={`Preview scene ${i + 1}`} />)}</div><span className="text-xs tabular-nums text-muted-foreground">{index + 1}/{plan.scenes.length}</span></div></main>;
+}
