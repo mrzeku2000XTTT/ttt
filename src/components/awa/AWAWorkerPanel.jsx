@@ -57,7 +57,7 @@ export default function AWAWorkerPanel() {
       {!mode ? null : (
         <div className="space-y-3">
           {/* Worker wallet */}
-          <div className="flex items-center gap-2 text-[11px]">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px]">
             <Wallet className="w-3.5 h-3.5 text-white/40" />
             {wallet ? (
               <span className="text-white/60 font-mono truncate">{wallet.address}</span>

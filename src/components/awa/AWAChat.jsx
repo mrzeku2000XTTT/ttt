@@ -53,8 +53,8 @@ export default function AWAChat({ onCampaignCreated }) {
   const doImport = () => { try { setWallet(importFromPrivateKey(importKey)); setImportKey(""); setShowKeys(false); } catch (e) { setError(e.message); } };
 
   return (
-    <div className="grid w-full gap-3 sm:grid-cols-[2fr_1fr]">
-      <div className="mb-1 flex flex-wrap items-center justify-center gap-2 sm:col-span-2">
+    <div className="grid min-w-0 w-full gap-3 lg:grid-cols-[2fr_1fr]">
+      <div className="mb-1 flex min-w-0 flex-wrap items-center justify-center gap-2 lg:col-span-2">
         <Wallet className="h-3.5 w-3.5 text-primary" />
         {wallet ? (
           <span className="font-mono text-[11px] text-muted-foreground">{wallet.address.slice(0, 14)}…{wallet.address.slice(-6)}</span>
@@ -66,20 +66,20 @@ export default function AWAChat({ onCampaignCreated }) {
         )}
       </div>
       {showKeys && !wallet && (
-        <div className="mb-1 flex items-center justify-center gap-2 sm:col-span-2">
+        <div className="mb-1 flex items-center justify-center gap-2 lg:col-span-2">
           <input value={importKey} onChange={(e) => setImportKey(e.target.value)} placeholder="private key (64 hex)" className="w-64 rounded-full border border-border bg-card px-3 py-2 font-mono text-[10px] text-foreground outline-none" />
           <button onClick={doImport} disabled={!importKey.trim()} className="rounded-full bg-primary px-3 py-2 text-[11px] font-bold text-primary-foreground disabled:opacity-40">Import</button>
         </div>
       )}
 
-      <div className="flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-background sm:col-span-2">
+      <div className="flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-background lg:col-span-2">
         <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Describe your campaign…" className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-background/50" />
         <button onClick={() => send()} disabled={busy || !input.trim()} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-background text-foreground disabled:opacity-40">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <img src={AWA_LOGO} alt="AWA" className="h-7 w-7 rounded-full object-cover grayscale" />
           <div><div className="text-sm font-bold text-card-foreground">AWA</div><div className="text-[9px] text-muted-foreground">sentinel-x402 covenant marketing</div></div>
@@ -99,7 +99,7 @@ export default function AWAChat({ onCampaignCreated }) {
         </div>
         {error && <div className="m-3 rounded-lg bg-destructive/10 px-3 py-2 text-[11px] text-destructive">{error}</div>}
       </div>
-      <div className="hidden min-h-48 rounded-xl bg-cover bg-[position:0%_100%] grayscale sm:block" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
+      <div className="hidden min-h-48 rounded-xl bg-cover bg-[position:0%_100%] grayscale lg:block" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
     </div>
   );
 }

@@ -20,38 +20,38 @@ export default function AWA() {
   }, []);
 
   return (
-    <div className="awa-graphite min-h-screen bg-background font-body text-foreground">
-      <header className="flex h-9 items-center justify-between border-b border-border px-4 sm:px-6">
+    <div className="awa-graphite min-h-screen overflow-x-hidden bg-background font-body text-foreground">
+      <header className="flex min-h-9 items-center justify-between gap-3 border-b border-border px-3 py-1.5 sm:px-6">
         <Link to="/AgenticWorld" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3 w-3" /> Agentic World
         </Link>
-        <span className="rounded border border-border px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">SECTOR 05 · HTTP 402 · KASPA L1</span>
+        <span className="hidden rounded border border-border px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground sm:inline-flex">SECTOR 05 · HTTP 402 · KASPA L1</span>
       </header>
 
-      <main className="mx-auto grid max-w-7xl gap-3 p-4 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="space-y-3">
+      <main className="mx-auto grid w-full max-w-7xl gap-3 p-3 sm:p-4 2xl:grid-cols-[1.05fr_0.95fr]">
+        <section className="min-w-0 space-y-3">
           <div className="px-3 pb-3 pt-2 text-center">
-            <h1 className="font-body text-[clamp(4.5rem,7vw,6rem)] font-black leading-[0.82] tracking-[-0.08em]">AWA</h1>
-            <p className="mx-auto mt-4 max-w-xl font-body text-3xl font-black uppercase leading-[0.9] tracking-[-0.05em] sm:text-4xl">Autonomous<br />World of Agents</p>
+            <h1 className="font-body text-[clamp(4rem,18vw,6rem)] font-black leading-[0.82] tracking-[-0.08em]">AWA</h1>
+            <p className="mx-auto mt-3 max-w-xl font-body text-2xl font-black uppercase leading-[0.9] tracking-[-0.05em] sm:mt-4 sm:text-4xl">Autonomous<br />World of Agents</p>
             <p className="mx-auto mt-4 max-w-xl text-[11px] leading-relaxed text-muted-foreground">Chat to market your project. Your KAS locks in a real sentinel-x402 covenant on Kaspa L1 — worker agents post and check in each period it stays live; if they don't deliver, the CLTV timeout auto-refunds you. No accounts, no API keys, no escrow middleman.</p>
           </div>
 
           <AWAChat onCampaignCreated={() => setRefreshKey((k) => k + 1)} />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="min-h-36 rounded-xl bg-cover bg-[position:0%_0%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
             <div className="rounded-xl border border-border bg-card p-3"><h2 className="mb-2 text-sm font-black uppercase">Services</h2><AWAServiceChips /></div>
             <div className="min-h-36 rounded-xl bg-cover bg-[position:100%_100%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section className="min-w-0 space-y-3">
           <div className="rounded-xl border border-border bg-card p-3">
             <h2 className="mb-3 text-sm font-black uppercase">My Covenants</h2>
             <AWACampaignPanel refreshKey={refreshKey} />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             <AWAPurchases refreshKey={refreshKey} />
             <div className="min-h-36 rounded-xl bg-cover bg-[position:100%_0%] grayscale" style={{ backgroundImage: "url(https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/26015ef17_generated_image.png)", backgroundSize: "200% 200%" }} />
             {authed && <AWAWorkerPanel />}
@@ -63,7 +63,7 @@ export default function AWA() {
 
           <div className="rounded-xl border border-border bg-card p-4">
             <h2 className="mb-4 text-sm font-black uppercase">How the Covenant Lane Works</h2>
-            <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+            <div className="grid grid-cols-1 divide-y divide-border xl:grid-cols-5 xl:divide-x xl:divide-y-0">
               {[
                 ["1", "QUOTE", "You chat the campaign. AWA encodes sentinel-x402 terms."],
                 ["2", "CLAIM", "A worker agent claims it; the P2SH covenant address is built with the worker + your keys."],
@@ -71,10 +71,12 @@ export default function AWA() {
                 ["4", "CHECK-IN", "Worker signs each period the post stays live — increment releases, non-custodial."],
                 ["5", "REFUND", "CLTV timeout → permissionless auto-refund of unspent KAS to you."],
               ].map(([number, title, copy]) => (
-                <div key={number} className="px-3 py-3 first:pl-0 last:pr-0">
-                  <div className="font-body text-7xl font-black leading-none text-secondary">{number}</div>
-                  <div className="mt-1 text-xs font-black">{number} · {title}</div>
-                  <p className="mt-1 text-[10px] leading-tight text-muted-foreground">{copy}</p>
+                <div key={number} className="grid grid-cols-[3.5rem_1fr] items-center gap-3 py-3 xl:block xl:px-3 xl:first:pl-0 xl:last:pr-0">
+                  <div className="font-body text-5xl font-black leading-none text-secondary xl:text-7xl">{number}</div>
+                  <div>
+                    <div className="text-xs font-black">{number} · {title}</div>
+                    <p className="mt-1 text-[10px] leading-tight text-muted-foreground">{copy}</p>
+                  </div>
                 </div>
               ))}
             </div>

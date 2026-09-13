@@ -56,12 +56,12 @@ export default function AWACampaignPanel({ refreshKey }) {
     <div className="space-y-3">
       {campaigns.map((c) => (
         <div key={c.id} className="border-b border-border py-3 last:border-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="truncate text-xs font-bold text-card-foreground">{c.description}</div>
+          <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="break-words text-xs font-bold text-card-foreground sm:line-clamp-2">{c.description}</div>
               <div className="mt-0.5 text-[10px] text-muted-foreground">{c.platform} · {c.total_kas} KAS · {c.increment_kas} KAS/period · {c.num_epochs} epochs</div>
             </div>
-            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black tracking-widest whitespace-nowrap ${STATUS_STYLE[c.status] || ""}`}>
+            <span className={`self-start whitespace-nowrap rounded-full border px-2 py-0.5 text-[9px] font-black tracking-widest ${STATUS_STYLE[c.status] || ""}`}>
               {(c.status || "").toUpperCase().replace(/_/g, " ")}
             </span>
           </div>

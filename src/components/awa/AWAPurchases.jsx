@@ -27,7 +27,7 @@ export default function AWAPurchases({ refreshKey }) {
       </div>
       <div className="space-y-2">
         {invoices.map((inv) => (
-          <div key={inv.id} className="flex items-center gap-2 border-b border-border py-2 last:border-0">
+          <div key={inv.id} className="flex flex-wrap items-center gap-2 border-b border-border py-2 last:border-0 sm:flex-nowrap">
             <div className="min-w-0 flex-1">
               <div className="truncate text-xs font-bold text-card-foreground">{inv.service_name}</div>
               <div className="truncate font-mono text-[9px] text-muted-foreground">{inv.input}</div>
