@@ -1,6 +1,6 @@
 import { base44 } from "@/api/base44Client";
 import { buildETADirectorPrompt } from "@/lib/etaDirectorPrompt";
-import parseEtaAdvanced from "@/lib/parseEtaAdvanced";
+import parseEtaAdvanced, { normalizeEtaValue } from "@/lib/parseEtaAdvanced";
 export { ETA_COMPONENTS } from "@/lib/etaComponents";
 
 export const createBlankETAScene = (component = "TitleCard") => ({
@@ -59,7 +59,8 @@ export async function createETAPlan(brief, files, onStatus) {
         required: ["title", "narrative", "scenes"],
       },
     });
-    currentPlan = { ...result, format: brief.format, fps: 60, scenes: result.scenes.map(({ advanced_json, ...scene }) => ({ ...scene, advanced: parseEtaAdvanced(advanced_json) })) };
+    const normalized = normalizeEtaValue(result);
+    currentPlan = { ...normalized, format: brief.format, fps: 60, scenes: normalized.scenes.map(({ advanced_json, ...scene }) => ({ ...scene, advanced: parseEtaAdvanced(advanced_json) })) };
   }
   return currentPlan;
 }
