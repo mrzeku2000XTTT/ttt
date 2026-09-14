@@ -19,7 +19,7 @@ export default async function createCameraRenderer(canvas, file) {
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), shadowMaterial); shadow.position.set(0, -.08, -.06); shadow.renderOrder = 1; group.add(shadow);
   let lastShape = '', lastRatio = '', disposed = false;
   const engine = { canvas, media, exporting: false, disposed: false,
-    draw(settings, time = 0, animate = false) {
+    draw(settings, time = 0, animate = false, interestPoints = []) {
       if (disposed) return;
       const [width, height] = CAMERA_SIZES[settings.ratio];
       if (lastRatio !== settings.ratio) { renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); lastRatio = settings.ratio; }
@@ -36,6 +36,20 @@ export default async function createCameraRenderer(canvas, file) {
         if (settings.motion === 'push') zoom *= 1 + .12 * Math.sin(Math.PI * ease) ** 2;
         if (settings.motion === 'orbit') { y += wave * 12; x += Math.sin(p * Math.PI) * 5; }
         if (settings.motion === 'float') { group.position.y = wave * .14; z += wave * 2; }
+      }
+      if (interestPoints.length) {
+        const ordered = [...interestPoints].sort((a, b) => a.time - b.time);
+        const nextIndex = ordered.findIndex(point => point.time >= time);
+        const next = nextIndex < 0 ? ordered.at(-1) : ordered[nextIndex];
+        const previous = nextIndex <= 0 ? next : ordered[nextIndex - 1];
+        const span = Math.max(.001, next.time - previous.time);
+        const mix = next === previous ? 1 : Math.max(0, Math.min(1, (time - previous.time) / span));
+        const smooth = mix * mix * (3 - 2 * mix);
+        const focusX = previous.x + (next.x - previous.x) * smooth;
+        const focusY = previous.y + (next.y - previous.y) * smooth;
+        group.position.x += -(focusX - .5) * 2.2;
+        group.position.y += (focusY - .5) * 1.7;
+        zoom *= 1.08;
       }
       group.rotation.set(THREE.MathUtils.degToRad(x), THREE.MathUtils.degToRad(y), THREE.MathUtils.degToRad(z)); group.scale.setScalar(zoom);
       shadowMaterial.opacity = settings.shadow; renderer.setClearColor(settings.background, 1); renderer.render(scene, camera);

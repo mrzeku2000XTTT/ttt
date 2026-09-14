@@ -17,7 +17,7 @@ export default function useCameraProject() {
   const [loaded, setLoaded] = useState(false), [status, setStatus] = useState('Opening project…'), [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    readCameraProject().then(project => { if (active && project) dispatch({ type: 'load', project: { ...project, settings: { ...CAMERA_DEFAULTS, ...project.settings } } }); }).catch(() => { if (active) setError('Could not restore local storage. Your browser may have disabled it.'); }).finally(() => { if (active) setLoaded(true); });
+    readCameraProject().then(project => { if (active && project) dispatch({ type: 'load', project: { ...project, editorMode: project.editorMode || 'operator', interestPoints: project.interestPoints || [], settings: { ...CAMERA_DEFAULTS, ...project.settings } } }); }).catch(() => { if (active) setError('Could not restore local storage. Your browser may have disabled it.'); }).finally(() => { if (active) setLoaded(true); });
     return () => { active = false; };
   }, []);
   useEffect(() => {
