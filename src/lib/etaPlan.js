@@ -1,5 +1,6 @@
 import { base44 } from "@/api/base44Client";
 import { buildETADirectorPrompt } from "@/lib/etaDirectorPrompt";
+import { buildETASceneAgentPrompt } from "@/lib/etaSceneAgentPrompt";
 import parseEtaAdvanced, { normalizeEtaValue } from "@/lib/parseEtaAdvanced";
 export { ETA_COMPONENTS } from "@/lib/etaComponents";
 
@@ -9,17 +10,9 @@ export const createBlankETAScene = (component = "TitleCard") => ({
   motion: "Ease in", transition: "Match cut", hyperframe_animation: "slide_up", advanced: {},
 });
 
-const PASS_LABELS = [
-  "Analyzing intent and narrative",
-  "Filling component direction",
-  "Generating motion and keyframes",
-  "Coordinating scene continuity",
-  "Validating and repairing the plan",
-];
-
 const getETAPassCount = (brief, files) => {
   const length = String(brief.description || "").trim().length;
-  let passes = 1;
+  let passes = 2;
   if (length > 60 || brief.url || brief.style) passes = 2;
   if (length > 180 || files.length > 0) passes = 3;
   if (length > 400 || Number(brief.duration) > 30) passes = 4;
@@ -46,21 +39,32 @@ export async function createETAPlan(brief, files, onStatus) {
     base44.integrations.Core.UploadPrivateFile({ file }).then((result) => result.file_uri)
   ));
   const maxPasses = getETAPassCount(brief, files);
-  let currentPlan = null;
-  for (let passIndex = 1; passIndex <= maxPasses; passIndex += 1) {
-    onStatus(`Pass ${passIndex}/${maxPasses}: ${PASS_LABELS[passIndex - 1]}`);
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: buildETADirectorPrompt(brief, { passIndex, maxPasses, currentPlan, referenceMediaCount: uploads.length }),
-      file_urls: uploads.length ? uploads : undefined,
-      response_json_schema: {
-        type: "object",
-        additionalProperties: false,
-        properties: { title: { type: "string" }, narrative: { type: "string" }, scenes: { type: "array", items: sceneSchema } },
-        required: ["title", "narrative", "scenes"],
-      },
-    });
-    const normalized = normalizeEtaValue(result);
-    currentPlan = { ...normalized, format: brief.format, fps: 60, scenes: normalized.scenes.map(({ advanced_json, ...scene }) => ({ ...scene, advanced: parseEtaAdvanced(advanced_json) })) };
+  onStatus("Director agent: building the master scene blueprint");
+  const blueprint = await base44.integrations.Core.InvokeLLM({
+    prompt: buildETADirectorPrompt(brief, { passIndex: 1, maxPasses, currentPlan: null, referenceMediaCount: uploads.length }),
+    file_urls: uploads.length ? uploads : undefined,
+    response_json_schema: {
+      type: "object", additionalProperties: false,
+      properties: { title: { type: "string" }, narrative: { type: "string" }, scenes: { type: "array", items: sceneSchema } },
+      required: ["title", "narrative", "scenes"],
+    },
+  });
+  const normalized = normalizeEtaValue(blueprint);
+  let currentPlan = { ...normalized, format: brief.format, fps: 60, scenes: normalized.scenes.map(({ advanced_json, ...scene }) => ({ ...scene, advanced: parseEtaAdvanced(advanced_json) })) };
+  const totalRounds = maxPasses - 1;
+  for (let round = 1; round <= totalRounds; round += 1) {
+    const sourceScenes = currentPlan.scenes;
+    onStatus(`Parallel scene agents: ${sourceScenes.length} specialists · round ${round}/${totalRounds}`);
+    const refinedScenes = await Promise.all(sourceScenes.map(async (scene, index) => {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: buildETASceneAgentPrompt({ brief, scene, index, total: sourceScenes.length, previous: sourceScenes[index - 1], next: sourceScenes[index + 1], round, totalRounds }),
+        file_urls: uploads.length ? uploads : undefined,
+        response_json_schema: sceneSchema,
+      });
+      const { advanced_json, ...refined } = normalizeEtaValue(result);
+      return { ...refined, advanced: parseEtaAdvanced(advanced_json) };
+    }));
+    currentPlan = { ...currentPlan, scenes: refinedScenes };
   }
   return currentPlan;
 }
