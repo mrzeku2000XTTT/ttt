@@ -3,6 +3,7 @@ import { cameraScreenGeometry, cameraShadowTexture } from '@/components/camerast
 import { loadCameraMedia } from '@/components/camerastudio/cameraStudioMedia';
 import { CAMERA_SIZES } from '@/components/camerastudio/cameraStudioDefaults';
 import { cameraEase } from '@/components/camerastudio/cameraEasing';
+import { layerTransformAt } from '@/components/camerastudio/cameraLayerAnimation';
 export default async function createCameraRenderer(canvas, assets) {
   const loaded = await Promise.all(assets.map(async asset => ({ asset, media: await loadCameraMedia(asset.file) })));
   let renderer;
@@ -27,7 +28,7 @@ export default async function createCameraRenderer(canvas, assets) {
       if (lastRatio !== settings.ratio) { renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); lastRatio = settings.ratio; }
       const viewHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z, viewWidth = viewHeight * camera.aspect;
       layers.forEach((layer, index) => {
-        const state = assetStates.find(item => item.id === layer.id) || {}, transform = { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1, ...state.transform };
+        const state = assetStates.find(item => item.id === layer.id) || {}, transform = state.previewing ? state.transform : layerTransformAt(state, time, settings.easing);
         const aspect = layer.media.width / layer.media.height, h = Math.min(4.4, 5 * camera.aspect / aspect), w = h * aspect, key = `${w}:${h}:${settings.radius}`;
         if (layer.shape !== key) { layer.screen.geometry.dispose(); layer.screen.geometry = cameraScreenGeometry(w, h, settings.radius); layer.shadow.scale.set(w * 1.25, h * 1.25, 1); layer.shape = key; }
         layer.root.position.set(transform.x * viewWidth, -transform.y * viewHeight, index * .025); layer.root.scale.setScalar(transform.scale); layer.root.rotation.z = THREE.MathUtils.degToRad(transform.rotation); layer.material.opacity = transform.opacity; layer.root.visible = transform.visible !== false; layer.shadowMaterial.opacity = settings.shadow * transform.opacity;

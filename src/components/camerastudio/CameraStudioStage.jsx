@@ -4,6 +4,7 @@ import createCameraRenderer from '@/components/camerastudio/cameraStudioRenderer
 import CameraFocusOverlay from '@/components/camerastudio/CameraFocusOverlay';
 import CameraAssetOverlay from '@/components/camerastudio/CameraAssetOverlay';
 import { CAMERA_SIZES } from '@/components/camerastudio/cameraStudioDefaults';
+import { layerTransformAt } from '@/components/camerastudio/cameraLayerAnimation';
 export default function CameraStudioStage({ asset, assets, selected, settings, playing, engineRef, add, upload, busy, onReady, onError, interestPoints, overlayPoints, playhead, onTime, armed, activePointId, onSelectPoint, onPlacePoint, onPreviewPoint, onMovePoint, showFocus, layersEditable, selectAsset, previewAsset, commitAsset }) {
   const canvas = useRef(null), box = useRef(null), latest = useRef({ settings, playing, interestPoints, playhead, assets }), start = useRef(0), lastTimeUpdate = useRef(0);
   const [bounds, setBounds] = useState([800, 450]), [loading, setLoading] = useState(false), [dragging, setDragging] = useState(false);
@@ -36,11 +37,11 @@ export default function CameraStudioStage({ asset, assets, selected, settings, p
     const medias = engineRef.current?.medias || [];
     if (!playing) medias.forEach(media => { if (media.video && Number.isFinite(media.element.duration)) media.element.currentTime = Math.min(playhead, Math.max(0, media.element.duration - .01)); });
   }, [playhead, playing]);
-  const size = CAMERA_SIZES[settings.ratio], ratio = size[0] / size[1], width = Math.min(bounds[0], bounds[1] * ratio);
+  const size = CAMERA_SIZES[settings.ratio], ratio = size[0] / size[1], width = Math.min(bounds[0], bounds[1] * ratio), overlayAssets = assets.map(item => ({ ...item, transform: item.previewing ? item.transform : layerTransformAt(item, playhead, settings.easing) }));
   return <div ref={box} className="relative flex h-full w-full items-center justify-center" onDragOver={e => { e.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) add(e.dataTransfer.files); }}>
     <div className="camera-frame" style={{ width, height: width / ratio }}>
       <canvas ref={canvas} aria-label="Live 3D media preview"/>
-      {asset && layersEditable && <CameraAssetOverlay assets={assets} aspects={engineRef.current?.aspects || {}} ratio={settings.ratio} selected={selected} select={selectAsset} preview={previewAsset} commit={commitAsset}/>} 
+      {asset && layersEditable && <CameraAssetOverlay assets={overlayAssets} aspects={engineRef.current?.aspects || {}} ratio={settings.ratio} selected={selected} select={selectAsset} preview={previewAsset} commit={commitAsset}/>} 
       {asset && showFocus && <CameraFocusOverlay points={overlayPoints} activeId={activePointId} armed={armed} onSelect={onSelectPoint} onPlace={onPlacePoint} onPreview={onPreviewPoint} onMove={onMovePoint}/>} 
       {(!asset || dragging) && <button onClick={upload} disabled={busy} className={`camera-empty w-full ${dragging ? 'dragging' : ''}`}><Upload size={26}/><strong>Add images or video</strong><small>Click to browse or drag and drop</small></button>}
       {loading && <div className="camera-stage-loading" role="status"><Loader2 size={22} className="animate-spin"/><span className="ml-2">Preparing media…</span></div>}
