@@ -430,7 +430,7 @@ const AuthenticatedApp = () => {
       <Route path="/GiftGenius" element={<GiftGeniusPage />} />
       <Route path="/LifestyleHub" element={<LifestyleHubPage />} />
       <Route path="/UI" element={<UIHubPage />} />
-      <Route path="/UI/Camera" element={<UIEmbedPage />} />
+      <Route path="/UI/Camera" element={<AdminRoute><UIEmbedPage /></AdminRoute>} />
       <Route path="/MealPlan" element={<MealPlanPage />} />
       <Route path="/FitForge" element={<FitForgePage />} />
       <Route path="/BudgetCoach" element={<BudgetCoachPage />} />
