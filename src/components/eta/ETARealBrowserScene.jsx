@@ -1,7 +1,7 @@
 import React from 'react';
 import { Globe2, MousePointer2 } from 'lucide-react';
 import ETABrowserHTML from './ETABrowserHTML';
-import { sample3D } from '@/lib/eta3DKeyframes';
+import { productDemoCamera, sampleCamera } from '@/lib/etaCameraMotion';
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
 export default function ETARealBrowserScene({ scene, advanced, frameProgress = .65 }) {
@@ -10,8 +10,7 @@ export default function ETARealBrowserScene({ scene, advanced, frameProgress = .
   const duration = Number(scene.duration || 3);
   const time = progress * duration;
   const active = frames.filter((item) => Number(item.time || 0) <= time).at(-1) || frames[0] || {};
-  const defaultCamera = [{time:0,panX:-34,panY:18,depth:0,scale:.88,rotateX:4,rotateY:-7,rotateZ:-1,originX:50,originY:50},{time:duration*.48,panX:22,panY:-10,depth:36,scale:1.08,rotateX:-2,rotateY:5,rotateZ:.7,originX:58,originY:42},{time:duration,panX:0,panY:0,depth:0,scale:1,rotateX:0,rotateY:0,rotateZ:0,originX:50,originY:50}];
-  const camera = sample3D(advanced.cameraKeyframes?.length ? advanced.cameraKeyframes : defaultCamera, time, {panX:0,panY:0,depth:0,scale:1,rotateX:0,rotateY:0,rotateZ:0,originX:50,originY:50});
+  const camera = sampleCamera(advanced.cameraKeyframes?.length ? advanced.cameraKeyframes : productDemoCamera(duration), time);
   const zoom = [...(advanced.zoomKeyframes || [])].filter((item) => Number(item.time || 0) <= time).at(-1);
   const reveal = clamp(progress * 3.2), scroll = Number(active.scrollY || 0) * progress;
   const cursor = advanced.cursorSteps?.[0];
