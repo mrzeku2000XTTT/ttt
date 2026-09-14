@@ -1,6 +1,6 @@
 import { base44 } from "@/api/base44Client";
 import { buildETADirectorPrompt } from "@/lib/etaDirectorPrompt";
-import { buildETASceneAgentPrompt } from "@/lib/etaSceneAgentPrompt";
+import { buildEngineerPrompt, runDesignAnalyzerAgent, searchAnimationReferences } from "@/lib/etaDesignAgents";
 import parseEtaAdvanced, { normalizeEtaValue } from "@/lib/parseEtaAdvanced";
 import { summarizeMorphLearnings } from "@/lib/etaShapeMorph";
 export { ETA_COMPONENTS } from "@/lib/etaComponents";
@@ -36,9 +36,12 @@ const sceneSchema = {
 
 export async function createETAPlan(brief, files, onStatus) {
   onStatus("Preparing reference media");
-  const uploads = await Promise.all(files.map((file) =>
-    base44.integrations.Core.UploadPrivateFile({ file }).then((result) => result.file_uri)
-  ));
+  // Private uploads are signed so the director, analyzer, and engineer agents can actually see them.
+  const uploads = await Promise.all(files.map(async (file) => {
+    const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+    const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
+    return signed_url;
+  }));
   const maxPasses = getETAPassCount(brief, files);
   onStatus("Director agent: building the master scene blueprint");
   const blueprint = await base44.integrations.Core.InvokeLLM({
@@ -60,12 +63,24 @@ export async function createETAPlan(brief, files, onStatus) {
     // First run or guest session — nothing learned from manual morph edits yet.
   }
   const totalRounds = maxPasses - 1;
+  const designBriefs = []; // one Design Analyzer brief per scene, reused across rounds
+  const searchCache = []; // per-scene high-quality animation research from round 1
   for (let round = 1; round <= totalRounds; round += 1) {
     const sourceScenes = currentPlan.scenes;
-    onStatus(`Parallel scene agents: ${sourceScenes.length} specialists · round ${round}/${totalRounds}`);
+    if (round === 1) {
+      onStatus(`Design research: sourcing high-quality animation references for ${sourceScenes.length} scenes`);
+      await Promise.all(sourceScenes.map(async (scene, index) => {
+        searchCache[index] = await searchAnimationReferences(brief, scene);
+      }));
+      onStatus(`Design Analyzers: reading your reference images · ${sourceScenes.length} agents`);
+      await Promise.all(sourceScenes.map(async (scene, index) => {
+        designBriefs[index] = await runDesignAnalyzerAgent({ brief, scene, index, total: sourceScenes.length, referenceUrls: uploads, searchResults: searchCache[index] || [] });
+      }));
+    }
+    onStatus(`Scene Engineers: building production scenes · ${sourceScenes.length} agents · round ${round}/${totalRounds}`);
     const refinedScenes = await Promise.all(sourceScenes.map(async (scene, index) => {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: buildETASceneAgentPrompt({ brief, scene, index, total: sourceScenes.length, previous: sourceScenes[index - 1], next: sourceScenes[index + 1], round, totalRounds, morphDigest }),
+        prompt: buildEngineerPrompt({ brief, scene, index, total: sourceScenes.length, previous: sourceScenes[index - 1], next: sourceScenes[index + 1], round, totalRounds, designBrief: designBriefs[index], morphDigest }),
         file_urls: uploads.length ? uploads : undefined,
         response_json_schema: sceneSchema,
       });
