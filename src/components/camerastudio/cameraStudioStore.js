@@ -20,9 +20,30 @@ export async function saveCameraProject(project) {
   const db = await openStore();
   return new Promise((resolve, reject) => {
     const tx = db.transaction('projects', 'readwrite');
+    tx.objectStore('projects').put(project, project.id);
     tx.objectStore('projects').put(project, 'current');
     tx.oncomplete = () => { db.close(); resolve(); };
     tx.onerror = () => { db.close(); reject(tx.error); };
     tx.onabort = () => { db.close(); reject(tx.error || new Error('Storage unavailable')); };
+  });
+}
+export async function listCameraProjects() {
+  const db = await openStore();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('projects', 'readonly');
+    const request = tx.objectStore('projects').getAll();
+    request.onsuccess = () => resolve([...new Map(request.result.filter(project => project?.id).map(project => [project.id, project])).values()]);
+    request.onerror = () => reject(request.error);
+    tx.oncomplete = () => db.close();
+  });
+}
+export async function deleteCameraProject(id) {
+  const db = await openStore();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('projects', 'readwrite'), store = tx.objectStore('projects'), current = store.get('current');
+    store.delete(id);
+    current.onsuccess = () => { if (current.result?.id === id) store.delete('current'); };
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }

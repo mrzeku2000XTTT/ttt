@@ -1,32 +1,21 @@
 import React, { useRef, useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Trash2, Crosshair, Circle } from 'lucide-react';
-export default function CameraVideoTimeline({ duration, time, playing, togglePlay, points, activeId, select, remove, move, preview, seek, easing, layerKeyframes, recording, toggleRecord }) {
-  const [drag, setDrag] = useState(null), markerDrag = useRef(null), ignoreClick = useRef(false);
-  const markerTime = event => { const rect = event.currentTarget.parentElement.getBoundingClientRect(); return Math.max(0, Math.min(duration, ((event.clientX - rect.left) / rect.width) * duration)); };
-  const beginMarker = (event, point) => { event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); markerDrag.current = { id: point.id, moved: false }; setDrag({ id: point.id, time: point.time }); select(point.id); };
-  const dragMarker = event => { if (!markerDrag.current) return; const next = markerTime(event); markerDrag.current.moved = true; setDrag({ id: markerDrag.current.id, time: next }); preview(markerDrag.current.id, { time: next }); };
-  const endMarker = event => { if (!markerDrag.current || !drag) return; event.stopPropagation(); ignoreClick.current = markerDrag.current.moved; move(drag.id, { time: drag.time }); seek(drag.time); markerDrag.current = null; setDrag(null); };
-  const scrub = event => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    seek(Math.max(0, Math.min(duration, ((event.clientX - rect.left) / rect.width) * duration)));
-  };
-  const jump = direction => {
-    const ordered = [...points].sort((a, b) => a.time - b.time);
-    const candidates = direction < 0 ? ordered.filter(point => point.time < time - .05).reverse() : ordered.filter(point => point.time > time + .05);
-    seek(candidates[0]?.time ?? (direction < 0 ? 0 : duration));
-  };
-  return <section className="camera-timeline" aria-label="Video focus timeline">
-    <div className="camera-timeline-head">
-      <div className="camera-timeline-controls"><button className={recording ? 'is-recording' : ''} onClick={toggleRecord} title={recording ? 'Stop recording movement' : 'Record layer movement'}><Circle size={11} fill="currentColor"/></button><button onClick={() => jump(-1)} title="Previous interest point"><SkipBack size={13}/></button><button onClick={togglePlay} title={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button><button onClick={() => jump(1)} title="Next interest point"><SkipForward size={13}/></button></div>
-      <span className="camera-timecode">{time.toFixed(1)}s / {duration.toFixed(1)}s</span>
-      <span className="camera-timeline-label"><Crosshair size={12}/>{points.length} interest {points.length === 1 ? 'point' : 'points'}<em>{easing === 'auto' ? 'Auto easing' : easing}</em></span>
+export default function CameraVideoTimeline({ duration, time, playing, togglePlay, points, activeId, select, move, preview, seek, easing, assets, selectedAssetId, selectAsset, removeKeyframe, clearLayerKeyframes, recording, toggleRecord }) {
+  const [drag, setDrag] = useState(null), markerDrag = useRef(null);
+  const markerTime = event => { const rect = event.currentTarget.parentElement.getBoundingClientRect(); return Math.max(0, Math.min(duration, (event.clientX - rect.left) / rect.width * duration)); };
+  const beginMarker = (event, point) => { event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); markerDrag.current = point.id; setDrag({ id: point.id, time: point.time }); select(point.id); };
+  const dragMarker = event => { if (!markerDrag.current) return; const next = markerTime(event); setDrag({ id: markerDrag.current, time: next }); preview(markerDrag.current, { time: next }); };
+  const endMarker = event => { if (!markerDrag.current || !drag) return; event.stopPropagation(); move(drag.id, { time: drag.time }); seek(drag.time); markerDrag.current = null; setDrag(null); };
+  const scrub = event => { const rect = event.currentTarget.getBoundingClientRect(); seek(Math.max(0, Math.min(duration, (event.clientX - rect.left) / rect.width * duration))); };
+  const frames = assets.flatMap(asset => asset.keyframes || []).sort((a, b) => a.time - b.time);
+  const jump = direction => { const candidates = direction < 0 ? frames.filter(frame => frame.time < time - .05).reverse() : frames.filter(frame => frame.time > time + .05); seek(candidates[0]?.time ?? (direction < 0 ? 0 : duration)); };
+  const Playhead = () => <span className="camera-playhead" style={{ left: `${time / duration * 100}%` }}/>;
+  const selectedFrames = assets.find(asset => asset.id === selectedAssetId)?.keyframes || [];
+  return <section className="camera-timeline" aria-label="Multi-layer video timeline">
+    <div className="camera-timeline-head"><div className="camera-timeline-controls"><button className={recording ? 'is-recording' : ''} onClick={toggleRecord} title={recording ? 'Stop recording' : 'Record selected layer'}><Circle size={11} fill="currentColor"/></button><button onClick={() => jump(-1)}><SkipBack size={13}/></button><button onClick={togglePlay}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button><button onClick={() => jump(1)}><SkipForward size={13}/></button></div><span className="camera-timecode">{time.toFixed(1)}s / {duration.toFixed(1)}s</span><span className="camera-timeline-label">{assets.length} layers<em>{easing === 'auto' ? 'Auto ease' : easing}</em></span></div>
+    <div className="camera-timeline-scroll">{assets.map(asset => <div className={`camera-timeline-row ${asset.id === selectedAssetId ? 'is-selected' : ''}`} key={asset.id}><button className="camera-track-name" onClick={() => selectAsset(asset.id)} title={asset.name}>{asset.name}</button><div className="camera-track-lane" onClick={scrub}><Playhead/>{(asset.keyframes || []).map(frame => <button key={frame.id} className="camera-layer-keyframe" style={{ left: `${frame.time / duration * 100}%` }} onClick={event => { event.stopPropagation(); selectAsset(asset.id); seek(frame.time); }} onDoubleClick={() => removeKeyframe(asset.id, frame.id)} title="Click to seek; double-click to delete"/>)}</div><button className="camera-track-clear" onClick={() => clearLayerKeyframes(asset.id)} disabled={!asset.keyframes?.length} title="Clear layer keyframes"><Trash2 size={11}/></button></div>)}
+      <div className="camera-timeline-row camera-focus-track"><span className="camera-track-name"><Crosshair size={11}/>Camera</span><div className="camera-track-lane" onClick={scrub}><Playhead/>{points.map((point, index) => { const at = drag?.id === point.id ? drag.time : point.time; return <button key={point.id} className={`camera-timeline-point ${activeId === point.id ? 'is-active' : ''}`} style={{ left: `${at / duration * 100}%` }} onPointerDown={event => beginMarker(event, point)} onPointerMove={dragMarker} onPointerUp={endMarker} onClick={event => { event.stopPropagation(); select(point.id); }}>{index + 1}</button>; })}</div><span/></div>
     </div>
-    <div className="camera-timeline-track" onClick={scrub}>
-      <div className="camera-timeline-fill" style={{ width: `${(time / duration) * 100}%` }}/>
-      <span className="camera-playhead" style={{ left: `${(time / duration) * 100}%` }}/>
-      {(layerKeyframes || []).map(frame => <button key={frame.id} className="camera-layer-keyframe" style={{ left: `${(frame.time / duration) * 100}%` }} onClick={event => { event.stopPropagation(); seek(frame.time); }} title={`Layer keyframe at ${frame.time.toFixed(1)} seconds`}/>)}
-      {points.map((point, index) => { const markerTime = drag?.id === point.id ? drag.time : point.time; return <button key={point.id} className={`camera-timeline-point ${activeId === point.id ? 'is-active' : ''}`} style={{ left: `${(markerTime / duration) * 100}%` }} onPointerDown={event => beginMarker(event, point)} onPointerMove={dragMarker} onPointerUp={endMarker} onClick={event => { event.stopPropagation(); if (ignoreClick.current) { ignoreClick.current = false; return; } select(point.id); }} title={`Drag interest point ${index + 1} to change its time`}>{index + 1}</button>; })}
-    </div>
-    <div className="camera-timeline-items">{points.map((point, index) => <button key={point.id} className={activeId === point.id ? 'is-active' : ''} onClick={() => { select(point.id); seek(point.time); }}><span>{index + 1}</span>{point.time.toFixed(1)}s<i>X {Math.round(point.x * 100)} · Y {Math.round(point.y * 100)}</i><b onClick={event => { event.stopPropagation(); remove(point.id); }} aria-label={`Delete interest point ${index + 1}`}><Trash2 size={11}/></b></button>)}</div>
+    <div className="camera-keyframe-items">{selectedFrames.map(frame => <button key={frame.id} onClick={() => seek(frame.time)}>{frame.time.toFixed(2)}s <b onClick={event => { event.stopPropagation(); removeKeyframe(selectedAssetId, frame.id); }}><Trash2 size={10}/></b></button>)}</div>
   </section>;
 }

@@ -31,7 +31,7 @@ export default async function createCameraRenderer(canvas, assets) {
         const state = assetStates.find(item => item.id === layer.id) || {}, transform = state.previewing ? state.transform : layerTransformAt(state, time, settings.easing);
         const aspect = layer.media.width / layer.media.height, h = Math.min(4.4, 5 * camera.aspect / aspect), w = h * aspect, key = `${w}:${h}:${settings.radius}`;
         if (layer.shape !== key) { layer.screen.geometry.dispose(); layer.screen.geometry = cameraScreenGeometry(w, h, settings.radius); layer.shadow.scale.set(w * 1.25, h * 1.25, 1); layer.shape = key; }
-        layer.root.position.set(transform.x * viewWidth, -transform.y * viewHeight, index * .025); layer.root.scale.setScalar(transform.scale); layer.root.rotation.z = THREE.MathUtils.degToRad(transform.rotation); layer.material.opacity = transform.opacity; layer.root.visible = transform.visible !== false; layer.shadowMaterial.opacity = settings.shadow * transform.opacity;
+        layer.root.position.set(transform.x * viewWidth, -transform.y * viewHeight, index * .025); layer.root.scale.set(transform.scale * (transform.scaleX || 1), transform.scale * (transform.scaleY || 1), transform.scale); layer.root.rotation.z = THREE.MathUtils.degToRad(transform.rotation); layer.material.opacity = transform.opacity; layer.root.visible = transform.visible !== false; layer.shadowMaterial.opacity = settings.shadow * transform.opacity;
       });
       const p = Math.max(0, Math.min(1, time / settings.duration)), baseEase = cameraEase(p, settings.easing), wave = Math.sin(p * Math.PI * 2);
       let x = settings.x, y = settings.y, z = settings.z, zoom = settings.zoom; stage.position.set(0, 0, 0);
