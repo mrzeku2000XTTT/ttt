@@ -13,8 +13,9 @@ import ETASearchAnimationScene from './ETASearchAnimationScene';
 import ETASearchAnimation2Scene from './ETASearchAnimation2Scene';
 import ETALogoAnimationScene from './ETALogoAnimationScene';
 import ETAUIAnimationScene from './ETAUIAnimationScene';
+import { sampleAutoKeyframes } from '@/lib/etaAutoKeyframes';
 
-export default function ETAAnimatedVisual({ scene, advanced, browser, frameProgress }) {
+function VisualContent({ scene, advanced, browser, frameProgress }) {
   const props = { scene, advanced, frameProgress };
   if (scene.component === 'TitleCard') return <TitleScene {...props} />;
   if (scene.component === 'NumberDisplay') return <NumberScene {...props} />;
@@ -34,4 +35,12 @@ export default function ETAAnimatedVisual({ scene, advanced, browser, frameProgr
   if (scene.component === 'Cards4') return <ETACards4Scene {...props} />;
   if (['Cards', 'Cards2'].includes(scene.component)) return <ETACardsScene {...props} />;
   return <TitleScene {...props} />;
+}
+
+export default function ETAAnimatedVisual({ scene, advanced, browser, frameProgress }) {
+  const content = <VisualContent scene={scene} advanced={advanced} browser={browser} frameProgress={frameProgress} />;
+  if (!Number.isFinite(frameProgress) || advanced.autoMotionEnabled === false) return content;
+  const state = sampleAutoKeyframes(scene, advanced, frameProgress);
+  const transform = `translate3d(${Number(state.x || 0)}px,${Number(state.y || 0)}px,${Number(state.z || 0)}px) rotateX(${Number(state.rotateX || 0)}deg) rotateY(${Number(state.rotateY || 0)}deg) rotateZ(${Number(state.rotateZ || 0)}deg) scale(${Number(state.scale || 1)})`;
+  return <div className="flex h-full w-full items-center justify-center" style={{ perspective: 1200 }}><div className="flex h-full w-full items-center justify-center" style={{ transform, transformStyle: 'preserve-3d', willChange: 'transform' }}>{content}</div></div>;
 }

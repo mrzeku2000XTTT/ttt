@@ -19,6 +19,7 @@ export const etaAdvancedSchema = { type:'object', properties:{
   subtitle:string, searchText:string, url:string, pageTitle:string, pageSubtitle:string, ctaLabel:string, browserRows:{type:'array',items:string}, videoMedia, videoObjectFit:string,
   browserKeyframes:{type:'array',items:browserKeyframe}, zoomKeyframes:{type:'array',items:zoomKeyframe}, cursorSteps:{type:'array',items:cursorStep}, textKeyframes:{type:'array',items:textKeyframe}, ringKeyframes:{type:'array',items:ringKeyframe}, haloMoveKeyframes:{type:'array',items:haloMoveKeyframe}, cardZoomKeyframes:{type:'array',items:cardZoomKeyframe}, matchCut,
   animatedBorder:{type:'boolean'}, showShell:{type:'boolean'}, backgroundColor:string, boxShadow:string, pillBackground:string, pillTextColor:string,
+  autoMotionEnabled:{type:'boolean'}, autoMotionPreset:string, autoMotionIntensity:number, autoTransformKeyframes:{type:'array',items:device3DKeyframe},
   textContent:string, fontSize:string, fontWeight:number, fontFamily:string, textColor:string, zIndex:number, textLeft:number, framesPerCharacter:number, typingStartFrame:number, pillStartFrame:number, pillEndFrame:number, searchBackground:string,
   cursorDelay:number, cursorMoveDuration:number, cursorClickDuration:number, cursorClick:{type:'boolean'}, cursorStartX:number, cursorStartY:number, cursorEndX:number, cursorEndY:number, cursorSize:number, morphBoxes:{type:'array',items:morphBox},
   typingSpeed:number, entranceStartScale:number, entranceEndScale:number, entranceStiffness:number, entranceDamping:number,
