@@ -19,7 +19,7 @@ export default function CameraStudioStage({ asset, settings, playing, engineRef,
       const tick = now => {
         const config = latest.current;
         const currentTime = config.playing ? ((now - start.current) / 1000) % config.settings.duration : config.playhead;
-        if (!engine.exporting) engine.draw(config.settings, currentTime, config.playing, config.interestPoints);
+        if (!engine.exporting) engine.draw(config.settings, currentTime, config.settings.mode === 'video', config.interestPoints);
         if (config.playing && now - lastTimeUpdate.current > 80) { lastTimeUpdate.current = now; onTime(currentTime); }
         frame = requestAnimationFrame(tick);
       };

@@ -17,16 +17,16 @@ export default async function createCameraRenderer(canvas, file) {
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material); screen.renderOrder = 2; group.add(screen);
   const shadowTexture = cameraShadowTexture(), shadowMaterial = new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, opacity: .24, depthWrite: false, side: THREE.DoubleSide });
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), shadowMaterial); shadow.position.set(0, -.08, -.06); shadow.renderOrder = 1; group.add(shadow);
-  let lastShape = '', lastRatio = '', disposed = false, planeWidth = 1, planeHeight = 1;
+  let lastShape = '', lastRatio = '', disposed = false;
   const engine = { canvas, media, exporting: false, disposed: false,
     draw(settings, time = 0, animate = false, interestPoints = []) {
       if (disposed) return;
       const [width, height] = CAMERA_SIZES[settings.ratio];
+      camera.position.set(0, 0, 9); camera.zoom = 1; camera.clearViewOffset();
       if (lastRatio !== settings.ratio) { renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); lastRatio = settings.ratio; }
       const key = `${settings.ratio}:${settings.radius}`;
       if (lastShape !== key) {
         const aspect = media.width / media.height, h = Math.min(4.4, 5 * camera.aspect / aspect), w = h * aspect;
-        planeWidth = w; planeHeight = h;
         screen.geometry.dispose(); screen.geometry = cameraScreenGeometry(w, h, settings.radius);
         shadow.scale.set(w * 1.25, h * 1.25, 1); lastShape = key;
       }
@@ -41,21 +41,26 @@ export default async function createCameraRenderer(canvas, file) {
       let focus = null;
       if (interestPoints.length) {
         const ordered = [...interestPoints].sort((a, b) => a.time - b.time);
-        if (ordered[0].time > 0) ordered.unshift({ time: 0, x: .5, y: .5 });
+        if (ordered[0].time > 0) ordered.unshift({ time: 0, x: .5, y: .5, width: 1, height: 1 });
         const nextIndex = ordered.findIndex(point => point.time >= time);
         const next = nextIndex < 0 ? ordered.at(-1) : ordered[nextIndex];
         const previous = nextIndex <= 0 ? next : ordered[nextIndex - 1];
         const span = Math.max(.001, next.time - previous.time);
         const mix = next === previous ? 1 : Math.max(0, Math.min(1, (time - previous.time) / span));
         const smooth = mix * mix * (3 - 2 * mix);
-        focus = { x: previous.x + (next.x - previous.x) * smooth, y: previous.y + (next.y - previous.y) * smooth };
+        const previousWidth = previous.width || .18, nextWidth = next.width || .18;
+        const previousHeight = previous.height || previousWidth * camera.aspect, nextHeight = next.height || nextWidth * camera.aspect;
+        focus = { x: previous.x + (next.x - previous.x) * smooth, y: previous.y + (next.y - previous.y) * smooth, width: previousWidth + (nextWidth - previousWidth) * smooth, height: previousHeight + (nextHeight - previousHeight) * smooth };
       }
       const rotation = new THREE.Euler(THREE.MathUtils.degToRad(x), THREE.MathUtils.degToRad(y), THREE.MathUtils.degToRad(z), 'XYZ');
       group.rotation.copy(rotation); group.scale.setScalar(zoom);
       if (focus) {
-        const target = new THREE.Vector3((focus.x - .5) * planeWidth, (.5 - focus.y) * planeHeight, 0).multiplyScalar(zoom).applyEuler(rotation);
-        group.position.x = -target.x; group.position.y = -target.y;
+        const crop = Math.max(.04, Math.min(1, Math.max(focus.width, focus.height)));
+        const centerX = Math.max(crop / 2, Math.min(1 - crop / 2, focus.x));
+        const centerY = Math.max(crop / 2, Math.min(1 - crop / 2, focus.y));
+        camera.setViewOffset(width, height, (centerX - crop / 2) * width, (centerY - crop / 2) * height, crop * width, crop * height);
       }
+      camera.updateProjectionMatrix();
       shadowMaterial.opacity = settings.shadow; renderer.setClearColor(settings.background, 1); renderer.render(scene, camera);
     },
     dispose() { disposed = true; engine.disposed = true; media.dispose(); texture.dispose(); shadowTexture.dispose(); material.dispose(); shadowMaterial.dispose(); screen.geometry.dispose(); shadow.geometry.dispose(); renderer.dispose(); }
