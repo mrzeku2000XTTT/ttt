@@ -434,7 +434,7 @@ const AuthenticatedApp = () => {
       <Route path="/UI" element={<UIHubPage />} />
       <Route path="/UI/Camera" element={<AdminRoute><UIEmbedPage /></AdminRoute>} />
       <Route path="/CameraStudio" element={<CameraStudio />} />
-      <Route path="/KaChat" element={<KaChatPage />} />
+      <Route path="/KaChat" element={<AdminRoute><KaChatPage /></AdminRoute>} />
       <Route path="/MealPlan" element={<MealPlanPage />} />
       <Route path="/FitForge" element={<FitForgePage />} />
       <Route path="/BudgetCoach" element={<BudgetCoachPage />} />
