@@ -9,6 +9,9 @@ export function normalizeEtaValue(value) {
     const payloadKey = keys.find((key) => key !== "id");
     return normalizeEtaValue(value[payloadKey]);
   }
+  if (keys.length === 1 && (value[keys[0]] === null || typeof value[keys[0]] !== "object")) {
+    return normalizeEtaValue(value[keys[0]]);
+  }
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeEtaValue(item)]));
 }
 
