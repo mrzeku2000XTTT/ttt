@@ -190,7 +190,7 @@ export default function CamAIAgent({ address, context, onAction, onGraph, media,
   if (!open) return <button className="cm-ai-dot" onClick={() => setOpen(true)} title="CAM AI Agent"><Camera /></button>;
   return (
     <div className="cm-ai-floater">
-      <div className="cm-ai-head"><Camera /><strong>CAM AI Agent</strong><button onClick={() => setOpen(false)} title="Hide"><X /></button></div>
+      <div className="cm-ai-head"><Camera /><strong>Director</strong><button onClick={() => setOpen(false)} title="Hide"><X /></button></div>
       <div ref={chatEl} className="cm-ai-chat">
         {messages.map((m, i) => m.r === 'd' ? (
           <div key={i} className="cm-ai-msg d"><b>DIRECTOR&apos;S PROMPT</b>{m.t}</div>
@@ -216,7 +216,7 @@ export default function CamAIAgent({ address, context, onAction, onGraph, media,
       )}
       <div className="cm-ai-row">
         <label className="cm-ai-input-wrap">
-          <input value={prompt} onChange={(e) => setPrompt(e.target.value)} onPaste={onPaste} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="Paste an image or call the shot…" />
+          <input value={prompt} onChange={(e) => setPrompt(e.target.value)} onPaste={onPaste} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder="Ask Director to control this scene…" />
         </label>
         <button onClick={send} disabled={busy} title="Run it">{busy ? <Loader2 className="animate-spin" /> : <Send />}</button>
       </div>

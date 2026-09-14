@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MOVES, moveById, drawInto } from './camMoves';
 import { base44 } from '@/api/base44Client';
@@ -40,8 +41,9 @@ export default function CAMStudio({ address, onHome }) {
   const [playing, setPlaying] = useState(false);
   const [mode, setMode] = useState('move'); // 'move' | 'seq'
   const [viewZoom, setViewZoom] = useState(0.85); // framing zoom — zoomed out a touch by default
-  const [splitPct, setSplitPct] = useState(50); // viewer split — 2D vs 3D pane sizes
+  const [splitPct, setSplitPct] = useState(100); // viewer split — 2D-only by default, drag out the 3D rig anytime
   const [maxPane, setMaxPane] = useState(null); // 'media' | 'camera' | 'nodes' | null
+  const [uiHidden, setUiHidden] = useState(false);
   const [seqIdx, setSeqIdx] = useState(0);
   const [shots, setShots] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`cam_shots_${address}`)) || []; } catch { return []; }
@@ -288,6 +290,11 @@ export default function CAMStudio({ address, onHome }) {
     timeline.leave();
     setMode('seq'); pRef.current = 0; seqIdxRef.current = 0; setSeqIdx(0); setPlaying(true);
   };
+  // the Move / Sequence pill in the toolbar
+  const pickMode = (next) => {
+    if (next === 'seq') playSequence();
+    else { timeline.leave(); setMode('move'); setPlaying(false); pRef.current = 0; }
+  };
   const addShot = () => setShots((prev) => [...prev, { id: Date.now(), move: moveId, intensity, duration }]);
   const loadShot = (shot) => {
     timeline.leave();
@@ -398,8 +405,8 @@ export default function CAMStudio({ address, onHome }) {
 
   if (fusionOn) {
     return (
-      <div className="cm-page cm-fusion-shell">
-        <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} />
+      <div className={`cm-page cm-fusion-shell ${uiHidden ? 'cm-ui-hidden' : ''}`}>
+        <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} uiHidden={uiHidden} onToggleUi={() => setUiHidden((v) => !v)} mode={mode} onModePick={null} canSeq={false} />
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
         <div className="cm-fusion-work">
           <main className="cm-fusion-center">
@@ -419,8 +426,9 @@ export default function CAMStudio({ address, onHome }) {
   }
 
   return (
-    <div data-mobile-view={mobileView} className={`cm-page cm-fusion-shell cm-editing-shell ${maxPane === 'nodes' ? 'is-max-nodes' : ''}`}>
-      <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} />
+    <div data-mobile-view={mobileView} className={`cm-page cm-fusion-shell cm-editing-shell ${maxPane === 'nodes' ? 'is-max-nodes' : ''} ${uiHidden ? 'cm-ui-hidden' : ''}`}>
+      {uiHidden && <button className="cm-ui-restore" onClick={() => setUiHidden(false)}><Eye size={14} /><span>Show controls</span></button>}
+      <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} uiHidden={uiHidden} onToggleUi={() => setUiHidden((v) => !v)} mode={mode} onModePick={pickMode} canSeq={!!img && shots.length > 0} />
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
       <input ref={mediaInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => Array.from(e.target.files || []).forEach(addMedia)} />
       <CamMobileViews view={mobileView} onChange={changeMobileView}/>
