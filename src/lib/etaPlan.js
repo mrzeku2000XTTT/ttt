@@ -1,5 +1,4 @@
 import { base44 } from "@/api/base44Client";
-import { etaAdvancedSchema } from "@/lib/etaAdvancedSchema";
 import { buildETADirectorPrompt } from "@/lib/etaDirectorPrompt";
 export { ETA_COMPONENTS } from "@/lib/etaComponents";
 
@@ -35,9 +34,9 @@ const sceneSchema = {
     voiceover: { type: "string" }, visual: { type: "string" },
     motion: { type: "string" }, transition: { type: "string" },
     hyperframe_animation: { type: "string", enum: ["fade_in", "fade_out", "slide_up", "slide_left", "pop", "typewriter", "zoom", "shake"] },
-    advanced: etaAdvancedSchema,
+    advanced_json: { type: "string" },
   },
-  required: ["component", "purpose", "duration", "headline", "voiceover", "visual", "motion", "transition", "hyperframe_animation", "advanced"],
+  required: ["component", "purpose", "duration", "headline", "voiceover", "visual", "motion", "transition", "hyperframe_animation", "advanced_json"],
 };
 
 export async function createETAPlan(brief, files, onStatus) {
@@ -54,11 +53,12 @@ export async function createETAPlan(brief, files, onStatus) {
       file_urls: uploads.length ? uploads : undefined,
       response_json_schema: {
         type: "object",
+        additionalProperties: false,
         properties: { title: { type: "string" }, narrative: { type: "string" }, scenes: { type: "array", items: sceneSchema } },
         required: ["title", "narrative", "scenes"],
       },
     });
-    currentPlan = { ...result, format: brief.format, fps: 60, scenes: result.scenes.map((scene) => ({ ...scene, advanced: scene.advanced || {} })) };
+    currentPlan = { ...result, format: brief.format, fps: 60, scenes: result.scenes.map(({ advanced_json, ...scene }) => ({ ...scene, advanced: JSON.parse(advanced_json) })) };
   }
   return currentPlan;
 }

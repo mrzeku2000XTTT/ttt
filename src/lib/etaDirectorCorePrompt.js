@@ -44,6 +44,6 @@ Use 60 FPS and convert frames as frame = seconds × 60. Keep entrance motion ear
 FINAL VALIDATION
 Silently verify intent fit, title, narrative, scene count, supported components, all required fields, component-appropriate advanced values, complete animated keyframes, ordered in-range timing, valid selectors, complete coherent Match Cuts, readable styling, no placeholders, no unsupported names or fields, no runtime randomness, camera motion on static media, editability, schema validity, and immediate compile readiness. Repair every failure before responding.
 
-OUTPUT
-Return only one valid JSON object matching the supplied response schema, with title, narrative, and scenes. No markdown, commentary, analysis, notes, or apologies.`;
+OUTPUT TRANSPORT
+Return only one valid JSON object matching the supplied response schema, with title, narrative, and scenes. Each scene must place its entire complete advanced configuration in advanced_json as a string containing valid JSON object syntax. Do not return an advanced field directly. advanced_json must parse without cleanup and must contain every universal and component-specific value required above. No markdown, commentary, analysis, notes, or apologies.`;
 }
