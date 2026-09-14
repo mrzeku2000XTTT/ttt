@@ -4,8 +4,8 @@ export default function CameraStudioLibrary({ assets, selected, select, remove, 
   const items = useMemo(() => assets.map(asset => ({ ...asset, url: URL.createObjectURL(asset.file) })), [assets]);
   useEffect(() => () => items.forEach(item => URL.revokeObjectURL(item.url)), [items]);
   return <aside className="camera-library" aria-label="Media library">
-    <header><strong>Project / Assets</strong><button onClick={close} aria-label="Close library"><X size={16}/></button></header>
-    <p>Choose the media to place on your canvas.</p>
+    <header><strong>Project / Visual layers</strong><button onClick={close} aria-label="Close library"><X size={16}/></button></header>
+    <p>Every item is a visual layer. Select it, then drag or resize it directly on the canvas.</p>
     <div className="camera-library-grid">{items.map(item => <div className="camera-asset" key={item.id}>
       <button onClick={() => select(item.id)} aria-pressed={selected === item.id} title={item.name}>
         {item.file.type.startsWith('video/') ? <video src={item.url} muted playsInline preload="metadata"/> : <img src={item.url} alt={item.name}/>}

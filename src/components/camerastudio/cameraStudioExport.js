@@ -4,27 +4,27 @@ export function downloadCameraBlob(blob, name) {
   link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
-export async function exportCameraPhoto(engine, settings, name) {
+export async function exportCameraPhoto(engine, settings, name, assets = []) {
   engine.exporting = true;
   try {
-    if (engine.media.video) engine.media.element.pause();
-    engine.draw(settings, 0, false);
+    engine.medias.forEach(media => media.video && media.element.pause());
+    engine.draw(settings, 0, false, [], assets);
     const blob = await new Promise(resolve => engine.canvas.toBlob(resolve, 'image/png'));
     if (!blob) throw new Error('Photo export failed. Please try again.');
     downloadCameraBlob(blob, `${name || 'camera-studio'}.png`);
   } finally { engine.exporting = false; }
 }
-export async function exportCameraVideo(engine, settings, name, progress, interestPoints = []) {
+export async function exportCameraVideo(engine, settings, name, progress, interestPoints = [], assets = []) {
   if (typeof MediaRecorder === 'undefined' || !engine.canvas.captureStream) throw new Error('Video export is not supported in this browser. Try Chrome or Edge, or export a photo.');
   const mime = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(type => MediaRecorder.isTypeSupported(type));
   if (!mime) throw new Error('No supported video encoder. Try Chrome or Edge.');
-  const media = engine.media, element = media.element, oldTime = media.video ? element.currentTime : 0;
+  const videos = engine.medias.filter(media => media.video), oldTimes = videos.map(media => media.element.currentTime);
   let stream, recorder, frame, rejectRun;
   engine.exporting = true;
   const abort = () => { if (document.hidden) rejectRun?.(new Error('Export interrupted: keep this tab visible and try again.')); };
   try {
-    if (media.video) { element.pause(); await seekCameraVideo(element, 0); await element.play(); }
-    engine.draw(settings, 0, true, interestPoints); stream = engine.canvas.captureStream(60);
+    await Promise.all(videos.map(async media => { media.element.pause(); await seekCameraVideo(media.element, 0); await media.element.play(); }));
+    engine.draw(settings, 0, true, interestPoints, assets); stream = engine.canvas.captureStream(60);
     recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12000000 });
     const chunks = [];
     const result = new Promise((resolve, reject) => {
@@ -38,7 +38,7 @@ export async function exportCameraVideo(engine, settings, name, progress, intere
     const tick = now => {
       if (engine.disposed) { rejectRun(new Error('Export stopped because the editor was closed.')); return; }
       const elapsed = (now - start) / 1000;
-      engine.draw(settings, Math.min(elapsed, settings.duration), true, interestPoints); progress(Math.min(1, elapsed / settings.duration));
+      engine.draw(settings, Math.min(elapsed, settings.duration), true, interestPoints, assets); progress(Math.min(1, elapsed / settings.duration));
       if (elapsed >= settings.duration) { recorder.stop(); return; }
       frame = requestAnimationFrame(tick);
     };
@@ -49,6 +49,6 @@ export async function exportCameraVideo(engine, settings, name, progress, intere
     cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', abort);
     if (recorder?.state === 'recording') recorder.stop(); stream?.getTracks().forEach(track => track.stop());
     engine.exporting = false;
-    if (media.video && !engine.disposed) { element.pause(); await seekCameraVideo(element, oldTime); }
+    if (!engine.disposed) await Promise.all(videos.map(async (media, index) => { media.element.pause(); await seekCameraVideo(media.element, oldTimes[index]); }));
   }
 }

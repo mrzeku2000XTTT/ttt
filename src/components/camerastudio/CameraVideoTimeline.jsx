@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Trash2, Crosshair } from 'lucide-react';
-export default function CameraVideoTimeline({ duration, time, playing, togglePlay, points, activeId, select, remove, move, preview, seek }) {
+export default function CameraVideoTimeline({ duration, time, playing, togglePlay, points, activeId, select, remove, move, preview, seek, easing }) {
   const [drag, setDrag] = useState(null), markerDrag = useRef(null), ignoreClick = useRef(false);
   const markerTime = event => { const rect = event.currentTarget.parentElement.getBoundingClientRect(); return Math.max(0, Math.min(duration, ((event.clientX - rect.left) / rect.width) * duration)); };
   const beginMarker = (event, point) => { event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); markerDrag.current = { id: point.id, moved: false }; setDrag({ id: point.id, time: point.time }); select(point.id); };
@@ -19,7 +19,7 @@ export default function CameraVideoTimeline({ duration, time, playing, togglePla
     <div className="camera-timeline-head">
       <div className="camera-timeline-controls"><button onClick={() => jump(-1)} title="Previous interest point"><SkipBack size={13}/></button><button onClick={togglePlay} title={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={14}/> : <Play size={14}/>}</button><button onClick={() => jump(1)} title="Next interest point"><SkipForward size={13}/></button></div>
       <span className="camera-timecode">{time.toFixed(1)}s / {duration.toFixed(1)}s</span>
-      <span className="camera-timeline-label"><Crosshair size={12}/>{points.length} interest {points.length === 1 ? 'point' : 'points'}<em>Auto keyframes</em></span>
+      <span className="camera-timeline-label"><Crosshair size={12}/>{points.length} interest {points.length === 1 ? 'point' : 'points'}<em>{easing === 'auto' ? 'Auto easing' : easing}</em></span>
     </div>
     <div className="camera-timeline-track" onClick={scrub}>
       <div className="camera-timeline-fill" style={{ width: `${(time / duration) * 100}%` }}/>

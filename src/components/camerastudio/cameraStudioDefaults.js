@@ -1,3 +1,3 @@
-export const CAMERA_DEFAULTS = { x: 0, y: 0, z: 0, zoom: 1, radius: 0.08, shadow: 0.24, background: '#f7f8fa', ratio: '16:9', mode: 'photo', motion: 'push', duration: 6 };
+export const CAMERA_DEFAULTS = { x: 0, y: 0, z: 0, zoom: 1, radius: 0.08, shadow: 0.24, background: '#f7f8fa', ratio: '16:9', mode: 'photo', motion: 'push', easing: 'auto', duration: 6 };
 export const CAMERA_SIZES = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:3': [1440, 1080] };
 export const emptyCameraProject = () => ({ name: 'Untitled', assets: [], selected: null, editorMode: 'operator', interestPoints: [], settings: { ...CAMERA_DEFAULTS } });

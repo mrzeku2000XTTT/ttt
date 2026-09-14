@@ -29,7 +29,7 @@ export default function useCameraProject() {
   const add = files => {
     const all = Array.from(files || []), valid = all.filter(file => /^(image\/(png|jpeg|webp|avif|gif)|video\/)/.test(file.type) && file.size <= 200 * 1024 * 1024);
     if (valid.length !== all.length) setError('Use PNG, JPG, WEBP, AVIF, GIF or video files up to 200 MB each.');
-    if (valid.length) dispatch({ type: 'add', assets: valid.map(file => ({ id: crypto.randomUUID(), name: file.name, file })) });
+    if (valid.length) dispatch({ type: 'add', assets: valid.map((file, index) => ({ id: crypto.randomUUID(), name: file.name, file, transform: { x: Math.min(.2, (state.project.assets.length + index) * .035), y: Math.min(.2, (state.project.assets.length + index) * .035), scale: 1, rotation: 0, opacity: 1, visible: true } })) });
   };
   return { ...state, loaded, status, error, setError, add, update: patch => dispatch({ type: 'settings', patch }), patch: patch => dispatch({ type: 'patch', patch }), remove: id => dispatch({ type: 'remove', id }), undo: () => dispatch({ type: 'undo' }) };
 }
