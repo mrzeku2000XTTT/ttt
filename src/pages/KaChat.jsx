@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Monitor } from "lucide-react";
 import BackToStore from "@/components/BackToStore";
 
-const KACHAT_URL = "https://kachat.app/";
+const KACHAT_URL = "https://kachat.app/desktop/";
 const KACHAT_LOGO = "https://play-lh.googleusercontent.com/EWz3-rGxKEkQSvqpfP8-RNoj2HVYn8_eA5WrbdGlH5ipbTzn-Qawz1o0YPDIjk6JSsH1pXANtkPH9RKN25uXzg=w240-h480-rw";
 
 export default function KaChat() {
