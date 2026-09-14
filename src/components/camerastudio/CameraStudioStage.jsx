@@ -6,10 +6,12 @@ import CameraAssetOverlay from '@/components/camerastudio/CameraAssetOverlay';
 import CameraMotionPenOverlay from '@/components/camerastudio/CameraMotionPenOverlay';
 import { CAMERA_SIZES } from '@/components/camerastudio/cameraStudioDefaults';
 import { layerTransformAt } from '@/components/camerastudio/cameraLayerAnimation';
-export default function CameraStudioStage({ asset, assets, selected, settings, playing, engineRef, add, upload, busy, onReady, onError, interestPoints, overlayPoints, playhead, onTime, armed, activePointId, onSelectPoint, onPlacePoint, onPreviewPoint, onMovePoint, showFocus, layersEditable, selectAsset, previewAsset, commitAsset, drawMode, onDrawPath }) {
-  const canvas = useRef(null), box = useRef(null), latest = useRef({ settings, playing, interestPoints, playhead, assets }), start = useRef(0), lastTimeUpdate = useRef(0);
+import { cameraTransformAt } from '@/components/camerastudio/cameraTransformAnimation';
+import CameraXYZOverlay from '@/components/camerastudio/CameraXYZOverlay';
+export default function CameraStudioStage({ asset, assets, selected, settings, playing, engineRef, add, upload, busy, onReady, onError, interestPoints, overlayPoints, playhead, onTime, armed, activePointId, onSelectPoint, onPlacePoint, onPreviewPoint, onMovePoint, showFocus, layersEditable, selectAsset, previewAsset, commitAsset, drawMode, onDrawPath, cameraKeyframes, showXYZ }) {
+  const canvas = useRef(null), box = useRef(null), latest = useRef({ settings, playing, interestPoints, playhead, assets, cameraKeyframes }), start = useRef(0), lastTimeUpdate = useRef(0);
   const [bounds, setBounds] = useState([800, 450]), [loading, setLoading] = useState(false), [dragging, setDragging] = useState(false);
-  latest.current = { settings, playing, interestPoints, playhead, assets };
+  latest.current = { settings, playing, interestPoints, playhead, assets, cameraKeyframes };
   useEffect(() => { const observer = new ResizeObserver(([entry]) => setBounds([entry.contentRect.width, entry.contentRect.height])); observer.observe(box.current); return () => observer.disconnect(); }, []);
   useEffect(() => {
     let active = true, engine, frame;
@@ -22,7 +24,7 @@ export default function CameraStudioStage({ asset, assets, selected, settings, p
       const tick = now => {
         const config = latest.current;
         const currentTime = config.playing ? ((now - start.current) / 1000) % config.settings.duration : config.playhead;
-        if (!engine.exporting) engine.draw(config.settings, currentTime, config.settings.mode === 'video', config.interestPoints, config.assets);
+        if (!engine.exporting) engine.draw(config.settings, currentTime, config.settings.mode === 'video', config.interestPoints, config.assets, config.cameraKeyframes);
         if (config.playing && now - lastTimeUpdate.current > 32) { lastTimeUpdate.current = now; onTime(currentTime); }
         frame = requestAnimationFrame(tick);
       };
@@ -42,6 +44,7 @@ export default function CameraStudioStage({ asset, assets, selected, settings, p
   return <div ref={box} className="relative flex h-full w-full items-center justify-center" onDragOver={e => { e.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) add(e.dataTransfer.files); }}>
     <div className="camera-frame" style={{ width, height: width / ratio }}>
       <canvas ref={canvas} aria-label="Live 3D media preview"/>
+      {showXYZ && <CameraXYZOverlay transform={cameraTransformAt(settings, cameraKeyframes, playhead, true)} time={playhead}/>} 
       {asset && <CameraMotionPenOverlay active={drawMode} onComplete={onDrawPath}/>}
       {asset && layersEditable && <CameraAssetOverlay assets={overlayAssets} aspects={engineRef.current?.aspects || {}} ratio={settings.ratio} selected={selected} select={selectAsset} preview={previewAsset} commit={commitAsset}/>} 
       {asset && showFocus && <CameraFocusOverlay points={overlayPoints} activeId={activePointId} armed={armed} onSelect={onSelectPoint} onPlace={onPlacePoint} onPreview={onPreviewPoint} onMove={onMovePoint}/>} 

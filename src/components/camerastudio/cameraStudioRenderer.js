@@ -4,6 +4,7 @@ import { loadCameraMedia } from '@/components/camerastudio/cameraStudioMedia';
 import { CAMERA_SIZES } from '@/components/camerastudio/cameraStudioDefaults';
 import { cameraEase } from '@/components/camerastudio/cameraEasing';
 import { layerTransformAt } from '@/components/camerastudio/cameraLayerAnimation';
+import { cameraTransformAt } from '@/components/camerastudio/cameraTransformAnimation';
 export default async function createCameraRenderer(canvas, assets) {
   const loaded = await Promise.all(assets.map(async asset => ({ asset, media: await loadCameraMedia(asset.file) })));
   let renderer;
@@ -22,7 +23,7 @@ export default async function createCameraRenderer(canvas, assets) {
   });
   let lastRatio = '', disposed = false;
   const engine = { canvas, media: loaded[0]?.media, medias: loaded.map(item => item.media), exporting: false, disposed: false, aspects: Object.fromEntries(loaded.map(item => [item.asset.id, item.media.width / item.media.height])),
-    draw(settings, time = 0, animate = false, interestPoints = [], assetStates = assets) {
+    draw(settings, time = 0, animate = false, interestPoints = [], assetStates = assets, cameraKeyframes = []) {
       if (disposed) return;
       const [width, height] = CAMERA_SIZES[settings.ratio]; camera.position.set(0, 0, 9); camera.zoom = 1; camera.clearViewOffset();
       if (lastRatio !== settings.ratio) { renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); lastRatio = settings.ratio; }
@@ -33,9 +34,8 @@ export default async function createCameraRenderer(canvas, assets) {
         if (layer.shape !== key) { layer.screen.geometry.dispose(); layer.screen.geometry = cameraScreenGeometry(w, h, settings.radius); layer.shadow.scale.set(w * 1.25, h * 1.25, 1); layer.shape = key; }
         layer.root.position.set(transform.x * viewWidth, -transform.y * viewHeight, index * .025); layer.root.scale.set(transform.scale * (transform.scaleX || 1), transform.scale * (transform.scaleY || 1), transform.scale); layer.root.rotation.z = THREE.MathUtils.degToRad(transform.rotation); layer.material.opacity = transform.opacity; layer.root.visible = transform.visible !== false; layer.shadowMaterial.opacity = settings.shadow * transform.opacity;
       });
-      const p = Math.max(0, Math.min(1, time / settings.duration)), baseEase = cameraEase(p, settings.easing), wave = Math.sin(p * Math.PI * 2);
-      let x = settings.x, y = settings.y, z = settings.z, zoom = settings.zoom; stage.position.set(0, 0, 0);
-      if (animate) { if (settings.motion === 'push') zoom *= 1 + .12 * Math.sin(Math.PI * baseEase) ** 2; if (settings.motion === 'orbit') { y += wave * 12; x += Math.sin(p * Math.PI) * 5; } if (settings.motion === 'float') { stage.position.y = wave * .14; z += wave * 2; } }
+      const p = Math.max(0, Math.min(1, time / settings.duration)), wave = Math.sin(p * Math.PI * 2), cameraTransform = cameraTransformAt(settings, cameraKeyframes, time, animate);
+      let { x, y, z, zoom } = cameraTransform; stage.position.set(0, animate && settings.motion === 'float' ? wave * .14 : 0, 0);
       if (interestPoints.length) {
         const ordered = [...interestPoints].sort((a, b) => a.time - b.time); if (ordered[0].time > 0) ordered.unshift({ time: 0, x: .5, y: .5, width: 1, height: 1 });
         const nextIndex = ordered.findIndex(point => point.time >= time), next = nextIndex < 0 ? ordered.at(-1) : ordered[nextIndex], previous = nextIndex <= 0 ? next : ordered[nextIndex - 1], span = Math.max(.001, next.time - previous.time), mix = next === previous ? 1 : Math.max(0, Math.min(1, (time - previous.time) / span));

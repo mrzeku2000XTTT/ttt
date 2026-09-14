@@ -19,7 +19,7 @@ export default function CameraStudioDock({ settings, update, exporting, progress
         <button className="camera-shutter" disabled={!ready || exporting} onClick={capture} title={settings.mode === 'photo' ? 'Download PNG' : 'Export silent video'}><Download size={14}/>{exporting ? `${Math.round(progress * 100)}%` : 'Export'}</button>
       </div>
     </fieldset>
-    <p className="camera-hint">{exporting ? `Exporting · ${(progress * settings.duration).toFixed(1)} / ${settings.duration}s · Keep this tab active` : settings.mode === 'photo' ? 'Drag the X / Y / Z dials to rotate · PNG export' : `${settings.duration}s Operator motion · 60 FPS capture · MP4 where supported, otherwise WebM · Silent`}</p>
+    <p className="camera-hint">{exporting ? `Exporting · ${(progress * settings.duration).toFixed(1)} / ${settings.duration}s · Keep this tab active` : settings.mode === 'photo' ? 'Drag the X / Y / Z dials to rotate · PNG export' : `${settings.duration}s · XYZ auto-keyed every second · 60 FPS capture · MP4 where supported, otherwise WebM · Silent`}</p>
     {exporting && <progress className="camera-export-progress" value={progress} max={1} aria-label="Export progress"/>}
   </div>;
 }
