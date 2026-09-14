@@ -1,5 +1,6 @@
 import React from 'react';
 import { Activity, Bell, ChevronRight, Search } from 'lucide-react';
+import ETARawBrowserHTML from './ETARawBrowserHTML';
 
 const text = (value, fallback = '') => {
   if (value == null) return fallback;
@@ -10,6 +11,7 @@ const text = (value, fallback = '') => {
 const list = (value, fallback) => Array.isArray(value) && value.length ? value : fallback;
 
 export default function ETABrowserHTML({ scene, advanced, progress, scroll }) {
+  if (advanced.browserHtml) return <ETARawBrowserHTML html={advanced.browserHtml} viewportWidth={advanced.browserViewportWidth} viewportHeight={advanced.browserViewportHeight} />;
   const nav = list(advanced.browserNavItems, advanced.browserRows || ['Overview', 'Projects', 'Analytics', 'Settings']);
   const stats = list(advanced.browserStats, [{label:'Active users',value:'12.8K',trend:'+18%'},{label:'Conversion',value:'8.4%',trend:'+2.1%'},{label:'Revenue',value:'$48K',trend:'+12%'}]);
   const cards = list(advanced.browserCards, (advanced.browserRows || ['Live workspace','Reusable components','Frame-accurate motion']).map((title) => ({title,body:'AI-composed HTML module',badge:'Live',progress:72})));

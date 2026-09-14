@@ -12,7 +12,7 @@ NEXT SCENE: ${JSON.stringify(summary(next))}
 
 Return exactly one complete scene object matching the supplied response schema. Preserve this scene's narrative purpose, duration, and component unless the component is impossible for the intent. Work only on this scene, but make its opening and ending visually compatible with the neighboring scenes.
 
-Use advanced_json as a strict JSON-encoded string containing an exhaustive, production-ready implementation for the selected component. Fully populate every relevant HTML element, UI data field, motion control, camera position, keyframe, cursor step, style, timing, and Match Cut value rather than relying on defaults. Keyframe times must fit inside the scene duration. BrowserWindow scenes must contain richly composed semantic HTML data and controlled Product Demo camera choreography. Do not return placeholders, markdown, explanations, comments, or fields belonging to unrelated components.
+Use advanced_json as a strict JSON-encoded string containing an exhaustive, production-ready implementation for the selected component. Fully populate every relevant HTML element, UI data field, motion control, camera position, keyframe, cursor step, style, timing, and Match Cut value rather than relying on defaults. Keyframe times must fit inside the scene duration. BrowserWindow scenes must include a complete self-contained browserHtml document with inline CSS plus browserViewportWidth and browserViewportHeight; preserve supplied HTML faithfully and target its real selectors with controlled Product Demo camera choreography. Do not return placeholders, markdown, explanations, comments, or fields belonging to unrelated components.
 
 ${buildETAComponentRules(ETA_COMPONENTS)}`;
 }

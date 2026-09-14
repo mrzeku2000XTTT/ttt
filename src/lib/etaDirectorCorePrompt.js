@@ -16,7 +16,7 @@ CURRENT_PLAN: ${currentPlan ? JSON.stringify(currentPlan) : 'null'}
 TARGET_FPS: 60
 
 CORE OBJECTIVE
-Understand the real creative intent and fill every required scene, component, animation, timing, keyframe, transition, Match Cut, typography, color, camera, cursor, media, and layout field. The plan must require no manual completion. Never return TBD, placeholders, example copy, null required fields, or empty animation arrays. Infer missing information from goal, subject, audience, tone, references, scene purpose, and adjacent continuity. Do not ask questions.
+Understand the real creative intent and fill every required scene, component, animation, timing, keyframe, transition, Match Cut, typography, color, camera, cursor, media, and layout field. Treat any complete HTML/CSS in USER_INTENT as authoritative visual source material: preserve and render it in BrowserWindow browserHtml instead of describing, flattening, or approximating it. The plan must require no manual completion. Never return TBD, placeholders, example copy, null required fields, or empty animation arrays. Infer missing information from goal, subject, audience, tone, references, scene purpose, and adjacent continuity. Do not ask questions.
 
 MULTI-PASS CONTRACT
 Every pass returns the entire valid usable plan, never notes or patches. With one pass, perform all stages internally. Pass 1 analyzes intent and creates the complete narrative. Pass 2 strengthens component selection and component values. Pass 3 completes deterministic motion and keyframes. Pass 4 coordinates Match Cuts and continuity. Pass 5 validates and repairs every field. When fewer passes run, combine all remaining duties into the final pass. Preserve correct prior work and never reduce CURRENT_PLAN completeness.
