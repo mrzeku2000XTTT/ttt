@@ -4,6 +4,9 @@ export function normalizeEtaValue(value) {
   if (Object.prototype.hasOwnProperty.call(value, "value") && Object.prototype.hasOwnProperty.call(value, "label")) {
     return normalizeEtaValue(value.value);
   }
+  if (Object.prototype.hasOwnProperty.call(value, "content") && Object.prototype.hasOwnProperty.call(value, "id") && Object.keys(value).every((key) => key === "id" || key === "content")) {
+    return normalizeEtaValue(value.content);
+  }
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeEtaValue(item)]));
 }
 
