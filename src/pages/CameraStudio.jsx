@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, X, Loader2 } from 'lucide-react';
 import BackToStore from '@/components/BackToStore';
@@ -22,6 +22,7 @@ export default function CameraStudio() {
   const displayAssets = project.assets.map(item => item.id === layerPreview?.id ? { ...item, transform: layerPreview.transform, previewing: true } : item);
   const asset = project.assets.find(item => item.id === project.selected);
   const updateStudioSettings = patch => { const nextSettings = { ...project.settings, ...patch }, axes = Object.fromEntries(Object.entries(patch).filter(([key]) => ['x', 'y', 'z', 'zoom'].includes(key))); let cameraKeyframes = project.cameraKeyframes || []; if (nextSettings.mode === 'video') { if (Object.keys(axes).length) cameraKeyframes = upsertCameraKeyframe(project.settings, cameraKeyframes, playhead, axes); cameraKeyframes = ensureCameraKeyframes(nextSettings, cameraKeyframes); } state.patch({ settings: nextSettings, cameraKeyframes }); };
+  useEffect(() => { if (state.loaded && project.settings.mode === 'video' && (project.cameraKeyframes || []).length !== Math.ceil(project.settings.duration) + 1) state.patch({ cameraKeyframes: ensureCameraKeyframes(project.settings, project.cameraKeyframes || []) }); }, [state.loaded, project.settings.mode, project.settings.duration, project.cameraKeyframes?.length]);
   const interestPoints = (project.interestPoints || []).filter(point => point.assetId === project.selected).sort((a, b) => a.time - b.time);
   const previewPoints = interestPoints.map(point => point.id === pointPreview?.id ? { ...point, ...pointPreview.patch } : point);
   const upload = () => input.current?.click();
@@ -58,7 +59,7 @@ export default function CameraStudio() {
   const capture = async () => {
     if (!engine.current || !ready || exporting) return;
     setPlaying(false); setLibrary(false); setExporting(true); setProgress(0); setError('');
-    try { if (project.settings.mode === 'photo') await exportCameraPhoto(engine.current, project.settings, project.name, displayAssets); else await exportCameraVideo(engine.current, project.settings, project.name, setProgress, interestPoints, displayAssets); }
+    try { if (project.settings.mode === 'photo') await exportCameraPhoto(engine.current, project.settings, project.name, displayAssets); else await exportCameraVideo(engine.current, project.settings, project.name, setProgress, interestPoints, displayAssets, ensureCameraKeyframes(project.settings, project.cameraKeyframes || [])); }
     catch (error) { setError(error.message); }
     finally { setExporting(false); }
   };
