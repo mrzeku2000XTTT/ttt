@@ -32,7 +32,7 @@ export default function ETA() {
   const deleteScene = (index) => setPlan((current) => current.scenes.length === 1 ? current : ({ ...current, scenes: current.scenes.filter((_, i) => i !== index) }));
 
   return (
-    <div className="eta-app min-h-screen bg-background font-body text-foreground">
+    <div className={`eta-app ${plan ? "" : "eta-landing"} min-h-screen bg-background font-body text-foreground`}>
       <BackToStore /><ETAHeader />
       <div className="eta-workspace">{plan ? (view === "editor" ? <ETAAdvancedEditor plan={plan} onBack={() => setView("plan")} onSceneChange={updateScene} onDelete={deleteScene} onPreview={() => setView("preview")} /> : view === "preview" ? <ETACompiledPreview plan={plan} onBack={() => setView("plan")} onEdit={() => setView("editor")} /> : <ETAScenePlan plan={plan} onBack={() => setPlan(null)} onSceneChange={updateScene} onAddScene={addScene} onDeleteScene={deleteScene} onCompile={() => setView("preview")} onEdit={() => setView("editor")} />) : <><ETABrief brief={brief} onChange={setBrief} files={files} onFiles={setFiles} onGenerate={generate} loading={loading} status={status} elapsed={elapsed} error={error} /><ETAFooter /></>}</div>
     </div>
