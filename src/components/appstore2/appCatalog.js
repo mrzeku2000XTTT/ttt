@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Camera Studio", path: "CameraStudio", cat: "Creative", directLaunch: true, desc: "Native 3D media editor · image & video uploads, camera angles, Operator motion, local projects and PNG/video export" },
   { name: "UI", path: "UI", cat: "Creative", logo: "https://ui.camera/demo-rounded.avif", desc: "A mini app store for focused interface design, presentation, and animation tools" },
   { name: "Kaspa Browser", path: "KaspaBrowser", cat: "Kaspa", logo: "https://cdn.jsdelivr.net/gh/Curious-being99/Kaspa-browser-@v1.0.20260913223625/app/src/main/res/drawable/app_launcher_icon_1788712553024.jpg", repoUrl: "https://github.com/Curious-being99/Kaspa-browser-", releaseUrl: "https://github.com/Curious-being99/Kaspa-browser-/releases/tag/v1.0.20260913223625", downloadUrl: "https://github.com/Curious-being99/Kaspa-browser-/releases/download/v1.0.20260913223625/KaspaBrowser-release-signed.apk", desc: "Decentralized Android browser · Chromium, mesh discovery, privacy controls, cryptographic identity & native Kaspa wallet tools", maturity: 80 },
   { name: "ETA", path: "ETA", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/f99a28ba7_generated_image.png", desc: "Enhanced Timeline Animator · product brief to an editable AI-directed scene plan with motion, pacing, voiceover, and transitions", maturity: 70 },

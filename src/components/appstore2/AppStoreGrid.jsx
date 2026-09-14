@@ -173,7 +173,7 @@ export default function AppStoreGrid({ search, category, isAdmin, refreshKey = 0
           return (
             <Link
               key={app.name + app.path + i}
-              to={app.path === "LifestyleHub" ? "/LifestyleHub" : `/AppDocs/${app.path}`}
+              to={app.directLaunch || app.path === "LifestyleHub" ? `/${app.path}` : `/AppDocs/${app.path}`}
               className="block w-full"
             >
               {inner}
