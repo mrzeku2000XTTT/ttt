@@ -9,8 +9,10 @@ import ETASearchAnimation2Settings from './ETASearchAnimation2Settings';
 import ETALogoAnimationSettings from './ETALogoAnimationSettings';
 import ETAUIAnimationSettings from './ETAUIAnimationSettings';
 import ETAVideoSettings from './ETAVideoSettings';
+import ETABrowserUISettings from './ETABrowserUISettings';
 
 export default function ETAComponentSettings({ scene, advanced, setAdvanced }) {
+  if (scene.component === 'BrowserWindow') return <ETABrowserUISettings advanced={advanced} setAdvanced={setAdvanced} />;
   if (scene.component === 'PhoneWindow') return <ETAPhoneSettings advanced={advanced} setAdvanced={setAdvanced} />;
   if (scene.component === 'IPhoneAnimated') return <ETAIPhoneSettings advanced={advanced} setAdvanced={setAdvanced} />;
   if (scene.component === 'MacBookAnimated') return <ETAMacBookSettings advanced={advanced} setAdvanced={setAdvanced} />;
