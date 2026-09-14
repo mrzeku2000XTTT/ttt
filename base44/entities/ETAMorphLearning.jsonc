@@ -1,0 +1,45 @@
+{
+  "name": "ETAMorphLearning",
+  "type": "object",
+  "properties": {
+    "shape_sequence": {
+      "type": "string",
+      "description": "Ordered shapes the user manually morphed through, e.g. circle\u2192square\u2192star"
+    },
+    "hold": {
+      "type": "number",
+      "description": "Average seconds the user holds each shape before morphing"
+    },
+    "palette": {
+      "type": "string",
+      "description": "Stroke/fill/background colors the user prefers"
+    },
+    "motion_note": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Short digest of the captured motion (keyframe count, duration, path style)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional description (up to 1000 characters)"
+    }
+  },
+  "required": [
+    "shape_sequence"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

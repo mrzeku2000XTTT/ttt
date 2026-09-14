@@ -4,6 +4,7 @@ import ETACardsSettings from './ETACardsSettings';
 import ETAIPhoneSettings from './ETAIPhoneSettings';
 import ETAMacBookSettings from './ETAMacBookSettings';
 import ETADivMorphSettings from './ETADivMorphSettings';
+import ETAShapeMorphSettings from './ETAShapeMorphSettings';
 import ETASearchAnimationSettings from './ETASearchAnimationSettings';
 import ETASearchAnimation2Settings from './ETASearchAnimation2Settings';
 import ETALogoAnimationSettings from './ETALogoAnimationSettings';
@@ -17,6 +18,7 @@ export default function ETAComponentSettings({ scene, advanced, setAdvanced }) {
   if (scene.component === 'IPhoneAnimated') return <ETAIPhoneSettings advanced={advanced} setAdvanced={setAdvanced} />;
   if (scene.component === 'MacBookAnimated') return <ETAMacBookSettings advanced={advanced} setAdvanced={setAdvanced} />;
   if (scene.component === 'DivMorph') return <ETADivMorphSettings advanced={advanced} setAdvanced={setAdvanced} />;
+  if (scene.component === 'ShapeMorph') return <ETAShapeMorphSettings scene={scene} advanced={advanced} setAdvanced={setAdvanced} />;
   if (['SearchAnimation', 'SearchAnimation1'].includes(scene.component)) return <ETASearchAnimationSettings advanced={advanced} setAdvanced={setAdvanced} />;
   if (scene.component === 'SearchAnimation2') return <ETASearchAnimation2Settings advanced={advanced} setAdvanced={setAdvanced} />;
   if (['LogoAnimation', 'LogoAnimation1', 'LogoAnimation2'].includes(scene.component)) return <ETALogoAnimationSettings advanced={advanced} setAdvanced={setAdvanced} variant={scene.component === 'LogoAnimation2' ? 2 : scene.component === 'LogoAnimation1' ? 1 : 0} />;

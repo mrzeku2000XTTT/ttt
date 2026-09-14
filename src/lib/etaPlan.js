@@ -2,6 +2,7 @@ import { base44 } from "@/api/base44Client";
 import { buildETADirectorPrompt } from "@/lib/etaDirectorPrompt";
 import { buildETASceneAgentPrompt } from "@/lib/etaSceneAgentPrompt";
 import parseEtaAdvanced, { normalizeEtaValue } from "@/lib/parseEtaAdvanced";
+import { summarizeMorphLearnings } from "@/lib/etaShapeMorph";
 export { ETA_COMPONENTS } from "@/lib/etaComponents";
 
 export const createBlankETAScene = (component = "TitleCard") => ({
@@ -51,13 +52,20 @@ export async function createETAPlan(brief, files, onStatus) {
   });
   const normalized = normalizeEtaValue(blueprint);
   let currentPlan = { ...normalized, format: brief.format, fps: 60, scenes: normalized.scenes.map(({ advanced_json, ...scene }) => ({ ...scene, advanced: parseEtaAdvanced(advanced_json) })) };
+  let morphDigest = "";
+  try {
+    const learnings = await base44.entities.ETAMorphLearning.list("-created_date", 10);
+    morphDigest = summarizeMorphLearnings(learnings);
+  } catch {
+    // First run or guest session — nothing learned from manual morph edits yet.
+  }
   const totalRounds = maxPasses - 1;
   for (let round = 1; round <= totalRounds; round += 1) {
     const sourceScenes = currentPlan.scenes;
     onStatus(`Parallel scene agents: ${sourceScenes.length} specialists · round ${round}/${totalRounds}`);
     const refinedScenes = await Promise.all(sourceScenes.map(async (scene, index) => {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: buildETASceneAgentPrompt({ brief, scene, index, total: sourceScenes.length, previous: sourceScenes[index - 1], next: sourceScenes[index + 1], round, totalRounds }),
+        prompt: buildETASceneAgentPrompt({ brief, scene, index, total: sourceScenes.length, previous: sourceScenes[index - 1], next: sourceScenes[index + 1], round, totalRounds, morphDigest }),
         file_urls: uploads.length ? uploads : undefined,
         response_json_schema: sceneSchema,
       });

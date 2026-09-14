@@ -9,6 +9,7 @@ import ETACards4Scene from './ETACards4Scene';
 import ETAIPhone3DScene from './ETAIPhone3DScene';
 import ETAMacBook3DScene from './ETAMacBook3DScene';
 import ETADivMorphScene from './ETADivMorphScene';
+import ETAShapeMorphScene from './ETAShapeMorphScene';
 import ETASearchAnimationScene from './ETASearchAnimationScene';
 import ETASearchAnimation2Scene from './ETASearchAnimation2Scene';
 import ETALogoAnimationScene from './ETALogoAnimationScene';
@@ -24,6 +25,7 @@ function VisualContent({ scene, advanced, browser, frameProgress }) {
   if (scene.component === 'SearchAnimation2') return <ETASearchAnimation2Scene {...props} />;
   if (['LogoAnimation', 'LogoAnimation1', 'LogoAnimation2'].includes(scene.component)) return <ETALogoAnimationScene {...props} variant={scene.component === 'LogoAnimation2' ? 2 : scene.component === 'LogoAnimation1' ? 1 : 0} />;
   if (scene.component === 'DivMorph') return <ETADivMorphScene {...props} />;
+  if (scene.component === 'ShapeMorph') return <ETAShapeMorphScene {...props} />;
   if (scene.component === 'UIAnimation') return <ETAUIAnimationScene {...props} />;
   if (scene.component === 'BrowserWindow' && Number.isFinite(frameProgress)) return <ETARealBrowserScene {...props} />;
   if (scene.component === 'BrowserWindow') return <BrowserScene {...props} browser={browser} />;
