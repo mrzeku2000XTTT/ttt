@@ -4,6 +4,27 @@
 
 // ── Curated docs for flagship apps ──
 const CURATED = {
+  KaspaBrowser: {
+    tagline: "Decentralized Android browser and Kaspa network gateway",
+    overview: "Kaspa Browser is an Apache-2.0 Android app built with Kotlin, Jetpack Compose Material 3, and Chromium WebView. It combines standard web browsing with decentralized protocol routing, peer and mesh discovery, privacy protections, cryptographic identity, a local node, and native Kaspa wallet utilities. Release v1.0.20260913223625 moves the browser controls to the top-right, improves scaling and viewport space, and replaces pull-to-refresh with a dedicated refresh action.",
+    features: [
+      { title: "Hybrid browser engine", desc: "Chromium WebView with custom routing for HTTPS, IPFS, KAS, mesh, dweb, .kas, .hns, and .eth targets." },
+      { title: "Privacy shield", desc: "HTTPS-only, incognito and strict decentralized modes, tracker blocking, traffic audit, and one-tap data purge." },
+      { title: "Kaspa utilities", desc: "Native KAS wallet functions, cryptographic identity, local signing bridge, and BlockDAG-aware services." },
+      { title: "Mesh and local node", desc: "Peer discovery, local content storage, on-device node hosting, and content verification with SHA-256." },
+      { title: "Android-native", desc: "Material 3 interface, native downloads, FIDO2 passkeys, Room storage, Kotlin coroutines, and HTTP/3 tooling." },
+    ],
+    howItWorks: [
+      { title: "Enter a destination", desc: "Open a standard URL, decentralized domain, CID, or supported custom protocol." },
+      { title: "Resolve and verify", desc: "The routing layer selects web or decentralized resolution and verifies content before rendering." },
+      { title: "Browse privately", desc: "Use browser controls, privacy modes, mesh tools, identity, and Kaspa wallet utilities from the app." },
+    ],
+    getStarted: [
+      { title: "Download the signed APK", desc: "Open the app page and download the v1.0.20260913223625 Android release." },
+      { title: "Install on Android", desc: "Approve installation from your browser or file manager, then open Kaspa Browser." },
+      { title: "Clone for development", desc: "Copy the public Git clone command and open the project in Android Studio." },
+    ],
+  },
   Isolate: {
     tagline: "Learn anything through themes you love",
     overview: "ISOLATE turns any topic into a personalized course built around a theme you already love — Star Wars, cooking, anime, anything. An AI tutor teaches each module through themed metaphors, then a 'Here's what's actually true' callout grounds it in real facts. Progress through a game-like level-select map, earn XP, and keep learning infinitely with on-demand module generation. ISOLATE runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, and your course progress is tied to your wallet, no separate account required.",

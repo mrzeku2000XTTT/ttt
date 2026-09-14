@@ -38,6 +38,7 @@ import KaChingWalletPage from './pages/KaChingWallet';
 import AgentInternetPage from './pages/AgentInternet';
 import AgentInternetLandingPage from './pages/AgentInternetLanding';
 import AppStoreV2Page from './pages/AppStoreV2';
+import KaspaBrowserPage from './pages/KaspaBrowser';
 import AgentStudioPage from './pages/AgentStudio';
 import AgentInternetStudioPage from './pages/AgentInternetStudio';
 import UIClonerPage from './pages/UICloner';
@@ -312,6 +313,7 @@ const AuthenticatedApp = () => {
       <Route path="/AgentInternetLanding" element={<AgentInternetLandingPage />} />
       <Route path="/AgentInternet" element={<AdminRoute><AgentInternetPage /></AdminRoute>} />
       <Route path="/AppStoreV2" element={<AppStoreV2Page />} />
+      <Route path="/KaspaBrowser" element={<KaspaBrowserPage />} />
       <Route path="/AgentStudio" element={<AdminRoute><AgentStudioPage /></AdminRoute>} />
       <Route path="/AgentInternetStudio" element={<AdminRoute><AgentInternetStudioPage /></AdminRoute>} />
       <Route path="/ValorantArena" element={<ValorantArenaPage />} />
