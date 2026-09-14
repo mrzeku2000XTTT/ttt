@@ -14,7 +14,7 @@ export default function KaspaBrowser() {
     <BackToStore />
     <div className="mx-auto max-w-3xl">
       <div className="flex items-center gap-4">
-        <img src="https://raw.githubusercontent.com/Curious-being99/Kaspa-browser-/v1.0.20260913223625/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" alt="Kaspa Browser" className="h-20 w-20 rounded-2xl" />
+        <img src="https://cdn.jsdelivr.net/gh/Curious-being99/Kaspa-browser-@v1.0.20260913223625/app/src/main/res/drawable/app_launcher_icon_1788712553024.jpg" alt="Kaspa Browser" className="h-20 w-20 rounded-2xl" />
         <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Android release</p><h1 className="text-4xl font-black tracking-tight">Kaspa Browser</h1><p className="mt-1 text-sm text-zinc-400">v1.0.20260913223625 · signed APK</p></div>
       </div>
       <p className="mt-8 text-lg leading-relaxed text-zinc-300">A Kotlin and Jetpack Compose browser combining Chromium WebView, decentralized domain routing, mesh discovery, privacy controls, cryptographic identity, and native Kaspa wallet utilities.</p>
