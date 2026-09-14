@@ -14,6 +14,10 @@ import TipListingModal from "./TipListingModal";
 import TipLeaderboardModal from "./TipLeaderboardModal";
 import { translateQuery } from "./nlSearch";
 import ParallelWebResults from "./ParallelWebResults";
+import TypingEdgeGlow from "./TypingEdgeGlow";
+import LiveAppSuggestions from "./LiveAppSuggestions";
+import SearchHighlight from "./SearchHighlight";
+import { mergeAppResults, searchTTTApps } from "./smartAppSearch";
 
 // "$KAS" is the Kaspian wall — same index, rendered as a profile grid.
 const KAS_TAB = "$KAS";
@@ -48,11 +52,16 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [ownerAddresses, setOwnerAddresses] = useState(new Map()); // verified url -> kaspa address
   const [tipTarget, setTipTarget] = useState(null);
   const [boardOpen, setBoardOpen] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [edgePulse, setEdgePulse] = useState(0);
   const inputRef = useRef(null);
   const reqId = useRef(0);
 
-  const runSearch = useCallback(async (q, cat) => {
+  const runSearch = useCallback(async (q, cat, localCategory = cat) => {
     const myId = ++reqId.current;
+    const localResults = searchTTTApps(q, localCategory);
+    setResults(localResults);
+    setTotal(localResults.length);
     setLoading(true);
     setError(null);
     setNotIndexed(false);
@@ -72,9 +81,9 @@ export default function KaspaSearchBrowser({ open, onClose }) {
       if (reqId.current !== myId) return;
       if (web?.success) setWebResults(web.results || []);
       if (res?.success) {
-        setResults(res.results || []);
-        setTotal(res.total || 0);
-        if (res.message) setNotIndexed(true);
+        setResults(mergeAppResults(localResults, res.results || []));
+        setTotal(localResults.length + (res.total || 0));
+        if (res.message && !localResults.length) setNotIndexed(true);
         // AI overview runs after results are on screen so the list never waits
         if (q) {
           setAiLoading(true);
@@ -86,7 +95,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
             .catch(() => {})
             .finally(() => { if (reqId.current === myId) setAiLoading(false); });
         }
-      } else if (!web?.success) {
+      } else if (!web?.success && !localResults.length) {
         setError(res?.error || web?.error || "Search failed");
       }
     } catch (e) {
@@ -213,7 +222,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
       setNlHint(nl);
       const nlCat = nl.category || cat;
       if (nl.category) setActiveCategory(nl.category);
-      runSearch(nl.keywords, nlCat);
+      runSearch(nl.keywords, nlCat, "All");
     }
   };
 
@@ -222,6 +231,15 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     runSearch(submitted, cat === KAS_TAB ? "X Profiles" : cat);
   };
 
+  const chooseSuggestion = (app) => {
+    setQuery(app.name);
+    setSubmitted(app.name);
+    setInputFocused(false);
+    setActiveCategory("All");
+    runSearch(app.name, "All");
+  };
+
+  const liveSuggestions = inputFocused ? searchTTTApps(query, "All", 6) : [];
   const isKasTab = activeCategory === KAS_TAB;
 
   return (
@@ -249,19 +267,23 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               <span className="text-white font-bold text-sm tracking-tight hidden sm:inline">Search <span className="text-cyan-300">Kaspa</span></span>
             </div>
 
-            <form onSubmit={submit} className="flex-1 min-w-[200px] flex items-center gap-2 px-4 h-11 rounded-full bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50 focus-within:shadow-[0_0_0_4px_rgba(6,182,212,0.1)] transition-all max-w-2xl">
-              <Search className="w-4 h-4 text-white/40 flex-shrink-0" />
+            <form onSubmit={submit} className="ttt-glowing-input relative flex-1 min-w-[200px] flex items-center gap-2 px-4 h-11 rounded-full bg-white/[0.06] border border-white/15 focus-within:border-cyan-300/70 focus-within:shadow-[0_0_0_4px_rgba(34,211,238,0.09),0_0_34px_rgba(34,211,238,0.18)] transition-all max-w-2xl">
+              <TypingEdgeGlow pulse={edgePulse} />
+              <Search className="relative z-[3] w-4 h-4 text-white/40 flex-shrink-0" />
               <input
                 ref={inputRef}
                 value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search Kaspa and the open web in parallel…"
-                className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 focus:outline-none min-w-0"
+                onChange={e => { setQuery(e.target.value); setEdgePulse(Date.now()); }}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                placeholder="Describe any app, tool, or Kaspa service…"
+                className="relative z-[3] flex-1 bg-transparent text-white text-sm placeholder:text-white/30 focus:outline-none min-w-0"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
               />
-              {loading && <Loader2 className="w-4 h-4 text-cyan-400 animate-spin flex-shrink-0" />}
+              {loading && <Loader2 className="relative z-[3] w-4 h-4 text-cyan-400 animate-spin flex-shrink-0" />}
+              <LiveAppSuggestions query={query} items={liveSuggestions} onChoose={chooseSuggestion} />
             </form>
 
             <div className="flex items-center gap-2 ml-auto">
@@ -379,7 +401,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           <div className="px-4 py-1.5 text-[11px] text-white/40 font-mono border-b border-white/5 w-full max-w-4xl mx-auto">
             {loading ? "Searching…" : notIndexed
               ? `Kaspa index not built · ${webResults.length} parallel web results`
-              : `${results.length} of ${total} Kaspa apps · ${webResults.length} web results${submitted ? ` · "${submitted}"` : ""}`}
+              : `${results.length} of ${total} combined apps · TTT App Store + Kaspa Hub · ${webResults.length} web results${submitted ? ` · "${submitted}"` : ""}`}
           </div>
 
           {/* Results — Google-style */}
@@ -442,17 +464,20 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                           className="block"
                         >
                           <h3 className="text-[15px] text-cyan-300 hover:underline font-medium leading-snug truncate">
-                            {app.name}
+                            <SearchHighlight text={app.name} query={submitted || query} />
                           </h3>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[11px] text-emerald-400/70 font-mono truncate">{hostOf(app.url)}</span>
                             {app.category && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/10 text-white/40 flex-shrink-0">{app.category}</span>
                             )}
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded border flex-shrink-0 ${app.source === "ttt" ? "bg-violet-500/10 border-violet-400/20 text-violet-300/70" : "bg-cyan-500/10 border-cyan-400/20 text-cyan-300/60"}`}>
+                              {app.source === "ttt" ? "TTT App Store" : "Kaspa Hub"}
+                            </span>
                           </div>
                         </a>
                         {app.description && (
-                          <p className="text-[13px] text-white/60 mt-1 leading-relaxed line-clamp-3">{app.description}</p>
+                          <p className="text-[13px] text-white/60 mt-1 leading-relaxed line-clamp-3"><SearchHighlight text={app.description} query={submitted || query} /></p>
                         )}
                         {app.features?.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
