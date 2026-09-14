@@ -16,11 +16,12 @@ const videoMedia = { type:'object', properties:{ url:string, type:string, name:s
 const browserStat = { type:'object', properties:{ label:string, value:string, trend:string } };
 const browserCard = { type:'object', properties:{ title:string, body:string, description:string, badge:string, progress:number, url:string } };
 const browserResult = { type:'object', properties:{ title:string, url:string, description:string, badge:string } };
+const cameraKeyframe = { type:'object', properties:{ time:number, panX:number, panY:number, depth:number, scale:number, rotateX:number, rotateY:number, rotateZ:number, originX:number, originY:number } };
 const matchCut = { type:'object', properties:{ enabled:{type:'boolean'}, direction:string, outgoing:cutSide, incoming:cutSide }, required:['enabled','direction','outgoing','incoming'] };
 
 export const etaAdvancedSchema = { type:'object', properties:{
   subtitle:string, searchText:string, url:string, pageTitle:string, pageSubtitle:string, ctaLabel:string, brandMark:string, browserRows:{type:'array',items:string}, videoMedia, videoObjectFit:string,
-  browserLayout:string, browserSearchPlaceholder:string, browserNavItems:{type:'array',items:string}, browserStats:{type:'array',items:browserStat}, browserCards:{type:'array',items:browserCard}, browserResults:{type:'array',items:browserResult}, browserChartValues:{type:'array',items:number}, browserTableColumns:{type:'array',items:string}, browserTableRows:{type:'array',items:{type:'array',items:string}},
+  browserLayout:string, browserSearchPlaceholder:string, browserNavItems:{type:'array',items:string}, browserStats:{type:'array',items:browserStat}, browserCards:{type:'array',items:browserCard}, browserResults:{type:'array',items:browserResult}, browserChartValues:{type:'array',items:number}, browserTableColumns:{type:'array',items:string}, browserTableRows:{type:'array',items:{type:'array',items:string}}, cameraKeyframes:{type:'array',items:cameraKeyframe},
   browserKeyframes:{type:'array',items:browserKeyframe}, zoomKeyframes:{type:'array',items:zoomKeyframe}, cursorSteps:{type:'array',items:cursorStep}, textKeyframes:{type:'array',items:textKeyframe}, ringKeyframes:{type:'array',items:ringKeyframe}, haloMoveKeyframes:{type:'array',items:haloMoveKeyframe}, cardZoomKeyframes:{type:'array',items:cardZoomKeyframe}, matchCut,
   animatedBorder:{type:'boolean'}, showShell:{type:'boolean'}, backgroundColor:string, boxShadow:string, pillBackground:string, pillTextColor:string,
   autoMotionEnabled:{type:'boolean'}, autoMotionPreset:string, autoMotionIntensity:number, autoTransformKeyframes:{type:'array',items:device3DKeyframe},
