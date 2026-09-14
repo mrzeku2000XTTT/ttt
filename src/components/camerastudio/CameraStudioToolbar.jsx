@@ -1,9 +1,19 @@
-import React from 'react';
-import { Plus, Images, Undo2, Redo2, FolderOpen, Play, Pause, Shuffle, Crosshair, Trash2, FilePlus2, Pencil } from 'lucide-react';
-export default function CameraStudioToolbar({ project, rename, add, library, toggleLibrary, undo, redo, canUndo, canRedo, newProject, deleteProject, playing, togglePlay, disabled, canPlay, status, editorMode, setEditorMode, compose, videoMode, armed, toggleArmed, pointCount, canDelete, deletePoint, drawMode, toggleDraw }) {
+import React, { useState } from 'react';
+import { Plus, Images, Undo2, Redo2, FolderOpen, Play, Pause, Shuffle, Crosshair, Trash2, FilePlus2, Pencil, Type } from 'lucide-react';
+export default function CameraStudioToolbar({ project, rename, add, library, toggleLibrary, undo, redo, canUndo, canRedo, newProject, deleteProject, playing, togglePlay, disabled, canPlay, status, editorMode, setEditorMode, compose, videoMode, armed, toggleArmed, pointCount, canDelete, deletePoint, drawMode, toggleDraw, textPresets = [], addText }) {
+  const [textOpen, setTextOpen] = useState(false);
   return <div className="camera-toolbar">
     <div className="camera-toolbar-left">
       <label className="camera-pill camera-project"><FolderOpen size={14}/><input aria-label="Project name" value={project.name} maxLength={70} onChange={e => rename(e.target.value)} disabled={disabled}/><button title="Add media" onClick={add} disabled={disabled}><Plus size={14}/><span>Add media</span></button></label>
+      <div className="relative">
+        <button className="camera-pill" onClick={() => setTextOpen(value => !value)} aria-expanded={textOpen} disabled={disabled} title="Add a text animation preset"><Type size={14}/><span>Text</span></button>
+        {textOpen && <div className="absolute top-full left-0 mt-2 z-50 w-60 rounded-xl border border-border bg-card p-1 shadow-xl">
+          {textPresets.map(preset => <button key={preset.id} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary" onClick={() => { addText(preset.id); setTextOpen(false); }}>
+            <span className="block text-sm font-semibold text-foreground">{preset.name}</span>
+            <span className="block text-[11px] leading-tight text-muted-foreground">{preset.description}</span>
+          </button>)}
+        </div>}
+      </div>
       <button className="camera-pill" onClick={toggleLibrary} aria-pressed={library} disabled={disabled}><Images size={14}/><span>Library</span></button><button className="camera-pill camera-new" onClick={newProject} disabled={disabled}><FilePlus2 size={14}/><span>New</span></button>
              <span className="camera-save"><i/>{status}</span>
     </div>

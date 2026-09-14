@@ -8,7 +8,8 @@ import { CAMERA_SIZES } from '@/components/camerastudio/cameraStudioDefaults';
 import { layerTransformAt } from '@/components/camerastudio/cameraLayerAnimation';
 import { cameraTransformAt } from '@/components/camerastudio/cameraTransformAnimation';
 import CameraXYZOverlay from '@/components/camerastudio/CameraXYZOverlay';
-export default function CameraStudioStage({ asset, assets, selected, settings, playing, engineRef, add, upload, busy, onReady, onError, interestPoints, overlayPoints, playhead, onTime, armed, activePointId, onSelectPoint, onPlacePoint, onPreviewPoint, onMovePoint, showFocus, layersEditable, selectAsset, previewAsset, commitAsset, drawMode, onDrawPath, cameraKeyframes, showXYZ }) {
+import CameraTextPanel from '@/components/camerastudio/CameraTextPanel';
+export default function CameraStudioStage({ asset, assets, selected, settings, playing, engineRef, add, upload, busy, onReady, onError, interestPoints, overlayPoints, playhead, onTime, armed, activePointId, onSelectPoint, onPlacePoint, onPreviewPoint, onMovePoint, showFocus, layersEditable, selectAsset, previewAsset, commitAsset, drawMode, onDrawPath, cameraKeyframes, showXYZ, onTextChange }) {
   const canvas = useRef(null), box = useRef(null), latest = useRef({ settings, playing, interestPoints, playhead, assets, cameraKeyframes }), start = useRef(0), lastTimeUpdate = useRef(0);
   const [bounds, setBounds] = useState([800, 450]), [loading, setLoading] = useState(false), [dragging, setDragging] = useState(false);
   latest.current = { settings, playing, interestPoints, playhead, assets, cameraKeyframes };
@@ -31,7 +32,7 @@ export default function CameraStudioStage({ asset, assets, selected, settings, p
       frame = requestAnimationFrame(tick);
     }).catch(error => { if (active) { setLoading(false); onError(error.message); } });
     return () => { active = false; cancelAnimationFrame(frame); engine?.dispose(); engineRef.current = null; };
-  }, [assets.map(item => item.id).join(':')]);
+  }, [assets.map(item => `${item.id}:${item.type === 'text' ? item.text : ''}`).join('|')]);
   useEffect(() => {
     start.current = performance.now() - playhead * 1000; const engine = engineRef.current;
     if (!engine?.exporting) engine?.medias.forEach(media => { if (!media.video) return; if (playing) media.element.play().catch(error => onError(error.message)); else media.element.pause(); });
@@ -51,6 +52,7 @@ export default function CameraStudioStage({ asset, assets, selected, settings, p
       {asset && showFocus && <CameraFocusOverlay points={overlayPoints} activeId={activePointId} armed={armed} onSelect={onSelectPoint} onPlace={onPlacePoint} onPreview={onPreviewPoint} onMove={onMovePoint}/>} 
       {(!asset || dragging) && <button onClick={upload} disabled={busy} className={`camera-empty w-full ${dragging ? 'dragging' : ''}`}><Upload size={26}/><strong>Add images or video</strong><small>Click to browse or drag and drop</small></button>}
       {loading && <div className="camera-stage-loading" role="status"><Loader2 size={22} className="animate-spin"/><span className="ml-2">Preparing media…</span></div>}
+      {!loading && !busy && <CameraTextPanel asset={asset} change={onTextChange}/>}
     </div>
     </div>
   </div>;

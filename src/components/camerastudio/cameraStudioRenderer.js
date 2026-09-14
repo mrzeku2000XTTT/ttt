@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { cameraScreenGeometry, cameraShadowTexture } from '@/components/camerastudio/cameraStudioGeometry';
 import { loadCameraMedia } from '@/components/camerastudio/cameraStudioMedia';
+import { loadTextMedia } from '@/components/camerastudio/cameraTextTexture';
 import { CAMERA_SIZES } from '@/components/camerastudio/cameraStudioDefaults';
 import { cameraEase } from '@/components/camerastudio/cameraEasing';
 import { layerTransformAt } from '@/components/camerastudio/cameraLayerAnimation';
 import { cameraTransformAt } from '@/components/camerastudio/cameraTransformAnimation';
 export default async function createCameraRenderer(canvas, assets) {
-  const loaded = await Promise.all(assets.map(async asset => ({ asset, media: await loadCameraMedia(asset.file) })));
+  const loaded = await Promise.all(assets.map(async asset => ({ asset, media: asset.type === 'text' ? loadTextMedia(asset) : await loadCameraMedia(asset.file) })));
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true }); }
   catch (error) { loaded.forEach(item => item.media.dispose()); throw error; }
@@ -18,6 +19,7 @@ export default async function createCameraRenderer(canvas, assets) {
     texture.colorSpace = THREE.SRGBColorSpace; texture.needsUpdate = true; texture.minFilter = THREE.LinearFilter; texture.magFilter = THREE.LinearFilter;
     const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, depthWrite: false }), screen = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
     const shadowTexture = cameraShadowTexture(), shadowMaterial = new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, depthWrite: false, side: THREE.DoubleSide }), shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), shadowMaterial);
+    shadow.visible = asset.type !== 'text';
     screen.renderOrder = 2; shadow.renderOrder = 1; shadow.position.set(0, -.08, -.06); root.add(shadow, screen); stage.add(root);
     return { id: asset.id, media, root, texture, material, screen, shadowTexture, shadowMaterial, shadow, shape: '' };
   });

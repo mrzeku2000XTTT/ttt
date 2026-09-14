@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useState } from 'react';
 import { CAMERA_DEFAULTS, emptyCameraProject } from '@/components/camerastudio/cameraStudioDefaults';
+import { createTextAsset } from '@/components/camerastudio/cameraTextPresets';
 import { readCameraProject, saveCameraProject, listCameraProjects, deleteCameraProject } from '@/components/camerastudio/cameraStudioStore';
 function reducer(state, action) {
   if (action.type === 'load') return { project: action.project, past: [], future: [] };
@@ -33,5 +34,6 @@ export default function useCameraProject() {
     if (valid.length !== all.length) setError('Use PNG, JPG, WEBP, AVIF, GIF or video files up to 200 MB each.');
     if (valid.length) dispatch({ type: 'add', assets: valid.map((file, index) => ({ id: crypto.randomUUID(), name: file.name, file, transform: { x: Math.min(.2, (state.project.assets.length + index) * .035), y: Math.min(.2, (state.project.assets.length + index) * .035), scale: 1, rotation: 0, opacity: 1, visible: true } })) });
   };
-  return { ...state, projects, loaded, status, error, setError, add, update: patch => dispatch({ type: 'settings', patch }), patch: patch => dispatch({ type: 'patch', patch }), remove: id => dispatch({ type: 'remove', id }), undo: () => dispatch({ type: 'undo' }), redo: () => dispatch({ type: 'redo' }), newProject: () => dispatch({ type: 'load', project: emptyCameraProject() }), openProject: project => dispatch({ type: 'load', project }), deleteProject: async id => { await deleteCameraProject(id); if (state.project.id === id) dispatch({ type: 'load', project: emptyCameraProject() }); refreshProjects(); } };
+  const addTextAsset = preset => dispatch({ type: 'add', assets: [createTextAsset(preset, state.project.settings.duration)] });
+  return { ...state, projects, loaded, status, error, setError, add, addTextAsset, update: patch => dispatch({ type: 'settings', patch }), patch: patch => dispatch({ type: 'patch', patch }), remove: id => dispatch({ type: 'remove', id }), undo: () => dispatch({ type: 'undo' }), redo: () => dispatch({ type: 'redo' }), newProject: () => dispatch({ type: 'load', project: emptyCameraProject() }), openProject: project => dispatch({ type: 'load', project }), deleteProject: async id => { await deleteCameraProject(id); if (state.project.id === id) dispatch({ type: 'load', project: emptyCameraProject() }); refreshProjects(); } };
 }
