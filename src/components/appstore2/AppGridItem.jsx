@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Crown, ExternalLink } from "lucide-react";
+import { Crown, ExternalLink, Monitor } from "lucide-react";
 
 const itemVariants = {
   hidden: { opacity: 0, y: 12, scale: 0.85 },
@@ -81,7 +81,7 @@ export default function AppGridItem({ app }) {
         )}
       </div>
       <div className="text-center max-w-[72px]">
-        <p className="text-[11px] font-semibold text-zinc-800 truncate leading-tight group-hover:text-zinc-950 transition-colors">{app.name}</p>
+        <p className="flex items-center justify-center gap-1 text-[11px] font-semibold text-zinc-800 truncate leading-tight group-hover:text-zinc-950 transition-colors">{app.name}{app.desktop && <Monitor className="h-3 w-3 shrink-0 text-emerald-600" aria-label="Desktop app"/>}</p>
         <p className="text-[9px] text-zinc-400 truncate">{app.desc}</p>
       </div>
     </motion.div>
