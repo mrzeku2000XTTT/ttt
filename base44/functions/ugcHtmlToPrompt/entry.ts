@@ -7,7 +7,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { buildUGCMasterPrompt } from '../../shared/ugcMasterPrompt.ts';
 
-const MAX_HTML = 20000;
+const MAX_HTML = 60000;
 const MODES = ['recreate', 'animate', 'video'];
 
 export default async function(req: Request): Promise<Response> {

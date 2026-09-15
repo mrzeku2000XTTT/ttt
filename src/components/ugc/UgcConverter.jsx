@@ -43,7 +43,7 @@ export default function UgcConverter() {
       const res = await base44.functions.invoke('ugcHtmlToPrompt', { html, mode });
       setResult(res.data);
     } catch (e) {
-      setError(e?.message || 'Conversion failed. Try again.');
+      setError(e?.response?.data?.error || e?.message || 'Conversion failed. Try again.');
     } finally {
       setLoading(false);
     }
