@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle, Dices, Share2, Swords, Wand2, Coins, Trophy } from "lucide-react";
+import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle, Dices, Share2, Swords, Wand2, Coins, Trophy, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { chargeSearch } from "@/lib/searchKaspaWallet";
 import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
 import SiteAgentChat from "./SiteAgentChat";
@@ -32,7 +33,7 @@ function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
 }
 
-export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' }) {
+export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', paidSearch = false, onRequireFunding, embedded = false }) {
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
@@ -45,6 +46,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
   const [ai, setAi] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [fundingIssue, setFundingIssue] = useState(null); // null | 'nowallet' | 'empty' | 'fetch'
   const [listOpen, setListOpen] = useState(false);
   const [agentApp, setAgentApp] = useState(null);
   const [linkAdd, setLinkAdd] = useState(null); // { status: 'adding'|'added'|'exists'|'error', handle, error }
@@ -64,6 +66,14 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
 
   const runSearch = useCallback(async (q, cat, localCategory = cat) => {
     const myId = ++reqId.current;
+    setFundingIssue(null);
+    // Paid mode — every non-empty search runs a KAS micro-transaction from the
+    // user's funded Search Kaspa wallet before hitting the index.
+    if (paidSearch && q.trim()) {
+      const charge = await chargeSearch();
+      if (reqId.current !== myId) return;
+      if (!charge.ok) { setFundingIssue(charge.reason); return; }
+    }
     const useNatural = q.trim().split(/\s+/).length >= 4 || q.includes('?');
     setNaturalSearch(useNatural);
     setNlHint(null);
@@ -113,7 +123,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
     } finally {
       if (reqId.current === myId) setLoading(false);
     }
-  }, []);
+  }, [paidSearch]);
 
   // Initial load — show all apps when opened
   useEffect(() => {
@@ -325,13 +335,15 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
               <Dices className="w-4 h-4" />
             </button>
 
-            <button
-              onClick={() => setListOpen(true)}
-              title="List your site"
-              className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/25 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+            {!embedded && (
+              <button
+                onClick={() => setListOpen(true)}
+                title="List your site"
+                className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/25 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
             </div>
           </div>
           </div>
@@ -422,7 +434,24 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
 
           {/* Results — Google-style */}
           <div ref={resultsRef} className="flex-1 overflow-y-auto px-4 py-4">
-            {error ? (
+            {fundingIssue ? (
+              <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center mb-3">
+                  <Wallet className="w-5 h-5 text-amber-300" />
+                </div>
+                <p className="text-white/80 text-sm font-semibold mb-1">Search Kaspa wallet needs funding</p>
+                <p className="text-white/40 text-xs max-w-xs leading-relaxed mb-4">
+                  {fundingIssue === 'nowallet'
+                    ? 'Create your Search Kaspa wallet and fund it with KAS — every search is a 0.001 KAS micro-transaction.'
+                    : fundingIssue === 'empty'
+                      ? 'Your wallet balance is too low for the 0.001 KAS micro-search fee. Top it up to keep searching.'
+                      : 'Could not reach the Kaspa network to verify your wallet. Try again in a moment.'}
+                </p>
+                <button onClick={() => onRequireFunding?.()} className="px-4 h-11 rounded-full bg-cyan-500 text-black text-sm font-bold active:scale-95 transition-transform">
+                  Open profile & fund wallet
+                </button>
+              </div>
+            ) : error ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
                 <p className="text-white/60 text-sm mb-2">{naturalSearch ? 'Directory search is unavailable' : 'Both search sources are unavailable'}</p>
                 <p className="text-white/30 text-xs">{error}</p>
@@ -543,6 +572,9 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
             <span className="text-[10px] text-white/40 font-mono">tttz.xyz</span>
             <Link to="/SearchKaspaDocs" className="text-[11px] text-white/70 underline underline-offset-4">Developer docs</Link>
           </div>
+
+          {/* Room for the in-app bottom tab bar */}
+          {embedded && <div className="h-[72px] flex-shrink-0" />}
 
           <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
           <ShareCardModal card={shareCard} onClose={() => setShareCard(null)} />
