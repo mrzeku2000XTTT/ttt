@@ -258,6 +258,15 @@ button:focus-visible {
   .ttt-edge-runner rect { stroke-dashoffset: -250; }
 }
 
+/* Search Kaspa developer docs keep a scoped monochrome theme. */
+:root .search-kaspa-docs, .dark .search-kaspa-docs {
+  --background: 0 0% 5%; --foreground: 0 0% 96%;
+  --card: 0 0% 9%; --card-foreground: 0 0% 96%;
+  --primary: 0 0% 96%; --primary-foreground: 0 0% 5%;
+  --muted: 0 0% 13%; --muted-foreground: 0 0% 66%;
+  --border: 0 0% 22%; --input: 0 0% 22%; --ring: 0 0% 70%;
+}
+
 /* Isolated Camera Studio workspace tokens. */
 :root .camera-studio, .dark .camera-studio {
   --background: 240 5% 5%; --foreground: 0 0% 96%; --card: 240 4% 10%; --card-foreground: 0 0% 96%;

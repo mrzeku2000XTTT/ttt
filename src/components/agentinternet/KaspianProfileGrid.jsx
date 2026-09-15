@@ -1,6 +1,7 @@
 import React from "react";
 import { Bot, ExternalLink, Users, BadgeCheck, Share2, Sparkles, Coins } from "lucide-react";
 import XAvatar from "./XAvatar";
+import SearchMatchEvidence from '@/components/agentinternet/SearchMatchEvidence';
 
 function handleOf(url) {
   try { return "@" + new URL(url).pathname.replace(/\/+$/, "").replace(/^\//, ""); }
@@ -66,6 +67,7 @@ export default function KaspianProfileGrid({ profiles, onAskAI, onShare, onTip, 
               <p className="text-[12px] text-white/55 leading-relaxed line-clamp-3 flex-1">{app.description}</p>
             )}
 
+            <div className="text-white/70"><SearchMatchEvidence evidence={app.match_evidence}/></div>
             <div className="flex items-center gap-3 mt-3 pt-2.5 border-t border-white/[0.06]">
               <button
                 onClick={() => onAskAI?.(app)}

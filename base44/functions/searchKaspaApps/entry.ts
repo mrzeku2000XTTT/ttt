@@ -3,7 +3,8 @@
 // Loads all records (small dataset) and ranks by query relevance server-side,
 // returning a Google-style result set.
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { kaspaNaturalSearch } from '../../shared/kaspaNaturalSearch.ts';
 
 // collapse to letters+digits so "taptotip" matches "Tap to Tip" / "tap-to-tip.com"
 const squash = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -44,7 +45,7 @@ function score(app, terms, rawQuery) {
   return s;
 }
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     if (req.method === 'OPTIONS') {
       return new Response(null, {
@@ -59,20 +60,31 @@ Deno.serve(async (req) => {
 
     // aiOnly: skip returning results, just produce the AI overview (called
     // separately by the UI so the app list renders instantly)
-    const { query, category, limit, aiOnly, withAi } = await req.json();
+    const cors = { 'Access-Control-Allow-Origin': '*' };
+    if (req.method !== 'POST') return Response.json({ success: false, error: 'Use POST' }, { status: 405, headers: cors });
+    let body;
+    try { body = await req.json(); } catch { return Response.json({ success: false, error: 'Invalid JSON' }, { status: 400, headers: cors }); }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return Response.json({ success: false, error: 'JSON object required' }, { status: 400, headers: cors });
+    const { query = '', category, limit = 2000, aiOnly, withAi, natural_language = false } = body;
+    if (typeof query !== 'string' || query.length > 300 || (category != null && typeof category !== 'string') || typeof natural_language !== 'boolean' || !Number.isInteger(Number(limit)) || Number(limit) < 1 || Number(limit) > 2000 || (natural_language && !query.trim())) {
+      return Response.json({ success: false, error: 'query: up to 300 characters (nonempty for natural-language search); category: string; limit: 1–2000; natural_language: boolean' }, { status: 400, headers: cors });
+    }
     const base44 = createClientFromRequest(req);
 
-    // Load the full index (small dataset — ~600 records)
+    // Page through the public directory; bound work and report partial coverage.
     let apps = [];
-    try {
-      apps = await base44.asServiceRole.entities.KaspaHubApp.list('-indexed_at', 2000);
-    } catch (e) {
-      console.log('list error:', e.message);
-      return Response.json({ success: true, results: [], total: 0, message: 'Index not built yet' });
+    let truncated = false;
+    for (let skip = 0; skip < 5000; skip += 500) {
+      const page = await base44.entities.KaspaHubApp.list('-indexed_at', 500, skip);
+      apps.push(...page);
+      if (page.length < 500) break;
+      if (skip === 4500) truncated = true;
     }
-
-    if (category && category !== 'All') {
-      apps = apps.filter(a => (a.category || '') === category);
+    const scanned = apps.length;
+    if (category && category !== 'All') apps = apps.filter(a => (a.category || '') === category);
+    if (natural_language) {
+      const grounded = await kaspaNaturalSearch(base44, query.trim(), apps, Number(limit));
+      return Response.json({ success: true, ...grounded, total: grounded.results.length, shown: grounded.results.length, coverage: { scanned, truncated }, ai: null }, { headers: cors });
     }
 
     const q = (query || '').trim().toLowerCase();
@@ -117,8 +129,7 @@ Deno.serve(async (req) => {
           : `The user searched the Kaspa (KAS cryptocurrency) ecosystem for "${query}" and nothing matched our index. Explain in 2-3 plain sentences what "${query}" most likely is in the Kaspa / crypto context, and if it is a real project say what it does. If you are unsure, say so plainly. No markdown, no lists.`;
         const out = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt,
-          add_context_from_internet: !top,
-          model: 'gemini_3_flash'
+          add_context_from_internet: !top
         });
         ai = typeof out === 'string' ? out.trim() : null;
       } catch (e) {
@@ -135,6 +146,6 @@ Deno.serve(async (req) => {
     }, { headers: { 'Access-Control-Allow-Origin': '*' } });
   } catch (error) {
     console.error('❌ searchKaspaApps error:', error);
-    return Response.json({ error: error.message, success: false }, { status: 500 });
+    return Response.json({ error: 'Search is temporarily unavailable. Please retry.', success: false }, { status: 503, headers: { 'Access-Control-Allow-Origin': '*' } });
   }
-});
+}

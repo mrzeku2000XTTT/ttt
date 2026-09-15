@@ -12,7 +12,8 @@ import ShareCardModal from "./ShareCardModal";
 import AgentBattleModal from "./AgentBattleModal";
 import TipListingModal from "./TipListingModal";
 import TipLeaderboardModal from "./TipLeaderboardModal";
-import { translateQuery } from "./nlSearch";
+import { Link } from 'react-router-dom';
+import SearchMatchEvidence from '@/components/agentinternet/SearchMatchEvidence';
 import ParallelWebResults from "./ParallelWebResults";
 import TypingEdgeGlow from "./TypingEdgeGlow";
 import LiveAppSuggestions from "./LiveAppSuggestions";
@@ -29,7 +30,7 @@ function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
 }
 
-export default function KaspaSearchBrowser({ open, onClose }) {
+export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' }) {
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
@@ -48,7 +49,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   const [verifiedUrls, setVerifiedUrls] = useState(new Set()); // KNS-verified owners
   const [shareCard, setShareCard] = useState(null);
   const [battleOpen, setBattleOpen] = useState(false);
-  const [nlHint, setNlHint] = useState(null); // what the AI understood from a spoken-style query
+  const [nlHint, setNlHint] = useState(null);
+  const [naturalSearch, setNaturalSearch] = useState(false);
   const [ownerAddresses, setOwnerAddresses] = useState(new Map()); // verified url -> kaspa address
   const [tipTarget, setTipTarget] = useState(null);
   const [boardOpen, setBoardOpen] = useState(false);
@@ -59,7 +61,10 @@ export default function KaspaSearchBrowser({ open, onClose }) {
 
   const runSearch = useCallback(async (q, cat, localCategory = cat) => {
     const myId = ++reqId.current;
-    const localResults = searchTTTApps(q, localCategory);
+    const useNatural = q.trim().split(/\s+/).length >= 4 || q.includes('?');
+    setNaturalSearch(useNatural);
+    setNlHint(null);
+    const localResults = useNatural ? [] : searchTTTApps(q, localCategory);
     setResults(localResults);
     setTotal(localResults.length);
     setLoading(true);
@@ -71,8 +76,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     setVisible(PAGE_SIZE);
     try {
       const [kaspaTask, webTask] = await Promise.allSettled([
-        base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000 }),
-        q ? base44.functions.invoke("openWebSearch", { query: q }) : Promise.resolve(null),
+        base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000, natural_language: useNatural }),
+        q && !useNatural ? base44.functions.invoke("openWebSearch", { query: q }) : Promise.resolve(null),
       ]);
       const kaspaRaw = kaspaTask.status === "fulfilled" ? kaspaTask.value : null;
       const webRaw = webTask.status === "fulfilled" ? webTask.value : null;
@@ -81,11 +86,12 @@ export default function KaspaSearchBrowser({ open, onClose }) {
       if (reqId.current !== myId) return;
       if (web?.success) setWebResults(web.results || []);
       if (res?.success) {
-        setResults(mergeAppResults(localResults, res.results || []));
-        setTotal(localResults.length + (res.total || 0));
+        setResults(useNatural ? res.results || [] : mergeAppResults(localResults, res.results || []));
+        setTotal(useNatural ? res.total || 0 : localResults.length + (res.total || 0));
+        if (useNatural) setNlHint({ keywords: (res.intent?.keywords || []).join(' · '), category: res.intent?.target === 'profiles' ? 'Profiles' : res.intent?.target === 'projects' ? 'Projects' : 'Profiles and projects', noMatchReason: res.no_match_reason, partial: res.coverage?.truncated });
         if (res.message && !localResults.length) setNotIndexed(true);
-        // AI overview runs after results are on screen so the list never waits
-        if (q) {
+        // Grounded mode shows exact directory quotes instead of a generated overview.
+        if (q && !useNatural) {
           setAiLoading(true);
           base44.functions.invoke("searchKaspaApps", { query: q, category: cat, aiOnly: true })
             .then(r => {
@@ -109,12 +115,14 @@ export default function KaspaSearchBrowser({ open, onClose }) {
   // Initial load — show all apps when opened
   useEffect(() => {
     if (open) {
-      setQuery("");
-      setSubmitted("");
+      const initial = String(initialQuery).slice(0, 300).trim();
+      setQuery(initial);
+      setSubmitted(initial);
+      setInputFocused(false);
       setActiveCategory("All");
       setLinkAdd(null);
-      runSearch("", "All");
-      setTimeout(() => inputRef.current?.focus(), 300);
+      runSearch(initial, "All");
+      if (!initial) setTimeout(() => inputRef.current?.focus(), 300);
       base44.entities.SiteOwnerClaim.filter({ verified: true }, "-created_date", 500)
         .then(rows => {
           const list = rows || [];
@@ -124,7 +132,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
         })
         .catch(() => {});
     }
-  }, [open, runSearch]);
+  }, [open, runSearch, initialQuery]);
 
   // "I'm feeling lucky" — jump to a random listing with its AI agent open.
   const feelingLucky = () => {
@@ -217,14 +225,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
     const cat = activeCategory === KAS_TAB ? "X Profiles" : activeCategory;
     runSearch(q, cat);
 
-    // Natural-language queries get re-run with AI-extracted keywords
-    const nl = await translateQuery(q);
-    if (nl && nl.keywords.toLowerCase() !== q.toLowerCase()) {
-      setNlHint(nl);
-      const nlCat = nl.category || cat;
-      if (nl.category) setActiveCategory(nl.category);
-      runSearch(nl.keywords, nlCat, "All");
-    }
+    // Interpretation and evidence matching now run together server-side.
+    // Never issue a stale second search or replace the original question.
   };
 
   const selectCategory = (cat) => {
@@ -277,7 +279,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                 onChange={e => { setQuery(e.target.value); setEdgePulse(Date.now()); setInputFocused(true); }}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
-                placeholder="Describe any app, tool, or Kaspa service…"
+                placeholder="Ask for a builder, project, or Kaspa service…"
+                maxLength={300}
                 className="relative z-[3] flex-1 bg-transparent text-white text-sm placeholder:text-white/30 focus:outline-none min-w-0"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -393,7 +396,8 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               <Wand2 className="w-3.5 h-3.5 flex-shrink-0" />
               <span>
                 Understood as <span className="font-mono text-white">{nlHint.keywords}</span>
-                {nlHint.category ? <> in <span className="font-mono text-white">{nlHint.category}</span></> : null}
+                {nlHint.category ? <> · <span className="font-mono text-white">{nlHint.category}</span></> : null}
+                {nlHint.partial ? ' · Partial index coverage' : ''}
               </span>
             </div>
           )}
@@ -402,6 +406,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           <div className="px-4 py-1.5 text-[11px] text-white/40 font-mono border-b border-white/5 w-full max-w-4xl mx-auto">
             {loading ? "Searching…" : notIndexed
               ? `Kaspa index not built · ${webResults.length} parallel web results`
+              : naturalSearch ? `${results.length} directory matches · indexed claims, not independently verified`
               : `${results.length} of ${total} combined apps · TTT App Store + Kaspa Hub · ${webResults.length} web results${submitted ? ` · "${submitted}"` : ""}`}
           </div>
 
@@ -409,7 +414,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           <div className="flex-1 overflow-y-auto px-4 py-4">
             {error ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                <p className="text-white/60 text-sm mb-2">Both search sources are unavailable</p>
+                <p className="text-white/60 text-sm mb-2">{naturalSearch ? 'Directory search is unavailable' : 'Both search sources are unavailable'}</p>
                 <p className="text-white/30 text-xs">{error}</p>
               </div>
             ) : notIndexed ? (
@@ -422,7 +427,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                   <p className="text-white/30 text-xs max-w-xs">The Kaspa directory is waiting for its next admin refresh.</p>
                 </div>}
               </div>
-            ) : isKasTab ? (
+            ) : isKasTab && !(naturalSearch && results.length === 0) ? (
               <div className="space-y-4">
                 <KaspianProfileGrid
                   profiles={results.slice(0, visible)}
@@ -447,7 +452,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                 {webResults.length ? <ParallelWebResults results={webResults} /> : <div className="flex flex-col items-center justify-center text-center px-6 py-10">
                   <Globe className="w-8 h-8 text-white/20 mb-3" />
                   <p className="text-white/50 text-sm mb-1">No matching results</p>
-                  <p className="text-white/30 text-xs">Try a different keyword or category.</p>
+                  <p className="text-white/30 text-xs max-w-lg leading-relaxed">{nlHint?.noMatchReason || 'Try a different keyword or category.'}</p>
                 </div>}
               </div>
             ) : (
@@ -480,6 +485,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
                         {app.description && (
                           <p className="text-[13px] text-white/60 mt-1 leading-relaxed line-clamp-3"><SearchHighlight text={app.description} query={submitted || query} /></p>
                         )}
+                        <div className="text-white/70"><SearchMatchEvidence evidence={app.match_evidence} /></div>
                         {app.features?.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {app.features.slice(0, 4).map((f, fi) => (
@@ -538,6 +544,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
           {/* Footer */}
           <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-center gap-2">
             <span className="text-[10px] text-white/40 font-mono">tttz.xyz</span>
+            <Link to="/SearchKaspaDocs" className="text-[11px] text-white/70 underline underline-offset-4">Developer docs</Link>
           </div>
 
           <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
