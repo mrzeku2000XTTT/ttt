@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Settings as SettingsIcon, LayoutGrid, Search, Database, Cpu } from "lucide-react";
+import { Lock, Settings as SettingsIcon, LayoutGrid, Search, Cpu } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import GalaxyVideoBg from "@/components/agentinternet/GalaxyVideoBg";
 import PowerConsole from "@/components/agentinternet/PowerConsole";
@@ -250,7 +250,7 @@ export default function AgentInternetLanding() {
                       <Search className="w-3.5 h-3.5" /> Search the web
                     </button>
                     <button onClick={() => setShowKaspaSearch(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-cyan-200 hover:text-white hover:border-cyan-400/60 transition-colors">
-                      <Database className="w-3.5 h-3.5" /> Search Kaspa
+                      <img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="" className="w-3.5 h-3.5 rounded-full" /> Search Kaspa
                     </button>
                     <button onClick={() => setShowCryptoSearch(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-amber-200 hover:text-white hover:border-amber-400/60 transition-colors">
                       <img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="w-4 h-4 rounded-full" /> Search Crypto
@@ -272,7 +272,7 @@ export default function AgentInternetLanding() {
 
                   <button onClick={() => setShowBrowser(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-2 text-center text-[9px] font-mono uppercase tracking-wide text-white/70 hover:border-white/30 hover:text-white"><LayoutGrid className="h-4 w-4" /> Browse live pages</button>
                   <button onClick={() => setShowWebSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-2 text-center text-[9px] font-mono uppercase tracking-wide text-white/70 hover:border-white/30 hover:text-white"><Search className="h-4 w-4" /> Search the web</button>
-                  <button onClick={() => setShowKaspaSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-cyan-500/25 bg-cyan-500/[0.07] px-2 text-center text-[9px] font-mono uppercase tracking-wide text-cyan-200 hover:border-cyan-400/50 hover:text-white"><Database className="h-4 w-4" /> Search Kaspa</button>
+                  <button onClick={() => setShowKaspaSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-cyan-500/25 bg-cyan-500/[0.07] px-2 text-center text-[9px] font-mono uppercase tracking-wide text-cyan-200 hover:border-cyan-400/50 hover:text-white"><img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="" className="h-4 w-4 rounded-full" /> Search Kaspa</button>
                   <button onClick={() => setShowCryptoSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] px-2 text-center text-[9px] font-mono uppercase tracking-wide text-amber-200 hover:border-amber-400/50 hover:text-white"><img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="h-4 w-4 rounded-full" /> Search Crypto</button>
                 </div>
 
@@ -306,7 +306,7 @@ export default function AgentInternetLanding() {
                     <span className="absolute -right-px bottom-0 h-2 w-2 border-b border-white/35" />
                     <button onClick={() => setShowBrowser(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-white"><LayoutGrid className="h-3.5 w-3.5" /> Browse live pages</button>
                     <button onClick={() => setShowWebSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-white"><Search className="h-3.5 w-3.5" /> Search the web</button>
-                    <button onClick={() => setShowKaspaSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white hover:text-cyan-200"><Database className="h-3.5 w-3.5 text-cyan-300" /> Search Kaspa</button>
+                    <button onClick={() => setShowKaspaSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white hover:text-cyan-200"><img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="" className="h-3.5 w-3.5 rounded-full" /> Search Kaspa</button>
                     <button onClick={() => setShowCryptoSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-amber-200"><img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="h-3.5 w-3.5 rounded-full" /> Search Crypto</button>
                   </div>
                 </div>
