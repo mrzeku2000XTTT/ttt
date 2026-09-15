@@ -206,6 +206,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
 
   const submit = async (e) => {
     e?.preventDefault();
+    setInputFocused(false); // hide live suggestions on Enter — Google-style
     const q = query.trim();
     const handle = extractXHandle(q);
     if (handle) { addXProfileFromLink(handle); return; }
@@ -273,7 +274,7 @@ export default function KaspaSearchBrowser({ open, onClose }) {
               <input
                 ref={inputRef}
                 value={query}
-                onChange={e => { setQuery(e.target.value); setEdgePulse(Date.now()); }}
+                onChange={e => { setQuery(e.target.value); setEdgePulse(Date.now()); setInputFocused(true); }}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
                 placeholder="Describe any app, tool, or Kaspa service…"
