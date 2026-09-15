@@ -54,7 +54,16 @@ export default function CameraStudio() {
     if (activePointId === id) setActivePointId(null);
   };
   const previewAsset = (id, transform) => { setLayerPreview({ id, transform }); if (recording && id === project.selected) { const previous = recordBuffer.current.at(-1); if (!previous || Math.abs(playhead - previous.time) >= .03) recordBuffer.current.push({ id: crypto.randomUUID(), time: playhead, transform, easing: project.settings.easing || 'auto' }); } };
-  const commitAsset = (id, transform) => { const captured = recording && id === project.selected ? [...recordBuffer.current, { id: crypto.randomUUID(), time: playhead, transform, easing: project.settings.easing || 'auto' }] : []; state.patch({ assets: project.assets.map(item => item.id === id ? { ...item, transform, keyframes: mergeLayerKeyframes(item.keyframes, captured) } : item) }); setLayerPreview(null); recordBuffer.current = recording ? [{ id: crypto.randomUUID(), time: playhead, transform, easing: project.settings.easing || 'auto' }] : []; };
+  const commitAsset = (id, transform) => {
+    const captured = recording && id === project.selected ? [...recordBuffer.current, { id: crypto.randomUUID(), time: playhead, transform, easing: project.settings.easing || 'auto' }] : [];
+    state.patch({ assets: project.assets.map(item => {
+      if (item.id !== id) return item;
+      const keyed = (item.keyframes || []).length && !recording, dx = (transform.x ?? 0) - (item.transform?.x ?? 0), dy = (transform.y ?? 0) - (item.transform?.y ?? 0), ds = (transform.scale ?? 1) - (item.transform?.scale ?? 1), dr = (transform.rotation ?? 0) - (item.transform?.rotation ?? 0);
+      const shifted = keyed ? item.keyframes.map(frame => ({ ...frame, transform: { ...frame.transform, x: (frame.transform?.x ?? 0) + dx, y: (frame.transform?.y ?? 0) + dy, scale: (frame.transform?.scale ?? 1) + ds, rotation: (frame.transform?.rotation ?? 0) + dr } })) : item.keyframes;
+      return { ...item, transform, keyframes: mergeLayerKeyframes(shifted, captured) };
+    }) });
+    setLayerPreview(null); recordBuffer.current = recording ? [{ id: crypto.randomUUID(), time: playhead, transform, easing: project.settings.easing || 'auto' }] : [];
+  };
   const toggleRecord = () => { const next = !recording; setRecording(next); setPlaying(next); const current = project.assets.find(item => item.id === project.selected); recordBuffer.current = next && current ? [{ id: crypto.randomUUID(), time: playhead, transform: layerTransformAt(current, playhead, project.settings.easing), easing: project.settings.easing || 'auto' }] : []; };
   const drawMotionPath = points => { if (!asset) return; const sampled = points.filter((_, index) => index % Math.max(1, Math.floor(points.length / 45)) === 0), span = Math.max(.5, project.settings.duration - playhead), frames = sampled.map((point, index) => ({ id: crypto.randomUUID(), time: Math.min(project.settings.duration, playhead + span * index / Math.max(1, sampled.length - 1)), transform: { ...layerTransformAt(asset, playhead, project.settings.easing), x: point.x - .5, y: point.y - .5 }, easing: project.settings.easing || 'auto' })); state.patch({ assets: project.assets.map(item => item.id === asset.id ? { ...item, keyframes: mergeLayerKeyframes(item.keyframes, frames) } : item) }); setDrawMode(false); };
   const scenes = project.scenes?.length ? project.scenes : [{ id: 'scene-1', name: 'Scene 1', start: 0, end: project.settings.duration }];

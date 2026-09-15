@@ -45,6 +45,7 @@ export default function CameraStudioStage({ asset, assets, selected, settings, p
   return <div ref={box} className="relative flex h-full w-full items-center justify-center" onDragOver={e => { e.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) add(e.dataTransfer.files); }}>
     <div className="camera-stage-col">
     {showXYZ && <CameraXYZOverlay transform={cameraTransformAt(settings, cameraKeyframes, playhead, true)} time={playhead}/>}
+    {asset?.type === 'text' && !loading && !busy && <CameraTextPanel asset={asset} change={onTextChange}/>}
     <div className="camera-frame" style={{ width, height: width / ratio }}>
       <canvas ref={canvas} aria-label="Live 3D media preview"/>
       {asset && <CameraMotionPenOverlay active={drawMode} onComplete={onDrawPath}/>}
@@ -52,7 +53,6 @@ export default function CameraStudioStage({ asset, assets, selected, settings, p
       {asset && showFocus && <CameraFocusOverlay points={overlayPoints} activeId={activePointId} armed={armed} onSelect={onSelectPoint} onPlace={onPlacePoint} onPreview={onPreviewPoint} onMove={onMovePoint}/>} 
       {(!asset || dragging) && <button onClick={upload} disabled={busy} className={`camera-empty w-full ${dragging ? 'dragging' : ''}`}><Upload size={26}/><strong>Add images or video</strong><small>Click to browse or drag and drop</small></button>}
       {loading && <div className="camera-stage-loading" role="status"><Loader2 size={22} className="animate-spin"/><span className="ml-2">Preparing media…</span></div>}
-      {!loading && !busy && <CameraTextPanel asset={asset} change={onTextChange}/>}
     </div>
     </div>
   </div>;
