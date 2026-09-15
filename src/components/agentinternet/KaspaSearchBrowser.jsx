@@ -72,7 +72,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
     if (paidSearch && q.trim()) {
       const charge = await chargeSearch();
       if (reqId.current !== myId) return;
-      if (!charge.ok) { setFundingIssue(charge.reason); return; }
+      if (!charge.ok) { setFundingIssue(charge.reason); setLoading(false); return; }
     }
     const useNatural = q.trim().split(/\s+/).length >= 4 || q.includes('?');
     setNaturalSearch(useNatural);
