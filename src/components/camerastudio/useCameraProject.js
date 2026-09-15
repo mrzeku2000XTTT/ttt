@@ -20,7 +20,7 @@ export default function useCameraProject() {
   const refreshProjects = () => listCameraProjects().then(setProjects).catch(() => setProjects([]));
   useEffect(() => {
     let active = true;
-    readCameraProject().then(project => { if (active && project) dispatch({ type: 'load', project: { ...project, id: project.id || crypto.randomUUID(), editorMode: project.editorMode === 'composer' ? 'operator' : (project.editorMode || 'operator'), interestPoints: project.interestPoints || [], settings: { ...CAMERA_DEFAULTS, ...project.settings } } }); refreshProjects(); }).catch(() => { if (active) setError('Could not restore local storage. Your browser may have disabled it.'); }).finally(() => { if (active) setLoaded(true); });
+    readCameraProject().then(project => { if (active && project) dispatch({ type: 'load', project: { ...project, id: project.id || crypto.randomUUID(), editorMode: project.editorMode === 'composer' ? 'operator' : (project.editorMode || 'operator'), interestPoints: project.interestPoints || [], scenes: project.scenes?.length ? project.scenes : [{ id: crypto.randomUUID(), name: 'Scene 1', start: 0, end: { ...CAMERA_DEFAULTS, ...project.settings }.duration }], settings: { ...CAMERA_DEFAULTS, ...project.settings } } }); refreshProjects(); }).catch(() => { if (active) setError('Could not restore local storage. Your browser may have disabled it.'); }).finally(() => { if (active) setLoaded(true); });
     return () => { active = false; };
   }, []);
   useEffect(() => {
