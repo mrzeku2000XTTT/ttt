@@ -92,7 +92,120 @@ function findDataFile(html) {
   return m ? m[1] : null;
 }
 
-Deno.serve(async (req) => {
+function tokenRecord({ name, ticker, url, description, logo, source, features = [] }) {
+  const symbol = String(ticker || '').toUpperCase();
+  return {
+    name: symbol ? `${name || symbol} ($${symbol})` : String(name || 'Kaspa token'),
+    description,
+    url,
+    category: 'Tokens',
+    logo: logo || '',
+    features: [source, symbol, ...features].filter(Boolean),
+    indexed_at: new Date().toISOString()
+  };
+}
+
+async function indexTokenSources(all, headers, perSection) {
+  try {
+    const res = await fetch('https://api.kron.technology/api/registry/tokens', { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const tokens = Array.isArray(data.tokens) ? data.tokens : [];
+    let count = 0;
+    for (const token of tokens) {
+      if (!token?.tick || token.hidden) continue;
+      const ticker = String(token.tick).toUpperCase();
+      const tokenUrl = `https://kron.technology/token/${encodeURIComponent(String(token.tick).toLowerCase())}`;
+      const creator = String(token.creator || '').trim();
+      const creatorProfile = token.links?.x ? String(token.links.x) : '';
+      const chainStatus = token.chainVerified ? 'Chain verified by KRON.' : 'Listed by the KRON token registry.';
+      const creatorText = creator ? ` Creator wallet: ${creator}.` : '';
+      all.set(`KRON|token|${ticker}`, tokenRecord({
+        name: token.name,
+        ticker,
+        url: tokenUrl,
+        description: `${String(token.description || `${token.name || ticker} token on Kaspa L1`).trim()} ${chainStatus}${creatorText}`,
+        logo: token.image,
+        source: 'KRON registry',
+        features: [token.chainVerified ? 'chain-verified' : 'listed', creator ? `creator:${creator}` : '', creatorProfile ? `creator-profile:${creatorProfile}` : '']
+      }));
+      if (creator) {
+        all.set(`KRON|creator|${ticker}`, {
+          name: `${token.name || ticker} creator — ${ticker}`,
+          description: `KRON's token registry identifies creator wallet ${creator} as the creator of ${token.name || ticker} ($${ticker}) on Kaspa L1.${creatorProfile ? ` The project creator profile is ${creatorProfile}.` : ''}`,
+          url: tokenUrl,
+          category: 'X Profiles',
+          logo: token.image ? String(token.image) : '',
+          features: ['token creator', ticker, creator, creatorProfile].filter(Boolean),
+          indexed_at: new Date().toISOString()
+        });
+      }
+      count++;
+    }
+    perSection['KRON Tokens'] = count;
+  } catch (e) {
+    console.log(`KRON token index error: ${e.message}`);
+    perSection['KRON Tokens'] = 0;
+  }
+
+  try {
+    const res = await fetch('https://kascov.io/data/mainnet/tokens.json', { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const tokens = Array.isArray(data.tokens) ? data.tokens : [];
+    let count = 0;
+    for (const token of tokens) {
+      const ticker = String(token.listed_ticker || token.claimed_ticker || '').toUpperCase();
+      if (!ticker || !token.covenant_id) continue;
+      const validation = token.status === 'verified' ? 'Kascov verified its complete on-chain history and conserved supply.' : `Kascov validation status: ${token.status || 'unvalidated'}.`;
+      all.set(`Kascov|${token.covenant_id}`, tokenRecord({
+        name: token.listed_name || token.claimed_name || token.name,
+        ticker,
+        url: `https://kascov.io/#/mainnet/token/${token.covenant_id}`,
+        description: `${token.listed_name || token.claimed_name || ticker} ($${ticker}) is a Kaspa L1 ${token.template || 'covenant token'}. ${validation} Covenant ID: ${token.covenant_id}.`,
+        logo: token.listed_image,
+        source: 'Kascov on-chain index',
+        features: [token.status || 'unvalidated', token.template, `covenant:${token.covenant_id}`]
+      }));
+      count++;
+    }
+    perSection['Kascov Tokens'] = count;
+  } catch (e) {
+    console.log(`Kascov token index error: ${e.message}`);
+    perSection['Kascov Tokens'] = 0;
+  }
+
+  try {
+    let count = 0;
+    for (let skip = 0; skip < 5000; skip += 500) {
+      const res = await fetch(`https://api.kaspa.com/krc20?skip=${skip}&limit=500&timeInterval=1d`, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const tokens = await res.json();
+      if (!Array.isArray(tokens)) throw new Error('Invalid token response');
+      for (const token of tokens) {
+        const ticker = String(token.ticker || '').toUpperCase();
+        if (!ticker) continue;
+        all.set(`KaspaCom|${ticker}`, tokenRecord({
+          name: ticker,
+          ticker,
+          url: `https://kaspa.com/tokens/marketplace/token/${encodeURIComponent(ticker)}`,
+          description: `${ticker} is indexed by the KaspaCom KRC-20 marketplace with ${Number(token.totalHolders || 0).toLocaleString('en-US')} holders and ${Number(token.totalMintedPercent || 0) >= 1 ? 'completed' : 'active'} minting. KaspaCom does not identify a creator in this market record.`,
+          logo: token.logoUrl || token.metadata?.logo,
+          source: 'KaspaCom KRC-20 index',
+          features: ['KRC-20', token.state, `rank:${token.rank || ''}`]
+        }));
+        count++;
+      }
+      if (tokens.length < 500) break;
+    }
+    perSection['KaspaCom Tokens'] = count;
+  } catch (e) {
+    console.log(`KaspaCom token index error: ${e.message}`);
+    perSection['KaspaCom Tokens'] = 0;
+  }
+}
+
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -171,6 +284,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    await indexTokenSources(all, headers, perSection);
     const records = [...all.values()];
 
     // Clear previous index
@@ -204,4 +318,4 @@ Deno.serve(async (req) => {
     console.error('❌ indexKaspaHub error:', error);
     return Response.json({ error: error.message, success: false }, { status: 500 });
   }
-});
+}
