@@ -176,27 +176,31 @@ async function indexTokenSources(all, headers, perSection) {
   }
 
   try {
-    let count = 0;
-    for (let skip = 0; skip < 5000; skip += 500) {
-      const res = await fetch(`https://api.kaspa.com/krc20?skip=${skip}&limit=500&timeInterval=1d`, { headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const countRes = await fetch('https://api.kaspa.com/krc20/count', { headers });
+    if (!countRes.ok) throw new Error(`Count HTTP ${countRes.status}`);
+    const total = Math.min(Number((await countRes.json()).count || 0), 5000);
+    const pageSize = 100;
+    const pages = await Promise.all(Array.from({ length: Math.ceil(total / pageSize) }, async (_, page) => {
+      const res = await fetch(`https://api.kaspa.com/krc20?skip=${page * pageSize}&limit=${pageSize}&timeInterval=1d`, { headers });
+      if (!res.ok) throw new Error(`Page ${page + 1} HTTP ${res.status}`);
       const tokens = await res.json();
-      if (!Array.isArray(tokens)) throw new Error('Invalid token response');
-      for (const token of tokens) {
-        const ticker = String(token.ticker || '').toUpperCase();
-        if (!ticker) continue;
-        all.set(`KaspaCom|${ticker}`, tokenRecord({
-          name: ticker,
-          ticker,
-          url: `https://kaspa.com/tokens/marketplace/token/${encodeURIComponent(ticker)}`,
-          description: `${ticker} is indexed by the KaspaCom KRC-20 marketplace with ${Number(token.totalHolders || 0).toLocaleString('en-US')} holders and ${Number(token.totalMintedPercent || 0) >= 1 ? 'completed' : 'active'} minting. KaspaCom does not identify a creator in this market record.`,
-          logo: token.logoUrl || token.metadata?.logo,
-          source: 'KaspaCom KRC-20 index',
-          features: ['KRC-20', token.state, `rank:${token.rank || ''}`]
-        }));
-        count++;
-      }
-      if (tokens.length < 500) break;
+      if (!Array.isArray(tokens)) throw new Error(`Invalid token response on page ${page + 1}`);
+      return tokens;
+    }));
+    let count = 0;
+    for (const token of pages.flat()) {
+      const ticker = String(token.ticker || '').toUpperCase();
+      if (!ticker) continue;
+      all.set(`KaspaCom|${ticker}`, tokenRecord({
+        name: ticker,
+        ticker,
+        url: `https://kaspa.com/tokens/marketplace/token/${encodeURIComponent(ticker)}`,
+        description: `${ticker} is indexed by the KaspaCom KRC-20 marketplace with ${Number(token.totalHolders || 0).toLocaleString('en-US')} holders and ${Number(token.totalMintedPercent || 0) >= 1 ? 'completed' : 'active'} minting. KaspaCom does not identify a creator in this market record.`,
+        logo: token.logoUrl || token.metadata?.logo,
+        source: 'KaspaCom KRC-20 index',
+        features: ['KRC-20', token.state, `rank:${token.rank || ''}`]
+      }));
+      count++;
     }
     perSection['KaspaCom Tokens'] = count;
   } catch (e) {
