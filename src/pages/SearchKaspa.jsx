@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
 import KaspaSearchBrowser from '@/components/agentinternet/KaspaSearchBrowser';
 import BackToStore from '@/components/BackToStore';
 import SearchKaspaTabBar from '@/components/searchkaspa/SearchKaspaTabBar';
@@ -8,18 +9,25 @@ import SearchDocsTab from '@/components/searchkaspa/SearchDocsTab';
 import SearchProfileTab from '@/components/searchkaspa/SearchProfileTab';
 
 /** Search Kaspa app — iOS-style shell with Search / Docs / Profile bottom tabs.
- * Searches run a KAS micro-transaction paid from the user's funded Search Kaspa wallet. */
+ * Only admins pay the KAS micro-search fee — everyone else searches for free. */
 export default function SearchKaspa() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [tab, setTab] = useState('search');
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me()
+      .then(u => setIsAdmin(u?.role === 'admin'))
+      .catch(() => setIsAdmin(false));
+  }, []);
 
   return <>
     <KaspaSearchBrowser
       open
       onClose={() => navigate('/')}
       initialQuery={params.get('q') || ''}
-      paidSearch
+      paidSearch={isAdmin}
       embedded
       onRequireFunding={() => setTab('profile')}
     />
