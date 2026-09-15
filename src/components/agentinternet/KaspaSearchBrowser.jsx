@@ -24,7 +24,7 @@ import { mergeAppResults, searchTTTApps } from "./smartAppSearch";
 
 // "$KAS" is the Kaspian wall — same index, rendered as a profile grid.
 const KAS_TAB = "$KAS";
-const CATEGORIES = [KAS_TAB, "All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources", "X Profiles"];
+const CATEGORIES = [KAS_TAB, "All", "Tokens", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources", "X Profiles"];
 
 const PAGE_SIZE = 10;
 const WEB_PAGE_SIZE = 4;
@@ -75,9 +75,10 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
       if (!charge.ok) { setFundingIssue(charge.reason); setLoading(false); return; }
     }
     const useNatural = q.trim().split(/\s+/).length >= 4 || q.includes('?');
+    const tokenSearch = /\b(tokens?|krc-?20|kcc-?20|layer\s*[12]|l[12]|kkdag)\b/i.test(q);
     setNaturalSearch(useNatural);
     setNlHint(null);
-    const localResults = useNatural ? [] : searchTTTApps(q, localCategory);
+    const localResults = searchTTTApps(q, localCategory);
     setResults(localResults);
     setTotal(localResults.length);
     setLoading(true);
@@ -90,7 +91,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
     try {
       const [kaspaTask, webTask] = await Promise.allSettled([
         base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000, natural_language: useNatural }),
-        q && !useNatural ? base44.functions.invoke("openWebSearch", { query: q }) : Promise.resolve(null),
+        q ? base44.functions.invoke("openWebSearch", { query: tokenSearch ? `${q} Kaspa KRC-20 KCC-20` : q }) : Promise.resolve(null),
       ]);
       const kaspaRaw = kaspaTask.status === "fulfilled" ? kaspaTask.value : null;
       const webRaw = webTask.status === "fulfilled" ? webTask.value : null;
@@ -99,8 +100,8 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
       if (reqId.current !== myId) return;
       if (web?.success) setWebResults(web.results || []);
       if (res?.success) {
-        setResults(useNatural ? res.results || [] : mergeAppResults(localResults, res.results || []));
-        setTotal(useNatural ? res.total || 0 : localResults.length + (res.total || 0));
+        setResults(mergeAppResults(localResults, res.results || []));
+        setTotal(localResults.length + (res.total || 0));
         if (useNatural) setNlHint({ keywords: (res.intent?.keywords || []).join(' · '), category: res.intent?.target === 'profiles' ? 'Profiles' : res.intent?.target === 'projects' ? 'Projects' : 'Profiles and projects', noMatchReason: res.no_match_reason, partial: res.coverage?.truncated });
         if (res.message && !localResults.length) setNotIndexed(true);
         // Grounded mode shows exact directory quotes instead of a generated overview.
@@ -428,7 +429,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
           <div className="px-4 py-1.5 text-[11px] text-white/40 font-mono border-b border-white/5 w-full max-w-4xl mx-auto">
             {loading ? "Searching…" : notIndexed
               ? `Kaspa index not built · ${webResults.length} parallel web results`
-              : naturalSearch ? `${results.length} directory matches · indexed claims, not independently verified`
+              : naturalSearch ? `${results.length} app and directory matches · ${webResults.length} web results · indexed claims not independently verified`
               : `${results.length} of ${total} combined apps · TTT App Store + Kaspa Hub · ${webResults.length} web results${submitted ? ` · "${submitted}"` : ""}`}
           </div>
 

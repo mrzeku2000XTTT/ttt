@@ -16,7 +16,10 @@ export async function kaspaNaturalSearch(base44, query, apps, limit) {
   const requiresBuilder = target === 'profiles' && /\b(build\w*|develop\w*|found\w*|creat\w*|working|leading|maintain\w*)\b/i.test(query);
   const builderEvidence = /\b(build(?:s|er|ers|ing)?|built|develop(?:s|er|ers|ing|ed)?|creat(?:or|ors|ed|ing)|found(?:er|ers|ed)|leading|leads?|maintain(?:er|s|ing)?|engineer(?:s|ing)?)\b/i;
   const keywords = [...new Set((Array.isArray(plan?.keywords) ? plan.keywords : []).filter(k => typeof k === 'string').map(k => k.trim().slice(0, 60)).filter(Boolean))].slice(0, 8);
-  const terms = keywords.map(normalize);
+  const tokenAliases = /\b(tokens?|krc-?20|kcc-?20|layer\s*[12]|l[12]|kkdag)\b/i.test(query)
+    ? ['token', 'krc20', 'krc-20', 'kcc20', 'kcc-20', 'layer 1', 'layer 2', 'l1', 'l2']
+    : [];
+  const terms = [...new Set([...keywords, ...tokenAliases].map(normalize))];
   const pool = apps.filter(a => safeUrl(a.url) && (target === 'profiles' ? isProfile(a) : target === 'projects' ? !isProfile(a) : true) && (!requiresBuilder || builderEvidence.test(a.description || '')));
   const candidates = pool.map(app => ({ app, score: terms.reduce((sum, term) => sum + (normalize(app.name).includes(term) ? 6 : 0) + (normalize(app.description).includes(term) ? 4 : 0) + (normalize((app.features || []).join(' ')).includes(term) ? 1 : 0), 0) }))
     .filter(item => item.score > 0).sort((a, b) => b.score - a.score).slice(0, 60).map(({ app }) => app);

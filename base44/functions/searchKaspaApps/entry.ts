@@ -81,7 +81,11 @@ export default async function(req) {
       if (skip === 4500) truncated = true;
     }
     const scanned = apps.length;
-    if (category && category !== 'All') apps = apps.filter(a => (a.category || '') === category);
+    if (category === 'Tokens') {
+      apps = apps.filter(a => /tokens?|coins?|krc-?20|kcc-?20|layer\s*[12]|\bl[12]\b|kkdag/i.test(`${a.name || ''} ${a.description || ''} ${(a.features || []).join(' ')}`));
+    } else if (category && category !== 'All') {
+      apps = apps.filter(a => (a.category || '') === category);
+    }
     if (natural_language) {
       const grounded = await kaspaNaturalSearch(base44, query.trim(), apps, Number(limit));
       return Response.json({ success: true, ...grounded, total: grounded.results.length, shown: grounded.results.length, coverage: { scanned, truncated }, ai: null }, { headers: cors });

@@ -16,6 +16,9 @@ const CONCEPTS = {
   search: ['search','discover','browser','explorer','research'],
   privacy: ['privacy','secure','security','encrypted','vault','identity'],
   social: ['social','community','feed','chat','creator'],
+  token: ['token','krc20','krc-20','kcc20','kcc-20','coin','layer1','layer2','l1','l2'],
+  tokens: ['token','krc20','krc-20','kcc20','kcc-20','coin','layer1','layer2','l1','l2'],
+  kkdag: ['kkdag','token','kcc20','kcc-20'],
   fitness: ['fitness','workout','exercise','health'],
   food: ['food','meal','recipe','grocery','fridge'],
 };
@@ -31,6 +34,7 @@ function categoryMatches(app, category) {
   if (category === 'Merchant Solutions') return ['Finance', 'Shop'].includes(app.cat);
   if (category === 'Resources') return ['Education', 'Media', 'Tools'].includes(app.cat);
   if (category === 'Ecosystem') return app.cat === 'Kaspa' || /kaspa|\bkas\b|dag|kcc/i.test(`${app.name} ${app.desc}`);
+  if (category === 'Tokens') return /tokens?|coins?|krc-?20|kcc-?20|layer\s*[12]|\bl[12]\b|kkdag/i.test(`${app.name} ${app.desc}`);
   return app.cat === category;
 }
 export function searchTTTApps(query, category = 'All', limit = 80) {
