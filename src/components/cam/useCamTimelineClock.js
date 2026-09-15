@@ -45,5 +45,5 @@ export default function useCamTimelineClock(projectRef, snapshotRef, setProject)
     snapshotRef.current = snapshot;
     startRecording(snapshot); // New move, fresh progress; recording stays on.
   };
-  return { time, seek, running, setRunning, recording, startRecording, stopRecording, changeMove, take };
+  return { time, currentTime: current, seek, running, setRunning, recording, startRecording, stopRecording, changeMove, take };
 }

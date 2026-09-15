@@ -1,8 +1,8 @@
 import React from 'react';
-import { Download, Eye, EyeOff, Plus, Store, Upload } from 'lucide-react';
+import { Download, Eye, EyeOff, Film, Plus, Store, Upload } from 'lucide-react';
 import { shortKaspaAddress } from '@/lib/useKcc20Wallet';
 
-export default function CamTopBar({ logo, address, onHome, onUpload, onDownload, onExit, canExport, fusionOn, onToggleFusion, uiHidden, onToggleUi, mode, onModePick, canSeq }) {
+export default function CamTopBar({ logo, address, onHome, onUpload, onDownload, onExportVideo, videoExport, onExit, canExport, fusionOn, onToggleFusion, uiHidden, onToggleUi, mode, onModePick, canSeq }) {
   const goPanel = (id) => {
     if (fusionOn) onToggleFusion();
     requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }));
@@ -18,6 +18,7 @@ export default function CamTopBar({ logo, address, onHome, onUpload, onDownload,
         <div className="cm-head-actions">
           <button onClick={onUpload}><Upload /> Media</button>
           <button onClick={onDownload} disabled={!canExport}><Download /> Export</button>
+          {onExportVideo && <button onClick={onExportVideo} disabled={!canExport || videoExport != null} className={videoExport != null ? 'active' : ''}><Film /> {videoExport != null ? `MP4 ${Math.round(videoExport * 100)}%` : 'Export MP4'}</button>}
           <button onClick={onExit}><Store /> Exit to Store</button>
         </div>
       </header>

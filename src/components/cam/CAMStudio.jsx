@@ -17,6 +17,8 @@ import CamEditorPanel from '@/components/cam/CamEditorPanel';
 import useCamTimeline from '@/components/cam/useCamTimeline';
 import { captureScene } from '@/components/cam/camTimelineModel';
 import renderCamScene from '@/components/cam/camSceneRender';
+import { camSceneAt } from '@/components/cam/camSceneAt';
+import { exportCamVideo } from '@/components/cam/camExport';
 import { edgeSmartCrop } from '@/components/cam/camSmartCrop';
 import { findAnimationPreset } from '@/components/cam/camAnimationLibrary';
 import useCamTextLayers from '@/components/cam/useCamTextLayers';
@@ -74,13 +76,17 @@ export default function CAMStudio({ address, onHome }) {
   const [camRig, setCamRig] = useState({ fov: 48, distance: 4.2, roll: 0, autoOrbit: false, position: { x: 0, y: 0, z: 0 }, pivot: { x: 0, y: 0, z: 0 } });
   const [refId, setRefId] = useState(null);
   const mediaInputRef = useRef(null);
-  const timeline = useCamTimeline(address, captureScene(media, manualOffset, camRig, moveId, intensity, duration));
+  const snapshot = captureScene(media, manualOffset, camRig, moveId, intensity, duration);
+  const timeline = useCamTimeline(address, snapshot);
+  const snapRef = useRef(snapshot); snapRef.current = snapshot;
   const timelineRef = useRef(timeline); timelineRef.current = timeline;
+  const [videoExport, setVideoExport] = useState(null);
+  const exportingRef = useRef(false);
   const scene = timeline.enabled ? timeline.scene : null;
   const primaryPose = scene?.assets.find((a) => a.id === 'primary');
   const previewOffset = scene && !timeline.recording ? { x: (primaryPose?.x || 0) / 2.4, y: (primaryPose?.y || 0) / 1.6, z: (primaryPose?.z || 0) / 2.2 } : manualOffset;
   const previewMedia = scene && !timeline.recording ? media.flatMap((m) => { const pose = scene.assets.find((a) => a.id === m.id); return pose ? [{ ...m, pos: { x: pose.x, y: pose.y, z: pose.z }, scale: pose.scale, rotation: pose.rotation, opacity: pose.opacity, glow: pose.glow }] : []; }) : media;
-  useEffect(() => { if (scene && !fusionOn) renderCamScene(canvasRef.current, scene, media, viewZoom); }, [scene, media, viewZoom, fusionOn]);
+  useEffect(() => { if (scene && !fusionOn && !exportingRef.current) renderCamScene(canvasRef.current, scene, media, viewZoom); }, [scene, media, viewZoom, fusionOn]);
 
   // refs mirrored for the animation loop
   const playingRef = useRef(false); playingRef.current = playing;
@@ -114,7 +120,7 @@ export default function CAMStudio({ address, onHome }) {
 
   const drawStill = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !img || timelineRef.current.enabled) return;
+    if (!canvas || !img || timelineRef.current.isEnabled?.() || exportingRef.current) return;
     const shot = modeRef.current === 'seq' && shotsRef.current.length ? shotsRef.current[seqIdxRef.current % shotsRef.current.length] : curRef.current;
     const snapshot=captureScene(media,manualOffset,camRig,shot.move||shot.moveId,shot.intensity,shot.duration);
     renderCamScene(canvas,{...snapshot,progress:pRef.current},media,viewZoomRef.current);
@@ -128,7 +134,12 @@ export default function CAMStudio({ address, onHome }) {
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       const dt = Math.min((now - last) / 1000, 0.1); last = now;
-      if (timelineRef.current.enabled) { if (barRef.current) barRef.current.style.width = `${timelineRef.current.total ? timelineRef.current.time / timelineRef.current.total * 100 : 0}%`; return; }
+      if (timelineRef.current.enabled) {
+        const tl = timelineRef.current;
+        if (tl.running && !tl.recording && !exportingRef.current && canvasRef.current) renderCamScene(canvasRef.current, camSceneAt(tl.project, snapRef.current, tl.currentTime.current), media, viewZoomRef.current);
+        if (barRef.current) barRef.current.style.width = `${tl.total ? tl.time / tl.total * 100 : 0}%`;
+        return;
+      }
       if (!playingRef.current || !img) return;
       const seqMode = modeRef.current === 'seq' && shotsRef.current.length > 0;
       const active = seqMode
@@ -295,6 +306,20 @@ export default function CAMStudio({ address, onHome }) {
     if (next === 'seq') playSequence();
     else { timeline.leave(); setMode('move'); setPlaying(false); pRef.current = 0; }
   };
+  // MP4 export — plays the composed timeline through the 2D renderer in real
+  // time and records the canvas, exactly like Camera Studio's video export.
+  const exportVideo = async () => {
+    if (!img || exportingRef.current) return;
+    timeline.leave(); setPlaying(false);
+    exportingRef.current = true; setVideoExport(0);
+    try {
+      await exportCamVideo({ canvas: canvasRef.current, project: timelineRef.current.project, snapshot: snapRef.current, media, onProgress: setVideoExport });
+    } catch (error) {
+      alert(error?.message || 'Video export failed. Try again.');
+    } finally {
+      exportingRef.current = false; setVideoExport(null); drawStill();
+    }
+  };
   const addShot = () => setShots((prev) => [...prev, { id: Date.now(), move: moveId, intensity, duration }]);
   const loadShot = (shot) => {
     timeline.leave();
@@ -428,7 +453,7 @@ export default function CAMStudio({ address, onHome }) {
   return (
     <div data-mobile-view={mobileView} className={`cm-page cm-fusion-shell cm-editing-shell ${maxPane === 'nodes' ? 'is-max-nodes' : ''} ${uiHidden ? 'cm-ui-hidden' : ''}`}>
       {uiHidden && <button className="cm-ui-restore" onClick={() => setUiHidden(false)}><Eye size={14} /><span>Show controls</span></button>}
-      <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} uiHidden={uiHidden} onToggleUi={() => setUiHidden((v) => !v)} mode={mode} onModePick={pickMode} canSeq={!!img && shots.length > 0} />
+      <CamTopBar logo={LOGO} address={address} onHome={onHome} onUpload={() => fileRef.current?.click()} onDownload={downloadStoryboard} onExportVideo={exportVideo} videoExport={videoExport} onExit={() => navigate('/AppStoreV2')} canExport={!!img} fusionOn={fusionOn} onToggleFusion={toggleFusion} uiHidden={uiHidden} onToggleUi={() => setUiHidden((v) => !v)} mode={mode} onModePick={pickMode} canSeq={!!img && shots.length > 0} />
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
       <input ref={mediaInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => Array.from(e.target.files || []).forEach(addMedia)} />
       <CamMobileViews view={mobileView} onChange={changeMobileView}/>

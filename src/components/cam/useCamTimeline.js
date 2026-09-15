@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { activeClip, endTime, sampleKeys, uid } from '@/components/cam/camTimelineModel';
+import { endTime, uid } from '@/components/cam/camTimelineModel';
 import useCamTimelineClock from '@/components/cam/useCamTimelineClock';
 import useCamTimelineEdits from '@/components/cam/useCamTimelineEdits';
-import { animationState } from '@/components/cam/camAnimationLibrary';
-import { propertyPose, editProperty } from '@/components/cam/camPropertyKeys';
+import { camSceneAt } from '@/components/cam/camSceneAt';
+import { editProperty } from '@/components/cam/camPropertyKeys';
 import { appendCameraMove, keyCamera } from '@/components/cam/camCameraTimeline';
 
 export default function useCamTimeline(address, snapshot) {
@@ -20,17 +20,8 @@ export default function useCamTimeline(address, snapshot) {
     if (!added.length) return;
     setProject((p) => ({ ...p, tracks: [...p.tracks, ...added.map((a) => ({ id: uid(), assetId: a.id, name: a.name, hidden: false, clips: [{ id: uid(), start: clock.time, duration: snapshot.duration, keys: [{ t: 0, x: a.x, y: a.y, z: a.z, scale: a.scale, aspect: a.aspect, animationId: a.animationId || '' }] }] }))] }));
   }, [snapshot.assets.map((a) => a.id).join('|')]);
-  const total = endTime(project), t = Math.min(clock.time, Math.max(0, total - 0.00001));
-  const cut = activeClip(project.cuts, t), camera = cut ? sampleKeys(cut.keys, t - cut.start) : snapshot.camera;
-  const scene = clock.recording ? { ...snapshot, progress: Math.min(1, (clock.time - (clock.take.current?.start || 0)) / (clock.take.current?.duration || snapshot.duration)) } : {
-    camera, progress: camera.progress ?? (cut ? (cut.fromProgress || 0) + ((cut.toProgress ?? 1) - (cut.fromProgress || 0)) * (t - cut.start) / cut.duration : 0),
-    assets: project.tracks.filter((track) => !track.hidden).flatMap((track) => {
-      const clip = activeClip(track.clips, t); if (!clip) return [];
-      const sampled = sampleKeys(clip.keys, t - clip.start), base = { ...sampled, ...propertyPose(clip,t-clip.start,sampled) }, progress = (t - clip.start) / clip.duration;
-      const anim = clip.animationId ? animationState(clip.animationId, progress, clip.animationIntensity || 1) : { dx:0,dy:0,dz:0,scale:1,rot:0,opacity:1,blur:0,glow:0 };
-      return [{ id: track.assetId, ...base, x: base.x + anim.dx, y: base.y + anim.dy, z: base.z + anim.dz, scale: base.scale * anim.scale, rotation: (base.rotation || 0) + anim.rot, opacity: (base.opacity ?? 1) * anim.opacity, blur: anim.blur, glow: anim.glow, animationId: clip.animationId || '' }];
-    }),
-  };
+  const total = endTime(project);
+  const scene = clock.recording ? { ...snapshot, progress: Math.min(1, (clock.time - (clock.take.current?.start || 0)) / (clock.take.current?.duration || snapshot.duration)) } : camSceneAt(project, snapshot, clock.time);
   const seek = (time) => { if (clock.recording) return; enabledRef.current = true; setEnabled(true); clock.setRunning(false); clock.seek(Math.min(total, Math.max(0, time))); };
   const play = () => { enabledRef.current = true; setEnabled(true); if (clock.time >= total) clock.seek(0); clock.setRunning(!clock.running); };
   const record = () => { enabledRef.current = true; setEnabled(true); clock.recording ? clock.stopRecording() : clock.startRecording(); };
