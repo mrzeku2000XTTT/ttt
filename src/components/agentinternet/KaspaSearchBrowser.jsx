@@ -18,13 +18,15 @@ import ParallelWebResults from "./ParallelWebResults";
 import TypingEdgeGlow from "./TypingEdgeGlow";
 import LiveAppSuggestions from "./LiveAppSuggestions";
 import SearchHighlight from "./SearchHighlight";
+import SearchPagination from "./SearchPagination";
 import { mergeAppResults, searchTTTApps } from "./smartAppSearch";
 
 // "$KAS" is the Kaspian wall — same index, rendered as a profile grid.
 const KAS_TAB = "$KAS";
 const CATEGORIES = [KAS_TAB, "All", "Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources", "X Profiles"];
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
+const WEB_PAGE_SIZE = 4;
 
 function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
@@ -42,7 +44,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
   const [notIndexed, setNotIndexed] = useState(false);
   const [ai, setAi] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
-  const [visible, setVisible] = useState(PAGE_SIZE);
+  const [page, setPage] = useState(1);
   const [listOpen, setListOpen] = useState(false);
   const [agentApp, setAgentApp] = useState(null);
   const [linkAdd, setLinkAdd] = useState(null); // { status: 'adding'|'added'|'exists'|'error', handle, error }
@@ -57,6 +59,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
   const [inputFocused, setInputFocused] = useState(false);
   const [edgePulse, setEdgePulse] = useState(0);
   const inputRef = useRef(null);
+  const resultsRef = useRef(null);
   const reqId = useRef(0);
 
   const runSearch = useCallback(async (q, cat, localCategory = cat) => {
@@ -73,7 +76,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
     setWebResults([]);
     setAi(null);
     setAiLoading(false);
-    setVisible(PAGE_SIZE);
+    setPage(1);
     try {
       const [kaspaTask, webTask] = await Promise.allSettled([
         base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000, natural_language: useNatural }),
@@ -244,6 +247,13 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
 
   const liveSuggestions = inputFocused ? searchTTTApps(query, "All", 6) : [];
   const isKasTab = activeCategory === KAS_TAB;
+  const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE), Math.ceil(webResults.length / WEB_PAGE_SIZE));
+  const pagedResults = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pagedWebResults = webResults.slice((page - 1) * WEB_PAGE_SIZE, page * WEB_PAGE_SIZE);
+  const changePage = (nextPage) => {
+    setPage(Math.max(1, Math.min(nextPage, totalPages)));
+    resultsRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <AnimatePresence>
@@ -411,7 +421,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
           </div>
 
           {/* Results — Google-style */}
-          <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div ref={resultsRef} className="flex-1 overflow-y-auto px-4 py-4">
             {error ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
                 <p className="text-white/60 text-sm mb-2">{naturalSearch ? 'Directory search is unavailable' : 'Both search sources are unavailable'}</p>
@@ -419,7 +429,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
               </div>
             ) : notIndexed ? (
               <div className="px-2">
-                {webResults.length ? <ParallelWebResults results={webResults} /> : <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                {webResults.length ? <ParallelWebResults results={pagedWebResults} /> : <div className="flex flex-col items-center justify-center h-full text-center px-6">
                   <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
                     <Database className="w-5 h-5 text-white/40" />
                   </div>
@@ -430,26 +440,19 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
             ) : isKasTab && !(naturalSearch && results.length === 0) ? (
               <div className="space-y-4">
                 <KaspianProfileGrid
-                  profiles={results.slice(0, visible)}
+                  profiles={pagedResults}
                   onAskAI={setAgentApp}
                   onShare={shareApp}
                   onTip={tipApp}
                   canTip={(app) => !!tipAddressFor(app)}
                   verifiedUrls={verifiedUrls}
                 />
-                {visible < results.length && (
-                  <button
-                    onClick={() => setVisible(v => v + PAGE_SIZE)}
-                    className="w-full max-w-4xl mx-auto block py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-xs font-medium transition-colors"
-                  >
-                    Show more Kaspians ({results.length - visible} remaining)
-                  </button>
-                )}
+
               </div>
             ) : results.length === 0 && !loading ? (
               <div className="px-2">
                 <AiOverviewCard text={ai} loading={aiLoading} />
-                {webResults.length ? <ParallelWebResults results={webResults} /> : <div className="flex flex-col items-center justify-center text-center px-6 py-10">
+                {webResults.length ? <ParallelWebResults results={pagedWebResults} /> : <div className="flex flex-col items-center justify-center text-center px-6 py-10">
                   <Globe className="w-8 h-8 text-white/20 mb-3" />
                   <p className="text-white/50 text-sm mb-1">No matching results</p>
                   <p className="text-white/30 text-xs max-w-lg leading-relaxed">{nlHint?.noMatchReason || 'Try a different keyword or category.'}</p>
@@ -458,7 +461,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
             ) : (
               <div className="max-w-2xl mx-auto space-y-5">
                 <AiOverviewCard text={ai} loading={aiLoading} />
-                {results.slice(0, visible).map((app, i) => (
+                {pagedResults.map((app, i) => (
                   <div key={app.id || i} className="group rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/15 transition-colors p-3.5">
                     <div className="flex items-start gap-3">
                       <SiteLogo app={app} size={36} />
@@ -528,18 +531,12 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '' })
                   </div>
                 ))}
 
-                {visible < results.length && (
-                  <button
-                    onClick={() => setVisible(v => v + PAGE_SIZE)}
-                    className="w-full py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-xs font-medium transition-colors"
-                  >
-                    Show more ({results.length - visible} remaining)
-                  </button>
-                )}
-                <ParallelWebResults results={webResults} />
+                <ParallelWebResults results={pagedWebResults} />
               </div>
             )}
           </div>
+
+          <SearchPagination page={page} totalPages={totalPages} onChange={changePage} />
 
           {/* Footer */}
           <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-center gap-2">
