@@ -14,7 +14,6 @@ import { APPS } from "@/components/appstore2/appCatalog";
 import { AGENT_CARDS } from "@/components/agentinternet/agentCards";
 import LivePagesBrowser from "@/components/agentinternet/LivePagesBrowser";
 import WebSearchBrowser from "@/components/agentinternet/WebSearchBrowser";
-import KaspaSearchBrowser from "@/components/agentinternet/KaspaSearchBrowser";
 import CryptoSearchBrowser from "@/components/agentinternet/CryptoSearchBrowser";
 import HotTopicsTicker from "@/components/agentinternet/HotTopicsTicker";
 import SuperComputerChat from "@/components/agentinternet/SuperComputerChat";
@@ -40,7 +39,7 @@ export default function AgentInternetLanding() {
   const [superMode, setSuperMode] = useState(false); // admin-only supercomputer chat
   const [showBrowser, setShowBrowser] = useState(false); // browse-all-live-pages directory
   const [showWebSearch, setShowWebSearch] = useState(false); // search-any-site iframe
-  const [showKaspaSearch, setShowKaspaSearch] = useState(false); // search kaspahub index
+
   const [showCryptoSearch, setShowCryptoSearch] = useState(false); // crypto coin search
 
   const openChat = (command) => {
@@ -249,7 +248,7 @@ export default function AgentInternetLanding() {
                     <button onClick={() => setShowWebSearch(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-white/60 hover:text-white hover:border-white/40 transition-colors">
                       <Search className="w-3.5 h-3.5" /> Search the web
                     </button>
-                    <button onClick={() => setShowKaspaSearch(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-cyan-200 hover:text-white hover:border-cyan-400/60 transition-colors">
+                    <button onClick={() => navigate("/SearchKaspa")} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-cyan-200 hover:text-white hover:border-cyan-400/60 transition-colors">
                       <img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="" className="w-3.5 h-3.5 rounded-full" /> Search Kaspa
                     </button>
                     <button onClick={() => setShowCryptoSearch(true)} className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-xl text-[10px] font-mono tracking-widest uppercase text-amber-200 hover:text-white hover:border-amber-400/60 transition-colors">
@@ -272,7 +271,7 @@ export default function AgentInternetLanding() {
 
                   <button onClick={() => setShowBrowser(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-2 text-center text-[9px] font-mono uppercase tracking-wide text-white/70 hover:border-white/30 hover:text-white"><LayoutGrid className="h-4 w-4" /> Browse live pages</button>
                   <button onClick={() => setShowWebSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 px-2 text-center text-[9px] font-mono uppercase tracking-wide text-white/70 hover:border-white/30 hover:text-white"><Search className="h-4 w-4" /> Search the web</button>
-                  <button onClick={() => setShowKaspaSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-cyan-500/25 bg-cyan-500/[0.07] px-2 text-center text-[9px] font-mono uppercase tracking-wide text-cyan-200 hover:border-cyan-400/50 hover:text-white"><img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="" className="h-4 w-4 rounded-full" /> Search Kaspa</button>
+                  <button onClick={() => navigate("/SearchKaspa")} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-cyan-500/25 bg-cyan-500/[0.07] px-2 text-center text-[9px] font-mono uppercase tracking-wide text-cyan-200 hover:border-cyan-400/50 hover:text-white"><img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="" className="h-4 w-4 rounded-full" /> Search Kaspa</button>
                   <button onClick={() => setShowCryptoSearch(true)} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] px-2 text-center text-[9px] font-mono uppercase tracking-wide text-amber-200 hover:border-amber-400/50 hover:text-white"><img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="h-4 w-4 rounded-full" /> Search Crypto</button>
                 </div>
 
@@ -306,7 +305,7 @@ export default function AgentInternetLanding() {
                     <span className="absolute -right-px bottom-0 h-2 w-2 border-b border-white/35" />
                     <button onClick={() => setShowBrowser(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-white"><LayoutGrid className="h-3.5 w-3.5" /> Browse live pages</button>
                     <button onClick={() => setShowWebSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-white"><Search className="h-3.5 w-3.5" /> Search the web</button>
-                    <button onClick={() => setShowKaspaSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white hover:text-cyan-200"><img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="" className="h-3.5 w-3.5 rounded-full" /> Search Kaspa</button>
+                    <button onClick={() => navigate("/SearchKaspa")} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white hover:text-cyan-200"><img src="https://cryptologos.cc/logos/kaspa-kas-logo.png" alt="" className="h-3.5 w-3.5 rounded-full" /> Search Kaspa</button>
                     <button onClick={() => setShowCryptoSearch(true)} className="flex w-full items-center gap-2 py-0.5 text-left text-[10px] font-mono uppercase text-white/80 hover:text-amber-200"><img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="" className="h-3.5 w-3.5 rounded-full" /> Search Crypto</button>
                   </div>
                 </div>
@@ -372,7 +371,7 @@ export default function AgentInternetLanding() {
 
       <WebSearchBrowser open={showWebSearch} onClose={() => setShowWebSearch(false)} />
 
-      <KaspaSearchBrowser open={showKaspaSearch} onClose={() => setShowKaspaSearch(false)} />
+
 
       <CryptoSearchBrowser open={showCryptoSearch} onClose={() => setShowCryptoSearch(false)} />
 
