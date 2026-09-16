@@ -74,7 +74,10 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
       if (reqId.current !== myId) return;
       if (!charge.ok) { setFundingIssue(charge.reason); setLoading(false); return; }
     }
-    const useNatural = q.trim().split(/\s+/).length >= 4 || q.includes('?');
+    // Question-shaped queries ("what is gembl.fun") are informational questions,
+    // not keyword searches — route them through the evidence-checked pipeline.
+    const isQuestion = q.includes('?') || /^(what|who|whom|which|where|when|why|how|is|are|was|were|do|does|did|can|could|should|would|tell|explain|describe|define)\b/i.test(q.trim());
+    const useNatural = isQuestion || q.trim().split(/\s+/).length >= 4;
     const tokenSearch = /\b(tokens?|krc-?20|kcc-?20|layer\s*[12]|l[12]|kkdag)\b/i.test(q);
     setNaturalSearch(useNatural);
     setNlHint(null);
@@ -262,6 +265,11 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
     runSearch(app.name, "All");
   };
 
+  // A site the user asked about that isn't in the directory yet — offer to index it.
+  const detectedDomain = (() => {
+    const m = (submitted || '').match(/(?:https?:\/\/)?(?:www\.)?([a-z0-9][a-z0-9-]{1,61}\.(?:com|fun|io|xyz|app|dev|net|org|kas|gg|me|to|cash|site|online|store|live|link)\b)/i);
+    return m ? m[1] : null;
+  })();
   const liveSuggestions = inputFocused ? searchTTTApps(query, "All", 6) : [];
   const isKasTab = activeCategory === KAS_TAB;
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE), Math.ceil(webResults.length / WEB_PAGE_SIZE));
@@ -493,6 +501,16 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
                   <p className="text-white/50 text-sm mb-1">No matching results</p>
                   <p className="text-white/30 text-xs max-w-lg leading-relaxed">{nlHint?.noMatchReason || 'Try a different keyword or category.'}</p>
                 </div>}
+                {detectedDomain && (
+                  <div className="flex justify-center mt-4">
+                    <button
+                      onClick={() => addSiteFromLink(detectedDomain)}
+                      className="inline-flex items-center gap-1.5 px-4 h-10 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/25 transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Index {detectedDomain} in the Kaspa directory
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="max-w-2xl mx-auto space-y-5">
