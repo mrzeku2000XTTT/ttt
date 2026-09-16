@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Wallet, RefreshCw, Copy, Check, Loader2, Trash2 } from 'lucide-react';
+import { RefreshCw, Copy, Check, Loader2, Trash2 } from 'lucide-react';
 import {
   getSearchWallet, generateSearchWallet, resetSearchWallet,
   fetchWalletBalance, subscribe, SEARCH_FEE_KAS,
 } from '@/lib/searchKaspaWallet';
+import SearchWalletKeyExport from './SearchWalletKeyExport';
 
 /** Wallet card for the Search Kaspa profile tab — create, fund, and track the micro-search wallet. */
 export default function SearchKaspaWalletCard() {
@@ -59,12 +60,7 @@ export default function SearchKaspaWalletCard() {
   return (
     <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/15">
-            <Wallet className="w-4 h-4 text-cyan-300" />
-          </div>
-          <h2 className="text-sm font-semibold text-white">Search Kaspa wallet</h2>
-        </div>
+        <h2 className="text-sm font-semibold text-white">Search Kaspa wallet</h2>
         {wallet && (
           <button
             onClick={refresh}
@@ -82,12 +78,23 @@ export default function SearchKaspaWalletCard() {
           <p className="text-xs leading-relaxed text-white/50">
             Every search runs a KAS micro-transaction of {SEARCH_FEE_KAS} KAS. Create your wallet, fund it with KAS, and each search is paid straight from it.
           </p>
+          <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-3 py-2.5">
+            <p className="text-[11px] leading-relaxed text-amber-200/90">
+              Local &amp; non-custodial: the key is generated on this device and never sent to us. We never hold your funds.
+            </p>
+          </div>
           <button onClick={createWallet} className="h-11 w-full rounded-xl bg-cyan-500 text-sm font-bold text-black transition-transform active:scale-95">
             Create Search Kaspa wallet
           </button>
         </>
       ) : (
         <>
+          <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-3 py-2.5">
+            <p className="text-[11px] leading-relaxed text-amber-200/90">
+              This wallet exists <span className="font-bold">only on this device</span> — we never hold your funds.
+              Export your key now: lose this device without a backup and your KAS is gone forever.
+            </p>
+          </div>
           <p className="text-2xl font-bold text-white">
             {availableKas === null ? '—' : availableKas.toFixed(4)}
             <span className="ml-1 text-sm font-medium text-white/40">KAS available</span>
@@ -115,9 +122,10 @@ export default function SearchKaspaWalletCard() {
               </span>
             </div>
           </div>
+          <SearchWalletKeyExport privateKey={wallet.privateKey} />
           <button
             onClick={() => {
-              if (window.confirm('Reset your Search Kaspa wallet? Any KAS left at its address stays on-chain, but this device loses the key.')) {
+              if (window.confirm('Reset your Search Kaspa wallet?\n\nThis erases the key from this device FOREVER. We never hold your funds — if you have NOT exported your private key, the KAS at this address is unrecoverable by anyone, including us.')) {
                 resetSearchWallet();
                 setWallet(null);
                 setBalanceSompi(null);
