@@ -1,51 +1,22 @@
-import { base44 } from "@/api/base44Client";
-
-const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+import { base44 } from '@/api/base44Client';
+import { clamp, newSubject, toWorld } from '@/components/uiangle/angleModel';
 
 export async function analyzeReferenceImage(file) {
-  const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-  const res = await base44.integrations.Core.InvokeLLM({
-    prompt:
-      "You are a scene-layout analyzer for a camera-angle planner. Look at the reference image and list every main visible subject — people/characters, buildings, and key objects (1-6 subjects, prioritize characters). For each subject return a tight axis-aligned bounding box as decimals normalized 0-1, where x,y is the top-left corner and w,h the size. kind must be 'character' for people/creatures, 'building' for structures, 'object' for anything else.",
-    file_urls: [file_url],
-    response_json_schema: {
-      type: "object",
-      properties: {
-        subjects: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              label: { type: "string" },
-              kind: { type: "string" },
-              x: { type: "number" },
-              y: { type: "number" },
-              w: { type: "number" },
-              h: { type: "number" }
-            },
-            required: ["label", "kind", "x", "y", "w", "h"]
-          }
-        }
-      },
-      required: ["subjects"]
-    }
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPG or WebP reference.');
+  if (file.size > 15 * 1024 * 1024) throw new Error('Please choose an image smaller than 15 MB.');
+  const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+  const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 86400 });
+  const image = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error('The reference image could not be opened.')); img.src = signed_url; });
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: 'Analyze visible characters, buildings and important objects, up to 8. Return a tight bounding box x,y,w,h normalized 0..1 in the original image. For EACH subject, trace its visible OUTER silhouette clockwise as 24-60 polygon points with x,y in 0..1 LOCAL TO ITS BOUNDING BOX. Follow head, shoulders, arms, hands, legs and feet; do not return a bounding rectangle for characters. Never infer occluded limbs. Building outlines follow roof and walls. These are editable approximate outlines, not pixel-perfect segmentation. kind is character, building or object.',
+    file_urls: [signed_url],
+    response_json_schema: { type: 'object', properties: { subjects: { type: 'array', items: { type: 'object', properties: { label: { type: 'string' }, kind: { type: 'string', enum: ['character','building','object'] }, x: { type: 'number' }, y: { type: 'number' }, w: { type: 'number' }, h: { type: 'number' }, outline: { type: 'array', items: { type: 'object', properties: { x: { type: 'number' }, y: { type: 'number' } }, required: ['x','y'] } } }, required: ['label','kind','x','y','w','h','outline'] } } }, required: ['subjects'] }
   });
-
-  const subjects = (res.subjects || [])
-    .filter((s) => s && s.w > 0.02 && s.h > 0.02)
-    .slice(0, 6)
-    .map((s) => {
-      const w = clamp(s.w * 100, 3, 98);
-      const h = clamp(s.h * 100, 3, 98);
-      return {
-        label: (s.label || "Subject").slice(0, 24),
-        kind: ["character", "building", "object"].includes(s.kind) ? s.kind : "object",
-        x: clamp(s.x * 100, 0, 100 - w),
-        y: clamp(s.y * 100, 0, 100 - h),
-        w,
-        h
-      };
-    });
-
-  return { file_url, subjects };
+  const subjects = (result.subjects || []).filter(s => [s.x,s.y,s.w,s.h].every(Number.isFinite) && s.w > .01 && s.h > .01).slice(0,8).map(s => {
+    const source = { x: clamp(s.x,0,.99), y: clamp(s.y,0,.99), w: clamp(s.w,.01,1-clamp(s.x,0,.99)), h: clamp(s.h,.01,1-clamp(s.y,0,.99)) };
+    const points = (s.outline || []).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y)).slice(0,80).map(p => [clamp(p.x,0,1)*100,clamp(p.y,0,1)*100]);
+    const item = newSubject(s.kind), height = s.kind === 'building' ? 3 : s.kind === 'character' ? 1.8 : 1.2;
+    return { ...item, label: s.label.slice(0,40), source, w: source.w*100, h: source.h*100, x: toWorld((source.x+source.w/2)*100), z: toWorld((source.y+source.h)*100), height, width: clamp(height*source.w*image.width/(source.h*image.height),.15,6), outline: points.length >= 3 ? points : item.outline, estimated: points.length >= 3 };
+  });
+  return { reference: { uri: file_uri, url: signed_url, width: image.width, height: image.height }, subjects };
 }

@@ -258,6 +258,18 @@ button:focus-visible {
   .ttt-edge-runner rect { stroke-dashoffset: -250; }
 }
 
+/* UI Angle editor: isolated monochrome workspace. */
+:root .angle-editor, .dark .angle-editor {
+  --background: 0 0% 5%; --foreground: 0 0% 94%; --card: 0 0% 8%; --card-foreground: 0 0% 94%;
+  --primary: 0 0% 94%; --primary-foreground: 0 0% 7%; --muted: 0 0% 13%; --muted-foreground: 0 0% 58%;
+  --border: 0 0% 18%; --input: 0 0% 18%; --ring: 0 0% 65%;
+  font-family: var(--font-body);
+}
+.angle-editor button:disabled { opacity: .4; cursor: not-allowed; }
+.angle-editor button:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+.angle-grid { background-image: linear-gradient(hsl(var(--border) / .55) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border) / .55) 1px, transparent 1px); background-size: 32px 32px; }
+.angle-input { width: 100%; border: 1px solid hsl(var(--border)); border-radius: .5rem; background: hsl(var(--background)); padding: .5rem .65rem; color: hsl(var(--foreground)); }
+
 /* Search Kaspa developer docs keep a scoped monochrome theme. */
 :root .search-kaspa-docs, .dark .search-kaspa-docs {
   --background: 0 0% 5%; --foreground: 0 0% 96%;
