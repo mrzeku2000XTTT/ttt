@@ -1,5 +1,5 @@
 // Search Kaspa SearchVault — Scorpion (KCC20 Wallet) client bridge.
-// Wallet: https://kcc-20-wallet.vercel.app (BUILD 245+, SDK v170)
+// Wallet: https://kcc-20-wallet.vercel.app (BUILD 245+, SDK v171)
 // Argent: https://kcc20-sdk.vercel.app/argent.js (v1.4.0)
 // Silver: https://kcc20-sdk.vercel.app/silverscript.js (ABI encoder)
 //
@@ -9,9 +9,9 @@
 import { base44 } from '@/api/base44Client';
 
 const KCC20_ORIGIN = 'https://kcc-20-wallet.vercel.app';
-const SDK_URL = `${KCC20_ORIGIN}/sdk.js?v=170`;
+const SDK_URL = `${KCC20_ORIGIN}/sdk.js?v=171`;
 const ARGENT_URL = 'https://kcc20-sdk.vercel.app/argent.js';
-const REQUIRED_SDK = '170';
+const REQUIRED_SDK = '171';
 const REQUIRED_ARGENT = '1.4.0';
 
 // Official Search Kaspa / TTT treasury (ews chip) — 32-byte Schnorr pubkey,
@@ -56,18 +56,20 @@ async function waitForSdkInit(w) {
 }
 
 // Wallet spec: load only on a USER CLICK. If a stale SDK is present, delete
-// window.kcc20 and inject the pinned v170 build, then wait for initialization.
+// window.kcc20, remove its old script tag (the SDK's top guard would skip
+// re-running otherwise), and inject the pinned v171 build fresh.
 export async function ensureScorpionSdk() {
   const existing = window.kcc20;
-  if (existing && existing.sdkVersion === REQUIRED_SDK && existing.origin === KCC20_ORIGIN) {
+  if (existing && String(existing.sdkVersion) === REQUIRED_SDK && existing.origin === KCC20_ORIGIN) {
     await waitForSdkInit(existing);
     return existing;
   }
   try { delete window.kcc20; } catch { /* ignore */ }
+  document.querySelectorAll(`script[src^="${KCC20_ORIGIN}/sdk.js"]`).forEach((el) => el.remove());
   await injectScript(SDK_URL);
   const w = await pollFor(() => window.kcc20);
   await waitForSdkInit(w);
-  if (w.sdkVersion !== REQUIRED_SDK) {
+  if (String(w.sdkVersion) !== REQUIRED_SDK) {
     throw new Error(`Scorpion wallet SDK is v${w.sdkVersion} — need v${REQUIRED_SDK}. Hard-refresh the Scorpion wallet and try again.`);
   }
   return w;

@@ -14,7 +14,7 @@
 // Build a PSKT, then signPskt. Never invent a txId.
 
 export const KCC20_ORIGIN = "https://kcc-20-wallet.vercel.app";
-export const KCC20_SDK = KCC20_ORIGIN + "/sdk.js?v=167";
+export const KCC20_SDK = KCC20_ORIGIN + "/sdk.js?v=171";
 export const KCC20_APP = KCC20_ORIGIN + "/index.html";
 
 // True when TTT is running inside the KCC20 wallet's dApp browser iframe.
