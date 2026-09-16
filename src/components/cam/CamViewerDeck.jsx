@@ -8,7 +8,7 @@ export default function CamViewerDeck({ canvasRef, image, hasLayers, onSeparate,
   const dragging = useRef(false);
   const pan = useRef(null);
   const full2d = split >= 99.5;
-  const startDrag = (e) => { dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); };
+  const startDrag = (e) => { e.preventDefault(); dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); };
   const moveDrag = (e) => {
     if (!dragging.current || !deck.current) return;
     const r = deck.current.getBoundingClientRect();
@@ -17,6 +17,7 @@ export default function CamViewerDeck({ canvasRef, image, hasLayers, onSeparate,
   const endDrag = () => { dragging.current = false; };
   const panStart = (e) => {
     if (!image) return;
+    e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const r = e.currentTarget.getBoundingClientRect();
     pan.current = { x: e.clientX, y: e.clientY, ox: manualOffset?.x || 0, oy: manualOffset?.y || 0, w: r.width, h: r.height };

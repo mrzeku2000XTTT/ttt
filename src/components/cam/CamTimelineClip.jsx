@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 
 export default function CamTimelineClip({ clip, image, title, zoom, selected, onSelect, onUpdate, disabled, camera, onSeek }) {
-  const drag = useRef(null), begin = (e, mode) => { e.stopPropagation(); if (disabled) return; drag.current={mode,x:e.clientX,start:clip.start,duration:clip.duration}; e.currentTarget.setPointerCapture(e.pointerId); onSelect(clip); };
+  const drag = useRef(null), begin = (e, mode) => { e.preventDefault(); e.stopPropagation(); if (disabled) return; drag.current={mode,x:e.clientX,start:clip.start,duration:clip.duration}; e.currentTarget.setPointerCapture(e.pointerId); onSelect(clip); };
   const move = (e) => { if (!drag.current) return; const d=drag.current, dx=(e.clientX-d.x)/zoom, end=d.start+d.duration;
     if(d.mode==='start'){const start=Math.max(0,Math.min(end-.1,d.start+dx));onUpdate(clip.id,{start,duration:end-start});}
     else if(d.mode==='end')onUpdate(clip.id,{duration:Math.max(.1,d.duration+dx)});
