@@ -1,6 +1,6 @@
 import { APPS } from '@/components/appstore2/appCatalog';
 
-const STOP_WORDS = new Set(['a','an','and','any','app','apps','can','do','find','for','help','i','in','is','looking','me','my','need','of','on','please','show','that','the','to','tool','tools','want','which','with']);
+const STOP_WORDS = new Set(['a','an','and','any','app','apps','can','did','do','does','find','for','help','how','i','in','is','looking','me','my','need','of','on','please','show','that','the','to','tool','tools','want','was','were','what','when','where','which','who','why','with']);
 const CONCEPTS = {
   animate: ['animation','motion','keyframe','video','moving','animate'],
   image: ['image','photo','picture','visual','thumbnail','design'],
@@ -37,20 +37,24 @@ function categoryMatches(app, category) {
   if (category === 'Tokens') return /tokens?|coins?|krc-?20|kcc-?20|layer\s*[12]|\bl[12]\b|kkdag/i.test(`${app.name} ${app.desc}`);
   return app.cat === category;
 }
-export function searchTTTApps(query, category = 'All', limit = 80) {
+export function searchTTTApps(query, category = 'All', limit = 80, natural = false) {
   const phrase = clean(query), terms = searchTerms(query);
   return APPS.filter(app => categoryMatches(app, category)).map(app => {
     const name = clean(app.name), description = clean(app.desc), path = clean(app.path), categoryText = clean(app.cat);
-    let score = phrase && name.includes(phrase) ? 140 : 0;
+    let nameScore = 0;
+    if (phrase && name.includes(phrase)) nameScore += 140;
+    let score = nameScore;
     for (const term of terms) {
-      if (name === term) score += 80;
-      else if (name.includes(term)) score += 38;
+      if (name === term) { nameScore += 80; score += 80; }
+      else if (name.includes(term)) { nameScore += 38; score += 38; }
       if (description.includes(term)) score += 15;
       if (categoryText.includes(term)) score += 12;
       if (path.includes(term)) score += 7;
     }
-    return { app, score };
-  }).filter(item => !phrase || item.score > 0).sort((a, b) => b.score - a.score || a.app.name.localeCompare(b.app.name)).slice(0, limit).map(({ app, score }) => ({
+    return { app, score, nameScore };
+  // Natural-language questions ("who built $CHIP?") must match an app's NAME —
+  // generic words like "built" appearing inside a description are noise, not intent.
+  }).filter(item => !phrase || (item.score > 0 && (!natural || item.nameScore > 0))).sort((a, b) => b.score - a.score || a.app.name.localeCompare(b.app.name)).slice(0, limit).map(({ app, score }) => ({
     id: `ttt-${app.path || app.name}`,
     name: app.name,
     url: app.externalUrl || `/${app.path}`,

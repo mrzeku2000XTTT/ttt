@@ -87,8 +87,8 @@ export default async function(req) {
       apps = apps.filter(a => (a.category || '') === category);
     }
     if (natural_language) {
-      const grounded = await kaspaNaturalSearch(base44, query.trim(), apps, Number(limit));
-      return Response.json({ success: true, ...grounded, total: grounded.results.length, shown: grounded.results.length, coverage: { scanned, truncated }, ai: null }, { headers: cors });
+      const grounded = await kaspaNaturalSearch(base44, query.trim(), apps, Number(limit), { withSummary: Boolean(withAi) });
+      return Response.json({ success: true, ...grounded, total: grounded.results.length, shown: grounded.results.length, coverage: { scanned, truncated }, ai: grounded.ai || null }, { headers: cors });
     }
 
     const q = (query || '').trim().toLowerCase();
@@ -129,7 +129,7 @@ export default async function(req) {
       try {
         const top = finalResults.slice(0, 6).map(r => `- ${r.name} (${r.url}) [${r.category}]: ${(r.description || '').slice(0, 200)}`).join('\n');
         const prompt = top
-          ? `The user searched the Kaspa ecosystem index for "${query}". These are the top matching apps:\n${top}\n\nWrite a 2-3 sentence plain-English overview explaining what the user is likely looking for and what these apps do. No markdown, no lists.`
+          ? `The user searched the Kaspa ecosystem index for "${query}". These are the top matching apps:\n${top}\n\nWrite a 2-3 sentence plain-English overview explaining what the user is likely looking for and what these apps do. End with a fact-check sentence: call out any listed app that does not genuinely relate to the query, and note that indexed descriptions are directory claims, not independently verified facts. No markdown, no lists.`
           : `The user searched the Kaspa (KAS cryptocurrency) ecosystem for "${query}" and nothing matched our index. Explain in 2-3 plain sentences what "${query}" most likely is in the Kaspa / crypto context, and if it is a real project say what it does. If you are unsure, say so plainly. No markdown, no lists.`;
         const out = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt,

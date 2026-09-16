@@ -78,7 +78,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
     const tokenSearch = /\b(tokens?|krc-?20|kcc-?20|layer\s*[12]|l[12]|kkdag)\b/i.test(q);
     setNaturalSearch(useNatural);
     setNlHint(null);
-    const localResults = searchTTTApps(q, localCategory);
+    const localResults = searchTTTApps(q, localCategory, 80, useNatural);
     setResults(localResults);
     setTotal(localResults.length);
     setLoading(true);
@@ -86,11 +86,11 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
     setNotIndexed(false);
     setWebResults([]);
     setAi(null);
-    setAiLoading(false);
+    setAiLoading(Boolean(q.trim()) && useNatural);
     setPage(1);
     try {
       const [kaspaTask, webTask] = await Promise.allSettled([
-        base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000, natural_language: useNatural }),
+        base44.functions.invoke("searchKaspaApps", { query: q, category: cat, limit: 2000, natural_language: useNatural, withAi: useNatural }),
         q ? base44.functions.invoke("openWebSearch", { query: tokenSearch ? `${q} Kaspa KRC-20 KCC-20` : q }) : Promise.resolve(null),
       ]);
       const kaspaRaw = kaspaTask.status === "fulfilled" ? kaspaTask.value : null;
@@ -102,9 +102,12 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
       if (res?.success) {
         setResults(mergeAppResults(localResults, res.results || []));
         setTotal(localResults.length + (res.total || 0));
-        if (useNatural) setNlHint({ keywords: (res.intent?.keywords || []).join(' · '), category: res.intent?.target === 'profiles' ? 'Profiles' : res.intent?.target === 'projects' ? 'Projects' : 'Profiles and projects', noMatchReason: res.no_match_reason, partial: res.coverage?.truncated });
+        if (useNatural) {
+          setNlHint({ keywords: (res.intent?.keywords || []).join(' · '), category: res.intent?.target === 'profiles' ? 'Profiles' : res.intent?.target === 'projects' ? 'Projects' : 'Profiles and projects', noMatchReason: res.no_match_reason, partial: res.coverage?.truncated });
+          setAi(res.ai || null);
+        }
         if (res.message && !localResults.length) setNotIndexed(true);
-        // Grounded mode shows exact directory quotes instead of a generated overview.
+        // Keyword searches fetch a fact-checked overview in the background.
         if (q && !useNatural) {
           setAiLoading(true);
           base44.functions.invoke("searchKaspaApps", { query: q, category: cat, aiOnly: true })
@@ -122,7 +125,10 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
       if (reqId.current !== myId) return;
       setError(e?.message || "Search failed");
     } finally {
-      if (reqId.current === myId) setLoading(false);
+      if (reqId.current === myId) {
+        setLoading(false);
+        if (useNatural) setAiLoading(false);
+      }
     }
   }, [paidSearch]);
 
