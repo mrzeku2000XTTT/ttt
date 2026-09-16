@@ -1,0 +1,27 @@
+{
+  "name": "XProfileProof",
+  "type": "object",
+  "properties": {
+    "handle": {
+      "type": "string",
+      "description": "X handle the proof belongs to"
+    },
+    "website": {
+      "type": "string",
+      "description": "Website submitted with the profile (optional)"
+    },
+    "proof_url": {
+      "type": "string",
+      "description": "Uploaded proof image (Kaspa meme post screenshot)"
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "Optional note from the user"
+    }
+  },
+  "required": [
+    "handle",
+    "proof_url"
+  ]
+}

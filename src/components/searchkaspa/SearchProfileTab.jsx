@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { AtSign, Globe, BookOpen, ChevronRight } from 'lucide-react';
 import SearchKaspaWalletCard from './SearchKaspaWalletCard';
+import SearchTransactionsTab from './SearchTransactionsTab';
 import XProfileForm from '@/components/agentinternet/XProfileForm';
 import ListSiteModal from '@/components/agentinternet/ListSiteModal';
 
 /** Profile tab — the user's funded search wallet plus profile writing and site listing. */
 export default function SearchProfileTab({ onOpenDocs }) {
   const [listOpen, setListOpen] = useState(false);
+  const [view, setView] = useState('profile');
 
   return (
     <div className="mx-auto max-w-md space-y-6 px-4 pb-4 pt-6">
@@ -15,6 +17,24 @@ export default function SearchProfileTab({ onOpenDocs }) {
         <p className="mt-1 text-xs text-white/40">Your wallet, your profile, your listings.</p>
       </header>
 
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-white/10 bg-white/[0.04] p-1">
+        {(['profile', 'transactions'] ).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`h-9 rounded-lg text-[13px] font-semibold transition-colors ${
+              view === v ? 'bg-cyan-500 text-black' : 'text-white/50'
+            }`}
+          >
+            {v === 'profile' ? 'Profile' : 'Transactions'}
+          </button>
+        ))}
+      </div>
+
+      {view === 'transactions' ? (
+        <SearchTransactionsTab />
+      ) : (
+      <>
       <SearchKaspaWalletCard />
 
       <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
@@ -49,6 +69,8 @@ export default function SearchProfileTab({ onOpenDocs }) {
         <span className="flex-1 text-sm font-medium text-white">Developer docs</span>
         <ChevronRight className="h-4 w-4 text-white/30" />
       </button>
+      </>
+      )}
 
       <ListSiteModal open={listOpen} onClose={() => setListOpen(false)} onListed={() => setListOpen(false)} />
     </div>

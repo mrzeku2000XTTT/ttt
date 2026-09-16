@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Loader2, ShieldCheck, AtSign, Globe } from "lucide-react";
+import { Loader2, ShieldCheck, AtSign, Globe, Upload } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import XProfileVerifyPanel from "@/components/searchkaspa/XProfileVerifyPanel";
 
 export default function XProfileForm({ onListed }) {
   const [handle, setHandle] = useState("");
@@ -8,20 +9,36 @@ export default function XProfileForm({ onListed }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [proofFile, setProofFile] = useState(null);
+  // null | 'sending' | 'sent' | 'error'
+  const [proofState, setProofState] = useState(null);
+
+  // Upload the Kaspa-meme proof image and file it against the handle for review.
+  const sendProof = async (h, file) => {
+    setProofState("sending");
+    try {
+      const up = await base44.integrations.Core.UploadPublicFile({ file });
+      const url = up?.file_url ?? up?.data?.file_url;
+      if (!url) throw new Error("Upload failed");
+      await base44.entities.XProfileProof.create({ handle: h, website: website.trim(), proof_url: url });
+      setProofState("sent");
+    } catch {
+      setProofState("error");
+    }
+  };
 
   const submit = async (e) => {
     e?.preventDefault();
-    if (!handle.trim() || busy) return;
-    setBusy(true); setError(null); setResult(null);
+    const h = handle.trim();
+    if (!h || busy) return;
+    setBusy(true); setError(null); setResult(null); setProofState(null);
     try {
-      const raw = await base44.functions.invoke("submitXProfile", {
-        handle: handle.trim(),
-        website: website.trim(),
-      });
+      const raw = await base44.functions.invoke("submitXProfile", { handle: h, website: website.trim() });
       const res = raw?.data ?? raw;
       if (!res?.success) { setError(res?.error || "Could not list this profile"); return; }
       setResult(res);
       onListed?.(res);
+      if (proofFile) sendProof(h, proofFile);
     } catch (e2) {
       setError(e2?.message || "Could not list this profile");
     } finally {
@@ -68,7 +85,31 @@ export default function XProfileForm({ onListed }) {
         </p>
       </form>
 
+      {(busy || (result?.success && !proofState)) && (
+        <XProfileVerifyPanel
+          handle={handle.trim()}
+          busy={busy}
+          proofFile={proofFile}
+          onProofFile={setProofFile}
+          onSendProof={() => proofFile && sendProof(handle.trim(), proofFile)}
+        />
+      )}
+
       {error && <p className="text-[12px] text-red-400 text-center">{error}</p>}
+
+      {proofState === "sending" && (
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-cyan-300">
+          <Loader2 className="h-3 w-3 animate-spin" /> Sending your proof image…
+        </p>
+      )}
+      {proofState === "sent" && (
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-300">
+          <Upload className="h-3 w-3" /> Proof sent — your Kaspa meme post will be reviewed.
+        </p>
+      )}
+      {proofState === "error" && (
+        <p className="text-[11px] text-red-400 text-center">Could not send the proof image — please try again.</p>
+      )}
 
       {result?.app && (
         <div className="rounded-xl p-3.5 border bg-emerald-500/[0.07] border-emerald-500/25">

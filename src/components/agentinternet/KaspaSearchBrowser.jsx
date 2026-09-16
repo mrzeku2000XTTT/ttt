@@ -70,7 +70,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
     // Paid mode — every non-empty search runs a KAS micro-transaction from the
     // user's funded Search Kaspa wallet before hitting the index.
     if (paidSearch && q.trim()) {
-      const charge = await chargeSearch();
+      const charge = await chargeSearch(q);
       if (reqId.current !== myId) return;
       if (!charge.ok) { setFundingIssue(charge.reason); setLoading(false); return; }
     }

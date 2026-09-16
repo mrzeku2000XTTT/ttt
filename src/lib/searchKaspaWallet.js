@@ -87,9 +87,41 @@ export async function fetchWalletBalance(force = false) {
   };
 }
 
+/** Every fee charge recorded on this device — newest first. */
+export function getCharges() {
+  const w = getSearchWallet();
+  return w && Array.isArray(w.charges) ? w.charges : [];
+}
+
+/** Settle the fee on-chain as a self-send marker tx so it carries a real,
+ * explorer-clickable tx id. Fire-and-forget: if it can't settle (recent tx
+ * still confirming, API hiccup), the charge simply stays on the local ledger. */
+function settleCharge(entryId, snapshot) {
+  if (!snapshot?.privateKey) return;
+  base44.functions
+    .invoke("sendKaspaTransaction", {
+      privateKey: snapshot.privateKey,
+      fromAddress: snapshot.address,
+      toAddress: snapshot.address,
+      amountKas: SEARCH_FEE_KAS,
+    })
+    .then((raw) => {
+      const res = raw?.data ?? raw;
+      const txId = res?.txId;
+      const cur = getSearchWallet();
+      if (!txId || !cur || cur.address !== snapshot.address) return;
+      cur.charges = (cur.charges || []).map((c) => (c.id === entryId ? { ...c, txId } : c));
+      // The fee is now deducted on-chain — stop counting it in the local spend ledger.
+      cur.spentSompi = Math.max(0, (cur.spentSompi || 0) - SEARCH_FEE_SOMPI);
+      save(cur);
+      emit();
+    })
+    .catch(() => {});
+}
+
 /** Charge one micro-search fee. Fails when there is no wallet, the balance
  * can't be verified, or the available balance is below the fee. */
-export async function chargeSearch() {
+export async function chargeSearch(query = "") {
   const w = getSearchWallet();
   if (!w) return { ok: false, reason: "nowallet" };
   const bal = await fetchWalletBalance();
@@ -99,8 +131,17 @@ export async function chargeSearch() {
   }
   w.spentSompi = (w.spentSompi || 0) + SEARCH_FEE_SOMPI;
   w.searches = (w.searches || 0) + 1;
+  const entry = {
+    id: `c${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    query: String(query || "").slice(0, 140),
+    feeKas: SEARCH_FEE_KAS,
+    at: Date.now(),
+    txId: null,
+  };
+  w.charges = [entry, ...(w.charges || [])].slice(0, 100);
   save(w);
   emit();
+  settleCharge(entry.id, w);
   return {
     ok: true,
     balanceSompi: bal.balanceSompi,
