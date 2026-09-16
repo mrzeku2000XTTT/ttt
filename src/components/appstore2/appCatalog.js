@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "ACT", path: "ACT", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/07a0016cf_generated_image.png", desc: "Real-time typing → image · every letter is read as you type and each sentence fires the instant you press period — watch it become a downloadable image" },
   { name: "KaChat", path: "KaChat", cat: "Kaspa", directLaunch: true, desktop: true, admin: true, logo: "https://play-lh.googleusercontent.com/EWz3-rGxKEkQSvqpfP8-RNoj2HVYn8_eA5WrbdGlH5ipbTzn-Qawz1o0YPDIjk6JSsH1pXANtkPH9RKN25uXzg=w240-h480-rw", desc: "Encrypted peer-to-peer Kaspa messaging and KAS payments · local-first, no central messaging server" },
   { name: "UGC", path: "UGC", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/90f4c3ddf_generated_image.png", desc: "UGC Factory Girls · turn any HTML into a clean self-contained prompt — recreate, animate, or make a video" },
   { name: "Camera Studio", path: "CameraStudio", cat: "Creative", directLaunch: true, logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/cccf476df_generated_image.png", desc: "Native 3D media editor · image & video uploads, camera angles, Operator motion, local projects and PNG/video export" },

@@ -219,6 +219,7 @@ import KaspaCollabPage from './pages/KaspaCollab';
 import KanvasPage from './pages/Kanvas';
 import CAMPage from './pages/CAM';
 import UGCPage from './pages/UGC';
+import ACTPage from './pages/ACT';
 import ClutchKAS from '@/pages/ClutchKAS';
 import BibliaPage from './pages/Biblia';
 import CollabCollaboratorsPage from './pages/CollabCollaborators';
@@ -487,6 +488,7 @@ const AuthenticatedApp = () => {
       <Route path="/Kanvas" element={<KanvasPage />} />
       <Route path="/CAM" element={<CAMPage />} />
       <Route path="/UGC" element={<UGCPage />} />
+      <Route path="/ACT" element={<ACTPage />} />
       <Route path="/SearchKaspa" element={<SearchKaspa />} />
       <Route path="/SearchKaspaDocs" element={<SearchKaspaDocs />} />
       <Route path="/ClutchKAS" element={<ClutchKAS />} />

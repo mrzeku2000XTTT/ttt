@@ -4,6 +4,28 @@
 
 // ── Curated docs for flagship apps ──
 const CURATED = {
+  ACT: {
+    tagline: "Real-time typing → image",
+    overview: "ACT watches you type. Every letter you write in the chat box is analyzed in real time by ACT's eye — and with real-time mode on, finishing a sentence with a period fires an image instantly, no submit button. The period itself transforms into the picture: you watch it render right where you typed it, download it, and keep typing the next one. ACT runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, no separate account required.",
+    features: [
+      { title: "Real-time reading", desc: "As you type, ACT analyzes every letter live and shows the image it sees forming." },
+      { title: "Period → image", desc: "End a sentence with a period and the image fires instantly — no button to press." },
+      { title: "Watch it become", desc: "The period pulses and turns into the picture, loading in place with an elapsed timer." },
+      { title: "Downloadable", desc: "Every image is one tap from download — keep it or type the next sentence." },
+      { title: "Real-time toggle", desc: "Turn the mode on or off; when off, periods are just periods." },
+      { title: "Letter tracking", desc: "A live count tracks every letter typed and every image made." },
+    ],
+    howItWorks: [
+      { title: "Type in the box", desc: "Write what you want to see like a chat message; ACT reads it in real time." },
+      { title: "Press the period", desc: "The sentence fires immediately and starts rendering with an elapsed timer." },
+      { title: "Watch & keep", desc: "The image loads where you typed it — download it or keep typing." },
+    ],
+    getStarted: [
+      { title: "Open ACT", desc: "Launch it from the store and press Enter on the landing." },
+      { title: "Keep real time on", desc: "The toggle is on by default — every finished sentence fires." },
+      { title: "End with a period", desc: "Finish a sentence and watch the period become a downloadable image." },
+    ],
+  },
   KaspaBrowser: {
     tagline: "Decentralized Android browser and Kaspa network gateway",
     overview: "Kaspa Browser is an Apache-2.0 Android app built with Kotlin, Jetpack Compose Material 3, and Chromium WebView. It combines standard web browsing with decentralized protocol routing, peer and mesh discovery, privacy protections, cryptographic identity, a local node, and native Kaspa wallet utilities. Release v1.0.20260913223625 moves the browser controls to the top-right, improves scaling and viewport space, and replaces pull-to-refresh with a dedicated refresh action.",
