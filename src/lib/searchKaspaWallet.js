@@ -4,6 +4,7 @@
  * on-chain balance. Keys never leave the device.
  */
 import { addressFromPrivateKey } from "@/lib/localKaspaWallet";
+import { getSearchVault, spendSearchFee } from "@/lib/searchVault";
 import { base44 } from "@/api/base44Client";
 
 const KEY = "ttt_search_kaspa_wallet";
@@ -144,6 +145,30 @@ function settleCharge(entryId, snapshot) {
 export async function chargeSearch(query = "") {
   const w = getSearchWallet();
   if (!w) return { ok: false, reason: "nowallet" };
+
+  // Covenant vault path — once a SearchVault exists, every query spends its
+  // UTXO with entry pay_search_fee, signed by the owner inside Scorpion.
+  // NEVER sendKas(0.001), NEVER Sweep, NEVER buyKron.
+  const vault = getSearchVault();
+  if (vault?.address && vault?.artifact) {
+    let txId = null;
+    try {
+      txId = (await spendSearchFee()).txId;
+    } catch (e) {
+      const msg = String(e?.message || "");
+      if (/insufficient|too low|remaining|top up/i.test(msg)) return { ok: false, reason: "empty" };
+      return { ok: false, reason: "vault", error: msg || "Vault spend failed" };
+    }
+    w.searches = (w.searches || 0) + 1;
+    w.charges = [
+      { id: `c${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, query: String(query || "").slice(0, 140), feeKas: SEARCH_FEE_KAS, at: Date.now(), txId, via: "vault" },
+      ...(w.charges || []),
+    ].slice(0, 100);
+    save(w);
+    emit();
+    return { ok: true, via: "vault", txId };
+  }
+
   const bal = await fetchWalletBalance();
   if (!bal.ok) return { ok: false, reason: bal.reason };
   if (bal.balanceSompi - getLedger().spentSompi < SEARCH_FEE_SOMPI) {

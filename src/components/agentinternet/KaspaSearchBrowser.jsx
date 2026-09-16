@@ -460,7 +460,9 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
                     ? 'Create your Search Kaspa wallet and fund it with KAS — every search is a 0.001 KAS micro-transaction.'
                     : fundingIssue === 'empty'
                       ? 'Your wallet balance is too low for the 0.001 KAS micro-search fee. Top it up to keep searching.'
-                      : 'Could not reach the Kaspa network to verify your wallet. Try again in a moment.'}
+                      : fundingIssue === 'vault'
+                        ? 'Your Search Vault could not pay the 0.001 KAS fee. Approve the pay_search_fee in your KCC20 wallet, or top up / unlock the vault from the profile tab.'
+                        : 'Could not reach the Kaspa network to verify your wallet. Try again in a moment.'}
                 </p>
                 <button onClick={() => onRequireFunding?.()} className="px-4 h-11 rounded-full bg-cyan-500 text-black text-sm font-bold active:scale-95 transition-transform">
                   Open profile & fund wallet

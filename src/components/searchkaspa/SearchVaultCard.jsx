@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Copy, Check, ShieldCheck } from 'lucide-react';
+import { Loader2, Copy, Check, ShieldCheck, Unplug } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { getSearchWallet } from '@/lib/searchKaspaWallet';
 import {
-  compileSearchVaultArtifact, fundVaultWithScorpion, getSearchVault, TREASURY_ADDRESS,
+  compileSearchVaultArtifact, fundVaultWithScorpion, unlockVault, getSearchVault, TREASURY_ADDRESS,
 } from '@/lib/searchVault';
 
 // Each pay_search_fee burns 100_000 sompi fee + 1000 sompi miner fee.
@@ -44,6 +44,21 @@ export default function SearchVaultCard() {
     }
   };
 
+  const unlock = async () => {
+    if (!window.confirm('Unlock your Search Vault?\n\nThe covenant returns ALL leftover KAS to your Scorpion wallet (one output to your key). You can fund a new vault anytime.')) return;
+    setBusy(true); setError(null);
+    try {
+      setStage('Approve unlock in Scorpion…');
+      await unlockVault();
+      setVault(getSearchVault());
+    } catch (e) {
+      setError(e?.message || 'Unlock failed');
+    } finally {
+      setStage('');
+      setBusy(false);
+    }
+  };
+
   const copyAddress = async () => {
     if (!vault?.address) return;
     try {
@@ -53,8 +68,10 @@ export default function SearchVaultCard() {
     } catch {}
   };
 
-  const totalSompi = (vault?.funds || []).reduce((s, f) => s + Math.round(Number(f.amountKas) * 1e8), 0);
-  const searchesPrepaid = Math.floor(totalSompi / SOMPI_PER_SEARCH);
+  const remainingSompi = Number.isFinite(vault?.remainingSompi)
+    ? vault.remainingSompi
+    : (vault?.funds || []).reduce((s, f) => s + Math.round(Number(f.amountKas) * 1e8), 0);
+  const searchesPrepaid = Math.floor(remainingSompi / SOMPI_PER_SEARCH);
 
   return (
     <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
@@ -108,8 +125,8 @@ export default function SearchVaultCard() {
           </div>
           <div className="grid grid-cols-2 gap-2 text-center">
             <div className="rounded-xl border border-white/10 bg-white/[0.04] py-2">
-              <p className="text-[10px] uppercase tracking-wider text-white/35">Locked</p>
-              <p className="text-sm font-medium text-white/80">{(totalSompi / 1e8).toFixed(4)} KAS</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/35">Remaining</p>
+              <p className="text-sm font-medium text-white/80">{(remainingSompi / 1e8).toFixed(4)} KAS</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/[0.04] py-2">
               <p className="text-[10px] uppercase tracking-wider text-white/35">Searches prepaid</p>
@@ -145,6 +162,13 @@ export default function SearchVaultCard() {
               {busy ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {stage || 'Working…'}</> : 'Top up vault'}
             </button>
           </div>
+          <button
+            onClick={unlock}
+            disabled={busy}
+            className="inline-flex w-full items-center justify-center gap-1 text-[11px] text-red-400/70 hover:text-red-300 disabled:opacity-40"
+          >
+            <Unplug className="h-3 w-3" /> Unlock vault — return leftover KAS to my wallet
+          </button>
         </>
       )}
 

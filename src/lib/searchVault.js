@@ -11,7 +11,10 @@ import { base44 } from '@/api/base44Client';
 const KCC20_ORIGIN = 'https://kcc-20-wallet.vercel.app';
 const SDK_URL = `${KCC20_ORIGIN}/sdk.js?v=171`;
 const ARGENT_URL = 'https://kcc20-sdk.vercel.app/argent.js';
+const SILVER_URL = 'https://kcc20-sdk.vercel.app/silverscript.js';
 const REQUIRED_SDK = '171';
+// One pay_search_fee burns 100_000 sompi fee + 1000 sompi miner fee.
+export const VAULT_SPEND_SOMPI = 101000;
 const REQUIRED_ARGENT = '1.4.0';
 
 // Official Search Kaspa / TTT treasury (ews chip) — 32-byte Schnorr pubkey,
@@ -85,14 +88,31 @@ export async function ensureArgent() {
   return argent;
 }
 
+// SilverScript ABI encoder (window.kcc20Silver.encodeEntry) — needed for the
+// wallet to sign pay_search_fee / unlock against the stored silverc artifact.
+export async function ensureSilver() {
+  if (window.kcc20Silver) return window.kcc20Silver;
+  await injectScript(SILVER_URL);
+  return pollFor(() => window.kcc20Silver);
+}
+
 // Connect — opens the Scorpion popup. The user approves; we get their address
 // and their 32-byte Schnorr public key (the vault's owner key).
 export async function connectScorpionWallet() {
   const kcc = await ensureScorpionSdk();
+  await ensureArgent();
+  await ensureSilver();
   const res = await kcc.connect();
   const raw = res?.address || res?.accounts?.[0] || (Array.isArray(res) ? res[0] : null);
   if (!raw) throw new Error('Scorpion did not return an address');
   const address = `kaspa:${String(raw).replace(/^kaspa:/, '')}`;
+  if (typeof kcc.getNetwork === 'function') {
+    let network = null;
+    try { network = await kcc.getNetwork(); } catch { /* optional call */ }
+    if (network && network !== 'kaspa_mainnet') {
+      throw new Error(`Switch Scorpion to kaspa_mainnet (currently ${network}).`);
+    }
+  }
   // connect() resolves to just the accounts array — the Schnorr public key
   // lives in the wallet session and must be requested separately.
   let publicKey = res?.publicKey || null;
@@ -135,6 +155,15 @@ export async function compileSearchVaultArtifact(ownerPubkey) {
 // the user Approves + PINs. Topping up = another fund to the same vault address.
 export async function fundVaultWithScorpion({ artifact, ownerPubkey, amountKas }) {
   const kcc = await ensureScorpionSdk();
+  const argent = await ensureArgent();
+  // Argent intent gate — "fund search kaspa vault" must parse as the
+  // searchvault covenant, never the generic capsule/Sweep sheet.
+  const directed = typeof argent.direct === 'function'
+    ? await argent.direct('fund search kaspa vault 1 kas')
+    : null;
+  if (directed?.type && directed.type !== 'searchvault') {
+    throw new Error(`Argent understood this as "${directed.type}" — expected the SearchVault covenant.`);
+  }
   const out = await kcc.compileVault({
     type: 'searchvault',
     amount: Number(amountKas),
@@ -142,17 +171,80 @@ export async function fundVaultWithScorpion({ artifact, ownerPubkey, amountKas }
   });
   if (!out?.address) throw new Error('Scorpion did not return a vault address');
   const existing = getSearchVault();
+  const sameVault = Boolean(existing && existing.address === String(out.address));
   const funds = [
-    ...((existing && existing.address === String(out.address) && Array.isArray(existing.funds)) ? existing.funds : []),
+    ...((sameVault && Array.isArray(existing.funds)) ? existing.funds : []),
     { txId: out.txId || null, amountKas: Number(amountKas), at: Date.now() },
   ];
+  const prevRemaining = sameVault
+    ? (Number.isFinite(existing.remainingSompi)
+        ? existing.remainingSompi
+        : (existing.funds || []).reduce((s, f) => s + Math.round(Number(f.amountKas) * 1e8), 0))
+    : 0;
   const vault = {
     address: String(out.address),
     ownerPubkey,
     artifact,
     funds,
+    remainingSompi: prevRemaining + Math.round(Number(amountKas) * 1e8),
+    spentSearches: sameVault ? (existing.spentSearches || 0) : 0,
     createdAt: existing?.createdAt || Date.now(),
   };
   saveSearchVault(vault);
   return vault;
+}
+
+// Step D — each search spends the vault UTXO with entry pay_search_fee:
+// exactly 100_000 sompi to the treasury P2PK and the change back to the SAME
+// covenant. The owner signs in Scorpion (PIN/KasWare) — we never see a key,
+// and this is NOT sendKas, NOT Sweep, NOT a capsule spend.
+export async function spendSearchFee() {
+  const vault = getSearchVault();
+  if (!vault?.address || !vault?.artifact) throw new Error('No funded Search Vault on this device');
+  const kcc = await ensureScorpionSdk();
+  await ensureSilver();
+  if (typeof kcc.spendSilverEntry !== 'function') {
+    throw new Error('This Scorpion build cannot spend covenant entries yet — update the KCC20 wallet and retry.');
+  }
+  const out = await kcc.spendSilverEntry({
+    address: vault.address,
+    artifact: vault.artifact,
+    contract: 'SearchVault',
+    entry: 'pay_search_fee',
+    args: [],
+  });
+  const txId = out?.txId || out?.txid || null;
+  if (!txId) {
+    throw new Error(out?.error || 'pay_search_fee did not complete — no tx id from Scorpion.');
+  }
+  vault.spentSearches = (vault.spentSearches || 0) + 1;
+  vault.remainingSompi = Math.max(0, (Number.isFinite(vault.remainingSompi) ? vault.remainingSompi : 0) - VAULT_SPEND_SOMPI);
+  vault.lastSpendTxId = txId;
+  saveSearchVault(vault);
+  return { txId };
+}
+
+// Step E — unlock returns ALL leftover KAS to the owner P2PK (one output).
+// This is the emergency exit, NOT the search action; the vault is gone after.
+export async function unlockVault() {
+  const vault = getSearchVault();
+  if (!vault?.address || !vault?.artifact) throw new Error('No vault to unlock');
+  const kcc = await ensureScorpionSdk();
+  await ensureSilver();
+  if (typeof kcc.spendSilverEntry !== 'function') {
+    throw new Error('This Scorpion build cannot spend covenant entries yet — update the KCC20 wallet and retry.');
+  }
+  const out = await kcc.spendSilverEntry({
+    address: vault.address,
+    artifact: vault.artifact,
+    contract: 'SearchVault',
+    entry: 'unlock',
+    args: [],
+  });
+  const txId = out?.txId || out?.txid || null;
+  if (!txId) {
+    throw new Error(out?.error || 'unlock did not complete — no tx id from Scorpion.');
+  }
+  clearSearchVault();
+  return { txId };
 }
