@@ -495,7 +495,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
               </div>
             ) : results.length === 0 && !loading ? (
               <div className="px-2">
-                <AiOverviewCard text={ai} loading={aiLoading} />
+                <AiOverviewCard text={ai} loading={aiLoading} query={submitted} />
                 {webResults.length ? <ParallelWebResults results={pagedWebResults} /> : <div className="flex flex-col items-center justify-center text-center px-6 py-10">
                   <Globe className="w-8 h-8 text-white/20 mb-3" />
                   <p className="text-white/50 text-sm mb-1">No matching results</p>
@@ -514,7 +514,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
               </div>
             ) : (
               <div className="max-w-2xl mx-auto space-y-5">
-                <AiOverviewCard text={ai} loading={aiLoading} />
+                <AiOverviewCard text={ai} loading={aiLoading} query={submitted} />
                 {pagedResults.map((app, i) => (
                   <div key={app.id || i} className="group rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/15 transition-colors p-3.5">
                     <div className="flex items-start gap-3">
@@ -595,7 +595,8 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
           {/* Footer */}
           <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-center gap-2">
             <span className="text-[10px] text-white/40 font-mono">tttz.xyz</span>
-            <Link to="/SearchKaspaDocs" className="text-[11px] text-white/70 underline underline-offset-4">Developer docs</Link>
+            <Link to="/AppDocs/SearchKaspa" className="text-[11px] text-white/70 underline underline-offset-4">How to use</Link>
+            <Link to="/SearchKaspaDocs" className="text-[11px] text-white/40 underline underline-offset-4">Developer docs</Link>
           </div>
 
           {/* Room for the in-app bottom tab bar */}

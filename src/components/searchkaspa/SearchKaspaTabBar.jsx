@@ -3,7 +3,7 @@ import { Search, BookOpen, User } from 'lucide-react';
 
 const TABS = [
   { id: 'search', label: 'Search', icon: Search },
-  { id: 'docs', label: 'Docs', icon: BookOpen },
+  { id: 'docs', label: 'Dev docs', icon: BookOpen },
   { id: 'profile', label: 'Profile', icon: User },
 ];
 

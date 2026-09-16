@@ -4,6 +4,29 @@
 
 // ── Curated docs for flagship apps ──
 const CURATED = {
+  SearchKaspa: {
+    tagline: "Kaspa's own search engine",
+    overview: "Search Kaspa is the search layer of the Kaspa ecosystem: a curated Kaspa directory (Kaspa Hub + the TTT App Store) searched alongside a live web index. Every profile match shows its evidence — exact quotes and the source URL — and a Kaspa-branded AI overview summarizes the topic, with a live-data follow-up chat that cites fresh sources. Paste any link and it gets security-scanned and indexed; paste an X profile and it gets its own AI agent. Admin searches are metered with a 0.001 KAS micro-transaction from the Search Kaspa wallet, locked by a SilverScript covenant SearchVault. Full developer docs and a preview client live in-app under the Dev docs tab.",
+    features: [
+      { title: "Curated + live index", desc: "Kaspa directory matches from Kaspa Hub and the TTT App Store, beside fresh parallel web results." },
+      { title: "Evidence-backed matches", desc: "Every match shows why it matched — exact quotes and the source URL, not guesses." },
+      { title: "AI overview + live chat", desc: "A Kaspa-branded overview per query, with a follow-up chat answered from live data fetched at ask-time." },
+      { title: "$KAS Kaspian wall", desc: "The whole Kaspa index rendered as a profile grid — builders, projects, and communities." },
+      { title: "Security-scanned listing", desc: "Paste any link — it's scanned, verified, and added to the searchable index." },
+      { title: "Covenant-metered micro-search", desc: "Admin searches pay a 0.001 KAS micro-fee from the Search Kaspa wallet, guarded by a covenant-locked SearchVault." },
+    ],
+    howItWorks: [
+      { title: "Search", desc: "Type a builder, project, or Kaspa service — directory and live web results come back together." },
+      { title: "Check the evidence", desc: "Each match links its 'why this matched' quotes and sources." },
+      { title: "Chat the AI overview", desc: "Ask follow-ups — answers are grounded in live data with cited sources." },
+      { title: "Tip and list", desc: "Tip verified builders in KAS, or list your own site after a security scan." },
+    ],
+    getStarted: [
+      { title: "Open Search Kaspa", desc: "Launch it from the store and type anything Kaspa." },
+      { title: "Read the AI overview", desc: "Every query gets a Kaspa-branded summary; chat it with live data." },
+      { title: "Open Dev docs", desc: "The Dev docs tab holds the protocol, examples, and preview client." },
+    ],
+  },
   ACT: {
     tagline: "Real-time typing → image",
     overview: "ACT watches you type. Every letter you write in the chat box is analyzed in real time by ACT's eye — and with real-time mode on, finishing a sentence with a period fires an image instantly, no submit button. The period itself transforms into the picture: you watch it render right where you typed it, download it, and keep typing the next one. ACT runs inside the TTT super app on the Kaspa network — your Kaspa wallet is your login, no separate account required.",
