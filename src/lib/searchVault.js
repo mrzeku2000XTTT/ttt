@@ -91,7 +91,17 @@ export async function connectScorpionWallet() {
   const raw = res?.address || res?.accounts?.[0] || (Array.isArray(res) ? res[0] : null);
   if (!raw) throw new Error('Scorpion did not return an address');
   const address = `kaspa:${String(raw).replace(/^kaspa:/, '')}`;
-  const publicKey = res?.publicKey ? String(res.publicKey).replace(/^0x/, '').toLowerCase() : null;
+  // connect() resolves to just the accounts array — the Schnorr public key
+  // lives in the wallet session and must be requested separately.
+  let publicKey = res?.publicKey || null;
+  if (!publicKey && typeof kcc.getPublicKey === 'function') {
+    try { publicKey = await kcc.getPublicKey(); } catch { /* fall through */ }
+  }
+  if (!publicKey && typeof kcc.getState === 'function') {
+    try { const s = await kcc.getState(); publicKey = s?.publicKey || s?.pubKey || null; } catch { /* fall through */ }
+  }
+  publicKey = publicKey ? String(publicKey).replace(/^0x/, '').toLowerCase() : null;
+  if (publicKey && publicKey.length === 66) publicKey = publicKey.slice(-64); // compressed → x-only
   if (!publicKey || !/^[0-9a-f]{64}$/.test(publicKey)) {
     throw new Error('Scorpion did not return your Schnorr public key (need wallet BUILD 245+)');
   }
