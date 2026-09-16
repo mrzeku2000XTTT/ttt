@@ -596,7 +596,6 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
           <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-center gap-2">
             <span className="text-[10px] text-white/40 font-mono">tttz.xyz</span>
             <Link to="/AppDocs/SearchKaspa" className="text-[11px] text-white/70 underline underline-offset-4">How to use</Link>
-            <Link to="/SearchKaspaDocs" className="text-[11px] text-white/40 underline underline-offset-4">Developer docs</Link>
           </div>
 
           {/* Room for the in-app bottom tab bar */}
