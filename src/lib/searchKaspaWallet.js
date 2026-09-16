@@ -45,6 +45,25 @@ export function generateSearchWallet() {
   return wallet;
 }
 
+/** Use an external Scorpion (KCC20) wallet as the Search Kaspa wallet —
+ * address only. No private key is ever stored, generated, or sent anywhere;
+ * the user signs every fee in their own Scorpion wallet. */
+export function setExternalSearchWallet(address) {
+  const clean = String(address || "").replace(/^kaspa:/, "").trim();
+  if (!clean) return null;
+  const wallet = {
+    address: `kaspa:${clean}`,
+    via: "scorpion",
+    createdAt: Date.now(),
+    spentSompi: 0,
+    searches: 0,
+    charges: [],
+  };
+  save(wallet);
+  emit();
+  return wallet;
+}
+
 export function resetSearchWallet() {
   try { localStorage.removeItem(KEY); } catch {}
   cache = { balanceSompi: null, at: 0 };
