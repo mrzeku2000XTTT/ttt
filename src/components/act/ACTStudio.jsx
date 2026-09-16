@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ActStream from './ActStream';
+import AppHeaderNav from '@/components/AppHeaderNav';
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -106,8 +107,11 @@ export default function ACTStudio() {
   return (
     <div className="flex flex-col h-[100dvh] bg-black text-white">
       <div className="flex items-center justify-between px-4 h-12 border-b border-white/10 shrink-0">
-        <span className="text-sm font-black tracking-tight">ACT</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-sm font-black tracking-tight">ACT</span>
+          <AppHeaderNav appPath="ACT" />
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <span className="hidden sm:inline text-[10px] text-neutral-600 tracking-wide">
             {chars} letters · {imgCount} images
           </span>

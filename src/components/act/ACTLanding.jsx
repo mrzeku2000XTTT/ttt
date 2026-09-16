@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import AppHeaderNav from '@/components/AppHeaderNav';
 
 const STEPS = [
   ['01', 'Type', 'Write in the box like a chat. ACT reads every letter the moment it lands.'],
@@ -9,7 +10,10 @@ const STEPS = [
 
 export default function ACTLanding({ onEnter }) {
   return (
-    <div className="min-h-[100dvh] bg-black text-white flex flex-col">
+    <div className="relative min-h-[100dvh] bg-black text-white flex flex-col">
+      <div className="absolute top-3 right-3">
+        <AppHeaderNav appPath="ACT" />
+      </div>
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center pt-10">
         <h1 className="text-7xl sm:text-9xl font-black tracking-tighter">ACT</h1>
         <p className="mt-6 max-w-xl text-sm sm:text-base text-neutral-400 leading-relaxed">

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import BackToStore from '@/components/BackToStore';
 import ACTLanding from '@/components/act/ACTLanding';
 import ACTStudio from '@/components/act/ACTStudio';
 
@@ -13,7 +12,6 @@ export default function ACTPage() {
 
   return (
     <div className="bg-black min-h-[100dvh]">
-      <BackToStore />
       {entered ? <ACTStudio /> : <ACTLanding onEnter={enter} />}
     </div>
   );
