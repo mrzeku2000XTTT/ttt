@@ -14,7 +14,8 @@ export function createAngleScene(host, preview, callbacks) {
   const controls=preview ? null : new OrbitControls(orbit,renderer.domElement); if(controls){controls.target.set(0,1,0);controls.maxPolarAngle=Math.PI*.49;controls.minDistance=3;controls.maxDistance=35;controls.update();}
   const subjects=new THREE.Group(); scene.add(subjects);
   const rig=new THREE.Mesh(new THREE.BoxGeometry(.45,.3,.55),new THREE.MeshBasicMaterial({color:'#f5f5f5',wireframe:true})); rig.userData.id='camera'; scene.add(rig); rig.visible=!preview;
-  const helper=new THREE.CameraHelper(shot); scene.add(helper); helper.visible=!preview;
+  const guide=new THREE.PerspectiveCamera(48,16/9,.15,3);scene.add(guide);
+  const helper=new THREE.CameraHelper(guide);helper.setColors('#777777','#bbbbbb','#777777','#bbbbbb','#777777');scene.add(helper);helper.visible=!preview;
   const selection=new THREE.BoxHelper(new THREE.Object3D(),'#ffffff'); scene.add(selection); selection.visible=false;
   let current, previousSubjects, previousImage;
   const render=()=>{renderer.setScissorTest(false);renderer.setViewport(0,0,host.clientWidth,host.clientHeight);renderer.render(scene,preview?shot:orbit);};
@@ -24,7 +25,7 @@ export function createAngleScene(host, preview, callbacks) {
   const update=(state,image)=>{
     current=state;
     if(previousSubjects!==state.subjects || previousImage!==image){while(subjects.children.length){const child=subjects.children[0];subjects.remove(child);disposeGroup(child);} state.subjects.forEach(s=>subjects.add(makeSubject(s,image)));previousSubjects=state.subjects;previousImage=image;}
-    setShotCamera(shot,state.liveCamera);rig.position.copy(shot.position);rig.quaternion.copy(shot.quaternion);helper.update();
+    setShotCamera(shot,state.liveCamera);setShotCamera(guide,state.liveCamera);rig.position.copy(shot.position);rig.quaternion.copy(shot.quaternion);helper.update();
     const selected=subjects.children.find(o=>o.userData.id===state.selected);selection.visible=!!selected&&!preview;if(selected)selection.setFromObject(selected);
     scene.updateMatrixWorld(true); render();
   };

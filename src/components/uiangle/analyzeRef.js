@@ -16,7 +16,8 @@ export async function analyzeReferenceImage(file) {
     const source = { x: clamp(s.x,0,.99), y: clamp(s.y,0,.99), w: clamp(s.w,.01,1-clamp(s.x,0,.99)), h: clamp(s.h,.01,1-clamp(s.y,0,.99)) };
     const points = (s.outline || []).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y)).slice(0,80).map(p => [clamp(p.x,0,1)*100,clamp(p.y,0,1)*100]);
     const item = newSubject(s.kind), height = s.kind === 'building' ? 3 : s.kind === 'character' ? 1.8 : 1.2;
-    return { ...item, label: s.label.slice(0,40), source, w: source.w*100, h: source.h*100, x: toWorld((source.x+source.w/2)*100), z: toWorld((source.y+source.h)*100), height, width: clamp(height*source.w*image.width/(source.h*image.height),.15,6), outline: points.length >= 3 ? points : item.outline, estimated: points.length >= 3 };
+    const fit=Math.min(1600/image.width,900/image.height), fw=image.width*fit/16, fh=image.height*fit/9, ox=(100-fw)/2, oy=(100-fh)/2;
+    return { ...item, label: s.label.slice(0,40), source, w: source.w*fw, h: source.h*fh, x: toWorld(ox+(source.x+source.w/2)*fw), z: toWorld(oy+(source.y+source.h)*fh), height, width: clamp(height*source.w*image.width/(source.h*image.height),.15,6), outline: points.length >= 3 ? points : item.outline, estimated: points.length >= 3 };
   });
   return { reference: { uri: file_uri, url: signed_url, width: image.width, height: image.height }, subjects };
 }

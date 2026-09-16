@@ -20,7 +20,7 @@ export async function captureFlatShot(state) {
   const ctx=canvas.getContext('2d'), c=state.flatCamera;
   const image=state.reference ? await loadAngleImage(state.reference.url) : null;
   ctx.fillStyle='#171717'; ctx.fillRect(0,0,1600,900); ctx.translate(800,450); ctx.rotate(-c.roll*Math.PI/180); ctx.scale(c.zoom,c.zoom); ctx.translate(-c.x*16,-c.y*9);
-  if(image) { ctx.globalAlpha=.25; ctx.drawImage(image,0,0,1600,900); ctx.globalAlpha=1; }
+  if(image) { const fit=Math.min(1600/image.width,900/image.height),w=image.width*fit,h=image.height*fit; ctx.globalAlpha=.25; ctx.drawImage(image,(1600-w)/2,(900-h)/2,w,h); ctx.globalAlpha=1; }
   state.subjects.forEach(item => {
     const w=item.w*16*item.scale,h=item.h*9*item.scale; ctx.save(); ctx.translate((item.x/16+.5)*1600,(item.z/16+.5)*900); ctx.rotate(item.rotation*Math.PI/180); ctx.translate(-w/2,-h); drawSubject(ctx,item,image,w,h); ctx.restore();
   });

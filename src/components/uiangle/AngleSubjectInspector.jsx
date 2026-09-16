@@ -10,7 +10,7 @@ export default function AngleSubjectInspector({editor:e}) {
     <AngleRange label="Scale" value={item.scale} min={.25} max={3} unit="×" onChange={scale=>patch({scale})}/>
     <AngleRange label={e.mode==='2d'?'Rotation':'Facing'} value={item.rotation} min={-180} max={180} step={1} unit="°" onChange={rotation=>patch({rotation})}/>
     {e.mode!=='2d'&&<><AngleRange label="Height" value={item.height} min={.2} max={8} unit=" m" onChange={height=>patch({height})}/><AngleRange label="Width" value={item.width} min={.2} max={6} unit=" m" onChange={width=>patch({width})}/>{item.kind!=='character'&&<AngleRange label="Depth" value={item.depth} min={.1} max={6} unit=" m" onChange={depth=>patch({depth})}/>}</>}
-    <button onClick={()=>{if(e.mode!=='2d'){e.setMode('2d');e.setEditOutline(true);}else e.setEditOutline(!e.editOutline);}} className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-xs"><ScanLine size={13}/>{e.editOutline?'Finish outline':'Edit outline in 2D'}</button>
+    <button onClick={()=>{if(item.source)patch({display:'cutout'});if(e.mode!=='2d'){e.setMode('2d');e.setEditOutline(true);}else e.setEditOutline(!e.editOutline);}} className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-xs"><ScanLine size={13}/>{e.editOutline?'Finish outline':'Edit outline in 2D'}</button>
     <p className="text-[10px] leading-relaxed text-muted-foreground">Outlines clip the image itself. Moving a cutout keeps its original pixels; it no longer samples a different part of the reference.</p>
   </section>;
 }
