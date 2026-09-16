@@ -169,6 +169,7 @@ import GiftGeniusPage from './pages/GiftGenius';
 import LifestyleHubPage from './pages/LifestyleHub';
 import UIHubPage from './pages/UIHub';
 import UIEmbedPage from './pages/UIEmbed';
+import UIAnglePage from './pages/UIAngle';
 import CameraStudio from '@/pages/CameraStudio';
 import KaChatPage from '@/pages/KaChat';
 import MealPlanPage from './pages/MealPlan';
@@ -436,6 +437,7 @@ const AuthenticatedApp = () => {
       <Route path="/LifestyleHub" element={<LifestyleHubPage />} />
       <Route path="/UI" element={<UIHubPage />} />
       <Route path="/UI/Camera" element={<AdminRoute><UIEmbedPage /></AdminRoute>} />
+      <Route path="/UI/Angle" element={<UIAnglePage />} />
       <Route path="/CameraStudio" element={<CameraStudio />} />
       <Route path="/KaChat" element={<AdminRoute><KaChatPage /></AdminRoute>} />
       <Route path="/MealPlan" element={<MealPlanPage />} />
