@@ -41,7 +41,7 @@ export default function SearchKaspaWalletCard() {
   useEffect(() => {
     if (getSearchWallet()) refresh();
     return subscribe(syncFromLib);
-  }, [refresh, syncFromLib]);
+  }, [refresh, syncFromLib, wallet?.address]);
 
   // Scorpion popup (SDK v170) — the user approves the connection in their own wallet.
   const connectScorpion = async () => {
