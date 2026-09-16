@@ -71,7 +71,8 @@ export default function ClaimOwnerModal({ open, app, onClose, onClaimed }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[260] bg-black/85 backdrop-blur-xl flex items-center justify-center p-4"
+          className="fixed inset-x-0 top-0 z-[260] bg-black/85 backdrop-blur-xl flex items-center justify-center p-4"
+          style={{ height: "100dvh" }}
           onClick={onClose}
         >
           <motion.div

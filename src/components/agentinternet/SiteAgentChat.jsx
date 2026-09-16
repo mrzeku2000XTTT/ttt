@@ -12,7 +12,7 @@ function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
 }
 
-export default function SiteAgentChat({ app, onClose }) {
+export default function SiteAgentChat({ app, onClose, bottomInset = 0 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -98,7 +98,10 @@ export default function SiteAgentChat({ app, onClose }) {
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", damping: 30, stiffness: 260 }}
-          className="fixed top-0 right-0 bottom-0 z-[220] w-full sm:w-[420px] bg-[#050505] border-l border-white/10 flex flex-col"
+          className="fixed top-0 right-0 z-[220] w-full sm:w-[420px] bg-[#050505] border-l border-white/10 flex flex-col"
+          // Lock the panel to the real viewport height — bottom-0 stretches to the
+          // blurred overlay's containing block and can push the input below the fold.
+          style={{ height: `calc(100dvh - ${bottomInset}px)` }}
         >
           <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
             <SiteLogo app={app} size={32} />
@@ -216,6 +219,7 @@ export default function SiteAgentChat({ app, onClose }) {
             open={kaChatOpen}
             app={app}
             claim={claim}
+            bottomInset={bottomInset}
             onClose={() => setKaChatOpen(false)}
           />
         </motion.div>

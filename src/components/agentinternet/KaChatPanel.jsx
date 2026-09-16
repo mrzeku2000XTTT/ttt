@@ -7,7 +7,7 @@ import { base44 } from "@/api/base44Client";
  * KACHAT — a direct thread with the verified human owner of a site / X profile.
  * One thread per visitor per site; the owner sees every thread for what they own.
  */
-export default function KaChatPanel({ open, app, claim, onClose }) {
+export default function KaChatPanel({ open, app, claim, onClose, bottomInset = 0 }) {
   const [me, setMe] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -74,7 +74,8 @@ export default function KaChatPanel({ open, app, claim, onClose }) {
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", damping: 30, stiffness: 260 }}
-          className="fixed top-0 right-0 bottom-0 z-[240] w-full sm:w-[420px] bg-[#050505] border-l border-white/10 flex flex-col"
+          className="fixed top-0 right-0 z-[240] w-full sm:w-[420px] bg-[#050505] border-l border-white/10 flex flex-col"
+          style={{ height: `calc(100dvh - ${bottomInset}px)` }}
         >
           <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
             <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center flex-shrink-0">

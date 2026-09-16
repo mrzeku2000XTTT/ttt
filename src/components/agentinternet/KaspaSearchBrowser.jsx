@@ -601,7 +601,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
           {/* Room for the in-app bottom tab bar */}
           {embedded && <div className="h-[72px] flex-shrink-0" />}
 
-          <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} />
+          <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} bottomInset={embedded ? 72 : 0} />
           <ShareCardModal card={shareCard} onClose={() => setShareCard(null)} />
           <AgentBattleModal open={battleOpen} onClose={() => setBattleOpen(false)} pool={results} verifiedUrls={verifiedUrls} />
           <TipListingModal target={tipTarget} onClose={() => setTipTarget(null)} />
