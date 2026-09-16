@@ -5,6 +5,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { kaspaNaturalSearch } from '../../shared/kaspaNaturalSearch.ts';
+import { gatherSocialClaims } from '../../shared/kaspaSocialMining.ts';
 
 // collapse to letters+digits so "taptotip" matches "Tap to Tip" / "tap-to-tip.com"
 const squash = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -128,12 +129,14 @@ export default async function(req) {
     if (q && (aiOnly || withAi)) {
       try {
         const top = finalResults.slice(0, 6).map(r => `- ${r.name} (${r.url}) [${r.category}]: ${(r.description || '').slice(0, 200)}`).join('\n');
-        const prompt = top
-          ? `The user searched the Kaspa ecosystem index for "${query}". These are the top matching apps:\n${top}\n\nWrite a 2-3 sentence plain-English overview explaining what the user is likely looking for and what these apps do. End with a fact-check sentence: call out any listed app that does not genuinely relate to the query, and note that indexed descriptions are directory claims, not independently verified facts. No markdown, no lists.`
-          : `The user searched the Kaspa (KAS cryptocurrency) ecosystem for "${query}" and nothing matched our index. Explain in 2-3 plain sentences what "${query}" most likely is in the Kaspa / crypto context, and if it is a real project say what it does. If you are unsure, say so plainly. No markdown, no lists.`;
+        const { social, socialBlock } = await gatherSocialClaims(base44, query);
+        const basePrompt = top
+          ? `The user searched the Kaspa ecosystem index for "${query}". These are the top matching apps:\n${top}\n\nWrite a 2-4 sentence plain-English overview explaining what the user is likely looking for and what these apps do. End with a fact-check sentence: call out any listed app that does not genuinely relate to the query, and note that indexed descriptions are directory claims, not independently verified facts.`
+          : `The user searched the Kaspa (KAS cryptocurrency) ecosystem for "${query}" and nothing matched our index. Explain in 2-4 plain sentences what "${query}" most likely is in the Kaspa / crypto context, and if it is a real project say what it does. If you are unsure, say so plainly.`;
+        const prompt = `${basePrompt}${socialBlock}${social.length ? '\n\nMine the SOCIAL POSTS for every checkable claim and fact-check each one against live web research — state CONFIRMED, REFUTED or UNVERIFIABLE per claim with the actual finding. If the query itself asserts a checkable fact, fact-check that too.' : ''} No markdown, no lists.`;
         const out = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt,
-          add_context_from_internet: !top
+          add_context_from_internet: !top || social.length > 0
         });
         ai = typeof out === 'string' ? out.trim() : null;
       } catch (e) {
