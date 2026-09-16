@@ -1,0 +1,11 @@
+import React from 'react';
+import { Camera, UserRound, Box, Building2, Plus } from 'lucide-react';
+export default function AngleLayers({editor:e}) {
+  return <aside className="flex flex-col border-b border-border bg-card lg:border-b-0 lg:border-r">
+    <div className="flex justify-between px-4 py-4 text-[10px] uppercase tracking-[.18em] text-muted-foreground"><span>Scene</span><span>{e.subjects.length} objects</span></div>
+    <div className="space-y-1 px-2"><button onClick={()=>e.setSelected('camera')} className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-xs ${e.selected==='camera'?'bg-muted text-foreground':'text-muted-foreground'}`}><Camera size={15}/>Camera 01<span className="ml-auto text-[9px]">LIVE</span></button>
+    {e.subjects.map((item,i)=>{const Icon=item.kind==='character'?UserRound:item.kind==='building'?Building2:Box;return <button key={item.id} onClick={()=>{e.setSelected(item.id);e.setEditOutline(false);}} className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-xs ${e.selected===item.id?'bg-muted text-foreground':'text-muted-foreground'}`}><Icon size={15} className="shrink-0"/><span className="truncate">{item.label}</span><span className="ml-auto font-mono text-[9px]">{String(i+1).padStart(2,'0')}</span></button>;})}</div>
+    <div className="grid grid-cols-3 gap-1 p-3">{[['character','Person'],['building','Building'],['object','Object']].map(([kind,label])=><button key={kind} onClick={()=>e.add(kind)} className="flex flex-col items-center gap-1 rounded-lg border border-border py-3 text-[10px] hover:bg-muted"><Plus size={13}/>{label}</button>)}</div>
+    <div className="mt-auto border-t border-border p-4">{e.reference?<><img src={e.reference.url} alt="Original reference" className="max-h-32 w-full rounded-lg object-contain"/><p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">AI outlines are approximate. Select a subject → Edit outline to correct its edge. 3D stand-ins are editable, not reconstructed models.</p></>:<><span className="text-[10px] uppercase tracking-widest">Starter scene</span><p className="mt-2 text-xs leading-relaxed text-muted-foreground">Try the camera now, or upload a reference to trace your own subjects.</p></>}</div>
+  </aside>;
+}

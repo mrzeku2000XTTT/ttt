@@ -1,0 +1,6 @@
+import React from 'react';
+import { Play, Pause } from 'lucide-react';
+export default function AngleMotionBar({editor:e}) {
+  if(e.mode!=='4d')return null;
+  return <div className="space-y-3 border-t border-border bg-card px-4 py-3"><div className="flex flex-wrap items-center gap-3"><button onClick={()=>{if(e.time>=1)e.setTime(0);e.setPlaying(!e.playing);}} className="rounded border border-border p-2" title={e.playing?'Pause motion':'Play motion'}>{e.playing?<Pause size={14}/>:<Play size={14}/>}</button><select aria-label="Camera motion" value={e.motion} onChange={event=>{e.setPlaying(false);e.setTime(0);e.setMotion(event.target.value);}} className="rounded border border-border bg-background px-2 py-1 text-xs">{['Dolly in','Dolly out','Pan left','Pan right','Orbit','Crane up'].map(m=><option key={m}>{m}</option>)}</select><span className="ml-auto font-mono text-xs text-muted-foreground">{(e.time*6).toFixed(1)} / 6.0s</span></div><input aria-label="Motion timeline" type="range" min="0" max="1" step=".001" value={e.time} onChange={event=>{e.setPlaying(false);e.setTime(Number(event.target.value));}} className="w-full accent-current"/><p className="text-[10px] text-muted-foreground">4D = 3D over time. Live camera-motion preview; Generate exports a still at the current time.</p></div>;
+}
