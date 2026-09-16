@@ -4,7 +4,7 @@ import {
   getSearchWallet, resetSearchWallet, setExternalSearchWallet,
   fetchWalletBalance, subscribe, SEARCH_FEE_KAS,
 } from '@/lib/searchKaspaWallet';
-import { connectKcc20 } from '@/lib/useKcc20Wallet';
+import { connectScorpionWallet } from '@/lib/searchVault';
 
 /** Wallet card for the Search Kaspa profile tab — connects the user's
  * external Scorpion (KCC20) wallet. Keys never touch this app. */
@@ -43,14 +43,13 @@ export default function SearchKaspaWalletCard() {
     return subscribe(syncFromLib);
   }, [refresh, syncFromLib]);
 
-  // Scorpion popup — the user approves the connection in their own wallet.
+  // Scorpion popup (SDK v170) — the user approves the connection in their own wallet.
   const connectScorpion = async () => {
     setConnecting(true);
     setConnectError(null);
     try {
-      const res = await connectKcc20();
-      if (res?.address) setExternalSearchWallet(res.address);
-      else throw new Error('Scorpion did not return an address');
+      const { address, publicKey } = await connectScorpionWallet();
+      setExternalSearchWallet(address, publicKey);
     } catch (e) {
       setConnectError(e?.message || 'Connection rejected');
     } finally {

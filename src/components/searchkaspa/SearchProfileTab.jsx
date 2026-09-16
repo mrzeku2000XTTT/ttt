@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AtSign, Globe, BookOpen, ChevronRight } from 'lucide-react';
 import SearchKaspaWalletCard from './SearchKaspaWalletCard';
+import SearchVaultCard from './SearchVaultCard';
 import SearchTransactionsTab from './SearchTransactionsTab';
 import XProfileForm from '@/components/agentinternet/XProfileForm';
 import ListSiteModal from '@/components/agentinternet/ListSiteModal';
@@ -36,6 +37,7 @@ export default function SearchProfileTab({ onOpenDocs }) {
       ) : (
       <>
       <SearchKaspaWalletCard />
+      <SearchVaultCard />
 
       <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
         <div className="flex items-center gap-2">
