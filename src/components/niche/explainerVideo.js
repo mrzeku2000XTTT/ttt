@@ -1,5 +1,6 @@
 // Explainer video utilities — shared by the Manual lab and the Automatic chat studio
 import { assignMotionFx } from './motionFx';
+import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
 
 // 5 animation styles the user can pick from — "neutral" is the default
 export const ANIMATION_STYLES = [
@@ -298,9 +299,8 @@ export function createAudioContext() {
 
 export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false }) {
   const style = styleById(styleId);
-  const isMobile = window.matchMedia?.('(max-width: 640px)').matches;
-  const W = isMobile ? 960 : 1280;
-  const H = isMobile ? 540 : 720;
+  const W = 1280;
+  const H = 720;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -355,8 +355,7 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     cursor += hold + GAP;
   });
   const totalDur = cursor + 0.4;
-  const renderRate = isMobile ? Math.min(ac.sampleRate, 32000) : ac.sampleRate;
-  const offline = new OfflineCtx(isMobile ? 1 : 2, Math.ceil(totalDur * renderRate), renderRate);
+  const offline = new OfflineCtx(2, Math.ceil(totalDur * ac.sampleRate), ac.sampleRate);
   timeline.forEach((seg) => {
     const s = offline.createBufferSource();
     s.buffer = seg.buf;
@@ -461,7 +460,8 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   // Start the narration and the recording together, then follow the audio clock
   const t0 = ac.currentTime + 0.1;
   player.start(t0);
-  recorder.start(250);
+  // Finalize a single MP4 instead of forcing Safari to emit 250ms fragments.
+  recorder.start();
 
   // setInterval (not requestAnimationFrame) so the capture loop keeps drawing
   // even when the user leaves the tab — rAF is paused in background tabs.
@@ -503,6 +503,9 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   await new Promise((r) => setTimeout(r, 400));
   recorder.stop();
   await stopped;
+  stream.getTracks().forEach((track) => track.stop());
   await ac.close();
-  return new Blob(chunks, { type: mimeType.split(';')[0] });
+  canvas.width = canvas.height = 0;
+  onProgress?.('Finalizing video timing…');
+  return finalizeNicheMp4(new Blob(chunks, { type: mimeType.split(';')[0] }), totalDur + 0.5);
 }

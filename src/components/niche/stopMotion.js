@@ -5,6 +5,7 @@
 // a 60fps exportable MP4 with hard pose cuts and a subtle handmade "boil".
 import { base44 } from '@/api/base44Client';
 import { createAudioContext } from './explainerVideo';
+import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
 
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
@@ -201,7 +202,8 @@ export async function compileStopMotionVideo({ framesPerScene, audios, captions 
 
   const t0 = ac.currentTime + 0.1;
   player.start(t0);
-  recorder.start(250);
+  // Let the recorder finalize one complete MP4 with a single media timeline.
+  recorder.start();
 
   const wallStart = Date.now();
   const guardMs = (totalDur + 12) * 1000;
@@ -236,6 +238,9 @@ export async function compileStopMotionVideo({ framesPerScene, audios, captions 
   await new Promise((r) => setTimeout(r, 400));
   recorder.stop();
   await stopped;
+  stream.getTracks().forEach((track) => track.stop());
   await ac.close();
-  return new Blob(chunks, { type: mimeType.split(';')[0] });
+  canvas.width = canvas.height = 0;
+  onProgress?.('Finalizing video timing…');
+  return finalizeNicheMp4(new Blob(chunks, { type: mimeType.split(';')[0] }), totalDur + 0.5);
 }

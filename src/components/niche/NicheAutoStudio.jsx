@@ -756,7 +756,7 @@ Decide what to do:
         finish({ text: res.reply || "Tell me a topic or paste your niche and I'll build the video." });
       }
     } catch (e) {
-      finish({ text: `Something went wrong: ${e?.message || e}. Want me to try again?` });
+      finish({ text: `Something went wrong: ${e?.message || e}. Want me to try again?`, resume: loadBuildJob(userEmail) });
     } finally {
       setBusy(false);
       inputRef.current?.focus();
@@ -812,7 +812,7 @@ Decide what to do:
           video: { url: URL.createObjectURL(out.blob), type: out.blob.type, title: job.title, description: job.description, tags: job.tags || [] }
         });
       } catch (e) {
-        finish({ text: `Resume failed: ${e?.message || e}. Your checkpoint is kept — try the Resume button again.` });
+        finish({ text: `Resume failed: ${e?.message || e}. Your checkpoint is kept — try the Resume button again.`, resume: loadBuildJob(userEmail) });
       } finally {
         setBusy(false);
       }
