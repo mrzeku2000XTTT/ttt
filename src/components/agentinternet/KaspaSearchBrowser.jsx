@@ -46,7 +46,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
   const [ai, setAi] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [fundingIssue, setFundingIssue] = useState(null); // null | 'nowallet' | 'empty' | 'fetch'
+  const [fundingIssue, setFundingIssue] = useState(null); // null | { reason, error }
   const [listOpen, setListOpen] = useState(false);
   const [agentApp, setAgentApp] = useState(null);
   const [linkAdd, setLinkAdd] = useState(null); // { status: 'adding'|'added'|'exists'|'error', handle, error }
@@ -72,7 +72,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
     if (paidSearch && q.trim()) {
       const charge = await chargeSearch(q);
       if (reqId.current !== myId) return;
-      if (!charge.ok) { setFundingIssue(charge.reason); setLoading(false); return; }
+      if (!charge.ok) { setFundingIssue({ reason: charge.reason, error: charge.error }); setLoading(false); return; }
     }
     // Question-shaped queries ("what is gembl.fun") are informational questions,
     // not keyword searches — route them through the evidence-checked pipeline.
@@ -451,22 +451,35 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
           <div ref={resultsRef} className="flex-1 overflow-y-auto px-4 py-4">
             {fundingIssue ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center mb-3">
-                  <Wallet className="w-5 h-5 text-amber-300" />
+                <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-3 ${fundingIssue.reason === 'vault' ? 'bg-cyan-500/15 border-cyan-400/30' : 'bg-amber-500/15 border-amber-400/30'}`}>
+                  <Wallet className={`w-5 h-5 ${fundingIssue.reason === 'vault' ? 'text-cyan-300' : 'text-amber-300'}`} />
                 </div>
-                <p className="text-white/80 text-sm font-semibold mb-1">Search Kaspa wallet needs funding</p>
+                <p className="text-white/80 text-sm font-semibold mb-1">
+                  {fundingIssue.reason === 'vault' ? "Search Vault spend didn't complete" : 'Search Kaspa wallet needs funding'}
+                </p>
                 <p className="text-white/40 text-xs max-w-xs leading-relaxed mb-4">
-                  {fundingIssue === 'nowallet'
+                  {fundingIssue.reason === 'nowallet'
                     ? 'Create your Search Kaspa wallet and fund it with KAS — every search is a 0.001 KAS micro-transaction.'
-                    : fundingIssue === 'empty'
+                    : fundingIssue.reason === 'empty'
                       ? 'Your wallet balance is too low for the 0.001 KAS micro-search fee. Top it up to keep searching.'
-                      : fundingIssue === 'vault'
-                        ? 'Your Search Vault could not pay the 0.001 KAS fee. Approve the pay_search_fee in your KCC20 wallet, or top up / unlock the vault from the profile tab.'
+                      : fundingIssue.reason === 'vault'
+                        ? (fundingIssue.error || 'The pay_search_fee was not approved in your KCC20 wallet — approve it there to run this search. Your vault still holds 1 KAS.')
                         : 'Could not reach the Kaspa network to verify your wallet. Try again in a moment.'}
                 </p>
-                <button onClick={() => onRequireFunding?.()} className="px-4 h-11 rounded-full bg-cyan-500 text-black text-sm font-bold active:scale-95 transition-transform">
-                  Open profile & fund wallet
-                </button>
+                {fundingIssue.reason === 'vault' ? (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => runSearch(submitted, activeCategory)} className="px-4 h-11 rounded-full bg-cyan-500 text-black text-sm font-bold active:scale-95 transition-transform">
+                      Try again
+                    </button>
+                    <button onClick={() => onRequireFunding?.()} className="px-4 h-11 rounded-full border border-white/15 text-white/70 text-sm font-medium hover:bg-white/5 transition-colors">
+                      Open profile
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => onRequireFunding?.()} className="px-4 h-11 rounded-full bg-cyan-500 text-black text-sm font-bold active:scale-95 transition-transform">
+                    Open profile & fund wallet
+                  </button>
+                )}
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
