@@ -24,25 +24,34 @@ export const TREASURY_ADDRESS = 'kaspa:qq5yhvly6338dspa9mm24g8q6chvy6v0jww3k4dgq
 
 const VAULT_KEY = 'search_kaspa_vault';
 
+// A URL counts as loaded only after its onload fired. A FAILED injection
+// leaves a dead <script> tag behind — treating "tag exists" as "script is
+// loaded" made every later connect short-circuit and time out forever.
+const loadedScripts = new Set();
+
 function injectScript(src) {
   return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    if (loadedScripts.has(src)) { resolve(); return; }
+    // Any existing tag with this exact src is dead or duplicate — a healthy
+    // load would have set its global and the caller's fast path would have
+    // skipped injectScript entirely. Removing it cancels/replaces cleanly.
+    document.querySelectorAll(`script[src="${src}"]`).forEach((el) => el.remove());
     const s = document.createElement('script');
     s.src = src;
     s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error(`Could not load ${src}`));
+    s.onload = () => { loadedScripts.add(src); resolve(); };
+    s.onerror = () => { s.remove(); reject(new Error(`Could not load ${src}`)); };
     document.head.appendChild(s);
   });
 }
 
-function pollFor(getter, ms = 8000) {
+function pollFor(getter, ms = 8000, message = 'Scorpion wallet SDK did not initialize') {
   const started = Date.now();
   return new Promise((resolve, reject) => {
     const iv = setInterval(() => {
       const v = getter();
       if (v) { clearInterval(iv); resolve(v); return; }
-      if (Date.now() - started > ms) { clearInterval(iv); reject(new Error('Scorpion wallet SDK did not initialize')); }
+      if (Date.now() - started > ms) { clearInterval(iv); reject(new Error(message)); }
     }, 100);
   });
 }
@@ -67,6 +76,9 @@ export async function ensureScorpionSdk() {
     await waitForSdkInit(existing);
     return existing;
   }
+  // Kill the stale instance two ways — if delete fails (non-configurable
+  // property), undefined still defeats the SDK's own top guard on re-inject.
+  try { window.kcc20 = undefined; } catch { /* ignore */ }
   try { delete window.kcc20; } catch { /* ignore */ }
   document.querySelectorAll(`script[src^="${KCC20_ORIGIN}/sdk.js"]`).forEach((el) => el.remove());
   await injectScript(SDK_URL);
@@ -81,7 +93,7 @@ export async function ensureScorpionSdk() {
 export async function ensureArgent() {
   if (window.kcc20Argent && window.kcc20Argent.version === REQUIRED_ARGENT) return window.kcc20Argent;
   await injectScript(ARGENT_URL);
-  const argent = await pollFor(() => window.kcc20Argent);
+  const argent = await pollFor(() => window.kcc20Argent, 8000, 'KCC20 Argent did not initialize');
   if (argent.version !== REQUIRED_ARGENT) {
     throw new Error(`KCC20 Argent is v${argent.version} — need v${REQUIRED_ARGENT}.`);
   }
@@ -93,7 +105,18 @@ export async function ensureArgent() {
 export async function ensureSilver() {
   if (window.kcc20Silver) return window.kcc20Silver;
   await injectScript(SILVER_URL);
-  return pollFor(() => window.kcc20Silver);
+  return pollFor(() => window.kcc20Silver, 8000, 'SilverScript encoder did not initialize');
+}
+
+/** Truly disconnect: revoke the wallet-side session too, so the next Connect
+ * runs the full Approve flow in Scorpion instead of silently reusing the
+ * stale one (which can no longer yield a public key). No-op if the SDK
+ * never loaded. */
+export function disconnectScorpionSession() {
+  try {
+    const kcc = window.kcc20;
+    if (kcc && typeof kcc.disconnect === 'function') kcc.disconnect().catch(() => {});
+  } catch { /* wallet already gone */ }
 }
 
 // Connect — opens the Scorpion popup. The user approves; we get their address

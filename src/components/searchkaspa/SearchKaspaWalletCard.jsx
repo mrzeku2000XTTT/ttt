@@ -4,7 +4,7 @@ import {
   getSearchWallet, resetSearchWallet, setExternalSearchWallet,
   fetchWalletBalance, subscribe, SEARCH_FEE_KAS,
 } from '@/lib/searchKaspaWallet';
-import { connectScorpionWallet } from '@/lib/searchVault';
+import { connectScorpionWallet, disconnectScorpionSession } from '@/lib/searchVault';
 
 /** Wallet card for the Search Kaspa profile tab — connects the user's
  * external Scorpion (KCC20) wallet. Keys never touch this app. */
@@ -145,6 +145,9 @@ export default function SearchKaspaWalletCard() {
                 setBalanceSompi(null);
                 setSpentSompi(0);
                 setSearches(0);
+                // Revoke the wallet session too, so reconnect runs the full
+                // Approve flow instead of reusing this stale session.
+                disconnectScorpionSession();
               }
             }}
             className="inline-flex w-full items-center justify-center gap-1 text-[11px] text-red-400/70 hover:text-red-300"
