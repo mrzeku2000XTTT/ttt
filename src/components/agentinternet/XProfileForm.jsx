@@ -47,9 +47,9 @@ export default function XProfileForm({ onListed }) {
   };
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={submit} className="space-y-3">
-        <div className="flex items-center gap-2 px-3 h-11 rounded-xl bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50">
+    <div className="space-y-3">
+      <form onSubmit={submit} className="space-y-2">
+        <div className="flex items-center gap-2 px-3 h-9 rounded-xl bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50">
           <AtSign className="w-4 h-4 text-white/40 flex-shrink-0" />
           <input
             value={handle}
@@ -61,7 +61,7 @@ export default function XProfileForm({ onListed }) {
           />
         </div>
 
-        <div className="flex items-center gap-2 px-3 h-11 rounded-xl bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50">
+        <div className="flex items-center gap-2 px-3 h-9 rounded-xl bg-white/[0.06] border border-white/15 focus-within:border-cyan-500/50">
           <Globe className="w-4 h-4 text-white/40 flex-shrink-0" />
           <input
             value={website}
@@ -76,7 +76,7 @@ export default function XProfileForm({ onListed }) {
         <button
           type="submit"
           disabled={busy || !handle.trim()}
-          className="w-full h-11 rounded-xl bg-cyan-500 text-black font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full h-9 rounded-xl bg-cyan-500 text-black font-bold text-[13px] disabled:opacity-40 flex items-center justify-center gap-2"
         >
           {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Researching…</> : "Add my X profile"}
         </button>

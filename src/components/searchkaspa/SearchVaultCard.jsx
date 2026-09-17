@@ -84,7 +84,7 @@ export default function SearchVaultCard() {
   const searchesPrepaid = Math.floor(remainingSompi / SOMPI_PER_SEARCH);
 
   return (
-    <section className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+    <section className="space-y-2.5 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white">Search Vault</h2>
         {vault && (
@@ -103,7 +103,7 @@ export default function SearchVaultCard() {
           <p className="text-xs leading-relaxed text-white/50">
             Lock KAS once into your Search Vault. Each search then spends exactly 0.001 KAS from it — signed by you in Scorpion, nothing more.
           </p>
-          <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3 py-2.5">
+          <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-2.5 py-1.5">
             <p className="text-[11px] leading-relaxed text-cyan-200/90">
               Self-custody: your keys stay in Scorpion — we never hold your funds. The covenant itself caps every spend at one 0.001 KAS fee to the treasury; leftover KAS always stays yours.
             </p>
@@ -114,13 +114,13 @@ export default function SearchVaultCard() {
               onChange={(e) => setAmount(e.target.value)}
               inputMode="decimal"
               disabled={busy}
-              className="h-11 w-28 rounded-xl border border-white/10 bg-black/40 px-3 text-sm text-white outline-none focus:border-cyan-400/60"
+              className="h-9 w-24 rounded-xl border border-white/10 bg-black/40 px-2.5 text-sm text-white outline-none focus:border-cyan-400/60"
               aria-label="KAS amount to lock"
             />
             <button
               onClick={fund}
               disabled={busy}
-              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-500 text-sm font-bold text-black transition-transform active:scale-95 disabled:opacity-40"
+              className="flex h-9 flex-1 items-center justify-center gap-2 rounded-xl bg-cyan-500 text-sm font-bold text-black transition-transform active:scale-95 disabled:opacity-40"
             >
               {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> {stage || 'Working…'}</> : 'Fund Search Vault'}
             </button>
@@ -128,24 +128,24 @@ export default function SearchVaultCard() {
         </>
       ) : (
         <>
-          <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3 py-2.5">
+          <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-2.5 py-1.5">
             <p className="text-[11px] leading-relaxed text-cyan-200/90">
               Vault funded. Every search signs one <span className="font-bold">pay_search_fee</span> in Scorpion — the covenant only ever allows 0.001 KAS to the treasury, and your remaining KAS re-locks itself.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] py-2">
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] py-1.5">
               <p className="text-[10px] uppercase tracking-wider text-white/35">Remaining</p>
               <p className="text-sm font-medium text-white/80">{(remainingSompi / 1e8).toFixed(4)} KAS</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] py-2">
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] py-1.5">
               <p className="text-[10px] uppercase tracking-wider text-white/35">Searches prepaid</p>
               <p className="text-sm font-medium text-white/80">≈ {searchesPrepaid.toLocaleString()}</p>
             </div>
           </div>
           <div>
-            <p className="mb-1.5 text-[11px] uppercase tracking-wider text-white/35">Vault address (kaspa:p)</p>
-            <button onClick={copyAddress} className="w-full break-all rounded-xl border border-white/10 bg-black/40 p-3 text-left font-mono text-[11px] text-cyan-200 transition-transform active:scale-[0.99]">
+            <p className="mb-1 text-[11px] uppercase tracking-wider text-white/35">Vault address (kaspa:p)</p>
+            <button onClick={copyAddress} className="w-full break-all rounded-xl border border-white/10 bg-black/40 px-2.5 py-2 text-left font-mono text-[11px] text-cyan-200 transition-transform active:scale-[0.99]">
               {vault.address}
             </button>
             <div className="mt-1.5 flex items-center justify-between gap-2">
@@ -161,13 +161,13 @@ export default function SearchVaultCard() {
               onChange={(e) => setAmount(e.target.value)}
               inputMode="decimal"
               disabled={busy}
-              className="h-10 w-28 rounded-xl border border-white/10 bg-black/40 px-3 text-sm text-white outline-none focus:border-cyan-400/60"
+              className="h-9 w-24 rounded-xl border border-white/10 bg-black/40 px-2.5 text-sm text-white outline-none focus:border-cyan-400/60"
               aria-label="Top-up KAS amount"
             />
             <button
               onClick={fund}
               disabled={busy}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-500/15 text-[12px] font-bold text-cyan-200 transition-transform active:scale-95 disabled:opacity-40"
+              className="flex h-9 flex-1 items-center justify-center gap-2 rounded-xl border border-cyan-400/40 bg-cyan-500/15 text-[12px] font-bold text-cyan-200 transition-transform active:scale-95 disabled:opacity-40"
             >
               {busy ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {stage || 'Working…'}</> : 'Top up vault'}
             </button>
