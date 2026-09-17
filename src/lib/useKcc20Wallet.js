@@ -7,6 +7,7 @@ import {
   kcc20Provider,
   disconnectKcc20Pwa,
 } from "@/lib/kcc20Pwa";
+import { base44 } from "@/api/base44Client";
 
 // Module-level shared state so every component using the hook stays in sync.
 let _address = null;
@@ -18,6 +19,21 @@ let _error = null;
 let _initStarted = false;
 let _initDone = false;
 const _subscribers = new Set();
+
+// The wallet approves sites by origin and remembers that approval forever, but
+// the SDK's own session is tab-local (sessionStorage) — a new tab would open
+// the wallet popup just to be told "already connected" (no connect sheet, long
+// boot — the exact popup the dashboard shows). We remember the connected
+// account browser-wide and adopt it silently in new tabs. Sensitive actions
+// (signing, sending) still go through the wallet popup every time.
+const ADDR_CACHE_KEY = "ttt_kcc20_wallet_v1";
+function loadCachedAddress() {
+  try { return (JSON.parse(localStorage.getItem(ADDR_CACHE_KEY) || "null") || {}).address || null; } catch { return null; }
+}
+function saveCachedAddress(addr) {
+  try { localStorage.setItem(ADDR_CACHE_KEY, JSON.stringify({ address: addr, at: Date.now() })); } catch {}
+}
+function clearCachedAddress() { try { localStorage.removeItem(ADDR_CACHE_KEY); } catch {} }
 
 function snap() {
   return { address: _address, kas: _kas, kkdag: _kkdag, holdings: _holdings, loading: _loading, error: _error };
@@ -52,29 +68,41 @@ function applyState(state) {
 export async function refreshKcc20State() {
   const w = kcc20Provider();
   if (!w || !_address) return null;
+  let state = null;
   try {
-    let state;
     if (typeof w.getState === "function") state = await w.getState();
     else if (typeof w.request === "function") state = await w.request("getState");
-    applyState(state);
-    return state;
-  } catch {
-    return null;
+  } catch {}
+  applyState(state);
+  if (state && (state.address || state.accounts?.length)) return state;
+  // No live wallet session in this tab (new tab, popup closed) — the wallet
+  // already approved this origin, so read the balance straight from the node.
+  if (_kas == null) {
+    try {
+      const res = await base44.functions.invoke("getKaspaBalance", { address: _address });
+      const d = res?.data || res;
+      if (d?.balanceKAS != null) { _kas = Number(d.balanceKAS); emit(); }
+    } catch {}
   }
+  return null;
 }
 
 async function silentRestore() {
   const w = kcc20Provider();
   if (!w) return;
+  let addr = null;
   try {
     let acc = null;
     if (typeof w.getAccounts === "function") acc = await w.getAccounts();
     else if (typeof w.request === "function") {
       try { acc = await w.request("getAccounts"); } catch {}
     }
-    const addr = acc?.address || acc?.accounts?.[0] || (Array.isArray(acc) ? acc[0] : null);
-    if (addr) { setAddress(addr); refreshKcc20State(); }
+    addr = acc?.address || acc?.accounts?.[0] || (Array.isArray(acc) ? acc[0] : null);
   } catch {}
+  // New tab with no SDK session — adopt the account this browser already
+  // connected with; the wallet remembers the approval by origin.
+  if (!addr) addr = loadCachedAddress();
+  if (addr) { setAddress(addr); refreshKcc20State(); }
 }
 
 function registerListeners() {
