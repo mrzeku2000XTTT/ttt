@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Wand2, Code2, Crosshair, Camera } from 'lucide-react';
+import { Send, Loader2, Download, Compass, Film, Lightbulb, Clapperboard, Captions, Pause, Music, Eye, EyeOff, Copy, Check, ScrollText, Paperclip, X, SlidersHorizontal, FileText, FileSpreadsheet, FileJson, FileCode, FileImage, File, Sparkles, Wand2, Code2, Crosshair, Camera, Play } from 'lucide-react';
 import { VOX_MASTER_PROMPT } from './voxMasterPrompt';
 import NichePromptsPanel from './NichePromptsPanel';
 import YouTubeDeploy from './YouTubeDeploy';
@@ -17,6 +17,8 @@ import { POSES_PER_SCENE, posePlanPrompt, generateStopMotionFrames, compileStopM
 import { analyzeYouTubeStyle } from '@/lib/youtubeStyleAnalysis';
 import NicheYouTubeResult from './NicheYouTubeResult';
 import { LEARNING_LESSONS } from './NicheLearningWait';
+import { saveBuildJob, loadBuildJob, updateBuildJob, clearBuildJob } from './nicheAutoResume';
+import { runRenderPipeline, saveVideoToLibrary } from './nicheRenderPipeline';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -132,7 +134,9 @@ export default function NicheAutoStudio({ niches }) {
         saved = (JSON.parse(localStorage.getItem(CHAT_KEY) || '[]') || []).filter((m) => m && m.role && m.text);
       }
       if (saved.length && saved.some((m) => m.role === 'user')) {
-        setMessages(saved);
+        // a refresh may have killed an in-flight build — offer to resume it
+        const job = loadBuildJob(userEmail);
+        setMessages(job ? [...saved, { id: uid(), role: 'ai', text: 'Your last build was interrupted by a page refresh before it finished — I kept every scene that was already drawn and narrated. Resume it?', resume: job }] : saved);
         return;
       }
     } catch {}
@@ -170,6 +174,15 @@ export default function NicheAutoStudio({ niches }) {
   useEffect(() => {
     base44.entities.NicheStyle.list().then(setLearnedStyles).catch(() => {});
   }, []);
+
+  // A build can run for many minutes — never let an accidental refresh throw
+  // it away without a fight. (If it still happens, the checkpoint offers resume.)
+  useEffect(() => {
+    if (!busy) return;
+    const guard = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', guard);
+    return () => window.removeEventListener('beforeunload', guard);
+  }, [busy]);
 
   // keep the chat on disk (per user) so a refresh doesn't wipe it — including
   // their attachments, references and the latest Mimic clone
@@ -596,12 +609,9 @@ Decide what to do:
           const r = await researchAppUi(realUiScene.app || v.app || v.title);
           uiDesc = r.description;
         }
-        // Generate every scene's image and narration in small batches with retry, so a
-        // transient failure on one scene doesn't drop it (and doesn't kill the build).
-        let done = 0;
-        const total = n * 2;
-        const step = () => setWork(`Drawing & narrating · ${++done}/${total}`);
-        setWork(`Drawing & narrating · 0/${total}`);
+        // Scene generation runs in the shared checkpointed render pipeline
+        // (nicheRenderPipeline.js) — the SM stop-motion path below uses these
+        // batch/retry helpers directly.
         const withRetry = async (fn) => {
           for (let attempt = 0; attempt < 3; attempt++) {
             try { return await fn(); } catch (e) { if (attempt === 2) return null; await new Promise((r) => setTimeout(r, 800 * (attempt + 1))); }
@@ -681,82 +691,56 @@ Decide what to do:
           return;
         }
 
-        const [images, audios] = await Promise.all([
-          mapBatch(scenes, 3, (s, i) =>
-            withRetry(() => {
-              const sid = sceneStyles[i];
-              const basePrompt = (() => {
-                if (sid === 'real-ui') return realUiPrompt(s.app || v.app || v.title, uiDesc, s.action, v.color_mode);
-                const ls = learnedStyles.find((x) => x.id === sid);
-                if (ls) return customStylePrompt(ls.description, s.action, v.color_mode);
-                return stylePrompt(sid, s.action, v.color_mode);
-              })();
-              // STYLE LOCK: when the user attached reference image(s), they define
-              // the exact look — copy them 1:1 instead of restyling. A grayscale
-              // reference means a strictly black-and-white scene, never recolored.
-              const prompt = attachmentUrls.length
-                ? `${basePrompt}\n\nSTYLE LOCK — the attached reference image(s) define the exact art style for this scene: copy them 1:1. Same illustration/animation type, same line weight and clean flat shapes, same character design and proportions as the reference (a character in the reference stays the SAME character here). CRITICAL PALETTE RULE: if the reference is black-and-white or grayscale, the output must be strictly black-and-white — NEVER add any color, no sepia, no painterly or realistic rendering. Replicate the reference's exact look, do not reinterpret it.`
-                : basePrompt;
-              return base44.integrations.Core.GenerateImage({
-                prompt,
-                ...(attachmentUrls.length ? { existing_image_urls: attachmentUrls } : {})
-              });
-            }).then((r) => { step(); return r?.url || null; })
-          ),
-          mapBatch(scenes, 3, (s) =>
-            withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }))
-              .then((r) => { step(); return r?.url || null; })
-          )
-        ]);
-        if (token.cancelled) { audioContext.close().catch(() => {}); return; }
-        // A scene needs both its image and its narration to make the cut.
-        const kept = scenes.map((s, i) => ({ s, img: images[i], aud: audios[i] })).filter((x) => x.img && x.aud);
-        const dropped = n - kept.length;
-        if (!kept.length) throw new Error('Every scene failed to generate — try again in a moment.');
-        const finalScenes = kept.map((x) => x.s);
-        const finalImages = kept.map((x) => x.img);
-        const finalAudios = kept.map((x) => x.aud);
-        setWork(motionFx ? 'Animating scenes with Motion FX' : 'Stitching your video');
-        const blob = await compileExplainerVideo({
-          images: finalImages,
-          audios: finalAudios,
-          captions: finalScenes.map((s) => (captionMode === 'tts' ? (s.voiceover || s.caption || '') : (s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
-          style: styleId,
-          cameras: finalScenes.map((s) => s.camera),
-          musicUrl: soundtrack ? musicUrl.trim() : '',
-          onProgress: setWork,
-          audioContext,
-          motion: motionFx
+        // Per-scene image prompts are computed up front and checkpointed with
+        // the job, so a refresh-resume regenerates only the missing pieces.
+        const scenePrompts = scenes.map((s, i) => {
+          const sid = sceneStyles[i];
+          const basePrompt = (() => {
+            if (sid === 'real-ui') return realUiPrompt(s.app || v.app || v.title, uiDesc, s.action, v.color_mode);
+            const ls = learnedStyles.find((x) => x.id === sid);
+            if (ls) return customStylePrompt(ls.description, s.action, v.color_mode);
+            return stylePrompt(sid, s.action, v.color_mode);
+          })();
+          // STYLE LOCK: when the user attached reference image(s), they define
+          // the exact look — copy them 1:1 instead of restyling. A grayscale
+          // reference means a strictly black-and-white scene, never recolored.
+          return attachmentUrls.length
+            ? `${basePrompt}\n\nSTYLE LOCK — the attached reference image(s) define the exact art style for this scene: copy them 1:1. Same illustration/animation type, same line weight and clean flat shapes, same character design and proportions as the reference (a character in the reference stays the SAME character here). CRITICAL PALETTE RULE: if the reference is black-and-white or grayscale, the output must be strictly black-and-white — NEVER add any color, no sepia, no painterly or realistic rendering. Replicate the reference's exact look, do not reinterpret it.`
+            : basePrompt;
         });
-        // best effort — save the finished video to the user's Library
-        (async () => {
-          try {
-            const me = await base44.auth.me();
-            if (!me?.email) return;
-            const up = await base44.integrations.Core.UploadFile({
-              file: new File(
-                [blob],
-                `${(v.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-')}.${videoExt(blob.type)}`,
-                { type: blob.type }
-              )
-            });
-            await base44.entities.NicheVideo.create({
-              user_email: me.email,
-              title: v.title,
-              description: v.description || '',
-              tags: v.tags || [],
-              style_name: learned ? learned.name : (ANIMATION_STYLES.find((s) => s.id === styleId) || {}).name || 'Neutral',
-              video_url: up.file_url,
-              scenes: finalScenes.map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
-              fact_note: checked.note || ''
-            });
-          } catch {}
-        })();
+        const styleName = learned ? learned.name : (ANIMATION_STYLES.find((s) => s.id === styleId) || {}).name || 'Neutral';
+        // refresh survival — checkpoint everything needed to resume this exact build
+        saveBuildJob(userEmail, {
+          title: v.title, description: v.description, tags: v.tags || [],
+          styleId, styleName, scenes, scenePrompts, attachmentUrls,
+          captionMode, motionFx, musicUrl: soundtrack ? musicUrl.trim() : '',
+          factNote: checked.note || '',
+          images: new Array(n).fill(null), audios: new Array(n).fill(null), createdAt: Date.now()
+        });
+        const trackAsset = (type, i, url) => {
+          if (!url) return;
+          const cur = loadBuildJob(userEmail);
+          if (!cur || cur.title !== v.title) return;
+          const arr = [...(type === 'image' ? cur.images : cur.audios)];
+          arr[i] = url;
+          updateBuildJob(userEmail, type === 'image' ? { images: arr } : { audios: arr });
+        };
+        const out = await runRenderPipeline({
+          scenes, scenePrompts, attachmentUrls, captionMode, motionFx,
+          musicUrl: soundtrack ? musicUrl.trim() : '',
+          styleId, audioContext, token, setWork, onAsset: trackAsset
+        });
+        if (!out) return; // paused/cancelled — the checkpoint stays for resume
+        audioContext.close().catch(() => {});
+        // WAIT for the Library save before telling the user it's saved — the
+        // old fire-and-forget upload died with the tab on a refresh.
+        await saveVideoToLibrary({ blob: out.blob, title: v.title, description: v.description, tags: v.tags, styleName, scenes: out.finalScenes, factNote: checked.note || '' });
+        clearBuildJob(userEmail);
         finish({
-          text: `${res.reply || `Your explainer is ready — ${finalScenes.length} scenes, narrated, captioned, stitched. Saved to your Library.`}${dropped ? ` ⚠️ ${dropped} scene(s) were dropped because their image or narration failed to generate (the rest finished).` : ''}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
+          text: `${res.reply || `Your explainer is ready — ${out.finalScenes.length} scenes, narrated, captioned, stitched. Saved to your Library.`}${out.dropped ? ` ⚠️ ${out.dropped} scene(s) were dropped because their image or narration failed to generate (the rest finished).` : ''}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
           video: {
-            url: URL.createObjectURL(blob),
-            type: blob.type,
+            url: URL.createObjectURL(out.blob),
+            type: out.blob.type,
             title: v.title,
             description: v.description,
             tags: v.tags || []
@@ -772,6 +756,62 @@ Decide what to do:
       setBusy(false);
       inputRef.current?.focus();
     }
+  };
+
+  // Pick up an interrupted build right where a refresh killed it: the script
+  // and every already-generated scene asset live in the checkpoint, so only
+  // the missing pieces get regenerated before stitching.
+  const startResume = (job, offerId) => {
+    if (busy) return;
+    setBusy(true);
+    const audioContext = createAudioContext(); // must be inside the tap for iOS
+    const workId = uid();
+    const token = { cancelled: false };
+    buildRef.current = token;
+    workIdRef.current = workId;
+    setMessages((m) => [
+      ...m.filter((x) => x.id !== offerId),
+      { id: uid(), role: 'user', text: '(Resuming my interrupted build)' },
+      { id: workId, role: 'ai', working: true, text: 'Resuming where the refresh stopped me', startedAt: Date.now() }
+    ]);
+    const setWork = (t) => setMessages((m) => m.map((x) => (x.id === workId ? { ...x, text: t } : x)));
+    const finish = (patch) => setMessages((m) => m.map((x) => (x.id === workId ? { ...x, working: false, ...patch } : x)));
+    (async () => {
+      try {
+        const trackAsset = (type, i, url) => {
+          if (!url) return;
+          const cur = loadBuildJob(userEmail);
+          if (!cur || cur.title !== job.title) return;
+          const arr = [...(type === 'image' ? cur.images : cur.audios)];
+          arr[i] = url;
+          updateBuildJob(userEmail, type === 'image' ? { images: arr } : { audios: arr });
+        };
+        const out = await runRenderPipeline({
+          scenes: job.scenes,
+          scenePrompts: job.scenePrompts,
+          attachmentUrls: job.attachmentUrls || [],
+          captionMode: job.captionMode || 'summary',
+          motionFx: !!job.motionFx,
+          musicUrl: job.musicUrl || '',
+          styleId: job.styleId,
+          audioContext, token, setWork,
+          images: job.images, audios: job.audios,
+          onAsset: trackAsset
+        });
+        if (!out) return; // paused/cancelled — the checkpoint stays for a later resume
+        audioContext.close().catch(() => {});
+        await saveVideoToLibrary({ blob: out.blob, title: job.title, description: job.description, tags: job.tags, styleName: job.styleName, scenes: out.finalScenes, factNote: job.factNote });
+        clearBuildJob(userEmail);
+        finish({
+          text: `Picked up right where the refresh stopped me — "${job.title}" is finished: ${out.finalScenes.length} scenes, narrated, captioned, stitched. Saved to your Library.${out.dropped ? ` ⚠️ ${out.dropped} scene(s) were dropped because their image or narration failed to generate (the rest finished).` : ''}`,
+          video: { url: URL.createObjectURL(out.blob), type: out.blob.type, title: job.title, description: job.description, tags: job.tags || [] }
+        });
+      } catch (e) {
+        finish({ text: `Resume failed: ${e?.message || e}. Your checkpoint is kept — try the Resume button again.` });
+      } finally {
+        setBusy(false);
+      }
+    })();
   };
 
   // Pause the in-flight build so the user can iterate: cancel its token, settle the
@@ -796,7 +836,7 @@ Decide what to do:
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 flex flex-col" style={{ height: 'calc(100vh - 190px)' }}>
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide">
+      <div ref={scrollRef} style={{ overscrollBehaviorY: 'contain' }} className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide">
         {messages.map((m) => (
           <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
             <div
@@ -853,6 +893,25 @@ Decide what to do:
                   {m.mimic && (
                     <div className="mt-3">
                       <NicheMimicCard html={m.mimic.html} />
+                    </div>
+                  )}
+                  {m.resume && !busy && (
+                    <div className="mt-3 p-3 rounded-xl border border-amber-400/30 bg-amber-400/5">
+                      <p className="text-xs text-white/50 mb-2.5">Interrupted build · {m.resume.title || 'your video'}</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startResume(m.resume, m.id)}
+                          className="flex-1 py-2.5 rounded-xl bg-white text-black text-sm font-bold hover:shadow-[0_0_25px_rgba(255,255,255,0.3)] transition-all flex items-center justify-center gap-2"
+                        >
+                          <Play className="w-4 h-4" /> Resume build
+                        </button>
+                        <button
+                          onClick={() => { clearBuildJob(userEmail); setMessages((ms) => ms.filter((x) => x.id !== m.id)); }}
+                          className="px-4 py-2.5 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-white/40 text-sm font-medium transition-all"
+                        >
+                          Discard
+                        </button>
+                      </div>
                     </div>
                   )}
                   {m.youtubeLearning && (
