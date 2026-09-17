@@ -139,15 +139,39 @@ export async function connectKcc20() {
     await ensureInit();
     const w = kcc20Provider();
     if (!w) throw new Error("KCC20 Wallet not detected — open TTT from KCC20 → Profile → TTT");
-    let accounts;
-    if (typeof w.connect === "function") {
-      accounts = await withTimeout(w.connect(), 25000, "Connection timed out — KCC20 wallet did not respond");
-    } else if (typeof w.request === "function") {
-      accounts = await withTimeout(w.request("connect"), 25000, "Connection timed out — KCC20 wallet did not respond");
-    } else {
-      throw new Error("KCC20 Wallet SDK missing connect()");
-    }
-    const addr = Array.isArray(accounts) ? accounts[0] : (accounts?.address || accounts?.accounts?.[0] || null);
+    const request = typeof w.connect === "function"
+      ? () => w.connect()
+      : typeof w.request === "function"
+        ? () => w.request("connect")
+        : null;
+    if (!request) throw new Error("KCC20 Wallet SDK missing connect()");
+    const getAddr = async () => {
+      let acc = null;
+      if (typeof w.getAccounts === "function") acc = await w.getAccounts();
+      else if (typeof w.request === "function") { try { acc = await w.request("getAccounts"); } catch { return null; } }
+      const a = Array.isArray(acc) ? acc[0] : (acc?.address || acc?.accounts?.[0] || null);
+      return a ? String(a).replace(/^kaspa:/, "") : null;
+    };
+    // Some SDK builds only settle connect() once the popup is closed — poll the
+    // wallet for the approved account so the UI connects the moment approval
+    // happens, not when the popup goes away.
+    const addr = await withTimeout(new Promise((resolve, reject) => {
+      const poll = setInterval(async () => {
+        try { const a = await getAddr(); if (a) { clearInterval(poll); resolve(a); } } catch {}
+      }, 600);
+      request().then(
+        (accounts) => {
+          const a = Array.isArray(accounts) ? accounts[0] : (accounts?.address || accounts?.accounts?.[0] || null);
+          if (a) { clearInterval(poll); resolve(String(a).replace(/^kaspa:/, "")); }
+          // No address yet — let the poll keep watching until the outer timeout.
+        },
+        (e) => {
+          // connect() failed — give a late-arriving approval a brief grace
+          // period, then surface the wallet's error.
+          setTimeout(() => { clearInterval(poll); reject(e); }, 2500);
+        }
+      );
+    }), 25000, "Connection timed out — KCC20 wallet did not respond");
     if (!addr) throw new Error("KCC20 Wallet did not return an address");
     setAddress(addr);
     try { const state = await w.getState?.(); applyState(state); } catch {}

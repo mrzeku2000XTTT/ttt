@@ -42,12 +42,21 @@ export function loadKcc20Sdk() {
     const existing = document.querySelector("script[data-kcc20-sdk]");
     const onReady = (el) => {
       el.addEventListener("load", () => {
+        el.dataset.kcc20Loaded = "1";
         const p = kcc20Provider();
         if (p) resolve(p);
         else reject(new Error("sdk loaded but window.kcc20 missing"));
       });
       el.addEventListener("error", () => reject(new Error("Could not reach KCC20 Wallet")));
     };
+    // An already-loaded script tag never fires "load" again — resolve at once
+    // instead of hanging on a dead listener for the 12s init timeout.
+    if (existing && existing.dataset.kcc20Loaded === "1") {
+      const p = kcc20Provider();
+      if (p) { resolve(p); return; }
+      reject(new Error("sdk loaded but window.kcc20 missing"));
+      return;
+    }
     if (existing) { onReady(existing); return; }
     const s = document.createElement("script");
     s.src = KCC20_SDK;
