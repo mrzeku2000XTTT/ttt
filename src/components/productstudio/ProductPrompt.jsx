@@ -1,0 +1,7 @@
+import React, { useRef } from 'react';
+import { ImagePlus, Loader2, Sparkles } from 'lucide-react';
+
+export default function ProductPrompt({ prompt, setPrompt, onFiles, onPaste, onGenerate, busy }) {
+  const input = useRef(null);
+  return <section className="border-b border-border p-4"><div className="mb-3"><p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Create</p><h1 className="mt-1 text-xl font-semibold">Product image ideas</h1></div><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} onPaste={onPaste} placeholder="Describe a product, paste an image URL, or paste an image…" className="h-28 w-full resize-none rounded-xl border border-border bg-card p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" /><div className="mt-2 grid grid-cols-[auto_1fr] gap-2"><button onClick={() => input.current?.click()} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card" aria-label="Upload product images"><ImagePlus className="h-4 w-4" /></button><button disabled={busy || !prompt.trim()} onClick={onGenerate} className="flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-40">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{busy ? 'Creating four ideas…' : 'Generate 4 ideas'}</button></div><input ref={input} type="file" multiple accept="image/*" className="hidden" onChange={(e) => onFiles([...e.target.files])} /></section>;
+}
