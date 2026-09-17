@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { useKcc20Wallet, connectKcc20, shortKaspaAddress } from "@/lib/useKcc20Wallet";
 import { signMessageKcc20, isKcc20Detected } from "@/lib/kcc20Pwa";
 import { visibleLivePages } from "@/components/agentinternet/livePages";
+import { markSearchKaspaOrigin } from "@/lib/searchKaspaOrigin";
 
 // Only pages a guest can actually open — admin-gated apps are excluded so
 // search never routes a guest into an AdminRoute wall.
@@ -112,6 +113,7 @@ export default function GuestAgentPreview({ open, command, onClose }) {
   };
 
   const launch = (app) => {
+    markSearchKaspaOrigin(false); // guest relay = landing origin
     const q = `?intent=${encodeURIComponent(command.slice(0, 300))}`;
     if (app.externalUrl) window.open(app.externalUrl + q, "_blank");
     else if (app.path) navigate(`/${app.path}${q}`);

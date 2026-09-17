@@ -13,7 +13,6 @@ import ShareCardModal from "./ShareCardModal";
 import AgentBattleModal from "./AgentBattleModal";
 import TipListingModal from "./TipListingModal";
 import TipLeaderboardModal from "./TipLeaderboardModal";
-import { Link } from 'react-router-dom';
 import SearchMatchEvidence from '@/components/agentinternet/SearchMatchEvidence';
 import ParallelWebResults from "./ParallelWebResults";
 import TypingEdgeGlow from "./TypingEdgeGlow";
@@ -33,7 +32,7 @@ function hostOf(url) {
   try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; }
 }
 
-export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', paidSearch = false, onRequireFunding, embedded = false }) {
+export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', paidSearch = false, onRequireFunding, embedded = false, headerExtra = null }) {
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
@@ -350,6 +349,8 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
               <Dices className="w-4 h-4" />
             </button>
 
+            {headerExtra}
+
             {!embedded && (
               <button
                 onClick={() => setListOpen(true)}
@@ -607,16 +608,10 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
 
           <SearchPagination page={page} totalPages={totalPages} onChange={changePage} />
 
-          {/* Footer */}
-          <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-center gap-2">
-            <span className="text-[10px] text-white/40 font-mono">tttz.xyz</span>
-            <Link to="/AppDocs/SearchKaspa" className="text-[11px] text-white/70 underline underline-offset-4">How to use</Link>
-          </div>
-
           {/* Room for the in-app bottom tab bar */}
-          {embedded && <div className="h-[72px] flex-shrink-0" />}
+          {embedded && <div className="h-[56px] flex-shrink-0" />}
 
-          <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} bottomInset={embedded ? 72 : 0} />
+          <SiteAgentChat app={agentApp} onClose={() => setAgentApp(null)} bottomInset={embedded ? 52 : 0} />
           <ShareCardModal card={shareCard} onClose={() => setShareCard(null)} />
           <AgentBattleModal open={battleOpen} onClose={() => setBattleOpen(false)} pool={results} verifiedUrls={verifiedUrls} />
           <TipListingModal target={tipTarget} onClose={() => setTipTarget(null)} />

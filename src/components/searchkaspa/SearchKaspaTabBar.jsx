@@ -7,7 +7,7 @@ const TABS = [
   { id: 'profile', label: 'Profile', icon: User },
 ];
 
-/** iOS-style bottom tab bar for the Search Kaspa app. */
+/** iOS-style bottom tab bar for the Search Kaspa app — compact for small screens. */
 export default function SearchKaspaTabBar({ active, onChange }) {
   return (
     <nav
@@ -23,10 +23,10 @@ export default function SearchKaspaTabBar({ active, onChange }) {
               key={id}
               onClick={() => onChange(id)}
               aria-current={isActive ? 'page' : undefined}
-              className="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-transform active:scale-95"
+              className="flex min-h-[44px] flex-1 flex-row items-center justify-center gap-1.5 py-1 transition-transform active:scale-95"
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-cyan-300' : 'text-white/40'}`} />
-              <span className={`text-[10px] font-medium ${isActive ? 'text-cyan-300' : 'text-white/40'}`}>{label}</span>
+              <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-300' : 'text-white/40'}`} />
+              <span className={`text-[9px] font-medium ${isActive ? 'text-cyan-300' : 'text-white/40'}`}>{label}</span>
             </button>
           );
         })}

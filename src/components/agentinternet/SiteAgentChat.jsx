@@ -109,7 +109,7 @@ export default function SiteAgentChat({ app, onClose, bottomInset = 0 }) {
               <p className="text-white text-sm font-semibold truncate">{app.name} agent</p>
               <p className="text-[11px] text-emerald-400/70 font-mono truncate">{hostOf(app.url)}</p>
             </div>
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/10">
+            <button onClick={onClose} aria-label="Close chat and return to search" className="w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/60 hover:text-white hover:border-white/40 hover:bg-white/10">
               <X className="w-4 h-4" />
             </button>
           </div>
