@@ -8,6 +8,7 @@ import AppAccessGate from "@/components/appstore2/AppAccessGate";
 import AccessTimePill from "@/components/appstore2/AccessTimePill";
 import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
 import { getMaturityMeta } from "@/components/appstore2/appCatalog";
+import { markSearchKaspaOrigin } from "@/lib/searchKaspaOrigin";
 
 // Shared docs hero — app icon, name, tagline, badges, and the Open App action.
 // Open App is always shown (mobile + desktop). Admin-only apps render an
@@ -34,6 +35,7 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
 
   const launch = () => {
     try { localStorage.setItem("came_from_categories", "true"); } catch {}
+    markSearchKaspaOrigin(true); // launched from the App Store docs flow
     if (openApp.startsWith("http")) window.open(openApp, "_blank", "noopener,noreferrer");
     else window.location.href = openApp;
   };
