@@ -4,7 +4,7 @@ import {
   getSearchWallet, resetSearchWallet, setExternalSearchWallet,
   fetchWalletBalance, subscribe, SEARCH_FEE_KAS,
 } from '@/lib/searchKaspaWallet';
-import { connectScorpionWallet, disconnectScorpionSession } from '@/lib/searchVault';
+import { connectScorpionWallet, disconnectScorpionSession, ensureScorpionSdk } from '@/lib/searchVault';
 
 /** Wallet card for the Search Kaspa profile tab — connects the user's
  * external Scorpion (KCC20) wallet. Keys never touch this app. */
@@ -15,6 +15,8 @@ export default function SearchKaspaWalletCard() {
   const [balanceSompi, setBalanceSompi] = useState(null);
   const [busy, setBusy] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [preparing, setPreparing] = useState(true);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [connectError, setConnectError] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -43,7 +45,35 @@ export default function SearchKaspaWalletCard() {
     return subscribe(syncFromLib);
   }, [refresh, syncFromLib, wallet?.address]);
 
-  // Scorpion popup (SDK v170) — the user approves the connection in their own wallet.
+  // Load transport only (no popup or connection), preserving the next click's
+  // browser activation for the SDK's window.open call.
+  useEffect(() => {
+    let active = true;
+    ensureScorpionSdk().catch((e) => {
+      if (active) setConnectError(e.message);
+    }).finally(() => { if (active) setPreparing(false); });
+    return () => { active = false; };
+  }, []);
+
+  const disconnectScorpion = async () => {
+    if (!window.confirm('Disconnect your Scorpion wallet from Search Kaspa?\n\nYour funds and funded vault remain unchanged.')) return;
+    setDisconnecting(true);
+    setConnectError(null);
+    try {
+      await disconnectScorpionSession();
+      resetSearchWallet();
+      setWallet(null);
+      setBalanceSompi(null);
+      setSpentSompi(0);
+      setSearches(0);
+    } catch (e) {
+      setConnectError(e?.message || 'Could not disconnect. Please try again.');
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  // Scorpion popup (SDK v171) — the user approves in their own wallet.
   const connectScorpion = async () => {
     setConnecting(true);
     setConnectError(null);
@@ -96,10 +126,10 @@ export default function SearchKaspaWalletCard() {
           </div>
           <button
             onClick={connectScorpion}
-            disabled={connecting}
+            disabled={connecting || preparing || disconnecting}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 text-sm font-bold text-black transition-transform active:scale-95 disabled:opacity-40"
           >
-            {connecting ? <><Loader2 className="h-4 w-4 animate-spin" /> Opening Scorpion…</> : 'Connect Scorpion wallet'}
+            {preparing ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing Scorpion…</> : connecting ? <><Loader2 className="h-4 w-4 animate-spin" /> Opening Scorpion…</> : 'Connect Scorpion wallet'}
           </button>
           {connectError && <p className="text-center text-[11px] text-red-400">{connectError}</p>}
         </>
@@ -138,22 +168,13 @@ export default function SearchKaspaWalletCard() {
             </div>
           </div>
           <button
-            onClick={() => {
-              if (window.confirm('Disconnect your Scorpion wallet from Search Kaspa?\n\nYour funds stay safe in your Scorpion wallet — this only removes the connection on this device.')) {
-                resetSearchWallet();
-                setWallet(null);
-                setBalanceSompi(null);
-                setSpentSompi(0);
-                setSearches(0);
-                // Revoke the wallet session too, so reconnect runs the full
-                // Approve flow instead of reusing this stale session.
-                disconnectScorpionSession();
-              }
-            }}
+            onClick={disconnectScorpion}
+            disabled={disconnecting}
             className="inline-flex w-full items-center justify-center gap-1 text-[11px] text-red-400/70 hover:text-red-300"
           >
-            <Unplug className="h-3 w-3" /> Disconnect wallet
+            <Unplug className="h-3 w-3" /> {disconnecting ? 'Disconnecting…' : 'Disconnect wallet'}
           </button>
+          {connectError && <p className="text-center text-[11px] text-red-400">{connectError}</p>}
         </>
       )}
     </section>

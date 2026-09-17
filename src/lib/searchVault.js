@@ -24,25 +24,28 @@ export const TREASURY_ADDRESS = 'kaspa:qq5yhvly6338dspa9mm24g8q6chvy6v0jww3k4dgq
 
 const VAULT_KEY = 'search_kaspa_vault';
 
-// A URL counts as loaded only after its onload fired. A FAILED injection
-// leaves a dead <script> tag behind — treating "tag exists" as "script is
-// loaded" made every later connect short-circuit and time out forever.
-const loadedScripts = new Set();
-
-function injectScript(src) {
-  return new Promise((resolve, reject) => {
-    if (loadedScripts.has(src)) { resolve(); return; }
-    // Any existing tag with this exact src is dead or duplicate — a healthy
-    // load would have set its global and the caller's fast path would have
-    // skipped injectScript entirely. Removing it cancels/replaces cleanly.
+// Deduplicate only in-flight loads; a failed or missing global can be retried.
+const scriptLoads = new Map();
+function injectScript(src, type = 'text/javascript') {
+  if (scriptLoads.has(src)) return scriptLoads.get(src);
+  const promise = new Promise((resolve, reject) => {
     document.querySelectorAll(`script[src="${src}"]`).forEach((el) => el.remove());
     const s = document.createElement('script');
+    const timer = setTimeout(() => finish(new Error(`Timed out loading ${src}`)), 15000);
+    const finish = (error) => {
+      clearTimeout(timer);
+      s.onload = s.onerror = null;
+      if (error) { s.remove(); reject(error); } else resolve();
+    };
+    s.type = type;
     s.src = src;
     s.async = true;
-    s.onload = () => { loadedScripts.add(src); resolve(); };
-    s.onerror = () => { s.remove(); reject(new Error(`Could not load ${src}`)); };
+    s.onload = () => finish();
+    s.onerror = () => finish(new Error(`Could not load ${src}`));
     document.head.appendChild(s);
-  });
+  }).finally(() => scriptLoads.delete(src));
+  scriptLoads.set(src, promise);
+  return promise;
 }
 
 function pollFor(getter, ms = 8000, message = 'Scorpion wallet SDK did not initialize') {
@@ -80,7 +83,9 @@ export async function ensureScorpionSdk() {
   // property), undefined still defeats the SDK's own top guard on re-inject.
   try { window.kcc20 = undefined; } catch { /* ignore */ }
   try { delete window.kcc20; } catch { /* ignore */ }
-  document.querySelectorAll(`script[src^="${KCC20_ORIGIN}/sdk.js"]`).forEach((el) => el.remove());
+  if (!scriptLoads.has(SDK_URL)) {
+    document.querySelectorAll(`script[src^="${KCC20_ORIGIN}/sdk.js"]`).forEach((el) => el.remove());
+  }
   await injectScript(SDK_URL);
   const w = await pollFor(() => window.kcc20);
   await waitForSdkInit(w);
@@ -104,27 +109,23 @@ export async function ensureArgent() {
 // wallet to sign pay_search_fee / unlock against the stored silverc artifact.
 export async function ensureSilver() {
   if (window.kcc20Silver) return window.kcc20Silver;
-  await injectScript(SILVER_URL);
+  await injectScript(SILVER_URL, 'module');
   return pollFor(() => window.kcc20Silver, 8000, 'SilverScript encoder did not initialize');
 }
 
-/** Truly disconnect: revoke the wallet-side session too, so the next Connect
- * runs the full Approve flow in Scorpion instead of silently reusing the
- * stale one (which can no longer yield a public key). No-op if the SDK
- * never loaded. */
-export function disconnectScorpionSession() {
-  try {
-    const kcc = window.kcc20;
-    if (kcc && typeof kcc.disconnect === 'function') kcc.disconnect().catch(() => {});
-  } catch { /* wallet already gone */ }
+/** SDK disconnect clears its cached accounts/session after closing the popup.
+ * Do not offer reconnect until that promise resolves. Vault data is untouched. */
+export async function disconnectScorpionSession() {
+  const kcc = window.kcc20;
+  if (typeof kcc?.disconnect === 'function') await kcc.disconnect();
 }
 
-// Connect — opens the Scorpion popup. The user approves; we get their address
-// and their 32-byte Schnorr public key (the vault's owner key).
+// Invoke connect directly during the click when the SDK is already loaded.
+// Argent and Silver are vault-operation dependencies, NOT connection gates.
 export async function connectScorpionWallet() {
-  const kcc = await ensureScorpionSdk();
-  await ensureArgent();
-  await ensureSilver();
+  const existing = window.kcc20;
+  const kcc = existing && String(existing.sdkVersion) === REQUIRED_SDK && existing.origin === KCC20_ORIGIN
+    ? existing : await ensureScorpionSdk();
   const res = await kcc.connect();
   const raw = res?.address || res?.accounts?.[0] || (Array.isArray(res) ? res[0] : null);
   if (!raw) throw new Error('Scorpion did not return an address');
