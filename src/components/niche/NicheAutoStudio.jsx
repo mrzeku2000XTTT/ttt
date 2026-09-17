@@ -73,6 +73,7 @@ const TipRotator = ({ tips }) => {
 export default function NicheAutoStudio({ niches }) {
   const [messages, setMessages] = useState([]);
   const [userEmail, setUserEmail] = useState('');
+  const [identityReady, setIdentityReady] = useState(false);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [learnedStyles, setLearnedStyles] = useState([]);
@@ -118,10 +119,14 @@ export default function NicheAutoStudio({ niches }) {
   const chatKey = userEmail ? `${CHAT_KEY}:${userEmail}` : CHAT_KEY;
 
   useEffect(() => {
-    base44.auth.me().then((u) => { if (u?.email) setUserEmail(u.email); }).catch(() => {});
+    base44.auth.me()
+      .then((u) => { if (u?.email) setUserEmail(u.email); })
+      .catch(() => {})
+      .finally(() => setIdentityReady(true));
   }, []);
 
   useEffect(() => {
+    if (!identityReady) return;
     const names = (niches || []).map((n) => n.niche_name);
     const intro = names.length
       ? `Your saved niches: ${names.slice(0, 6).join(' · ')}. Tap one below, paste a topic, X link, or any public YouTube URL, and I’ll take it from there.`
@@ -147,7 +152,7 @@ export default function NicheAutoStudio({ niches }) {
         text: `Hey — I’m your NICHE auto-pilot. Give me a topic, X link, prompt, or public YouTube URL. I can study its animation language and story structure, invent original viral directions, then draw, animate, narrate, caption, and show you the finished video.\n\n${intro}`
       }
     ]);
-  }, [chatKey]);
+  }, [chatKey, identityReady]);
 
   // Auto-scroll ONLY when a new message arrives or the working bubble settles —
   // not on the 1-second elapsed timer updates, which would yank the user back
@@ -256,7 +261,7 @@ export default function NicheAutoStudio({ niches }) {
 
   const send = async (raw) => {
     let text = (raw ?? input).trim();
-    if (busy) return;
+    if (busy || !identityReady) return;
     let attachmentUrls = [];
     let attachmentPreviews = [];
     let videoFile = null;
@@ -835,12 +840,12 @@ Decide what to do:
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 flex flex-col" style={{ height: 'calc(100vh - 190px)' }}>
-      <div ref={scrollRef} style={{ overscrollBehaviorY: 'contain' }} className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide">
+    <div className="w-full min-w-0 max-w-3xl h-full min-h-0 mx-auto px-4 sm:px-6 flex flex-col overflow-hidden">
+      <div ref={scrollRef} style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden space-y-4 pr-1 scrollbar-hide">
         {messages.map((m) => (
-          <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+          <div key={m.id} className={`min-w-0 max-w-full ${m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}>
             <div
-              className={`${m.framez || m.mimic ? 'w-full' : 'max-w-[85%]'} rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              className={`${m.framez || m.mimic ? 'w-full' : 'max-w-[85%]'} min-w-0 overflow-hidden break-words rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 m.role === 'user'
                   ? 'bg-white text-black rounded-br-sm'
                   : 'bg-white/[0.04] border border-white/10 text-white rounded-bl-sm'
@@ -848,7 +853,7 @@ Decide what to do:
             >
               {m.working ? (
                 <>
-                  <span className="flex items-center gap-2 font-medium">
+                  <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium break-words">
                     <Loader2 className="w-4 h-4 animate-spin opacity-70" /> {m.text}
                     {m.elapsed != null ? <span className="text-white/40 tabular-nums">· {fmtElapsed(m.elapsed)}</span> : null}
                     <WorkDots />
@@ -1189,7 +1194,7 @@ Decide what to do:
         )}
 
         {/* Main compact row */}
-        <div className="flex gap-2 items-center">
+        <div className="flex min-w-0 gap-2 items-center">
           {niches?.length > 0 && (
             <button
               onClick={() => setShowRecentChips((s) => !s)}
@@ -1242,12 +1247,12 @@ Decide what to do:
             }}
             onPaste={handlePaste}
             placeholder={mimicMode ? 'Mimic is on — attach a screenshot to clone it, or tell me what to change…' : cloneMode ? 'Auto Clone is on — attach a video and I will clone it 1:1…' : promptoMode ? 'Prompto is on — type anything, I will amplify it into a detailed animation brief…' : smMode ? 'SM is on — give me a topic and I will shoot it as a stop-motion film, exported at 60fps…' : voxMode ? 'Motion V1 (Vox) is on — paste a topic, X link, YouTube URL, or prompt…' : 'Paste a topic, X link, YouTube URL, or niche — or attach a file…'}
-            disabled={busy}
-            className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
+            disabled={busy || !identityReady}
+            className="min-w-0 flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none disabled:opacity-50"
           />
           <button
             onClick={busy ? pauseBuild : () => send(input)}
-            disabled={!busy && !input.trim() && attachments.length === 0}
+            disabled={!identityReady || (!busy && !input.trim() && attachments.length === 0)}
             className={`px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-40 ${
               busy ? 'bg-amber-400/20 border border-amber-400/60 text-amber-300 hover:bg-amber-400/30' : 'bg-white text-black hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]'
             }`}

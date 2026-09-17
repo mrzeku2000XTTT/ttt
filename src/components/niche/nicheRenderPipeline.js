@@ -12,6 +12,8 @@ export const runRenderPipeline = async ({
   images = [], audios = [], onAsset
 }) => {
   const n = scenes.length;
+  const isMobile = window.matchMedia?.('(max-width: 640px)').matches;
+  const concurrency = isMobile ? 1 : 3;
   let done = images.filter(Boolean).length + audios.filter(Boolean).length;
   const total = n * 2;
   const step = () => setWork(`Drawing & narrating · ${Math.min(++done, total)}/${total}`);
@@ -30,7 +32,7 @@ export const runRenderPipeline = async ({
     return out;
   };
   const [outImages, outAudios] = await Promise.all([
-    mapBatch(scenes, 3, (s, i) =>
+    mapBatch(scenes, concurrency, (s, i) =>
       images[i]
         ? images[i]
         : withRetry(() => base44.integrations.Core.GenerateImage({
@@ -38,7 +40,7 @@ export const runRenderPipeline = async ({
             ...(attachmentUrls.length ? { existing_image_urls: attachmentUrls } : {})
           })).then((r) => { step(); const url = r?.url || null; onAsset?.('image', i, url); return url; })
     ),
-    mapBatch(scenes, 3, (s, i) =>
+    mapBatch(scenes, concurrency, (s, i) =>
       audios[i]
         ? audios[i]
         : withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }))
@@ -64,25 +66,23 @@ export const runRenderPipeline = async ({
   return { blob, finalScenes, dropped: n - kept.length, images: outImages, audios: outAudios };
 };
 
-// Best-effort save of the finished video to the user's Library. AWAIT this —
-// a refresh right at "finished!" used to kill the in-flight upload and the
-// video never reached the Library even though the chat claimed it was saved.
+// Save must finish successfully before the build checkpoint is cleared or the
+// chat claims the video is in the Library.
 export const saveVideoToLibrary = async ({ blob, title, description, tags, styleName, scenes, factNote }) => {
-  try {
-    const me = await base44.auth.me();
-    if (!me?.email) return;
-    const up = await base44.integrations.Core.UploadFile({
-      file: new File([blob], `${(title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-')}.${videoExt(blob.type)}`, { type: blob.type })
-    });
-    await base44.entities.NicheVideo.create({
-      user_email: me.email,
-      title,
-      description: description || '',
-      tags: tags || [],
-      style_name: styleName || 'Neutral',
-      video_url: up.file_url,
-      scenes: (scenes || []).map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
-      fact_note: factNote || ''
-    });
-  } catch {}
+  const me = await base44.auth.me();
+  if (!me?.email) throw new Error('Sign in before saving the finished video.');
+  const up = await base44.integrations.Core.UploadFile({
+    file: new File([blob], `${(title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-')}.${videoExt(blob.type)}`, { type: blob.type })
+  });
+  await base44.entities.NicheVideo.create({
+    user_email: me.email,
+    title,
+    description: description || '',
+    tags: tags || [],
+    style_name: styleName || 'Neutral',
+    video_url: up.file_url,
+    scenes: (scenes || []).map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
+    fact_note: factNote || ''
+  });
+  return up.file_url;
 };

@@ -298,8 +298,9 @@ export function createAudioContext() {
 
 export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false }) {
   const style = styleById(styleId);
-  const W = 1280;
-  const H = 720;
+  const isMobile = window.matchMedia?.('(max-width: 640px)').matches;
+  const W = isMobile ? 960 : 1280;
+  const H = isMobile ? 540 : 720;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -354,7 +355,8 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     cursor += hold + GAP;
   });
   const totalDur = cursor + 0.4;
-  const offline = new OfflineCtx(2, Math.ceil(totalDur * ac.sampleRate), ac.sampleRate);
+  const renderRate = isMobile ? Math.min(ac.sampleRate, 32000) : ac.sampleRate;
+  const offline = new OfflineCtx(isMobile ? 1 : 2, Math.ceil(totalDur * renderRate), renderRate);
   timeline.forEach((seg) => {
     const s = offline.createBufferSource();
     s.buffer = seg.buf;

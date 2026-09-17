@@ -32,13 +32,13 @@ export default function NicheStudio() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+    <div className={`h-[100dvh] min-h-0 bg-black text-white relative flex flex-col overflow-x-hidden ${mode === 'auto' ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
       <div
         className="fixed inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 60% 40% at 50% -10%, rgba(255,255,255,0.07) 0%, rgba(0,0,0,0) 60%)' }}
       />
 
-      <div className="flex items-center justify-between px-4 sm:px-6 py-4 relative z-10">
+      <div className="flex shrink-0 items-center justify-between px-4 sm:px-6 py-4 relative z-10">
         <Link to="/Niche" className="flex items-center gap-2.5 group">
           <NicheLogo size={32} />
           <span className="font-black tracking-tight text-xl">NICHE <span className="text-white/40 group-hover:text-white/70 transition-colors">Studio</span></span>
@@ -62,7 +62,7 @@ export default function NicheStudio() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 relative z-10 mb-2">
+      <div className="flex shrink-0 items-center justify-center gap-2 relative z-10 mb-2">
         {[
           { key: 'auto', label: 'Automatic', icon: Sparkles },
           { key: 'manual', label: 'Manual', icon: SlidersHorizontal },
@@ -82,7 +82,7 @@ export default function NicheStudio() {
         ))}
       </div>
 
-      <div className="relative z-10 py-4 sm:py-8 pb-24">
+      <div className={`relative z-10 min-w-0 ${mode === 'auto' ? 'flex-1 min-h-0 py-2 pb-2 overflow-hidden' : 'py-4 sm:py-8 pb-24'}`}>
         {mode === 'library' ? (
           <NicheVideoLibrary />
         ) : mode === 'auto' ? (
