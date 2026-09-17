@@ -175,6 +175,33 @@ export async function compileSearchVaultArtifact(ownerPubkey) {
   return artifact;
 }
 
+// silverc compiles in a sandbox and can outlast the click's browser user
+// activation — the SDK then refuses to open the popup ("Tap Connect KCC20
+// Wallet"). Cache the artifact per owner key and let pages warm it up front
+// so the Fund click goes straight to the wallet popup.
+let artifactCache = { pubkey: null, artifact: null, promise: null };
+export function getSearchVaultArtifact(ownerPubkey) {
+  if (artifactCache.pubkey === ownerPubkey && artifactCache.artifact) return Promise.resolve(artifactCache.artifact);
+  if (artifactCache.pubkey === ownerPubkey && artifactCache.promise) return artifactCache.promise;
+  artifactCache = { pubkey: ownerPubkey, artifact: null, promise: null };
+  artifactCache.promise = compileSearchVaultArtifact(ownerPubkey)
+    .then((artifact) => { artifactCache.artifact = artifact; return artifact; })
+    .finally(() => { artifactCache.promise = null; });
+  return artifactCache.promise;
+}
+
+// Refresh the wallet session from inside the click. With a live session this
+// resolves instantly WITHOUT opening a window, so the click's activation is
+// still fresh when compileVault raises the popup (and a re-run after the user
+// closed the popup simply reopens it).
+export async function ensureScorpionConnected() {
+  const existing = window.kcc20;
+  const kcc = existing && String(existing.sdkVersion) === REQUIRED_SDK && existing.origin === KCC20_ORIGIN
+    ? existing : await ensureScorpionSdk();
+  await kcc.connect();
+  return kcc;
+}
+
 // Step 2 — fund the vault through Scorpion. The wallet builds the kaspa:p P2SH;
 // the user Approves + PINs. Topping up = another fund to the same vault address.
 export async function fundVaultWithScorpion({ artifact, ownerPubkey, amountKas }) {
@@ -188,6 +215,8 @@ export async function fundVaultWithScorpion({ artifact, ownerPubkey, amountKas }
   if (directed?.type && directed.type !== 'searchvault') {
     throw new Error(`Argent understood this as "${directed.type}" — expected the SearchVault covenant.`);
   }
+  // Fast-path session refresh keeps the click's activation alive for the popup.
+  await kcc.connect();
   const out = await kcc.compileVault({
     type: 'searchvault',
     amount: Number(amountKas),

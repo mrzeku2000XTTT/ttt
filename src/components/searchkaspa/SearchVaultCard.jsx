@@ -3,7 +3,7 @@ import { Loader2, Copy, Check, ShieldCheck, Unplug } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { getSearchWallet } from '@/lib/searchKaspaWallet';
 import {
-  compileSearchVaultArtifact, fundVaultWithScorpion, unlockVault, getSearchVault, TREASURY_ADDRESS,
+  getSearchVaultArtifact, fundVaultWithScorpion, unlockVault, getSearchVault, TREASURY_ADDRESS,
 } from '@/lib/searchVault';
 
 // Each pay_search_fee burns 100_000 sompi fee + 1000 sompi miner fee.
@@ -24,6 +24,16 @@ export default function SearchVaultCard() {
     base44.auth.me().then((u) => setIsAdmin(u?.role === 'admin')).catch(() => setIsAdmin(false));
   }, []);
 
+  // Warm the silverc compile in the background — compiling inside the Fund
+  // click outlasts the browser's user activation and the SDK then refuses to
+  // reopen its popup. With a warmed artifact the click opens Scorpion at once.
+  useEffect(() => {
+    const ownerPubkey = getSearchWallet()?.publicKey;
+    if (isAdmin && ownerPubkey) {
+      getSearchVaultArtifact(ownerPubkey).catch(() => {});
+    }
+  }, [isAdmin, getSearchWallet()?.publicKey]);
+
   const fund = async () => {
     const amt = Number(amount);
     if (!Number.isFinite(amt) || amt <= 0) { setError('Enter a KAS amount'); return; }
@@ -32,7 +42,7 @@ export default function SearchVaultCard() {
     setBusy(true); setError(null);
     try {
       setStage('Compiling your vault covenant (silverc v1.0.0)…');
-      const artifact = await compileSearchVaultArtifact(ownerPubkey);
+      const artifact = await getSearchVaultArtifact(ownerPubkey);
       setStage('Approve + PIN in Scorpion…');
       await fundVaultWithScorpion({ artifact, ownerPubkey, amountKas: amt });
       setVault(getSearchVault());
