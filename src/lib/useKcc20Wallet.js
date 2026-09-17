@@ -167,6 +167,13 @@ export async function connectKcc20() {
     await ensureInit();
     const w = kcc20Provider();
     if (!w) throw new Error("KCC20 Wallet not detected — open TTT from KCC20 → Profile → TTT");
+    // Already connected in this browser — the wallet's approval is per-origin
+    // and persistent, so opening its popup would just land on the dashboard
+    // with no connect sheet. Adopt the known account silently instead.
+    if (!_address) {
+      const cached = loadCachedAddress();
+      if (cached) { setAddress(cached); refreshKcc20State(); return { address: cached }; }
+    }
     const request = typeof w.connect === "function"
       ? () => w.connect()
       : typeof w.request === "function"
@@ -202,8 +209,9 @@ export async function connectKcc20() {
     }), 25000, "Connection timed out — KCC20 wallet did not respond");
     if (!addr) throw new Error("KCC20 Wallet did not return an address");
     setAddress(addr);
+    saveCachedAddress(addr);
     try { const state = await w.getState?.(); applyState(state); } catch {}
-    return { address: String(addr).replace(/^kaspa:/, "") };
+    return { address: addr };
   } catch (e) {
     _error = e?.message || "Connection rejected";
     emit();
@@ -224,6 +232,7 @@ export async function disconnectKcc20() {
   _error = null;
   _address = null;
   _kas = null; _kkdag = null; _holdings = null;
+  clearCachedAddress();
   emit();
   try { await disconnectKcc20Pwa(); } catch {}
 }
