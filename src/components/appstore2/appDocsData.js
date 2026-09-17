@@ -4,6 +4,28 @@
 
 // ── Curated docs for flagship apps ──
 const CURATED = {
+  FlagSense: {
+    tagline: "Relationship self-awareness — understand the behavior, not the person",
+    overview: "FlagSense helps people recognize relationship behaviors as green flags (healthy), yellow flags (worth reflecting on), or red flags (potentially unhealthy) — without ever labeling you or your partner. Read a realistic situation, swipe or choose your honest response, then see why it matters, how the other person might feel, and what to try instead. It works for both sides: understanding your partner, and honestly asking 'am I doing this?'. A self-reflection mode finds your own patterns, an AI coach helps you reflect without judging, and Say It Better rewrites raw reactions into healthier sentences. Everything stays on your device — private by design, no account required.",
+    features: [
+      { title: "Swipe scenarios", desc: "Real situations with three honest responses — healthy, worth reflecting on, concerning — plus why each matters." },
+      { title: "Think about them", desc: "Every result asks how the other person might feel — teaching empathy, not blame." },
+      { title: "Try this instead", desc: "A healthier alternative and a ready-to-use example phrase, with one-tap copy." },
+      { title: "Self-reflection mode", desc: "'Am I the red flag?' — answer honestly, then see your pattern bars and one tiny weekly challenge." },
+      { title: "Say It Better", desc: "AI rewrites what you want to say in Calm, Honest, Gentle, or Direct tones — same feeling, better delivery." },
+      { title: "Pause feature", desc: "A breathing pause that turns emotional reactions into named feelings and needs." },
+    ],
+    howItWorks: [
+      { title: "Read the situation", desc: "Open the app and get today's scenario card — realistic, short, no judgment." },
+      { title: "Choose honestly", desc: "Swipe or pick your real response. Then see why it matters and how the other person might feel." },
+      { title: "Practice", desc: "Take the healthier alternative and the example phrase into your real life." },
+    ],
+    getStarted: [
+      { title: "Open FlagSense", desc: "Launch it from the store — no wallet or account needed; everything stays on your device." },
+      { title: "Take the short onboarding", desc: "Three quick questions shape which topics you see first." },
+      { title: "Do today's check-in", desc: "One scenario a day is the whole habit — growth is a direction, not a grade." },
+    ],
+  },
   SearchKaspa: {
     tagline: "Kaspa's own search engine",
     overview: "Search Kaspa is the search layer of the Kaspa ecosystem: a curated Kaspa directory (Kaspa Hub + the TTT App Store) searched alongside a live web index. Every profile match shows its evidence — exact quotes and the source URL — and a Kaspa-branded AI overview summarizes the topic, with a live-data follow-up chat that cites fresh sources. Paste any link and it gets security-scanned and indexed; paste an X profile and it gets its own AI agent. Admin searches are metered with a 0.001 KAS micro-transaction from the Search Kaspa wallet, locked by a SilverScript covenant SearchVault. Full developer docs and a preview client live in-app under the Dev docs tab.",

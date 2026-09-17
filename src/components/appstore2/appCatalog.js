@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "FlagSense", path: "FlagSense", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/48ed8d14e_generated_image.png", desc: "Relationship red flag / green flag self-awareness · swipe real scenarios, see how the other person might feel, learn a healthier alternative — private by design, no labels, no judgment" },
   { name: "Search Kaspa", path: "SearchKaspa", cat: "Kaspa", logo: "https://assets.coingecko.com/coins/images/25751/large/kaspa-icon-exchanges.png", desc: "Kaspa's own search engine · curated Kaspa directory + live web index, evidence-backed AI overviews with live-data chat, security-scanned site listing and covenant-metered micro-search" },
   { name: "ACT", path: "ACT", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/07a0016cf_generated_image.png", desc: "Real-time typing → image · every letter is read as you type and each sentence fires the instant you press period — watch it become a downloadable image" },
   { name: "KaChat", path: "KaChat", cat: "Kaspa", directLaunch: true, desktop: true, admin: true, logo: "https://play-lh.googleusercontent.com/EWz3-rGxKEkQSvqpfP8-RNoj2HVYn8_eA5WrbdGlH5ipbTzn-Qawz1o0YPDIjk6JSsH1pXANtkPH9RKN25uXzg=w240-h480-rw", desc: "Encrypted peer-to-peer Kaspa messaging and KAS payments · local-first, no central messaging server" },

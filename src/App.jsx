@@ -225,6 +225,7 @@ import BibliaPage from './pages/Biblia';
 import CollabCollaboratorsPage from './pages/CollabCollaborators';
 import AdminRoute from '@/components/AdminRoute';
 import SearchKaspa from '@/pages/SearchKaspa';
+import FlagSensePage from '@/pages/FlagSense';
 import SearchKaspaDocs from '@/pages/SearchKaspaDocs';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -491,6 +492,7 @@ const AuthenticatedApp = () => {
       <Route path="/ACT" element={<ACTPage />} />
       <Route path="/SearchKaspa" element={<SearchKaspa />} />
       <Route path="/SearchKaspaDocs" element={<SearchKaspaDocs />} />
+      <Route path="/FlagSense" element={<FlagSensePage />} />
       <Route path="/ClutchKAS" element={<ClutchKAS />} />
       <Route path="/Biblia" element={<AdminRoute><BibliaPage /></AdminRoute>} />
       <Route path="/CollabCollaborators" element={<CollabCollaboratorsPage />} />

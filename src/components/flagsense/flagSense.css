@@ -1,0 +1,80 @@
+/* FlagSense — scoped warm, light, Apple-like theme.
+   Everything lives under .flag-sense so no other app is affected. */
+
+:root .flag-sense, .dark .flag-sense {
+  --background: 40 25% 97%;
+  --foreground: 220 14% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 14% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 14% 12%;
+  --primary: 220 14% 12%;
+  --primary-foreground: 40 25% 97%;
+  --secondary: 40 16% 93%;
+  --secondary-foreground: 220 14% 16%;
+  --muted: 40 16% 93%;
+  --muted-foreground: 220 8% 45%;
+  --accent: 40 16% 92%;
+  --accent-foreground: 220 14% 12%;
+  --destructive: 0 62% 46%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 40 12% 87%;
+  --input: 40 12% 87%;
+  --ring: 220 14% 30%;
+  --radius: 1.25rem;
+  --fs-green: 152 38% 38%;
+  --fs-amber: 38 78% 44%;
+  --fs-red: 0 62% 46%;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+}
+
+.flag-sense {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-family: var(--font-body);
+}
+
+.flag-sense button { -webkit-tap-highlight-color: transparent; }
+.flag-sense button:active:not(:disabled) { transform: scale(0.97); transition: transform 0.08s ease; }
+.flag-sense button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* soft radial light at the top of pages */
+.flag-sense::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 55vh;
+  background: radial-gradient(70% 60% at 50% 0%, hsl(40 40% 100% / 0.9), transparent 70%);
+  pointer-events: none;
+}
+
+/* breathing circle for the Pause feature */
+@keyframes fs-breathe {
+  0% { transform: scale(0.82); opacity: 0.55; }
+  50% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(0.82); opacity: 0.55; }
+}
+.fs-breathe { animation: fs-breathe 3s ease-in-out infinite; }
+
+@keyframes fs-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fs-fade-up { animation: fs-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* small uppercase label used across cards */
+.fs-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: hsl(220 8% 55%);
+}
+
+/* progress bars */
+.fs-bar { height: 6px; border-radius: 999px; background: hsl(220 10% 91%); overflow: hidden; }
+.fs-bar-fill { height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
