@@ -44,6 +44,7 @@
 ---
 
 ## Apps built with this checklist
+- **Product Studio** (`/ProductStudio`) — AI product-image asset collection with upload/paste references, draggable canvas, motion presets, and browser preview. Original logo + hero generated 2026-09-17.
 - **ClutchKAS** (`/ClutchKAS`) — VALORANT highlight feed, uploaded MP4/WebM or YouTube embeds, fan-set KAS heart tips with Scorpion approval. Landing-first, KCC20-gated; TTT sign-in for publishing. Original logo + hero generated 2026-09-13.
 - **Kanvas** (`/Kanvas`) — image markup, clip, crop & annotate studio, Scorpion-wallet-gated. Logo + hero generated 2026-09-11.
 - **CAM** (`/CAM`) — cinematic camera controller: 10 camera moves over any image, shot sequences & storyboard export, Scorpion-wallet-gated. Logo + hero generated 2026-09-11.
