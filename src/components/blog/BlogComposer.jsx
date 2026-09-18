@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { buildDraftPrompt } from "@/lib/blogAi";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 
 const EMOJIS = ["✍️", "💡", "🚀", "🧠", "⚙️", "🛡️", "💸", "🎨", "🔥", "🌌"];
 
@@ -29,15 +29,7 @@ export default function BlogComposer({ onPublished }) {
   const draft = async () => {
     setDrafting(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        model: "claude_sonnet_4_6",
-        prompt: buildDraftPrompt({
-          title,
-          topic,
-          tone,
-          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-        }),
-      });
+      const res = await invokeProtectedOperation('draftBlogPost', { title, topic, tone, tags: tags.split(',').map(t => t.trim()).filter(Boolean) });
       setContent(llmText(res));
     } catch (e) {
       alert("Draft failed: " + e.message);

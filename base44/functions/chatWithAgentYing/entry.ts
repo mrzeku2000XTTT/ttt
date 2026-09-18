@@ -1,11 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
+import { getRequestUser } from '../../shared/requestAuth.ts';
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     
     // Verify user is authenticated
-    const user = await base44.auth.me();
+    const user = await getRequestUser(base44);
+    if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -82,7 +85,7 @@ ${verifications.slice(-10).map((v, i) => `${i + 1}. ${v.task_type}: ${v.verifica
       console.log('📸 Analyzing new image with Google Lens + SAVING to hive mind...');
       
       // Extract structured data from image
-      const visionExtraction = await base44.integrations.Core.InvokeLLM({
+      const visionExtraction = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `You are Agent Ying's vision system. Extract ALL data from this image like Google Lens.
 
 User Question/Context: "${question}"
@@ -167,7 +170,7 @@ READ EVERYTHING. Be extremely thorough and detailed.`,
       }
       
       // Generate conversational response with extracted data
-      aiResponse = await base44.integrations.Core.InvokeLLM({
+      aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `${knowledgeContext}
 
 User uploaded an image and asked: "${question}"
@@ -191,7 +194,7 @@ Now provide a detailed, conversational answer to the user's question using the e
       
     } else {
       // Regular text question - use FULL knowledge base
-      aiResponse = await base44.integrations.Core.InvokeLLM({
+      aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `${knowledgeContext}
 
 User Question: "${question}"
@@ -226,7 +229,7 @@ Provide a detailed answer showing EXACTLY what data I have. Don't say "I don't h
       success: false
     }, { status: 500 });
   }
-});
+}
 
 async function generateHash(data) {
   const encoder = new TextEncoder();

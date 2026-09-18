@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 
 /**
  * Fast lane for TTT A.I.
@@ -10,20 +11,7 @@ import { base44 } from "@/api/base44Client";
  * so the agent can answer anything without faking an orchestration.
  * Returns null when the message should go through orchestration.
  */
-const SCHEMA = {
-  type: "object",
-  properties: {
-    mode: { type: "string", enum: ["question", "task"] },
-    title: { type: "string", description: "short 2-4 word label for the answer" },
-    answer: { type: "string", description: "the direct answer, 1-4 sentences, factual and conversational" },
-    points: {
-      type: "array",
-      items: { type: "string" },
-      description: "optional 2-5 key supporting facts, only when the answer benefits from a breakdown",
-    },
-  },
-  required: ["mode"],
-};
+
 
 // live KAS price questions are answered by our own price oracle, never by the LLM
 const PRICE_Q = /\b(kas|kaspa)\b[^?]*\b(price|worth|cost|trading|value|usd)\b|\b(price|worth|value)\b[^?]*\b(kas|kaspa)\b/i;
@@ -54,26 +42,11 @@ export async function tryQuickAnswer(text, history) {
     } catch {}
   }
 
-  const ctx = (history || [])
-    .slice(-6)
-    .map((m) => (m.role === "user" ? `User: ${m.text}` : `Assistant: ${m.output?.detail || m.output?.title || ""}`))
-    .join("\n");
-
-  const res = await base44.integrations.Core.InvokeLLM({
-    prompt: `You are TTT A.I. First classify the user's latest message.
-
-mode = "task" ONLY if it asks you to DO something inside an app: send/pay KAS, escrow funds, mint, generate or draw an image, build a site or landing page, make/edit a video, clip a stream, post/broadcast to channels, create a wallet, deploy or run something.
-
-mode = "question" for EVERYTHING else — factual questions, current events, prices, how-tos, definitions, code help, opinions, small talk, follow-ups. Questions about Kaspa, crypto, tech, news, people, anything at all.
-
-If mode is "question": answer it directly and completely using live web knowledge. Be accurate, specific and current — cite concrete numbers, names and dates where relevant. 1-4 sentences. Add "points" only if a short breakdown genuinely helps. Never refuse, never say you need an agent, never invent transactions.
-If mode is "task": return only { "mode": "task" } and nothing else.
-
-${ctx ? `Conversation so far:\n${ctx}\n` : ""}Latest message: "${text}"`,
-    response_json_schema: SCHEMA,
-    add_context_from_internet: true,
-    model: "gemini_3_flash",
-  });
+  const recent = (history || []).slice(-6).map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    text: (m.role === 'user' ? m.text : m.output?.detail || m.output?.title) || '…'
+  }));
+  const res = await invokeProtectedOperation('answerTTTQuestion', { message: text, history: recent });
 
   const data = typeof res === "string" ? JSON.parse(res) : res;
   if (!data || data.mode !== "question" || !data.answer) return null;

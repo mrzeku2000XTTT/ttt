@@ -1,8 +1,13 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { getRequestUser } from '../../shared/requestAuth.ts';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await getRequestUser(base44);
+    if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
+    if (!user) return Response.json({ error: 'Sign in to request threat intelligence.' }, { status: 401 });
     
     // Fetch real-time threat data
     const threats = [];
@@ -29,7 +34,7 @@ Deno.serve(async (req) => {
 
     // Nuclear threats - check news
     try {
-      const newsResponse = await base44.integrations.Core.InvokeLLM({
+      const newsResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: 'Search current news for nuclear threats, military tensions, DEFCON status changes, and geopolitical conflicts. Provide a severity assessment (low/medium/high/critical) and brief summary. Format: SEVERITY|Title|Description',
         add_context_from_internet: true
       });
@@ -78,7 +83,7 @@ Deno.serve(async (req) => {
 
     // Prophetic analysis
     try {
-      const prophecyResponse = await base44.integrations.Core.InvokeLLM({
+      const prophecyResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: 'Based on current world events from news today, identify patterns matching biblical prophecy from Revelation. Rate severity (low/medium/high/critical) based on prophetic significance. Format: SEVERITY|Title|Description with scripture reference',
         add_context_from_internet: true
       });
@@ -122,4 +127,4 @@ Deno.serve(async (req) => {
       error: error.message 
     }, { status: 500 });
   }
-});
+}

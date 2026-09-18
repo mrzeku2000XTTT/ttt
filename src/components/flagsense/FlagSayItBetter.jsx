@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, WandSparkles, Copy, Check, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 
 const TONES = ["Calm", "Honest", "Gentle", "Direct"];
 
-const PROMPT = `You transform what someone wants to say into a healthier, more constructive way to say it — same feeling, better delivery. You never manipulate, never sugarcoat into dishonesty, and never add guilt trips. Return JSON with "rewrites": exactly 3 short, natural, first-person phrasings in the requested tone. Each must be something a real person could actually say out loud, under 45 words.`;
+
 
 /** "Say It Better" — rewrite a raw reaction in a chosen tone. */
 export default function FlagSayItBetter({ onClose }) {
@@ -20,14 +20,7 @@ export default function FlagSayItBetter({ onClose }) {
     setBusy(true);
     setResults(null);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${PROMPT}\n\nTone: ${tone}\nWhat they want to say: "${text.trim()}"`,
-        response_json_schema: {
-          type: "object",
-          properties: { rewrites: { type: "array", items: { type: "string" } } },
-          required: ["rewrites"],
-        },
-      });
+      const res = await invokeProtectedOperation('flagSenseAssistant', { action: 'rewrite', text: text.trim(), tone });
       setResults(res?.rewrites?.length ? res.rewrites : ["Could you help me rephrase that more gently?"]);
     } catch {
       setResults(null);

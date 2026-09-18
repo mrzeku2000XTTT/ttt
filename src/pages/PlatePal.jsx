@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import { Upload, ChefHat, Loader2 } from "lucide-react";
 import BackToStore from "@/components/BackToStore";
 
@@ -23,18 +24,8 @@ export default function PlatePal() {
     setLoading(true);
     setResult(null);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Look at this fridge/pantry photo. Identify the ingredients visible. Then suggest 3 realistic recipes the person can cook RIGHT NOW with what's visible, and a short shopping list of 2-4 missing items that would unlock more meals. Dietary preferences: ${prefs || "none"}. Respond as JSON: { "can_cook": [{ "name": string, "time": string, "steps": string[] }], "missing": string[] }. Keep recipe names short. Steps max 5 each, one sentence.`,
-        file_urls: [file_url],
-        response_json_schema: {
-          type: "object",
-          properties: {
-            can_cook: { type: "array", items: { type: "object", properties: { name: { type: "string" }, time: { type: "string" }, steps: { type: "array", items: { type: "string" } } } } },
-            missing: { type: "array", items: { type: "string" } }
-          }
-        }
-      });
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      const res = await invokeProtectedOperation('suggestFridgeRecipes', { photo: file_url, preferences: prefs });
       setResult(res);
     } catch (e) {
       setResult({ error: e.message || "Something went wrong" });

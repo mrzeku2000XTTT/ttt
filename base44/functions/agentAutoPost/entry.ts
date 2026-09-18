@@ -1,10 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getAdminUser } from '../../shared/requestAuth.ts';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
 
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await getAdminUser(base44);
+    if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
     if (!user) {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
@@ -204,7 +206,7 @@ ${agent.voice_tone} tone, ${style}, under 280 chars.`
           prompt = newsPrompts[Math.floor(Math.random() * newsPrompts.length)];
         }
       
-      const aiResponse = await base44.integrations.Core.InvokeLLM({
+      const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt,
         add_context_from_internet: false
       });
@@ -215,7 +217,7 @@ ${agent.voice_tone} tone, ${style}, under 280 chars.`
         try {
           const imagePrompt = `${agent.image_style || 'modern digital art'}. Visual for: ${article.title}. ${agent.voice_tone} style, eye-catching, professional.`;
           
-          const imgResponse = await base44.integrations.Core.GenerateImage({
+          const imgResponse = await base44.asServiceRole.integrations.Core.GenerateImage({
             prompt: imagePrompt
           });
           

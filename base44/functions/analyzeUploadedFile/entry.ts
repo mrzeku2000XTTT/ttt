@@ -1,11 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
+import { getRequestUser } from '../../shared/requestAuth.ts';
 
-Deno.serve(async (req) => {
+export default async function(req) {
     try {
         const base44 = createClientFromRequest(req);
         
         // Authenticate User
-        const user = await base44.auth.me();
+        const user = await getRequestUser(base44);
+        if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
         if (!user) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -56,7 +59,7 @@ Deno.serve(async (req) => {
         `;
 
         // Use InvokeLLM with the file_url attached and JSON schema enforcement
-        const result = await base44.integrations.Core.InvokeLLM({
+        const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt: prompt,
             file_urls: [file_url],
             add_context_from_internet: true,
@@ -109,4 +112,4 @@ Deno.serve(async (req) => {
         console.error("Analysis failed:", error);
         return Response.json({ error: error.message }, { status: 500 });
     }
-});
+}

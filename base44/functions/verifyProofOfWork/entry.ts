@@ -1,11 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
+import { getRequestUser } from '../../shared/requestAuth.ts';
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     
     // Verify user is authenticated
-    const user = await base44.auth.me();
+    const user = await getRequestUser(base44);
+    if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -31,7 +34,7 @@ Deno.serve(async (req) => {
       
       try {
         // Use LLM with vision to extract structured data from image
-        const visionResponse = await base44.integrations.Core.InvokeLLM({
+        const visionResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: `You are Agent Ying's vision system with Google Lens capabilities.
 
 ANALYZE THIS IMAGE LIKE GOOGLE LENS:
@@ -202,7 +205,7 @@ Return structured JSON with:
       success: false
     }, { status: 500 });
   }
-});
+}
 
 function calculateQualityScore(proofAnalysis, explanation, visionData) {
   let score = 0;

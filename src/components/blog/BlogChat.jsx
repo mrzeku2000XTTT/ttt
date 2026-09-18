@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User as UserIcon, Loader2, MessageCircle, X } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { buildChatPrompt } from "@/lib/blogAi";
+
 
 function llmText(res) {
   if (typeof res === "string") return res;
@@ -29,10 +29,7 @@ export default function BlogChat({ blog }) {
     setInput("");
     setLoading(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        model: "claude_sonnet_4_6",
-        prompt: buildChatPrompt(blog, next, q),
-      });
+      const res = await invokeProtectedOperation('askBlogPost', { blogId: blog.id, history: next.slice(-6), question: q });
       setMessages([...next, { role: "assistant", content: llmText(res) }]);
     } catch (e) {
       setMessages([...next, { role: "assistant", content: "Sorry, I couldn't answer that: " + e.message }]);

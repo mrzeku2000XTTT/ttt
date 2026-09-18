@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import { Loader2, Send } from "lucide-react";
 import LifestyleShell from "@/components/lifestyle/LifestyleShell";
 
@@ -17,15 +17,7 @@ export default function MsgCraft() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Write this message 3 ways. The gist: "${gist}". Recipient: ${to || "general"}. Primary tone: ${tone}. Respond as JSON: { "versions": [{ "tone": string, "subject": string, "message": string }] }. First version uses the primary tone; the other two use different sensible tones. Messages are short, natural and ready to send — email-style with a subject. No placeholders.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            versions: { type: "array", items: { type: "object", properties: { tone: { type: "string" }, subject: { type: "string" }, message: { type: "string" } } } }
-          }
-        }
-      });
+      const res = await invokeProtectedOperation('writeMessageVersions', { gist, to, tone });
       setResult(res);
     } catch (e) {
       setResult({ error: e.message || "Something went wrong" });

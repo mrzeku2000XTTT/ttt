@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, MessageCircleHeart } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 
 const STARTERS = [
   "I got angry because they didn't text me back.",
@@ -9,12 +9,7 @@ const STARTERS = [
   "Why does silence bother me so much?",
 ];
 
-const RULES = `You are the FlagSense coach — a warm, non-judgmental relationship reflection coach. STRICT RULES:
-- Ask reflective questions; help the user notice their own patterns. Never diagnose people, never declare anyone "toxic", never tell the user what decision to make.
-- Encourage empathy and healthier communication, but never help manipulate a partner.
-- Never pretend to know the other person's intentions — offer possibilities, not verdicts.
-- If the user describes abuse, threats, coercion, stalking, or violence, gently distinguish "safety concern" from ordinary conflict and encourage trusted people or local professional resources. Do not treat it as a quiz topic.
-Keep every reply under 120 words, calm and human, ending with either one gentle question or one concrete suggestion.`;
+
 
 /** Optional AI coach — reflects, never diagnoses. */
 export default function FlagSenseCoach({ onClose }) {
@@ -35,9 +30,7 @@ export default function FlagSenseCoach({ onClose }) {
     setMessages(next);
     setBusy(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${RULES}\n\nConversation so far:\n${next.map((m) => `${m.role === "user" ? "User" : "Coach"}: ${m.text}`).join("\n")}\n\nCoach:`,
-      });
+      const res = await invokeProtectedOperation('flagSenseAssistant', { action: 'coach', messages: next.slice(-12) });
       setMessages([...next, { role: "coach", text: typeof res === "string" ? res : res?.completion || "…" }]);
     } catch {
       setMessages([...next, { role: "coach", text: "I'm having trouble thinking right now — try me again in a moment." }]);

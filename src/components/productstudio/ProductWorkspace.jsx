@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import { Aperture, RotateCcw } from 'lucide-react';
 import ProductPrompt from './ProductPrompt';
 import AssetRail from './AssetRail';
@@ -16,7 +17,7 @@ export default function ProductWorkspace() {
   const addAssets = (urls, source) => setAssets((old) => [...urls.map((url, i) => ({ id: crypto.randomUUID(), url, source, name: `${source} idea ${i + 1}` })), ...old]);
   const upload = async (files) => { setBusy(true); setError(''); try { const out = await Promise.all(files.map((file) => base44.integrations.Core.UploadPublicFile({ file }))); addAssets(out.map((x) => x.file_url), 'Uploaded'); } catch (e) { setError(e.message); } finally { setBusy(false); } };
   const paste = (event) => { const files = [...event.clipboardData.files].filter((x) => x.type.startsWith('image/')); if (files.length) { event.preventDefault(); upload(files); return; } const url = event.clipboardData.getData('text').match(/https?:\/\/\S+\.(?:png|jpe?g|webp)(?:\?\S*)?/i)?.[0]; if (url) addAssets([url], 'Pasted'); };
-  const generate = async () => { setBusy(true); setError(''); try { const refs = assets.filter((x) => x.source !== 'Generated').slice(0, 3).map((x) => x.url); const calls = ['clean hero shot', 'editorial angle', 'detail close-up', 'lifestyle composition'].map((direction) => base44.integrations.Core.GenerateImage({ prompt: `Premium commercial product photography. ${prompt}. Direction: ${direction}. Minimal white studio aesthetic, soft daylight, precise shadows, no text, no logos, no watermark.`, ...(refs.length ? { existing_image_urls: refs } : {}) })); addAssets((await Promise.all(calls)).map((x) => x.url), 'Generated'); } catch (e) { setError(e.message); } finally { setBusy(false); } };
+  const generate = async () => { setBusy(true); setError(''); try { const refs = assets.filter((x) => x.source !== 'Generated').slice(0, 3).map((x) => x.url); const calls = ['clean hero shot', 'editorial angle', 'detail close-up', 'lifestyle composition'].map((direction) => invokeProtectedOperation('generateProductConcept', { brief: prompt, direction, references: refs })); addAssets((await Promise.all(calls)).map((x) => x.url), 'Generated'); } catch (e) { setError(e.message); } finally { setBusy(false); } };
   const addLayer = (asset) => { const layer = { ...asset, id: crypto.randomUUID(), x: 80 + layers.length * 12, y: 80 + layers.length * 12, scale: 55, radius: 24, motion: 'none' }; setLayers((x) => [...x, layer]); setSelected(layer.id); };
   const change = (data) => setLayers((x) => x.map((item) => item.id === selected ? { ...item, ...data } : item));
   const [playing, setPlaying] = useState(true), [replay, setReplay] = useState(0);

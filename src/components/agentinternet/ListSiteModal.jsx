@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, ShieldAlert, Loader2, Globe, Plus } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import ScanSteps from "./ScanSteps";
 import XProfileForm from "./XProfileForm";
 
@@ -19,8 +19,7 @@ export default function ListSiteModal({ open, onClose, onListed }) {
     if (!url.trim() || scanning) return;
     setScanning(true); setError(null); setResult(null);
     try {
-      const raw = await base44.functions.invoke("submitKaspaSite", { url: url.trim() });
-      const res = raw?.data ?? raw;
+      const res = await invokeProtectedOperation('submitKaspaSite', { url: url.trim() });
       if (!res?.success) { setError(res?.error || "Scan failed"); return; }
       setResult(res);
       if (res.verified || res.already_listed) onListed?.(res);

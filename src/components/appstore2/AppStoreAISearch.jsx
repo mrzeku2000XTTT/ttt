@@ -25,11 +25,8 @@ export default function AppStoreAISearch({ value, onSearchChange, onResults }) {
   const reqIdRef = useRef(0);
   const cacheRef = useRef(new Map());
 
-  // Build the catalog text once — used in every LLM prompt.
-  const catalogText = React.useMemo(
-    () => APPS.map((a) => `- ${a.name}: ${a.desc}`).join("\n"),
-    []
-  );
+  // Only catalog data crosses the boundary; prompts and schemas stay server-side.
+  const catalog = React.useMemo(() => APPS.map(({ name, desc }) => ({ name, desc })), []);
 
   useEffect(() => {
     const query = (value || "").trim();
@@ -72,27 +69,9 @@ export default function AppStoreAISearch({ value, onSearchChange, onResults }) {
     const myReqId = ++reqIdRef.current;
     setLoading(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt:
-          `A user is searching a decentralized app store. Their search query is: "${query}"\n\n` +
-          `Below is the full catalog of available apps, each listed as "name: description".\n\n` +
-          `${catalogText}\n\n` +
-          `Your job: return the app NAMES that best match what the user is looking for, based on the descriptions.\n` +
-          `Match semantically — e.g. "image to html" should match an app described as "Images & files to HTML clones".\n` +
-          `"edit video" should match apps that do AI video editing. "send crypto" should match wallet/bridge/tip apps.\n` +
-          `Return up to 15 results, ranked by relevance (best first). Only return app names that EXACTLY appear in the catalog above.\n` +
-          `If nothing is relevant, return an empty array.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-          matches: {
-              type: "array",
-              items: { type: "string" },
-            },
-          },
-          required: ["matches"],
-        },
-      });
+      // Guests retain instant local search without spending integration credits.
+      if (!(await base44.auth.isAuthenticated())) return;
+      const { data: res } = await base44.functions.invoke('searchStoreApps', { query, catalog });
 
       // Ignore stale responses from older queries.
       if (myReqId !== reqIdRef.current) return;

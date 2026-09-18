@@ -2,7 +2,9 @@
 // AI researches the account, then it's indexed under the "X Profiles" category
 // so it gets the same per-site AI agent as every other listing.
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { getRequestUser } from '../../shared/requestAuth.ts';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -19,11 +21,14 @@ function cleanHandle(input: string) {
   return /^[A-Za-z0-9_]{1,15}$/.test(h) ? h : null;
 }
 
-Deno.serve(async (req) => {
+export default async function(req) {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
   try {
     const base44 = createClientFromRequest(req);
+    const user = await getRequestUser(base44);
+    if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
+    if (!user) return Response.json({ success: false, error: 'Sign in to submit an X profile.' }, { status: 401, headers: CORS });
     const body = await req.json();
 
     const handle = cleanHandle(body?.handle || '');
@@ -51,7 +56,7 @@ Deno.serve(async (req) => {
     }
 
     // AI research on the account
-    const meta = await base44.integrations.Core.InvokeLLM({
+    const meta = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `Research the X (Twitter) account @${handle}${website ? ` and its website ${website}` : ''} for a Kaspa ecosystem directory.
 
 Return the display name of the account, a 1-2 sentence factual description of who they are and what they do in the Kaspa / crypto space, up to 4 short tags, and whether this account genuinely appears connected to the Kaspa community. If you cannot verify the account exists, set exists to false.
@@ -89,4 +94,4 @@ The description must be plain text only — never include citation markers, mark
     console.error('submitXProfile error:', error);
     return Response.json({ success: false, error: error.message }, { status: 500, headers: CORS });
   }
-});
+}

@@ -1,10 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getAdminUser } from '../../shared/requestAuth.ts';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
 
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await getAdminUser(base44);
+    if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
     if (!user) {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
@@ -50,7 +52,7 @@ Requirements:
 - Make it shareable and engaging
 ${sourceUrl ? `- Reference this source: ${sourceUrl}` : ''}`;
     
-    const postContent = await base44.integrations.Core.InvokeLLM({
+    const postContent = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
       add_context_from_internet: true
     });
@@ -62,7 +64,7 @@ ${sourceUrl ? `- Reference this source: ${sourceUrl}` : ''}`;
       try {
         const imagePrompt = `${agent.image_style}. Create a visual representation for: ${topic}. Style: ${agent.voice_tone}, professional, eye-catching.`;
         
-        const imageResponse = await base44.integrations.Core.GenerateImage({
+        const imageResponse = await base44.asServiceRole.integrations.Core.GenerateImage({
           prompt: imagePrompt
         });
         

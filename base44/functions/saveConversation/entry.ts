@@ -1,9 +1,12 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
+import { getRequestUser } from '../../shared/requestAuth.ts';
 
-Deno.serve(async (req) => {
+export default async function(req) {
     try {
         const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+        const user = await getRequestUser(base44);
+        if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
 
         if (!user) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,7 +21,7 @@ Deno.serve(async (req) => {
         // Analyze conversation with AI to extract topics
         const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
         
-        const analysis = await base44.integrations.Core.InvokeLLM({
+        const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt: `Analyze this conversation and extract:
 1. Main topics discussed (3-5 keywords)
 2. Conversation type (market_analysis, technical_help, general_question, whale_tracking, or news)
@@ -92,4 +95,4 @@ Return as JSON with: topics (array), conversation_type (string), sentiment (stri
             error: error.message || 'Failed to save conversation' 
         }, { status: 500 });
     }
-});
+}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Loader2, ShieldCheck, AtSign, Globe, Upload } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import XProfileVerifyPanel from "@/components/searchkaspa/XProfileVerifyPanel";
 
 export default function XProfileForm({ onListed }) {
@@ -33,8 +34,7 @@ export default function XProfileForm({ onListed }) {
     if (!h || busy) return;
     setBusy(true); setError(null); setResult(null); setProofState(null);
     try {
-      const raw = await base44.functions.invoke("submitXProfile", { handle: h, website: website.trim() });
-      const res = raw?.data ?? raw;
+      const res = await invokeProtectedOperation('submitXProfile', { handle: h, website: website.trim() });
       if (!res?.success) { setError(res?.error || "Could not list this profile"); return; }
       setResult(res);
       onListed?.(res);

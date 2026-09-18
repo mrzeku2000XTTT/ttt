@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Globe, ExternalLink, Loader2, Database, Sparkles, Plus, Bot, UserPlus, CheckCircle2, AlertCircle, Dices, Share2, Swords, Wand2, Coins, Trophy, Wallet } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import { chargeSearch } from "@/lib/searchKaspaWallet";
 import AiOverviewCard from "./AiOverviewCard";
 import ListSiteModal from "./ListSiteModal";
@@ -193,8 +194,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
   const addXProfileFromLink = async (handle) => {
     setLinkAdd({ status: "adding", handle });
     try {
-      const raw = await base44.functions.invoke("submitXProfile", { handle });
-      const res = raw?.data ?? raw;
+      const res = await invokeProtectedOperation('submitXProfile', { handle });
       if (res?.success) {
         setLinkAdd({ status: res.already_listed ? "exists" : "added", handle });
         setActiveCategory(KAS_TAB);
@@ -215,8 +215,7 @@ export default function KaspaSearchBrowser({ open, onClose, initialQuery = '', p
   const addSiteFromLink = async (url) => {
     setLinkAdd({ status: "adding", handle: url });
     try {
-      const raw = await base44.functions.invoke("submitKaspaSite", { url });
-      const res = raw?.data ?? raw;
+      const res = await invokeProtectedOperation('submitKaspaSite', { url });
       if (res?.success && res.app) {
         setLinkAdd({ status: res.already_listed ? "exists" : "added", handle: url });
         const cat = res.app.category || "Ecosystem";

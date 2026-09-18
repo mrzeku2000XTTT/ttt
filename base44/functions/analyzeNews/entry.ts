@@ -1,9 +1,12 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
+import { getRequestUser } from '../../shared/requestAuth.ts';
 
-Deno.serve(async (req) => {
+export default async function(req) {
     try {
         const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+        const user = await getRequestUser(base44);
+        if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
 
         if (!user) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -41,7 +44,7 @@ Deno.serve(async (req) => {
         console.log('🤖 Generating new AI analysis...');
 
         // SIMPLIFIED AND FASTER PROMPT - focuses on key metrics only
-        const analysis = await base44.integrations.Core.InvokeLLM({
+        const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt: `Analyze this conflict news quickly and provide structured insights:
 
 Title: ${news.news_title}
@@ -109,4 +112,4 @@ Keep it brief and focused.`,
             details: error.toString()
         }, { status: 500 });
     }
-});
+}

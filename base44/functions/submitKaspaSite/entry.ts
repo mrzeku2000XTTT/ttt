@@ -1,4 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { getRequestUser } from '../../shared/requestAuth.ts';
+import { creditAccessCheck } from '../../shared/creditAccessCheck.ts';
 
 const CATEGORIES = ["Ecosystem", "Resources", "Exchanges", "Wallets", "Merchant Solutions", "Developer Tools", "Community Chats", "News Sources"];
 
@@ -32,7 +34,7 @@ async function extractLogo(url: string, domain: string): Promise<string> {
   }
 }
 
-Deno.serve(async (req) => {
+export default async function(req) {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       headers: {
@@ -45,6 +47,9 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
+    const user = await getRequestUser(base44);
+    if (user && await creditAccessCheck(req)) return Response.json({ authorized: true });
+    if (!user) return Response.json({ success: false, error: 'Sign in to submit a site.' }, { status: 401, headers: { 'Access-Control-Allow-Origin': '*' } });
     const body = await req.json();
     let raw = (body?.url || '').trim();
     if (!raw) return Response.json({ success: false, error: 'URL is required' }, { status: 400 });
@@ -74,7 +79,7 @@ Deno.serve(async (req) => {
     }
 
     // 1) Security scan — phishing / malware / scam analysis
-    const security = await base44.integrations.Core.InvokeLLM({
+    const security = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `You are a security scanner. Analyze this website for phishing, malware, crypto scams, wallet drainers and fake token sites: ${url}
 
 Domain: ${domain}
@@ -105,7 +110,7 @@ Return an honest verdict plus a short human summary of what the scan found.`,
     }
 
     // 2) AI indexing — read the site and produce catalog metadata
-    const meta = await base44.integrations.Core.InvokeLLM({
+    const meta = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `Index this website for a Kaspa ecosystem app directory: ${url}
 
 Return a clean product name (no marketing tagline), a 1-2 sentence factual description of what it does, the best matching category from this list: ${CATEGORIES.join(', ')}, and up to 5 short feature tags.`,
@@ -139,4 +144,4 @@ Return a clean product name (no marketing tagline), a 1-2 sentence factual descr
     console.error('submitKaspaSite error:', error);
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
-});
+}
