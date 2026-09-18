@@ -19,7 +19,6 @@ import NicheYouTubeResult from './NicheYouTubeResult';
 import { LEARNING_LESSONS } from './NicheLearningWait';
 import { saveBuildJob, loadBuildJob, updateBuildJob, clearBuildJob } from './nicheAutoResume';
 import { runRenderPipeline, saveVideoToLibrary } from './nicheRenderPipeline';
-import useNicheBuildCleanup from '@/components/niche/useNicheBuildCleanup';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -116,7 +115,6 @@ export default function NicheAutoStudio({ niches }) {
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
   const inputRef = useRef(null);
   const persistedRowsRef = useRef(null);
-  useNicheBuildCleanup(busy, buildRef);
   // per-user session memory — each user's chat history, attachments and clones
   // live under their own key, so the agent remembers everything they said
   const chatKey = userEmail ? `${CHAT_KEY}:${userEmail}` : CHAT_KEY;
