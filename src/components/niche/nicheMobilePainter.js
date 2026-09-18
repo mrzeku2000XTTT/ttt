@@ -6,9 +6,9 @@ export default function nicheMobilePainter({ style, styleId, cameras, motion, co
   const ui = styleId === 'real-ui';
   const fxs = motion && !ui && !stopMotion ? assignMotionFx(count) : null;
   const moves = ['zoom-in', 'pan-left', 'zoom-out', 'pan-right', 'pan-up', 'zoom-in', 'pan-down', 'zoom-out'];
-  return (ctx, assets, caption, i, p, t) => {
-    ctx.fillStyle = stopMotion ? (colorMode === 'color' ? '#0b0b0e' : '#050507') : style.bg;
-    ctx.fillRect(0, 0, W, H);
+  return (ctx, assets, caption, i, p, t, alpha = 1) => {
+    ctx.save();
+    ctx.globalAlpha = alpha;
     const img = assets.images[stopMotion ? Math.min(assets.images.length - 1, Math.floor(p * assets.images.length)) : 0];
     if (fxs) fxs[i].draw(ctx, img, p, t, { W, H: drawH, style });
     else {
@@ -38,5 +38,6 @@ export default function nicheMobilePainter({ style, styleId, cameras, motion, co
     ctx.fillStyle = stopMotion ? '#f5f5f7' : style.ink;
     ctx.textAlign = 'center';
     lines.slice(0, 2).forEach((text, li) => ctx.fillText(text, W / 2, H - 56 + li * 42));
+    ctx.restore();
   };
 }

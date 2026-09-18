@@ -1,5 +1,5 @@
 // Follow the audio clock; don't produce a corrupt silent file if iOS suspends it.
-export default function nicheMobileSegment({ ac, start, duration, lead, draw, token, recorderError, onProgress, scene, count, fps }) {
+export default function nicheMobileSegment({ ac, start, duration, draw, token, recorderError, onProgress, scene, count, fps }) {
   return new Promise((resolve, reject) => {
     let timer, previousProgress = -1;
     const finish = (error) => { clearInterval(timer); error ? reject(error) : resolve(); };
@@ -9,7 +9,7 @@ export default function nicheMobileSegment({ ac, start, duration, lead, draw, to
         if (document.hidden || ac.state !== 'running') throw new Error('Rendering was interrupted. Keep this tab visible; use Resume build if offered, or try again.');
         if (recorderError()) throw recorderError();
         const elapsed = Math.max(0, ac.currentTime - start);
-        draw(Math.min(1, Math.max(0, (elapsed - lead) / (duration - lead))), elapsed);
+        draw(Math.min(1, elapsed / duration), elapsed);
         const progress = Math.min(100, Math.floor(elapsed / duration * 100));
         if (progress !== previousProgress && progress % 5 === 0) {
           previousProgress = progress;
