@@ -4,7 +4,7 @@
 // Used by the "Search the web" browser to render sites that block iframing
 // (Google, X, etc.) directly inside the TTT UI.
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     if (req.method === 'OPTIONS') {
       return new Response(null, {
@@ -24,27 +24,29 @@ Deno.serve(async (req) => {
     }
 
     // SSRF protection
-    let parsedUrl: URL;
+    let parsedUrl;
     try {
       parsedUrl = new URL(url);
     } catch {
       return Response.json({ error: 'Invalid URL', success: false }, { status: 400 });
     }
 
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return Response.json({ error: 'Only http/https URLs are allowed', success: false }, { status: 400 });
-    }
-
-    const hostname = parsedUrl.hostname.toLowerCase();
-    const blockedPatterns = [
-      /^localhost$/i, /^127\./, /^0\./, /^10\./, /^192\.168\./,
-      /^172\.(1[6-9]|2[0-9]|3[01])\./, /^169\.254\./, /^::1$/,
-      /^fc00:/i, /^fe80:/i, /^fd/i, /^0\.0\.0\.0$/, /^\[?::1\]?$/i,
-      /^metadata\.google\.internal$/i, /^169\.254\.169\.254$/,
-    ];
-    if (blockedPatterns.some((re) => re.test(hostname))) {
-      return Response.json({ error: 'Access to internal/private addresses is blocked', success: false }, { status: 400 });
-    }
+    // The same checks apply to the initial URL and every redirect destination.
+    const validateUrl = (target) => {
+      if (target.protocol !== 'http:' && target.protocol !== 'https:') {
+        return 'Only http/https URLs are allowed';
+      }
+      const hostname = target.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.+$/, '');
+      const blockedPatterns = [
+        /(^|\.)localhost$/i, /^127\./, /^0\./, /^10\./, /^192\.168\./,
+        /^172\.(1[6-9]|2[0-9]|3[01])\./, /^169\.254\./, /^::1$/,
+        /^::$/, /^::ffff:/i, /^f[cd][0-9a-f]{2}:/i, /^fe[89ab][0-9a-f]:/i, /^fd/i,
+        /^metadata\.google\.internal$/i,
+      ];
+      return blockedPatterns.some((re) => re.test(hostname))
+        ? 'Access to internal/private addresses is blocked'
+        : null;
+    };
 
     console.log('🌐 [publicWebProxy] Fetching:', url);
 
@@ -68,18 +70,33 @@ Deno.serve(async (req) => {
     };
 
     try {
-      const response = await fetch(url, {
-        headers,
-        redirect: 'follow',
-        method: 'GET'
-      });
+      let response;
+      const maxRedirects = 5;
+      for (let redirects = 0; ; redirects++) {
+        const validationError = validateUrl(parsedUrl);
+        if (validationError) {
+          return Response.json({ error: validationError, success: false }, { status: 400 });
+        }
+        response = await fetch(parsedUrl.href, { headers, redirect: 'manual', method: 'GET' });
+        if (![301, 302, 303, 307, 308].includes(response.status)) break;
+        const location = response.headers.get('Location');
+        await response.body?.cancel();
+        if (!location || redirects >= maxRedirects) {
+          return Response.json({ error: !location ? 'Redirect missing Location' : 'Too many redirects', success: false }, { status: 400 });
+        }
+        try {
+          parsedUrl = new URL(location, parsedUrl);
+        } catch {
+          return Response.json({ error: 'Invalid redirect URL', success: false }, { status: 400 });
+        }
+      }
 
       let content = await response.text();
       const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
 
       // Page metadata + "is this just a JS shell?" detection, so the client can
       // show a real preview for SPAs (kaspa.org, tttz.xyz, …) that render blank.
-      const pick = (re: RegExp) => {
+      const pick = (re) => {
         const m = content.match(re);
         return m ? m[1].trim() : null;
       };
@@ -163,4 +180,4 @@ Deno.serve(async (req) => {
       success: false
     }, { status: 200 });
   }
-});
+}
