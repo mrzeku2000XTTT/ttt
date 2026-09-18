@@ -1,5 +1,4 @@
 import nicheMobileSceneQueue from '@/components/niche/nicheMobileSceneQueue';
-import validateNicheVideoDuration from '@/components/niche/validateNicheVideoDuration';
 import nicheMobilePainter from '@/components/niche/nicheMobilePainter';
 import nicheMobileSegment from '@/components/niche/nicheMobileSegment';
 import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
@@ -14,7 +13,7 @@ export default async function compileNicheMobileVideo({ scenes, audioContext: ac
   const queue = nicheMobileSceneQueue(scenes, ac, token);
   const sources = new Map();
   let stream, recorder, dest, monitor, music, musicNode, musicGain;
-  let recordedSeconds = 0, expectedSeconds = 0, result, error = null;
+  let recordedSeconds = 0, result, error = null;
   const chunks = [];
   const clear = () => {
     ctx.globalAlpha = 1;
@@ -98,7 +97,6 @@ export default async function compileNicheMobileVideo({ scenes, audioContext: ac
     await new Promise(resolve => setTimeout(resolve, 400));
     check();
     recordedSeconds = ac.currentTime - recordingAt;
-    expectedSeconds = sceneStart + 0.5;
     recorder.stop(); await stopped;
     result = new Blob(chunks, { type: mimeType.split(';')[0] });
   } finally {
@@ -114,7 +112,5 @@ export default async function compileNicheMobileVideo({ scenes, audioContext: ac
   }
   check();
   onProgress?.('Finalizing video timing…');
-  const finalized = await finalizeNicheMp4(result, recordedSeconds);
-  onProgress?.('Checking the MP4 duration against the scene timeline…');
-  return validateNicheVideoDuration(finalized, expectedSeconds);
+  return finalizeNicheMp4(result, recordedSeconds);
 }

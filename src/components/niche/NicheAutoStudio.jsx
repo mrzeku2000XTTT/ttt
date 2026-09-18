@@ -812,7 +812,7 @@ Decide what to do:
           video: { url: savedVideoUrl, type: out.blob.type, title: job.title, description: job.description, tags: job.tags || [] }
         });
       } catch (e) {
-        finish({ text: `Resume failed: ${e?.message || e}. Your checkpoint is kept — try the Resume button again.`, resume: loadBuildJob(userEmail) });
+        finish({ text: `Resume failed: ${e?.message || e}. Your generated scenes are still available — Resume will reuse them without generating them again.`, resume: loadBuildJob(userEmail) });
       } finally {
         if (audioContext.state !== 'closed') await audioContext.close().catch(() => {});
         if (token.cancelled) finish({ text: 'Build paused. Any checkpointed scenes are ready to resume.', resume: loadBuildJob(userEmail) });
