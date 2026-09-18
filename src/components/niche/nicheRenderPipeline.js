@@ -1,6 +1,6 @@
 import { base44 } from '@/api/base44Client';
 import { compileExplainerVideo, videoExt } from './explainerVideo';
-import nicheMobileDevice from '@/components/niche/nicheMobileDevice';
+
 
 // Shared render pipeline for the auto-pilot's standard build AND its
 // refresh-resume: generates only the scenes whose image/narration is still
@@ -13,8 +13,7 @@ export const runRenderPipeline = async ({
   images = [], audios = [], onAsset
 }) => {
   const n = scenes.length;
-  const isMobile = nicheMobileDevice();
-  const concurrency = isMobile ? 1 : 3;
+  const concurrency = 3;
   let done = images.filter(Boolean).length + audios.filter(Boolean).length;
   const total = n * 2;
   const step = () => setWork(`Drawing & narrating · ${Math.min(++done, total)}/${total}`);

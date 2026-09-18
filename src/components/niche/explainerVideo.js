@@ -1,8 +1,6 @@
 // Explainer video utilities — shared by the Manual lab and the Automatic chat studio
 import { assignMotionFx } from './motionFx';
 import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
-import nicheMobileDevice from '@/components/niche/nicheMobileDevice';
-import compileNicheMobileVideo from '@/components/niche/compileNicheMobileVideo';
 
 // 5 animation styles the user can pick from — "neutral" is the default
 export const ANIMATION_STYLES = [
@@ -301,13 +299,6 @@ export function createAudioContext() {
 
 export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false, token }) {
   const style = styleById(styleId);
-  if (nicheMobileDevice()) {
-    return compileNicheMobileVideo({
-      scenes: images.map((image, i) => ({ images: [image], audio: audios[i], caption: captions[i] || '' })),
-      audioContext: audioContext || createAudioContext(), style, styleId, cameras,
-      musicUrl, musicVolume, motion, onProgress, token
-    });
-  }
   const W = 1280;
   const H = 720;
   const canvas = document.createElement('canvas');
