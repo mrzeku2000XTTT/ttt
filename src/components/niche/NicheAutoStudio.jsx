@@ -19,6 +19,7 @@ import NicheYouTubeResult from './NicheYouTubeResult';
 import { LEARNING_LESSONS } from './NicheLearningWait';
 import { saveBuildJob, loadBuildJob, updateBuildJob, clearBuildJob } from './nicheAutoResume';
 import { runRenderPipeline, saveVideoToLibrary } from './nicheRenderPipeline';
+import useNicheBuildCleanup from '@/components/niche/useNicheBuildCleanup';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -114,6 +115,8 @@ export default function NicheAutoStudio({ niches }) {
   const buildRef = useRef(null); // { cancelled } token for the in-flight build, so Pause can stop it
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
   const inputRef = useRef(null);
+  const persistedRowsRef = useRef(null);
+  useNicheBuildCleanup(busy, buildRef);
   // per-user session memory — each user's chat history, attachments and clones
   // live under their own key, so the agent remembers everything they said
   const chatKey = userEmail ? `${CHAT_KEY}:${userEmail}` : CHAT_KEY;
@@ -169,8 +172,9 @@ export default function NicheAutoStudio({ niches }) {
   // live elapsed timer on whichever message is currently working
   useEffect(() => {
     const t = setInterval(() => {
-      setMessages((m) =>
-        m.map((x) => (x.working ? { ...x, elapsed: Math.floor((Date.now() - (x.startedAt || Date.now())) / 1000) } : x))
+      setMessages((m) => m.some((x) => x.working)
+        ? m.map((x) => (x.working ? { ...x, elapsed: Math.floor((Date.now() - (x.startedAt || Date.now())) / 1000) } : x))
+        : m
       );
     }, 1000);
     return () => clearInterval(t);
@@ -192,10 +196,12 @@ export default function NicheAutoStudio({ niches }) {
   // keep the chat on disk (per user) so a refresh doesn't wipe it — including
   // their attachments, references and the latest Mimic clone
   useEffect(() => {
-    if (!messages.length) return;
-    const rows = messages
-      .filter((m) => !m.working)
-      .map((m) => ({
+    if (!identityReady || !messages.length) return;
+    const completed = messages.filter((m) => !m.working);
+    const previous = persistedRowsRef.current;
+    if (previous?.key === chatKey && completed.length === previous.rows.length && completed.every((row, i) => row === previous.rows[i])) return;
+    persistedRowsRef.current = { key: chatKey, rows: completed };
+    const rows = completed.map((m) => ({
         id: m.id,
         role: m.role,
         text: m.text,
@@ -213,7 +219,7 @@ export default function NicheAutoStudio({ niches }) {
         localStorage.setItem(chatKey, JSON.stringify(rows.map((r) => (r.mimic?.html && r.id !== lastMimicId ? { ...r, mimic: undefined } : r))));
       } catch {}
     }
-  }, [messages, chatKey]);
+  }, [messages, chatKey, identityReady]);
 
   // Attach images/files (or paste them) so the AI can ingest them as references,
   // analyze and fact-check them, and ask focused questions before building.
@@ -261,7 +267,7 @@ export default function NicheAutoStudio({ niches }) {
 
   const send = async (raw) => {
     let text = (raw ?? input).trim();
-    if (busy || !identityReady) return;
+    if (busy || buildRef.current || !identityReady) return;
     let attachmentUrls = [];
     let attachmentPreviews = [];
     let videoFile = null;
@@ -289,14 +295,14 @@ export default function NicheAutoStudio({ niches }) {
       if (img) imageUploadUrl = img.url;
     }
     const userText = text || (mimicMode && imageUploadUrl ? 'Clone this screenshot 1:1' : attachmentUrls.length ? 'Analyze the attached reference(s) and tell me what you see — fact-check anything claim-like, and ask me one focused question about what I want built.' : '');
-    if (!userText) return;
+    if (!userText || buildRef.current) return;
     setInput('');
     setAttachments([]);
     setBusy(true);
     // must be created synchronously inside the tap — iOS blocks audio otherwise
     const audioContext = createAudioContext();
     const workId = uid();
-    const token = { cancelled: false };
+    const token = { cancelled: false, audioContext };
     buildRef.current = token;
     workIdRef.current = workId;
     const shownAtts = attachmentUrls.length ? attachmentUrls : attachmentPreviews;
@@ -666,32 +672,19 @@ Decide what to do:
             captions: kept.map((x) => (captionMode === 'tts' ? (x.s.voiceover || x.s.caption || '') : (x.s.caption || String(x.s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
             colorMode: v.color_mode,
             onProgress: setWork,
-            audioContext
+            audioContext,
+            token
           });
           if (token.cancelled) { return; }
           const finalScenes = kept.map((x) => x.s);
-          (async () => {
-            try {
-              const me = await base44.auth.me();
-              if (!me?.email) return;
-              const up = await base44.integrations.Core.UploadFile({
-                file: new File([blob], `${(v.title || 'niche-stopmotion').replace(/[^a-z0-9]+/gi, '-')}.${videoExt(blob.type)}`, { type: blob.type })
-              });
-              await base44.entities.NicheVideo.create({
-                user_email: me.email,
-                title: v.title,
-                description: v.description || '',
-                tags: v.tags || [],
-                style_name: 'Stop Motion',
-                video_url: up.file_url,
-                scenes: finalScenes.map((s) => ({ action: s.action, caption: s.caption, voiceover: s.voiceover })),
-                fact_note: checked.note || ''
-              });
-            } catch {}
-          })();
+          setWork('Saving your finished stop-motion video to the Library');
+          const savedVideoUrl = await saveVideoToLibrary({
+            blob, title: v.title, description: v.description, tags: v.tags,
+            styleName: 'Stop Motion', scenes: finalScenes, factNote: checked.note || ''
+          });
           finish({
             text: `${res.reply || `Your stop-motion film is ready — ${finalScenes.length} scenes, ${kept.reduce((a, x) => a + x.frames.length, 0)} handcrafted exposures, exported at 60fps.`}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
-            video: { url: URL.createObjectURL(blob), type: blob.type, title: v.title, description: v.description, tags: v.tags || [] }
+            video: { url: savedVideoUrl, type: blob.type, title: v.title, description: v.description, tags: v.tags || [] }
           });
           return;
         }
@@ -739,12 +732,13 @@ Decide what to do:
         audioContext.close().catch(() => {});
         // WAIT for the Library save before telling the user it's saved — the
         // old fire-and-forget upload died with the tab on a refresh.
-        await saveVideoToLibrary({ blob: out.blob, title: v.title, description: v.description, tags: v.tags, styleName, scenes: out.finalScenes, factNote: checked.note || '' });
+        setWork('Saving your finished video to the Library');
+        const savedVideoUrl = await saveVideoToLibrary({ blob: out.blob, title: v.title, description: v.description, tags: v.tags, styleName, scenes: out.finalScenes, factNote: checked.note || '' });
         clearBuildJob(userEmail);
         finish({
           text: `${res.reply || `Your explainer is ready — ${out.finalScenes.length} scenes, narrated, captioned, stitched. Saved to your Library.`}${out.dropped ? ` ⚠️ ${out.dropped} scene(s) were dropped because their image or narration failed to generate (the rest finished).` : ''}${checked.note ? `\n\nFact-checked: ${checked.note}` : ''}`,
           video: {
-            url: URL.createObjectURL(out.blob),
+            url: savedVideoUrl,
             type: out.blob.type,
             title: v.title,
             description: v.description,
@@ -758,8 +752,13 @@ Decide what to do:
     } catch (e) {
       finish({ text: `Something went wrong: ${e?.message || e}. Want me to try again?`, resume: loadBuildJob(userEmail) });
     } finally {
-      setBusy(false);
-      inputRef.current?.focus();
+      if (audioContext.state !== 'closed') await audioContext.close().catch(() => {});
+      if (token.cancelled) finish({ text: 'Build paused. Any checkpointed scenes are ready to resume.', resume: loadBuildJob(userEmail) });
+      if (buildRef.current === token) {
+        buildRef.current = null;
+        workIdRef.current = null;
+        setBusy(false);
+      }
     }
   };
 
@@ -767,11 +766,11 @@ Decide what to do:
   // and every already-generated scene asset live in the checkpoint, so only
   // the missing pieces get regenerated before stitching.
   const startResume = (job, offerId) => {
-    if (busy) return;
+    if (busy || buildRef.current || !identityReady) return;
     setBusy(true);
     const audioContext = createAudioContext(); // must be inside the tap for iOS
     const workId = uid();
-    const token = { cancelled: false };
+    const token = { cancelled: false, audioContext };
     buildRef.current = token;
     workIdRef.current = workId;
     setMessages((m) => [
@@ -805,16 +804,23 @@ Decide what to do:
         });
         if (!out) return; // paused/cancelled — the checkpoint stays for a later resume
         audioContext.close().catch(() => {});
-        await saveVideoToLibrary({ blob: out.blob, title: job.title, description: job.description, tags: job.tags, styleName: job.styleName, scenes: out.finalScenes, factNote: job.factNote });
+        setWork('Saving your finished video to the Library');
+        const savedVideoUrl = await saveVideoToLibrary({ blob: out.blob, title: job.title, description: job.description, tags: job.tags, styleName: job.styleName, scenes: out.finalScenes, factNote: job.factNote });
         clearBuildJob(userEmail);
         finish({
           text: `Picked up right where the refresh stopped me — "${job.title}" is finished: ${out.finalScenes.length} scenes, narrated, captioned, stitched. Saved to your Library.${out.dropped ? ` ⚠️ ${out.dropped} scene(s) were dropped because their image or narration failed to generate (the rest finished).` : ''}`,
-          video: { url: URL.createObjectURL(out.blob), type: out.blob.type, title: job.title, description: job.description, tags: job.tags || [] }
+          video: { url: savedVideoUrl, type: out.blob.type, title: job.title, description: job.description, tags: job.tags || [] }
         });
       } catch (e) {
         finish({ text: `Resume failed: ${e?.message || e}. Your checkpoint is kept — try the Resume button again.`, resume: loadBuildJob(userEmail) });
       } finally {
-        setBusy(false);
+        if (audioContext.state !== 'closed') await audioContext.close().catch(() => {});
+        if (token.cancelled) finish({ text: 'Build paused. Any checkpointed scenes are ready to resume.', resume: loadBuildJob(userEmail) });
+        if (buildRef.current === token) {
+          buildRef.current = null;
+          workIdRef.current = null;
+          setBusy(false);
+        }
       }
     })();
   };
@@ -823,13 +829,11 @@ Decide what to do:
   // working bubble, and re-enable the input. The discarded work resolves later but
   // its result is dropped at the next checkpoint.
   const pauseBuild = () => {
-    if (buildRef.current) buildRef.current.cancelled = true;
-    buildRef.current = null;
+    if (!buildRef.current || buildRef.current.cancelled) return;
+    buildRef.current.cancelled = true;
     const wid = workIdRef.current;
-    workIdRef.current = null;
-    if (wid) setMessages((m) => m.map((x) => (x.id === wid ? { ...x, working: false, text: `${x.text} — paused. Tell me what to change.` } : x)));
-    setBusy(false);
-    inputRef.current?.focus();
+    setMessages((m) => m.map((x) => x.id === wid ? { ...x, text: 'Pausing — releasing the current build before starting another' } : x));
+    // Keep the build locked until its renderer has released audio, tracks and images.
   };
 
   const download = (m) => {
@@ -874,7 +878,7 @@ Decide what to do:
                     <div className="mt-3 space-y-3">
                       {m.video.url ? (
                         <>
-                          <video src={m.video.url} controls className="w-full rounded-xl border border-white/10 bg-black" />
+                          <video src={m.video.url} controls playsInline preload="none" className="w-full rounded-xl border border-white/10 bg-black" />
                           <button
                             onClick={() => download(m)}
                             className="w-full py-3 rounded-xl border border-white/15 text-white/80 hover:text-white hover:border-white/40 text-sm font-semibold transition-all flex items-center justify-center gap-2"
@@ -1252,7 +1256,7 @@ Decide what to do:
           />
           <button
             onClick={busy ? pauseBuild : () => send(input)}
-            disabled={!identityReady || (!busy && !input.trim() && attachments.length === 0)}
+            disabled={!identityReady || (busy && buildRef.current?.cancelled) || (!busy && !input.trim() && attachments.length === 0)}
             className={`px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-40 ${
               busy ? 'bg-amber-400/20 border border-amber-400/60 text-amber-300 hover:bg-amber-400/30' : 'bg-white text-black hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]'
             }`}

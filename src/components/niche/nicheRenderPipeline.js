@@ -1,5 +1,6 @@
 import { base44 } from '@/api/base44Client';
 import { compileExplainerVideo, videoExt } from './explainerVideo';
+import nicheMobileDevice from '@/components/niche/nicheMobileDevice';
 
 // Shared render pipeline for the auto-pilot's standard build AND its
 // refresh-resume: generates only the scenes whose image/narration is still
@@ -12,7 +13,7 @@ export const runRenderPipeline = async ({
   images = [], audios = [], onAsset
 }) => {
   const n = scenes.length;
-  const isMobile = window.matchMedia?.('(max-width: 640px)').matches;
+  const isMobile = nicheMobileDevice();
   const concurrency = isMobile ? 1 : 3;
   let done = images.filter(Boolean).length + audios.filter(Boolean).length;
   const total = n * 2;
@@ -20,6 +21,7 @@ export const runRenderPipeline = async ({
   setWork(`Drawing & narrating · ${Math.min(done, total)}/${total}`);
   const withRetry = async (fn) => {
     for (let attempt = 0; attempt < 3; attempt++) {
+      if (token.cancelled) return null;
       try { return await fn(); } catch (e) { if (attempt === 2) return null; await new Promise((r) => setTimeout(r, 800 * (attempt + 1))); }
     }
   };
@@ -27,7 +29,7 @@ export const runRenderPipeline = async ({
     const out = new Array(items.length).fill(null);
     let idx = 0;
     await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-      while (idx < items.length) { const i = idx++; if (i < items.length) out[i] = await fn(items[i], i); }
+      while (idx < items.length && !token.cancelled) { const i = idx++; if (i < items.length) out[i] = await fn(items[i], i); }
     }));
     return out;
   };
@@ -61,8 +63,10 @@ export const runRenderPipeline = async ({
     musicUrl: musicUrl || '',
     onProgress: setWork,
     audioContext,
-    motion: motionFx
+    motion: motionFx,
+    token
   });
+  if (token.cancelled) return null;
   return { blob, finalScenes, dropped: n - kept.length, images: outImages, audios: outAudios };
 };
 

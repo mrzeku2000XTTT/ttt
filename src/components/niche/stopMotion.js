@@ -6,6 +6,8 @@
 import { base44 } from '@/api/base44Client';
 import { createAudioContext } from './explainerVideo';
 import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
+import nicheMobileDevice from '@/components/niche/nicheMobileDevice';
+import compileNicheMobileVideo from '@/components/niche/compileNicheMobileVideo';
 
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
@@ -94,7 +96,13 @@ export async function generateStopMotionFrames({ scene, poses, colorMode, attach
 // Compile the exposed frames into one 60fps exportable MP4 — each scene's
 // poses step forward in hard cuts (authentic stop motion), with a subtle 12Hz
 // "frame boil" jitter that sells the handmade puppetry inside the 60fps stream.
-export async function compileStopMotionVideo({ framesPerScene, audios, captions = [], colorMode = 'mono', onProgress, audioContext }) {
+export async function compileStopMotionVideo({ framesPerScene, audios, captions = [], colorMode = 'mono', onProgress, audioContext, token }) {
+  if (nicheMobileDevice()) {
+    return compileNicheMobileVideo({
+      scenes: framesPerScene.map((images, i) => ({ images, audio: audios[i], caption: captions[i] || '' })),
+      audioContext: audioContext || createAudioContext(), stopMotion: true, colorMode, onProgress, token
+    });
+  }
   const W = 1280;
   const H = 720;
   const bg = colorMode === 'color' ? '#0b0b0e' : '#050507';
