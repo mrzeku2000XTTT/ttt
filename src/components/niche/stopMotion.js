@@ -5,6 +5,7 @@
 // a 60fps exportable MP4 with hard pose cuts and a subtle handmade "boil".
 import { base44 } from '@/api/base44Client';
 import { createAudioContext } from './explainerVideo';
+import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
 
 
 const loadImage = (src) =>
@@ -218,7 +219,10 @@ export async function compileStopMotionVideo({ framesPerScene, audios, captions 
     };
     player.onended = done;
     const tick = () => {
-      const elapsed = ac.currentTime - t0;
+      // Wall clock, not the audio clock — on phones a suspended audio context
+      // freezes its clock while the recorder keeps rolling, inflating the
+      // export with dead air. Narration plays in real time; wall time is true.
+      const elapsed = (Date.now() - wallStart) / 1000;
       let idx = segments.findIndex((s) => elapsed >= s.start && elapsed < s.end);
       if (idx === -1) idx = elapsed >= totalDur ? segments.length - 1 : 0;
       const seg = segments[idx];
@@ -242,5 +246,7 @@ export async function compileStopMotionVideo({ framesPerScene, audios, captions 
   await ac.close();
   canvas.width = canvas.height = 0;
   onProgress?.('Finalizing video timing…');
-  return new Blob(chunks, { type: mimeType.split(';')[0] });
+  // No-op when the recorder already wrote correct timing (desktop); repairs
+  // broken mobile MP4 metadata so the file's length equals the narration.
+  return finalizeNicheMp4(new Blob(chunks, { type: mimeType.split(';')[0] }), totalDur + 0.5);
 }

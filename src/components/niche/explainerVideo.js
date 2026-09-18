@@ -289,6 +289,8 @@ const RECORDER_TYPES = [
 // drawing each scene's caption at the bottom in the chosen style's palette.
 // Create the AudioContext synchronously inside a user tap/click — iOS Safari
 // refuses to start audio (and stalls forever) if it is created later in an async chain.
+import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
+
 export function createAudioContext() {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const ac = new AudioCtx();
@@ -473,7 +475,11 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     // so the recorder never stops before the last line is spoken.
     player.onended = done;
     const tick = () => {
-      const elapsed = ac.currentTime - t0;
+      // Wall clock, not the audio clock. On phones the audio context can
+      // suspend (tab switch, screen lock) and its clock freezes while the
+      // recorder keeps rolling — inflating the export with dead air. The
+      // narration plays in real time, so wall time is the faithful measure.
+      const elapsed = (Date.now() - wallStart) / 1000;
       let idx = segments.findIndex((s) => elapsed >= s.start && elapsed < s.end);
       if (idx === -1) idx = elapsed >= totalDur ? segments.length - 1 : 0;
       const seg = segments[idx];
@@ -505,5 +511,8 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   stream.getTracks().forEach((track) => track.stop());
   await ac.close();
   canvas.width = canvas.height = 0;
-  return new Blob(chunks, { type: mimeType.split(';')[0] });
+  onProgress?.('Finalizing video timing…');
+  // No-op when the recorder already wrote correct timing (desktop); repairs
+  // broken mobile MP4 metadata so the file's length equals the narration.
+  return finalizeNicheMp4(new Blob(chunks, { type: mimeType.split(';')[0] }), totalDur + 0.5);
 }
