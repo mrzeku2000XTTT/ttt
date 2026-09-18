@@ -1,6 +1,5 @@
 // Explainer video utilities — shared by the Manual lab and the Automatic chat studio
 import { assignMotionFx } from './motionFx';
-import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
 
 // 5 animation styles the user can pick from — "neutral" is the default
 export const ANIMATION_STYLES = [
@@ -506,6 +505,5 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   stream.getTracks().forEach((track) => track.stop());
   await ac.close();
   canvas.width = canvas.height = 0;
-  onProgress?.('Finalizing video timing…');
-  return finalizeNicheMp4(new Blob(chunks, { type: mimeType.split(';')[0] }), totalDur + 0.5);
+  return new Blob(chunks, { type: mimeType.split(';')[0] });
 }

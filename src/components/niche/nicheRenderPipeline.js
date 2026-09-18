@@ -14,10 +14,12 @@ export const runRenderPipeline = async ({
 }) => {
   const n = scenes.length;
   const concurrency = 3;
-  let done = images.filter(Boolean).length + audios.filter(Boolean).length;
-  const total = n * 2;
-  const step = () => setWork(`Drawing & narrating · ${Math.min(++done, total)}/${total}`);
-  setWork(`Drawing & narrating · ${Math.min(done, total)}/${total}`);
+  let drawn = images.filter(Boolean).length;
+  let spoken = audios.filter(Boolean).length;
+  const report = () => setWork(`Drawing scene ${Math.min(drawn, n)}/${n} · narrating ${Math.min(spoken, n)}/${n}`);
+  const drewScene = () => { drawn++; report(); };
+  const spokeScene = () => { spoken++; report(); };
+  report();
   const withRetry = async (fn) => {
     for (let attempt = 0; attempt < 3; attempt++) {
       if (token.cancelled) return null;
@@ -39,13 +41,13 @@ export const runRenderPipeline = async ({
         : withRetry(() => base44.integrations.Core.GenerateImage({
             prompt: scenePrompts[i],
             ...(attachmentUrls.length ? { existing_image_urls: attachmentUrls } : {})
-          })).then((r) => { step(); const url = r?.url || null; onAsset?.('image', i, url); return url; })
+          })).then((r) => { drewScene(); const url = r?.url || null; onAsset?.('image', i, url); return url; })
     ),
     mapBatch(scenes, concurrency, (s, i) =>
       audios[i]
         ? audios[i]
         : withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }))
-            .then((r) => { step(); const url = r?.url || null; onAsset?.('audio', i, url); return url; })
+            .then((r) => { spokeScene(); const url = r?.url || null; onAsset?.('audio', i, url); return url; })
     )
   ]);
   if (token.cancelled) { try { audioContext.close(); } catch {} return null; }
