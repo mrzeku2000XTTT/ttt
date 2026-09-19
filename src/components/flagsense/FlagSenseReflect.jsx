@@ -15,7 +15,7 @@ export default function FlagSenseReflect({ state, onStart }) {
   const strongest = scores.filter((s) => s.value != null).sort((a, b) => b.value - a.value)[0];
 
   return (
-    <div className="mx-auto w-full max-w-md px-6 pt-4 pb-10">
+    <div className="mx-auto w-full max-w-md px-6 pt-4 pb-28">
       <p className="fs-label">Self-reflection</p>
       <h1 className="mb-2 text-[26px] font-bold tracking-tight">"Am I the red flag?"</h1>
       <p className="mb-6 text-[13.5px] leading-relaxed text-neutral-500">

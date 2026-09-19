@@ -56,7 +56,7 @@ export default function FlagSenseApp() {
         />
       )}
 
-      <div className="relative z-10 mx-auto w-full max-w-md px-6 pt-6 pb-24">
+      <div className="relative z-10 mx-auto w-full max-w-md px-6 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] pb-24">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src={LOGO} alt="" className="h-8 w-8 rounded-xl shadow-sm" />

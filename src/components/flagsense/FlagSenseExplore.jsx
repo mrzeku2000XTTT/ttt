@@ -13,7 +13,7 @@ export default function FlagSenseExplore({ state, onStart }) {
   if (cat) {
     const list = SCENARIOS.filter((s) => s.category === cat.id);
     return (
-      <div className="mx-auto w-full max-w-md px-6 pt-4 pb-10">
+      <div className="mx-auto w-full max-w-md px-6 pt-4 pb-28">
         <button
           onClick={() => setCat(null)}
           className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-neutral-500 hover:text-neutral-900"
@@ -51,7 +51,7 @@ export default function FlagSenseExplore({ state, onStart }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-6 pt-4 pb-10">
+    <div className="mx-auto w-full max-w-md px-6 pt-4 pb-28">
       <h1 className="mb-1 text-[26px] font-bold tracking-tight">Scenario library</h1>
       <p className="mb-6 text-[13.5px] text-neutral-500">Pick a topic and work through it one situation at a time.</p>
       <div className="grid grid-cols-2 gap-2.5">

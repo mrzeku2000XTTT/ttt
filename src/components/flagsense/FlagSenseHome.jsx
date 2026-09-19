@@ -14,7 +14,7 @@ export default function FlagSenseHome({ state, onStart, onOpenTab, lessonSeen, o
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="mx-auto w-full max-w-md px-6 pt-4 pb-10">
+    <div className="mx-auto w-full max-w-md px-6 pt-4 pb-28">
       <p className="mb-1 flex items-center gap-2 text-[13px] font-medium text-neutral-500">
         {hour < 12 ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
         {greeting}.

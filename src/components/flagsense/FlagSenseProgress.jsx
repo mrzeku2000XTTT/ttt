@@ -10,7 +10,7 @@ export default function FlagSenseProgress({ state }) {
   const answered = Object.keys(state.answers || {}).length;
 
   return (
-    <div className="mx-auto w-full max-w-md px-6 pt-4 pb-10">
+    <div className="mx-auto w-full max-w-md px-6 pt-4 pb-28">
       <p className="fs-label">My growth</p>
       <h1 className="mb-6 text-[26px] font-bold tracking-tight">Progress</h1>
 
