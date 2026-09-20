@@ -76,9 +76,9 @@ export default function AppStoreV2Page() {
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-[14px] font-medium">Back</span>
+            <span className="hidden sm:inline text-[14px] font-medium">Back</span>
           </Link>
-          <span className="text-[15px] font-[800] tracking-tight min-w-0 truncate text-center">App Store</span>
+          <span className="hidden sm:block text-[15px] font-[800] tracking-tight min-w-0 truncate text-center">App Store</span>
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <Kcc20ConnectButton />
             <Link
