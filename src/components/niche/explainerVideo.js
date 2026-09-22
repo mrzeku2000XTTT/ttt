@@ -1,7 +1,5 @@
 // Explainer video utilities — shared by the Manual lab and the Automatic chat studio
 import { assignMotionFx } from './motionFx';
-import { isNicheIos, prepareNicheIosAudio, loadNicheIosAssets } from '@/components/niche/nicheIosRuntime';
-import waitForNicheIosFrames from '@/components/niche/waitForNicheIosFrames';
 
 // 5 animation styles the user can pick from — "neutral" is the default
 export const ANIMATION_STYLES = [
@@ -297,19 +295,11 @@ export function createAudioContext() {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const ac = new AudioCtx();
   ac.resume?.().catch(() => {});
-  if (isNicheIos()) {
-    const unlock = ac.createBufferSource();
-    unlock.buffer = ac.createBuffer(1, 1, ac.sampleRate);
-    unlock.connect(ac.destination);
-    unlock.onended = () => unlock.disconnect();
-    unlock.start();
-  }
   return ac;
 }
 
 export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false, token }) {
   const style = styleById(styleId);
-  const ios = isNicheIos();
   const W = 1280;
   const H = 720;
   const canvas = document.createElement('canvas');
@@ -318,7 +308,7 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   const ctx = canvas.getContext('2d');
 
   onProgress?.('Loading scenes…');
-  const imgEls = ios ? await loadNicheIosAssets(images, loadImage) : await Promise.all(images.map(loadImage));
+  const imgEls = await Promise.all(images.map(loadImage));
 
   onProgress?.('Preparing narration…');
   const ac = audioContext || createAudioContext();
@@ -332,7 +322,7 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     const buf = await (await fetch(u)).arrayBuffer();
     return new Promise((resolve, reject) => ac.decodeAudioData(buf, resolve, reject));
   };
-  const buffers = ios ? await loadNicheIosAssets(audios, decodeNarration) : await Promise.all(audios.map(decodeNarration));
+  const buffers = await Promise.all(audios.map(decodeNarration));
 
   // Optional background soundtrack — fetch + decode a royalty-free audio URL
   // (e.g. a Pixabay download link) to mix under the narration. Failures (CORS,
@@ -384,10 +374,6 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     ms.stop(totalDur);
   }
   const mixed = await offline.startRendering();
-  if (ios) {
-    buffers.length = 0;
-    timeline.forEach((seg) => { seg.buf = null; });
-  }
 
   // Scene windows: each image stays up for its own line plus the breath after it
   const segments = timeline.map((seg, i) => ({
@@ -397,7 +383,6 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
     caption: seg.caption
   }));
 
-  if (ios) await prepareNicheIosAudio(ac);
   const stream = canvas.captureStream(25);
   dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
   const mimeType = RECORDER_TYPES.find((t) => MediaRecorder.isTypeSupported(t)) || 'video/mp4';
@@ -482,21 +467,9 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   // even when the user leaves the tab — rAF is paused in background tabs.
   const wallStart = Date.now();
   const guardMs = (totalDur + 12) * 1000; // desktop behavior unchanged
-  const paintAt = (elapsed) => {
-    let idx = segments.findIndex((s) => elapsed >= s.start && elapsed < s.end);
-    if (idx === -1) idx = elapsed >= totalDur ? segments.length - 1 : 0;
-    const seg = segments[idx];
-    const localP = (elapsed - seg.start) / (seg.end - seg.start);
-    clear();
-    if (idx < segments.length - 1 && elapsed >= seg.end - XFADE && elapsed < seg.end) {
-      const t = Math.min(1, (elapsed - (seg.end - XFADE)) / XFADE);
-      drawContent(idx, localP, 1 - t, elapsed);
-      drawContent(idx + 1, 0, t, elapsed);
-    } else drawContent(idx, localP, 1, elapsed);
-  };
+  // All devices use the existing desktop recording loop below.
   try {
-  if (ios) await waitForNicheIosFrames({ ac, recorder, player, token, duration: totalDur, t0, draw: paintAt, onProgress });
-  else await new Promise((resolve) => {
+  await new Promise((resolve) => {
     let settled = false;
     const done = () => { if (!settled) { settled = true; clearInterval(timer); resolve(); } };
     // Backup: resolve the moment the mixed narration actually finishes playing,

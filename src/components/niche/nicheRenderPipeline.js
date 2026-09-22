@@ -1,6 +1,5 @@
 import { base44 } from '@/api/base44Client';
 import { compileExplainerVideo, videoExt } from './explainerVideo';
-import { isNicheIos } from '@/components/niche/nicheIosRuntime';
 
 
 // Shared render pipeline for the auto-pilot's standard build AND its
@@ -14,8 +13,7 @@ export const runRenderPipeline = async ({
   images = [], audios = [], onAsset
 }) => {
   const n = scenes.length;
-  const ios = isNicheIos();
-  const concurrency = ios ? 1 : 3;
+  const concurrency = 3;
   let drawn = images.filter(Boolean).length;
   let spoken = audios.filter(Boolean).length;
   const report = () => setWork(`Drawing scene ${Math.min(drawn, n)}/${n} · narrating ${Math.min(spoken, n)}/${n}`);
@@ -25,17 +23,7 @@ export const runRenderPipeline = async ({
   const withRetry = async (fn) => {
     for (let attempt = 0; attempt < 3; attempt++) {
       if (token.cancelled) return null;
-      if (ios && document.hidden) {
-        setWork('Generation waiting — reopen Niche Studio to continue the saved scenes');
-        while (document.hidden && !token.cancelled) await new Promise((r) => setTimeout(r, 500));
-        if (token.cancelled) return null;
-        report();
-      }
-      try {
-        const result = await fn();
-        if (ios && !result?.url) throw new Error('Scene asset was not returned.');
-        return result;
-      } catch (e) { if (attempt === 2) return null; await new Promise((r) => setTimeout(r, 800 * (attempt + 1))); }
+      try { return await fn(); } catch (e) { if (attempt === 2) return null; await new Promise((r) => setTimeout(r, 800 * (attempt + 1))); }
     }
   };
   const mapBatch = async (items, concurrency, fn) => {
@@ -53,18 +41,17 @@ export const runRenderPipeline = async ({
         : withRetry(() => base44.integrations.Core.GenerateImage({
             prompt: scenePrompts[i],
             ...(attachmentUrls.length ? { existing_image_urls: attachmentUrls } : {})
-          })).then((r) => { const url = r?.url || null; if (!ios || url) drewScene(); onAsset?.('image', i, url); return url; })
+          })).then((r) => { drewScene(); const url = r?.url || null; onAsset?.('image', i, url); return url; })
     ),
     mapBatch(scenes, concurrency, (s, i) =>
       audios[i]
         ? audios[i]
         : withRetry(() => base44.integrations.Core.GenerateSpeech({ text: s.voiceover, voice: 'storm' }))
-            .then((r) => { const url = r?.url || null; if (!ios || url) spokeScene(); onAsset?.('audio', i, url); return url; })
+            .then((r) => { spokeScene(); const url = r?.url || null; onAsset?.('audio', i, url); return url; })
     )
   ]);
   if (token.cancelled) { try { audioContext.close(); } catch {} return null; }
   const kept = scenes.map((s, i) => ({ s, img: outImages[i], aud: outAudios[i] })).filter((x) => x.img && x.aud);
-  if (ios && kept.length !== n) throw new Error(`${n - kept.length} scene(s) still need an image or narration. Tap Resume build to retry only the missing assets; no scenes have been skipped.`);
   if (!kept.length) throw new Error('Every scene failed to generate — try again in a moment.');
   const finalScenes = kept.map((x) => x.s);
   setWork(motionFx ? 'Animating scenes with Motion FX' : 'Stitching your video');

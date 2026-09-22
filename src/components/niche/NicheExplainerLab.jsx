@@ -6,8 +6,6 @@ import ExplainerPlayer from './ExplainerPlayer';
 import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
-import { isNicheIos } from '@/components/niche/nicheIosRuntime';
-import useNicheBuildCleanup from '@/components/niche/useNicheBuildCleanup';
 
 const fmtElapsed = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, '0')}`;
 
@@ -28,10 +26,8 @@ export default function NicheExplainerLab({ niche }) {
   const [appName, setAppName] = useState(''); // for the "Real UI Clone" style
   const [uiResearch, setUiResearch] = useState(null); // cached {app, description}
   const [elapsed, setElapsed] = useState(0); // live elapsed on the working status
-  const [renderError, setRenderError] = useState('');
 
   const scenes = script?.scenes || [];
-  useNicheBuildCleanup(!!busy, null, isNicheIos());
 
   // tick elapsed seconds while any build step is running
   useEffect(() => {
@@ -168,7 +164,6 @@ Narration must total about 60–120 seconds when spoken.`,
   const downloadVideo = async () => {
     // must be created synchronously inside the tap — iOS blocks audio otherwise
     const audioContext = createAudioContext();
-    setRenderError('');
     setBusy('Stitching your video…');
     try {
       const blob = await compileExplainerVideo({
@@ -209,11 +204,7 @@ Narration must total about 60–120 seconds when spoken.`,
       a.href = URL.createObjectURL(blob);
       a.download = `${(script.title || 'niche-explainer').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.${videoExt(blob.type)}`;
       a.click();
-    } catch (error) {
-      if (!isNicheIos()) throw error;
-      setRenderError('Recording was interrupted. Keep Niche Studio open and tap Download MP4 again — your scenes and narration are still ready.');
     } finally {
-      if (isNicheIos() && audioContext.state !== 'closed') await audioContext.close();
       setBusy('');
     }
   };
@@ -359,7 +350,6 @@ Narration must total about 60–120 seconds when spoken.`,
         </p>
       )}
 
-      {renderError && <p role="alert" className="text-destructive text-sm mt-3">{renderError}</p>}
       {script && (
         <div className="space-y-4 mt-5">
           <div className="rounded-xl border border-white/10 p-4">
