@@ -19,6 +19,8 @@ import NicheYouTubeResult from './NicheYouTubeResult';
 import { LEARNING_LESSONS } from './NicheLearningWait';
 import { saveBuildJob, loadBuildJob, updateBuildJob, clearBuildJob } from './nicheAutoResume';
 import { runRenderPipeline, saveVideoToLibrary } from './nicheRenderPipeline';
+import { isNicheIos } from '@/components/niche/nicheIosRuntime';
+import useNicheBuildCleanup from '@/components/niche/useNicheBuildCleanup';
 
 const uid = () => Math.random().toString(36).slice(2);
 const CHAT_KEY = 'niche_studio_chat'; // the chat survives a refresh
@@ -115,6 +117,7 @@ export default function NicheAutoStudio({ niches }) {
   const workIdRef = useRef(null); // id of the current "working" chat bubble, so Pause can settle it
   const inputRef = useRef(null);
   const persistedRowsRef = useRef(null);
+  useNicheBuildCleanup(busy, buildRef, isNicheIos());
   // per-user session memory — each user's chat history, attachments and clones
   // live under their own key, so the agent remembers everything they said
   const chatKey = userEmail ? `${CHAT_KEY}:${userEmail}` : CHAT_KEY;
@@ -266,6 +269,9 @@ export default function NicheAutoStudio({ niches }) {
   const send = async (raw) => {
     let text = (raw ?? input).trim();
     if (busy || buildRef.current || !identityReady) return;
+    if (!text && !attachments.length) return;
+    // Unlock iPhone audio during the actual tap, before attachment uploads await.
+    const tapAudioContext = isNicheIos() ? createAudioContext() : null;
     let attachmentUrls = [];
     let attachmentPreviews = [];
     let videoFile = null;
@@ -293,12 +299,12 @@ export default function NicheAutoStudio({ niches }) {
       if (img) imageUploadUrl = img.url;
     }
     const userText = text || (mimicMode && imageUploadUrl ? 'Clone this screenshot 1:1' : attachmentUrls.length ? 'Analyze the attached reference(s) and tell me what you see — fact-check anything claim-like, and ask me one focused question about what I want built.' : '');
-    if (!userText || buildRef.current) return;
+    if (!userText || buildRef.current) { tapAudioContext?.close().catch(() => {}); return; }
     setInput('');
     setAttachments([]);
     setBusy(true);
     // must be created synchronously inside the tap — iOS blocks audio otherwise
-    const audioContext = createAudioContext();
+    const audioContext = tapAudioContext || createAudioContext();
     const workId = uid();
     const token = { cancelled: false, audioContext };
     buildRef.current = token;

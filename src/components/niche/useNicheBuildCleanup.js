@@ -1,15 +1,16 @@
 import { useEffect } from 'react';
 
-export default function useNicheBuildCleanup(busy, buildRef) {
+export default function useNicheBuildCleanup(busy, buildRef, enabled = true) {
   useEffect(() => () => {
-    const token = buildRef.current;
+    if (!enabled) return;
+    const token = buildRef?.current;
     if (token) {
       token.cancelled = true;
       if (token.audioContext?.state !== 'closed') token.audioContext?.close().catch(() => {});
     }
-  }, [buildRef]);
+  }, [buildRef, enabled]);
   useEffect(() => {
-    if (!busy || !navigator.wakeLock) return;
+    if (!enabled || !busy || !navigator.wakeLock) return;
     let disposed = false, lock = null;
     const acquire = async () => {
       if (document.hidden || disposed || lock) return;
@@ -27,5 +28,5 @@ export default function useNicheBuildCleanup(busy, buildRef) {
       document.removeEventListener('visibilitychange', acquire);
       lock?.release().catch(() => {});
     };
-  }, [busy]);
+  }, [busy, enabled]);
 }
