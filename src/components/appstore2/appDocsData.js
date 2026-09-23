@@ -4,6 +4,31 @@
 
 // ── Curated docs for flagship apps ──
 const CURATED = {
+  Hybrid: {
+    tagline: "Paste your channel link — see the real channel and what to fix",
+    overview: "Hybrid is a social engagement auditor. Paste any public social link — a YouTube channel or video, a TikTok profile, an Instagram reel, an X account, a Twitch channel — and Hybrid finds the creator behind it, opens the channel on the live web, and reads what is actually happening there: recent posts, view counts, titles, posting cadence, comments and any publicly listed follower numbers. It then scores your engagement health out of 100 and tells you the truth: what is already working, what is holding you back, and five to six ranked actions you can do this week to lift engagement. Every action says what to change, why it moves the numbers, and how to do it — never generic advice like 'post consistently'. You also get content ideas with the opening hook written out, a posting cadence with best times and formats, and the metrics worth tracking. Copy the whole plan in one tap and take it into your week.",
+    features: [
+      { title: "Any link in", desc: "YouTube, TikTok, Instagram, X, Twitch, Facebook, LinkedIn — a channel, profile, video or single post URL all work." },
+      { title: "Finds the real channel", desc: "Paste a video link and Hybrid resolves the creator and channel behind it, then audits that channel rather than the one clip." },
+      { title: "Engagement health score", desc: "A 0–100 read on how healthy your engagement actually is, with one sentence explaining the number." },
+      { title: "What is holding you back", desc: "The specific problems dragging your engagement down, each tagged high, medium or low severity." },
+      { title: "Do this week", desc: "Five to six ranked actions with the why, the how, an impact rating and a realistic effort estimate." },
+      { title: "Ideas with hooks", desc: "Ready-to-shoot content ideas with the format and the opening hook written out for you." },
+      { title: "Posting plan", desc: "A cadence, best posting times and the formats to lead with, plus the metrics to track." },
+      { title: "One-tap plan copy", desc: "Copy the entire audit as plain text and paste it into your notes, brief or team chat." },
+    ],
+    howItWorks: [
+      { title: "Paste your link", desc: "Drop any public channel, profile, video or post URL into the studio." },
+      { title: "Hybrid researches", desc: "It opens your channel on the live web and reads your recent posts, views, titles and cadence. Nothing is invented — anything not public is marked 'not public'." },
+      { title: "Read your audit", desc: "Score, snapshot, strengths, problems, and the ranked actions for this week." },
+      { title: "Work the plan", desc: "Copy the plan, ship the actions, and re-audit the same link later to see what moved." },
+    ],
+    getStarted: [
+      { title: "Open Hybrid", desc: "Launch it from the store, connect your Scorpion wallet, and enter the studio." },
+      { title: "Paste your channel", desc: "Use your channel URL — or any video link and let Hybrid find the channel." },
+      { title: "Start with action #1", desc: "The actions are ranked by impact, so the top one is always the place to begin." },
+    ],
+  },
   FlagSense: {
     tagline: "Relationship self-awareness — understand the behavior, not the person",
     overview: "FlagSense helps people recognize relationship behaviors as green flags (healthy), yellow flags (worth reflecting on), or red flags (potentially unhealthy) — without ever labeling you or your partner. Read a realistic situation, swipe or choose your honest response, then see why it matters, how the other person might feel, and what to try instead. It works for both sides: understanding your partner, and honestly asking 'am I doing this?'. A self-reflection mode finds your own patterns, an AI coach helps you reflect without judging, and Say It Better rewrites raw reactions into healthier sentences. Everything stays on your device — private by design, no account required.",

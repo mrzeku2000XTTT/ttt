@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Hybrid", path: "Hybrid", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/89278bc6a_generated_image.png", desc: "Social engagement auditor · paste any channel, video or profile link, see the real channel behind it and exactly what to do this week to lift engagement" },
   { name: "Product Studio", path: "ProductStudio", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20ef07dfe_generated_image.png", desc: "AI product image studio · generate four visual directions, upload or paste references, collect ideas, arrange them on a canvas, and preview motion presets" },
   { name: "FlagSense", path: "FlagSense", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/48ed8d14e_generated_image.png", desc: "Relationship red flag / green flag self-awareness · swipe real scenarios, see how the other person might feel, learn a healthier alternative — private by design, no labels, no judgment" },
   { name: "Search Kaspa", path: "SearchKaspa", cat: "Kaspa", logo: "https://assets.coingecko.com/coins/images/25751/large/kaspa-icon-exchanges.png", desc: "Kaspa's own search engine · curated Kaspa directory + live web index, evidence-backed AI overviews with live-data chat, security-scanned site listing and covenant-metered micro-search" },

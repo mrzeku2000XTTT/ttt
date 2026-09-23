@@ -227,6 +227,7 @@ import AdminRoute from '@/components/AdminRoute';
 import SearchKaspa from '@/pages/SearchKaspa';
 import FlagSensePage from '@/pages/FlagSense';
 import SearchKaspaDocs from '@/pages/SearchKaspaDocs';
+import HybridPage from '@/pages/Hybrid';
 import ProductStudioPage from '@/pages/ProductStudio';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -382,6 +383,7 @@ const AuthenticatedApp = () => {
       <Route path="/MotionFly" element={<MotionFlyPage />} />
       <Route path="/ETA" element={<ETAPage />} />
       <Route path="/ProductStudio" element={<ProductStudioPage />} />
+      <Route path="/Hybrid" element={<HybridPage />} />
       <Route path="/ORINLanding" element={<ORINLandingPage />} />
       <Route path="/ORIN" element={<ORINPage />} />
       <Route path="/Pingguo" element={<PingguoPage />} />
