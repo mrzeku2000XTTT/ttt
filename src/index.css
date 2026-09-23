@@ -375,5 +375,16 @@ button:focus-visible {
   --ring: 156 100% 50%;
   --destructive: 0 85% 70%;
   --destructive-foreground: 150 20% 5%;
-  --radius: 1rem;
+  --radius: 0.75rem;
+  --font-heading: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.hybrid-page h1, .hybrid-page h2, .hybrid-page h3 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
 }
