@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Link2, Gauge, ListChecks, Store, Lightbulb } from 'lucide-react';
 import HybridLogo from './HybridLogo';
@@ -38,6 +38,16 @@ const STEPS = [
 export default function HybridLanding({ onEnter }) {
   const navigate = useNavigate();
   const { address, connect, loading } = useKcc20Wallet();
+  const videoRef = useRef(null);
+
+  // Some browsers only autoplay a loop when muted is set on the element itself.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    const p = v.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }, []);
 
   const handleEnter = async () => {
     if (!address) {
@@ -49,9 +59,10 @@ export default function HybridLanding({ onEnter }) {
   return (
     <div className="relative min-h-screen">
       {/* Looping background video */}
-      <div className="fixed inset-0 -z-10 overflow-hidden bg-background">
+      <div className="fixed inset-0 z-0 overflow-hidden bg-background pointer-events-none">
         <video
-          className="w-full h-full object-cover"
+          ref={videoRef}
+          className="hybrid-loop w-full h-full object-cover"
           src={LOOP_VIDEO}
           autoPlay
           loop
@@ -59,7 +70,7 @@ export default function HybridLanding({ onEnter }) {
           playsInline
           preload="auto"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/80 to-background/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background/80" />
       </div>
 
       <header className="relative z-10">

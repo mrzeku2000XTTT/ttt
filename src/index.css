@@ -388,3 +388,7 @@ button:focus-visible {
   font-family: var(--font-heading);
   letter-spacing: -0.025em;
 }
+/* Keep the looping backdrop clearly visible against the dark scrim. */
+.hybrid-page video.hybrid-loop {
+  filter: brightness(1.3) saturate(1.2) contrast(1.05);
+}
