@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowRight, Link2, Sparkles, Trash2 } from 'lucide-react';
 import { EASE_NAMES } from './morphEngine';
 import { MOTION_STYLES, UI_MORPHS } from './morphMorphs';
+import MorphSequenceControls from './MorphSequenceControls';
 
 const sel = 'w-full rounded border border-white/12 bg-black/40 px-1.5 py-1 text-[10px] text-white/80 outline-none focus:border-white/40';
 
@@ -12,6 +13,7 @@ const sel = 'w-full rounded border border-white/12 bg-black/40 px-1.5 py-1 text-
  */
 export default function MorphMorphPanel({
   scene, morphSel, onSelect, onCreate, onUpdate, onDelete, onApplyPreset, onApplyStyle, onDemo,
+  sequenceWord, onBuildSequence,
 }) {
   const layers = scene.layers || [];
   const morphs = scene.morphs || [];
@@ -93,6 +95,8 @@ export default function MorphMorphPanel({
           Create morph
         </button>
       </div>
+
+      <MorphSequenceControls word={sequenceWord} onBuild={onBuildSequence} />
 
       {/* existing relations */}
       {morphs.length > 0 && (

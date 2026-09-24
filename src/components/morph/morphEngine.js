@@ -606,11 +606,37 @@ function drawLayer(ctx, layer, time, W, H, onAssetReady) {
     }
   } else if (layer.type === 'text') {
     const fs = base * 0.62;
+    const word = String(layer.text || 'TEXT');
+    const stagger = clamp(Number(layer.glyphStagger) || 0, 0, 0.5);
     ctx.fillStyle = layer.color;
     ctx.font = `700 ${fs}px ${FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(layer.text || 'TEXT', 0, 0);
+    if (stagger > 0 && word.length > 1) {
+      // Letterforms emerge one at a time: each glyph rides its own slice of the
+      // reveal, so whatever is morphing underneath is still readable as the
+      // first letters land. Driven by the layer's own reveal, not by the clock,
+      // so it stays in step with whatever morph is producing it.
+      const reveal = clamp(p.textOpacity, 0, 1);
+      const slot = stagger / Math.max(0.05, Number(layer.glyphWindow) || 1);
+      const slots = 1 + slot * (word.length - 1);
+      const glyphs = [...word];
+      const widths = glyphs.map((c) => ctx.measureText(c).width);
+      const full = widths.reduce((a, b) => a + b, 0);
+      const held = ctx.globalAlpha;
+      let x = -full / 2;
+      glyphs.forEach((c, i) => {
+        const from = (i * slot) / slots;
+        const to = (i * slot + 1) / slots;
+        const a = clamp((reveal - from) / Math.max(0.0001, to - from), 0, 1);
+        ctx.globalAlpha = held * a;
+        ctx.fillText(c, x + widths[i] / 2, (1 - a) * fs * 0.16);
+        x += widths[i];
+      });
+      ctx.globalAlpha = held;
+    } else {
+      ctx.fillText(word, 0, 0);
+    }
   } else if (layer.type === 'image') {
     const img = imageFor(layer.src, onAssetReady);
     if (img) {
@@ -757,16 +783,32 @@ export function autoEaseScene(scene, ease = 'easeInOut') {
 // scale, rotation, label size, fill colour and the label handover itself.
 // Nothing blinks out and reappears.
 
-export function morphProgress(rel, time) {
+export // A morph may carry its own spring physics, so the landing can be tuned per
+// relation instead of living in one shared curve. Curves are cached because they
+// are asked for on every frame.
+const springCache = new Map();
+const springFor = (stiffness, damping) => {
+  const key = `${stiffness}|${damping}`;
+  if (!springCache.has(key)) springCache.set(key, springCurve(stiffness, damping));
+  return springCache.get(key);
+};
+
+function morphProgress(rel, time) {
   const d = Math.max(0.001, rel.duration || 1);
   const raw = (time - (rel.start || 0)) / d;
   const p = clamp(raw, 0, 1);
-  return { raw, p, eased: (EASES[rel.easing] || EASES.easeInOut)(p) };
+  const curve = rel.easing === 'spring' && rel.spring
+    ? springFor(Number(rel.spring.stiffness) || 180, Number(rel.spring.damping) || 16)
+    : (EASES[rel.easing] || EASES.easeInOut);
+  return { raw, p, eased: curve(p) };
 }
 
 // Geometry, radius and label size travel from source to target. Colour is mixed
 // separately because it is not a number.
-const MORPH_PROPS = ['x', 'y', 'w', 'h', 'radius', 'scale', 'rotation', 'textSize'];
+// `size` travels too: it is what a shape and a text layer are both measured by,
+// so blending it is what makes a shape condense into letterforms. Cards ignore
+// it, so UI morphs are unaffected.
+const MORPH_PROPS = ['x', 'y', 'w', 'h', 'radius', 'size', 'scale', 'rotation', 'textSize'];
 
 function rgbOf(hex) {
   const h = String(hex || '#ffffff').replace('#', '');
@@ -807,41 +849,46 @@ export function layerBox(layer, time, W, H) {
 // One layer, seen through every morph that touches it.
 export function resolveLayer(scene, layer, time) {
   const asTarget = (scene.morphs || []).find((r) => r.to === layer.id);
+  const asSource = (scene.morphs || []).find((r) => r.from === layer.id);
+  let out = layer;
+
   if (asTarget) {
     const src = scene.layers.find((l) => l.id === asTarget.from);
     if (src) {
       const { raw, eased } = morphProgress(asTarget, time);
-      if (raw >= 1) return layer;
-      const a = sampleLayer(src, time);
-      const b = sampleLayer(layer, time);
-      const mix = raw <= 0 ? 0 : eased;
-      const out = { ...layer, tracks: {} };
-      MORPH_PROPS.forEach((prop) => { out[prop] = a[prop] + (b[prop] - a[prop]) * mix; });
-      out.color = mixColor(src.color, layer.color, mix);
-      out.opacity = b.opacity * mix;
-      // The box lands first, the words arrive after it — that ordering is what
-      // makes the pair read as one object changing rather than two swapping.
-      out.textOpacity = mix <= 0.4 ? 0 : clamp((mix - 0.4) / 0.6, 0, 1);
-      return out;
+      if (raw < 1) {
+        const a = sampleLayer(src, time);
+        const b = sampleLayer(layer, time);
+        const mix = raw <= 0 ? 0 : eased;
+        out = { ...layer, tracks: {} };
+        MORPH_PROPS.forEach((prop) => { out[prop] = a[prop] + (b[prop] - a[prop]) * mix; });
+        out.color = mixColor(src.color, layer.color, mix);
+        out.opacity = b.opacity * mix;
+        // The box lands first, the words arrive after it — that ordering is what
+        // makes the pair read as one object changing rather than two swapping.
+        out.textOpacity = mix <= 0.4 ? 0 : clamp((mix - 0.4) / 0.6, 0, 1);
+      }
     }
   }
 
-  const asSource = (scene.morphs || []).find((r) => r.from === layer.id);
+  // A layer can be the target of one step and the source of the next. Resolving
+  // both is what makes a chain (shape → text → logo) one continuous
+  // transformation instead of two unrelated effects.
   if (asSource) {
     const { raw, eased } = morphProgress(asSource, time);
-    const own = sampleLayer(layer, time);
-    const out = { ...layer, tracks: {}, ...own };
-    if (raw >= 1) return { ...out, opacity: 0 };
+    const own = sampleLayer(out, time);
+    const held = { ...out, tracks: {}, ...own };
+    if (raw >= 1) return { ...held, opacity: 0 };
     if (raw > 0) {
       // Hold solid while the target takes over, then hand over completely.
       const handoff = clamp((eased - 0.6) / 0.4, 0, 1);
-      out.opacity = own.opacity * (1 - handoff);
-      out.textOpacity = 1 - handoff;
+      held.opacity = own.opacity * (1 - handoff);
+      held.textOpacity = 1 - handoff;
     }
-    return out;
+    return held;
   }
 
-  return layer;
+  return out;
 }
 
 export function resolveMorphs(scene, time) {

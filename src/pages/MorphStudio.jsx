@@ -17,7 +17,7 @@ import MorphSequences from '@/components/morph/MorphSequences';
 import MorphDynamics from '@/components/morph/MorphDynamics';
 import { applySequence } from '@/components/morph/morphSequences';
 import {
-  UI_MORPHS, addMorph, applyMorphPreset, applyMotionStyle,
+  MORPH_PRESETS, addMorph, applyMorphPreset, applyMotionStyle,
   deleteMorph, makeMorph, musicToThrillerScene, updateMorph,
 } from '@/components/morph/morphMorphs';
 import {
@@ -412,18 +412,24 @@ export default function MorphStudio({ onHome }) {
     setSelectedId(cut || rel ? null : next.layers[next.layers.length - 1]?.id || null);
   };
 
-  const addPreset = (id) => {
-    // A text-based preset carries the word already on the canvas — the selected
-    // text layer, or the scene's only text layer — instead of our sample word.
+  // The word a text-based preset should carry: the selected text layer's, or the
+  // scene's only text layer.
+  const presetWord = (() => {
     const picked = scene.layers.find((l) => l.id === selectedId);
-    const word = (picked?.type === 'text' ? picked.text : '')
+    return (picked?.type === 'text' ? picked.text : '')
       || scene.layers.find((l) => l.type === 'text')?.text
       || '';
+  })();
+
+  const addPreset = (id, options = {}) => {
+    const word = options.text || presetWord;
     loadMorphScene(
-      applyMorphPreset(scene, id, word ? { text: word } : {}),
-      `Morph preset · ${UI_MORPHS.find((p) => p.id === id)?.label || id}`,
+      applyMorphPreset(scene, id, word ? { ...options, text: word } : options),
+      `Morph preset · ${MORPH_PRESETS.find((p) => p.id === id)?.label || id}`,
     );
   };
+
+  const buildSequence = (options) => addPreset('shape-text-logo', options);
 
   const loadDemo = () => loadMorphScene(musicToThrillerScene(), 'Demo · Music → Thriller');
 
@@ -616,6 +622,8 @@ export default function MorphStudio({ onHome }) {
       onApplyPreset={addPreset}
       onApplyStyle={setMorphStyle}
       onDemo={loadDemo}
+      sequenceWord={presetWord}
+      onBuildSequence={buildSequence}
     />
   );
 

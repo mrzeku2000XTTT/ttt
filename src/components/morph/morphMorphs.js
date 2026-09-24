@@ -5,6 +5,7 @@
 // easing and an optional connecting arrow. Everything else is the engine's job.
 
 import { makeLayer } from './morphEngine';
+import { SHAPE_SEQUENCES, applyMorphSequence, isMorphSequence } from './morphSequence';
 
 const uid = (p) => `${p}${Math.random().toString(36).slice(2, 8)}`;
 
@@ -125,6 +126,13 @@ export const UI_MORPHS = [
   },
 ];
 
+// Everything the AI director may pick from: the UI morphs, and the shape
+// sequences, which are chains of transformations rather than a pair of boxes.
+export const MORPH_PRESETS = [
+  ...UI_MORPHS.map(({ id, label }) => ({ id, label })),
+  ...SHAPE_SEQUENCES.map(({ id, label }) => ({ id, label })),
+];
+
 export function makeMorph(partial = {}) {
   return {
     id: uid('MR'),
@@ -177,6 +185,8 @@ const wordWidth = (word, size) => Math.min(0.6, Math.max(0.1, word.length * (siz
 
 /** A preset drops in two layers and the morph between them. */
 export function applyMorphPreset(scene, presetId, options = {}) {
+  // A sequence is a whole chain of transformations, so it builds itself.
+  if (isMorphSequence(presetId)) return applyMorphSequence(scene, presetId, options);
   const preset = UI_MORPHS.find((p) => p.id === presetId);
   if (!preset) return scene;
   const style = MOTION_STYLES.find((s) => s.id === preset.style) || MOTION_STYLES[0];

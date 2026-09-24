@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import { EASE_NAMES, keysToTracks, makeLayer } from './morphEngine';
 import { SEQUENCES, applySequence } from './morphSequences';
-import { UI_MORPHS, applyMorphPreset } from './morphMorphs';
+import { MORPH_PRESETS, applyMorphPreset } from './morphMorphs';
 
 const URL_RE = /(https?:\/\/[^\s<>"')]+)/gi;
 const IMG_RE = /\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/i;
@@ -159,7 +159,7 @@ export default function MorphSmartInput({
         images,
         existing,
         catalog: SEQUENCES.map(({ name, label, description }) => ({ name, label, description })),
-        presets: UI_MORPHS.map(({ id, label }) => ({ id, label })),
+        presets: MORPH_PRESETS,
       });
 
       // The director may hand back prebuilt sequences instead of — or as well as
@@ -171,11 +171,13 @@ export default function MorphSmartInput({
       // A UI morph the director chose lands exactly the way it does from the
       // panel: real geometry, the morph between the two, and its cover image —
       // which the director may have swapped for one of the attached images.
-      const preset = UI_MORPHS.find((p) => p.id === out?.preset);
+      const preset = MORPH_PRESETS.find((p) => p.id === out?.preset);
       const presetOptions = {};
       if (out?.presetImage) presetOptions.image = out.presetImage;
       // A word-becoming-a-logo preset carries the user's own word through.
       if (out?.presetText) presetOptions.text = out.presetText;
+      if (out?.presetShape) presetOptions.shape = out.presetShape;
+      if (out?.presetBounce) presetOptions.bounce = out.presetBounce;
       const withPreset = preset ? applyMorphPreset(scene, preset.id, presetOptions) : null;
 
       const built = out?.scene?.layers?.length ? buildScene(out.scene, idea) : null;
@@ -184,7 +186,10 @@ export default function MorphSmartInput({
       // "sequence" means: animate the logo already on screen, don't replace it.
       const animateCurrent = out?.mode === 'sequence' && names.length && scene.layers.length > 0;
 
-      if (withPreset) onScene(names.reduce((s, n) => applySequence(s, n, {}), withPreset), dyn, marks);
+      // A preset is complete choreography — its own geometry, timing, phases and
+      // landing. Stacking a generic sequence or a baked behaviour on top would
+      // fight it, so it goes in exactly as it was built.
+      if (withPreset) onScene(withPreset, null, []);
       else if (animateCurrent || (!built && names.length)) onSequences?.(names, dyn, marks);
       else if (built) onScene(names.reduce((s, n) => applySequence(s, n, {}), built), dyn, marks);
       else if (dyn || marks.length) onSequences?.([], dyn, marks);

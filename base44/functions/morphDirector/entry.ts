@@ -21,7 +21,15 @@ const SCHEMA = {
     },
     presetText: {
       type: 'string',
-      description: 'Only with a "preset" whose source is text (the "text-logo" preset). The exact word or short phrase the user wants carried through the morph — their brand name or the word they named in the brief. Copy it from the brief; never invent one.',
+      description: 'Only with a preset that carries words (the "text-logo" preset, and the shape sequences). The exact word or short phrase the user wants carried through the morph — their brand name or the word they named in the brief. Copy it from the brief; never invent one.',
+    },
+    presetShape: {
+      type: 'string',
+      description: 'Only with a shape sequence ("shape-text-logo", "shape-text", "shape-logo"). The shape the reveal starts from: circle | square | triangle | diamond | hexagon | star | burst | spark | kite.',
+    },
+    presetBounce: {
+      type: 'string',
+      description: 'Only with a preset. How hard the landing hits: off | subtle | medium | strong. Default to "subtle" — a premium reveal is felt, never cartoonish.',
     },
     layers: {
       type: 'array',
@@ -114,6 +122,9 @@ function buildPrompt({ idea, context, imageCount, existing, catalog, presets }) 
       'A UI morph is often the brief even when it is phrased loosely — "make a music button turn into an album card", "the icon should open into a panel", "turn the button into the dashboard".',
       'The "text-logo" preset is the one for words becoming a logo. Use it whenever the brief asks for that however it is worded — "make my text morph into a logo", "animate TEXT → LOGO", "my brand name should turn into the logo", "the wordmark becomes the mark", "turn this word into a logo". A word becoming a logo is this preset, never a hand-built shape scene.',
       'Whenever you return the "text-logo" preset, also return "presetText" with the exact word or short phrase from the brief, so the logo carries the user\'s own brand. Never invent a brand name, slogan or tagline: if the brief names no word, omit "presetText" and the preset keeps its own.',
+      'The shape sequences — "shape-text-logo", "shape-text", "shape-logo" — are the ones for a shape becoming type and then resolving into a logo. Use them for "turn this shape into the logo", "make the circle reveal the TTT logo", "have the shape become the word TTT", "transform the shape into text and then resolve into the logo". They are a real chain of transformations, not a crossfade: the shape deforms, the letters emerge one at a time, the word resolves into the logo, and the logo lands on a spring.',
+      'With a shape sequence, also return "presetText" (the word to reveal — the user\'s own, never invented) and "presetShape" (the shape it starts from, when the brief names one: "the circle reveals…" means circle).',
+      'When the brief is about how the landing should feel — "give the logo a satisfying bounce", "make it feel premium", "make the final logo snap into place", "elastic but subtle" — set "presetBounce": subtle for premium, satisfying or snapping; medium when they want more energy; off when they ask for none. Never strong unless they explicitly want it cartoonish.',
       'With a preset, also return "presetImage" when the brief supplies a cover for the target element — copy one of the attached image URLs verbatim, or a URL the user wrote in the brief. Never invent or recall an image URL: no cover art, no album artwork, no stock or encyclopedia links. If the user supplied none, omit "presetImage" and the preset uses its own generated cover.',
     );
   }
@@ -195,12 +206,19 @@ export default async function (req) {
     const presetText = preset
       ? String(result?.presetText || '').replace(/\s+/g, ' ').trim().slice(0, 24)
       : '';
+    // Only the shapes and bounce profiles the client actually ships are honoured.
+    const shape = String(result?.presetShape || '').toLowerCase();
+    const bounce = String(result?.presetBounce || '').toLowerCase();
+    const presetShape = preset && SHAPES.includes(shape) ? shape : '';
+    const presetBounce = preset && ['off', 'subtle', 'medium', 'strong'].includes(bounce) ? bounce : '';
 
     return {
       scene: result || null,
       preset,
       presetImage,
       presetText,
+      presetShape,
+      presetBounce,
       mode: result?.mode === 'sequence' ? 'sequence' : 'scene',
       dynamics: result?.dynamics && typeof result.dynamics === 'object' ? result.dynamics : null,
       markers: (Array.isArray(result?.markers) ? result.markers : [])
