@@ -44,6 +44,7 @@
 ---
 
 ## Apps built with this checklist
+- **PRISM** (`/Prism`) — video inspector: drop any MP4 and it is decoded in the browser — sampled frames are measured for cuts, shot lengths, pacing, motion between samples, brightness, white coverage and palette by area, then a vision read reports the typography, the animation on each element and a keyframe recipe to rebuild the piece. Minimal white-light identity (scoped `.prism-page` theme, the only colour is the prism spectrum). Landing-first, KCC20-gated. Original logo + hero generated 2026-09-24.
 - **Morph** (`/Morph`) — Motion Studio: a real animation engine with split VIEWPORT/FINAL surfaces, an RGB (X/Y/Z) transform gizmo, true point-by-point vector shape morphing, a keyframe timeline, and an AI director that writes the scene keyframes. Landing-first, KCC20-gated; monochrome identity to match the studio. Original logo + hero generated 2026-09-24.
 - **Hybrid** (`/Hybrid`) — social engagement auditor: paste any channel/video/profile link, Hybrid resolves the real channel from the live web and returns an engagement score, what's holding you back, ranked weekly actions, content ideas with hooks, and a posting plan. Landing-first, KCC20-gated; docs curated in `appDocsData.js`. Original logo + hero generated 2026-09-23.
 - **Product Studio** (`/ProductStudio`) — AI product-image asset collection with upload/paste references, draggable canvas, motion presets, and browser preview. Original logo + hero generated 2026-09-17.

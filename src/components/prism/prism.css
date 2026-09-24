@@ -1,0 +1,62 @@
+/* PRISM — a minimal white-light workspace. Scoped so nothing leaks. */
+:root .prism-page,
+.dark .prism-page {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 7%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 7%;
+  --primary: 0 0% 7%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 43%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 0 0% 25%;
+  --font-heading: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --prism-ink: 0 0% 7%;
+  --prism-line: 0 0% 90%;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  background: #ffffff;
+  color: #121212;
+}
+
+.prism-page h1,
+.prism-page h2,
+.prism-page h3 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+/* The prism itself — one white beam, one spectrum. The only colour in the app. */
+.prism-spectrum {
+  background: linear-gradient(90deg, #ff6b6b 0%, #ffa94d 18%, #ffe066 36%, #69db7c 54%, #4dabf7 72%, #9775fa 88%, #da77f2 100%);
+}
+
+.prism-hairline {
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, #ff6b6b 12%, #ffa94d 28%, #ffe066 44%, #69db7c 60%, #4dabf7 76%, #9775fa 92%, #da77f2 100%);
+}
+
+.prism-page .prism-drop {
+  border: 1.5px dashed hsl(var(--border));
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.prism-page .prism-drop:hover {
+  border-color: hsl(var(--ring));
+  background: hsl(0 0% 98%);
+}
+
+.prism-page .prism-frame {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 12px 32px -18px rgba(0, 0, 0, 0.35);
+}
+
+.prism-page input[type='range'] {
+  accent-color: #121212;
+}

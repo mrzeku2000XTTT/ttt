@@ -231,6 +231,7 @@ import HybridPage from '@/pages/Hybrid';
 import ProductStudioPage from '@/pages/ProductStudio';
 
 import MorphPage from './pages/Morph';
+import PrismPage from './pages/Prism';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -387,6 +388,7 @@ const AuthenticatedApp = () => {
       <Route path="/ProductStudio" element={<ProductStudioPage />} />
       <Route path="/Morph" element={<MorphPage />} />
       <Route path="/MorphStudio" element={<MorphPage />} />
+      <Route path="/Prism" element={<PrismPage />} />
       <Route path="/Hybrid" element={<HybridPage />} />
       <Route path="/ORINLanding" element={<ORINLandingPage />} />
       <Route path="/ORIN" element={<ORINPage />} />
