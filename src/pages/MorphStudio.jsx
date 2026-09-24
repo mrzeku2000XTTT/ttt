@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Maximize2, Minimize2, Grid3x3, ZoomIn, ZoomOut,
   Store, RotateCcw, Magnet, Home, Layers, Sliders, Clock,
-  SplitSquareHorizontal, Plus, Type, X, Wand2,
+  SplitSquareHorizontal, Plus, Type, X, Wand2, Sparkles,
 } from 'lucide-react';
 import MorphStage from '@/components/morph/MorphStage';
 import MorphTimeline from '@/components/morph/MorphTimeline';
@@ -12,7 +12,13 @@ import MorphLayers from '@/components/morph/MorphLayers';
 import MorphSmartInput from '@/components/morph/MorphSmartInput';
 import MorphToolButton from '@/components/morph/MorphToolButton';
 import MorphSequences from '@/components/morph/MorphSequences';
+import MorphDynamics from '@/components/morph/MorphDynamics';
 import { applySequence } from '@/components/morph/morphSequences';
+import { DEFAULT_DYNAMICS, bakeDynamics } from '@/components/morph/morphDynamics';
+import {
+  addMarker, addTime, deleteKey, groupMembers, moveKey, removeMarker,
+  setDuration, setGroup, setKeyEase, stagger, transformGroup, uniqueGroupName,
+} from '@/components/morph/morphEdits';
 import {
   starterScene, makeLayer, upsertKey, removeKey, sampleLayer, clamp, PROPS, autoEaseScene,
 } from '@/components/morph/morphEngine';
@@ -21,7 +27,7 @@ const STORE_KEY = 'morph_scene_v1';
 const LAYOUT_KEY = 'morph_layout_v1';
 const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/76b25d579_generated_image.png';
 
-const DEFAULT_LAYOUT = { sidebarW: 264, timelineH: 200, split: 50, paneDir: 'row', autoEase: true, ease: 'easeInOut' };
+const DEFAULT_LAYOUT = { sidebarW: 280, timelineH: 240, split: 50, paneDir: 'row', autoEase: true, ease: 'easeInOut' };
 
 const loadScene = () => {
   try {
@@ -52,7 +58,11 @@ export default function MorphStudio({ onHome }) {
   const [autoKey, setAutoKey] = useState(true);
   const [solo, setSolo] = useState(null);
   const [layout, setLayout] = useState(loadLayout);
-  const [panel, setPanel] = useState(null); // mobile sheet: layers | inspector | timeline
+  const [panel, setPanel] = useState(null); // mobile sheet: dynamics | sequences | layers | inspector | timeline
+  const [timelineMode, setTimelineMode] = useState('simple');
+  const [keySel, setKeySel] = useState(null);
+  const [checked, setChecked] = useState([]);
+  const [dynamics, setDynamics] = useState(DEFAULT_DYNAMICS);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
 
   const areaRef = useRef(null);
@@ -177,12 +187,19 @@ export default function MorphStudio({ onHome }) {
     setScene((s) => ({ ...s, layers: s.layers.map((l) => (l.id === id ? { ...l, visible: l.visible === false } : l)) }));
   };
 
-  const applyScene = useCallback((next) => {
-    const eased = autoEase ? autoEaseScene(next, ease) : next;
-    setScene(eased);
+  const applyScene = useCallback((next, dyn, marks) => {
+    // Auto-ease first, then bake the behaviour: the spring curve the behaviour
+    // writes is the whole point, so nothing may overwrite it afterwards.
+    let s = autoEase ? autoEaseScene(next, ease) : next;
+    if (dyn) {
+      s = bakeDynamics(s, dyn);
+      setDynamics((d) => ({ ...d, ...dyn }));
+    }
+    (marks || []).forEach((m) => { s = addMarker(s, Number(m.t), m.label || 'Marker'); });
+    setScene(s);
     setTime(0);
     setPlaying(false);
-    setSelectedId(eased.layers[0]?.id || null);
+    setSelectedId(s.layers[0]?.id || null);
     setSolo(null);
   }, [autoEase, ease]);
 
@@ -203,12 +220,42 @@ export default function MorphStudio({ onHome }) {
     setPlaying(false);
   }, [selectedId]);
 
-  const runSequences = useCallback((names) => {
-    if (!names?.length) return;
-    setScene((s) => names.reduce((acc, n) => applySequence(acc, n, {}), s));
+  const runSequences = useCallback((names, dyn, marks) => {
+    if (!names?.length && !dyn && !marks?.length) return;
+    setScene((s) => {
+      let next = (names || []).reduce((acc, n) => applySequence(acc, n, {}), s);
+      if (dyn) next = bakeDynamics(next, dyn);
+      (marks || []).forEach((m) => { next = addMarker(next, Number(m.t), m.label || 'Marker'); });
+      return next;
+    });
+    if (dyn) setDynamics((d) => ({ ...d, ...dyn }));
     setTime(0);
     setPlaying(false);
   }, []);
+
+  /* ------------------------------------------------ timeline + hierarchy ops */
+  const selectKey = (k) => {
+    const layer = scene.layers.find((l) => l.id === k.layerId);
+    const found = (layer?.tracks?.[k.prop] || []).find((x) => Math.abs(x.t - k.t) < 0.004);
+    setKeySel(found ? { ...k, ease: found.ease } : null);
+    setTime(k.t);
+  };
+
+  const groupChecked = () => {
+    if (checked.length < 2) return;
+    setScene((s) => setGroup(s, checked, uniqueGroupName(s, 'LOGO')));
+    setChecked([]);
+  };
+
+  const ungroup = (name) => setScene((s) => setGroup(s, groupMembers(s, name).map((l) => l.id), ''));
+
+  // Parenting: the group moves or scales as one, baked into its members' keys.
+  const moveGroup = (group, delta) => setScene((s) => transformGroup(s, group, delta));
+
+  const staggerIds = (ids) => setScene((s) => stagger(s, ids, 0.1));
+
+  const bakeDyn = (scope) =>
+    setScene((s) => bakeDynamics(s, dynamics, scope === 'layer' && selectedId ? { layerIds: [selectedId] } : {}));
 
   /* ------------------------------------------------------ resizable splits */
   const startResize = (kind) => (e) => {
@@ -290,6 +337,11 @@ export default function MorphStudio({ onHome }) {
       onAdd={addLayer}
       onDelete={deleteLayer}
       onToggleVisible={toggleVisible}
+      checked={checked}
+      onCheck={(id) => setChecked((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]))}
+      onGroup={groupChecked}
+      onUngroup={ungroup}
+      onStagger={staggerIds}
     />
   );
 
@@ -299,6 +351,7 @@ export default function MorphStudio({ onHome }) {
       time={time}
       onTransform={updateLayer}
       onToggleKey={(prop) => selected && toggleKey(selected.id, prop)}
+      onGroupTransform={moveGroup}
     />
   );
 
@@ -306,13 +359,36 @@ export default function MorphStudio({ onHome }) {
     <MorphTimeline
       scene={scene}
       time={time}
+      mode={timelineMode}
+      onModeChange={setTimelineMode}
       onSeek={(t) => { setPlaying(false); setTime(t); }}
+      onDuration={(d) => setScene((s) => setDuration(s, d))}
+      onAddTime={(sec) => setScene((s) => addTime(s, sec))}
       selectedId={selectedId}
       onSelect={setSelectedId}
+      keySel={keySel}
+      onSelectKey={selectKey}
+      onEaseKey={(ease) => {
+        setScene((s) => setKeyEase(s, keySel.layerId, keySel.prop, keySel.t, ease));
+        setKeySel((k) => ({ ...k, ease }));
+      }}
+      onMoveKey={(layerId, prop, t, nextT) => setScene((s) => moveKey(s, layerId, prop, t, nextT))}
+      onDeleteKey={() => {
+        setScene((s) => deleteKey(s, keySel.layerId, keySel.prop, keySel.t));
+        setKeySel(null);
+      }}
+      onAddMarker={(t) => setScene((s) => addMarker(s, t))}
+      onRemoveMarker={(id) => setScene((s) => removeMarker(s, id))}
+      dynamics={dynamics}
+      onEditDynamics={() => { if (!wide) setPanel('dynamics'); }}
     />
   );
 
   const sequencesPanel = <MorphSequences onApply={applySeq} hasSelection={!!selected} />;
+
+  const dynamicsPanel = (
+    <MorphDynamics value={dynamics} onChange={setDynamics} onBake={bakeDyn} hasSelection={!!selected} />
+  );
 
   return (
     <div className="morph-studio flex flex-col bg-[#070707] text-white overflow-hidden h-screen" style={{ height: '100dvh' }}>
@@ -409,6 +485,7 @@ export default function MorphStudio({ onHome }) {
           style={{ width: sidebarW }}
           className="hidden lg:flex flex-col shrink-0 border-r border-white/10 overflow-y-auto"
         >
+          {dynamicsPanel}
           {sequencesPanel}
           {layersPanel}
           {inspectorPanel}
@@ -471,6 +548,12 @@ export default function MorphStudio({ onHome }) {
             onClick={() => setPanel((p) => (p === 'timeline' ? null : 'timeline'))}
           />
           <MorphToolButton
+            icon={Sparkles}
+            label="Dynamic"
+            active={panel === 'dynamics'}
+            onClick={() => setPanel((p) => (p === 'dynamics' ? null : 'dynamics'))}
+          />
+          <MorphToolButton
             icon={Wand2}
             label="Sequences"
             active={panel === 'sequences'}
@@ -497,7 +580,9 @@ export default function MorphStudio({ onHome }) {
                 ? inspectorPanel
                 : panel === 'timeline'
                   ? timelinePanel
-                  : sequencesPanel}
+                  : panel === 'sequences'
+                    ? sequencesPanel
+                    : dynamicsPanel}
           </div>
         )}
       </div>

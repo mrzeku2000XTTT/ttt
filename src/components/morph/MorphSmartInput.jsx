@@ -167,12 +167,14 @@ export default function MorphSmartInput({
         .filter((n) => SEQUENCES.some((s) => s.name === n));
 
       const built = out?.scene?.layers?.length ? buildScene(out.scene, idea) : null;
+      const dyn = out?.dynamics && typeof out.dynamics === 'object' ? out.dynamics : null;
+      const marks = Array.isArray(out?.markers) ? out.markers : [];
       // "sequence" means: animate the logo already on screen, don't replace it.
       const animateCurrent = out?.mode === 'sequence' && names.length && scene.layers.length > 0;
 
-      if (animateCurrent) onSequences?.(names);
-      else if (built) onScene(names.reduce((s, n) => applySequence(s, n, {}), built));
-      else if (names.length) onSequences?.(names);
+      if (animateCurrent || (!built && names.length)) onSequences?.(names, dyn, marks);
+      else if (built) onScene(names.reduce((s, n) => applySequence(s, n, {}), built), dyn, marks);
+      else if (dyn || marks.length) onSequences?.([], dyn, marks);
       else throw new Error('The director returned nothing usable — try rephrasing.');
 
       setText('');

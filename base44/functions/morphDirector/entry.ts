@@ -33,6 +33,23 @@ const SCHEMA = {
         required: ['name'],
       },
     },
+    dynamics: {
+      type: 'object',
+      description: 'A behavioural animation instead of hand-written keys. Use it when the brief is about HOW the motion feels — "snappier", "hit harder", "more bounce", "staggered", "magnetic". The engine bakes the spring physics into real keyframes.',
+      properties: {
+        motion: { type: 'string', description: 'spring | smooth | explosive | magnetic' },
+        energy: { type: 'number', description: '0-100 — faster and travels further' },
+        overshoot: { type: 'number', description: '0-100 — how far the spring overshoots' },
+        stagger: { type: 'number', description: 'milliseconds between each layer starting' },
+        randomness: { type: 'number', description: '0-40 — jitter on the entrance offsets' },
+        loop: { type: 'boolean', description: 'keep hovering after the entrance' },
+      },
+    },
+    markers: {
+      type: 'array',
+      description: 'Timeline markers for the beats the animation should land on.',
+      items: { type: 'object', properties: { t: { type: 'number' }, label: { type: 'string' } }, required: ['t'] },
+    },
     sequences: {
       type: 'array',
       description: 'Prebuilt engine sequences to chain onto the scene, in play order. Reuse these instead of hand-writing the same effects; they may be returned on their own to animate the scene the user already has.',
@@ -72,6 +89,8 @@ function buildPrompt({ idea, context, imageCount, existing, catalog }) {
       'PREBUILT SEQUENCES — the engine already implements these, hand-tuned. Prefer returning them in "sequences" over hand-writing the same effect, and chain several when the brief asks for several:',
       ...catalog.map((c) => `- ${c.name} — ${c.label}: ${c.description}`),
       'When the brief is about animating the scene the user already has — "make it assemble, spin and glow" — set mode to "sequence", return those sequences, and return NO layers.',
+      'When the brief is about how the motion FEELS rather than one specific effect — "snappier", "hit harder", "more bounce", "staggered", "magnetic" — return a "dynamics" object instead of new keys; the engine bakes the spring physics into keyframes.',
+      'Add "markers" when the brief names beats ("land the impact on the beat") so the timeline shows where they land.',
     );
   }
 
@@ -133,6 +152,11 @@ export default async function (req) {
     return {
       scene: result || null,
       mode: result?.mode === 'sequence' ? 'sequence' : 'scene',
+      dynamics: result?.dynamics && typeof result.dynamics === 'object' ? result.dynamics : null,
+      markers: (Array.isArray(result?.markers) ? result.markers : [])
+        .filter((m) => Number.isFinite(Number(m?.t)))
+        .slice(0, 12)
+        .map((m) => ({ t: Math.max(0, Number(m.t)), label: String(m.label || 'Marker').slice(0, 18) })),
       sequences: (Array.isArray(result?.sequences) ? result.sequences : [])
         .map((s) => ({
           name: String((typeof s === 'string' ? s : s?.name) || '').slice(0, 40),

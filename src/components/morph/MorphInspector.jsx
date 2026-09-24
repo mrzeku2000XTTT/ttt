@@ -12,7 +12,7 @@ const ROWS = [
   { prop: 'morph', label: 'Morph', min: 0, max: 1, step: 0.01, shapes: true },
 ];
 
-export default function MorphInspector({ layer, time, onTransform, onToggleKey }) {
+export default function MorphInspector({ layer, time, onTransform, onToggleKey, onGroupTransform }) {
   if (!layer) {
     return <p className="p-3 text-[11px] text-white/35">Select a layer to edit its transform.</p>;
   }
@@ -29,6 +29,37 @@ export default function MorphInspector({ layer, time, onTransform, onToggleKey }
           className="mt-1.5 w-full bg-white/[0.05] border border-white/10 rounded px-2 py-1.5 text-[11px] text-white outline-none focus:border-white/35"
         />
       </div>
+
+      {layer.group && onGroupTransform && (
+        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-2 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-white/45">Group · {layer.group}</span>
+            <span className="text-[9px] text-white/25">parent</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {[
+              ['◀', { dx: -0.01 }, 'Move the whole group left'],
+              ['▲', { dy: -0.01 }, 'Move the whole group up'],
+              ['▶', { dx: 0.01 }, 'Move the whole group right'],
+              ['▼', { dy: 0.01 }, 'Move the whole group down'],
+              ['+', { scale: 1.05 }, 'Scale the whole group up'],
+              ['−', { scale: 0.95 }, 'Scale the whole group down'],
+            ].map(([label, delta, hint]) => (
+              <button
+                key={label}
+                onClick={() => onGroupTransform(layer.group, delta)}
+                title={hint}
+                className="rounded border border-white/12 py-0.5 text-[11px] text-white/70 hover:text-white hover:border-white/40 transition-colors"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[9px] leading-relaxed text-white/25">
+            Moves every member of {layer.group} and bakes it into their keys — each point keeps its own animation.
+          </p>
+        </div>
+      )}
 
       {layer.type === 'shape' ? (
         <div className="grid grid-cols-2 gap-1.5">

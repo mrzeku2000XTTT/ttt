@@ -11,12 +11,41 @@ export const DEFAULT_DURATION = 6;
 export const DEFAULTS = { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, morph: 0, glow: 0 };
 export const PROPS = Object.keys(DEFAULTS);
 
+// A real damped spring, as an interpolation curve. Overshoot becomes a property
+// of the physics instead of a hand-drawn number — this is the bridge between an
+// "animation behaviour" (see morphDynamics) and the keyframes the renderer plays.
+export function springCurve(stiffness = 180, damping = 12, mass = 1) {
+  const w0 = Math.sqrt(stiffness / mass);
+  const zeta = damping / (2 * Math.sqrt(stiffness * mass));
+  const wd = w0 * Math.sqrt(Math.max(0.0001, 1 - zeta * zeta));
+  return (t) => {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    return 1 - Math.exp(-zeta * w0 * t) * (Math.cos(wd * t) + ((zeta * w0) / wd) * Math.sin(wd * t));
+  };
+}
+
+const bounceOut = (t) => {
+  const n = 7.5625;
+  const d = 2.75;
+  if (t < 1 / d) return n * t * t;
+  if (t < 2 / d) return n * (t -= 1.5 / d) * t + 0.75;
+  if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + 0.9375;
+  return n * (t -= 2.625 / d) * t + 0.984375;
+};
+
+const elasticOut = (t) =>
+  t <= 0 ? 0 : t >= 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1;
+
 export const EASES = {
   linear: (t) => t,
   easeIn: (t) => t * t,
   easeOut: (t) => 1 - (1 - t) * (1 - t),
   easeInOut: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2),
   backOut: (t) => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2),
+  spring: springCurve(180, 12),
+  bounce: bounceOut,
+  elastic: elasticOut,
   hold: () => 0,
 };
 export const EASE_NAMES = Object.keys(EASES);
@@ -184,6 +213,7 @@ export function makeLayer(partial = {}) {
     src: '',
     size: 0.2,
     visible: true,
+    group: '',
     ...DEFAULTS,
     ...partial,
     tracks: { ...(partial.tracks || {}) },
