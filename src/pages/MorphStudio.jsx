@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Maximize2, Minimize2, Grid3x3, ZoomIn, ZoomOut,
   Store, RotateCcw, Magnet, Home, Layers, Sliders, Clock,
-  SplitSquareHorizontal, Plus, Type, X, Wand2, Sparkles,
+  SplitSquareHorizontal, Plus, Type, X, Wand2, Sparkles, FolderOpen, Boxes,
 } from 'lucide-react';
 import MorphStage from '@/components/morph/MorphStage';
 import MorphTimeline from '@/components/morph/MorphTimeline';
@@ -15,6 +15,13 @@ import MorphSequences from '@/components/morph/MorphSequences';
 import MorphDynamics from '@/components/morph/MorphDynamics';
 import { applySequence } from '@/components/morph/morphSequences';
 import { DEFAULT_DYNAMICS, bakeDynamics } from '@/components/morph/morphDynamics';
+import MorphLibrary from '@/components/morph/MorphLibrary';
+import MorphProjects from '@/components/morph/MorphProjects';
+import { blankScene } from '@/components/morph/morphComponents';
+import {
+  activate, activeProject, createProject, deleteProject, loadStore, persist,
+  pushHistory, restoreVersion, updateActiveScene,
+} from '@/components/morph/morphProjects';
 import {
   addMarker, addTime, deleteKey, groupMembers, moveKey, removeMarker,
   setDuration, setGroup, setKeyEase, stagger, transformGroup, uniqueGroupName,
@@ -49,10 +56,17 @@ const loadLayout = () => {
 };
 
 export default function MorphStudio({ onHome }) {
-  const [scene, setScene] = useState(loadScene);
+  // Boot once: the projects store, and whichever scene it says is open (falling
+  // back to the single-scene key older sessions left behind).
+  const [boot] = useState(() => {
+    const legacy = loadScene();
+    const store = loadStore(legacy);
+    return { store, scene: activeProject(store)?.scene || legacy };
+  });
+  const [scene, setScene] = useState(boot.scene);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [selectedId, setSelectedId] = useState(() => loadScene().layers[0]?.id || null);
+  const [selectedId, setSelectedId] = useState(() => boot.scene.layers[0]?.id || null);
   const [zoom, setZoom] = useState(1);
   const [grid, setGrid] = useState(true);
   const [autoKey, setAutoKey] = useState(true);
@@ -63,7 +77,13 @@ export default function MorphStudio({ onHome }) {
   const [keySel, setKeySel] = useState(null);
   const [checked, setChecked] = useState([]);
   const [dynamics, setDynamics] = useState(DEFAULT_DYNAMICS);
+  const [store, setStore] = useState(boot.store);
+  const [showProjects, setShowProjects] = useState(false);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+
+  const active = activeProject(store);
+  // A queued label means "the next scene change is worth remembering".
+  const snapLabel = useRef('');
 
   const areaRef = useRef(null);
   const imgCount = useRef(0);
@@ -93,7 +113,19 @@ export default function MorphStudio({ onHome }) {
 
   useEffect(() => {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(scene)); } catch {}
+    // Read the label outside the updater so the update stays pure.
+    const label = snapLabel.current;
+    snapLabel.current = '';
+    setStore((s) => {
+      const next = updateActiveScene(s, scene);
+      return label ? pushHistory(next, label, scene) : next;
+    });
   }, [scene]);
+
+  useEffect(() => { persist(store); }, [store]);
+
+  // An explicit save writes straight away — no scene change is coming.
+  const snapshotNow = (label) => setStore((s) => pushHistory(updateActiveScene(s, scene), label, scene));
 
   useEffect(() => {
     try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch {}
@@ -196,6 +228,7 @@ export default function MorphStudio({ onHome }) {
       setDynamics((d) => ({ ...d, ...dyn }));
     }
     (marks || []).forEach((m) => { s = addMarker(s, Number(m.t), m.label || 'Marker'); });
+    snapLabel.current = 'AI built a scene';
     setScene(s);
     setTime(0);
     setPlaying(false);
@@ -205,6 +238,7 @@ export default function MorphStudio({ onHome }) {
 
   const reset = () => {
     const fresh = starterScene();
+    snapLabel.current = 'Reset to the starter logo';
     setScene(fresh);
     setTime(0);
     setPlaying(false);
@@ -215,6 +249,7 @@ export default function MorphStudio({ onHome }) {
   // chained onto the same logo. They carry their own hand-tuned easing, so they
   // are deliberately not run through auto-ease.
   const applySeq = useCallback((name, scope) => {
+    snapLabel.current = `Sequence · ${name}`;
     setScene((s) => applySequence(s, name, scope === 'layer' && selectedId ? { layerIds: [selectedId] } : {}));
     setTime(0);
     setPlaying(false);
@@ -222,6 +257,7 @@ export default function MorphStudio({ onHome }) {
 
   const runSequences = useCallback((names, dyn, marks) => {
     if (!names?.length && !dyn && !marks?.length) return;
+    snapLabel.current = names?.length ? `Sequences · ${names.join(', ')}` : 'Behaviour applied';
     setScene((s) => {
       let next = (names || []).reduce((acc, n) => applySequence(acc, n, {}), s);
       if (dyn) next = bakeDynamics(next, dyn);
@@ -256,6 +292,59 @@ export default function MorphStudio({ onHome }) {
 
   const bakeDyn = (scope) =>
     setScene((s) => bakeDynamics(s, dynamics, scope === 'layer' && selectedId ? { layerIds: [selectedId] } : {}));
+
+  /* ------------------------------------------------- library, projects, history */
+  const addComponent = useCallback((layers) => {
+    if (!layers?.length) return;
+    snapLabel.current = 'Component added';
+    setScene((s) => ({ ...s, layers: [...s.layers, ...layers] }));
+    setSelectedId(layers[0].id);
+    setTime(0);
+    setPlaying(false);
+  }, []);
+
+  const applyDynPreset = (motion) => {
+    snapLabel.current = `Behaviour · ${motion}`;
+    setScene((s) => bakeDynamics(s, { ...dynamics, motion }));
+    setTime(0);
+    setPlaying(false);
+  };
+
+  const loadInto = (next, show) => {
+    setScene(next);
+    setTime(0);
+    setPlaying(false);
+    setSelectedId(next.layers[0]?.id || null);
+    setChecked([]);
+    setKeySel(null);
+    if (show) setShowProjects(false);
+  };
+
+  const newProject = (name) => {
+    const fresh = blankScene((name || '').trim());
+    const { store: next } = createProject(store, name, fresh);
+    setStore(next);
+    loadInto(fresh, true);
+  };
+
+  const openProject = (id) => {
+    if (id === store.activeId) {
+      setShowProjects(false);
+      return;
+    }
+    const next = activate(store, id);
+    setStore(next);
+    const target = activeProject(next)?.scene;
+    if (target) loadInto(target, true);
+    else setShowProjects(false);
+  };
+
+  const removeProject = (id) => setStore((s) => deleteProject(s, id));
+
+  const restore = (entryId) => {
+    const snap = restoreVersion(store, entryId);
+    if (snap) loadInto(snap, true);
+  };
 
   /* ------------------------------------------------------ resizable splits */
   const startResize = (kind) => (e) => {
@@ -390,6 +479,17 @@ export default function MorphStudio({ onHome }) {
     <MorphDynamics value={dynamics} onChange={setDynamics} onBake={bakeDyn} hasSelection={!!selected} />
   );
 
+  const libraryPanel = (
+    <MorphLibrary
+      scene={scene}
+      onAddComponent={addComponent}
+      onApplySequence={applySeq}
+      onApplyDynamics={applyDynPreset}
+      onAddAsset={addImageLayer}
+      hasSelection={!!selected}
+    />
+  );
+
   return (
     <div className="morph-studio flex flex-col bg-[#070707] text-white overflow-hidden h-screen" style={{ height: '100dvh' }}>
       {/* Toolbar */}
@@ -402,6 +502,15 @@ export default function MorphStudio({ onHome }) {
           >
             <img src={LOGO} alt="Morph" className="w-4 h-4 rounded object-cover" />
             <span className="text-[11px] font-bold tracking-[0.2em]">MORPH</span>
+          </button>
+
+          <button
+            onClick={() => setShowProjects(true)}
+            title="Projects & version history"
+            className="flex items-center gap-1 shrink-0 px-2 py-1.5 rounded-lg border border-white/15 text-[10px] text-white/60 hover:text-white hover:border-white/40 transition-colors"
+          >
+            <FolderOpen className="w-3 h-3" />
+            <span className="hidden sm:inline max-w-[120px] truncate">{active?.name || 'Project'}</span>
           </button>
 
           <div className="flex items-center gap-1 shrink-0">
@@ -485,9 +594,10 @@ export default function MorphStudio({ onHome }) {
           style={{ width: sidebarW }}
           className="hidden lg:flex flex-col shrink-0 border-r border-white/10 overflow-y-auto"
         >
+          {libraryPanel}
+          {layersPanel}
           {dynamicsPanel}
           {sequencesPanel}
-          {layersPanel}
           {inspectorPanel}
         </aside>
         <div
@@ -529,6 +639,12 @@ export default function MorphStudio({ onHome }) {
       {/* Mobile / tablet: tools + panels as a sheet, then the chat composer */}
       <div className="lg:hidden shrink-0 border-t border-white/10 bg-[#0b0b0b]">
         <div className="flex items-center gap-1 px-2 py-1.5 overflow-x-auto scrollbar-hide">
+          <MorphToolButton
+            icon={Boxes}
+            label="Library"
+            active={panel === 'library'}
+            onClick={() => setPanel((p) => (p === 'library' ? null : 'library'))}
+          />
           <MorphToolButton
             icon={Layers}
             label="Layers"
@@ -574,18 +690,33 @@ export default function MorphStudio({ onHome }) {
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            {panel === 'layers'
-              ? layersPanel
-              : panel === 'inspector'
-                ? inspectorPanel
-                : panel === 'timeline'
-                  ? timelinePanel
-                  : panel === 'sequences'
-                    ? sequencesPanel
-                    : dynamicsPanel}
+            {panel === 'library'
+              ? libraryPanel
+              : panel === 'layers'
+                ? layersPanel
+                : panel === 'inspector'
+                  ? inspectorPanel
+                  : panel === 'timeline'
+                    ? timelinePanel
+                    : panel === 'sequences'
+                      ? sequencesPanel
+                      : dynamicsPanel}
           </div>
         )}
       </div>
+
+      {showProjects && (
+        <MorphProjects
+          projects={store.projects}
+          activeId={store.activeId}
+          onNew={newProject}
+          onOpen={openProject}
+          onDelete={removeProject}
+          onRestore={restore}
+          onSnapshot={() => snapshotNow('Manual save')}
+          onClose={() => setShowProjects(false)}
+        />
+      )}
 
       <div className="shrink-0 border-t border-white/10 bg-[#0b0b0b]">
         <MorphSmartInput
