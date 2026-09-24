@@ -45,9 +45,9 @@ function Line({ values, height = 44, stroke = '#121212' }) {
   );
 }
 
-function Card({ icon: Icon, title, children, right }) {
+function Card({ icon: Icon, title, children, right, className = '' }) {
   return (
-    <div className="rounded-2xl border border-[#ececec] bg-white p-4 prism-frame">
+    <div className={`rounded-2xl border border-[#ececec] bg-white p-4 prism-frame ${className}`}>
       <div className="flex items-center gap-2">
         <Icon className="w-3.5 h-3.5 text-[#8a8a8a]" />
         <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6f6f6f]">{title}</h3>
@@ -74,7 +74,7 @@ export default function PrismMeasurements({ result, sheet, onSeek, activeTime })
         title="Contact sheet"
         right={`${sheet.length} frames · drawn from the file`}
       >
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1.5">
           {sheet.map((f) => (
             <button
               key={f.t}

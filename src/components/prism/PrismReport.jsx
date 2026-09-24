@@ -17,8 +17,8 @@ export default function PrismReport({ report, times }) {
   const t = report.typography || {};
 
   return (
-    <div className="space-y-2.5">
-      <div className="rounded-2xl border border-[#ececec] bg-[#fafafa] p-4 prism-frame">
+    <div className="grid sm:grid-cols-2 gap-2.5 items-start">
+      <div className="sm:col-span-2 rounded-2xl border border-[#ececec] bg-[#fafafa] p-4 prism-frame">
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-[#9775fa]" />
           <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6f6f6f]">The read</h3>
@@ -31,7 +31,7 @@ export default function PrismReport({ report, times }) {
         )}
       </div>
 
-      <div className="rounded-2xl border border-[#ececec] bg-white p-4 prism-frame">
+      <div className="sm:col-span-2 rounded-2xl border border-[#ececec] bg-white p-4 prism-frame">
         <div className="flex items-center gap-2">
           <Type className="w-3.5 h-3.5 text-[#8a8a8a]" />
           <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6f6f6f]">Typography</h3>
@@ -90,7 +90,7 @@ export default function PrismReport({ report, times }) {
         </div>
       )}
 
-      <div className="grid sm:grid-cols-3 gap-2.5">
+      <div className="sm:col-span-2 grid sm:grid-cols-3 gap-2.5">
         <div className="rounded-2xl border border-[#ececec] bg-white p-4 prism-frame">
           <span className="block text-[9px] uppercase tracking-[0.14em] text-[#a3a3a3]">Lighting</span>
           <p className="mt-1 text-[11px] text-[#5c5c5c] leading-relaxed">{report.lighting || 'not determinable'}</p>
@@ -106,7 +106,7 @@ export default function PrismReport({ report, times }) {
       </div>
 
       {(report.recipe || []).length > 0 && (
-        <div className="rounded-2xl border border-[#121212] bg-white p-4 prism-frame">
+        <div className="sm:col-span-2 rounded-2xl border border-[#121212] bg-white p-4 prism-frame">
           <div className="flex items-center gap-2">
             <ListOrdered className="w-3.5 h-3.5" />
             <h3 className="text-[11px] font-bold uppercase tracking-[0.16em]">Rebuild recipe</h3>
@@ -127,7 +127,7 @@ export default function PrismReport({ report, times }) {
       )}
 
       {(report.rebuild_notes || report.confidence) && (
-        <div className="rounded-2xl border border-[#ececec] bg-[#fafafa] p-4 prism-frame space-y-2">
+        <div className="sm:col-span-2 rounded-2xl border border-[#ececec] bg-[#fafafa] p-4 prism-frame space-y-2">
           {report.rebuild_notes && (
             <div>
               <span className="block text-[9px] uppercase tracking-[0.14em] text-[#a3a3a3]">Easy to get wrong</span>

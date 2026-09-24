@@ -129,3 +129,75 @@ export function download(name, content, type = 'text/plain') {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
+
+export async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/** Minimal markdown → HTML, enough for a clean paste into a document. */
+export function mdToHtml(md) {
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const out = [];
+  let inList = false;
+  md.split('\n').forEach((raw) => {
+    const line = raw.trimEnd();
+    if (line.startsWith('|') || /^-{3,}$/.test(line.trim())) return;
+    const li = line.match(/^-\s+(.*)$/);
+    if (li) {
+      if (!inList) {
+        out.push('<ul>');
+        inList = true;
+      }
+      out.push(`<li>${inline(li[1])}</li>`);
+      return;
+    }
+    if (inList) {
+      out.push('</ul>');
+      inList = false;
+    }
+    const h = line.match(/^(#{1,3})\s+(.*)$/);
+    if (h) {
+      out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`);
+      return;
+    }
+    if (!line) return;
+    out.push(`<p>${inline(line)}</p>`);
+  });
+  if (inList) out.push('</ul>');
+  return out.join('\n');
+}
+
+export async function copyRich(html, text) {
+  try {
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        }),
+      ]);
+      return true;
+    }
+  } catch {
+    // fall through to plain text
+  }
+  return copyText(text);
+}
