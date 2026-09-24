@@ -20,6 +20,11 @@ export const MOTION_STYLES = [
   { id: 'saas', label: 'SaaS-style', easing: 'cubicBezier', duration: 0.7 },
 ];
 
+// Generated album artwork the media-card presets morph into, so a button becomes
+// a real card with a cover on it rather than an empty box. Replaceable per use.
+export const CARD_ARTWORK =
+  'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/de3a40f09_generated_image.png';
+
 // The two boxes each preset builds. Real geometry a designer would start from.
 export const UI_MORPHS = [
   {
@@ -27,7 +32,18 @@ export const UI_MORPHS = [
     label: 'Button → Card',
     style: 'smooth',
     from: { name: 'Button', w: 0.22, h: 0.1, radius: 0.06, text: 'Music', color: '#f4f4f5' },
-    to: { name: 'Card', w: 0.26, h: 0.42, radius: 0.045, text: 'THRILLER', subtext: 'Michael Jackson', color: '#f7f7f8' },
+    to: {
+      name: 'Card',
+      w: 0.26,
+      h: 0.42,
+      radius: 0.045,
+      text: 'THRILLER',
+      subtext: 'Michael Jackson',
+      color: '#f7f7f8',
+      src: CARD_ARTWORK,
+      textColor: '#ffffff',
+      subtextColor: 'rgba(255,255,255,0.75)',
+    },
   },
   {
     id: 'card-modal',
@@ -138,12 +154,18 @@ const cardLayer = (spec, x) =>
   });
 
 /** A preset drops in two UI layers and the morph between them. */
-export function applyMorphPreset(scene, presetId) {
+export function applyMorphPreset(scene, presetId, options = {}) {
   const preset = UI_MORPHS.find((p) => p.id === presetId);
   if (!preset) return scene;
   const style = MOTION_STYLES.find((s) => s.id === preset.style) || MOTION_STYLES[0];
   const from = cardLayer(preset.from, 0.28);
-  const to = cardLayer(preset.to, 0.7);
+  // The agent — or the user — may hand in a different cover for the target card.
+  const to = cardLayer(
+    options.image
+      ? { ...preset.to, src: options.image, textColor: '#ffffff', subtextColor: 'rgba(255,255,255,0.75)' }
+      : preset.to,
+    0.7,
+  );
   const rel = makeMorph({
     from: from.id,
     to: to.id,
@@ -188,9 +210,11 @@ export function musicToThrillerScene() {
     h: 0.4,
     radius: 0.045,
     color: '#f7f7f8',
+    src: CARD_ARTWORK,
     text: 'THRILLER',
     subtext: 'Michael Jackson',
-    textColor: '#0a0a0a',
+    textColor: '#ffffff',
+    subtextColor: 'rgba(255,255,255,0.75)',
     textSize: 0.045,
     size: 0.1,
   });

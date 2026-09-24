@@ -106,6 +106,26 @@ export default function MorphStudio({ onHome }) {
   const paneDir = wide ? widePaneDir : 'col';
   const keyEase = autoEase ? ease : 'linear';
 
+  // One thing is selected at a time — a layer, a morph or a match cut — so the
+  // Delete key and the canvas highlight always mean exactly one thing.
+  const selectLayer = (id) => {
+    setSelectedId(id);
+    setMorphSel(null);
+    setTransitionSel(null);
+  };
+
+  const selectMorph = (id) => {
+    setMorphSel(id);
+    setSelectedId(null);
+    setTransitionSel(null);
+  };
+
+  const selectTransition = (id) => {
+    setTransitionSel(id);
+    setMorphSel(null);
+    setSelectedId(null);
+  };
+
   /* ------------------------------------------------------------- playback */
   useEffect(() => {
     if (!playing) return;
@@ -196,7 +216,7 @@ export default function MorphStudio({ onHome }) {
       ? makeLayer({ type: 'text', name: 'Text', text: 'TITLE', size: 0.2, y: 0.8 })
       : makeLayer({ name: 'Shape', shape: 'circle', morphTo: 'star' });
     setScene((s) => ({ ...s, layers: [...s.layers, layer] }));
-    setSelectedId(layer.id);
+    selectLayer(layer.id);
   };
 
   // Pasted / dropped / linked images land in the scene immediately, with an
@@ -220,7 +240,7 @@ export default function MorphStudio({ onHome }) {
         : {}),
     });
     setScene((s) => ({ ...s, layers: [...s.layers, layer] }));
-    setSelectedId(layer.id);
+    selectLayer(layer.id);
   }, [autoEase, ease]);
 
   const deleteLayer = (id) => {
@@ -245,7 +265,7 @@ export default function MorphStudio({ onHome }) {
     setScene(s);
     setTime(0);
     setPlaying(false);
-    setSelectedId(s.layers[0]?.id || null);
+    selectLayer(s.layers[0]?.id || null);
     setSolo(null);
   }, [autoEase, ease]);
 
@@ -255,7 +275,7 @@ export default function MorphStudio({ onHome }) {
     setScene(fresh);
     setTime(0);
     setPlaying(false);
-    setSelectedId(fresh.layers[0]?.id || null);
+    selectLayer(fresh.layers[0]?.id || null);
   };
 
   // Prebuilt sequences merge into the tracks already there, so several can be
@@ -311,7 +331,7 @@ export default function MorphStudio({ onHome }) {
     if (!layers?.length) return;
     snapLabel.current = 'Component added';
     setScene((s) => ({ ...s, layers: [...s.layers, ...layers] }));
-    setSelectedId(layers[0].id);
+    selectLayer(layers[0].id);
     setTime(0);
     setPlaying(false);
   }, []);
@@ -327,7 +347,7 @@ export default function MorphStudio({ onHome }) {
     setScene(next);
     setTime(0);
     setPlaying(false);
-    setSelectedId(next.layers[0]?.id || null);
+    selectLayer(next.layers[0]?.id || null);
     setChecked([]);
     setKeySel(null);
     if (show) setShowProjects(false);
@@ -366,7 +386,7 @@ export default function MorphStudio({ onHome }) {
     const rel = makeMorph({ from, to, ...opts });
     snapLabel.current = 'Morph created';
     setScene((s) => addMorph(s, rel));
-    setMorphSel(rel.id);
+    selectMorph(rel.id);
     setPlaying(false);
     setTime(rel.start);
   };
@@ -383,9 +403,13 @@ export default function MorphStudio({ onHome }) {
     setScene(next);
     setTime(0);
     setPlaying(false);
-    setMorphSel(next.morphs?.[next.morphs.length - 1]?.id || null);
-    setTransitionSel(next.transitions?.[0]?.id || null);
-    setSelectedId(next.layers[next.layers.length - 1]?.id || null);
+    // The most specific thing the preset brought in gets the selection: a match
+    // cut first, then a morph, then a layer.
+    const cut = next.transitions?.[next.transitions.length - 1]?.id || null;
+    const rel = next.morphs?.[next.morphs.length - 1]?.id || null;
+    setTransitionSel(cut);
+    setMorphSel(cut ? null : rel);
+    setSelectedId(cut || rel ? null : next.layers[next.layers.length - 1]?.id || null);
   };
 
   const addPreset = (id) =>
@@ -403,7 +427,7 @@ export default function MorphStudio({ onHome }) {
     if (!plan) return;
     snapLabel.current = `Match cut · ${plan.meta.source.name} → ${plan.meta.target.name}`;
     setScene((s) => addTransition(s, plan));
-    setTransitionSel(plan.id);
+    selectTransition(plan.id);
     setPlaying(false);
     setTime(plan.start);
   };
@@ -437,7 +461,7 @@ export default function MorphStudio({ onHome }) {
     if (!plan) return { ok: false, message: 'No visual correspondence found between the scenes.' };
     snapLabel.current = `Match cut · ${plan.meta.source.name} → ${plan.meta.target.name}`;
     setScene((s) => addTransition(s, plan));
-    setTransitionSel(plan.id);
+    selectTransition(plan.id);
     setPlaying(false);
     setTime(plan.start);
     return { ok: true, message: `${parsed.understood.join(' · ')} — ${Math.round(plan.score * 100)}% match.` };
@@ -449,6 +473,27 @@ export default function MorphStudio({ onHome }) {
   };
 
   const loadMatchCutDemo = () => loadMorphScene(matchCutDemoScene(), 'Match cut · Music → Thriller');
+
+  // Delete / Backspace removes whatever is selected — a layer or an asset, a
+  // morph, a match cut, or a keyframe. Never while typing in a field.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const el = e.target;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+      if (transitionSel) { e.preventDefault(); dropTransition(transitionSel); return; }
+      if (morphSel) { e.preventDefault(); dropMorph(morphSel); return; }
+      if (keySel) {
+        e.preventDefault();
+        setScene((s) => deleteKey(s, keySel.layerId, keySel.prop, keySel.t));
+        setKeySel(null);
+        return;
+      }
+      if (selectedId) { e.preventDefault(); deleteLayer(selectedId); }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [transitionSel, morphSel, keySel, selectedId]);
 
   /* ------------------------------------------------------ resizable splits */
   const startResize = (kind) => (e) => {
@@ -510,7 +555,7 @@ export default function MorphStudio({ onHome }) {
             time={time}
             mode={id === 'viewport' ? 'edit' : 'final'}
             selectedId={id === 'viewport' ? selectedId : null}
-            onSelect={id === 'viewport' ? setSelectedId : undefined}
+            onSelect={id === 'viewport' ? selectLayer : undefined}
             onTransform={id === 'viewport' ? updateLayer : undefined}
             zoom={id === 'viewport' ? zoom : 1}
             grid={grid}
@@ -528,7 +573,7 @@ export default function MorphStudio({ onHome }) {
     <MorphLayers
       scene={scene}
       selectedId={selectedId}
-      onSelect={setSelectedId}
+      onSelect={selectLayer}
       onAdd={addLayer}
       onDelete={deleteLayer}
       onToggleVisible={toggleVisible}
@@ -554,7 +599,7 @@ export default function MorphStudio({ onHome }) {
     <MorphMorphPanel
       scene={scene}
       morphSel={morphSel}
-      onSelect={setMorphSel}
+      onSelect={selectMorph}
       onCreate={createMorph}
       onUpdate={editMorph}
       onDelete={dropMorph}
@@ -568,7 +613,7 @@ export default function MorphStudio({ onHome }) {
     <MorphTransitionPanel
       scene={scene}
       transitionSel={transitionSel}
-      onSelect={setTransitionSel}
+      onSelect={selectTransition}
       onCreate={createTransition}
       onUpdate={editTransition}
       onDelete={dropTransition}
@@ -589,7 +634,7 @@ export default function MorphStudio({ onHome }) {
       onDuration={(d) => setScene((s) => setDuration(s, d))}
       onAddTime={(sec) => setScene((s) => addTime(s, sec))}
       selectedId={selectedId}
-      onSelect={setSelectedId}
+      onSelect={selectLayer}
       keySel={keySel}
       onSelectKey={selectKey}
       onEaseKey={(ease) => {
@@ -602,10 +647,10 @@ export default function MorphStudio({ onHome }) {
         setKeySel(null);
       }}
       morphSel={morphSel}
-      onSelectMorph={setMorphSel}
+      onSelectMorph={selectMorph}
       onMoveMorph={(id, patch) => setScene((s) => updateMorph(s, id, patch))}
       transitionSel={transitionSel}
-      onSelectTransition={setTransitionSel}
+      onSelectTransition={selectTransition}
       onMoveTransition={(id, patch) => setScene((s) => updateTransition(s, id, patch))}
       onAddMarker={(t) => setScene((s) => addMarker(s, t))}
       onRemoveMarker={(id) => setScene((s) => removeMarker(s, id))}

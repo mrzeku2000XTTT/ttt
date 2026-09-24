@@ -556,11 +556,33 @@ function drawLayer(ctx, layer, time, W, H, onAssetReady) {
 
   if (layer.type === 'card') {
     // A UI element: a rounded box with a label and an optional line under it.
+    // With artwork it becomes a media card — the image fills the rounded shape
+    // and a scrim keeps the label readable on top of it.
     const w = Math.max(8, p.w * W);
     const h = Math.max(8, p.h * H);
-    roundRect(ctx, -w / 2, -h / 2, w, h, p.radius * Math.min(W, H));
-    ctx.fillStyle = layer.color || '#ffffff';
-    ctx.fill();
+    const r = p.radius * Math.min(W, H);
+    const art = layer.src ? imageFor(layer.src, onAssetReady) : null;
+    if (art) {
+      ctx.save();
+      roundRect(ctx, -w / 2, -h / 2, w, h, r);
+      ctx.clip();
+      const ar = (art.naturalWidth / art.naturalHeight) || 1;
+      const scaleToFill = Math.max(w / art.naturalWidth, h / art.naturalHeight);
+      const dw = art.naturalWidth * scaleToFill;
+      const dh = art.naturalHeight * scaleToFill;
+      ctx.drawImage(art, -dw / 2, -dh / 2, dw, dh);
+      const scrim = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+      scrim.addColorStop(0, 'rgba(0,0,0,0.08)');
+      scrim.addColorStop(0.45, 'rgba(0,0,0,0.5)');
+      scrim.addColorStop(1, 'rgba(0,0,0,0.85)');
+      ctx.fillStyle = scrim;
+      ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.restore();
+    } else {
+      roundRect(ctx, -w / 2, -h / 2, w, h, r);
+      ctx.fillStyle = layer.color || '#ffffff';
+      ctx.fill();
+    }
     const label = clamp(p.textOpacity, 0, 1);
     if (layer.text && label > 0.001) {
       const fs = p.textSize > 0 ? p.textSize * H : h * (layer.subtext ? 0.3 : 0.34);

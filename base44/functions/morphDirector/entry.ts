@@ -11,6 +11,14 @@ const SCHEMA = {
     name: { type: 'string' },
     mode: { type: 'string', description: '"sequence" when the brief only asks for effects the library already covers — animate the scene the user has on screen and return NO layers. "scene" when the brief describes content that must be created (shapes, text, images).' },
     duration: { type: 'number' },
+    preset: {
+      type: 'string',
+      description: 'When the brief is one interface element becoming another (a button becoming a card, a card becoming a modal, an icon becoming a button), return the id of the matching entry from PREBUILT UI MORPHS and return NO layers — the engine builds both elements and the morph between them.',
+    },
+    presetImage: {
+      type: 'string',
+      description: 'Only with "preset". A public image URL to use as the artwork of the preset\'s target element — one of the attached image URLs, or a URL the user supplied.',
+    },
     layers: {
       type: 'array',
       items: {
@@ -66,7 +74,7 @@ const SCHEMA = {
   required: ['name', 'mode'],
 };
 
-function buildPrompt({ idea, context, imageCount, existing, catalog }) {
+function buildPrompt({ idea, context, imageCount, existing, catalog, presets }) {
   const lines = [
     'You are the AI director of a deterministic motion-graphics engine. Turn the brief below into a scene the engine can play.',
     '',
@@ -91,6 +99,16 @@ function buildPrompt({ idea, context, imageCount, existing, catalog }) {
       'When the brief is about animating the scene the user already has — "make it assemble, spin and glow" — set mode to "sequence", return those sequences, and return NO layers.',
       'When the brief is about how the motion FEELS rather than one specific effect — "snappier", "hit harder", "more bounce", "staggered", "magnetic" — return a "dynamics" object instead of new keys; the engine bakes the spring physics into keyframes.',
       'Add "markers" when the brief names beats ("land the impact on the beat") so the timeline shows where they land.',
+    );
+  }
+
+  if (presets && presets.length) {
+    lines.push(
+      '',
+      'PREBUILT UI MORPHS — one real interface element becoming another, built by the engine. When the brief is exactly that, return the matching id in "preset" and return NO layers; the engine builds both elements and the morph between them:',
+      ...presets.map((p) => `- ${p.id} — ${p.label}`),
+      'A UI morph is often the brief even when it is phrased loosely — "make a music button turn into an album card", "the icon should open into a panel", "turn the button into the dashboard".',
+      'With a preset, also return "presetImage" when the brief supplies a cover for the target element — copy one of the attached image URLs verbatim, or a URL the user wrote in the brief. Never invent or recall an image URL: no cover art, no album artwork, no stock or encyclopedia links. If the user supplied none, omit "presetImage" and the preset uses its own generated cover.',
     );
   }
 
@@ -126,6 +144,13 @@ export default async function (req) {
     const idea = text(input?.idea, 'Idea', 1200, true);
     const context = text(input?.context, 'Source material', 8000, true);
     const images = publicImageUrls(input?.images || [], 3);
+    const presets = (Array.isArray(input?.presets) ? input.presets : [])
+      .slice(0, 12)
+      .map((p) => ({
+        id: String(p?.id || '').slice(0, 40),
+        label: String(p?.label || '').slice(0, 60),
+      }))
+      .filter((p) => p.id);
     const catalog = (Array.isArray(input?.catalog) ? input.catalog : [])
       .slice(0, 24)
       .map((c) => ({
@@ -144,13 +169,26 @@ export default async function (req) {
     }
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: buildPrompt({ idea, context, imageCount: images.length, existing, catalog }),
+      prompt: buildPrompt({ idea, context, imageCount: images.length, existing, catalog, presets }),
       response_json_schema: SCHEMA,
       ...(images.length ? { file_urls: images } : {}),
     });
 
+    // Only a preset the client actually ships is honoured, so a hallucinated id
+    // cannot reach the scene.
+    const preset = presets.some((p) => p.id === result?.preset) ? result.preset : null;
+    // A cover may only come from material the user actually supplied — an
+    // attached image, or a URL they wrote in the brief. The model must never
+    // invent one, so anything else falls back to the preset's own artwork.
+    const supplied = new Set(images);
+    for (const m of (idea || '').matchAll(/https?:\/\/[^\s<>"')]+/gi)) supplied.add(m[0]);
+    const wanted = preset ? publicImageUrls(result?.presetImage ? [result.presetImage] : [], 1)[0] : null;
+    const presetImage = wanted && supplied.has(wanted) ? wanted : null;
+
     return {
       scene: result || null,
+      preset,
+      presetImage,
       mode: result?.mode === 'sequence' ? 'sequence' : 'scene',
       dynamics: result?.dynamics && typeof result.dynamics === 'object' ? result.dynamics : null,
       markers: (Array.isArray(result?.markers) ? result.markers : [])

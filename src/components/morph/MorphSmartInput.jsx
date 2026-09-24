@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import { EASE_NAMES, keysToTracks, makeLayer } from './morphEngine';
 import { SEQUENCES, applySequence } from './morphSequences';
+import { UI_MORPHS, applyMorphPreset } from './morphMorphs';
 
 const URL_RE = /(https?:\/\/[^\s<>"')]+)/gi;
 const IMG_RE = /\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/i;
@@ -158,6 +159,7 @@ export default function MorphSmartInput({
         images,
         existing,
         catalog: SEQUENCES.map(({ name, label, description }) => ({ name, label, description })),
+        presets: UI_MORPHS.map(({ id, label }) => ({ id, label })),
       });
 
       // The director may hand back prebuilt sequences instead of — or as well as
@@ -166,13 +168,22 @@ export default function MorphSmartInput({
         .map((s) => (typeof s === 'string' ? s : s?.name))
         .filter((n) => SEQUENCES.some((s) => s.name === n));
 
+      // A UI morph the director chose lands exactly the way it does from the
+      // panel: real geometry, the morph between the two, and its cover image —
+      // which the director may have swapped for one of the attached images.
+      const preset = UI_MORPHS.find((p) => p.id === out?.preset);
+      const withPreset = preset
+        ? applyMorphPreset(scene, preset.id, out?.presetImage ? { image: out.presetImage } : {})
+        : null;
+
       const built = out?.scene?.layers?.length ? buildScene(out.scene, idea) : null;
       const dyn = out?.dynamics && typeof out.dynamics === 'object' ? out.dynamics : null;
       const marks = Array.isArray(out?.markers) ? out.markers : [];
       // "sequence" means: animate the logo already on screen, don't replace it.
       const animateCurrent = out?.mode === 'sequence' && names.length && scene.layers.length > 0;
 
-      if (animateCurrent || (!built && names.length)) onSequences?.(names, dyn, marks);
+      if (withPreset) onScene(names.reduce((s, n) => applySequence(s, n, {}), withPreset), dyn, marks);
+      else if (animateCurrent || (!built && names.length)) onSequences?.(names, dyn, marks);
       else if (built) onScene(names.reduce((s, n) => applySequence(s, n, {}), built), dyn, marks);
       else if (dyn || marks.length) onSequences?.([], dyn, marks);
       else throw new Error('The director returned nothing usable — try rephrasing.');
