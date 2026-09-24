@@ -182,7 +182,7 @@ export default function MorphStudio() {
             selectedId={id === 'viewport' ? selectedId : null}
             onSelect={id === 'viewport' ? setSelectedId : undefined}
             onTransform={id === 'viewport' ? updateLayer : undefined}
-            zoom={zoom}
+            zoom={id === 'viewport' ? zoom : 1}
             grid={grid}
           />
         </div>
