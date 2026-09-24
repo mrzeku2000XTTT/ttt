@@ -29,7 +29,7 @@ const ROWS = [
   ['Typography', 'Two-tone statement, sans'],
 ];
 
-const PALETTE = ['#f276b7', '#f184d8', '#fbfbfc', '#040404'];
+const PALETTE = ['#0a0a12', '#1b1046', '#6b3fd4', '#fbfbfc'];
 
 export default function PrismHeroMockup() {
   const total = SHOTS.reduce((a, s) => a + s.len, 0);
@@ -51,7 +51,7 @@ export default function PrismHeroMockup() {
 
         <div className="p-3 space-y-2.5">
           {/* viewer */}
-          <div className="relative rounded-xl overflow-hidden aspect-[16/9] bg-gradient-to-br from-[#f276b7] to-[#f184d8] flex items-center justify-center">
+          <div className="relative rounded-xl overflow-hidden aspect-[16/9] bg-gradient-to-br from-[#0a0a12] via-[#1b1046] to-[#3b1470] flex items-center justify-center">
             <span className="px-6 text-center text-[13px] sm:text-[15px] font-semibold text-white/95 drop-shadow-sm">
               Centralized platforms hold your funds.
             </span>
@@ -70,8 +70,8 @@ export default function PrismHeroMockup() {
                     style={{
                       background:
                         Number(s.n) > 4
-                          ? 'linear-gradient(135deg,#f7f7f8,#fbfbfc)'
-                          : 'linear-gradient(135deg,#f276b7,#f184d8)',
+                          ? 'linear-gradient(135deg,#f2f2f5,#fbfbfc)'
+                          : 'linear-gradient(135deg,#1b1046,#3b1470)',
                     }}
                   />
                   <span className="absolute bottom-0.5 left-1 text-[7px] font-semibold text-black/45">
@@ -131,7 +131,7 @@ export default function PrismHeroMockup() {
                   <span key={c} className="flex-1" style={{ background: c }} />
                 ))}
               </div>
-              <div className="mt-1.5 aspect-video rounded bg-gradient-to-br from-[#fbfbfc] to-[#f0f0f2] border border-[#f0f0f0]" />
+              <div className="mt-1.5 aspect-video rounded bg-gradient-to-br from-[#1b1046] to-[#3b1470]" />
               <span className="block mt-1 text-[8px] text-[#a3a3a3]">A new tomorrow</span>
             </div>
           </div>

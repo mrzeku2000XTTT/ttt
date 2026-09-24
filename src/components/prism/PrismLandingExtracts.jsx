@@ -24,7 +24,7 @@ const CARDS = [
     icon: Layers,
     title: 'Colour palette',
     body: 'The palette by area, most-used first, with readable colour names and the share each one actually holds.',
-    sample: '#f276b7 · #f184d8 · #fbfbfc',
+    sample: '#0a0a12 · #1b1046 · #6b3fd4',
   },
   {
     icon: FileVideo,
@@ -63,7 +63,7 @@ export default function PrismLandingExtracts({ onDrop }) {
           })}
 
           {/* CTA */}
-          <div className="rounded-2xl p-5 flex flex-col justify-between bg-gradient-to-br from-[#0b0b0f] via-[#120b2b] to-[#2a0f4d]">
+          <div className="rounded-2xl p-5 flex flex-col justify-between bg-gradient-to-br from-[#07070c] via-[#130b2c] to-[#2a0f4d]">
             <div>
               <span className="text-[11px] font-bold tracking-[0.28em] bg-gradient-to-r from-[#7aa2ff] to-[#d18cff] bg-clip-text text-transparent">
                 PRISM
