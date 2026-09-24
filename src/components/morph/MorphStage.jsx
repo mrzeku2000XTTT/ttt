@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { drawScene, gizmoHandles, hitLayer, sampleLayer } from './morphEngine';
 
 const W = 1280;
@@ -21,6 +21,9 @@ export default function MorphStage({
 }) {
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
+  // Image layers decode asynchronously — this ticks once a bitmap is ready so
+  // the canvas repaints with the real pixels.
+  const [assetTick, bumpAssets] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -32,14 +35,22 @@ export default function MorphStage({
     ctx.translate(W / 2, H / 2);
     ctx.scale(zoom, zoom);
     ctx.translate(-W / 2, -H / 2);
-    drawScene(ctx, { scene, time, W, H, mode, selectedId, grid });
+    drawScene(ctx, {
+      scene, time, W, H, mode, selectedId, grid,
+      onAssetReady: () => bumpAssets((n) => n + 1),
+    });
     ctx.restore();
-  }, [scene, time, mode, selectedId, zoom, grid]);
+  }, [scene, time, mode, selectedId, zoom, grid, assetTick]);
 
   const toCanvas = (clientX, clientY) => {
     const rect = canvasRef.current.getBoundingClientRect();
-    const cx = ((clientX - rect.left) / rect.width) * W;
-    const cy = ((clientY - rect.top) / rect.height) * H;
+    // The canvas is painted with object-fit: contain, so the frame is
+    // letterboxed inside the element — map through the real content box.
+    const s = Math.min(rect.width / W, rect.height / H) || 1;
+    const dw = W * s;
+    const dh = H * s;
+    const cx = ((clientX - rect.left - (rect.width - dw) / 2) / dw) * W;
+    const cy = ((clientY - rect.top - (rect.height - dh) / 2) / dh) * H;
     return { x: (cx - W / 2) / zoom + W / 2, y: (cy - H / 2) / zoom + H / 2 };
   };
 
@@ -105,7 +116,7 @@ export default function MorphStage({
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
-      className={`w-full h-full block touch-none ${mode === 'edit' ? 'cursor-crosshair' : ''}`}
+      className={`w-full h-full block object-contain touch-none ${mode === 'edit' ? 'cursor-crosshair' : ''}`}
     />
   );
 }

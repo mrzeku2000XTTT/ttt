@@ -179,6 +179,7 @@ export function makeLayer(partial = {}) {
     morphTo: 'star',
     color: '#ffffff',
     text: '',
+    src: '',
     size: 0.2,
     visible: true,
     ...DEFAULTS,
@@ -219,16 +220,38 @@ export function starterScene() {
   };
 }
 
+/* ------------------------------------------------------------------ images */
+const IMG_CACHE = {};
+
+// Image layers decode asynchronously, so the renderer asks for the bitmap and
+// pings the surface once it is ready — the canvas then repaints with pixels.
+export function imageFor(src, onReady) {
+  if (!src) return null;
+  let img = IMG_CACHE[src];
+  if (!img) {
+    img = new Image();
+    img.crossOrigin = 'anonymous';
+    IMG_CACHE[src] = img;
+    img.src = src;
+  }
+  if (img.complete && img.naturalWidth) return img;
+  if (onReady) {
+    img.addEventListener('load', onReady, { once: true });
+    img.addEventListener('error', onReady, { once: true });
+  }
+  return null;
+}
+
 /* ---------------------------------------------------------------- renderer */
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif";
 const AXIS = { x: '#ff4d4d', y: '#3ddc84', z: '#4d8dff' };
 
-export function drawScene(ctx, { scene, time, W, H, mode = 'final', selectedId = null, grid = false }) {
+export function drawScene(ctx, { scene, time, W, H, mode = 'final', selectedId = null, grid = false, onAssetReady }) {
   ctx.fillStyle = '#070707';
   ctx.fillRect(0, 0, W, H);
   if (grid && mode === 'edit') drawGrid(ctx, W, H);
   scene.layers.forEach((layer) => {
-    if (layer.visible !== false) drawLayer(ctx, layer, time, W, H);
+    if (layer.visible !== false) drawLayer(ctx, layer, time, W, H, onAssetReady);
   });
   if (mode === 'edit' && selectedId) {
     const layer = scene.layers.find((l) => l.id === selectedId);
@@ -268,7 +291,7 @@ function drawGrid(ctx, W, H) {
   ctx.restore();
 }
 
-function drawLayer(ctx, layer, time, W, H) {
+function drawLayer(ctx, layer, time, W, H, onAssetReady) {
   const p = sampleLayer(layer, time);
   const base = Math.min(W, H) * layer.size;
   ctx.save();
@@ -284,6 +307,21 @@ function drawLayer(ctx, layer, time, W, H) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(layer.text || 'TEXT', 0, 0);
+  } else if (layer.type === 'image') {
+    const img = imageFor(layer.src, onAssetReady);
+    if (img) {
+      const box = base * 2;
+      const ar = img.naturalWidth / img.naturalHeight || 1;
+      const dw = ar >= 1 ? box : box * ar;
+      const dh = ar >= 1 ? box / ar : box;
+      ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+    } else {
+      ctx.save();
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.strokeRect(-base, -base, base * 2, base * 2);
+      ctx.restore();
+    }
   } else {
     const pts = morphPath(layer.shape, layer.morphTo, clamp(p.morph, 0, 1));
     ctx.beginPath();
@@ -378,4 +416,20 @@ export function keysToTracks(keys, ease = 'easeInOut') {
     if (cleaned.length) tracks[prop] = cleaned;
   });
   return tracks;
+}
+
+// Auto-ease: rewrite every keyframe's interpolation in one pass. Applied to
+// director output, to freshly written keys, and to the whole scene when the
+// user switches auto-ease on.
+export function autoEaseScene(scene, ease = 'easeInOut') {
+  const name = EASES[ease] ? ease : 'easeInOut';
+  return {
+    ...scene,
+    layers: scene.layers.map((l) => ({
+      ...l,
+      tracks: Object.fromEntries(
+        Object.entries(l.tracks || {}).map(([prop, list]) => [prop, (list || []).map((k) => ({ ...k, ease: name }))])
+      ),
+    })),
+  };
 }

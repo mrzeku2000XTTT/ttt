@@ -52,6 +52,15 @@ export default function MorphInspector({ layer, time, onTransform, onToggleKey }
             </select>
           </label>
         </div>
+      ) : layer.type === 'image' ? (
+        <label className="block text-[10px] text-white/40">
+          Image URL
+          <input
+            value={layer.src || ''}
+            onChange={(e) => onTransform(layer.id, { src: e.target.value })}
+            className="mt-1 w-full bg-white/[0.05] border border-white/10 rounded px-2 py-1.5 text-[11px] text-white outline-none focus:border-white/35"
+          />
+        </label>
       ) : (
         <label className="block text-[10px] text-white/40">
           Text
@@ -63,6 +72,7 @@ export default function MorphInspector({ layer, time, onTransform, onToggleKey }
         </label>
       )}
 
+      {layer.type !== 'image' && (
       <div className="flex items-center gap-1.5">
         {SWATCHES.map((c) => (
           <button
@@ -80,6 +90,7 @@ export default function MorphInspector({ layer, time, onTransform, onToggleKey }
           className="w-6 h-5 bg-transparent border border-white/15 rounded cursor-pointer"
         />
       </div>
+      )}
 
       <label className="block text-[10px] text-white/40">
         Size {layer.size.toFixed(2)}
