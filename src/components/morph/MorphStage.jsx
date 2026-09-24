@@ -83,9 +83,21 @@ export default function MorphStage({
       onSelect?.(hit);
       startDrag(hit, 'move', pt, sampleLayer(scene.layers.find((l) => l.id === hit), time));
       e.currentTarget.setPointerCapture?.(e.pointerId);
-    } else {
-      onSelect?.(null);
+      return;
     }
+    if (layer && layer.visible !== false) {
+      // A layer that has faded out or drifted off the frame at this point on the
+      // timeline can never be grabbed on the canvas — drag it anyway, otherwise
+      // no keyframe could be recorded past its own animation.
+      const at = sampleLayer(layer, time);
+      const grabbable = at.opacity >= 0.05 && at.x >= 0 && at.x <= 1 && at.y >= 0 && at.y <= 1;
+      if (!grabbable) {
+        startDrag(layer.id, 'move', pt, at);
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        return;
+      }
+    }
+    onSelect?.(null);
   };
 
   const onPointerMove = (e) => {
