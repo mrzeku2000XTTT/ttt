@@ -139,18 +139,16 @@ export function applyMorphSequence(scene, sequenceId, options = {}) {
     });
   }
   if (hasLogo) {
+    // The end frame is the logotype itself. A card is a panel that happens to
+    // contain the word — light plate, dark label — which reads as UI, not as a
+    // logo. So the word condenses out of the wordmark into a tight white
+    // lockup on the stage, in the same palette the reveal has been using.
     nodes.logo = makeLayer({
-      type: 'card',
-      name: 'Logo lockup',
-      w: 0.42,
-      h: 0.26,
-      radius: 0.055,
-      color: '#f4f4f5',
+      type: 'text',
+      name: 'Logo',
       text: word.toUpperCase(),
-      subtext: '',
-      textColor: '#0a0a0a',
-      textSize: 0.05,
-      size: 0.1,
+      color: '#ffffff',
+      size: 0.17,
       ...centre,
     });
   }
