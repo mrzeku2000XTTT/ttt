@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Maximize2, Minimize2, Grid3x3, ZoomIn, ZoomOut,
   Store, RotateCcw, Magnet, Home, Layers, Sliders, Clock,
-  SplitSquareHorizontal, Plus, Type, X, Wand2, Sparkles, FolderOpen, Boxes, Link2,
+  SplitSquareHorizontal, Plus, Type, X, Wand2, Sparkles, FolderOpen, Boxes, Link2, ArrowRightLeft,
 } from 'lucide-react';
 import MorphStage from '@/components/morph/MorphStage';
 import MorphTimeline from '@/components/morph/MorphTimeline';
@@ -11,6 +11,7 @@ import MorphInspector from '@/components/morph/MorphInspector';
 import MorphLayers from '@/components/morph/MorphLayers';
 import MorphSmartInput from '@/components/morph/MorphSmartInput';
 import MorphMorphPanel from '@/components/morph/MorphMorphPanel';
+import MorphTransitionPanel from '@/components/morph/MorphTransitionPanel';
 import MorphToolButton from '@/components/morph/MorphToolButton';
 import MorphSequences from '@/components/morph/MorphSequences';
 import MorphDynamics from '@/components/morph/MorphDynamics';
@@ -19,6 +20,11 @@ import {
   UI_MORPHS, addMorph, applyMorphPreset, applyMotionStyle,
   deleteMorph, makeMorph, musicToThrillerScene, updateMorph,
 } from '@/components/morph/morphMorphs';
+import {
+  addTransition, deleteTransition, matchCutDemoScene, planFor, replanInScene,
+  transitionContext, updateTransition,
+} from '@/components/morph/morphTransitions';
+import { parseTransitionCommand } from '@/components/morph/transitionCommands';
 import { DEFAULT_DYNAMICS, bakeDynamics } from '@/components/morph/morphDynamics';
 import MorphLibrary from '@/components/morph/MorphLibrary';
 import MorphProjects from '@/components/morph/MorphProjects';
@@ -85,6 +91,7 @@ export default function MorphStudio({ onHome }) {
   const [store, setStore] = useState(boot.store);
   const [showProjects, setShowProjects] = useState(false);
   const [morphSel, setMorphSel] = useState(null);
+  const [transitionSel, setTransitionSel] = useState(null);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
 
   const active = activeProject(store);
@@ -377,6 +384,7 @@ export default function MorphStudio({ onHome }) {
     setTime(0);
     setPlaying(false);
     setMorphSel(next.morphs?.[next.morphs.length - 1]?.id || null);
+    setTransitionSel(next.transitions?.[0]?.id || null);
     setSelectedId(next.layers[next.layers.length - 1]?.id || null);
   };
 
@@ -386,6 +394,61 @@ export default function MorphStudio({ onHome }) {
   const loadDemo = () => loadMorphScene(musicToThrillerScene(), 'Demo · Music → Thriller');
 
   const setMorphStyle = (id, styleId) => setScene((s) => applyMotionStyle(s, id, styleId));
+
+  /* ----------------------------------------------------------- match cuts */
+  // Scene-level. Layers carry a scene tag, the planner finds the pair, the plan
+  // lands on the scene and the engine renders the handover.
+  const createTransition = (options = {}) => {
+    const plan = planFor(scene, { start: 0.5, ...options });
+    if (!plan) return;
+    snapLabel.current = `Match cut · ${plan.meta.source.name} → ${plan.meta.target.name}`;
+    setScene((s) => addTransition(s, plan));
+    setTransitionSel(plan.id);
+    setPlaying(false);
+    setTime(plan.start);
+  };
+
+  const editTransition = (id, patch) => setScene((s) => updateTransition(s, id, patch));
+
+  const dropTransition = (id) => {
+    setScene((s) => deleteTransition(s, id));
+    setTransitionSel((cur) => (cur === id ? null : cur));
+  };
+
+  const replanById = (id, patch) =>
+    setScene((s) => {
+      const plan = (s.transitions || []).find((t) => t.id === id);
+      if (!plan) return s;
+      const next = replanInScene(s, plan, patch);
+      return next ? updateTransition(s, id, next) : s;
+    });
+
+  // A sentence becomes planner options, the planner becomes a plan — the AI and
+  // the user take exactly the same path.
+  const runTransitionCommand = (text) => {
+    const ctx = transitionContext(scene);
+    const parsed = parseTransitionCommand(text, {
+      anchorsA: ctx.anchorsA,
+      anchorsB: ctx.anchorsB,
+      candidates: ctx.candidates,
+    });
+    if (!parsed) return { ok: false, message: 'Nothing to match yet.' };
+    const plan = planFor(scene, { start: 0.5, ...parsed.options });
+    if (!plan) return { ok: false, message: 'No visual correspondence found between the scenes.' };
+    snapLabel.current = `Match cut · ${plan.meta.source.name} → ${plan.meta.target.name}`;
+    setScene((s) => addTransition(s, plan));
+    setTransitionSel(plan.id);
+    setPlaying(false);
+    setTime(plan.start);
+    return { ok: true, message: `${parsed.understood.join(' · ')} — ${Math.round(plan.score * 100)}% match.` };
+  };
+
+  const previewTransition = (start) => {
+    setTime(Math.max(0, start - 0.35));
+    setPlaying(true);
+  };
+
+  const loadMatchCutDemo = () => loadMorphScene(matchCutDemoScene(), 'Match cut · Music → Thriller');
 
   /* ------------------------------------------------------ resizable splits */
   const startResize = (kind) => (e) => {
@@ -452,6 +515,7 @@ export default function MorphStudio({ onHome }) {
             zoom={id === 'viewport' ? zoom : 1}
             grid={grid}
             selectedMorphId={id === 'viewport' ? morphSel : null}
+            selectedTransitionId={id === 'viewport' ? transitionSel : null}
           />
         </div>
       </div>
@@ -500,6 +564,21 @@ export default function MorphStudio({ onHome }) {
     />
   );
 
+  const transitionPanel = (
+    <MorphTransitionPanel
+      scene={scene}
+      transitionSel={transitionSel}
+      onSelect={setTransitionSel}
+      onCreate={createTransition}
+      onUpdate={editTransition}
+      onDelete={dropTransition}
+      onReplan={replanById}
+      onCommand={runTransitionCommand}
+      onPreview={previewTransition}
+      onDemo={loadMatchCutDemo}
+    />
+  );
+
   const timelinePanel = (
     <MorphTimeline
       scene={scene}
@@ -525,6 +604,9 @@ export default function MorphStudio({ onHome }) {
       morphSel={morphSel}
       onSelectMorph={setMorphSel}
       onMoveMorph={(id, patch) => setScene((s) => updateMorph(s, id, patch))}
+      transitionSel={transitionSel}
+      onSelectTransition={setTransitionSel}
+      onMoveTransition={(id, patch) => setScene((s) => updateTransition(s, id, patch))}
       onAddMarker={(t) => setScene((s) => addMarker(s, t))}
       onRemoveMarker={(id) => setScene((s) => removeMarker(s, id))}
       dynamics={dynamics}
@@ -656,6 +738,7 @@ export default function MorphStudio({ onHome }) {
           {libraryPanel}
           {layersPanel}
           {morphPanel}
+          {transitionPanel}
           {dynamicsPanel}
           {sequencesPanel}
           {inspectorPanel}
@@ -741,6 +824,12 @@ export default function MorphStudio({ onHome }) {
             active={panel === 'morph'}
             onClick={() => setPanel((p) => (p === 'morph' ? null : 'morph'))}
           />
+          <MorphToolButton
+            icon={ArrowRightLeft}
+            label="Match cut"
+            active={panel === 'cuts'}
+            onClick={() => setPanel((p) => (p === 'cuts' ? null : 'cuts'))}
+          />
           <MorphToolButton icon={Magnet} label="Auto-key" active={autoKey} onClick={() => setAutoKey((v) => !v)} />
           <MorphToolButton icon={Grid3x3} label="Grid" active={grid} onClick={() => setGrid((g) => !g)} />
           <MorphToolButton icon={Plus} label="Shape" onClick={() => addLayer('shape')} />
@@ -768,7 +857,9 @@ export default function MorphStudio({ onHome }) {
                       ? sequencesPanel
                       : panel === 'morph'
                         ? morphPanel
-                        : dynamicsPanel}
+                        : panel === 'cuts'
+                          ? transitionPanel
+                          : dynamicsPanel}
           </div>
         )}
       </div>

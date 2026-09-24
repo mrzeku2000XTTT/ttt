@@ -422,7 +422,10 @@ export function imageFor(src, onReady) {
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif";
 const AXIS = { x: '#ff4d4d', y: '#3ddc84', z: '#4d8dff' };
 
-export function drawScene(ctx, { scene, time, W, H, mode = 'final', selectedId = null, grid = false, onAssetReady, selectedMorphId = null }) {
+export function drawScene(ctx, {
+  scene, time, W, H, mode = 'final', selectedId = null, grid = false,
+  onAssetReady, selectedMorphId = null, selectedTransitionId = null,
+}) {
   ctx.fillStyle = '#070707';
   ctx.fillRect(0, 0, W, H);
   if (grid && mode === 'edit') drawGrid(ctx, W, H);
@@ -431,16 +434,52 @@ export function drawScene(ctx, { scene, time, W, H, mode = 'final', selectedId =
   // separate object fading in, it is the source re-shaped — so the arrow and the
   // layers always agree about where things are.
   const resolved = resolveMorphs(scene, time);
+  // A match cut sits above that: whole scenes handing over through one object.
+  const cut = resolveTransitions(resolved, time, W, H);
 
-  (scene.morphs || []).forEach((rel) => {
+  ctx.save();
+  if (cut) applyCamera(ctx, cut.camera, W, H);
+
+  (resolved.morphs || []).forEach((rel) => {
     drawMorphArrow(ctx, resolved, rel, time, W, H, mode === 'edit' && selectedMorphId === rel.id);
   });
 
+  const drawOne = (layer) => drawLayer(ctx, layer, time, W, H, onAssetReady);
+
   resolved.layers.forEach((layer) => {
-    if (layer.visible !== false) drawLayer(ctx, layer, time, W, H, onAssetReady);
+    if (layer.visible === false) return;
+    if (cut) {
+      // The target is never drawn on its own: the hero becomes it.
+      if (cut.hidden.has(layer.id) || cut.heroId === layer.id) return;
+      const a = cut.alpha.get(layer.id);
+      if (a != null && a <= 0.001) return;
+      const l = a != null && a < 0.999 ? withLayerAlpha(layer, time, a) : layer;
+      // Scene B arrives *through* the hero while the cut is running.
+      if (cut.clip && cut.reveal.has(layer.id)) {
+        ctx.save();
+        roundRect(ctx, cut.maskBox.left, cut.maskBox.top, cut.maskBox.w, cut.maskBox.h, cut.maskBox.radius);
+        ctx.clip();
+        drawOne(l);
+        ctx.restore();
+        return;
+      }
+      drawOne(l);
+      return;
+    }
+    drawOne(layer);
   });
 
+  if (cut) {
+    // One object, continuously, becoming another.
+    drawOne(cut.hero);
+    if (cut.maskEdge > 0.01) drawMaskEdge(ctx, cut.maskBox, cut.maskEdge);
+  }
+
   if (mode === 'edit') {
+    if (selectedTransitionId) {
+      const rel = (scene.transitions || []).find((t) => t.id === selectedTransitionId);
+      if (rel) drawTransitionHighlight(ctx, resolved, rel, time, W, H);
+    }
     if (selectedMorphId) {
       const rel = (scene.morphs || []).find((r) => r.id === selectedMorphId);
       if (rel) drawMorphHighlight(ctx, resolved, rel, time, W, H);
@@ -450,6 +489,13 @@ export function drawScene(ctx, { scene, time, W, H, mode = 'final', selectedId =
       if (layer && layer.visible !== false) drawGizmo(ctx, layer, time, W, H);
     }
   }
+  ctx.restore();
+}
+
+// A layer at a fraction of its own opacity, used for scenes arriving and leaving.
+function withLayerAlpha(layer, time, a) {
+  const p = sampleLayer(layer, time);
+  return { ...layer, tracks: {}, ...p, opacity: p.opacity * a };
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -730,7 +776,10 @@ export function layerBox(layer, time, W, H) {
   const h = card ? Math.max(8, p.h * H) * p.scale : unit * (layer.size || 0.2) * p.scale * 2;
   const cx = p.x * W;
   const cy = p.y * H;
-  return { cx, cy, w, h, left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2, p };
+  // The corner radius travels with the box so a match cut can use the hero's
+  // own silhouette as its mask.
+  const radius = card ? p.radius * unit * p.scale : 0;
+  return { cx, cy, w, h, radius, left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2, p };
 }
 
 // One layer, seen through every morph that touches it.
@@ -856,6 +905,139 @@ function drawMorphArrow(ctx, scene, rel, time, W, H, selected) {
   ctx.closePath();
   ctx.fillStyle = color;
   ctx.fill();
+  ctx.restore();
+}
+
+/* ------------------------------------------------- match-cut transitions */
+// A match cut works one level above a morph. Instead of two layers blending,
+// a whole scene hands over to another through a single object that stays
+// continuous: the hero interpolates, Scene A leaves around it, Scene B arrives
+// through it, and an optional camera pushes through the crossing.
+
+export const TRANSITION_PROPS = {
+  position: ['x', 'y'],
+  scale: ['x', 'y', 'w', 'h', 'scale'],
+  shape: ['x', 'y', 'w', 'h', 'radius', 'scale', 'rotation'],
+  color: ['x', 'y'],
+  rotation: ['x', 'y', 'rotation'],
+  mask: ['x', 'y', 'w', 'h', 'radius'],
+  camera: ['x', 'y', 'w', 'h', 'radius'],
+  compound: ['x', 'y', 'w', 'h', 'radius', 'scale', 'rotation', 'textSize'],
+};
+
+// The camera pushes in as the object takes over and settles back as the new
+// scene arrives — peak at the crossing, never a lingering zoom.
+function cameraAt(tr, mix, box, W, H) {
+  const c = tr.camera || {};
+  if (!c.enabled) return { x: 0, y: 0, scale: 1, rotation: 0, blur: 0 };
+  const peak = Math.sin(clamp(mix, 0, 1) * Math.PI);
+  return {
+    x: (W / 2 - box.cx) * peak * (c.center ?? 1),
+    y: (H / 2 - box.cy) * peak * (c.center ?? 1),
+    scale: 1 + ((c.scaleTo ?? 1.5) - 1) * peak,
+    rotation: (c.rotationTo ?? 0) * peak,
+    blur: (c.blurTo ?? 2.5) * peak,
+  };
+}
+
+function applyCamera(ctx, cam, W, H) {
+  if (!cam) return;
+  ctx.translate(W / 2 + cam.x, H / 2 + cam.y);
+  if (cam.rotation) ctx.rotate((cam.rotation * Math.PI) / 180);
+  ctx.scale(cam.scale, cam.scale);
+  ctx.translate(-W / 2, -H / 2);
+  if (cam.blur > 0.01 && 'filter' in ctx) ctx.filter = `blur(${cam.blur.toFixed(2)}px)`;
+}
+
+/**
+ * Resolve every match cut on the scene for a moment in time. Before a cut has
+ * started its target scene stays hidden and its source scene stays whole, so the
+ * same resolver covers the before, during and after states.
+ */
+export function resolveTransitions(scene, time, W, H) {
+  const list = scene.transitions || [];
+  if (!list.length) return null;
+  const hidden = new Set();
+  const reveal = new Set();
+  const alpha = new Map();
+  let hero = null;
+  let heroId = null;
+  let camera = null;
+  let clip = false;
+  let maskBox = null;
+  let maskEdge = 0;
+  let active = null;
+
+  list.forEach((tr) => {
+    const from = scene.layers.find((l) => l.id === tr.from);
+    const to = scene.layers.find((l) => l.id === tr.to);
+    if (!from || !to) return;
+    const { raw, eased } = morphProgress(tr, time);
+    const mix = clamp(eased, 0, 1);
+
+    hidden.add(to.id);
+    (tr.reveal || []).forEach((id) => reveal.add(id));
+    (tr.conceal || []).forEach((id) => {
+      alpha.set(id, Math.min(alpha.get(id) ?? 1, 1 - clamp((mix - 0.15) / 0.6, 0, 1)));
+    });
+    (tr.reveal || []).forEach((id) => {
+      alpha.set(id, Math.min(alpha.get(id) ?? 1, clamp((mix - 0.3) / 0.6, 0, 1)));
+    });
+
+    if (raw <= 0) return;
+
+    const props = TRANSITION_PROPS[tr.type] || TRANSITION_PROPS.compound;
+    const a = sampleLayer(from, time);
+    const b = sampleLayer(to, time);
+    const h = { ...from, tracks: {} };
+    props.forEach((prop) => { h[prop] = a[prop] + (b[prop] - a[prop]) * mix; });
+    h.color = mixColor(from.color, to.color, mix);
+    h.text = to.text;
+    h.subtext = to.subtext;
+    h.textColor = to.textColor;
+    h.opacity = a.opacity + (b.opacity - a.opacity) * mix;
+    h.textOpacity = raw >= 1 ? 1 : mix <= 0.4 ? 0 : clamp((mix - 0.4) / 0.6, 0, 1);
+
+    hero = h;
+    heroId = from.id;
+    maskBox = layerBox(h, time, W, H);
+    camera = cameraAt(tr, mix, maskBox, W, H);
+    clip = tr.mask?.enabled !== false && raw < 1;
+    maskEdge = clip ? clamp(1 - mix * 1.5, 0, 1) : 0;
+    active = tr;
+  });
+
+  if (!hero) return null;
+  return { hero, heroId, hidden, reveal, alpha, camera, clip, maskBox, maskEdge, tr: active };
+}
+
+function drawMaskEdge(ctx, box, edge) {
+  ctx.save();
+  ctx.strokeStyle = `rgba(255,255,255,${(0.28 * edge).toFixed(3)})`;
+  ctx.lineWidth = 2;
+  roundRect(ctx, box.left, box.top, box.w, box.h, box.radius);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Edit mode: show the source and the target of the selected match cut.
+export function drawTransitionHighlight(ctx, scene, tr, time, W, H) {
+  const from = scene.layers.find((l) => l.id === tr.from);
+  const to = scene.layers.find((l) => l.id === tr.to);
+  if (!from || !to) return;
+  const A = layerBox(from, time, W, H);
+  const B = layerBox(to, time, W, H);
+  ctx.save();
+  ctx.setLineDash([6, 6]);
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(125,220,255,0.75)';
+  [A, B].forEach((b) => ctx.strokeRect(b.left - 8, b.top - 8, b.w + 16, b.h + 16));
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(125,220,255,0.45)';
+  ctx.beginPath();
+  ctx.moveTo(A.cx, A.cy);
+  ctx.lineTo(B.cx, B.cy);
+  ctx.stroke();
   ctx.restore();
 }
 

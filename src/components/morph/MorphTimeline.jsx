@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, Flag, Link2, X } from 'lucide-react';
+import { ArrowRightLeft, ChevronDown, ChevronRight, Flag, Link2, X } from 'lucide-react';
 import { EASES, clamp, layerKeyTimes, timecode } from './morphEngine';
 import MorphTimelineAgent from './MorphTimelineAgent';
 
@@ -61,6 +61,9 @@ export default function MorphTimeline({
   morphSel,
   onSelectMorph,
   onMoveMorph,
+  transitionSel,
+  onSelectTransition,
+  onMoveTransition,
   onAddMarker,
   onRemoveMarker,
   dynamics,
@@ -128,28 +131,27 @@ export default function MorphTimeline({
     window.addEventListener('pointercancel', up);
   };
 
-  // A morph bar drags along the ruler: the relation's start time, never past the
-  // end of the composition.
-  const startMorphDrag = (e, rel) => {
+  // A relation bar drags along the ruler: its start time, never past the end of
+  // the composition. Shared by morphs and match cuts.
+  const startBarDrag = (e, item, onMove) => {
     e.stopPropagation();
-    onSelectMorph(rel.id);
     const rect = rulerRef.current.getBoundingClientRect();
     const x0 = e.clientX;
-    const s0 = rel.start || 0;
+    const s0 = item.start || 0;
     let active = false;
-    const move = (ev) => {
+    const handleMove = (ev) => {
       if (!active && Math.abs(ev.clientX - x0) < 4) return;
       active = true;
-      const ns = clamp(s0 + ((ev.clientX - x0) / rect.width) * duration, 0, Math.max(0, duration - (rel.duration || 1)));
-      onMoveMorph?.(rel.id, { start: ns });
+      const ns = clamp(s0 + ((ev.clientX - x0) / rect.width) * duration, 0, Math.max(0, duration - (item.duration || 1)));
+      onMove(ns);
       onSeek(ns);
     };
     const up = () => {
-      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
     };
-    window.addEventListener('pointermove', move);
+    window.addEventListener('pointermove', handleMove);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);
   };
@@ -163,6 +165,7 @@ export default function MorphTimeline({
   });
   const loose = scene.layers.filter((l) => !l.group);
   const morphs = scene.morphs || [];
+  const cuts = scene.transitions || [];
   const nameOf = (id) => scene.layers.find((l) => l.id === id)?.name || '—';
 
   const laneBase = (isSelected) =>
@@ -412,6 +415,47 @@ export default function MorphTimeline({
 
           {/* Lanes */}
           <div className="px-3 py-2 space-y-1 max-h-40 overflow-y-auto">
+            {/* A match cut spans both scenes, so it sits above everything else. */}
+            {cuts.length > 0 && (
+              <div className="space-y-1 pb-1 mb-1 border-b border-white/5">
+                {cuts.map((cut) => {
+                  const on = transitionSel === cut.id;
+                  const left = ((cut.start || 0) / duration) * 100;
+                  const width = Math.max(2, ((cut.duration || 1) / duration) * 100);
+                  return (
+                    <div key={cut.id} className="flex items-center gap-2">
+                      <div style={{ width: LABEL_W }} className="shrink-0 flex items-center gap-1">
+                        <ArrowRightLeft className="w-3 h-3 shrink-0 text-cyan-300/70" />
+                        <button
+                          onClick={() => onSelectTransition(cut.id)}
+                          className={`flex-1 min-w-0 text-left truncate text-[11px] px-1.5 py-0.5 rounded transition-colors ${
+                            on ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'
+                          }`}
+                        >
+                          Match cut
+                        </button>
+                      </div>
+                      <div className="relative flex-1 h-6 rounded bg-white/[0.04]">
+                        <button
+                          onPointerDown={(e) => startBarDrag(e, cut, (ns) => onMoveTransition?.(cut.id, { start: ns }))}
+                          title={`${nameOf(cut.from)} → ${nameOf(cut.to)} · ${cut.duration}s · ${EASE_LABELS[cut.easing] || cut.easing}`}
+                          style={{ left: `${left}%`, width: `${width}%` }}
+                          className={`absolute top-0.5 bottom-0.5 rounded flex items-center gap-1 px-1.5 overflow-hidden cursor-ew-resize text-[9px] ${
+                            on
+                              ? 'bg-gradient-to-r from-cyan-200 to-white text-black'
+                              : 'bg-gradient-to-r from-cyan-400/30 to-white/25 text-white/80 hover:from-cyan-300/50 hover:to-white/40'
+                          }`}
+                        >
+                          <span className="truncate">{nameOf(cut.from)} → {nameOf(cut.to)}</span>
+                        </button>
+                        <div className="absolute top-0 bottom-0 w-px bg-white/70 pointer-events-none" style={{ left: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Morphs sit above the layers: they are the relationships between them. */}
             {morphs.length > 0 && (
               <div className="space-y-1 pb-1 mb-1 border-b border-white/5">
@@ -434,7 +478,7 @@ export default function MorphTimeline({
                       </div>
                       <div className="relative flex-1 h-6 rounded bg-white/[0.04]">
                         <button
-                          onPointerDown={(e) => startMorphDrag(e, rel)}
+                          onPointerDown={(e) => startBarDrag(e, rel, (ns) => onMoveMorph?.(rel.id, { start: ns }))}
                           title={`${nameOf(rel.from)} → ${nameOf(rel.to)} · ${rel.duration}s · ${EASE_LABELS[rel.easing] || rel.easing}`}
                           style={{ left: `${left}%`, width: `${width}%` }}
                           className={`absolute top-0.5 bottom-0.5 rounded flex items-center gap-1 px-1.5 overflow-hidden cursor-ew-resize text-[9px] ${
