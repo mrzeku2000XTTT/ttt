@@ -159,7 +159,8 @@ export function applyMorphSequence(scene, sequenceId, options = {}) {
   // word is readable before it resolves into the logo.
   const morphs = [];
   const steps = [];
-  const gap = Math.max(0.12, morphDuration * 0.2);
+  // Long enough that the word is actually read before it resolves into the logo.
+  const gap = Math.max(0.24, morphDuration * 0.35);
   let cursor = 0.35; // the shape is established first
   for (let i = 1; i < plan.steps.length; i += 1) {
     const from = nodes[plan.steps[i - 1]];

@@ -8,10 +8,15 @@
 export const FPS = 30;
 export const DEFAULT_DURATION = 6;
 
-// Every animatable property. `w/h/radius` are a UI card's box, `textSize` and
-// `textOpacity` the label inside it, `draw` a path being drawn on (0→1).
+// Every animatable property. `size` is what a shape, a text layer and an image
+// are measured by, `w/h/radius` are a UI card's box, `textSize` and `textOpacity`
+// the label inside it, `draw` a path being drawn on (0→1).
+// `size` lives here so it is sampled like everything else: a morph between a
+// shape and a text layer blends it, and a prop the sampler does not know about
+// would come back undefined and poison the blend with NaN.
 export const DEFAULTS = {
   x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, morph: 0, glow: 0,
+  size: 0.2,
   w: 0.34, h: 0.12, radius: 0.05, textSize: 0, textOpacity: 1, draw: 1,
 };
 export const PROPS = Object.keys(DEFAULTS);
@@ -861,12 +866,23 @@ export function resolveLayer(scene, layer, time) {
         const b = sampleLayer(layer, time);
         const mix = raw <= 0 ? 0 : eased;
         out = { ...layer, tracks: {} };
-        MORPH_PROPS.forEach((prop) => { out[prop] = a[prop] + (b[prop] - a[prop]) * mix; });
+        // A prop the source does not carry must never turn the pair into NaN —
+        // the target's own value is the safe floor, and anything still unusable
+        // is simply left as the layer had it.
+        MORPH_PROPS.forEach((prop) => {
+          const av = Number.isFinite(a[prop]) ? a[prop] : Number.isFinite(b[prop]) ? b[prop] : layer[prop];
+          const bv = Number.isFinite(b[prop]) ? b[prop] : av;
+          const v = av + (bv - av) * mix;
+          if (Number.isFinite(v)) out[prop] = v;
+        });
         out.color = mixColor(src.color, layer.color, mix);
         out.opacity = b.opacity * mix;
         // The box lands first, the words arrive after it — that ordering is what
         // makes the pair read as one object changing rather than two swapping.
-        out.textOpacity = mix <= 0.4 ? 0 : clamp((mix - 0.4) / 0.6, 0, 1);
+        // Driven by the linear progress, not the eased one: a spring reaches its
+        // target early, so an eased handover would blink the words in at 40% and
+        // leave the rest of the morph with nothing happening.
+        out.textOpacity = raw <= 0.4 ? 0 : clamp((raw - 0.4) / 0.6, 0, 1);
       }
     }
   }
@@ -875,13 +891,16 @@ export function resolveLayer(scene, layer, time) {
   // both is what makes a chain (shape → text → logo) one continuous
   // transformation instead of two unrelated effects.
   if (asSource) {
-    const { raw, eased } = morphProgress(asSource, time);
+    const { raw } = morphProgress(asSource, time);
     const own = sampleLayer(out, time);
     const held = { ...out, tracks: {}, ...own };
     if (raw >= 1) return { ...held, opacity: 0 };
     if (raw > 0) {
-      // Hold solid while the target takes over, then hand over completely.
-      const handoff = clamp((eased - 0.6) / 0.4, 0, 1);
+      // Hold solid while the target takes over, then hand over completely — on
+      // the linear progress, so whatever is becoming the next thing stays fully
+      // on screen while the new form is still arriving instead of vanishing
+      // halfway through its own morph.
+      const handoff = clamp((raw - 0.6) / 0.4, 0, 1);
       held.opacity = own.opacity * (1 - handoff);
       held.textOpacity = 1 - handoff;
     }
