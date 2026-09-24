@@ -5,6 +5,7 @@ import invokeProtectedOperation from '@/components/integrations/invokeProtectedO
 import { EASE_NAMES, keysToTracks, makeLayer } from './morphEngine';
 import { SEQUENCES, applySequence } from './morphSequences';
 import { MORPH_PRESETS, applyMorphPreset } from './morphMorphs';
+import MorphPromptPresets, { MorphPromptList } from './MorphPromptPresets';
 
 const URL_RE = /(https?:\/\/[^\s<>"')]+)/gi;
 const IMG_RE = /\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/i;
@@ -36,7 +37,9 @@ export default function MorphSmartInput({
   const [items, setItems] = useState([]); // { id, kind: 'image' | 'link', name, url }
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
+  const [presetsOpen, setPresetsOpen] = useState(false);
   const fileRef = useRef(null);
+  const areaRef = useRef(null);
 
   const links = text.match(URL_RE) || [];
   const pendingLinks = links.filter((u) => !items.some((i) => i.url === u));
@@ -250,6 +253,7 @@ export default function MorphSmartInput({
         )}
 
         <textarea
+          ref={areaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onPaste={onPaste}
@@ -258,6 +262,16 @@ export default function MorphSmartInput({
           placeholder="Describe the animation, paste an image, or drop a link…"
           className="w-full bg-transparent px-3 py-2 text-[12px] leading-relaxed text-white placeholder:text-white/25 outline-none resize-none"
         />
+
+        {presetsOpen && (
+          <MorphPromptList
+            onPick={(prompt) => {
+              setText(prompt);
+              setPresetsOpen(false);
+              areaRef.current?.focus();
+            }}
+          />
+        )}
 
         <div className="flex items-center gap-1.5 px-2 pb-2">
           <button
@@ -275,6 +289,8 @@ export default function MorphSmartInput({
             className="hidden"
             onChange={(e) => addFiles(Array.from(e.target.files || []))}
           />
+
+          <MorphPromptPresets open={presetsOpen} onToggle={() => setPresetsOpen((o) => !o)} />
 
           <button
             onClick={onToggleAutoEase}
