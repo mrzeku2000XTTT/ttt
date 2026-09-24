@@ -111,6 +111,10 @@ export const UI_MORPHS = [
     // starts on the word's own box (w is sized to the word) and fades up as the
     // letters hand over, so it reads as one word turning into one logo.
     from: { type: 'text', name: 'Wordmark', text: 'prism', color: '#ffffff', size: 0.2, w: 0.19, h: 0.12 },
+    // The lockup is the logotype itself, not a plate around it. It stays a card
+    // so a supplied logo image can still fill it, but it paints nothing — the
+    // word lands as type in the stage's own palette instead of a white pill
+    // with dark text on it.
     to: {
       name: 'Logo lockup',
       w: 0.4,
@@ -118,10 +122,10 @@ export const UI_MORPHS = [
       radius: 0.055,
       text: 'PRISM',
       subtext: 'video inspector',
-      color: '#f4f4f5',
-      textColor: '#0a0a0a',
-      subtextColor: 'rgba(10,10,10,0.6)',
-      textSize: 0.05,
+      color: 'transparent',
+      textColor: '#ffffff',
+      subtextColor: 'rgba(255,255,255,0.6)',
+      textSize: 0.17,
     },
   },
 ];
