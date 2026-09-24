@@ -5,6 +5,8 @@
 // produces exact values, so the FINAL pane, the VIEWPORT pane and any future
 // export all render identical frames.
 
+import { drawBackground } from './morphBackground';
+
 export const FPS = 30;
 export const DEFAULT_DURATION = 6;
 
@@ -431,8 +433,9 @@ export function drawScene(ctx, {
   scene, time, W, H, mode = 'final', selectedId = null, grid = false,
   onAssetReady, selectedMorphId = null, selectedTransitionId = null,
 }) {
-  ctx.fillStyle = '#070707';
-  ctx.fillRect(0, 0, W, H);
+  // The backdrop is drawn before the camera transform: a ramp has to fill the
+  // frame, so it must not be cropped when a match cut pushes in.
+  drawBackground(ctx, scene.background, time, W, H);
   if (grid && mode === 'edit') drawGrid(ctx, W, H);
 
   // Morphs resolve the layers before anything is drawn: a morph target is not a

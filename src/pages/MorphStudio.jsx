@@ -269,6 +269,13 @@ export default function MorphStudio({ onHome }) {
     setSolo(null);
   }, [autoEase, ease]);
 
+  // A backdrop belongs to the scene rather than to a layer: it is set, swapped
+  // and cleared on its own, without disturbing anything already animated.
+  const setBackground = useCallback((bg) => {
+    snapLabel.current = bg ? 'Background gradient' : 'Background cleared';
+    setScene((s) => ({ ...s, background: bg || undefined }));
+  }, []);
+
   const reset = () => {
     const fresh = starterScene();
     snapLabel.current = 'Reset to the starter logo';
@@ -946,6 +953,7 @@ export default function MorphStudio({ onHome }) {
           onScene={applyScene}
           onSequences={runSequences}
           onAddImage={addImageLayer}
+          onBackground={setBackground}
           autoEase={autoEase}
           ease={ease}
           onToggleAutoEase={() => setLayout((l) => ({ ...l, autoEase: !l.autoEase }))}

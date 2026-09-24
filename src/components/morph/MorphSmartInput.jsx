@@ -6,6 +6,7 @@ import { EASE_NAMES, keysToTracks, makeLayer } from './morphEngine';
 import { SEQUENCES, applySequence } from './morphSequences';
 import { MORPH_PRESETS, applyMorphPreset } from './morphMorphs';
 import MorphPromptPresets, { MorphPromptList } from './MorphPromptPresets';
+import MorphBackgroundPicker, { MorphBackgroundPanel } from './MorphBackgroundPicker';
 
 const URL_RE = /(https?:\/\/[^\s<>"')]+)/gi;
 const IMG_RE = /\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/i;
@@ -27,6 +28,7 @@ export default function MorphSmartInput({
   onScene,
   onSequences,
   onAddImage,
+  onBackground,
   autoEase,
   ease,
   onToggleAutoEase,
@@ -38,6 +40,7 @@ export default function MorphSmartInput({
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [presetsOpen, setPresetsOpen] = useState(false);
+  const [bgOpen, setBgOpen] = useState(false);
   const fileRef = useRef(null);
   const areaRef = useRef(null);
 
@@ -115,6 +118,8 @@ export default function MorphSmartInput({
       name: String(data?.name || idea || 'Untitled animation').slice(0, 60),
       duration: Math.min(20, Math.max(2, Number(data?.duration) || 6)),
       layers: next,
+      // The backdrop the user chose is theirs, not the director's to replace.
+      background: scene.background,
     };
   };
 
@@ -273,6 +278,8 @@ export default function MorphSmartInput({
           />
         )}
 
+        {bgOpen && <MorphBackgroundPanel background={scene.background} onApply={onBackground} />}
+
         <div className="flex items-center gap-1.5 px-2 pb-2">
           <button
             onClick={() => fileRef.current?.click()}
@@ -290,7 +297,16 @@ export default function MorphSmartInput({
             onChange={(e) => addFiles(Array.from(e.target.files || []))}
           />
 
-          <MorphPromptPresets open={presetsOpen} onToggle={() => setPresetsOpen((o) => !o)} />
+          <MorphPromptPresets
+            open={presetsOpen}
+            onToggle={() => { setPresetsOpen((o) => !o); setBgOpen(false); }}
+          />
+
+          <MorphBackgroundPicker
+            open={bgOpen}
+            active={scene.background}
+            onToggle={() => { setBgOpen((o) => !o); setPresetsOpen(false); }}
+          />
 
           <button
             onClick={onToggleAutoEase}
