@@ -8,7 +8,7 @@
 export const FPS = 30;
 export const DEFAULT_DURATION = 6;
 
-export const DEFAULTS = { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, morph: 0 };
+export const DEFAULTS = { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, morph: 0, glow: 0 };
 export const PROPS = Object.keys(DEFAULTS);
 
 export const EASES = {
@@ -46,6 +46,8 @@ export const SHAPES = {
   hexagon: polygon(6),
   star: star(),
   burst: star(9, 0.62),
+  spark: star(4, 0.18),
+  kite: [[0, -1], [0.34, 0], [0, 1], [-0.34, 0]],
 };
 export const SHAPE_NAMES = Object.keys(SHAPES);
 
@@ -189,6 +191,11 @@ export function makeLayer(partial = {}) {
 }
 
 export function starterScene() {
+  return diamondLogoScene();
+}
+
+// The scene the studio shipped with — kept as a preset so nothing is lost.
+export function shapeDemoScene() {
   const a = makeLayer({ name: 'Circle → Star', shape: 'circle', morphTo: 'star', color: '#ffffff', size: 0.22, x: 0.34 });
   return {
     name: 'Untitled animation',
@@ -214,6 +221,116 @@ export function starterScene() {
         tracks: {
           opacity: [{ t: 0.2, v: 0, ease: 'easeOut' }, { t: 1.4, v: 1, ease: 'easeOut' }],
           y: [{ t: 0.2, v: 0.88, ease: 'easeOut' }, { t: 1.4, v: 0.82, ease: 'easeOut' }],
+        },
+      }),
+    ],
+  };
+}
+
+/* -------------------------------------------------------------- test logo */
+// The MVP logo: four kite-shaped points (one per corner of the mark) plus a
+// centre spark. Five separate vector layers, so each point animates on its own
+// AND morphs — 3s reveal, exactly to spec:
+//   0.0s tiny, invisible, slightly rotated · 0.5s flying in · 1.0s formed
+//   1.4s overshoot to 1.15 · 1.7s settle 0.97 · 1.9s rest
+//   2.0s spin once 0→360° · 2.7s glow 0→1 · 3.0s clean static logo
+const FRAME_W = 1280;
+const FRAME_H = 720;
+
+export function diamondLogoScene() {
+  const CX = 0.5;
+  const CY = 0.5;
+  const ARM = 100; // arm length in pixels (identical on both axes)
+  const R_X = ARM / FRAME_W;
+  const R_Y = ARM / FRAME_H;
+  const DEG = Math.PI / 180;
+
+  const home = (deg) => ({ x: CX + R_X * Math.cos(deg * DEG), y: CY + R_Y * Math.sin(deg * DEG) });
+
+  // Assemble from a corner → form → overshoot → settle.
+  const entry = (deg, startX, startY) => {
+    const h = home(deg);
+    return {
+      opacity: [{ t: 0, v: 0, ease: 'easeOut' }, { t: 0.5, v: 1, ease: 'easeOut' }],
+      scale: [
+        { t: 0, v: 0.08, ease: 'easeInOut' },
+        { t: 1, v: 1, ease: 'easeOut' },
+        { t: 1.4, v: 1.15, ease: 'easeOut' },
+        { t: 1.7, v: 0.97, ease: 'easeInOut' },
+        { t: 1.9, v: 1, ease: 'easeOut' },
+      ],
+      x: [
+        { t: 0, v: startX, ease: 'easeInOut' },
+        { t: 1, v: h.x, ease: 'easeOut' },
+        { t: 1.4, v: CX + (h.x - CX) * 1.25, ease: 'easeOut' },
+        { t: 1.7, v: CX + (h.x - CX) * 0.97, ease: 'easeInOut' },
+        { t: 1.9, v: h.x, ease: 'easeOut' },
+      ],
+      y: [
+        { t: 0, v: startY, ease: 'easeInOut' },
+        { t: 1, v: h.y, ease: 'easeOut' },
+        { t: 1.4, v: CY + (h.y - CY) * 1.25, ease: 'easeOut' },
+        { t: 1.7, v: CY + (h.y - CY) * 0.97, ease: 'easeInOut' },
+        { t: 1.9, v: h.y, ease: 'easeOut' },
+      ],
+      rotation: [{ t: 0, v: deg - 45, ease: 'easeOut' }, { t: 1, v: deg, ease: 'easeOut' }],
+    };
+  };
+
+  // One full turn about the mark's centre: the arm orbits while it spins.
+  const spin = (deg) => {
+    const x = [];
+    const y = [];
+    for (let j = 0; j <= 4; j++) {
+      const a = (deg + j * 90) * DEG;
+      x.push({ t: 2 + j * 0.25, v: CX + R_X * Math.cos(a), ease: 'linear' });
+      y.push({ t: 2 + j * 0.25, v: CY + R_Y * Math.sin(a), ease: 'linear' });
+    }
+    return {
+      x,
+      y,
+      rotation: [{ t: 2, v: deg, ease: 'linear' }, { t: 3, v: deg + 360, ease: 'linear' }],
+    };
+  };
+
+  const glow = [
+    { t: 2.2, v: 0, ease: 'easeOut' },
+    { t: 2.7, v: 1, ease: 'easeOut' },
+    { t: 3, v: 0.2, ease: 'easeInOut' },
+  ];
+
+  const arm = (name, deg, startX, startY) => makeLayer({
+    name,
+    shape: 'kite',
+    morphTo: 'spark',
+    color: '#ffffff',
+    size: 0.139,
+    rotation: deg,
+    tracks: { ...entry(deg, startX, startY), ...spin(deg), glow },
+  });
+
+  return {
+    name: 'Diamond logo reveal',
+    duration: 3,
+    layers: [
+      arm('Point · top', -90, 0.2, -0.03),
+      arm('Point · right', 0, 0.8, -0.03),
+      arm('Point · bottom', 90, 0.8, 1.03),
+      arm('Point · left', 180, 0.2, 1.03),
+      makeLayer({
+        name: 'Core',
+        shape: 'spark',
+        morphTo: 'diamond',
+        color: '#ffffff',
+        size: 0.045,
+        tracks: {
+          opacity: [{ t: 0.9, v: 0, ease: 'easeOut' }, { t: 1.2, v: 1, ease: 'easeOut' }],
+          scale: [
+            { t: 0.9, v: 0.4, ease: 'backOut' },
+            { t: 1.4, v: 1.15, ease: 'easeOut' },
+            { t: 1.9, v: 1, ease: 'easeOut' },
+          ],
+          glow,
         },
       }),
     ],
@@ -299,6 +416,10 @@ function drawLayer(ctx, layer, time, W, H, onAssetReady) {
   ctx.translate(p.x * W, p.y * H);
   ctx.rotate((p.rotation * Math.PI) / 180);
   ctx.scale(p.scale, p.scale);
+  if (p.glow > 0.001) {
+    ctx.shadowColor = layer.color || '#ffffff';
+    ctx.shadowBlur = p.glow * 70;
+  }
 
   if (layer.type === 'text') {
     const fs = base * 0.62;

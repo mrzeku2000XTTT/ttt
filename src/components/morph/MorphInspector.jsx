@@ -8,6 +8,7 @@ const ROWS = [
   { prop: 'scale', label: 'Scale', min: 0.05, max: 4, step: 0.01 },
   { prop: 'rotation', label: 'Rotation°', min: -720, max: 720, step: 1 },
   { prop: 'opacity', label: 'Opacity', min: 0, max: 1, step: 0.01 },
+  { prop: 'glow', label: 'Glow', min: 0, max: 1, step: 0.01 },
   { prop: 'morph', label: 'Morph', min: 0, max: 1, step: 0.01, shapes: true },
 ];
 

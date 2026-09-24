@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Maximize2, Minimize2, Grid3x3, ZoomIn, ZoomOut,
   Store, RotateCcw, Magnet, Home, Layers, Sliders, Clock,
-  SplitSquareHorizontal, Plus, Type, X,
+  SplitSquareHorizontal, Plus, Type, X, Wand2,
 } from 'lucide-react';
 import MorphStage from '@/components/morph/MorphStage';
 import MorphTimeline from '@/components/morph/MorphTimeline';
@@ -11,6 +11,8 @@ import MorphInspector from '@/components/morph/MorphInspector';
 import MorphLayers from '@/components/morph/MorphLayers';
 import MorphSmartInput from '@/components/morph/MorphSmartInput';
 import MorphToolButton from '@/components/morph/MorphToolButton';
+import MorphSequences from '@/components/morph/MorphSequences';
+import { applySequence } from '@/components/morph/morphSequences';
 import {
   starterScene, makeLayer, upsertKey, removeKey, sampleLayer, clamp, PROPS, autoEaseScene,
 } from '@/components/morph/morphEngine';
@@ -186,11 +188,27 @@ export default function MorphStudio({ onHome }) {
 
   const reset = () => {
     const fresh = starterScene();
-    setScene(autoEase ? autoEaseScene(fresh, ease) : fresh);
+    setScene(fresh);
     setTime(0);
     setPlaying(false);
     setSelectedId(fresh.layers[0]?.id || null);
   };
+
+  // Prebuilt sequences merge into the tracks already there, so several can be
+  // chained onto the same logo. They carry their own hand-tuned easing, so they
+  // are deliberately not run through auto-ease.
+  const applySeq = useCallback((name, scope) => {
+    setScene((s) => applySequence(s, name, scope === 'layer' && selectedId ? { layerIds: [selectedId] } : {}));
+    setTime(0);
+    setPlaying(false);
+  }, [selectedId]);
+
+  const runSequences = useCallback((names) => {
+    if (!names?.length) return;
+    setScene((s) => names.reduce((acc, n) => applySequence(acc, n, {}), s));
+    setTime(0);
+    setPlaying(false);
+  }, []);
 
   /* ------------------------------------------------------ resizable splits */
   const startResize = (kind) => (e) => {
@@ -294,6 +312,8 @@ export default function MorphStudio({ onHome }) {
     />
   );
 
+  const sequencesPanel = <MorphSequences onApply={applySeq} hasSelection={!!selected} />;
+
   return (
     <div className="morph-studio flex flex-col bg-[#070707] text-white overflow-hidden h-screen" style={{ height: '100dvh' }}>
       {/* Toolbar */}
@@ -389,6 +409,7 @@ export default function MorphStudio({ onHome }) {
           style={{ width: sidebarW }}
           className="hidden lg:flex flex-col shrink-0 border-r border-white/10 overflow-y-auto"
         >
+          {sequencesPanel}
           {layersPanel}
           {inspectorPanel}
         </aside>
@@ -449,6 +470,12 @@ export default function MorphStudio({ onHome }) {
             active={panel === 'timeline'}
             onClick={() => setPanel((p) => (p === 'timeline' ? null : 'timeline'))}
           />
+          <MorphToolButton
+            icon={Wand2}
+            label="Sequences"
+            active={panel === 'sequences'}
+            onClick={() => setPanel((p) => (p === 'sequences' ? null : 'sequences'))}
+          />
           <MorphToolButton icon={Magnet} label="Auto-key" active={autoKey} onClick={() => setAutoKey((v) => !v)} />
           <MorphToolButton icon={Grid3x3} label="Grid" active={grid} onClick={() => setGrid((g) => !g)} />
           <MorphToolButton icon={Plus} label="Shape" onClick={() => addLayer('shape')} />
@@ -464,7 +491,13 @@ export default function MorphStudio({ onHome }) {
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            {panel === 'layers' ? layersPanel : panel === 'inspector' ? inspectorPanel : timelinePanel}
+            {panel === 'layers'
+              ? layersPanel
+              : panel === 'inspector'
+                ? inspectorPanel
+                : panel === 'timeline'
+                  ? timelinePanel
+                  : sequencesPanel}
           </div>
         )}
       </div>
@@ -473,6 +506,7 @@ export default function MorphStudio({ onHome }) {
         <MorphSmartInput
           scene={scene}
           onScene={applyScene}
+          onSequences={runSequences}
           onAddImage={addImageLayer}
           autoEase={autoEase}
           ease={ease}

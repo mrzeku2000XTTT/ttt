@@ -3,6 +3,7 @@ import { Loader2, Paperclip, Send, Link2, ImagePlus, X, Magnet } from 'lucide-re
 import { base44 } from '@/api/base44Client';
 import invokeProtectedOperation from '@/components/integrations/invokeProtectedOperation';
 import { EASE_NAMES, keysToTracks, makeLayer } from './morphEngine';
+import { SEQUENCES, applySequence } from './morphSequences';
 
 const URL_RE = /(https?:\/\/[^\s<>"')]+)/gi;
 const IMG_RE = /\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/i;
@@ -22,6 +23,7 @@ const hostOf = (u) => {
 export default function MorphSmartInput({
   scene,
   onScene,
+  onSequences,
   onAddImage,
   autoEase,
   ease,
@@ -155,11 +157,24 @@ export default function MorphSmartInput({
         context: contexts.join('\n\n').slice(0, 8000),
         images,
         existing,
+        catalog: SEQUENCES.map(({ name, label, description }) => ({ name, label, description })),
       });
 
-      const built = buildScene(out?.scene, idea);
-      if (!built) throw new Error('The director returned nothing usable — try rephrasing.');
-      onScene(built);
+      // The director may hand back prebuilt sequences instead of — or as well as
+      // — new layers. Chain every one it asked for, in order.
+      const names = (Array.isArray(out?.sequences) ? out.sequences : [])
+        .map((s) => (typeof s === 'string' ? s : s?.name))
+        .filter((n) => SEQUENCES.some((s) => s.name === n));
+
+      const built = out?.scene?.layers?.length ? buildScene(out.scene, idea) : null;
+      // "sequence" means: animate the logo already on screen, don't replace it.
+      const animateCurrent = out?.mode === 'sequence' && names.length && scene.layers.length > 0;
+
+      if (animateCurrent) onSequences?.(names);
+      else if (built) onScene(names.reduce((s, n) => applySequence(s, n, {}), built));
+      else if (names.length) onSequences?.(names);
+      else throw new Error('The director returned nothing usable — try rephrasing.');
+
       setText('');
       setItems([]);
     } catch (e) {
