@@ -7,7 +7,8 @@ const ENTERED_KEY = 'prism_entered';
 
 /**
  * Landing first, always — the studio only opens once the visitor has chosen to
- * enter, and that choice lasts for the session.
+ * enter, and that choice lasts for the session. A file dropped on the landing is
+ * handed straight to the studio.
  */
 export default function Prism() {
   const [entered, setEntered] = useState(() => {
@@ -17,20 +18,23 @@ export default function Prism() {
       return false;
     }
   });
+  const [pending, setPending] = useState(null);
 
-  const enter = () => {
+  const enter = (file) => {
     try { sessionStorage.setItem(ENTERED_KEY, '1'); } catch {}
+    setPending(file || null);
     setEntered(true);
   };
 
   const home = () => {
     try { sessionStorage.removeItem(ENTERED_KEY); } catch {}
+    setPending(null);
     setEntered(false);
   };
 
   return (
     <div className="prism-page min-h-screen bg-white">
-      {entered ? <PrismStudio onHome={home} /> : <PrismLanding onEnter={enter} />}
+      {entered ? <PrismStudio onHome={home} initialFile={pending} /> : <PrismLanding onEnter={enter} />}
     </div>
   );
 }

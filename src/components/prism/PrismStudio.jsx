@@ -38,7 +38,7 @@ const friendly = (e) => {
   return m || 'Something went wrong reading this file.';
 };
 
-export default function PrismStudio({ onHome }) {
+export default function PrismStudio({ onHome, initialFile }) {
   const [src, setSrc] = useState('');
   const [source, setSource] = useState(null);
   const [stage, setStage] = useState('idle');
@@ -90,6 +90,11 @@ export default function PrismStudio({ onHome }) {
       }
     }
   }, []);
+
+  // A file handed over from the landing page's drop zone.
+  useEffect(() => {
+    if (initialFile) startFile(initialFile);
+  }, [initialFile]);
 
   const persist = (over = {}) => {
     if (!source) return;

@@ -43,6 +43,9 @@
 
 ---
 
+> Landing pages: every app opens on a landing built to the shared layout in
+> [`app-landing-standard.md`](./app-landing-standard.md). PRISM is the reference implementation.
+
 ## Apps built with this checklist
 - **PRISM** (`/Prism`) — video inspector: drop any MP4 and it is decoded in the browser — sampled frames are measured for cuts, shot lengths, pacing, motion between samples, brightness, white coverage and palette by area, then a vision read reports the typography, the animation on each element and a keyframe recipe to rebuild the piece. Minimal white-light identity (scoped `.prism-page` theme, the only colour is the prism spectrum). Landing-first, KCC20-gated. Original logo + hero generated 2026-09-24.
 - **Morph** (`/Morph`) — Motion Studio: a real animation engine with split VIEWPORT/FINAL surfaces, an RGB (X/Y/Z) transform gizmo, true point-by-point vector shape morphing, a keyframe timeline, and an AI director that writes the scene keyframes. Landing-first, KCC20-gated; monochrome identity to match the studio. Original logo + hero generated 2026-09-24.
