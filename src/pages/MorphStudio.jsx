@@ -412,8 +412,18 @@ export default function MorphStudio({ onHome }) {
     setSelectedId(cut || rel ? null : next.layers[next.layers.length - 1]?.id || null);
   };
 
-  const addPreset = (id) =>
-    loadMorphScene(applyMorphPreset(scene, id), `Morph preset · ${UI_MORPHS.find((p) => p.id === id)?.label || id}`);
+  const addPreset = (id) => {
+    // A text-based preset carries the word already on the canvas — the selected
+    // text layer, or the scene's only text layer — instead of our sample word.
+    const picked = scene.layers.find((l) => l.id === selectedId);
+    const word = (picked?.type === 'text' ? picked.text : '')
+      || scene.layers.find((l) => l.type === 'text')?.text
+      || '';
+    loadMorphScene(
+      applyMorphPreset(scene, id, word ? { text: word } : {}),
+      `Morph preset · ${UI_MORPHS.find((p) => p.id === id)?.label || id}`,
+    );
+  };
 
   const loadDemo = () => loadMorphScene(musicToThrillerScene(), 'Demo · Music → Thriller');
 

@@ -172,9 +172,11 @@ export default function MorphSmartInput({
       // panel: real geometry, the morph between the two, and its cover image —
       // which the director may have swapped for one of the attached images.
       const preset = UI_MORPHS.find((p) => p.id === out?.preset);
-      const withPreset = preset
-        ? applyMorphPreset(scene, preset.id, out?.presetImage ? { image: out.presetImage } : {})
-        : null;
+      const presetOptions = {};
+      if (out?.presetImage) presetOptions.image = out.presetImage;
+      // A word-becoming-a-logo preset carries the user's own word through.
+      if (out?.presetText) presetOptions.text = out.presetText;
+      const withPreset = preset ? applyMorphPreset(scene, preset.id, presetOptions) : null;
 
       const built = out?.scene?.layers?.length ? buildScene(out.scene, idea) : null;
       const dyn = out?.dynamics && typeof out.dynamics === 'object' ? out.dynamics : null;

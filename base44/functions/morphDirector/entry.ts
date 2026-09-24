@@ -19,6 +19,10 @@ const SCHEMA = {
       type: 'string',
       description: 'Only with "preset". A public image URL to use as the artwork of the preset\'s target element — one of the attached image URLs, or a URL the user supplied.',
     },
+    presetText: {
+      type: 'string',
+      description: 'Only with a "preset" whose source is text (the "text-logo" preset). The exact word or short phrase the user wants carried through the morph — their brand name or the word they named in the brief. Copy it from the brief; never invent one.',
+    },
     layers: {
       type: 'array',
       items: {
@@ -108,6 +112,8 @@ function buildPrompt({ idea, context, imageCount, existing, catalog, presets }) 
       'PREBUILT UI MORPHS — one real interface element becoming another, built by the engine. When the brief is exactly that, return the matching id in "preset" and return NO layers; the engine builds both elements and the morph between them:',
       ...presets.map((p) => `- ${p.id} — ${p.label}`),
       'A UI morph is often the brief even when it is phrased loosely — "make a music button turn into an album card", "the icon should open into a panel", "turn the button into the dashboard".',
+      'The "text-logo" preset is the one for words becoming a logo. Use it whenever the brief asks for that however it is worded — "make my text morph into a logo", "animate TEXT → LOGO", "my brand name should turn into the logo", "the wordmark becomes the mark", "turn this word into a logo". A word becoming a logo is this preset, never a hand-built shape scene.',
+      'Whenever you return the "text-logo" preset, also return "presetText" with the exact word or short phrase from the brief, so the logo carries the user\'s own brand. Never invent a brand name, slogan or tagline: if the brief names no word, omit "presetText" and the preset keeps its own.',
       'With a preset, also return "presetImage" when the brief supplies a cover for the target element — copy one of the attached image URLs verbatim, or a URL the user wrote in the brief. Never invent or recall an image URL: no cover art, no album artwork, no stock or encyclopedia links. If the user supplied none, omit "presetImage" and the preset uses its own generated cover.',
     );
   }
@@ -184,11 +190,17 @@ export default async function (req) {
     for (const m of (idea || '').matchAll(/https?:\/\/[^\s<>"')]+/gi)) supplied.add(m[0]);
     const wanted = preset ? publicImageUrls(result?.presetImage ? [result.presetImage] : [], 1)[0] : null;
     const presetImage = wanted && supplied.has(wanted) ? wanted : null;
+    // The word a text→logo preset should carry. Taken from the model, but only
+    // ever the user's own words — never a brand it invented.
+    const presetText = preset
+      ? String(result?.presetText || '').replace(/\s+/g, ' ').trim().slice(0, 24)
+      : '';
 
     return {
       scene: result || null,
       preset,
       presetImage,
+      presetText,
       mode: result?.mode === 'sequence' ? 'sequence' : 'scene',
       dynamics: result?.dynamics && typeof result.dynamics === 'object' ? result.dynamics : null,
       markers: (Array.isArray(result?.markers) ? result.markers : [])

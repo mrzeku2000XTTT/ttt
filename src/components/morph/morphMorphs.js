@@ -105,8 +105,23 @@ export const UI_MORPHS = [
     id: 'text-logo',
     label: 'Text → Logo',
     style: 'elastic',
-    from: { name: 'Text', w: 0.3, h: 0.12, radius: 0.02, text: 'prism', color: '#f4f4f5' },
-    to: { name: 'Logo', w: 0.34, h: 0.2, radius: 0.04, text: 'PRISM', subtext: 'video inspector', color: '#ffffff' },
+    // A real wordmark, not a card that happens to contain a word: the source is a
+    // text layer, so the letters are what grows into the logo lockup. The plate
+    // starts on the word's own box (w is sized to the word) and fades up as the
+    // letters hand over, so it reads as one word turning into one logo.
+    from: { type: 'text', name: 'Wordmark', text: 'prism', color: '#ffffff', size: 0.2, w: 0.19, h: 0.12 },
+    to: {
+      name: 'Logo lockup',
+      w: 0.4,
+      h: 0.26,
+      radius: 0.055,
+      text: 'PRISM',
+      subtext: 'video inspector',
+      color: '#f4f4f5',
+      textColor: '#0a0a0a',
+      subtextColor: 'rgba(10,10,10,0.6)',
+      textSize: 0.05,
+    },
   },
 ];
 
@@ -143,9 +158,11 @@ export function applyMotionStyle(scene, id, styleId) {
   return s ? updateMorph(scene, id, { duration: s.duration, easing: s.easing }) : scene;
 }
 
-const cardLayer = (spec, x) =>
+// One side of a preset. A text side stays a text layer — that is what makes the
+// letters themselves the thing that morphs.
+const sideLayer = (spec, x) =>
   makeLayer({
-    type: 'card',
+    type: spec.type === 'text' ? 'text' : 'card',
     size: 0.1,
     textColor: '#0a0a0a',
     x,
@@ -153,17 +170,35 @@ const cardLayer = (spec, x) =>
     ...spec,
   });
 
-/** A preset drops in two UI layers and the morph between them. */
+// Roughly how wide a word renders at a given text size, as a fraction of the
+// frame — used so a text→logo plate starts tight on the word instead of
+// appearing as an unrelated box around it.
+const wordWidth = (word, size) => Math.min(0.6, Math.max(0.1, word.length * (size || 0.2) * 0.19));
+
+/** A preset drops in two layers and the morph between them. */
 export function applyMorphPreset(scene, presetId, options = {}) {
   const preset = UI_MORPHS.find((p) => p.id === presetId);
   if (!preset) return scene;
   const style = MOTION_STYLES.find((s) => s.id === preset.style) || MOTION_STYLES[0];
-  const from = cardLayer(preset.from, 0.28);
+  // When the preset is a word becoming a logo, the word is the user's, not ours:
+  // the wordmark keeps their spelling and the lockup carries it as a logotype.
+  const word = String(options.text || '').replace(/\s+/g, ' ').trim().slice(0, 24);
+  const useWord = preset.from.type === 'text' && word;
+  const fromSpec = useWord
+    ? { ...preset.from, text: word, w: wordWidth(word, preset.from.size) }
+    : preset.from;
+  // The preset's own tagline is a placeholder for our sample brand — drop it when
+  // the lockup is carrying the user's word instead.
+  const toSpec = useWord
+    ? { ...preset.to, text: word.toUpperCase(), subtext: '' }
+    : preset.to;
+
+  const from = sideLayer(fromSpec, 0.28);
   // The agent — or the user — may hand in a different cover for the target card.
-  const to = cardLayer(
+  const to = sideLayer(
     options.image
-      ? { ...preset.to, src: options.image, textColor: '#ffffff', subtextColor: 'rgba(255,255,255,0.75)' }
-      : preset.to,
+      ? { ...toSpec, src: options.image, textColor: '#ffffff', subtextColor: 'rgba(255,255,255,0.75)' }
+      : toSpec,
     0.7,
   );
   const rel = makeMorph({
