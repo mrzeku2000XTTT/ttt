@@ -9,7 +9,7 @@ import { Wand2 } from 'lucide-react';
 export const MORPH_PROMPTS = [
   {
     label: 'Shape → Text → Logo',
-    prompt: 'Morph the circle into the word TTT, then resolve it into the logo and let it land on a subtle spring.',
+    prompt: 'Take the shape and morph it point-for-point into the word TTT — the letters emerging left to right — then resolve the word into the logo and land it on a subtle spring.',
   },
   {
     label: 'Text → Logo',

@@ -25,7 +25,7 @@ const SCHEMA = {
     },
     presetShape: {
       type: 'string',
-      description: 'Only with a shape sequence ("shape-text-logo", "shape-text", "shape-logo"). The shape the reveal starts from: circle | square | triangle | diamond | hexagon | star | burst | spark | kite.',
+      description: 'Only with a shape sequence ("shape-text-logo", "shape-text", "shape-logo"). The shape the reveal starts from — map whatever shape the brief names onto the closest of: circle | square | triangle | diamond | hexagon | star | burst | spark | kite. Never invent a shape id; if the brief names no shape, omit this.',
     },
     presetBounce: {
       type: 'string',
@@ -122,8 +122,9 @@ function buildPrompt({ idea, context, imageCount, existing, catalog, presets }) 
       'A UI morph is often the brief even when it is phrased loosely — "make a music button turn into an album card", "the icon should open into a panel", "turn the button into the dashboard".',
       'The "text-logo" preset is the one for words becoming a logo. Use it whenever the brief asks for that however it is worded — "make my text morph into a logo", "animate TEXT → LOGO", "my brand name should turn into the logo", "the wordmark becomes the mark", "turn this word into a logo". A word becoming a logo is this preset, never a hand-built shape scene.',
       'Whenever you return the "text-logo" preset, also return "presetText" with the exact word or short phrase from the brief, so the logo carries the user\'s own brand. Never invent a brand name, slogan or tagline: if the brief names no word, omit "presetText" and the preset keeps its own.',
-      'The shape sequences — "shape-text-logo", "shape-text", "shape-logo" — are the ones for a shape becoming type and then resolving into a logo. Use them for "turn this shape into the logo", "make the circle reveal the TTT logo", "have the shape become the word TTT", "transform the shape into text and then resolve into the logo". They are a real chain of transformations, not a crossfade: the shape deforms, the letters emerge one at a time, the word resolves into the logo, and the logo lands on a spring.',
-      'With a shape sequence, also return "presetText" (the word to reveal — the user\'s own, never invented) and "presetShape" (the shape it starts from, when the brief names one: "the circle reveals…" means circle).',
+      'The shape sequences — "shape-text-logo", "shape-text", "shape-logo" — are the ones for ANY shape becoming ANY logo. Use them for "turn this shape into the logo", "make the circle reveal the TTT logo", "have the shape become the word TTT", "transform the shape into text and then resolve into the logo", "morph my shape into my logo".',
+      'What they do, so you pick them for the right briefs: the start shape is resampled into an even set of points along its outline and blended point-for-point into the letterforms, parts matched left to right, so the silhouette genuinely deforms into type — the letters then emerge one at a time in that same left-to-right order, the word resolves into the logo, and the logo lands on a spring. Nothing fades at any stage: every stage is the previous stage\'s outline still moving. Treat the whole chain as one continuous transformation, which is why it is a sequence and not three effects stacked.',
+      'With a shape sequence, also return "presetText" (the word to reveal — the user\'s own, never invented) and "presetShape" (the shape it starts from). Any shape the brief names is a starting point: map it onto the nearest silhouette the library ships rather than dropping it — a heart, a drop or a leaf is not a shipped shape, so choose the closest primitive that still reads (diamond for a pointed form, circle for a round one, star for a spiky one).',
       'When the brief is about how the landing should feel — "give the logo a satisfying bounce", "make it feel premium", "make the final logo snap into place", "elastic but subtle" — set "presetBounce": subtle for premium, satisfying or snapping; medium when they want more energy; off when they ask for none. Never strong unless they explicitly want it cartoonish.',
       'With a preset, also return "presetImage" when the brief supplies a cover for the target element — copy one of the attached image URLs verbatim, or a URL the user wrote in the brief. Never invent or recall an image URL: no cover art, no album artwork, no stock or encyclopedia links. If the user supplied none, omit "presetImage" and the preset uses its own generated cover.',
     );
@@ -147,6 +148,7 @@ function buildPrompt({ idea, context, imageCount, existing, catalog, presets }) 
     '- Give every layer at least 2 keyframes on the properties that move. Layers that never change look broken.',
     '- Keep x and y between 0.05 and 0.95 so nothing leaves the frame. scale between 0.1 and 2.5.',
     '- For a morph, key "morph" from 0 to 1 across a couple of seconds.',
+    '- When one thing becomes another — a shape into a word, a word into a logo, an icon into a panel — move it, never cross-fade it. A dissolve reads as two elements swapping; a real point-for-point blend reads as one element transforming, and that blend is the whole reason this engine exists.',
     '- Text layers: type "text", put the words in "text" (max 4 words), size 0.14–0.3.',
     '- Use 2–4 layers total. One clear focal element, one supporting element, optionally a title.',
     '- Colours: white #ffffff, or one accent (#ff4d4d red, #3ddc84 green, #4d8dff blue, #facc15 amber).',
