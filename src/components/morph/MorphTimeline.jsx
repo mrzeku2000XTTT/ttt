@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, Flag, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Flag, Link2, X } from 'lucide-react';
 import { EASES, clamp, layerKeyTimes, timecode } from './morphEngine';
 import MorphTimelineAgent from './MorphTimelineAgent';
 
@@ -25,6 +25,9 @@ const EASE_LABELS = {
   easeOut: 'Ease Out',
   easeInOut: 'Ease In Out',
   backOut: 'Back Out',
+  backIn: 'Back In',
+  anticipate: 'Anticipate',
+  cubicBezier: 'Cubic Bezier',
   spring: 'Spring',
   bounce: 'Bounce',
   elastic: 'Elastic',
@@ -55,6 +58,9 @@ export default function MorphTimeline({
   onEaseKey,
   onMoveKey,
   onDeleteKey,
+  morphSel,
+  onSelectMorph,
+  onMoveMorph,
   onAddMarker,
   onRemoveMarker,
   dynamics,
@@ -122,6 +128,32 @@ export default function MorphTimeline({
     window.addEventListener('pointercancel', up);
   };
 
+  // A morph bar drags along the ruler: the relation's start time, never past the
+  // end of the composition.
+  const startMorphDrag = (e, rel) => {
+    e.stopPropagation();
+    onSelectMorph(rel.id);
+    const rect = rulerRef.current.getBoundingClientRect();
+    const x0 = e.clientX;
+    const s0 = rel.start || 0;
+    let active = false;
+    const move = (ev) => {
+      if (!active && Math.abs(ev.clientX - x0) < 4) return;
+      active = true;
+      const ns = clamp(s0 + ((ev.clientX - x0) / rect.width) * duration, 0, Math.max(0, duration - (rel.duration || 1)));
+      onMoveMorph?.(rel.id, { start: ns });
+      onSeek(ns);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
+
   const ticks = [];
   for (let s = 0; s <= duration + 0.001; s += 0.5) ticks.push(Math.round(s * 100) / 100);
 
@@ -130,6 +162,8 @@ export default function MorphTimeline({
     if (l.group && !groupNames.includes(l.group)) groupNames.push(l.group);
   });
   const loose = scene.layers.filter((l) => !l.group);
+  const morphs = scene.morphs || [];
+  const nameOf = (id) => scene.layers.find((l) => l.id === id)?.name || '—';
 
   const laneBase = (isSelected) =>
     `relative flex-1 h-6 rounded bg-white/[0.04] cursor-pointer ${isSelected ? 'ring-1 ring-white/25' : ''}`;
@@ -378,6 +412,45 @@ export default function MorphTimeline({
 
           {/* Lanes */}
           <div className="px-3 py-2 space-y-1 max-h-40 overflow-y-auto">
+            {/* Morphs sit above the layers: they are the relationships between them. */}
+            {morphs.length > 0 && (
+              <div className="space-y-1 pb-1 mb-1 border-b border-white/5">
+                {morphs.map((rel) => {
+                  const on = morphSel === rel.id;
+                  const left = ((rel.start || 0) / duration) * 100;
+                  const width = Math.max(2, ((rel.duration || 1) / duration) * 100);
+                  return (
+                    <div key={rel.id} className="flex items-center gap-2">
+                      <div style={{ width: LABEL_W }} className="shrink-0 flex items-center gap-1">
+                        <Link2 className="w-3 h-3 shrink-0 text-white/35" />
+                        <button
+                          onClick={() => onSelectMorph(rel.id)}
+                          className={`flex-1 min-w-0 text-left truncate text-[11px] px-1.5 py-0.5 rounded transition-colors ${
+                            on ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white/80'
+                          }`}
+                        >
+                          Morph
+                        </button>
+                      </div>
+                      <div className="relative flex-1 h-6 rounded bg-white/[0.04]">
+                        <button
+                          onPointerDown={(e) => startMorphDrag(e, rel)}
+                          title={`${nameOf(rel.from)} → ${nameOf(rel.to)} · ${rel.duration}s · ${EASE_LABELS[rel.easing] || rel.easing}`}
+                          style={{ left: `${left}%`, width: `${width}%` }}
+                          className={`absolute top-0.5 bottom-0.5 rounded flex items-center gap-1 px-1.5 overflow-hidden cursor-ew-resize text-[9px] ${
+                            on ? 'bg-white text-black' : 'bg-white/20 text-white/70 hover:bg-white/30'
+                          }`}
+                        >
+                          <span className="truncate">{nameOf(rel.from)} → {nameOf(rel.to)}</span>
+                        </button>
+                        <div className="absolute top-0 bottom-0 w-px bg-white/70 pointer-events-none" style={{ left: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {scene.layers.length === 0 && <p className="text-[11px] text-white/35 py-2">No layers yet.</p>}
             {groupNames.map((g) => groupRow(g))}
             {loose.map((l) => layerRow(l))}

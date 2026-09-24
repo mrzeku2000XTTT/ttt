@@ -104,6 +104,36 @@ export default function MorphInspector({ layer, time, onTransform, onToggleKey, 
         </label>
       )}
 
+      {layer.type === 'card' && (
+        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-2 space-y-1.5">
+          <span className="text-[10px] text-white/45">UI card</span>
+          {[['w', 'Width', 0.02, 1], ['h', 'Height', 0.02, 1], ['radius', 'Radius', 0, 0.3], ['textSize', 'Label size', 0, 0.15]].map(
+            ([prop, label, min, max]) => (
+              <label key={prop} className="block text-[9px] text-white/40">
+                {label} · {Number(p[prop] ?? 0).toFixed(3)}
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step="0.002"
+                  value={p[prop] ?? 0}
+                  onChange={(e) => onTransform(layer.id, { [prop]: Number(e.target.value) })}
+                  className="w-full accent-white"
+                />
+              </label>
+            )
+          )}
+          <label className="block text-[9px] text-white/40">
+            Subtext
+            <input
+              value={layer.subtext || ''}
+              onChange={(e) => onTransform(layer.id, { subtext: e.target.value })}
+              className="mt-1 w-full bg-white/[0.05] border border-white/10 rounded px-2 py-1 text-[11px] text-white outline-none focus:border-white/35"
+            />
+          </label>
+        </div>
+      )}
+
       {layer.type !== 'image' && (
       <div className="flex items-center gap-1.5">
         {SWATCHES.map((c) => (

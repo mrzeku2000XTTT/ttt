@@ -3,17 +3,22 @@ import { Link } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Maximize2, Minimize2, Grid3x3, ZoomIn, ZoomOut,
   Store, RotateCcw, Magnet, Home, Layers, Sliders, Clock,
-  SplitSquareHorizontal, Plus, Type, X, Wand2, Sparkles, FolderOpen, Boxes,
+  SplitSquareHorizontal, Plus, Type, X, Wand2, Sparkles, FolderOpen, Boxes, Link2,
 } from 'lucide-react';
 import MorphStage from '@/components/morph/MorphStage';
 import MorphTimeline from '@/components/morph/MorphTimeline';
 import MorphInspector from '@/components/morph/MorphInspector';
 import MorphLayers from '@/components/morph/MorphLayers';
 import MorphSmartInput from '@/components/morph/MorphSmartInput';
+import MorphMorphPanel from '@/components/morph/MorphMorphPanel';
 import MorphToolButton from '@/components/morph/MorphToolButton';
 import MorphSequences from '@/components/morph/MorphSequences';
 import MorphDynamics from '@/components/morph/MorphDynamics';
 import { applySequence } from '@/components/morph/morphSequences';
+import {
+  UI_MORPHS, addMorph, applyMorphPreset, applyMotionStyle,
+  deleteMorph, makeMorph, musicToThrillerScene, updateMorph,
+} from '@/components/morph/morphMorphs';
 import { DEFAULT_DYNAMICS, bakeDynamics } from '@/components/morph/morphDynamics';
 import MorphLibrary from '@/components/morph/MorphLibrary';
 import MorphProjects from '@/components/morph/MorphProjects';
@@ -79,6 +84,7 @@ export default function MorphStudio({ onHome }) {
   const [dynamics, setDynamics] = useState(DEFAULT_DYNAMICS);
   const [store, setStore] = useState(boot.store);
   const [showProjects, setShowProjects] = useState(false);
+  const [morphSel, setMorphSel] = useState(null);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
 
   const active = activeProject(store);
@@ -346,6 +352,41 @@ export default function MorphStudio({ onHome }) {
     if (snap) loadInto(snap, true);
   };
 
+  /* ------------------------------------------------------------------ morphs */
+  // A morph is a relation between two layers. Creating one writes it into the
+  // scene, so both panes and the timeline pick it up on the next frame.
+  const createMorph = (from, to, opts) => {
+    const rel = makeMorph({ from, to, ...opts });
+    snapLabel.current = 'Morph created';
+    setScene((s) => addMorph(s, rel));
+    setMorphSel(rel.id);
+    setPlaying(false);
+    setTime(rel.start);
+  };
+
+  const editMorph = (id, patch) => setScene((s) => updateMorph(s, id, patch));
+
+  const dropMorph = (id) => {
+    setScene((s) => deleteMorph(s, id));
+    setMorphSel((cur) => (cur === id ? null : cur));
+  };
+
+  const loadMorphScene = (next, label) => {
+    snapLabel.current = label;
+    setScene(next);
+    setTime(0);
+    setPlaying(false);
+    setMorphSel(next.morphs?.[next.morphs.length - 1]?.id || null);
+    setSelectedId(next.layers[next.layers.length - 1]?.id || null);
+  };
+
+  const addPreset = (id) =>
+    loadMorphScene(applyMorphPreset(scene, id), `Morph preset · ${UI_MORPHS.find((p) => p.id === id)?.label || id}`);
+
+  const loadDemo = () => loadMorphScene(musicToThrillerScene(), 'Demo · Music → Thriller');
+
+  const setMorphStyle = (id, styleId) => setScene((s) => applyMotionStyle(s, id, styleId));
+
   /* ------------------------------------------------------ resizable splits */
   const startResize = (kind) => (e) => {
     e.preventDefault();
@@ -410,6 +451,7 @@ export default function MorphStudio({ onHome }) {
             onTransform={id === 'viewport' ? updateLayer : undefined}
             zoom={id === 'viewport' ? zoom : 1}
             grid={grid}
+            selectedMorphId={id === 'viewport' ? morphSel : null}
           />
         </div>
       </div>
@@ -444,6 +486,20 @@ export default function MorphStudio({ onHome }) {
     />
   );
 
+  const morphPanel = (
+    <MorphMorphPanel
+      scene={scene}
+      morphSel={morphSel}
+      onSelect={setMorphSel}
+      onCreate={createMorph}
+      onUpdate={editMorph}
+      onDelete={dropMorph}
+      onApplyPreset={addPreset}
+      onApplyStyle={setMorphStyle}
+      onDemo={loadDemo}
+    />
+  );
+
   const timelinePanel = (
     <MorphTimeline
       scene={scene}
@@ -466,6 +522,9 @@ export default function MorphStudio({ onHome }) {
         setScene((s) => deleteKey(s, keySel.layerId, keySel.prop, keySel.t));
         setKeySel(null);
       }}
+      morphSel={morphSel}
+      onSelectMorph={setMorphSel}
+      onMoveMorph={(id, patch) => setScene((s) => updateMorph(s, id, patch))}
       onAddMarker={(t) => setScene((s) => addMarker(s, t))}
       onRemoveMarker={(id) => setScene((s) => removeMarker(s, id))}
       dynamics={dynamics}
@@ -596,6 +655,7 @@ export default function MorphStudio({ onHome }) {
         >
           {libraryPanel}
           {layersPanel}
+          {morphPanel}
           {dynamicsPanel}
           {sequencesPanel}
           {inspectorPanel}
@@ -675,6 +735,12 @@ export default function MorphStudio({ onHome }) {
             active={panel === 'sequences'}
             onClick={() => setPanel((p) => (p === 'sequences' ? null : 'sequences'))}
           />
+          <MorphToolButton
+            icon={Link2}
+            label="Morph"
+            active={panel === 'morph'}
+            onClick={() => setPanel((p) => (p === 'morph' ? null : 'morph'))}
+          />
           <MorphToolButton icon={Magnet} label="Auto-key" active={autoKey} onClick={() => setAutoKey((v) => !v)} />
           <MorphToolButton icon={Grid3x3} label="Grid" active={grid} onClick={() => setGrid((g) => !g)} />
           <MorphToolButton icon={Plus} label="Shape" onClick={() => addLayer('shape')} />
@@ -700,7 +766,9 @@ export default function MorphStudio({ onHome }) {
                     ? timelinePanel
                     : panel === 'sequences'
                       ? sequencesPanel
-                      : dynamicsPanel}
+                      : panel === 'morph'
+                        ? morphPanel
+                        : dynamicsPanel}
           </div>
         )}
       </div>

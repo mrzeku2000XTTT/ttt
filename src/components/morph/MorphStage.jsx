@@ -18,6 +18,7 @@ export default function MorphStage({
   onTransform,
   zoom = 1,
   grid = false,
+  selectedMorphId = null,
 }) {
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
@@ -36,11 +37,11 @@ export default function MorphStage({
     ctx.scale(zoom, zoom);
     ctx.translate(-W / 2, -H / 2);
     drawScene(ctx, {
-      scene, time, W, H, mode, selectedId, grid,
+      scene, time, W, H, mode, selectedId, grid, selectedMorphId,
       onAssetReady: () => bumpAssets((n) => n + 1),
     });
     ctx.restore();
-  }, [scene, time, mode, selectedId, zoom, grid, assetTick]);
+  }, [scene, time, mode, selectedId, zoom, grid, assetTick, selectedMorphId]);
 
   const toCanvas = (clientX, clientY) => {
     const rect = canvasRef.current.getBoundingClientRect();

@@ -8,7 +8,12 @@
 export const FPS = 30;
 export const DEFAULT_DURATION = 6;
 
-export const DEFAULTS = { x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, morph: 0, glow: 0 };
+// Every animatable property. `w/h/radius` are a UI card's box, `textSize` and
+// `textOpacity` the label inside it, `draw` a path being drawn on (0→1).
+export const DEFAULTS = {
+  x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, morph: 0, glow: 0,
+  w: 0.34, h: 0.12, radius: 0.05, textSize: 0, textOpacity: 1, draw: 1,
+};
 export const PROPS = Object.keys(DEFAULTS);
 
 // A real damped spring, as an interpolation curve. Overshoot becomes a property
@@ -37,12 +42,34 @@ const bounceOut = (t) => {
 const elasticOut = (t) =>
   t <= 0 ? 0 : t >= 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1;
 
+// A real cubic-bezier, solved by bisection — the curve a designer would type.
+export function cubicBezier(x1, y1, x2, y2) {
+  const bx = (t) => 3 * (1 - t) ** 2 * t * x1 + 3 * (1 - t) * t * t * x2 + t ** 3;
+  const by = (t) => 3 * (1 - t) ** 2 * t * y1 + 3 * (1 - t) * t * t * y2 + t ** 3;
+  return (p) => {
+    if (p <= 0) return 0;
+    if (p >= 1) return 1;
+    let lo = 0;
+    let hi = 1;
+    let t = p;
+    for (let i = 0; i < 22; i++) {
+      t = (lo + hi) / 2;
+      if (bx(t) < p) lo = t;
+      else hi = t;
+    }
+    return by(t);
+  };
+}
+
 export const EASES = {
   linear: (t) => t,
   easeIn: (t) => t * t,
   easeOut: (t) => 1 - (1 - t) * (1 - t),
   easeInOut: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2),
   backOut: (t) => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2),
+  backIn: (t) => 2.7 * t ** 3 - 1.7 * t ** 2,
+  anticipate: (t) => 2.7 * t ** 3 - 1.7 * t ** 2,
+  cubicBezier: cubicBezier(0.42, 0, 0.2, 1),
   spring: springCurve(180, 12),
   bounce: bounceOut,
   elastic: elasticOut,
@@ -210,6 +237,8 @@ export function makeLayer(partial = {}) {
     morphTo: 'star',
     color: '#ffffff',
     text: '',
+    subtext: '',
+    textColor: '#0a0a0a',
     src: '',
     size: 0.2,
     visible: true,
@@ -393,17 +422,45 @@ export function imageFor(src, onReady) {
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif";
 const AXIS = { x: '#ff4d4d', y: '#3ddc84', z: '#4d8dff' };
 
-export function drawScene(ctx, { scene, time, W, H, mode = 'final', selectedId = null, grid = false, onAssetReady }) {
+export function drawScene(ctx, { scene, time, W, H, mode = 'final', selectedId = null, grid = false, onAssetReady, selectedMorphId = null }) {
   ctx.fillStyle = '#070707';
   ctx.fillRect(0, 0, W, H);
   if (grid && mode === 'edit') drawGrid(ctx, W, H);
-  scene.layers.forEach((layer) => {
+
+  // Morphs resolve the layers before anything is drawn: a morph target is not a
+  // separate object fading in, it is the source re-shaped — so the arrow and the
+  // layers always agree about where things are.
+  const resolved = resolveMorphs(scene, time);
+
+  (scene.morphs || []).forEach((rel) => {
+    drawMorphArrow(ctx, resolved, rel, time, W, H, mode === 'edit' && selectedMorphId === rel.id);
+  });
+
+  resolved.layers.forEach((layer) => {
     if (layer.visible !== false) drawLayer(ctx, layer, time, W, H, onAssetReady);
   });
-  if (mode === 'edit' && selectedId) {
-    const layer = scene.layers.find((l) => l.id === selectedId);
-    if (layer && layer.visible !== false) drawGizmo(ctx, layer, time, W, H);
+
+  if (mode === 'edit') {
+    if (selectedMorphId) {
+      const rel = (scene.morphs || []).find((r) => r.id === selectedMorphId);
+      if (rel) drawMorphHighlight(ctx, resolved, rel, time, W, H);
+    }
+    if (selectedId) {
+      const layer = resolved.layers.find((l) => l.id === selectedId);
+      if (layer && layer.visible !== false) drawGizmo(ctx, layer, time, W, H);
+    }
   }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  const rad = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rad);
+  ctx.arcTo(x + w, y + h, x, y + h, rad);
+  ctx.arcTo(x, y + h, x, y, rad);
+  ctx.arcTo(x, y, x + w, y, rad);
+  ctx.closePath();
 }
 
 function drawGrid(ctx, W, H) {
@@ -451,7 +508,35 @@ function drawLayer(ctx, layer, time, W, H, onAssetReady) {
     ctx.shadowBlur = p.glow * 70;
   }
 
-  if (layer.type === 'text') {
+  if (layer.type === 'card') {
+    // A UI element: a rounded box with a label and an optional line under it.
+    const w = Math.max(8, p.w * W);
+    const h = Math.max(8, p.h * H);
+    roundRect(ctx, -w / 2, -h / 2, w, h, p.radius * Math.min(W, H));
+    ctx.fillStyle = layer.color || '#ffffff';
+    ctx.fill();
+    const label = clamp(p.textOpacity, 0, 1);
+    if (layer.text && label > 0.001) {
+      const fs = p.textSize > 0 ? p.textSize * H : h * (layer.subtext ? 0.3 : 0.34);
+      const lines = String(layer.text).split('\n');
+      const lh = fs * 1.12;
+      const top = layer.subtext ? -(lines.length * lh) / 2 : -lh / 2;
+      ctx.save();
+      ctx.globalAlpha = clamp(p.opacity, 0, 1) * label;
+      ctx.fillStyle = layer.textColor || '#0a0a0a';
+      ctx.font = `700 ${fs}px ${FONT}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      lines.forEach((ln, i) => ctx.fillText(ln, 0, top + lh * (i + 0.5)));
+      if (layer.subtext) {
+        const sf = fs * 0.6;
+        ctx.font = `500 ${sf}px ${FONT}`;
+        ctx.fillStyle = layer.subtextColor || 'rgba(10,10,10,0.55)';
+        ctx.fillText(layer.subtext, 0, top + lines.length * lh + sf * 0.85);
+      }
+      ctx.restore();
+    }
+  } else if (layer.type === 'text') {
     const fs = base * 0.62;
     ctx.fillStyle = layer.color;
     ctx.font = `700 ${fs}px ${FONT}`;
@@ -509,7 +594,12 @@ function drawGizmo(ctx, layer, time, W, H) {
   ctx.setLineDash([7, 7]);
   ctx.lineWidth = 2;
   ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.strokeRect(move.x - r, move.y - r, r * 2, r * 2);
+  if (layer.type === 'card') {
+    const box = layerBox(layer, time, W, H);
+    ctx.strokeRect(box.left, box.top, box.w, box.h);
+  } else {
+    ctx.strokeRect(move.x - r, move.y - r, r * 2, r * 2);
+  }
   ctx.setLineDash([]);
   [[hx, AXIS.x], [hy, AXIS.y], [hz, AXIS.z]].forEach(([h, color]) => {
     ctx.strokeStyle = color;
@@ -536,10 +626,17 @@ function drawGizmo(ctx, layer, time, W, H) {
 }
 
 export function hitLayer(scene, time, x, y, W, H) {
-  for (let i = scene.layers.length - 1; i >= 0; i--) {
-    const l = scene.layers[i];
+  const resolved = resolveMorphs(scene, time);
+  for (let i = resolved.layers.length - 1; i >= 0; i--) {
+    const l = resolved.layers[i];
     if (l.visible === false) continue;
     const p = sampleLayer(l, time);
+    if (p.opacity < 0.05) continue;
+    if (l.type === 'card') {
+      const box = layerBox(l, time, W, H);
+      if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) return l.id;
+      continue;
+    }
     const r = Math.min(W, H) * l.size * p.scale * 1.2;
     if (Math.hypot(x - p.x * W, y - p.y * H) <= r) return l.id;
   }
@@ -583,4 +680,197 @@ export function autoEaseScene(scene, ease = 'easeInOut') {
       ),
     })),
   };
+}
+
+/* ------------------------------------------------------------------- morphs */
+// A morph is a first-class relation between two layers, not a copy of an
+// effect: the source is what it looks like now, the target is where it has to
+// end up, and everything between is interpolated — box, position, radius,
+// scale, rotation, label size, fill colour and the label handover itself.
+// Nothing blinks out and reappears.
+
+export function morphProgress(rel, time) {
+  const d = Math.max(0.001, rel.duration || 1);
+  const raw = (time - (rel.start || 0)) / d;
+  const p = clamp(raw, 0, 1);
+  return { raw, p, eased: (EASES[rel.easing] || EASES.easeInOut)(p) };
+}
+
+// Geometry, radius and label size travel from source to target. Colour is mixed
+// separately because it is not a number.
+const MORPH_PROPS = ['x', 'y', 'w', 'h', 'radius', 'scale', 'rotation', 'textSize'];
+
+function rgbOf(hex) {
+  const h = String(hex || '#ffffff').replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full.slice(0, 6), 16);
+  return Number.isFinite(n) ? [(n >> 16) & 255, (n >> 8) & 255, n & 255] : [255, 255, 255];
+}
+
+export function mixColor(a, b, t) {
+  if (!t) return a;
+  if (t >= 1) return b;
+  const A = rgbOf(a);
+  const B = rgbOf(b);
+  const c = A.map((v, i) => Math.round(v + (B[i] - v) * t));
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+}
+
+function withAlpha(hex, a) {
+  const c = rgbOf(hex);
+  return `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${clamp(a, 0, 1)})`;
+}
+
+// The box a layer occupies at a moment in time, whatever kind of layer it is.
+export function layerBox(layer, time, W, H) {
+  const p = sampleLayer(layer, time);
+  const card = layer.type === 'card';
+  const unit = Math.min(W, H);
+  const w = card ? Math.max(8, p.w * W) * p.scale : unit * (layer.size || 0.2) * p.scale * 2;
+  const h = card ? Math.max(8, p.h * H) * p.scale : unit * (layer.size || 0.2) * p.scale * 2;
+  const cx = p.x * W;
+  const cy = p.y * H;
+  return { cx, cy, w, h, left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2, p };
+}
+
+// One layer, seen through every morph that touches it.
+export function resolveLayer(scene, layer, time) {
+  const asTarget = (scene.morphs || []).find((r) => r.to === layer.id);
+  if (asTarget) {
+    const src = scene.layers.find((l) => l.id === asTarget.from);
+    if (src) {
+      const { raw, eased } = morphProgress(asTarget, time);
+      if (raw >= 1) return layer;
+      const a = sampleLayer(src, time);
+      const b = sampleLayer(layer, time);
+      const mix = raw <= 0 ? 0 : eased;
+      const out = { ...layer, tracks: {} };
+      MORPH_PROPS.forEach((prop) => { out[prop] = a[prop] + (b[prop] - a[prop]) * mix; });
+      out.color = mixColor(src.color, layer.color, mix);
+      out.opacity = b.opacity * mix;
+      // The box lands first, the words arrive after it — that ordering is what
+      // makes the pair read as one object changing rather than two swapping.
+      out.textOpacity = mix <= 0.4 ? 0 : clamp((mix - 0.4) / 0.6, 0, 1);
+      return out;
+    }
+  }
+
+  const asSource = (scene.morphs || []).find((r) => r.from === layer.id);
+  if (asSource) {
+    const { raw, eased } = morphProgress(asSource, time);
+    const own = sampleLayer(layer, time);
+    const out = { ...layer, tracks: {}, ...own };
+    if (raw >= 1) return { ...out, opacity: 0 };
+    if (raw > 0) {
+      // Hold solid while the target takes over, then hand over completely.
+      const handoff = clamp((eased - 0.6) / 0.4, 0, 1);
+      out.opacity = own.opacity * (1 - handoff);
+      out.textOpacity = 1 - handoff;
+    }
+    return out;
+  }
+
+  return layer;
+}
+
+export function resolveMorphs(scene, time) {
+  if (!scene.morphs?.length) return scene;
+  return { ...scene, layers: scene.layers.map((l) => resolveLayer(scene, l, time)) };
+}
+
+/* ---------------------------------------------------------------- the arrow */
+// A curved connector between the two boxes, calculated fresh every frame so it
+// follows them. It draws itself on over the morph, and the head rides the end of
+// whatever has been drawn so far.
+
+export function morphArrow(scene, rel, time, W, H) {
+  const from = scene.layers.find((l) => l.id === rel.from);
+  const to = scene.layers.find((l) => l.id === rel.to);
+  if (!from || !to) return null;
+  const A = layerBox(from, time, W, H);
+  const B = layerBox(to, time, W, H);
+  const rightward = B.cx >= A.cx;
+  const gap = 16;
+  const sx = (rightward ? A.right : A.left) + (rightward ? gap : -gap);
+  const ex = (rightward ? B.left : B.right) + (rightward ? -gap : gap);
+  const sy = A.cy;
+  const ey = B.cy;
+  const span = Math.hypot(ex - sx, ey - sy);
+  const mx = (sx + ex) / 2;
+  const my = (sy + ey) / 2 - span * (rel.curve ?? 0.35);
+  const { eased } = morphProgress(rel, time);
+  return { sx, sy, mx, my, ex, ey, draw: clamp((eased - 0.15) / 0.85, 0, 1) };
+}
+
+function pointOn(a, c, b, t) {
+  const u = 1 - t;
+  return { x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y };
+}
+
+function drawMorphArrow(ctx, scene, rel, time, W, H, selected) {
+  if (rel.arrow === false) return;
+  const g = morphArrow(scene, rel, time, W, H);
+  if (!g || g.draw <= 0.001) return;
+  const a = { x: g.sx, y: g.sy };
+  const c = { x: g.mx, y: g.my };
+  const b = { x: g.ex, y: g.ey };
+  const steps = 64;
+  const upto = Math.max(2, Math.round(steps * g.draw));
+  const pts = [];
+  for (let i = 0; i <= upto; i++) pts.push(pointOn(a, c, b, (i / steps) * g.draw));
+  const color = rel.glowColor || '#7DDCFF';
+  const glow = rel.glow ?? 0.8;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const path = () => {
+    ctx.beginPath();
+    pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.stroke();
+  };
+  if (glow > 0.001) {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = glow * 30;
+  }
+  // A soft wide pass under a thin bright core: light, not neon.
+  ctx.strokeStyle = withAlpha(color, 0.14 + glow * 0.22);
+  ctx.lineWidth = selected ? 8 : 7;
+  path();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = selected ? 2.6 : 2;
+  path();
+  ctx.shadowBlur = 0;
+
+  const last = pts[pts.length - 1];
+  const prev = pts[pts.length - 2] || pts[0];
+  const ang = Math.atan2(last.y - prev.y, last.x - prev.x);
+  const size = selected ? 15 : 13;
+  ctx.translate(last.x, last.y);
+  ctx.rotate(ang);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-size, -size * 0.58);
+  ctx.lineTo(-size * 0.72, 0);
+  ctx.lineTo(-size, size * 0.58);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+// Edit mode: show which two layers a selected morph is joining.
+function drawMorphHighlight(ctx, scene, rel, time, W, H) {
+  const from = scene.layers.find((l) => l.id === rel.from);
+  const to = scene.layers.find((l) => l.id === rel.to);
+  if (!from || !to) return;
+  ctx.save();
+  ctx.setLineDash([5, 5]);
+  ctx.lineWidth = 1.5;
+  [from, to].forEach((l) => {
+    const box = layerBox(l, time, W, H);
+    ctx.strokeStyle = withAlpha(rel.glowColor || '#7DDCFF', 0.75);
+    ctx.strokeRect(box.left - 6, box.top - 6, box.w + 12, box.h + 12);
+  });
+  ctx.restore();
 }
