@@ -44,6 +44,7 @@
 ---
 
 ## Apps built with this checklist
+- **Morph** (`/Morph`) — Motion Studio: a real animation engine with split VIEWPORT/FINAL surfaces, an RGB (X/Y/Z) transform gizmo, true point-by-point vector shape morphing, a keyframe timeline, and an AI director that writes the scene keyframes. Landing-first, KCC20-gated; monochrome identity to match the studio. Original logo + hero generated 2026-09-24.
 - **Hybrid** (`/Hybrid`) — social engagement auditor: paste any channel/video/profile link, Hybrid resolves the real channel from the live web and returns an engagement score, what's holding you back, ranked weekly actions, content ideas with hooks, and a posting plan. Landing-first, KCC20-gated; docs curated in `appDocsData.js`. Original logo + hero generated 2026-09-23.
 - **Product Studio** (`/ProductStudio`) — AI product-image asset collection with upload/paste references, draggable canvas, motion presets, and browser preview. Original logo + hero generated 2026-09-17.
 - **ClutchKAS** (`/ClutchKAS`) — VALORANT highlight feed, uploaded MP4/WebM or YouTube embeds, fan-set KAS heart tips with Scorpion approval. Landing-first, KCC20-gated; TTT sign-in for publishing. Original logo + hero generated 2026-09-13.

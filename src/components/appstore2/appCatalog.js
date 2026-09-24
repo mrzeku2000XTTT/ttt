@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "Morph", path: "Morph", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/76b25d579_generated_image.png", desc: "Motion Studio · a real animation engine — split VIEWPORT/FINAL surfaces, RGB transform gizmo, true point-by-point shape morphing and an AI director that writes the keyframes" },
   { name: "Hybrid", path: "Hybrid", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/89278bc6a_generated_image.png", desc: "Social engagement auditor · paste any channel, video or profile link, see the real channel behind it and exactly what to do this week to lift engagement" },
   { name: "Product Studio", path: "ProductStudio", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/20ef07dfe_generated_image.png", desc: "AI product image studio · generate four visual directions, upload or paste references, collect ideas, arrange them on a canvas, and preview motion presets" },
   { name: "FlagSense", path: "FlagSense", cat: "Lifestyle", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/48ed8d14e_generated_image.png", desc: "Relationship red flag / green flag self-awareness · swipe real scenarios, see how the other person might feel, learn a healthier alternative — private by design, no labels, no judgment" },

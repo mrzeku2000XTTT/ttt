@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Maximize2, Minimize2, Grid3x3, ZoomIn, ZoomOut,
-  Store, RotateCcw, Magnet,
+  Store, RotateCcw, Magnet, Home,
 } from 'lucide-react';
 import MorphStage from '@/components/morph/MorphStage';
 import MorphTimeline from '@/components/morph/MorphTimeline';
@@ -14,6 +14,7 @@ import {
 } from '@/components/morph/morphEngine';
 
 const STORE_KEY = 'morph_scene_v1';
+const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/76b25d579_generated_image.png';
 
 const loadScene = () => {
   try {
@@ -26,7 +27,7 @@ const loadScene = () => {
   return starterScene();
 };
 
-export default function MorphStudio() {
+export default function MorphStudio({ onHome }) {
   const [scene, setScene] = useState(loadScene);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -197,10 +198,14 @@ export default function MorphStudio() {
       {/* Toolbar */}
       <header className="shrink-0 border-b border-white/10 bg-[#0b0b0b]">
         <div className="flex items-center gap-2 px-2.5 py-2 flex-wrap">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="w-4 h-4 rounded-full bg-white" />
+          <button
+            onClick={onHome}
+            title="Back to landing"
+            className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity"
+          >
+            <img src={LOGO} alt="Morph" className="w-4 h-4 rounded object-cover" />
             <span className="text-[11px] font-bold tracking-[0.2em]">MORPH</span>
-          </div>
+          </button>
 
           <div className="flex items-center gap-1 shrink-0">
             <button
@@ -245,6 +250,13 @@ export default function MorphStudio() {
             </button>
             <button onClick={reset} className="p-1.5 rounded text-white/45 hover:text-white" title="Reset scene">
               <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onHome}
+              title="Home"
+              className="p-1.5 rounded text-white/45 hover:text-white transition-colors"
+            >
+              <Home className="w-3.5 h-3.5" />
             </button>
             <Link
               to="/AppStoreV2"
