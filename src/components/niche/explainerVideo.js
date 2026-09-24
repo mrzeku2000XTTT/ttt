@@ -298,7 +298,7 @@ export function createAudioContext() {
   return ac;
 }
 
-export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false, token }) {
+export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false, token, minScene = 3.5, gap = 0.45 }) {
   const style = styleById(styleId);
   const W = 1280;
   const H = 720;
@@ -343,10 +343,11 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   onProgress?.('Laying out narration…');
   const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const LEAD = 0.25;
-  const GAP = 0.45;
   // never let a rushed narration line shrink a scene below this hold time —
-  // a 14-second video for 8 scenes means the lines came back far too short
-  const MIN_SCENE = 3.5;
+  // a 14-second video for 8 scenes means the lines came back far too short.
+  // Sentence pacing passes a tighter hold + breath so every sentence keeps its own beat.
+  const GAP = gap;
+  const MIN_SCENE = minScene;
   const timeline = [];
   let cursor = LEAD;
   buffers.forEach((buf, i) => {

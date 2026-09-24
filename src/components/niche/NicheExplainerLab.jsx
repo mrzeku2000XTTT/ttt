@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { PenTool, Loader2, Mic, Download, ShieldCheck, Captions, Music } from 'lucide-react';
+import { PenTool, Loader2, Mic, Download, ShieldCheck, Captions, Music, Gauge } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
 import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileExplainerVideo, videoExt, researchAppUi, realUiPrompt, createAudioContext } from './explainerVideo';
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
+import { buildSentenceBeats, beatCaption } from './sentencePacing';
 
 const fmtElapsed = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, '0')}`;
 
@@ -26,8 +27,28 @@ export default function NicheExplainerLab({ niche }) {
   const [appName, setAppName] = useState(''); // for the "Real UI Clone" style
   const [uiResearch, setUiResearch] = useState(null); // cached {app, description}
   const [elapsed, setElapsed] = useState(0); // live elapsed on the working status
+  const [sentencePacing, setSentencePacing] = useState(false); // one image per spoken sentence
 
   const scenes = script?.scenes || [];
+  // Sentence pacing: one image + one narration clip per spoken sentence, so the
+  // visuals change with every line instead of holding one image for a whole scene.
+  const beats = sentencePacing ? buildSentenceBeats(scenes) : [];
+  const units = sentencePacing ? beats : scenes;
+  const unitLine = (u) => u.line ?? u.voiceover ?? '';
+  const unitCaption = (u) =>
+    sentencePacing
+      ? beatCaption(u, captionMode)
+      : captionMode === 'tts'
+        ? (u.voiceover || u.caption || '')
+        : (u.caption || String(u.voiceover || '').split(' ').slice(0, 8).join(' '));
+
+  const toggleSentencePacing = () => {
+    // pacing changes the asset layout (one per sentence vs one per scene), so the
+    // generated images/narration are cleared to keep everything in sync
+    setSentencePacing((v) => !v);
+    setImages([]);
+    setAudios([]);
+  };
 
   // tick elapsed seconds while any build step is running
   useEffect(() => {
@@ -67,6 +88,7 @@ Write:
 2. A script of exactly ${sceneCount} scenes. For each scene: a visual "action" describing ONLY what is seen (typing at a desk, plugging in a cable, celebrating) — never commands, URLs, code or step text in the action, those go only in the voiceover; a short on-screen "caption" of at most 8 words matching the scene; and the exact narrator voiceover lines for that scene (2–4 sentences, written the way a person talks).
 3. A YouTube description (2 short paragraphs)
 4. 8–10 SEO tags
+${sentencePacing ? `5. Sentence pacing is ON: split every scene's voiceover into its individual sentences and add a "beats" array to that scene — one beat per sentence, in order, each with "line" (that exact sentence) and "visual" (a distinct wordless visual moment showing what is on screen while that sentence is spoken). Joined in order, the beats' lines must read exactly as the scene's voiceover.` : ''}
 
 The script must actually teach: for how-to topics include the real technical steps — which website to open, which buttons or menus to click, which commands to run — in chronological order, with real URLs, commands and requirements you have verified from live research. No vague generalities, no invented details.
 
@@ -85,7 +107,20 @@ Narration must total about 60–120 seconds when spoken.`,
                 properties: {
                   action: { type: 'string', description: 'What the character is seen doing — pure visual moment, no commands or step text' },
                   caption: { type: 'string', description: 'Short on-screen caption, max 8 words' },
-                  voiceover: { type: 'string' }
+                  voiceover: { type: 'string' },
+                  ...(sentencePacing ? {
+                    beats: {
+                      type: 'array',
+                      description: 'One entry per sentence of this scene voiceover, in order',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          line: { type: 'string', description: 'The exact sentence of the voiceover' },
+                          visual: { type: 'string', description: 'Wordless visual moment for this sentence — no commands or step text' }
+                        }
+                      }
+                    }
+                  } : {})
                 }
               }
             }
@@ -107,7 +142,7 @@ Narration must total about 60–120 seconds when spoken.`,
   };
 
   const generateVisuals = async () => {
-    setBusy('Drawing scene 1/' + scenes.length + '…');
+    setBusy('Drawing scene 1/' + units.length + '…');
     try {
       // Real UI Clone: research the actual app's UI once, then clone it per scene
       let uiDesc = '';
@@ -128,15 +163,15 @@ Narration must total about 60–120 seconds when spoken.`,
         }
       }
       const urls = [];
-      for (let i = 0; i < scenes.length; i++) {
-        setBusy(`Drawing scene ${i + 1}/${scenes.length}…`);
+      for (let i = 0; i < units.length; i++) {
+        setBusy(`Drawing ${sentencePacing ? 'image' : 'scene'} ${i + 1}/${units.length}…`);
         const learned = learnedStyles.find((s) => `learned:${s.id}` === styleId);
         const prompt =
           styleId === 'real-ui'
-            ? realUiPrompt(appName.trim(), uiDesc, scenes[i].action, colorMode)
+            ? realUiPrompt(appName.trim(), uiDesc, units[i].action, colorMode)
             : learned
-              ? customStylePrompt(learned.description, scenes[i].action, colorMode)
-              : stylePrompt(styleId, scenes[i].action, colorMode);
+              ? customStylePrompt(learned.description, units[i].action, colorMode)
+              : stylePrompt(styleId, units[i].action, colorMode);
         const res = await base44.integrations.Core.GenerateImage({ prompt });
         urls.push(res.url);
         setImages([...urls]);
@@ -147,12 +182,12 @@ Narration must total about 60–120 seconds when spoken.`,
   };
 
   const generateNarration = async () => {
-    setBusy('Recording narration 1/' + scenes.length + '…');
+    setBusy('Recording narration 1/' + units.length + '…');
     try {
       const urls = [];
-      for (let i = 0; i < scenes.length; i++) {
-        setBusy(`Recording narration ${i + 1}/${scenes.length}…`);
-        const res = await base44.integrations.Core.GenerateSpeech({ text: scenes[i].voiceover, voice: 'storm' });
+      for (let i = 0; i < units.length; i++) {
+        setBusy(`Recording narration ${i + 1}/${units.length}…`);
+        const res = await base44.integrations.Core.GenerateSpeech({ text: unitLine(units[i]), voice: 'storm' });
         urls.push(res.url);
         setAudios([...urls]);
       }
@@ -169,11 +204,14 @@ Narration must total about 60–120 seconds when spoken.`,
       const blob = await compileExplainerVideo({
         images,
         audios,
-        captions: scenes.map((s) => (captionMode === 'tts' ? (s.voiceover || s.caption || '') : (s.caption || String(s.voiceover || '').split(' ').slice(0, 8).join(' ')))),
+        captions: units.map(unitCaption),
         style: styleId,
         musicUrl: soundtrack ? musicUrl.trim() : '',
         onProgress: setBusy,
-        audioContext
+        audioContext,
+        // sentence pacing keeps a tighter hold and breath so every line gets its own beat
+        minScene: sentencePacing ? 1.8 : 3.5,
+        gap: sentencePacing ? 0.25 : 0.45
       });
       // best effort — save the finished video to the user's Library
       (async () => {
@@ -281,6 +319,20 @@ Narration must total about 60–120 seconds when spoken.`,
           {captionMode === 'tts' ? 'Real TTS' : 'Summary'}
         </button>
         <button
+          onClick={toggleSentencePacing}
+          disabled={!!busy}
+          title="Sentence pacing — one image per spoken sentence, so the visuals change with every line"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border disabled:opacity-50 ${
+            sentencePacing
+              ? 'bg-amber-400/15 text-amber-300 border-amber-400/60'
+              : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+          }`}
+          aria-label="Sentence pacing"
+        >
+          <Gauge className="w-3.5 h-3.5" />
+          Sentence pacing {sentencePacing ? 'On' : 'Off'}
+        </button>
+        <button
           onClick={() => setSoundtrack((s) => !s)}
           disabled={!!busy}
           title="Background soundtrack — paste a royalty-free audio URL (e.g. a Pixabay download link)"
@@ -365,25 +417,25 @@ Narration must total about 60–120 seconds when spoken.`,
           <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={generateVisuals}
-              disabled={!!busy || images.length === scenes.length}
+              disabled={!!busy || images.length === units.length}
               className="flex-1 py-3 rounded-xl border border-white/15 text-white/80 hover:text-white hover:border-white/40 text-sm font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {busy.startsWith('Drawing') ? <Loader2 className="w-4 h-4 animate-spin" /> : <PenTool className="w-4 h-4" />}
-              {images.length === scenes.length ? 'Visuals ready' : `Generate visuals (${scenes.length} scenes)`}
+              {images.length === units.length ? 'Visuals ready' : `Generate visuals (${units.length} ${sentencePacing ? 'sentences' : 'scenes'})`}
             </button>
             <button
               onClick={generateNarration}
-              disabled={!!busy || audios.length === scenes.length}
+              disabled={!!busy || audios.length === units.length}
               className="flex-1 py-3 rounded-xl border border-white/15 text-white/80 hover:text-white hover:border-white/40 text-sm font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {busy.startsWith('Recording') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
-              {audios.length === scenes.length ? 'Narration ready' : 'Generate TTS narration'}
+              {audios.length === units.length ? 'Narration ready' : 'Generate TTS narration'}
             </button>
           </div>
 
-          {images.length === scenes.length && audios.length === scenes.length && (
+          {images.length === units.length && audios.length === units.length && (
             <>
-              <ExplainerPlayer images={images} audios={audios} captions={scenes.map((s) => (captionMode === 'tts' ? (s.voiceover || s.caption || '') : (s.caption || '')))} />
+              <ExplainerPlayer images={images} audios={audios} captions={units.map(unitCaption)} />
               <button
                 onClick={downloadVideo}
                 disabled={!!busy}
@@ -396,17 +448,20 @@ Narration must total about 60–120 seconds when spoken.`,
           )}
 
           <ol className="space-y-3">
-            {scenes.map((s, i) => (
+            {units.map((u, i) => (
               <li key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                {sentencePacing && u.first && (
+                  <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Scene {u.sceneIndex + 1}</p>
+                )}
                 <div className="flex items-center gap-3">
                   {images[i] ? (
-                    <img src={images[i]} alt={`Scene ${i + 1}`} className="w-24 h-14 object-cover rounded-lg border border-white/10 shrink-0" />
+                    <img src={images[i]} alt={sentencePacing ? `Image ${i + 1}` : `Scene ${i + 1}`} className="w-24 h-14 object-cover rounded-lg border border-white/10 shrink-0" />
                   ) : (
                     <div className="w-24 h-14 rounded-lg border border-dashed border-white/15 shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-white/50 text-xs mb-0.5">Scene {i + 1}: {s.action}</p>
-                    <p className="text-white text-sm leading-relaxed">{s.voiceover}</p>
+                    <p className="text-white/50 text-xs mb-0.5">{sentencePacing ? 'Sentence' : 'Scene'} {i + 1}: {u.action}</p>
+                    <p className="text-white text-sm leading-relaxed">{unitLine(u)}</p>
                   </div>
                 </div>
                 {audios[i] && (
