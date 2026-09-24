@@ -230,6 +230,9 @@ import SearchKaspaDocs from '@/pages/SearchKaspaDocs';
 import HybridPage from '@/pages/Hybrid';
 import ProductStudioPage from '@/pages/ProductStudio';
 
+import MorphLandingPage from './pages/Morph';
+import MorphStudioPage from './pages/MorphStudio';
+
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
@@ -383,6 +386,8 @@ const AuthenticatedApp = () => {
       <Route path="/MotionFly" element={<MotionFlyPage />} />
       <Route path="/ETA" element={<ETAPage />} />
       <Route path="/ProductStudio" element={<ProductStudioPage />} />
+      <Route path="/Morph" element={<MorphLandingPage />} />
+      <Route path="/MorphStudio" element={<MorphStudioPage />} />
       <Route path="/Hybrid" element={<HybridPage />} />
       <Route path="/ORINLanding" element={<ORINLandingPage />} />
       <Route path="/ORIN" element={<ORINPage />} />
