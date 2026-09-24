@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PenTool, Loader2, Mic, Download, ShieldCheck, Captions, Music, Gauge } from 'lucide-react';
+import { PenTool, Loader2, Mic, Download, ShieldCheck, Captions, Music, Gauge, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import YouTubeDeploy from './YouTubeDeploy';
 import ExplainerPlayer from './ExplainerPlayer';
@@ -7,6 +7,8 @@ import { ANIMATION_STYLES, COLOR_MODES, stylePrompt, customStylePrompt, compileE
 import NicheStyleLearner from './NicheStyleLearner';
 import { factCheckExplainer } from './explainerFactCheck';
 import { buildSentenceBeats, beatCaption } from './sentencePacing';
+import GsapOverlayPreview from './GsapOverlayPreview';
+import { generateOverlaySpec } from './gsapOverlay';
 
 const fmtElapsed = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, '0')}`;
 
@@ -28,6 +30,9 @@ export default function NicheExplainerLab({ niche }) {
   const [uiResearch, setUiResearch] = useState(null); // cached {app, description}
   const [elapsed, setElapsed] = useState(0); // live elapsed on the working status
   const [sentencePacing, setSentencePacing] = useState(false); // one image per spoken sentence
+  const [gsapOverlay, setGsapOverlay] = useState(false); // GSAP-animated UI layer over the video
+  const [overlays, setOverlays] = useState([]); // one overlay spec per unit
+  const [previewIndex, setPreviewIndex] = useState(0); // which unit's overlay is being previewed
 
   const scenes = script?.scenes || [];
   // Sentence pacing: one image + one narration clip per spoken sentence, so the
@@ -48,6 +53,33 @@ export default function NicheExplainerLab({ niche }) {
     setSentencePacing((v) => !v);
     setImages([]);
     setAudios([]);
+  };
+
+  const toggleGsapOverlay = () => {
+    // overlays are authored per unit, so switching the layer clears them
+    setGsapOverlay((v) => !v);
+    setOverlays([]);
+    setPreviewIndex(0);
+  };
+
+  // The agent designs one GSAP-animated UI layer per scene/sentence
+  const generateOverlays = async () => {
+    setBusy('Designing UI overlay 1/' + units.length + '…');
+    try {
+      const specs = [];
+      for (let i = 0; i < units.length; i++) {
+        setBusy(`Designing UI overlay ${i + 1}/${units.length}…`);
+        const spec = await generateOverlaySpec({
+          action: units[i].action,
+          line: unitLine(units[i]),
+          brand: `${niche.niche_name} — ${niche.tagline}`
+        });
+        specs.push(spec);
+        setOverlays([...specs]);
+      }
+    } finally {
+      setBusy('');
+    }
   };
 
   // tick elapsed seconds while any build step is running
@@ -205,6 +237,7 @@ Narration must total about 60–120 seconds when spoken.`,
         images,
         audios,
         captions: units.map(unitCaption),
+        overlays: gsapOverlay ? overlays : [],
         style: styleId,
         musicUrl: soundtrack ? musicUrl.trim() : '',
         onProgress: setBusy,
@@ -333,6 +366,20 @@ Narration must total about 60–120 seconds when spoken.`,
           Sentence pacing {sentencePacing ? 'On' : 'Off'}
         </button>
         <button
+          onClick={toggleGsapOverlay}
+          disabled={!!busy}
+          title="GSAP UI overlay — the agent designs a GSAP-animated UI layer and composites it on top of your video"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border disabled:opacity-50 ${
+            gsapOverlay
+              ? 'bg-cyan-400/15 text-cyan-300 border-cyan-400/60'
+              : 'border-white/15 text-white/60 hover:text-white hover:border-white/40'
+          }`}
+          aria-label="GSAP UI overlay"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          GSAP UI overlay {gsapOverlay ? 'On' : 'Off'}
+        </button>
+        <button
           onClick={() => setSoundtrack((s) => !s)}
           disabled={!!busy}
           title="Background soundtrack — paste a royalty-free audio URL (e.g. a Pixabay download link)"
@@ -431,25 +478,51 @@ Narration must total about 60–120 seconds when spoken.`,
               {busy.startsWith('Recording') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
               {audios.length === units.length ? 'Narration ready' : 'Generate TTS narration'}
             </button>
+            {gsapOverlay && (
+              <button
+                onClick={generateOverlays}
+                disabled={!!busy || overlays.length === units.length}
+                className="flex-1 py-3 rounded-xl border border-cyan-400/40 text-cyan-200 hover:text-white hover:border-cyan-300 text-sm font-semibold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {busy.startsWith('Designing') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {overlays.length === units.length ? 'UI overlay ready' : `Generate UI overlay (${units.length})`}
+              </button>
+            )}
           </div>
+
+          {gsapOverlay && overlays.length > 0 && (
+            <GsapOverlayPreview
+              image={images[previewIndex]}
+              spec={overlays[previewIndex]}
+              label={`GSAP UI overlay ${previewIndex + 1} of ${units.length}`}
+            />
+          )}
 
           {images.length === units.length && audios.length === units.length && (
             <>
               <ExplainerPlayer images={images} audios={audios} captions={units.map(unitCaption)} />
               <button
                 onClick={downloadVideo}
-                disabled={!!busy}
+                disabled={!!busy || (gsapOverlay && overlays.length !== units.length)}
                 className="w-full py-3.5 rounded-xl bg-white text-black font-bold text-sm hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] disabled:opacity-40 transition-all flex items-center justify-center gap-2"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {busy ? busy : 'Download MP4'}
+                {busy ? busy : gsapOverlay && overlays.length !== units.length ? 'Generate the UI overlay first' : 'Download MP4'}
               </button>
             </>
           )}
 
           <ol className="space-y-3">
             {units.map((u, i) => (
-              <li key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <li
+                key={i}
+                onClick={overlays.length ? () => setPreviewIndex(i) : undefined}
+                className={`rounded-xl border p-4 ${
+                  overlays.length && previewIndex === i
+                    ? 'border-white/40 bg-white/[0.06]'
+                    : 'border-white/[0.06] bg-white/[0.02]'
+                } ${overlays.length ? 'cursor-pointer' : ''}`}
+              >
                 {sentencePacing && u.first && (
                   <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Scene {u.sceneIndex + 1}</p>
                 )}
@@ -462,6 +535,11 @@ Narration must total about 60–120 seconds when spoken.`,
                   <div className="flex-1 min-w-0">
                     <p className="text-white/50 text-xs mb-0.5">{sentencePacing ? 'Sentence' : 'Scene'} {i + 1}: {u.action}</p>
                     <p className="text-white text-sm leading-relaxed">{unitLine(u)}</p>
+                    {overlays[i] && (
+                      <p className="text-cyan-300/70 text-[10px] font-bold uppercase tracking-[0.15em] mt-1.5">
+                        GSAP overlay · {overlays[i].title}
+                      </p>
+                    )}
                   </div>
                 </div>
                 {audios[i] && (

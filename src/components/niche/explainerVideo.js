@@ -290,6 +290,7 @@ const RECORDER_TYPES = [
 // Create the AudioContext synchronously inside a user tap/click — iOS Safari
 // refuses to start audio (and stalls forever) if it is created later in an async chain.
 import finalizeNicheMp4 from '@/components/niche/finalizeNicheMp4';
+import { createOverlayPlayer } from '@/components/niche/gsapOverlay';
 
 export function createAudioContext() {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -298,7 +299,7 @@ export function createAudioContext() {
   return ac;
 }
 
-export async function compileExplainerVideo({ images, audios, captions = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false, token, minScene = 3.5, gap = 0.45 }) {
+export async function compileExplainerVideo({ images, audios, captions = [], overlays = [], style: styleId, cameras = [], musicUrl = '', musicVolume = 0.12, onProgress, audioContext, motion = false, token, minScene = 3.5, gap = 0.45 }) {
   const style = styleById(styleId);
   const W = 1280;
   const H = 720;
@@ -417,6 +418,11 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
   // (eased cameras, cutout entrances, drift, sweeps, particles). UI clones
   // stay static — cloned screens should never be sliced or shaken.
   const fxs = motion && !isUi ? assignMotionFx(segments.length) : null;
+  // GSAP UI overlay layer — one animated spec per segment, drawn on top of the
+  // frame. Players are built once so every recorded frame is a deterministic seek.
+  const overlayPlayers = overlays.length
+    ? overlays.map((spec) => (spec && spec.elements?.length ? createOverlayPlayer(spec) : null))
+    : null;
 
   const drawContent = (idx, p, alpha, absT = 0) => {
     ctx.save();
@@ -437,6 +443,12 @@ export async function compileExplainerVideo({ images, audios, captions = [], sty
       const panX = dx * Math.max(0, dw - W) / 2;
       const panY = dy * Math.max(0, dh - drawH) / 2;
       ctx.drawImage(img, (W - dw) / 2 + panX, (drawH - dh) / 2 + panY, dw, dh);
+    }
+    // the GSAP UI layer sits between the scene image and the caption band
+    const overlay = overlayPlayers?.[idx];
+    if (overlay) {
+      overlay.seek(Math.max(0, absT - segments[idx].start));
+      overlay.draw(ctx, W, drawH, alpha);
     }
     const lines = wrapCaption(seg.caption);
     ctx.font = 'bold 34px "Nunito", sans-serif';
