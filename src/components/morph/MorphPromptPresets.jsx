@@ -8,36 +8,8 @@ import { Wand2 } from 'lucide-react';
  */
 export const MORPH_PROMPTS = [
   {
-    label: 'Shape → Text → Logo',
-    prompt: 'Take the shape and morph it point-for-point into the word TTT — the letters emerging left to right — then resolve the word into the logo and land it on a subtle spring.',
-  },
-  {
-    label: 'Text → Logo',
-    prompt: 'Take the word KASPA and turn it into the logo with a premium, satisfying bounce.',
-  },
-  {
-    label: 'Button → Card',
-    prompt: 'Turn the music button into a thriller card with a clean UI morph and a soft glow.',
-  },
-  {
-    label: 'Staggered entrance',
-    prompt: 'Stagger every layer in from below with a soft spring and keep the whole thing premium and calm.',
-  },
-  {
-    label: 'Logo reveal',
-    prompt: 'Reveal the logo one letter at a time, then settle it into place.',
-  },
-  {
-    label: 'Match cut',
-    prompt: 'Add a match cut between the two scenes, matching the card edges.',
-  },
-  {
-    label: 'Camera push',
-    prompt: 'Push the camera slowly into the title and fade the background out.',
-  },
-  {
-    label: 'Seamless loop',
-    prompt: 'Make the whole thing loop seamlessly with a gentle breathing motion.',
+    label: 'Shape Morph Any',
+    prompt: 'Shape Morph Any — take the starting shapes and morph them point-for-point into the logo: resample each shape\'s outline into an even set of points and blend every point straight to its matching point on the logo, pairing shapes left to right by their horizontal position. Move, never cross-fade, so each outline stays continuous the whole way, and land the logo on a subtle spring settle.',
   },
 ];
 
@@ -61,7 +33,7 @@ export default function MorphPromptPresets({ open, onToggle }) {
 export function MorphPromptList({ onPick }) {
   return (
     <div className="mx-2 mb-1 max-h-56 overflow-y-auto scrollbar-hide rounded-xl border border-white/12 bg-white/[0.04] p-1.5">
-      <p className="px-1.5 py-1 text-[9px] uppercase tracking-[0.14em] text-white/30">Prompt presets</p>
+      <p className="px-1.5 py-1 text-[9px] uppercase tracking-[0.14em] text-white/30">Prompt preset</p>
       {MORPH_PROMPTS.map((p) => (
         <button
           key={p.label}
