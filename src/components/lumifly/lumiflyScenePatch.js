@@ -29,7 +29,9 @@ export function mergeScenePatch(scene, patch) {
   const next = { ...scene };
   Object.entries(patch).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
-    if (!(key in scene)) return;
+    // Known scene fields are accepted even when an older saved project is
+    // missing the key, so a first move on a legacy scene still lands.
+    if (!(key in scene) && !(key in SCENE_FIELD_LABELS)) return;
     if (NESTED.includes(key) && typeof value === 'object' && !Array.isArray(value)) {
       next[key] = { ...(scene[key] || {}), ...value };
     } else {

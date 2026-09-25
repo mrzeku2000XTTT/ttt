@@ -346,7 +346,8 @@ export function textBounds(scene, w, h) {
   let lines;
   let blockH;
 
-  if (textAnimation(scene.animation).wordSequence) {
+  const anim = textAnimation(scene.animation);
+  if (anim.wordSequence) {
     const blocks = splitSentences(scene.text).map((sentence) => wrapLines(ctx, sentence, w * 0.9));
     const gap = fontPx * 0.4;
     blockH =
@@ -365,12 +366,20 @@ export function textBounds(scene, w, h) {
     if (lineW > blockW) blockW = lineW;
   });
 
+  // The gizmo mirrors the frame the scene settles on: the animation at rest and
+  // the slide at its end, plus a little breathing room around the glyphs.
+  const rest = anim.wordSequence ? { x: 0, y: 0 } : anim.build(1, scene);
+  const offX = num(rest.x, 0) * w + (Number(scene.slideEnd) || 0) * unit;
+  const offY = num(rest.y, 0) * h;
+  const padX = fontPx * 0.08;
+  const padY = fontPx * 0.06;
   const anchor = scene.textPos || { x: 0.5, y: 0.5 };
+
   return {
-    x: w * num(anchor.x, 0.5) - blockW / 2,
-    y: h * num(anchor.y, 0.5) - blockH / 2,
-    w: Math.max(blockW, fontPx * 0.5),
-    h: blockH,
+    x: w * num(anchor.x, 0.5) + offX - blockW / 2 - padX,
+    y: h * num(anchor.y, 0.5) + offY - blockH / 2 - padY,
+    w: Math.max(blockW, fontPx * 0.5) + padX * 2,
+    h: blockH + padY * 2,
     fontPx,
   };
 }
