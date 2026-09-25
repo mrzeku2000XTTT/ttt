@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check, Copy, Download, Maximize2 } from 'lucide-react';
 import KilnFrame from './KilnFrame';
+import { formatHtml } from './kilnFormat';
 import { IconCodeSheet, IconEye } from './KilnIcons';
 
 const TABS = [
@@ -44,7 +45,7 @@ export default function KilnPreview({ html, width, height, tab, onTab, onCopy, c
           <KilnFrame html={html} width={width} height={height} />
         ) : (
           <pre className="kiln-code kiln-pixel kiln-mono max-h-[70vh] overflow-auto p-4 text-[11px] leading-[1.65]">
-            <code>{html}</code>
+            <code>{formatHtml(html)}</code>
           </pre>
         )}
       </div>

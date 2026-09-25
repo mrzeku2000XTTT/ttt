@@ -1,28 +1,31 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
 import {
   ETA_COMPONENTS,
+  KILN_BUILD_RULES,
   KILN_FIDELITY_RULES,
   KILN_RESPONSE_SCHEMA,
+  kilnBuildPrompt,
   kilnClonePrompt,
   kilnEditPrompt,
 } from '../../shared/kilnEtaModel.ts';
 
 const clean = (raw) => String(raw || '').replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
-function validate(result, imageUrl, strict) {
+function validate(result, imageUrl, mode, wanted) {
   const html = clean(result?.html);
   if (!/^<!doctype html>/i.test(html)) return 'HTML document is incomplete.';
   if (!/<head[\s>]/i.test(html) || !/<\/head>/i.test(html) || !/<body[\s>]/i.test(html) || !/<\/body>\s*<\/html>\s*$/i.test(html)) {
     return 'HTML document is incomplete.';
   }
-  if (!Array.isArray(result?.sections) || !result.sections.length) return 'Source section inventory is missing.';
-  const ids = new Set();
-  for (const section of result.sections) {
-    if (!/^[a-z0-9-]+$/i.test(section.id) || ids.has(section.id)) return 'Invalid source section inventory.';
-    if (!Number.isInteger(section.itemCount) || section.itemCount < 0 || section.itemCount > 500) return 'Invalid source section inventory.';
-    ids.add(section.id);
-    if (!new RegExp(`data-source-section=["']${section.id}["']`).test(html)) return `Missing section: ${section.label}`;
-    if (strict) {
+  // A clone must account for every section of the source; a rebuild or an edit may restructure.
+  if (mode === 'clone') {
+    if (!Array.isArray(result?.sections) || !result.sections.length) return 'Source section inventory is missing.';
+    const ids = new Set();
+    for (const section of result.sections) {
+      if (!/^[a-z0-9-]+$/i.test(section.id) || ids.has(section.id)) return 'Invalid source section inventory.';
+      if (!Number.isInteger(section.itemCount) || section.itemCount < 0 || section.itemCount > 500) return 'Invalid source section inventory.';
+      ids.add(section.id);
+      if (!new RegExp(`data-source-section=["']${section.id}["']`).test(html)) return `Missing section: ${section.label}`;
       for (let i = 1; i <= section.itemCount; i++) {
         if (!new RegExp(`data-source-item=["']${section.id}-${i}["']`).test(html)) return `Missing item ${i} in ${section.label}`;
       }
@@ -32,6 +35,9 @@ function validate(result, imageUrl, strict) {
   if (!Array.isArray(result?.etaComponents) || !result.etaComponents.length) return 'ETA component map is missing.';
   for (const entry of result.etaComponents) {
     if (!ETA_COMPONENTS.includes(entry.component)) return `Unknown ETA component: ${entry.component}`;
+  }
+  if (wanted && !new RegExp(`data-eta-component=["']${wanted}["']`).test(html)) {
+    return `The rebuilt block is not marked as an ETA ${wanted}.`;
   }
   if (result.usesSourceArtwork && imageUrl && !html.includes(imageUrl) && !html.includes(imageUrl.replace(/&/g, '&amp;'))) {
     return 'The original artwork is missing.';
@@ -49,7 +55,10 @@ export default async function (req) {
     const imageUrl = typeof body?.imageUrl === 'string' ? body.imageUrl.slice(0, 2000) : '';
     const instruction = typeof body?.instruction === 'string' ? body.instruction.slice(0, 2000) : '';
     const currentHtml = typeof body?.currentHtml === 'string' ? body.currentHtml : '';
+    const component = ETA_COMPONENTS.includes(body?.component) ? body.component : '';
     const isEdit = !!currentHtml && !!instruction;
+    const wantsBuild = body?.mode === 'build' && !!imageUrl;
+    const mode = isEdit ? 'edit' : wantsBuild ? 'build' : 'clone';
     if (!isEdit && !imageUrl) return Response.json({ error: 'An image or an edit instruction is required.' }, { status: 400 });
     if (isEdit && currentHtml.length > 400000) return Response.json({ error: 'That component is too large to edit.' }, { status: 413 });
 
@@ -57,9 +66,11 @@ export default async function (req) {
     const height = Number(body?.imageHeight);
     const hasDimensions = Number.isFinite(width) && width > 0 && width <= 20000 && Number.isFinite(height) && height > 0 && height <= 50000;
 
-    const prompt = isEdit
+    const prompt = mode === 'edit'
       ? kilnEditPrompt({ currentHtml, instruction, hasImage: !!imageUrl })
-      : kilnClonePrompt({ instruction });
+      : mode === 'build'
+        ? kilnBuildPrompt({ component, instruction })
+        : kilnClonePrompt({ instruction });
 
     const dimensionNote = hasDimensions
       ? `The source image is exactly ${width}px wide by ${height}px high — use a canvas of precisely those dimensions and those coordinates for artwork crops.`
@@ -70,12 +81,12 @@ export default async function (req) {
     for (const model of ['claude-sonnet-5', 'gpt_6_luna']) {
       try {
         const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `${prompt}\n${KILN_FIDELITY_RULES}\n${dimensionNote}${failure ? `\nA previous attempt was rejected: ${failure}. Return a fresh COMPLETE document, not a continuation.` : ''}`,
+          prompt: `${prompt}\n${mode === 'build' ? KILN_BUILD_RULES : KILN_FIDELITY_RULES}\n${dimensionNote}${failure ? `\nA previous attempt was rejected: ${failure}. Return a fresh COMPLETE document, not a continuation.` : ''}`,
           model,
           ...attach,
           response_json_schema: KILN_RESPONSE_SCHEMA,
         });
-        failure = validate(result, imageUrl, !isEdit);
+        failure = validate(result, imageUrl, mode, component);
         if (failure) {
           console.warn('KILN rejected a result:', failure);
           continue;

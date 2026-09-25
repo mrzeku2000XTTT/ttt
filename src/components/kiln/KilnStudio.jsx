@@ -6,10 +6,18 @@ import KilnPixelSteps from './KilnPixelSteps';
 import KilnPreview from './KilnPreview';
 import KilnFullscreen from './KilnFullscreen';
 import KilnComponentRail from './KilnComponentRail';
+import { ETA_LIBRARY } from './kilnComponents';
 import { KILN_LOGO } from './kilnAssets';
 import './kiln.css';
 
 const DEFAULTS = { width: 1440, height: 900 };
+
+// Below the desktop breakpoint the studio shows one pane at a time.
+const PANES = [
+  { id: 'chat', label: 'Forge chat' },
+  { id: 'preview', label: 'Preview' },
+  { id: 'eta', label: 'ETA components' },
+];
 
 export default function KilnStudio({ onHome, initialFile }) {
   const fileInput = useRef(null);
@@ -26,6 +34,7 @@ export default function KilnStudio({ onHome, initialFile }) {
   const [tab, setTab] = useState('preview');
   const [copied, setCopied] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [pane, setPane] = useState('chat');
 
   const width = source?.width || DEFAULTS.width;
   const height = source?.height || DEFAULTS.height;
@@ -73,11 +82,12 @@ export default function KilnStudio({ onHome, initialFile }) {
       sections: data.sections || [],
     });
     setTab('preview');
+    setPane('preview');
   };
 
   const runAgent = async (payload) => {
     setBusy(true);
-    const usedUrl = payload.mode === 'edit' ? await freshUrl() : payload.imageUrl;
+    const usedUrl = payload.mode === 'clone' ? payload.imageUrl : (await freshUrl()) || payload.imageUrl;
     try {
       const response = await base44.functions.invoke('kilnAgent', { ...payload, imageUrl: usedUrl });
       const data = response?.data;
@@ -133,7 +143,7 @@ export default function KilnStudio({ onHome, initialFile }) {
       setSource({ url: null, dataUrl, ...size, name: file.name });
       const published = await publish(file);
       setSource({ ...published, dataUrl, ...size, name: file.name });
-      await runAgent({ mode: 'clone', imageUrl: published.url, imageWidth: size.width, imageHeight: size.height });
+      askComponent();
     } catch (error) {
       const status = error?.response?.status;
       push({
@@ -152,7 +162,7 @@ export default function KilnStudio({ onHome, initialFile }) {
     });
     push({ role: 'user', text: url, image: url });
     setSource({ url, dataUrl: url, width: size.width, height: size.height, name: url });
-    await runAgent({ mode: 'clone', imageUrl: url, imageWidth: size.width, imageHeight: size.height });
+    askComponent();
   };
 
   useEffect(() => {
@@ -170,6 +180,8 @@ export default function KilnStudio({ onHome, initialFile }) {
     if (!html) {
       if (/^https?:\/\//i.test(text)) {
         await loadLink(text);
+      } else if (source) {
+        await build('', text);
       } else {
         push({ role: 'user', text });
         push({ role: 'agent', text: 'I need the picture first — drop the image, paste a screenshot, or paste an image link.' });
@@ -188,6 +200,42 @@ export default function KilnStudio({ onHome, initialFile }) {
   };
 
   const instruct = (brief) => setDraft(brief);
+
+  // Nothing is built until the user says what the asset should become.
+  const askComponent = () =>
+    push({
+      role: 'agent',
+      text: 'Uploaded. What should I build from it? Pick a component and I will rebuild the image as that component — or describe it in your own words.',
+      choices: ETA_LIBRARY.map((entry) => entry.name),
+    });
+
+  // A chosen component turns the asset into that component — never a pixel copy of the flat source.
+  const build = async (component, instruction = '') => {
+    if (busy || !source) return;
+    push({ role: 'user', text: component || instruction });
+    await runAgent({
+      mode: 'build',
+      component,
+      instruction,
+      imageUrl: source.url,
+      imageWidth: width,
+      imageHeight: height,
+    });
+  };
+
+  const choose = async (component) => {
+    if (busy || !source) return;
+    if (!html) return build(component);
+    push({ role: 'user', text: `Rebuild as ETA ${component}` });
+    return runAgent({
+      mode: 'edit',
+      currentHtml: html,
+      instruction: `Rebuild the main block as a real ETA ${component} component using its full anatomy from the component recipes, keeping the source's content, artwork and palette.`,
+      imageUrl: source.url,
+      imageWidth: width,
+      imageHeight: height,
+    });
+  };
 
   const portableHtml = source?.url && source?.dataUrl
     ? html.replaceAll(source.url.replaceAll('&', '&amp;'), source.dataUrl).replaceAll(source.url, source.dataUrl)
@@ -210,7 +258,7 @@ export default function KilnStudio({ onHome, initialFile }) {
   };
 
   return (
-    <div className="kiln-page flex min-h-screen flex-col lg:h-screen">
+    <div className="kiln-page flex h-[100dvh] flex-col overflow-hidden">
       <input
         ref={fileInput}
         type="file"
@@ -250,9 +298,21 @@ export default function KilnStudio({ onHome, initialFile }) {
           const file = Array.from(event.dataTransfer?.files || []).find((entry) => entry.type.startsWith('image/'));
           if (file) loadFile(file);
         }}
-        className="mx-auto grid w-full max-w-[1560px] flex-1 gap-3 px-3 pb-4 pt-3 lg:min-h-0 lg:grid-cols-[352px_minmax(0,1fr)_228px] lg:overflow-hidden"
+        className="mx-auto flex min-h-0 w-full max-w-[1560px] flex-1 flex-col gap-3 px-3 pb-4 pt-3 lg:grid lg:min-h-0 lg:grid-cols-[352px_minmax(0,1fr)_228px] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden"
       >
-        <div className="h-[560px] min-h-0 lg:h-auto">
+        <div className="flex gap-1 lg:hidden">
+          {PANES.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setPane(id)}
+              className={`kiln-btn flex-1 justify-center px-2 py-2 ${pane === id ? 'kiln-btn-primary' : ''}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className={`${pane === 'chat' ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col lg:flex`}>
           <KilnChat
             messages={messages}
             busy={busy}
@@ -261,13 +321,15 @@ export default function KilnStudio({ onHome, initialFile }) {
             draft={draft}
             setDraft={setDraft}
             onSend={send}
+            onChoose={choose}
             onPickFile={() => fileInput.current?.click()}
             onPasteImage={loadFile}
-            hasSource={!!html}
+            hasSource={!!source}
+            hasSheet={!!html}
           />
         </div>
 
-        <div className="flex min-h-0 flex-col gap-3">
+        <div className={`${pane === 'preview' ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col gap-3 lg:flex`}>
           <KilnPixelSteps stage={stage} busy={busy} elapsed={elapsed} />
           {html ? (
             <KilnPreview
@@ -295,8 +357,8 @@ export default function KilnStudio({ onHome, initialFile }) {
           )}
         </div>
 
-        <div className="max-h-[360px] min-h-0 lg:max-h-none">
-          <KilnComponentRail used={eta} onInstruct={instruct} />
+        <div className={`${pane === 'eta' ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col lg:flex`}>
+          <KilnComponentRail used={eta} onInstruct={instruct} onChoose={choose} />
         </div>
       </main>
 

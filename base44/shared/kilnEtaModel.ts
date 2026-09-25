@@ -69,7 +69,12 @@ HOW TO EXPRESS THIS IN PLAIN HTML/CSS (KILN's contract)
 COMPONENT RECIPES — build every mapped block as the REAL component, then apply the source's own values on top.
 A component is ONE container element (carrying its data-eta-component) that owns its own padding, layout, surface and stacking. Text is NEVER loose on the canvas: it always lives inside its component's layers.
 
-- TitleCard — the headline block. Anatomy: a column container with an optional eyebrow line, the display headline (the largest type), and an optional subline, with its own vertical padding and a comfortable measure. Headline: display size, tight leading, strong weight. Subline: smaller, letter-spaced, muted. Over artwork it sits above the artwork as its own block (z-index), never as raw text dropped on the canvas.
+- TitleCard — a cinematic title sequence laid over full-bleed artwork. Anatomy, all inside one full-bleed container:
+  · a top credit row: 3-6 names, uppercase, small, wide letter-spacing, spread evenly edge to edge on the top margin with uniform padding;
+  · the main title on the LEFT at mid-height: a large elegant serif line, with a script or calligraphic line directly beneath it, left-aligned with generous negative space to its right;
+  · a bottom-left logline: one or two short lines of small uppercase sans on a comfortable measure;
+  · a bottom-right meta row: small rounded badge chips (a resolution chip, a small square icon chip) with a production or studio name line beneath.
+  The type sits directly on the artwork — white or light, high contrast, with only a subtle scrim or text-shadow for legibility. Never a flat grey plate, never a floating banner box, never a card behind the type. The artwork stays full-bleed behind everything.
 - Glass — a translucent surface: translucent fill (rgba white .08-.14 or the source's tint), backdrop-filter: blur(14px) saturate(140%), 1px hairline border, generous radius, inner padding, soft shadow. It always wraps content and is never an empty box.
 - NumberDisplay — one large numeral layer (tabular figures, tight leading) with a small caption layer beneath, in its own padded block.
 - BrowserWindow — a window shell: a title-bar strip with pill dots and a URL pill, then the content area; radius, shadow, overflow hidden, and real markup inside (never a screenshot).
@@ -136,6 +141,27 @@ SOURCE MARKERS (required)
 For each source section supply an id (letters, numbers and hyphens only), a label, and itemCount (the number of repeated cards/items, zero if none). Its HTML container MUST carry data-source-section="id". Inside it mark each repeated item with data-source-item="id-1", "id-2", and so on — include every card, not a sample.
 `;
 
+// Build mode treats the upload as raw material, so it must NOT inherit the clone's "reproduce, do not redesign" framing.
+export const KILN_BUILD_RULES = `
+ARTWORK
+Reuse the source's ORIGINAL pixels for photographic artwork, illustrations, product shots, subjects and logos: crop regions of the source image URL with an overflow-hidden container and an absolutely positioned source image sized to the source canvas (offset by negative crop x/y), or an <img> with object-fit/object-position. Never invent image URLs, never substitute gradients or emojis, and never omit the artwork. Crop only artwork regions; everything else is editable HTML/CSS.
+
+THE ASSET IS RAW MATERIAL
+The uploaded asset is raw material for the rebuild, not a layout to copy. Its subject, colours, type character and wording are the truth to keep — its flat plate, banner box, empty panel and stacked layout are NOT. Compose the kept content in the component's real anatomy from the recipes.
+
+DO NOT MIRROR THE SOURCE LAYOUT
+The source's arrangement is NOT a template. Do not reproduce its rows, bands, plates, strips or stacking order. If the asset is a flat banner with the subject on top and the words in a strip beneath, the rebuild does NOT keep that strip: the artwork becomes full-bleed and the words become the component's own layers, placed by the recipe — not by the source. Never centre a plate, band or strip of text under the artwork, and never keep the source's grey panel or its box.
+
+COMPLETENESS
+Account for everything the asset shows — every string, every logo, every subject. Nothing is dropped, and nothing is invented.
+
+EVERY STRING APPEARS EXACTLY ONCE
+Never let a string appear twice. If the artwork crop you reuse already shows a string, do NOT also draw that string in HTML — crop the artwork to the region that excludes the text and write the text once in HTML, inside its component's layers. Before returning, check every visible string: exactly one occurrence.
+
+COMPONENT STRUCTURE (required)
+Every block is built as its ETA component from the recipes: one container with its own padding, layout and surface, text inside the component's layers, artwork behind it.
+`;
+
 export function kilnClonePrompt({ instruction }: { instruction?: string } = {}) {
   return `You are KILN, the component forge. You are given an image of an interface the user made. Reproduce it as ONE complete, self-contained HTML document — a strict, pixel-faithful 1:1 clone — and express every block of it through the ETA component model below.
 
@@ -161,6 +187,43 @@ OUTPUT
 
 ETA MAPPING
 Every top-level block gets data-eta-component="<library name>" and data-eta-settings="<the ETA settings you judged from the image>". Build each one with the full anatomy from the COMPONENT RECIPES above — a headline over artwork is a real TitleCard block, a translucent panel is a real Glass panel — while keeping the source's own colours, type and spacing. List those same components in etaComponents, one entry per block, with a short note on why.
+${instruction ? `\nEXTRA USER INSTRUCTIONS: ${instruction}` : ''}
+
+Return only the JSON object.`;
+}
+
+const TITLECARD_BUILD_PLAN = `
+TITLECARD BUILD PLAN — follow it exactly
+1. Full-bleed artwork: the source image covers the whole canvas (width/height 100%, object-fit: cover), cropped so the source's own text strip is NOT visible. No grey plate, band, panel or box behind the type — ever.
+2. Top credit row: pinned to the top edge, full width, evenly spaced small uppercase names with wide letter-spacing, in white with a soft text-shadow. Use the source's own names if it shows any.
+3. Left title block at mid-height: the source's main line as a large elegant serif (Playfair Display), and the source's supporting line directly beneath it in a script face (a cursive script font). Left-aligned, white, generous negative space to the right, soft shadow.
+4. Bottom-left logline: the source's remaining copy as one or two short uppercase lines, small, white.
+5. Bottom-right meta: a small rounded white chip (a resolution or duration label) and a small square icon chip, with a production or studio line beneath.
+6. One soft scrim over the artwork (a subtle dark linear-gradient) for contrast — never a solid panel.
+`;
+
+export function kilnBuildPrompt({ component, instruction }: { component?: string; instruction?: string } = {}) {
+  const target = component || 'the ETA component that best fits the asset';
+  return `You are KILN, the component forge, in BUILD mode. The user uploaded a visual asset and asked you to turn it into ${target}. You are REBUILDING the asset as that component — not screenshotting it, and not laying text over the raw image.
+
+ETA MODEL
+${ETA_SPEC}
+
+OUTPUT
+- ONE complete HTML document (<!DOCTYPE html> ... </html>).
+- ALL CSS inline in a <style> tag in <head>. No external stylesheets or frameworks (a Google Fonts <link> is allowed only when the source shows a distinctive font).
+- Return the JSON object the schema describes: sections, etaComponents, usesSourceArtwork, html, reply.
+- reply is 1-2 short sentences to the user about the component you built. Plain language, no code.
+
+BUILD RULES (a rebuild, not a copy)
+- Keep the source's CONTENT, imagery, palette and typography character — but compose it in the real anatomy of ${target} from the COMPONENT RECIPES above. The finished block must look like a designed component, not the flat banner that was uploaded.
+- Extract the artwork: reuse the source image as the visual, cropped so the source's baked-in text is EXCLUDED (the subject, logo and background stay). Use an overflow-hidden frame with an absolutely positioned source image sized to the source canvas, offset by negative crop x/y — or an <img> with object-fit/object-position. Never use the whole image as a full-page background.
+- Re-compose every string the source shows as real HTML text inside the component's layers, with the source's own wording, casing and colour. Each string appears exactly once — never also inside the crop.
+- Keep the source's palette in CSS custom properties (--ink, --surface, --accent) and its type character.
+- Never leave the source's flat plate, empty banner box or grey panel behind the type.
+- Mark the rebuilt block data-eta-component="${component || 'TitleCard'}" and declare its ETA settings on the same element.
+- STATIC output: no animation, no hover, no JavaScript. Motion is declared through the ETA data attributes only.
+${component === 'TitleCard' ? TITLECARD_BUILD_PLAN : ''}
 ${instruction ? `\nEXTRA USER INSTRUCTIONS: ${instruction}` : ''}
 
 Return only the JSON object.`;

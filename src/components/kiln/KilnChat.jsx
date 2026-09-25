@@ -3,7 +3,7 @@ import { ArrowUp, ImagePlus, Link2 } from 'lucide-react';
 import KilnWorkBubble from './KilnWorkBubble';
 import { IconSpark } from './KilnIcons';
 
-function AgentMessage({ message }) {
+function AgentMessage({ message, onChoose, busy }) {
   return (
     <div className="flex gap-2.5">
       <span className="kiln-pixel mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center bg-[hsl(var(--k-ink))] text-[hsl(var(--k-bg))]">
@@ -21,6 +21,20 @@ function AgentMessage({ message }) {
               >
                 {entry.component}
               </span>
+            ))}
+          </div>
+        )}
+        {!!message.choices?.length && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {message.choices.map((name) => (
+              <button
+                key={name}
+                onClick={() => onChoose(name)}
+                disabled={busy}
+                className="kiln-pixel border border-[hsl(var(--k-line))] bg-[hsl(var(--k-surface))] px-2 py-1 text-[10px] font-semibold hover:border-[hsl(var(--k-amber))] disabled:opacity-40"
+              >
+                {name}
+              </button>
             ))}
           </div>
         )}
@@ -59,9 +73,11 @@ export default function KilnChat({
   draft,
   setDraft,
   onSend,
+  onChoose,
   onPickFile,
   onPasteImage,
   hasSource,
+  hasSheet,
 }) {
   const scroll = useRef(null);
   const end = useRef(null);
@@ -71,7 +87,7 @@ export default function KilnChat({
   }, [messages.length, busy]);
 
   return (
-    <section className="kiln-card flex min-h-0 flex-col overflow-hidden">
+    <section className="kiln-card flex h-full min-h-0 flex-col overflow-hidden">
       <div className="flex items-center gap-2 border-b border-[hsl(var(--k-line))] px-3 py-2">
         <span className="kiln-mono text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--k-muted))]">
           Forge chat
@@ -82,9 +98,9 @@ export default function KilnChat({
       <div ref={scroll} className="kiln-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-4">
         {!messages.length && !busy && (
           <div className="space-y-2 py-6 text-center">
-            <p className="kiln-display text-[15px]">Drop a component, or paste a link.</p>
+            <p className="kiln-display text-[15px]">Drop an asset, or paste a link.</p>
             <p className="mx-auto max-w-[240px] text-[11.5px] leading-5 text-[hsl(var(--k-muted))]">
-              KILN reads the image, maps every block onto the ETA component model, and writes the working HTML.
+              KILN asks which component you want, then rebuilds your image as that component — a real ETA component, not a copy of the flat file.
             </p>
           </div>
         )}
@@ -93,7 +109,7 @@ export default function KilnChat({
           message.role === 'user' ? (
             <UserMessage key={message.id} message={message} />
           ) : (
-            <AgentMessage key={message.id} message={message} />
+            <AgentMessage key={message.id} message={message} onChoose={onChoose} busy={busy} />
           )
         )}
 
@@ -128,9 +144,11 @@ export default function KilnChat({
             rows={2}
             disabled={busy}
             placeholder={
-              hasSource
+              hasSheet
                 ? 'Tell KILN what to change — or name an ETA component, preset or transition…'
-                : 'Drop an image, paste a screenshot, or paste an image link…'
+                : hasSource
+                  ? 'Name or describe the component you want from this asset…'
+                  : 'Drop an image, paste a screenshot, or paste an image link…'
             }
             className="kiln-mono w-full resize-none bg-transparent text-[12px] leading-5 outline-none placeholder:text-[hsl(var(--k-muted))] disabled:opacity-50"
           />
@@ -154,7 +172,7 @@ export default function KilnChat({
               className="kiln-btn kiln-btn-primary ml-auto px-3 py-1.5"
             >
               <ArrowUp className="h-3.5 w-3.5" />
-              {hasSource ? 'Edit' : 'Build'}
+              {hasSheet ? 'Edit' : 'Build'}
             </button>
           </div>
         </div>
