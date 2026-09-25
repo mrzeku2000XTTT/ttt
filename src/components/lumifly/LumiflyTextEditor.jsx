@@ -41,6 +41,7 @@ export default function LumiflyTextEditor({ scene, onText, onDone }) {
   const fontPx = Math.max(10, (Number(scene.fontSize) || 300) * unit);
   const offsetX = (Number(scene.slideEnd) || 0) * unit;
   const colors = scene.textColors?.length === 3 ? scene.textColors : ['#ffffff', '#ffe9d6', '#d8a47f'];
+  const pos = scene.textPos || { x: 0.5, y: 0.5 };
 
   return (
     <div
@@ -48,7 +49,7 @@ export default function LumiflyTextEditor({ scene, onText, onDone }) {
       onMouseDown={(e) => {
         if (e.target === boxRef.current) onDone();
       }}
-      className="absolute inset-0 flex items-center justify-center bg-black/45 px-4"
+      className="absolute inset-0 bg-black/45"
     >
       <div
         ref={textRef}
@@ -67,12 +68,15 @@ export default function LumiflyTextEditor({ scene, onText, onDone }) {
         }}
         className="max-w-[90%] cursor-text text-center outline-none"
         style={{
+          position: 'absolute',
+          left: `${pos.x * 100}%`,
+          top: `${pos.y * 100}%`,
           fontSize: `${fontPx}px`,
           fontFamily: `"${scene.fontFamily || 'SF Pro Display'}", system-ui, -apple-system, sans-serif`,
           fontWeight: Number(scene.weight) || 700,
           lineHeight: 1.14,
           minHeight: `${fontPx}px`,
-          transform: `translateX(${offsetX}px)`,
+          transform: `translate(-50%, -50%) translateX(${offsetX}px)`,
           backgroundImage: `linear-gradient(90deg, ${colors[0]}, ${colors[1]}, ${colors[2]})`,
           WebkitBackgroundClip: 'text',
           backgroundClip: 'text',

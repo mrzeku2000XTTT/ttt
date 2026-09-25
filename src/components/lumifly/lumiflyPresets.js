@@ -126,6 +126,9 @@ export const BACKGROUND_PRESETS = [
 
 export const DEFAULT_TEXT_COLORS = ['#ffffff', '#ffe9d6', '#d8a47f'];
 
+/** Where the type sits on the stage — a fraction of the frame, centre-anchored. */
+export const DEFAULT_TEXT_POS = { x: 0.5, y: 0.5 };
+
 export const newId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
@@ -140,6 +143,7 @@ export function createScene(name = 'scene-1', patch = {}) {
     fontFamily: 'SF Pro Display',
     weight: 700,
     textColors: [...DEFAULT_TEXT_COLORS],
+    textPos: { ...DEFAULT_TEXT_POS },
     gradientAnimation: 'sweep',
     background: { colors: [...BACKGROUND_PRESETS[0].colors], motion: 'mesh', speed: 0.6 },
     animation: 'motion-text',

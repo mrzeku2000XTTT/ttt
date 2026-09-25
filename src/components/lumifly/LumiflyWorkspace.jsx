@@ -7,10 +7,11 @@ import LumiflyInspector from './LumiflyInspector';
 import LumiflyTransport from './LumiflyTransport';
 import LumiflyAIEditor from './LumiflyAIEditor';
 import LumiflyTextEditor from './LumiflyTextEditor';
+import LumiflyTextDragLayer from './LumiflyTextDragLayer';
 import { FPS, LUMIFLY_PROJECT_KEY, RESOLUTION_SCALE, cloneScene, createScene, presetProject } from './lumiflyPresets';
 import { mergeScenePatch } from './lumiflyScenePatch';
 import { exportFrame } from './lumiflyRender';
-import { Type } from 'lucide-react';
+import { Crosshair, Type } from 'lucide-react';
 
 /**
  * The studio. Scenes on the left, the stage and transport in the middle, every
@@ -125,12 +126,16 @@ export default function LumiflyWorkspace() {
     [selectedId]
   );
 
-  // Editing type on the canvas: settle the scene at rest first, so the editable
-  // words sit exactly where the render puts them.
-  const startTextEdit = () => {
+  // Rest is where the scene holds before its exit — the frame the canvas gizmo
+  // mirrors, so editing and dragging both act on the type where the render puts it.
+  const settleAtRest = useCallback(() => {
     setPlaying(false);
     const rest = Math.max(0, duration - (Number(scene.outgoing?.duration) || 0) - 0.02);
     setCursor((c) => ({ index: c.index, t: rest }));
+  }, [duration, scene.outgoing?.duration]);
+
+  const startTextEdit = () => {
+    settleAtRest();
     setEditingText(true);
   };
 
@@ -240,6 +245,16 @@ export default function LumiflyWorkspace() {
                 className="h-auto w-full"
               />
 
+              {!editingText && (
+                <LumiflyTextDragLayer
+                  scene={scene}
+                  aspect={aspect}
+                  onGrab={settleAtRest}
+                  onMove={(pos) => patchScene({ textPos: pos })}
+                  onScale={(fontSize) => patchScene({ fontSize })}
+                />
+              )}
+
               {editingText ? (
                 <LumiflyTextEditor
                   scene={scene}
@@ -247,20 +262,30 @@ export default function LumiflyWorkspace() {
                   onDone={() => setEditingText(false)}
                 />
               ) : (
-                <button
-                  onClick={startTextEdit}
-                  className="absolute right-2 top-2 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-[10px] text-white/70 backdrop-blur transition-colors hover:text-white"
-                >
-                  <Type className="w-3 h-3" />
-                  Edit text
-                </button>
+                <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                  <button
+                    onClick={() => patchScene({ textPos: { x: 0.5, y: 0.5 } })}
+                    title="Centre the type"
+                    className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-[10px] text-white/70 backdrop-blur transition-colors hover:text-white"
+                  >
+                    <Crosshair className="w-3 h-3" />
+                    Centre
+                  </button>
+                  <button
+                    onClick={startTextEdit}
+                    className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-[10px] text-white/70 backdrop-blur transition-colors hover:text-white"
+                  >
+                    <Type className="w-3 h-3" />
+                    Edit text
+                  </button>
+                </div>
               )}
             </div>
 
             <p className="mt-2 text-center text-[10px] text-white/30">
               {editingText
                 ? 'Editing the words on the canvas — Esc or Enter to finish'
-                : 'Double-click the preview to edit the text'}
+                : 'Drag the type to move it, drag its corner to resize — double-click to edit the words'}
             </p>
           </div>
 

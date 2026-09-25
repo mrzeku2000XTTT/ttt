@@ -1,7 +1,7 @@
 // Applying a scene patch — the one place both the inspector and the AI editor
 // go through, so nested groups merge instead of being replaced wholesale.
 
-const NESTED = ['glow', 'background', 'matchCut', 'outgoing', 'incoming', 'words'];
+const NESTED = ['glow', 'background', 'matchCut', 'outgoing', 'incoming', 'words', 'textPos'];
 
 export const SCENE_FIELD_LABELS = {
   text: 'the words',
@@ -9,6 +9,7 @@ export const SCENE_FIELD_LABELS = {
   fontFamily: 'font family',
   weight: 'font weight',
   textColors: 'type gradient',
+  textPos: 'text position',
   gradientAnimation: 'gradient animation',
   animation: 'text animation',
   easing: 'easing',

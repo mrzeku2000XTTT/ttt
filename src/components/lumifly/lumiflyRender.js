@@ -282,9 +282,11 @@ export function drawScene(ctx, w, h, scene, time = 0, transition = {}) {
   const glow = scene.glow || {};
   const glowFade = glow.on ? Math.max(0, 1 - time / Math.max(0.1, Number(glow.dissolve) || 5)) : 0;
 
+  const anchor = scene.textPos || { x: 0.5, y: 0.5 };
+
   ctx.save();
   ctx.globalAlpha = clamp01(opacity);
-  ctx.translate(w / 2 + x, h / 2 + y);
+  ctx.translate(w * num(anchor.x, 0.5) + x, h * num(anchor.y, 0.5) + y);
   ctx.scale(scale, scale);
   ctx.fillStyle = textGradient(ctx, scene, w * 0.7, blockH, time);
   if (glowFade > 0) {
@@ -320,6 +322,57 @@ export function drawScene(ctx, w, h, scene, time = 0, transition = {}) {
   }
   ctx.restore();
   ctx.restore();
+}
+
+let measureCtx = null;
+function getMeasureCtx() {
+  if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+  return measureCtx;
+}
+
+/**
+ * Where the type sits once the scene has settled — the box the on-canvas gizmo
+ * draws, measured with the same font and wrapping the renderer uses.
+ */
+export function textBounds(scene, w, h) {
+  const ctx = getMeasureCtx();
+  const unit = h / 1080;
+  const fontPx = Math.max(8, (Number(scene.fontSize) || 300) * unit);
+  const family = `"${scene.fontFamily || 'SF Pro Display'}", system-ui, -apple-system, sans-serif`;
+  ctx.font = `${Number(scene.weight) || 700} ${fontPx}px ${family}`;
+
+  const lineHeight = fontPx * 1.14;
+  const spaceW = ctx.measureText(' ').width;
+  let lines;
+  let blockH;
+
+  if (textAnimation(scene.animation).wordSequence) {
+    const blocks = splitSentences(scene.text).map((sentence) => wrapLines(ctx, sentence, w * 0.9));
+    const gap = fontPx * 0.4;
+    blockH =
+      blocks.reduce((sum, block) => sum + Math.max(lineHeight, block.length * lineHeight), 0) +
+      gap * Math.max(0, blocks.length - 1);
+    lines = blocks.flat();
+  } else {
+    lines = wrapLines(ctx, String(scene.text || ''), w * 0.9);
+    blockH = Math.max(lineHeight, lines.length * lineHeight);
+  }
+
+  let blockW = 0;
+  lines.forEach((words) => {
+    const lineW =
+      words.reduce((sum, word) => sum + ctx.measureText(word).width, 0) + spaceW * Math.max(0, words.length - 1);
+    if (lineW > blockW) blockW = lineW;
+  });
+
+  const anchor = scene.textPos || { x: 0.5, y: 0.5 };
+  return {
+    x: w * num(anchor.x, 0.5) - blockW / 2,
+    y: h * num(anchor.y, 0.5) - blockH / 2,
+    w: Math.max(blockW, fontPx * 0.5),
+    h: blockH,
+    fontPx,
+  };
 }
 
 /** Renders the current frame off-screen and hands back a PNG data URL. */
