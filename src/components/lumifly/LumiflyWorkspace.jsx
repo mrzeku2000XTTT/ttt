@@ -5,8 +5,12 @@ import LumiflyTopBar from './LumiflyTopBar';
 import LumiflyScenes from './LumiflyScenes';
 import LumiflyInspector from './LumiflyInspector';
 import LumiflyTransport from './LumiflyTransport';
+import LumiflyAIEditor from './LumiflyAIEditor';
+import LumiflyTextEditor from './LumiflyTextEditor';
 import { LUMIFLY_PROJECT_KEY, RESOLUTION_SCALE, cloneScene, createScene, defaultProject } from './lumiflyPresets';
+import { mergeScenePatch } from './lumiflyScenePatch';
 import { exportFrame } from './lumiflyRender';
+import { Type } from 'lucide-react';
 
 /**
  * The studio. Scenes on the left, the stage and transport in the middle, every
@@ -40,6 +44,7 @@ export default function LumiflyWorkspace() {
   const [playAll, setPlayAll] = useState(true);
   const [rate, setRate] = useState(1);
   const [cursor, setCursor] = useState({ index: 0, t: 0 });
+  const [editingText, setEditingText] = useState(false);
 
   const scenes = project.scenes;
 
@@ -100,17 +105,27 @@ export default function LumiflyWorkspace() {
     (patch) => {
       setProject((p) => ({
         ...p,
-        scenes: p.scenes.map((s) => (s.id === selectedId ? { ...s, ...patch } : s)),
+        scenes: p.scenes.map((s) => (s.id === selectedId ? mergeScenePatch(s, patch) : s)),
       }));
     },
     [selectedId]
   );
+
+  // Editing type on the canvas: settle the scene at rest first, so the editable
+  // words sit exactly where the render puts them.
+  const startTextEdit = () => {
+    setPlaying(false);
+    const rest = Math.max(0, duration - (Number(scene.outgoing?.duration) || 0) - 0.02);
+    setCursor((c) => ({ index: c.index, t: rest }));
+    setEditingText(true);
+  };
 
   const selectScene = (id) => {
     const i = scenes.findIndex((s) => s.id === id);
     if (i < 0) return;
     setSelectedId(id);
     setCursor({ index: i, t: 0 });
+    setEditingText(false);
   };
 
   const addScene = () => {
@@ -151,6 +166,7 @@ export default function LumiflyWorkspace() {
   const seek = (i) => {
     setCursor({ index: i, t: 0 });
     setSelectedId(scenes[i].id);
+    setEditingText(false);
   };
 
   const download = () => {
@@ -189,12 +205,43 @@ export default function LumiflyWorkspace() {
         <main className="min-w-0 flex-1">
           <div className="p-3 sm:p-5">
             <div
-              className="mx-auto overflow-hidden rounded-xl border border-white/10 bg-black"
+              className="relative mx-auto overflow-hidden rounded-xl border border-white/10 bg-black"
               style={{ maxWidth: aspect === '9:16' ? 380 : 980 }}
+              onDoubleClick={startTextEdit}
             >
-              <LumiflyStage scene={scene} time={cursor.t} aspect={aspect} transition={transition} className="h-auto w-full" />
+              <LumiflyStage
+                scene={editingText ? { ...scene, text: '' } : scene}
+                time={cursor.t}
+                aspect={aspect}
+                transition={transition}
+                className="h-auto w-full"
+              />
+
+              {editingText ? (
+                <LumiflyTextEditor
+                  scene={scene}
+                  onText={(value) => patchScene({ text: value })}
+                  onDone={() => setEditingText(false)}
+                />
+              ) : (
+                <button
+                  onClick={startTextEdit}
+                  className="absolute right-2 top-2 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-[10px] text-white/70 backdrop-blur transition-colors hover:text-white"
+                >
+                  <Type className="w-3 h-3" />
+                  Edit text
+                </button>
+              )}
             </div>
+
+            <p className="mt-2 text-center text-[10px] text-white/30">
+              {editingText
+                ? 'Editing the words on the canvas — Esc or Enter to finish'
+                : 'Double-click the preview to edit the text'}
+            </p>
           </div>
+
+          <LumiflyAIEditor scene={scene} onApply={patchScene} />
 
           <LumiflyTransport
             scenes={scenes}
