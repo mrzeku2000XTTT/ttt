@@ -46,9 +46,25 @@ export default function KilnStudio({ onHome, initialFile }) {
 
   const push = (message) => setMessages((list) => [...list, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, ...message }]);
 
-  const applyResult = (data) => {
-    setHtml(data.html);
+  // A signed link lives one hour, so every call gets a fresh one and the sheet follows it.
+  const freshUrl = async () => {
+    if (!source) return undefined;
+    if (!source.fileUri) return source.url;
+    try {
+      return await sign(source.fileUri);
+    } catch {
+      return source.url;
+    }
+  };
+
+  const applyResult = (data, usedUrl) => {
+    let next = data.html;
+    if (usedUrl && source?.url && usedUrl !== source.url) {
+      next = next.split(source.url.replaceAll('&', '&amp;')).join(usedUrl).split(source.url).join(usedUrl);
+    }
+    setHtml(next);
     setEta(data.etaComponents || []);
+    if (usedUrl && source) setSource({ ...source, url: usedUrl });
     if (data.imageWidth) setSource((current) => (current ? { ...current, width: data.imageWidth, height: data.imageHeight || current.height } : current));
     push({
       role: 'agent',
@@ -61,11 +77,12 @@ export default function KilnStudio({ onHome, initialFile }) {
 
   const runAgent = async (payload) => {
     setBusy(true);
+    const usedUrl = payload.mode === 'edit' ? await freshUrl() : payload.imageUrl;
     try {
-      const response = await base44.functions.invoke('kilnAgent', payload);
+      const response = await base44.functions.invoke('kilnAgent', { ...payload, imageUrl: usedUrl });
       const data = response?.data;
       if (data?.html) {
-        applyResult(data);
+        applyResult(data, usedUrl);
       } else {
         push({ role: 'agent', text: data?.error || 'That build did not come back complete. Try again.' });
       }
@@ -73,6 +90,33 @@ export default function KilnStudio({ onHome, initialFile }) {
       push({ role: 'agent', text: error?.response?.data?.error || 'That build failed. Please try again.' });
     }
     setBusy(false);
+  };
+
+  const measure = (src) =>
+    new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => resolve({ width: image.naturalWidth || DEFAULTS.width, height: image.naturalHeight || DEFAULTS.height });
+      image.onerror = () => resolve({ width: DEFAULTS.width, height: DEFAULTS.height });
+      image.src = src;
+    });
+
+  // The image has to be reachable by the agent. Private first, public as the fallback.
+  const sign = async (fileUri) => {
+    const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: fileUri, expires_in: 3600 });
+    if (!signed_url) throw new Error('no signed url');
+    return signed_url;
+  };
+
+  const publish = async (file) => {
+    try {
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      if (!file_uri) throw new Error('no file uri');
+      return { fileUri: file_uri, url: await sign(file_uri) };
+    } catch (privateError) {
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+      if (!file_url) throw privateError;
+      return { fileUri: null, url: file_url };
+    }
   };
 
   const loadFile = async (file) => {
@@ -84,22 +128,18 @@ export default function KilnStudio({ onHome, initialFile }) {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      const image = new Image();
-      image.src = dataUrl;
-      await image.decode();
+      const size = await measure(dataUrl);
       push({ role: 'user', text: file.name || 'Pasted image', image: dataUrl });
-      setSource({ url: null, dataUrl, width: image.naturalWidth, height: image.naturalHeight, name: file.name });
-      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 86400 });
-      setSource({ url: signed_url, dataUrl, width: image.naturalWidth, height: image.naturalHeight, name: file.name });
-      await runAgent({
-        mode: 'clone',
-        imageUrl: signed_url,
-        imageWidth: image.naturalWidth,
-        imageHeight: image.naturalHeight,
-      });
+      setSource({ url: null, dataUrl, ...size, name: file.name });
+      const published = await publish(file);
+      setSource({ ...published, dataUrl, ...size, name: file.name });
+      await runAgent({ mode: 'clone', imageUrl: published.url, imageWidth: size.width, imageHeight: size.height });
     } catch (error) {
-      push({ role: 'agent', text: 'That image could not be read. Try another file.' });
+      const status = error?.response?.status;
+      push({
+        role: 'agent',
+        text: `That image could not be sent${status ? ` (${status})` : ''}. Try another file, or paste an image link instead.`,
+      });
     }
   };
 
