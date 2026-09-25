@@ -1,0 +1,131 @@
+/* KILN — scoped theme. Cream paper, dark chocolate, amber gradient, pixel widgets.
+   Nothing here leaks to other apps: every rule is namespaced under .kiln-page. */
+
+:root .kiln-page,
+.dark .kiln-page {
+  --k-bg: 36 44% 97%;
+  --k-surface: 40 60% 99%;
+  --k-ink: 22 32% 12%;
+  --k-muted: 24 14% 38%;
+  --k-line: 30 26% 87%;
+  --k-accent: 24 58% 26%;
+  --k-amber: 30 62% 46%;
+  --k-code-bg: 22 30% 11%;
+  --k-code-ink: 36 52% 90%;
+  --k-display: 'Fraunces', Georgia, serif;
+  --k-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --k-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  background: hsl(var(--k-bg));
+  color: hsl(var(--k-ink));
+  font-family: var(--k-body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.kiln-display {
+  font-family: var(--k-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.kiln-mono {
+  font-family: var(--k-mono);
+  font-variant-ligatures: none;
+}
+.kiln-grad {
+  background: linear-gradient(112deg, hsl(var(--k-accent)), hsl(var(--k-amber)) 62%, hsl(34 70% 62%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.kiln-rule {
+  border-color: hsl(var(--k-line));
+}
+.kiln-card {
+  background: hsl(var(--k-surface));
+  border: 1px solid hsl(var(--k-line));
+  border-radius: 16px;
+  box-shadow: 0 14px 34px -26px hsl(var(--k-accent) / 0.5);
+}
+.kiln-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--k-line));
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--k-ink));
+  background: hsl(var(--k-surface));
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+.kiln-btn:hover { transform: translateY(-1px); border-color: hsl(var(--k-amber)); }
+.kiln-btn:disabled { opacity: 0.42; cursor: not-allowed; transform: none; }
+.kiln-btn-primary {
+  background: linear-gradient(120deg, hsl(var(--k-accent)), hsl(var(--k-amber)));
+  border-color: transparent;
+  color: hsl(36 60% 98%);
+}
+.kiln-btn-primary:hover { border-color: transparent; }
+
+/* Pixel-cornered frame — the blocky widget language. */
+.kiln-pixel {
+  clip-path: polygon(
+    0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0,
+    calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
+    6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px)
+  );
+}
+.kiln-px {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: hsl(var(--k-ink) / 0.13);
+  image-rendering: pixelated;
+}
+.kiln-px.is-on {
+  background: linear-gradient(120deg, hsl(var(--k-accent)), hsl(var(--k-amber)));
+}
+.kiln-px.is-pulse {
+  animation: kiln-px-pulse 900ms steps(2, end) infinite;
+}
+@keyframes kiln-px-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.28; }
+}
+
+/* The working bubble's live code stream. */
+.kiln-code {
+  background: hsl(var(--k-code-bg));
+  color: hsl(var(--k-code-ink));
+}
+.kiln-code-line {
+  opacity: 0.42;
+  transition: opacity 220ms ease;
+  white-space: pre;
+}
+.kiln-code-line.is-last { opacity: 1; }
+.kiln-caret {
+  display: inline-block;
+  width: 7px;
+  height: 12px;
+  background: hsl(var(--k-amber));
+  vertical-align: -1px;
+  animation: kiln-caret 900ms steps(2, end) infinite;
+}
+@keyframes kiln-caret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.kiln-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--k-line)) transparent;
+}
+.kiln-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.kiln-scroll::-webkit-scrollbar-thumb { background: hsl(var(--k-line)); border-radius: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kiln-px.is-pulse, .kiln-caret { animation: none; }
+}

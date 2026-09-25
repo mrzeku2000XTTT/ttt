@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "KILN", path: "Kiln", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/5c0016b99_generated_image.png", desc: "Image → working UI components · drop any screenshot or link and KILN rebuilds it as 1:1 HTML, mapping every block onto the ETA component model — then keeps editing it with you in chat" },
   { name: "PRISM", path: "Prism", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/1fe645919_generated_image.png", desc: "Video inspector · drop any MP4 and read it frame by frame — cuts, pacing, motion and palette measured from the real pixels, plus a typography read and a keyframe recipe to rebuild it" },
   { name: "Morph", path: "Morph", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/76b25d579_generated_image.png", desc: "Motion Studio · a real animation engine — split VIEWPORT/FINAL surfaces, RGB transform gizmo, true point-by-point shape morphing and an AI director that writes the keyframes" },
   { name: "Hybrid", path: "Hybrid", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/89278bc6a_generated_image.png", desc: "Social engagement auditor · paste any channel, video or profile link, see the real channel behind it and exactly what to do this week to lift engagement" },

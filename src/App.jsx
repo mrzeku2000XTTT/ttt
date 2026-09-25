@@ -234,6 +234,7 @@ import MorphPage from './pages/Morph';
 import PrismPage from './pages/Prism';
 import LumiflyPage from './pages/Lumifly';
 import LumiflyStudioPage from './pages/LumiflyStudio';
+import KilnPage from './pages/Kiln';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -393,6 +394,7 @@ const AuthenticatedApp = () => {
       <Route path="/Prism" element={<PrismPage />} />
       <Route path="/Lumifly" element={<LumiflyPage />} />
       <Route path="/LumiflyStudio" element={<LumiflyStudioPage />} />
+      <Route path="/Kiln" element={<KilnPage />} />
       <Route path="/Hybrid" element={<HybridPage />} />
       <Route path="/ORINLanding" element={<ORINLandingPage />} />
       <Route path="/ORIN" element={<ORINPage />} />

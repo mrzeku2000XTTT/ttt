@@ -1,0 +1,176 @@
+// KILN's backend knowledge: the ETA design model, written for the agent.
+// Mirrors src/docs/ETA_ANIMATION_EDITOR.md — keep the two in step.
+
+export const ETA_COMPONENTS = [
+  'TitleCard',
+  'NumberDisplay',
+  'Glass',
+  'BrowserWindow',
+  'PhoneWindow',
+  'Cards',
+  'Cards2',
+  'Cards3',
+  'Cards4',
+  'IPhoneAnimated',
+  'MacBookAnimated',
+  'DivMorph',
+  'SearchAnimation',
+  'LogoAnimation',
+  'UIAnimation',
+  'Video',
+];
+
+export const ETA_SPEC = `
+ETA — ENHANCED TIMELINE ANIMATOR (the motion model every KILN component follows)
+
+COMPONENT LIBRARY — every block you build is one of these, and only these:
+- TitleCard — opening or section headline
+- NumberDisplay — statistics, counters, KPIs, numbered steps
+- Glass — translucent visual panel
+- BrowserWindow — browser mockup with zoom and cursor choreography
+- PhoneWindow — mobile application window
+- Cards / Cards2 / Cards3 / Cards4 — feature and benefit card systems (2, 3, 4 up)
+- IPhoneAnimated — animated phone presentation
+- MacBookAnimated — animated laptop presentation
+- DivMorph — container and layout morphing
+- SearchAnimation — search-interface motion
+- LogoAnimation — brand reveal and outro
+- UIAnimation — general interface animation
+- Video — imported video media
+
+SCENE MODEL: a scene has a primary component, content, styling, animation behaviour, keyframes, and entrance/exit logic.
+
+TEXT SYSTEM: content, font size, family (SF Pro Display, Inter, PT Sans, Montserrat, Poppins), weight, three colour stops, gradient animation, glow, glow colour, intensity, dissolve duration.
+TEXT MOTION PRESETS: SplitText, TextType, RotatingText, FadeUpWords, SpringScaleText, AnchorSpring, FlyWords, MotionTextAnimation, StaggeredRevealText, SlideScaleWord, WordScaleSequence, StaticSentences.
+TEXT TIMING: speed, slide speed, start offset, end offset. EASING: linear, ease-in, ease-out, ease-in-out, or a custom cubic-bezier curve.
+
+MATCH TRANSITIONS: an outgoing movement (duration, slide distance, drift, final drift duration, drift curve, easing) linked to the next scene's incoming movement (proportional timing, duration, slide distance, start opacity, start scale, easing, inherited movement). Directions: left, right, up, down, zoom in, zoom out.
+
+BROWSERWINDOW: content URL, rotation amplitude, animation speed, X/Y/Z rotation, start offset, motion + zoom, appearance, browser shell, animated border.
+- BROWSER KEYFRAMES: position, rotation and scale stored at exact scene times (reveal, presentation angle, feature focus, transition preparation).
+- ZOOM KEYFRAMES: time, selector, x, y, scale, duration, easing. A CSS selector targets a product element; x/y frame content manually; empty targeting restores the full view.
+- CURSOR STEPS: start time, target selector, movement duration, optional click.
+- BROWSER STYLING: background, shadow, pill colours, typing speed.
+- OVERLAY TEXT: font controls, colour, z-index, horizontal position, keyframes for position/opacity/scale.
+
+KEYFRAME MODEL: a component has properties; a keyframe stores selected property values at one time; values interpolate with the chosen easing. Properties include position, X/Y/Z rotation, scale, opacity, zoom target, zoom duration, cursor timing, text motion, and scene entrance/exit.
+
+WORKFLOW: component → content → style and typography → text motion → movement → zoom targets → cursor choreography → overlay text timing → transition to the next scene → recompile.
+LAUNCH SEQUENCE: TitleCard hook → BrowserWindow or IPhoneAnimated reveal → BrowserWindow feature focus → Cards benefits → BrowserWindow guided workflow → NumberDisplay outcome → LogoAnimation call to action.
+
+HOW TO EXPRESS THIS IN PLAIN HTML/CSS (KILN's contract)
+- Mark every block with its component: data-eta-component="Cards" (always one of the library names above).
+- Declare the ETA settings you judged from the source on the same element: data-eta-settings="text:FadeUpWords;easing:ease-out;transition:zoom-in".
+- Mark text elements you would animate: data-text-motion="SplitText".
+- Express motion as real CSS @keyframes named after the preset or transition (fadeUpWords, splitText, driftOut, zoomIn), on the element itself.
+- Express zoom/cursor choreography as comments the editor can act on, e.g. /* zoom-keyframe: selector .pricing, scale 1.4, ease ease-in-out */.
+- Keep the palette in CSS custom properties (--ink, --surface, --accent) so later edits are one-line changes.
+`;
+
+export const KILN_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    sections: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          itemCount: { type: 'integer' },
+        },
+        required: ['id', 'label', 'itemCount'],
+      },
+    },
+    etaComponents: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          component: { type: 'string' },
+          settings: { type: 'string' },
+          note: { type: 'string' },
+        },
+        required: ['id', 'component', 'settings', 'note'],
+      },
+    },
+    usesSourceArtwork: { type: 'boolean' },
+    html: { type: 'string' },
+    reply: { type: 'string' },
+  },
+  required: ['sections', 'etaComponents', 'usesSourceArtwork', 'html', 'reply'],
+};
+
+export const KILN_FIDELITY_RULES = `
+SOURCE REFERENCE
+The image is a user interface the user made. Reproduce it, do not redesign it.
+For photographic artwork, illustrations, product shots and avatars, reuse the ORIGINAL pixels: crop regions of the source image URL with an overflow-hidden container and an absolutely positioned source image sized to the source canvas (offset by negative crop x/y). Never invent image URLs, never substitute gradients or emojis, never omit the artwork, and never stretch the whole image into one slot. Crop only artwork regions; the rest of the interface stays editable HTML/CSS. Never use the entire source image as the page or as a full-page background.
+
+COMPLETENESS
+Inspect the ENTIRE image, including its bottom edge, before writing HTML. Inventory every visible section, every card in each row, every header, badge, control and lower grid. Recreate ALL of it, not just the first viewport. Keep CSS compact and shared across repeated cards so the complete document fits. No placeholders, ellipses, TODOs or omitted sections.
+
+SOURCE MARKERS (required)
+For each source section supply an id (letters, numbers and hyphens only), a label, and itemCount (the number of repeated cards/items, zero if none). Its HTML container MUST carry data-source-section="id". Inside it mark each repeated item with data-source-item="id-1", "id-2", and so on — include every card, not a sample.
+`;
+
+export function kilnClonePrompt({ instruction }: { instruction?: string } = {}) {
+  return `You are KILN, the component forge. You are given an image of an interface the user made. Reproduce it as ONE complete, self-contained HTML document — a strict, pixel-faithful 1:1 clone — and express every block of it through the ETA component model below.
+
+ETA MODEL
+${ETA_SPEC}
+
+OUTPUT
+- ONE complete HTML document (<!DOCTYPE html> ... </html>).
+- ALL CSS inline in a <style> tag in <head>. No external stylesheets or frameworks (a Google Fonts <link> is allowed only when the image shows a distinctive font).
+- Return the JSON object the schema describes: sections, etaComponents, usesSourceArtwork, html, reply.
+- reply is 1-2 short sentences to the user about what you built and which ETA components you mapped it to. Plain language, no code.
+
+1:1 RULES
+- Render ONLY what is actually visible in the image. If the image shows a single button, the document contains ONLY that button — no hero, no headline, no nav, no footer, no extra sections.
+- NEVER add, guess, invent or "complete" content. Any element or text not present in the image is FORBIDDEN.
+- Copy the image's text EXACTLY, character for character, preserving per-word colours, weights and emphasis.
+- Match exact geometry: width/height ratios, padding, border-radius, font-size, font-weight, letter-spacing, line-height, exact hex colours, borders and shadows. Estimate proportions carefully.
+- Position elements exactly as they appear (centring, spacing, and the image's own background colour).
+- Preserve the SOURCE layout, columns and aspect ratio. Do NOT rearrange a desktop screenshot into a mobile layout. The preview scales the source canvas to fit.
+- Put everything in a single source-sized canvas with position:relative and every visible section retained top to bottom. Never hide lower content with overflow:hidden on body.
+- STATIC, exact reproduction: no animation, no hover effects, no scroll effects, no JavaScript. Motion is declared through the ETA data attributes only — the agent adds real keyframes later, on request.
+- If the image shows only a fragment of a page, clone only that fragment.
+
+ETA MAPPING
+Every top-level block gets data-eta-component="<library name>" and data-eta-settings="<the ETA settings you judged from the image>". List those same components in etaComponents, one entry per block, with a short note on why.
+${instruction ? `\nEXTRA USER INSTRUCTIONS: ${instruction}` : ''}
+
+Return only the JSON object.`;
+}
+
+export function kilnEditPrompt({
+  currentHtml,
+  instruction,
+  hasImage,
+}: {
+  currentHtml: string;
+  instruction: string;
+  hasImage: boolean;
+}) {
+  return `You are KILN's edit mode. You are given a self-contained HTML document (a 1:1 UI component sheet built from the user's image) and ONE edit instruction from the user.
+
+ETA MODEL — the vocabulary every edit is expressed in
+${ETA_SPEC}
+
+EDIT RULES
+- Apply ONLY the requested change. Keep every other element, style, text, size and structure exactly as it is.
+- Do NOT add new sections or content beyond what the instruction asks.
+- When the instruction names an ETA component, text-motion preset, keyframe or transition (for example "make the headline SplitText", "add a zoom keyframe on the pricing card", "give this a zoom-in transition"), implement it for real: real CSS @keyframes, real timing and easing, plus the matching data-eta-component / data-eta-settings declaration. That is the one case where motion is allowed.
+- When the instruction is a plain change (text, colour, font, background, size, spacing), change only that and leave the document static.
+- Keep the palette in CSS custom properties so later edits stay one-line changes.
+- Keep it ONE complete self-contained HTML document with inline CSS, no external frameworks.
+- Keep the existing source canvas dimensions, source markers (data-source-section / data-source-item) and artwork crops. Do not force a mobile layout.${hasImage ? ' Use the attached original image as reference.' : ''}
+
+CURRENT HTML
+${currentHtml}
+
+USER EDIT INSTRUCTION: ${instruction}
+
+Return the JSON object the schema describes — sections and etaComponents must reflect the UPDATED document. Return the full updated HTML document in html, and a 1-2 sentence reply for the user.`;
+}
