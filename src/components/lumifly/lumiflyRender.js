@@ -1,4 +1,4 @@
-import { easingFn, textAnimation } from './lumiflyPresets';
+import { FPS, easingFn, textAnimation } from './lumiflyPresets';
 
 export const STAGE_DIMS = { '16:9': { w: 1280, h: 720 }, '9:16': { w: 720, h: 1280 } };
 
@@ -123,10 +123,95 @@ function wrapLines(ctx, text, maxW) {
   return lines;
 }
 
+/** Splits the text into sentences, so each one can fade in and out on its own. */
+function splitSentences(text) {
+  const sentences = [];
+  String(text)
+    .split('\n')
+    .forEach((line) => {
+      const parts = line.match(/[^.!?]+[.!?]*/g) || [];
+      parts.forEach((part) => {
+        const trimmed = part.trim();
+        if (trimmed) sentences.push(trimmed);
+      });
+    });
+  return sentences;
+}
+
+/**
+ * FadeUpWords: every word fades and travels in on its own clock, its sentence
+ * holds, then fades out before the next sentence begins.
+ */
+function drawWordSequence(ctx, scene, time, { w, unit, fontPx, ease }) {
+  const cfg = scene.words || {};
+  const fadeIn = Math.max(0.05, num(cfg.fadeDuration, 50) / FPS);
+  const stagger = Math.max(0, num(cfg.stagger, 5) / FPS);
+  const hold = Math.max(0, num(cfg.holdDuration, 10) / FPS);
+  const fadeOut = Math.max(0, num(cfg.fadeOutDuration, 15) / FPS);
+  const gap = Math.max(0, num(cfg.sentenceDelay, 0) / FPS);
+  const travel = num(cfg.distance, 200) * unit;
+  const blurMax = cfg.blurOn === false ? 0 : Math.max(0, num(cfg.blur, 12)) * unit;
+  const canBlur = typeof ctx.filter === 'string';
+  const axis = { up: [0, 1], down: [0, -1], left: [1, 0], right: [-1, 0] }[cfg.direction] || [0, 1];
+
+  const lineHeight = fontPx * 1.14;
+  const spaceW = ctx.measureText(' ').width;
+  const blocks = splitSentences(scene.text).map((sentence) => {
+    const lines = wrapLines(ctx, sentence, w * 0.9);
+    return { lines, height: Math.max(lineHeight, lines.length * lineHeight) };
+  });
+  if (!blocks.length) return;
+
+  const blockGap = fontPx * 0.4;
+  const totalH = blocks.reduce((sum, block) => sum + block.height, 0) + blockGap * (blocks.length - 1);
+
+  let sentenceStart = 0;
+  let top = -totalH / 2;
+
+  blocks.forEach((block) => {
+    const words = block.lines.flat();
+    const wordsEnd = sentenceStart + stagger * Math.max(0, words.length - 1) + fadeIn;
+    const outStart = wordsEnd + hold;
+    const sentenceAlpha = fadeOut > 0 && time > outStart ? clamp01(1 - (time - outStart) / fadeOut) : 1;
+    const drift = cfg.drift ? -6 * unit * Math.max(0, time - wordsEnd) : 0;
+
+    let lineTop = top;
+    let index = 0;
+
+    block.lines.forEach((lineWords) => {
+      const lineW =
+        lineWords.reduce((sum, word) => sum + ctx.measureText(word).width, 0) + spaceW * Math.max(0, lineWords.length - 1);
+      let cursor = -lineW / 2;
+      const lineY = lineTop + lineHeight / 2;
+
+      lineWords.forEach((word) => {
+        const wordW = ctx.measureText(word).width;
+        const p = ease(clamp01((time - (sentenceStart + index * stagger)) / fadeIn));
+        if (p > 0.001 && sentenceAlpha > 0.001) {
+          const away = travel * (1 - p);
+          ctx.save();
+          ctx.globalAlpha = ctx.globalAlpha * p * sentenceAlpha;
+          if (blurMax > 0 && canBlur) ctx.filter = `blur(${(blurMax * (1 - p)).toFixed(2)}px)`;
+          ctx.fillText(word, cursor + wordW / 2 + axis[0] * away, lineY + axis[1] * away + drift);
+          ctx.restore();
+        }
+        cursor += wordW + spaceW;
+        index += 1;
+      });
+
+      lineTop += lineHeight;
+    });
+
+    sentenceStart = outStart + fadeOut + gap;
+    top += block.height + blockGap;
+  });
+}
+
 /**
  * One frame of a scene: backdrop, then the type with its animation, slide,
  * gradient and glow. `transition.in` / `.out` are 0 → 1 progress values for the
- * scene's entrance and exit windows.
+ * scene's entrance and exit windows; the entrance itself comes from the
+ * previous scene's incoming group.
  */
 export function drawScene(ctx, w, h, scene, time = 0, transition = {}) {
   ctx.save();
@@ -154,7 +239,7 @@ export function drawScene(ctx, w, h, scene, time = 0, transition = {}) {
   const ease = easingFn(scene.easing);
   const enterDur = Math.max(0.15, Number(scene.speed) || 0.7);
   const p = ease(clamp01(time / enterDur));
-  const m = anim.build(p, scene);
+  const m = anim.wordSequence ? { x: 0, y: 0, scale: 1, opacity: 1 } : anim.build(p, scene);
 
   const slideEase = ease(clamp01(time / Math.max(0.15, Number(scene.slideSpeed) || 0.9)));
   const slideStart = Number(scene.slideStart) || 0;
@@ -166,20 +251,23 @@ export function drawScene(ctx, w, h, scene, time = 0, transition = {}) {
   let scale = m.scale;
   let opacity = m.opacity;
 
-  const direction = scene.matchCut?.direction === 'right' ? 1 : -1;
+  // The exit uses this scene's own match cut. The entrance is the previous
+  // scene's incoming group, so the two scenes hand over on one shared direction.
+  const outDirection = scene.matchCut?.direction === 'right' ? 1 : -1;
 
   if (transition.out) {
     const o = scene.outgoing || {};
     const dp = easingFn(o.driftCurve)(clamp01(transition.out));
-    x += direction * num(o.slideDistance, 0.5) * w * 0.45 * dp;
+    x += outDirection * num(o.slideDistance, 0.5) * w * 0.45 * dp;
     y -= num(o.driftAmount, 0.15) * h * 0.12 * dp;
     opacity *= 1 - clamp01(transition.out);
   }
 
-  if (transition.in) {
-    const i = scene.incoming || {};
+  if (transition.in && transition.incoming) {
+    const i = transition.incoming;
     const ip = clamp01(transition.in);
-    if (scene.matchCut?.on) x += -direction * num(i.slideDistance, 0.5) * w * 0.45 * (1 - ip);
+    const inDirection = transition.direction === 'right' ? 1 : -1;
+    if (transition.match !== false) x += -inDirection * num(i.slideDistance, 0.5) * w * 0.45 * (1 - ip);
     const fromOpacity = num(i.opacityStart, 0);
     const fromScale = num(i.scaleStart, 1);
     opacity *= fromOpacity + (1 - fromOpacity) * ip;
@@ -204,28 +292,32 @@ export function drawScene(ctx, w, h, scene, time = 0, transition = {}) {
     ctx.shadowBlur = (Number(glow.intensity) || 0.5) * fontPx * 0.6 * glowFade;
   }
 
-  let wordIndex = 0;
-  lines.forEach((words, li) => {
-    const lineY = -blockH / 2 + lineHeight * (li + 0.5);
-    const lineW =
-      words.reduce((sum, word) => sum + ctx.measureText(word).width, 0) + spaceW * Math.max(0, words.length - 1);
-    let cursor = -lineW / 2;
-    words.forEach((word) => {
-      const wordW = ctx.measureText(word).width;
-      if (anim.stagger) {
-        const wp = ease(clamp01((time - wordIndex * anim.stagger) / enterDur));
-        const wm = anim.build(wp, scene);
-        ctx.save();
-        ctx.globalAlpha = clamp01(opacity) * clamp01(wm.opacity);
-        ctx.fillText(word, cursor + wordW / 2, lineY + wm.y * h);
-        ctx.restore();
-      } else {
-        ctx.fillText(word, cursor + wordW / 2, lineY);
-      }
-      cursor += wordW + spaceW;
-      wordIndex += 1;
+  if (anim.wordSequence) {
+    drawWordSequence(ctx, scene, time, { w, unit, fontPx, ease });
+  } else {
+    let wordIndex = 0;
+    lines.forEach((words, li) => {
+      const lineY = -blockH / 2 + lineHeight * (li + 0.5);
+      const lineW =
+        words.reduce((sum, word) => sum + ctx.measureText(word).width, 0) + spaceW * Math.max(0, words.length - 1);
+      let cursor = -lineW / 2;
+      words.forEach((word) => {
+        const wordW = ctx.measureText(word).width;
+        if (anim.stagger) {
+          const wp = ease(clamp01((time - wordIndex * anim.stagger) / enterDur));
+          const wm = anim.build(wp, scene);
+          ctx.save();
+          ctx.globalAlpha = clamp01(opacity) * clamp01(wm.opacity);
+          ctx.fillText(word, cursor + wordW / 2, lineY + wm.y * h);
+          ctx.restore();
+        } else {
+          ctx.fillText(word, cursor + wordW / 2, lineY);
+        }
+        cursor += wordW + spaceW;
+        wordIndex += 1;
+      });
     });
-  });
+  }
   ctx.restore();
   ctx.restore();
 }

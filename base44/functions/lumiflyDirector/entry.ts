@@ -18,7 +18,7 @@ const SCHEMA = {
       type: 'object',
       description: 'ONLY the settings that must change. Anything you leave out stays exactly as it is.',
       properties: {
-        text: { type: 'string', description: 'The words on screen, max 40 characters. Only when the user asks for different words.' },
+        text: { type: 'string', description: 'The words on screen, max 200 characters. ONLY when the user asks for different words — never echo the current text back.' },
         fontSize: { type: 'number', description: '24 to 900. Bigger or smaller type.' },
         fontFamily: { type: 'string', description: FONTS.join(' | ') },
         weight: { type: 'number', description: '300 to 900 — how bold the type is.' },
@@ -53,6 +53,22 @@ const SCHEMA = {
           properties: {
             on: { type: 'boolean' },
             direction: { type: 'string', description: 'left | right' },
+          },
+        },
+        words: {
+          type: 'object',
+          description: 'Only meaningful for the FadeUpWords animation — the word and sentence timing, counted in frames.',
+          properties: {
+            fadeDuration: { type: 'number', description: '1 to 300 frames for one word to fade in' },
+            stagger: { type: 'number', description: '0 to 60 frames between words' },
+            holdDuration: { type: 'number', description: '0 to 300 frames a sentence holds after its last word' },
+            fadeOutDuration: { type: 'number', description: '0 to 300 frames for a sentence to fade out' },
+            sentenceDelay: { type: 'number', description: '0 to 300 frames between sentences' },
+            distance: { type: 'number', description: '0 to 1200 — how far each word travels in' },
+            direction: { type: 'string', description: 'up | down | left | right' },
+            blurOn: { type: 'boolean' },
+            blur: { type: 'number', description: '0 to 80 px of blur at the start of each word' },
+            drift: { type: 'boolean' },
           },
         },
       },
@@ -92,10 +108,14 @@ function buildPrompt(scene, prompt, history) {
     '',
     'Rules:',
     '- Return only the settings that must change in "patch" — never echo a setting back at its current value, and never return a field you are not changing. Everything you leave out keeps its current value.',
-    '- A vague instruction still deserves a real change: "make it pop" means a bigger font size, a bolder weight or a glow; "more premium" means a slower ease, softer colours and a subtler backdrop.',
+    '- A vague instruction still deserves a real change, but only on the aspect it names: "make it pop" means a bigger font size, a bolder weight or a glow; "more premium" means a slower ease, softer colours and a subtler backdrop. Never change an aspect the instruction does not name.',
+    '- Return the smallest patch that satisfies the instruction. If the instruction names only the word timing, the patch contains only "words".',
     '- Colours are always six-digit hex, like #ffd9b3. textColors and background.colors each need exactly 3 of them.',
     '- Never invent an animation, easing, motion or font id — use only the ones listed above.',
     '- Change only what the instruction is about. This is one scene being tuned, not a rewrite.',
+    '- If the instruction is about timing, animation or colour, return ONLY those fields. Never touch the words, the glow, the background or the match cut unless the instruction names them — echoing a setting back, even at the same value, is a change you did not ask for.',
+    '- Never return "text" unless the user asked for different words.',
+    '- "words" only applies to the FadeUpWords animation: it sets how long one word takes to fade in, the gap between words, how long a sentence holds and fades out, the gap between sentences, how far each word travels in, its direction, its blur-in, and whether the type keeps drifting. Those numbers are frames, not seconds.',
     '- "reply" is one short sentence in the user\'s own words — say what changed, not which setting you edited.',
   );
 
@@ -119,7 +139,7 @@ function sanitize(raw) {
   };
 
   if (typeof raw.text === 'string') {
-    const text = raw.text.replace(/\s+/g, ' ').trim().slice(0, 40);
+    const text = raw.text.replace(/\s+/g, ' ').trim().slice(0, 200);
     if (text) patch.text = text;
   }
 
@@ -169,6 +189,29 @@ function sanitize(raw) {
     const bgSpeed = num(raw.background.speed, 0, 3);
     if (bgSpeed !== null) background.speed = bgSpeed;
     if (Object.keys(background).length) patch.background = background;
+  }
+
+  if (raw.words && typeof raw.words === 'object') {
+    const words = {};
+    const fadeDuration = num(raw.words.fadeDuration, 1, 300);
+    if (fadeDuration !== null) words.fadeDuration = fadeDuration;
+    const stagger = num(raw.words.stagger, 0, 60);
+    if (stagger !== null) words.stagger = stagger;
+    const holdDuration = num(raw.words.holdDuration, 0, 300);
+    if (holdDuration !== null) words.holdDuration = holdDuration;
+    const fadeOutDuration = num(raw.words.fadeOutDuration, 0, 300);
+    if (fadeOutDuration !== null) words.fadeOutDuration = fadeOutDuration;
+    const sentenceDelay = num(raw.words.sentenceDelay, 0, 300);
+    if (sentenceDelay !== null) words.sentenceDelay = sentenceDelay;
+    const distance = num(raw.words.distance, 0, 1200);
+    if (distance !== null) words.distance = distance;
+    const direction = pick(raw.words.direction, ['up', 'down', 'left', 'right']);
+    if (direction) words.direction = direction;
+    if (typeof raw.words.blurOn === 'boolean') words.blurOn = raw.words.blurOn;
+    const blur = num(raw.words.blur, 0, 80);
+    if (blur !== null) words.blur = blur;
+    if (typeof raw.words.drift === 'boolean') words.drift = raw.words.drift;
+    if (Object.keys(words).length) patch.words = words;
   }
 
   if (raw.matchCut && typeof raw.matchCut === 'object') {

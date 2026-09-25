@@ -7,7 +7,7 @@ import LumiflyInspector from './LumiflyInspector';
 import LumiflyTransport from './LumiflyTransport';
 import LumiflyAIEditor from './LumiflyAIEditor';
 import LumiflyTextEditor from './LumiflyTextEditor';
-import { LUMIFLY_PROJECT_KEY, RESOLUTION_SCALE, cloneScene, createScene, defaultProject } from './lumiflyPresets';
+import { FPS, LUMIFLY_PROJECT_KEY, RESOLUTION_SCALE, cloneScene, createScene, presetProject } from './lumiflyPresets';
 import { mergeScenePatch } from './lumiflyScenePatch';
 import { exportFrame } from './lumiflyRender';
 import { Type } from 'lucide-react';
@@ -27,7 +27,7 @@ export default function LumiflyWorkspace() {
     } catch {
       loaded = null;
     }
-    const base = loaded || defaultProject();
+    const base = loaded || presetProject();
     try {
       const text = new URLSearchParams(window.location.search).get('text');
       if (!text) return base;
@@ -58,6 +58,7 @@ export default function LumiflyWorkspace() {
 
   const index = Math.min(cursor.index, scenes.length - 1);
   const scene = scenes[index] || scenes[0];
+  const previous = scenes[index - 1] || null;
   const duration = Math.max(0.5, Number(scene.duration) || 6);
 
   // The clock. It advances the current scene, then hands over to the next one.
@@ -89,17 +90,30 @@ export default function LumiflyWorkspace() {
     if (id && id !== selectedId) setSelectedId(id);
   }, [index, playAll, scenes, selectedId]);
 
+  // A scene's entrance is set by the scene before it, so the two hand over on
+  // one shared direction — the match cut.
   const transition = useMemo(() => {
     const outDuration = Math.max(0, Number(scene.outgoing?.duration) || 0);
-    const inDuration = Math.max(0, Number(scene.incoming?.duration) || 0);
+    const entrance = previous?.incoming || null;
+    const inDuration = entrance ? Math.max(0, Number(entrance.duration) || 0) : 0;
     return {
       out:
         outDuration > 0 && cursor.t > duration - outDuration
           ? Math.min(1, (cursor.t - (duration - outDuration)) / outDuration)
           : null,
       in: inDuration > 0 && cursor.t < inDuration ? Math.min(1, cursor.t / inDuration) : null,
+      incoming: entrance,
+      direction: previous?.matchCut?.direction || 'left',
+      match: previous?.matchCut?.on !== false,
     };
-  }, [scene, cursor.t, duration]);
+  }, [scene, previous, cursor.t, duration]);
+
+  const entranceFrom = previous?.incoming
+    ? {
+        frames: Math.round((Number(previous.incoming.duration) || 0) * FPS),
+        direction: previous?.matchCut?.direction || 'left',
+      }
+    : null;
 
   const patchScene = useCallback(
     (patch) => {
@@ -137,6 +151,15 @@ export default function LumiflyWorkspace() {
     setProject((p) => ({ ...p, scenes: [...p.scenes, created] }));
     setSelectedId(created.id);
     setCursor({ index: scenes.length, t: 0 });
+  };
+
+  const loadPreset = () => {
+    if (!window.confirm('Load the reference preset? This replaces the scenes in this project.')) return;
+    const preset = presetProject();
+    setProject(preset);
+    setSelectedId(preset.scenes[0].id);
+    setCursor({ index: 0, t: 0 });
+    setEditingText(false);
   };
 
   const duplicateScene = (id) => {
@@ -198,8 +221,8 @@ export default function LumiflyWorkspace() {
           selectedId={selectedId}
           onSelect={selectScene}
           onAdd={addScene}
-          onDuplicate={duplicateScene}
           onDelete={deleteScene}
+          onLoadPreset={loadPreset}
         />
 
         <main className="min-w-0 flex-1">
@@ -258,7 +281,7 @@ export default function LumiflyWorkspace() {
           />
         </main>
 
-        <LumiflyInspector scene={scene} onPatch={patchScene} />
+        <LumiflyInspector scene={scene} onPatch={patchScene} entranceFrom={entranceFrom} />
       </div>
     </div>
   );

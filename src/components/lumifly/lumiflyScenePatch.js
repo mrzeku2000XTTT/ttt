@@ -1,7 +1,7 @@
 // Applying a scene patch — the one place both the inspector and the AI editor
 // go through, so nested groups merge instead of being replaced wholesale.
 
-const NESTED = ['glow', 'background', 'matchCut', 'outgoing', 'incoming'];
+const NESTED = ['glow', 'background', 'matchCut', 'outgoing', 'incoming', 'words'];
 
 export const SCENE_FIELD_LABELS = {
   text: 'the words',
@@ -20,6 +20,7 @@ export const SCENE_FIELD_LABELS = {
   glow: 'glow',
   background: 'background',
   matchCut: 'match cut',
+  words: 'word timing',
 };
 
 export function mergeScenePatch(scene, patch) {

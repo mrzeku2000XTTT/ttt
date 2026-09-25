@@ -5,11 +5,13 @@ import {
   BACKGROUND_MOTIONS,
   BACKGROUND_PRESETS,
   DEFAULT_TEXT_COLORS,
+  DEFAULT_WORDS,
   EASINGS,
   FONT_FAMILIES,
   FONT_WEIGHTS,
   GRADIENT_ANIMATIONS,
   TEXT_ANIMATIONS,
+  WORD_DIRECTIONS,
   easingFn,
   textAnimation,
 } from './lumiflyPresets';
@@ -84,7 +86,7 @@ function EasingGraph({ easing }) {
   );
 }
 
-const ToggleButton = ({ open, onClick, children }) => (
+const ToggleButton = ({ onClick, children }) => (
   <button
     onClick={onClick}
     className="mt-1 w-full rounded-md border border-white/10 py-1 text-[10px] text-white/50 transition-colors hover:border-white/25 hover:text-white"
@@ -93,7 +95,7 @@ const ToggleButton = ({ open, onClick, children }) => (
   </button>
 );
 
-export default function LumiflyInspector({ scene, onPatch }) {
+export default function LumiflyInspector({ scene, onPatch, entranceFrom }) {
   const [showEasing, setShowEasing] = useState(false);
   const [showOutGraph, setShowOutGraph] = useState(false);
   const [showInGraph, setShowInGraph] = useState(false);
@@ -105,6 +107,7 @@ export default function LumiflyInspector({ scene, onPatch }) {
   const cut = scene.matchCut || {};
   const out = scene.outgoing || {};
   const incoming = scene.incoming || {};
+  const words = { ...DEFAULT_WORDS, ...(scene.words || {}) };
   const colors = scene.textColors?.length === 3 ? scene.textColors : DEFAULT_TEXT_COLORS;
   const bgColors = bg.colors?.length === 3 ? bg.colors : BACKGROUND_PRESETS[0].colors;
 
@@ -118,6 +121,7 @@ export default function LumiflyInspector({ scene, onPatch }) {
     next[index] = value;
     onPatch({ background: { ...bg, colors: next } });
   };
+  const setWord = (patch) => onPatch({ words: { ...words, ...patch } });
 
   return (
     <aside className="w-full shrink-0 border-t border-white/10 bg-[#0e0e0f] lg:max-h-[calc(100vh-52px)] lg:w-[330px] lg:overflow-y-auto lg:border-l lg:border-t-0">
@@ -137,13 +141,10 @@ export default function LumiflyInspector({ scene, onPatch }) {
         <Row label="Font family">
           <Picker value={scene.fontFamily} onChange={(v) => onPatch({ fontFamily: v })} options={FONT_FAMILIES} />
         </Row>
-        <Row label="Font weight">
-          <Picker value={scene.weight} onChange={(v) => onPatch({ weight: Number(v) })} options={FONT_WEIGHTS} />
-        </Row>
       </Section>
 
       <Section
-        title="Gradient"
+        title="Text color & gradient"
         right={
           <button
             onClick={() => onPatch({ textColors: [...DEFAULT_TEXT_COLORS] })}
@@ -172,10 +173,51 @@ export default function LumiflyInspector({ scene, onPatch }) {
         <Row label="Easing">
           <Picker value={scene.easing} onChange={(v) => onPatch({ easing: v })} options={EASINGS} />
         </Row>
-        <ToggleButton open={showEasing} onClick={() => setShowEasing((v) => !v)}>
-          Edit Easing
-        </ToggleButton>
+        <ToggleButton onClick={() => setShowEasing((v) => !v)}>Edit Easing</ToggleButton>
         {showEasing && <div className="mt-1.5"><EasingGraph easing={scene.easing} /></div>}
+      </Section>
+
+      {scene.animation === 'fade-up-words' && (
+        <Section title="Words">
+          <Row label="Word fade duration (frames)">
+            <Num value={words.fadeDuration} min={1} max={300} step={5} onChange={(v) => setWord({ fadeDuration: v })} />
+          </Row>
+          <Row label="Delay between words (frames)">
+            <Num value={words.stagger} min={0} max={60} step={1} onChange={(v) => setWord({ stagger: v })} />
+          </Row>
+          <Row label="Sentence hold duration (frames)">
+            <Num value={words.holdDuration} min={0} max={300} step={5} onChange={(v) => setWord({ holdDuration: v })} />
+          </Row>
+          <Row label="Sentence fade out duration (frames)">
+            <Num value={words.fadeOutDuration} min={0} max={300} step={5} onChange={(v) => setWord({ fadeOutDuration: v })} />
+          </Row>
+          <Row label="Delay between sentences (frames)">
+            <Num value={words.sentenceDelay} min={0} max={300} step={5} onChange={(v) => setWord({ sentenceDelay: v })} />
+          </Row>
+          <Row label="Fade up distance">
+            <Num value={words.distance} min={0} max={1200} step={20} onChange={(v) => setWord({ distance: v })} />
+          </Row>
+          <Row label="Direction">
+            <Picker value={words.direction} onChange={(v) => setWord({ direction: v })} options={WORD_DIRECTIONS} />
+          </Row>
+          <Row label="Blur in">
+            <Switch checked={words.blurOn !== false} onCheckedChange={(v) => setWord({ blurOn: v })} />
+          </Row>
+          {words.blurOn !== false && (
+            <Row label="Blur amount (px)">
+              <Num value={words.blur} min={0} max={80} step={1} onChange={(v) => setWord({ blur: v })} />
+            </Row>
+          )}
+          <Row label="Continuous drift">
+            <Switch checked={!!words.drift} onCheckedChange={(v) => setWord({ drift: v })} />
+          </Row>
+        </Section>
+      )}
+
+      <Section title="Typography">
+        <Row label="Font weight">
+          <Picker value={scene.weight} onChange={(v) => onPatch({ weight: Number(v) })} options={FONT_WEIGHTS} />
+        </Row>
       </Section>
 
       <Section title="Timing">
@@ -241,7 +283,7 @@ export default function LumiflyInspector({ scene, onPatch }) {
         </Row>
       </Section>
 
-      <Section title="Match cut">
+      <Section title="Match cut to next scene">
         <Row label="Disable match cut">
           <Switch checked={!(cut.on ?? true)} onCheckedChange={(v) => onPatch({ matchCut: { ...cut, on: !v } })} />
         </Row>
@@ -270,16 +312,14 @@ export default function LumiflyInspector({ scene, onPatch }) {
         <Row label="Drift over last (s)">
           <Num value={out.driftOver ?? 2.5} min={0} max={10} step={0.5} onChange={(v) => onPatch({ outgoing: { ...out, driftOver: v } })} />
         </Row>
-        <Row label="Drift curve">
+        <Row label="Drift curve (outgoing)">
           <Picker value={out.driftCurve} onChange={(v) => onPatch({ outgoing: { ...out, driftCurve: v } })} options={EASINGS} />
         </Row>
-        <ToggleButton open={showOutGraph} onClick={() => setShowOutGraph((v) => !v)}>
-          Easing graph (outgoing)
-        </ToggleButton>
+        <ToggleButton onClick={() => setShowOutGraph((v) => !v)}>Easing graph (outgoing)</ToggleButton>
         {showOutGraph && <div className="mt-1.5"><EasingGraph easing={out.driftCurve} /></div>}
       </Section>
 
-      <Section title="Incoming (this scene enters)">
+      <Section title="Incoming (next scene enters)">
         <Row label="Golden ratio (1:2)">
           <Switch
             checked={!!incoming.goldenRatio}
@@ -306,11 +346,17 @@ export default function LumiflyInspector({ scene, onPatch }) {
         <Row label="Scale (start)">
           <Num value={incoming.scaleStart ?? 1} min={0.2} max={2} step={0.05} onChange={(v) => onPatch({ incoming: { ...incoming, scaleStart: v } })} />
         </Row>
-        <ToggleButton open={showInGraph} onClick={() => setShowInGraph((v) => !v)}>
-          Easing graph (incoming)
-        </ToggleButton>
+        <ToggleButton onClick={() => setShowInGraph((v) => !v)}>Easing graph (incoming)</ToggleButton>
         {showInGraph && <div className="mt-1.5"><EasingGraph easing={incoming.easing || 'easeOutCubic'} /></div>}
       </Section>
+
+      {entranceFrom && (
+        <Section title="From previous scene (read-only)">
+          <p className="text-[11px] leading-relaxed text-white/50">
+            Your entrance: {entranceFrom.frames} frames, direction: {entranceFrom.direction}.
+          </p>
+        </Section>
+      )}
     </aside>
   );
 }

@@ -6,6 +6,29 @@ export const LUMIFLY_PROJECT_KEY = 'lumifly_project_v1';
 export const RESOLUTIONS = ['720P', '1080P', '4K'];
 export const RESOLUTION_SCALE = { '720P': 0.75, '1080P': 1, '4K': 2 };
 
+/** Word-sequence timings are counted in frames, as they are in the panel. */
+export const FPS = 30;
+
+export const WORD_DIRECTIONS = [
+  { id: 'up', label: 'Up' },
+  { id: 'down', label: 'Down' },
+  { id: 'left', label: 'Left' },
+  { id: 'right', label: 'Right' },
+];
+
+export const DEFAULT_WORDS = {
+  fadeDuration: 50,
+  stagger: 5,
+  holdDuration: 10,
+  fadeOutDuration: 15,
+  sentenceDelay: 0,
+  distance: 200,
+  direction: 'up',
+  blurOn: true,
+  blur: 12,
+  drift: false,
+};
+
 export const FONT_FAMILIES = [
   'SF Pro Display',
   'Helvetica Regular',
@@ -74,9 +97,9 @@ export const TEXT_ANIMATIONS = [
   {
     id: 'fade-up-words',
     label: 'FadeUpWords',
-    description: 'Each word rises and fades in behind the one before it',
-    stagger: 0.14,
-    build: (p) => ({ x: 0, y: (1 - p) * 0.16, scale: 1, opacity: Math.min(1, p * 1.4) }),
+    description: 'Words and sentences fade in one after another on their own timing',
+    wordSequence: true,
+    build: () => ({ x: 0, y: 0, scale: 1, opacity: 1 }),
   },
 ];
 
@@ -129,6 +152,7 @@ export function createScene(name = 'scene-1', patch = {}) {
     matchCut: { on: true, direction: 'left' },
     outgoing: { duration: 0.5, slideDistance: 0.5, driftAmount: 0.15, driftOver: 2.5, driftCurve: 'easeInOutCubic' },
     incoming: { goldenRatio: true, duration: 1, slideDistance: 0.5, opacityStart: 0, scaleStart: 1, easing: 'easeOutCubic' },
+    words: { ...DEFAULT_WORDS },
     duration: 6,
     ...patch,
   };
@@ -142,16 +166,29 @@ export function cloneScene(scene, name) {
   return copy;
 }
 
-export function defaultProject() {
+/** The reference preset: a MotionTextAnimation scene handing over to a FadeUpWords scene. */
+export function presetProject() {
   return {
-    name: 'Untitled project',
+    name: 'Lumifly preset',
     scenes: [
-      createScene('scene-1'),
+      createScene('scene-1', {
+        glow: { on: true, color: '#ffffff', intensity: 0.5, dissolve: 5 },
+      }),
       createScene('scene-2', {
-        text: 'Then It Lands.',
+        text: 'You have the vision. But turning ideas into reality takes the right tools.',
+        fontSize: 100,
+        weight: 700,
         animation: 'fade-up-words',
-        textColors: ['#ffffff', '#cfe9ff', '#8fb8ff'],
+        easing: 'linear',
+        glow: { on: true, color: '#ffffff', intensity: 0.2, dissolve: 2 },
+        matchCut: { on: true, direction: 'right' },
+        words: { ...DEFAULT_WORDS, drift: true },
+        duration: 7,
       }),
     ],
   };
+}
+
+export function defaultProject() {
+  return presetProject();
 }
