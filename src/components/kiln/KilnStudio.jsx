@@ -84,7 +84,7 @@ export default function KilnStudio({ onHome, initialFile }) {
       if (data?.html) {
         applyResult(data, usedUrl);
       } else {
-        push({ role: 'agent', text: data?.error || 'That build did not come back complete. Try again.' });
+        push({ role: 'agent', text: data?.error ? `${data.error}${data.reason ? ` — ${data.reason}` : ''}` : 'That build did not come back complete. Try again.' });
       }
     } catch (error) {
       push({ role: 'agent', text: error?.response?.data?.error || 'That build failed. Please try again.' });

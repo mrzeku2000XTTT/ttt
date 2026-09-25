@@ -9,7 +9,7 @@ import {
 
 const clean = (raw) => String(raw || '').replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
-function validate(result, imageUrl) {
+function validate(result, imageUrl, strict) {
   const html = clean(result?.html);
   if (!/^<!doctype html>/i.test(html)) return 'HTML document is incomplete.';
   if (!/<head[\s>]/i.test(html) || !/<\/head>/i.test(html) || !/<body[\s>]/i.test(html) || !/<\/body>\s*<\/html>\s*$/i.test(html)) {
@@ -22,8 +22,10 @@ function validate(result, imageUrl) {
     if (!Number.isInteger(section.itemCount) || section.itemCount < 0 || section.itemCount > 500) return 'Invalid source section inventory.';
     ids.add(section.id);
     if (!new RegExp(`data-source-section=["']${section.id}["']`).test(html)) return `Missing section: ${section.label}`;
-    for (let i = 1; i <= section.itemCount; i++) {
-      if (!new RegExp(`data-source-item=["']${section.id}-${i}["']`).test(html)) return `Missing item ${i} in ${section.label}`;
+    if (strict) {
+      for (let i = 1; i <= section.itemCount; i++) {
+        if (!new RegExp(`data-source-item=["']${section.id}-${i}["']`).test(html)) return `Missing item ${i} in ${section.label}`;
+      }
     }
   }
   if (!/data-eta-component=/i.test(html)) return 'No ETA components were marked in the HTML.';
@@ -73,7 +75,7 @@ export default async function (req) {
           ...attach,
           response_json_schema: KILN_RESPONSE_SCHEMA,
         });
-        failure = validate(result, imageUrl);
+        failure = validate(result, imageUrl, !isEdit);
         if (failure) {
           console.warn('KILN rejected a result:', failure);
           continue;
@@ -91,7 +93,7 @@ export default async function (req) {
         console.warn('KILN attempt failed:', failure);
       }
     }
-    return Response.json({ error: 'A complete component sheet could not be produced. Please retry — no partial result was accepted.' }, { status: 502 });
+    return Response.json({ error: 'A complete component sheet could not be produced. Please retry — no partial result was accepted.', reason: failure }, { status: 502 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

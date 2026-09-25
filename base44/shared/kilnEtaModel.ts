@@ -65,6 +65,22 @@ HOW TO EXPRESS THIS IN PLAIN HTML/CSS (KILN's contract)
 - Express motion as real CSS @keyframes named after the preset or transition (fadeUpWords, splitText, driftOut, zoomIn), on the element itself.
 - Express zoom/cursor choreography as comments the editor can act on, e.g. /* zoom-keyframe: selector .pricing, scale 1.4, ease ease-in-out */.
 - Keep the palette in CSS custom properties (--ink, --surface, --accent) so later edits are one-line changes.
+
+COMPONENT RECIPES — build every mapped block as the REAL component, then apply the source's own values on top.
+A component is ONE container element (carrying its data-eta-component) that owns its own padding, layout, surface and stacking. Text is NEVER loose on the canvas: it always lives inside its component's layers.
+
+- TitleCard — the headline block. Anatomy: a column container with an optional eyebrow line, the display headline (the largest type), and an optional subline, with its own vertical padding and a comfortable measure. Headline: display size, tight leading, strong weight. Subline: smaller, letter-spaced, muted. Over artwork it sits above the artwork as its own block (z-index), never as raw text dropped on the canvas.
+- Glass — a translucent surface: translucent fill (rgba white .08-.14 or the source's tint), backdrop-filter: blur(14px) saturate(140%), 1px hairline border, generous radius, inner padding, soft shadow. It always wraps content and is never an empty box.
+- NumberDisplay — one large numeral layer (tabular figures, tight leading) with a small caption layer beneath, in its own padded block.
+- BrowserWindow — a window shell: a title-bar strip with pill dots and a URL pill, then the content area; radius, shadow, overflow hidden, and real markup inside (never a screenshot).
+- PhoneWindow — a device shell: rounded frame, notch, inner screen area, then the app content.
+- Cards / Cards2 / Cards3 / Cards4 — a real row or grid of equal cards (2, 3, 4 up); each card is its own surface with padding, radius and an inner stack of icon, title and body. Every card in the source is its own element.
+- IPhoneAnimated / MacBookAnimated — device shells (phone / laptop with base and screen) with the content composited inside the screen area.
+- DivMorph — a morph-ready container: one wrapper whose inner blocks are positioned layers, so a later morph can travel between them.
+- SearchAnimation — a search field block (pill or bar, leading icon, placeholder line) with its results list beneath.
+- LogoAnimation — a centred mark block: the logo lockup in its own padded container, optionally with a tagline line beneath.
+- UIAnimation — a general interface block: a padded surface holding the source's controls in their real row/column structure.
+- Video — a media block: a frame at the source's ratio with the artwork inside, plus radius and shadow.
 `;
 
 export const KILN_RESPONSE_SCHEMA = {
@@ -110,6 +126,12 @@ For photographic artwork, illustrations, product shots and avatars, reuse the OR
 COMPLETENESS
 Inspect the ENTIRE image, including its bottom edge, before writing HTML. Inventory every visible section, every card in each row, every header, badge, control and lower grid. Recreate ALL of it, not just the first viewport. Keep CSS compact and shared across repeated cards so the complete document fits. No placeholders, ellipses, TODOs or omitted sections.
 
+EVERY STRING APPEARS EXACTLY ONCE
+Never let a string appear twice. If the artwork crop you reuse already shows a string, do NOT also draw that string in HTML — that doubles it and makes it look broken. Preferred: crop the artwork to the region that excludes the text (the character, product, logo, background) and write the text once in HTML, inside its component's layers. Only if the text cannot be separated from the artwork, keep it inside the crop and write no duplicate. Before returning, check every visible string against the document: exactly one occurrence.
+
+COMPONENT STRUCTURE (required, without changing the look)
+Reproduce the source's look exactly, but never as loose floating text or stray boxes. Every visible block is built as its ETA component from the recipes below — one container with its own padding and layout, text inside the component's layers, artwork behind it, and the source's own values (colour, size, font, spacing, alignment) applied on top. A headline sitting over artwork is a TitleCard block above the artwork, not raw text on the canvas.
+
 SOURCE MARKERS (required)
 For each source section supply an id (letters, numbers and hyphens only), a label, and itemCount (the number of repeated cards/items, zero if none). Its HTML container MUST carry data-source-section="id". Inside it mark each repeated item with data-source-item="id-1", "id-2", and so on — include every card, not a sample.
 `;
@@ -138,7 +160,7 @@ OUTPUT
 - If the image shows only a fragment of a page, clone only that fragment.
 
 ETA MAPPING
-Every top-level block gets data-eta-component="<library name>" and data-eta-settings="<the ETA settings you judged from the image>". List those same components in etaComponents, one entry per block, with a short note on why.
+Every top-level block gets data-eta-component="<library name>" and data-eta-settings="<the ETA settings you judged from the image>". Build each one with the full anatomy from the COMPONENT RECIPES above — a headline over artwork is a real TitleCard block, a translucent panel is a real Glass panel — while keeping the source's own colours, type and spacing. List those same components in etaComponents, one entry per block, with a short note on why.
 ${instruction ? `\nEXTRA USER INSTRUCTIONS: ${instruction}` : ''}
 
 Return only the JSON object.`;
@@ -160,6 +182,8 @@ ${ETA_SPEC}
 
 EDIT RULES
 - Apply ONLY the requested change. Keep every other element, style, text, size and structure exactly as it is.
+- When the instruction asks for a component (TitleCard, Glass, Cards4, …), rebuild that block with the component's FULL anatomy from the COMPONENT RECIPES above: a real TitleCard is an eyebrow/headline/subline block with its own padding and measure, not raw text sitting on the canvas; a real Glass panel is a translucent blurred surface with a hairline border that wraps the content. Keep the source's own colours, type and spacing on top of the recipe.
+- Never duplicate a string: if a string is visible inside an artwork crop, do not draw it again in HTML.
 - Do NOT add new sections or content beyond what the instruction asks.
 - When the instruction names an ETA component, text-motion preset, keyframe or transition (for example "make the headline SplitText", "add a zoom keyframe on the pricing card", "give this a zoom-in transition"), implement it for real: real CSS @keyframes, real timing and easing, plus the matching data-eta-component / data-eta-settings declaration. That is the one case where motion is allowed.
 - When the instruction is a plain change (text, colour, font, background, size, spacing), change only that and leave the document static.
