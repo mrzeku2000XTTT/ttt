@@ -33,6 +33,7 @@ export default function GlyphStage({
   onFile,
   busy,
   reveal = true,
+  maxHeight,
   styleLabelText,
 }) {
   const frameRef = useRef(null);
@@ -86,6 +87,11 @@ export default function GlyphStage({
   };
 
   const loaded = !!(srcUrl || videoUrl);
+
+  // In the studio shell the artwork is capped to the space actually left over,
+  // so the page never has to scroll. Fullscreen keeps its own viewport rule.
+  const cap =
+    !fullscreen && maxHeight ? Math.max(120, maxHeight - (videoUrl ? 122 : 78)) : 0;
 
   const moveTo = (clientX) => {
     const r = frameRef.current?.getBoundingClientRect();
@@ -188,6 +194,7 @@ export default function GlyphStage({
                   clipPath: `inset(0 0 0 ${compare * 100}%)`,
                   opacity: reveal ? 1 : 0,
                   transition: 'opacity 650ms ease',
+                  maxHeight: cap ? `${cap}px` : undefined,
                 }}
               />
               {compare > 0.001 && <div className="glyph-handle" style={{ left: `${compare * 100}%` }} />}

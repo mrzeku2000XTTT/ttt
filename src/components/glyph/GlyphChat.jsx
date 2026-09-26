@@ -162,7 +162,7 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
   };
 
   return (
-    <aside className="flex h-[340px] min-h-0 flex-col overflow-hidden lg:h-[380px]">
+    <aside className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="flex shrink-0 items-center gap-2.5 pb-3 mb-1" style={{ borderBottom: '1px solid var(--g-line)' }}>
         <GlyphMark size={30} spinning={thinking} />
         <div className="min-w-0 flex-1">

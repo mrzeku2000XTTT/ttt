@@ -317,6 +317,15 @@
   }
 }
 
+/* ── the studio owns the viewport: the header and the chat/controls dock stay
+   put, so the panels are always in reach instead of sitting at the bottom of a
+   long scroll. ── */
+.glyph-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
+
 /* ── posing the 3D card: drag the bar to move it, drag the corner to size it ── */
 .glyph-grab {
   position: absolute;

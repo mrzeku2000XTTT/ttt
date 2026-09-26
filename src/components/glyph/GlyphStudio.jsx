@@ -53,6 +53,32 @@ export default function GlyphStudio({ onHome, initialFile }) {
   const [params, setParams] = useState(null);
   // Open on a split, so the source is always visible beside the render.
   const [compare, setCompare] = useState(0.5);
+
+  // The studio fills the viewport, so the artwork has to fit the space that is
+  // genuinely left over. That space is measured and the canvas is capped to it,
+  // which is what keeps the page itself from ever scrolling.
+  const scrollRef = useRef(null);
+  const ribbonRef = useRef(null);
+  const [stageH, setStageH] = useState(0);
+  const hasParams = Boolean(params);
+
+  useEffect(() => {
+    const measure = () => {
+      const c = scrollRef.current;
+      if (!c) return;
+      const avail = c.clientHeight - (ribbonRef.current?.offsetHeight || 0) - 30;
+      setStageH(Math.max(110, avail));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (scrollRef.current) ro.observe(scrollRef.current);
+    if (ribbonRef.current) ro.observe(ribbonRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [hasParams]);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [exportOpen, setExportOpen] = useState(false);
@@ -358,8 +384,8 @@ export default function GlyphStudio({ onHome, initialFile }) {
   };
 
   return (
-    <div className="glyph-page">
-      <header className="sticky top-0 z-40 glyph-glass" style={{ borderBottom: '1px solid var(--g-line)' }}>
+    <div className="glyph-page glyph-shell flex flex-col overflow-hidden">
+      <header className="z-40 shrink-0 glyph-glass" style={{ borderBottom: '1px solid var(--g-line)' }}>
         <div className="max-w-[1500px] mx-auto px-3 sm:px-4 py-2 min-h-14 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
           <div className="flex items-center gap-2 min-w-0">
             <button onClick={onHome} className="flex items-center gap-2 min-w-0" title="Back to landing">
@@ -480,7 +506,10 @@ export default function GlyphStudio({ onHome, initialFile }) {
         </div>
       </header>
 
-      <div className="max-w-[1700px] mx-auto px-3 sm:px-4 py-4 lg:py-6">
+      <div
+        ref={scrollRef}
+        className="w-full max-w-[1700px] mx-auto px-3 sm:px-4 pt-3 pb-4 flex-1 min-h-0 overflow-y-auto"
+      >
         <main className="min-w-0">
           <GlyphStage
             srcUrl={srcUrl}
@@ -498,6 +527,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
             onFile={accept}
             busy={busy}
             reveal={reveal}
+            maxHeight={stageH}
             styleLabelText={params ? styleLabel(params) : 'GLYPH'}
           />
 
@@ -513,7 +543,8 @@ export default function GlyphStudio({ onHome, initialFile }) {
             </p>
           )}
 
-          {params && <GlyphStyleBar params={params} onStyle={applyStyle} onPalette={setPalette} />}
+          <div ref={ribbonRef}>
+            {params && <GlyphStyleBar params={params} onStyle={applyStyle} onPalette={setPalette} />}
 
           {params && (
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 glyph-muted text-[10px] uppercase tracking-[0.16em]">
@@ -527,67 +558,69 @@ export default function GlyphStudio({ onHome, initialFile }) {
               <span className="hidden sm:inline">R randomize · S surprise · O original · F fullscreen · E export</span>
             </div>
           )}
+          </div>
         </main>
 
-        {(chatOpen || (controlsOpen && params)) && (
-          <section className="mt-4 overflow-hidden rounded-2xl glyph-card">
-            <div className="flex items-center gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--g-line)' }}>
-              <button
-                onClick={() => {
-                  setChatOpen(true);
-                  setControlsOpen(false);
-                }}
-                className={`glyph-btn ${chatOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                Chat
-              </button>
-              <button
-                onClick={() => {
-                  setControlsOpen(true);
-                  setChatOpen(false);
-                }}
-                className={`glyph-btn ${controlsOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
-              >
-                <Settings2 className="w-3.5 h-3.5" />
-                Controls
-              </button>
-              <button
-                onClick={() => {
-                  setChatOpen(false);
-                  setControlsOpen(false);
-                }}
-                className="glyph-pill ml-auto flex h-7 w-7 items-center justify-center rounded-full"
-                title="Close the panel"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-            <div className="p-3">
-              {chatOpen ? (
-                <GlyphChat
-                  params={params}
-                  imageReady={!!(source || videoSource)}
-                  view3d={view3d}
-                  onApply={applyChat}
-                  onView={applyView}
-                  onRandomize={randomize}
-                  onSurprise={surprise}
-                />
-              ) : (
-                params && (
-                  <GlyphControls
-                    params={params}
-                    patch={patch}
-                    onClose={() => setControlsOpen(false)}
-                    onReset={() => setParams(randomizeParams(null, {}))}
-                  />
-                )
-              )}
-            </div>
-          </section>
-        )}
       </div>
+
+      {(chatOpen || (controlsOpen && params)) && (
+        <section className="shrink-0 mx-2 mb-2 lg:mx-3 lg:mb-3 flex h-[40dvh] max-h-[430px] flex-col overflow-hidden rounded-2xl glyph-card">
+          <div className="flex shrink-0 items-center gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--g-line)' }}>
+            <button
+              onClick={() => {
+                setChatOpen(true);
+                setControlsOpen(false);
+              }}
+              className={`glyph-btn ${chatOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Chat
+            </button>
+            <button
+              onClick={() => {
+                setControlsOpen(true);
+                setChatOpen(false);
+              }}
+              className={`glyph-btn ${controlsOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+              Controls
+            </button>
+            <button
+              onClick={() => {
+                setChatOpen(false);
+                setControlsOpen(false);
+              }}
+              className="glyph-pill ml-auto flex h-7 w-7 items-center justify-center rounded-full"
+              title="Close the panel"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            {chatOpen ? (
+              <GlyphChat
+                params={params}
+                imageReady={!!(source || videoSource)}
+                view3d={view3d}
+                onApply={applyChat}
+                onView={applyView}
+                onRandomize={randomize}
+                onSurprise={surprise}
+              />
+            ) : (
+              params && (
+                <GlyphControls
+                  params={params}
+                  patch={patch}
+                  onClose={() => setControlsOpen(false)}
+                  onReset={() => setParams(randomizeParams(null, {}))}
+                />
+              )
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
