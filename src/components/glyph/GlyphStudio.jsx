@@ -35,6 +35,8 @@ import { createMask } from './glyphMask';
 import GlyphStage from './GlyphStage';
 import GlyphMaskBar from './GlyphMaskBar';
 import GlyphMaskPainter from './GlyphMaskPainter';
+import GlyphStyleGallery from './GlyphStyleGallery';
+import { isCoreStyle, makePreviewSource } from './glyphLibrary';
 import GlyphStyleBar from './GlyphStyleBar';
 import GlyphControls from './GlyphControls';
 import GlyphExportMenu from './GlyphExportMenu';
@@ -144,6 +146,10 @@ export default function GlyphStudio({ onHome, initialFile }) {
   const [maskVersion, setMaskVersion] = useState(0);
   const [brush, setBrush] = useState(10);
   const [erase, setErase] = useState(false);
+
+  // The style library, plus the small copy of the picture its tiles render from.
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [previewSource, setPreviewSource] = useState(null);
 
   const animated = params ? isAnimated(params) : false;
   const source = useMemo(() => (img ? prepareSource(img, animated) : null), [img, animated]);
@@ -271,6 +277,10 @@ export default function GlyphStudio({ onHome, initialFile }) {
   // result no longer correlates with the source, fall back to Pixel Art.
   useEffect(() => {
     if (!source || !params || !canvasRef.current || params.style === 'pixel') return;
+    // The guard is for the core renderers, which are all meant to rebuild the
+    // picture. The library's other shelves are deliberate looks — sparse line
+    // art, a blur, a warp — and are meant to read the way they do.
+    if (!isCoreStyle(params.style)) return;
     const key = `${params.seed}|${params.style}|${params.cellSize}`;
     if (checkedRef.current === key) return;
     checkedRef.current = key;
@@ -394,6 +404,23 @@ export default function GlyphStudio({ onHome, initialFile }) {
     if (m) m.getContext('2d').clearRect(0, 0, m.width, m.height);
     setHasMask(false);
     setMaskVersion((v) => v + 1);
+  }, []);
+
+  /* ── the style library ── */
+  // A still builds its preview as soon as it is prepared; a video hands one over
+  // from its current frame when the library opens.
+  useEffect(() => {
+    if (source) setPreviewSource(makePreviewSource(source));
+  }, [source]);
+
+  const openGallery = useCallback(() => {
+    const s = source || lastFrameRef.current;
+    if (s) setPreviewSource(makePreviewSource(s));
+    setGalleryOpen(true);
+  }, [source]);
+
+  const applyRecipe = useCallback((styleId, paletteId) => {
+    setParams((p) => randomizeParams(p, { style: styleId, palette: paletteId }));
   }, []);
 
   /* ── paste from the clipboard ── */
@@ -663,7 +690,14 @@ export default function GlyphStudio({ onHome, initialFile }) {
                 onDone={() => setMaskMode(false)}
               />
             )}
-            {params && <GlyphStyleBar params={params} onStyle={applyStyle} onPalette={setPalette} />}
+            {params && (
+              <GlyphStyleBar
+                params={params}
+                onStyle={applyStyle}
+                onPalette={setPalette}
+                onBrowse={openGallery}
+              />
+            )}
 
           {params && (
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 glyph-muted text-[10px] uppercase tracking-[0.16em]">
@@ -762,6 +796,16 @@ export default function GlyphStudio({ onHome, initialFile }) {
           </section>
         )}
       </div>
+
+      {galleryOpen && (
+        <GlyphStyleGallery
+          params={params}
+          preview={previewSource}
+          onApply={applyStyle}
+          onRecipe={applyRecipe}
+          onClose={() => setGalleryOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -142,6 +142,21 @@
   cursor: not-allowed;
 }
 
+/* Library tiles — a real render of the picture, one per style. */
+.glyph-tile {
+  border: 1px solid var(--g-line);
+  background: rgba(255, 255, 255, 0.02);
+}
+.glyph-tile:hover {
+  border-color: rgba(107, 202, 255, 0.55);
+  background: rgba(107, 202, 255, 0.07);
+}
+.glyph-tile-on {
+  border: 1px solid rgba(107, 202, 255, 0.85);
+  background: rgba(107, 202, 255, 0.09);
+  box-shadow: 0 0 0 1px rgba(107, 202, 255, 0.35);
+}
+
 /* ── stage ── */
 
 .glyph-frame {

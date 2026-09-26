@@ -15,6 +15,8 @@
 
 import { CHAR_SETS } from './glyphStyles';
 import { luma, mapColor, nearestColor, plateColor, plateRgb, rgbCss } from './glyphPalettes';
+import { drawFilter, FILTER_STYLES } from './glyphFilters';
+import { drawMark, MARK_STYLES } from './glyphPatterns';
 
 /* ── sampling ─────────────────────────────────────────────────────────── */
 
@@ -663,6 +665,16 @@ export const RENDERERS = {
   matrix: drawMatrix,
   mixed: drawMixed,
 };
+
+// The newer families register themselves: every filter style renders through
+// drawFilter and every mark style through drawMark, so a new style is added in
+// one place — its family set — and shows up here automatically.
+FILTER_STYLES.forEach((id) => {
+  RENDERERS[id] = drawFilter;
+});
+MARK_STYLES.forEach((id) => {
+  RENDERERS[id] = drawMark;
+});
 
 export function drawStyle(ctx, src, W, H, p, t = 0) {
   const fn = RENDERERS[p.style] || drawPixel;
