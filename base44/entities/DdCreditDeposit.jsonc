@@ -26,7 +26,7 @@
     "amount": {
       "type": "number",
       "default": 0,
-      "description": "KKDAG amount credited"
+      "description": "KKDAG amount credited (derived from the chain, never from the client)"
     },
     "status": {
       "type": "string",
@@ -46,17 +46,23 @@
     "amount"
   ],
   "rls": {
-    "create": {
-      "data.user_email": "{{user.email}}"
-    },
     "read": {
       "data.user_email": "{{user.email}}"
     },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "update": {
-      "data.user_email": "{{user.email}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "data.user_email": "{{user.email}}"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
