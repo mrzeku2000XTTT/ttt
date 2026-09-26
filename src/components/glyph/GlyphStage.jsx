@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { ImagePlus, Loader2, Maximize2, Minimize2, Pause, Play, Upload } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ImagePlus, Loader2, Maximize2, Minimize2, Move, MoveDiagonal2, Pause, Play, Upload } from 'lucide-react';
 import GlyphTimeline from './GlyphTimeline';
 
 // The three ways to look at a render. Split is the default, so the source is
@@ -38,6 +38,52 @@ export default function GlyphStage({
   const frameRef = useRef(null);
   const dragging = useRef(false);
   const [dragOver, setDragOver] = useState(false);
+
+  // 3D only: the artwork can be dragged around and scaled, so the card can be
+  // posed however the user wants it. The transform sits on the frame, leaving
+  // the plane free to keep its sway.
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const panStart = useRef(null);
+  const zoomStart = useRef(null);
+
+  useEffect(() => {
+    setPan({ x: 0, y: 0 });
+    setZoom(1);
+  }, [srcUrl, videoUrl]);
+
+  const reset3d = () => {
+    setPan({ x: 0, y: 0 });
+    setZoom(1);
+  };
+
+  const startPan = (e) => {
+    e.stopPropagation();
+    panStart.current = { x: e.clientX, y: e.clientY, ox: pan.x, oy: pan.y };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const movePan = (e) => {
+    const s = panStart.current;
+    if (!s) return;
+    setPan({ x: s.ox + (e.clientX - s.x), y: s.oy + (e.clientY - s.y) });
+  };
+  const endPan = () => {
+    panStart.current = null;
+  };
+
+  const startZoom = (e) => {
+    e.stopPropagation();
+    zoomStart.current = { x: e.clientX, s: zoom };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const moveZoom = (e) => {
+    const s = zoomStart.current;
+    if (!s) return;
+    setZoom(Math.max(0.6, Math.min(1.9, s.s + (e.clientX - s.x) / 220)));
+  };
+  const endZoom = () => {
+    zoomStart.current = null;
+  };
 
   const loaded = !!(srcUrl || videoUrl);
 
@@ -115,6 +161,7 @@ export default function GlyphStage({
           <div
             ref={frameRef}
             className={`glyph-frame ${view3d ? 'glyph-frame-3d' : ''} ${fullscreen ? 'glyph-frame-full' : ''}`}
+            style={view3d ? { transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})` } : undefined}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
@@ -145,7 +192,40 @@ export default function GlyphStage({
               />
               {compare > 0.001 && <div className="glyph-handle" style={{ left: `${compare * 100}%` }} />}
             </div>
+            {view3d && (
+              <button
+                type="button"
+                className="glyph-resize"
+                onPointerDown={startZoom}
+                onPointerMove={moveZoom}
+                onPointerUp={endZoom}
+                onPointerCancel={endZoom}
+                onDoubleClick={reset3d}
+                title="Drag to resize · double-click to reset"
+              >
+                <MoveDiagonal2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
+
+          {view3d && (
+            <button
+              type="button"
+              className="glyph-grab"
+              onPointerDown={startPan}
+              onPointerMove={movePan}
+              onPointerUp={endPan}
+              onPointerCancel={endPan}
+              onDoubleClick={reset3d}
+              title="Drag to move · double-click to reset"
+            >
+              <Move className="w-3 h-3" />
+              <span className="hidden sm:inline">drag to move</span>
+              {Math.round(zoom * 100) !== 100 && (
+                <span className="glyph-mono">{Math.round(zoom * 100)}%</span>
+              )}
+            </button>
+          )}
 
           <div className="absolute left-5 top-5 flex items-center gap-1.5">
             <span className="glyph-glass rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] font-semibold">
@@ -186,9 +266,11 @@ export default function GlyphStage({
           {videoUrl && <GlyphTimeline videoRef={videoRef} playing={playing} onTogglePlay={onTogglePlay} />}
 
           <p className="glyph-muted mt-2 text-center text-[10px] tracking-wide">
-            {videoUrl
-              ? 'drag the slider to compare · the video keeps playing underneath'
-              : 'drag the slider to compare · drop or paste a new image to transform it'}
+            {view3d
+              ? 'drag the bar to move the card · the corner grip resizes it · the slider still compares'
+              : videoUrl
+                ? 'drag the slider to compare · the video keeps playing underneath'
+                : 'drag the slider to compare · drop or paste a new image to transform it'}
           </p>
         </div>
       )}

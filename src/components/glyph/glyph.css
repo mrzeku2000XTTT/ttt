@@ -316,3 +316,50 @@
     animation: none;
   }
 }
+
+/* ── posing the 3D card: drag the bar to move it, drag the corner to size it ── */
+.glyph-grab {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: grab;
+  background: rgba(10, 18, 28, 0.72);
+  border: 1px solid var(--g-line);
+  color: var(--g-ink);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  touch-action: none;
+  user-select: none;
+}
+.glyph-grab:active {
+  cursor: grabbing;
+}
+.glyph-resize {
+  position: absolute;
+  right: -11px;
+  bottom: -11px;
+  z-index: 6;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  cursor: nwse-resize;
+  background: rgba(10, 18, 28, 0.82);
+  border: 1px solid var(--g-line);
+  color: var(--g-ink);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  touch-action: none;
+}
