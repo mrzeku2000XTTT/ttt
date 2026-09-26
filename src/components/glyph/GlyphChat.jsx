@@ -136,8 +136,8 @@ export default function GlyphChat({ params, imageReady, onApply, onRandomize, on
   };
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-50 flex max-h-[64vh] flex-col rounded-t-3xl glyph-card p-3 lg:static lg:z-auto lg:max-h-none lg:h-[560px] lg:w-[324px] lg:shrink-0 lg:rounded-2xl">
-      <div className="flex items-center gap-2.5 pb-3 mb-1" style={{ borderBottom: '1px solid var(--g-line)' }}>
+    <aside className="fixed inset-x-0 bottom-0 z-50 flex max-h-[62vh] min-h-0 flex-col overflow-hidden rounded-t-3xl glyph-card p-3 lg:sticky lg:top-20 lg:z-auto lg:self-start lg:max-h-none lg:h-[560px] lg:w-[324px] lg:shrink-0 lg:rounded-2xl">
+      <div className="flex shrink-0 items-center gap-2.5 pb-3 mb-1" style={{ borderBottom: '1px solid var(--g-line)' }}>
         <GlyphMark size={30} spinning={thinking} />
         <div className="min-w-0 flex-1">
           <p className="glyph-word text-[11px]">Glyph</p>
@@ -147,11 +147,11 @@ export default function GlyphChat({ params, imageReady, onApply, onRandomize, on
         </div>
       </div>
 
-      <div ref={listRef} className="flex-1 overflow-y-auto space-y-2.5 py-3 pr-0.5">
+      <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto space-y-2.5 py-3 pr-1">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <p
-              className={`max-w-[86%] rounded-2xl px-3 py-2 text-[12px] leading-relaxed ${
+              className={`max-w-[86%] break-words rounded-2xl px-3 py-2 text-[12px] leading-relaxed ${
                 m.role === 'user' ? 'text-[#04202f]' : 'glyph-pill'
               }`}
               style={m.role === 'user' ? { background: 'linear-gradient(100deg,#6BCAFF,#4A90E2)' } : undefined}
@@ -169,7 +169,7 @@ export default function GlyphChat({ params, imageReady, onApply, onRandomize, on
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1.5 pb-2">
+      <div className="flex shrink-0 flex-wrap gap-1.5 pb-2">
         {QUICK.map((q) => (
           <button
             key={q.label}
@@ -187,7 +187,7 @@ export default function GlyphChat({ params, imageReady, onApply, onRandomize, on
           e.preventDefault();
           ask(input);
         }}
-        className="flex items-end gap-2"
+        className="flex shrink-0 items-end gap-2"
       >
         <textarea
           value={input}

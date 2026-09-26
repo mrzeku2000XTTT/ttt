@@ -19,11 +19,15 @@ const css = (h, l, a = 1) => `hsla(${h.toFixed(1)}, 92%, ${l}%, ${a})`;
 
 const PEAKS = 3;
 const BANDS = 6;
+// The gradient tool's signature animation is its hue rotate: the whole ramp
+// walks the spectrum instead of sitting still. Degrees per second.
+const HUE_TURN = 62;
 
 function paint(canvas, t) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width;
   const H = canvas.height;
+  const hs = t * HUE_TURN;
   const drift = t * 0.16;
 
   ctx.fillStyle = '#050a11';
@@ -31,7 +35,7 @@ function paint(canvas, t) {
 
   // the glow the gradient sits on
   const glow = ctx.createRadialGradient(W * 0.5, H * 0.7, 0, W * 0.5, H * 0.7, H);
-  glow.addColorStop(0, css(rampAt(0.3 + drift), 60, 0.55));
+  glow.addColorStop(0, css(rampAt(0.3 + drift) + hs, 60, 0.55));
   glow.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
@@ -41,7 +45,7 @@ function paint(canvas, t) {
     const u = x / Math.max(1, W - 1);
     const wave = (Math.sin((u * PEAKS + drift * 2) * Math.PI * 2) + 1) / 2;
     const top = H * (0.12 + (1 - wave) * 0.46);
-    const col = rampAt(u * 0.45 + drift + wave * 0.1);
+    const col = rampAt(u * 0.45 + drift + wave * 0.1) + hs;
     const span = H - top;
     for (let b = 0; b < BANDS; b++) {
       const y0 = top + (span * b) / BANDS;

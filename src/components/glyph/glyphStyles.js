@@ -22,13 +22,16 @@ export const STYLES = [
   { id: 'mixed', name: 'Mixed' },
   { id: 'pixel', name: 'Pixel Art' },
   { id: 'mosaic', name: 'Mosaic' },
-  { id: 'dots', name: 'Dots' },
-  { id: 'halftone', name: 'Halftone' },
-  { id: 'crosshatch', name: 'Cross' },
   { id: 'lego', name: 'LEGO' },
   { id: 'disco', name: 'Disco' },
-  { id: 'matrix', name: 'Matrix', animated: true },
   { id: 'animatedAscii', name: 'Animated ASCII', animated: true },
+  { id: 'dots', name: 'Dots' },
+  { id: 'crosshatch', name: 'Cross' },
+  { id: 'diagonal', name: 'Diagonal' },
+  { id: 'diamond', name: 'Diamond' },
+  { id: 'lines', name: 'Lines' },
+  { id: 'halftone', name: 'Halftone' },
+  { id: 'matrix', name: 'Matrix', animated: true },
 ];
 
 export function styleById(id) {
@@ -61,6 +64,9 @@ const CELL_RANGE = {
   dots: [6, 22],
   halftone: [8, 24],
   crosshatch: [8, 22],
+  diagonal: [6, 18],
+  diamond: [5, 20],
+  lines: [4, 16],
   lego: [10, 26],
   disco: [8, 26],
   mixed: [8, 20],
@@ -73,7 +79,7 @@ const round = (v, step) => Math.round(v / step) * step;
 // A mixed renderer stacks two or three different renderers in horizontal bands.
 function randomBands(rng, styleId) {
   if (styleId !== 'mixed') return null;
-  const pool = ['characters', 'dither', 'dots', 'pixel', 'mosaic', 'halftone', 'crosshatch', 'lego', 'disco'];
+  const pool = ['characters', 'dither', 'dots', 'pixel', 'mosaic', 'halftone', 'crosshatch', 'lego', 'disco', 'diagonal', 'diamond', 'lines'];
   const shuffled = pool.sort(() => rng() - 0.5);
   const count = 2 + Math.floor(rng() * 2);
   const bands = [];

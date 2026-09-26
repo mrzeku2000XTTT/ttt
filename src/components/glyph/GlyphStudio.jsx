@@ -227,7 +227,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
   return (
     <div className="glyph-page">
       <header className="sticky top-0 z-40 glyph-glass" style={{ borderBottom: '1px solid var(--g-line)' }}>
-        <div className="max-w-[1500px] mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
+        <div className="max-w-[1500px] mx-auto px-3 sm:px-4 py-2 min-h-14 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
           <div className="flex items-center gap-2 min-w-0">
             <button onClick={onHome} className="flex items-center gap-2 min-w-0" title="Back to landing">
               <GlyphMark size={28} />
@@ -236,7 +236,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
             <span className="hidden xl:block glyph-muted text-[11px] ml-2">turn any image into visual code</span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
             <label className="glyph-btn glyph-btn-ghost cursor-pointer">
               <ImageIcon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Upload</span>

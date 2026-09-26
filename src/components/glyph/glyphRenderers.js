@@ -555,6 +555,95 @@ function drawMixed(ctx, src, W, H, p, t) {
   });
 }
 
+/* ── Diagonal ─────────────────────────────────────────────────────────── */
+
+// Diagonal line art: one stroke per cell, thick where the cell is bright. Each
+// stroke is clipped to its own cell and runs corner to corner, so neighbours
+// line up into continuous hatching without ever leaving the grid.
+function drawDiagonal(ctx, src, W, H, p) {
+  const cs = Math.max(4, p.cellSize);
+  const ground = groundFor(p, src);
+  ctx.fillStyle = rgbCss(ground);
+  ctx.fillRect(0, 0, W, H);
+  const ink = luma(ground[0], ground[1], ground[2]) < 128;
+  const a = ((45 + p.rotation) * Math.PI) / 180;
+  eachCell(W, H, cs, (i, j, x, y, w, h) => {
+    const c = cellAvg(src, x, y, w, h);
+    const l = luma(c[0], c[1], c[2]);
+    const cover = ink ? l / 255 : 1 - l / 255;
+    if (cover < 0.05) return;
+    const col = mapColor(c[0], c[1], c[2], p.paletteObj);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    ctx.strokeStyle = rgbCss(col);
+    ctx.lineWidth = Math.max(1, Math.min(w, h) * cover);
+    const len = Math.hypot(w, h);
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - (Math.cos(a) * len) / 2, cy - (Math.sin(a) * len) / 2);
+    ctx.lineTo(cx + (Math.cos(a) * len) / 2, cy + (Math.sin(a) * len) / 2);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+/* ── Diamond ──────────────────────────────────────────────────────────── */
+
+// A rhombus per cell, sized by the cell's brightness — the halftone idea with a
+// diamond mark, so the picture reads as a diamond screen.
+function drawDiamond(ctx, src, W, H, p) {
+  const cs = Math.max(3, p.cellSize);
+  const ground = groundFor(p, src);
+  ctx.fillStyle = rgbCss(ground);
+  ctx.fillRect(0, 0, W, H);
+  const ink = luma(ground[0], ground[1], ground[2]) < 128;
+  const rot = (p.rotation * Math.PI) / 180;
+  eachCell(W, H, cs, (i, j, x, y, w, h) => {
+    const c = cellAvg(src, x, y, w, h);
+    const l = luma(c[0], c[1], c[2]);
+    const cover = ink ? l / 255 : 1 - l / 255;
+    const rx = (cover * (w - p.spacing)) / 2;
+    const ry = (cover * (h - p.spacing)) / 2;
+    if (rx < 0.4 || ry < 0.4) return;
+    ctx.save();
+    ctx.translate(x + w / 2, y + h / 2);
+    if (rot) ctx.rotate(rot);
+    ctx.fillStyle = rgbCss(mapColor(c[0], c[1], c[2], p.paletteObj));
+    ctx.beginPath();
+    ctx.moveTo(0, -ry);
+    ctx.lineTo(rx, 0);
+    ctx.lineTo(0, ry);
+    ctx.lineTo(-rx, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+/* ── Lines ────────────────────────────────────────────────────────────── */
+
+// Horizontal line art: the cell's brightness sets the height of its rule, so the
+// picture is rebuilt as stacked bars — a scanline screen that keeps the light.
+function drawLines(ctx, src, W, H, p) {
+  const cs = Math.max(3, p.cellSize);
+  const ground = groundFor(p, src);
+  ctx.fillStyle = rgbCss(ground);
+  ctx.fillRect(0, 0, W, H);
+  const ink = luma(ground[0], ground[1], ground[2]) < 128;
+  eachCell(W, H, cs, (i, j, x, y, w, h) => {
+    const c = cellAvg(src, x, y, w, h);
+    const l = luma(c[0], c[1], c[2]);
+    const cover = ink ? l / 255 : 1 - l / 255;
+    const bh = Math.max(1, cover * h * 0.85 - p.spacing);
+    if (cover < 0.04) return;
+    ctx.fillStyle = rgbCss(mapColor(c[0], c[1], c[2], p.paletteObj));
+    ctx.fillRect(x, y + (h - bh) / 2, w, bh);
+  });
+}
+
 /* ── dispatch ─────────────────────────────────────────────────────────── */
 
 export const RENDERERS = {
@@ -566,6 +655,9 @@ export const RENDERERS = {
   dots: drawDots,
   halftone: drawHalftone,
   crosshatch: drawCrosshatch,
+  diagonal: drawDiagonal,
+  diamond: drawDiamond,
+  lines: drawLines,
   lego: drawLego,
   disco: drawDisco,
   matrix: drawMatrix,
