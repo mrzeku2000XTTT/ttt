@@ -1,5 +1,5 @@
 import React from 'react';
-import { ETA_EDIT_IDEAS, ETA_LIBRARY } from './kilnComponents';
+import { ETA_EDIT_IDEAS, ETA_LIBRARY, KILN_LAYOUT_TARGET } from './kilnComponents';
 
 /** The ETA component window: the library KILN edits with, and the briefs that drive it. */
 export default function KilnComponentRail({ used = [], onInstruct, onChoose }) {
@@ -13,6 +13,16 @@ export default function KilnComponentRail({ used = [], onInstruct, onChoose }) {
       </div>
 
       <div className="space-y-[3px] p-2">
+        <button
+          onClick={() => onChoose(KILN_LAYOUT_TARGET.name)}
+          className="mb-1 flex w-full items-center gap-2 border border-dashed border-[hsl(var(--k-amber))] px-2 py-1.5 text-left hover:bg-[hsl(var(--k-bg))]"
+        >
+          <span className="kiln-px is-on shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="kiln-mono block truncate text-[10.5px] font-semibold">{KILN_LAYOUT_TARGET.name}</span>
+            <span className="block truncate text-[9.5px] text-[hsl(var(--k-muted))]">{KILN_LAYOUT_TARGET.use}</span>
+          </span>
+        </button>
         {ETA_LIBRARY.map((component) => {
           const isUsed = usedNames.has(component.name);
           return (

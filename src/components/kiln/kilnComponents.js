@@ -20,6 +20,12 @@ export const ETA_LIBRARY = [
   { name: 'Video', use: 'Imported video media' },
 ];
 
+// Not an ETA component: a whole-page build target that composes several of them.
+export const KILN_LAYOUT_TARGET = {
+  name: 'Layout',
+  use: 'Whole page: shell + sections',
+};
+
 // Ready-made ETA edit briefs the rail drops into the composer.
 export const ETA_EDIT_IDEAS = [
   { label: 'SplitText headline', brief: 'Animate the main headline with the ETA SplitText preset, ease-out, and mark it data-text-motion="SplitText".' },

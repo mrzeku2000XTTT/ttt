@@ -229,6 +229,43 @@ ${instruction ? `\nEXTRA USER INSTRUCTIONS: ${instruction}` : ''}
 Return only the JSON object.`;
 }
 
+const LAYOUT_PLAN = `
+REALISTIC PAGE LAYOUT — what you are building
+Build the asset into a believable, finished interface made of several ETA components, not one block with a picture dropped into it.
+1. SHELL — the outer frame the page lives in (BrowserWindow by default): chrome strip with pill dots and a URL pill, then the real page area inside it. The shell element carries the data-eta-component for the chosen shell.
+2. NAV ROW — a slim header inside the page: a small wordmark on the left, three or four short nav labels on the right.
+3. HERO — the asset's artwork as the hero visual, filling its own block, with the asset's own headline and supporting line placed by the recipe beside or over it. Crop the artwork so any text baked into it is excluded.
+4. SUPPORT ROW — one row of equal cards built from the asset's own themes, features or subjects.
+5. STAT BAND — a number row with two or three figures, ONLY if the asset actually shows figures. Otherwise omit this band entirely.
+6. FOOTER — a single slim closing row.
+Keep to four to six blocks in that order, each built with the full anatomy from the COMPONENT RECIPES and carrying the asset's own palette and type character.
+COPY: reuse the asset's own wording wherever it has any. Where it has none, write short neutral product copy in the same voice — never invent brand names, statistics, prices or claims.
+`;
+
+export function kilnLayoutPrompt({ component, instruction }: { component?: string; instruction?: string } = {}) {
+  const shell = component || 'BrowserWindow';
+  return `You are KILN, the component forge, in LAYOUT mode. The user uploaded a visual asset and wants a REALISTIC PAGE LAYOUT built from it — a believable interface composed of several ETA components, with the asset as its hero visual. Not the flat file dropped into a frame.
+${LAYOUT_PLAN}
+ETA MODEL
+${ETA_SPEC}
+
+OUTPUT
+- ONE complete HTML document (<!DOCTYPE html> ... </html>).
+- ALL CSS inline in a <style> tag in <head>. No external stylesheets or frameworks (a Google Fonts <link> is allowed only when the asset shows a distinctive font).
+- Return the JSON object the schema describes: sections, etaComponents, usesSourceArtwork, html, reply.
+- reply is 1-2 short sentences about the page you composed. Plain language, no code.
+
+LAYOUT RULES
+- Mark the outer shell data-eta-component="${shell}" and give EVERY other block its own data-eta-component from the library, each with its own data-eta-settings. The document must show at least three different ETA components.
+- Reuse the asset's ORIGINAL pixels for the hero visual: an overflow-hidden frame with an absolutely positioned source image sized to the source canvas, offset by negative crop x/y. Never invent image URLs, never substitute gradients or emojis, and never use the whole image as a full-page background.
+- Never leave the asset's flat plate, empty banner box or grey panel behind the type.
+- The document is STATIC: no animation, no hover, no JavaScript. Motion is declared through the ETA data attributes only.
+- Keep the palette in CSS custom properties (--ink, --surface, --accent).
+${instruction ? `\nEXTRA USER INSTRUCTIONS: ${instruction}` : ''}
+
+Return only the JSON object.`;
+}
+
 export function kilnEditPrompt({
   currentHtml,
   instruction,

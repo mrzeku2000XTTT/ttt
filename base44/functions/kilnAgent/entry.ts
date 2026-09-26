@@ -7,11 +7,12 @@ import {
   kilnBuildPrompt,
   kilnClonePrompt,
   kilnEditPrompt,
+  kilnLayoutPrompt,
 } from '../../shared/kilnEtaModel.ts';
 
 const clean = (raw) => String(raw || '').replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
-function validate(result, imageUrl, mode, wanted) {
+function validate(result, imageUrl, mode, wanted, layout) {
   const html = clean(result?.html);
   if (!/^<!doctype html>/i.test(html)) return 'HTML document is incomplete.';
   if (!/<head[\s>]/i.test(html) || !/<\/head>/i.test(html) || !/<body[\s>]/i.test(html) || !/<\/body>\s*<\/html>\s*$/i.test(html)) {
@@ -31,7 +32,10 @@ function validate(result, imageUrl, mode, wanted) {
       }
     }
   }
-  if (!/data-eta-component=/i.test(html)) return 'No ETA components were marked in the HTML.';
+  const marked = [...html.matchAll(/data-eta-component=["']([^"']+)["']/gi)].map((match) => match[1]);
+  if (!marked.length) return 'No ETA components were marked in the HTML.';
+  // A realistic layout is several components working together, never one block.
+  if (layout && new Set(marked).size < 3) return 'A realistic layout needs several ETA components, not one.';
   if (!Array.isArray(result?.etaComponents) || !result.etaComponents.length) return 'ETA component map is missing.';
   for (const entry of result.etaComponents) {
     if (!ETA_COMPONENTS.includes(entry.component)) return `Unknown ETA component: ${entry.component}`;
@@ -59,6 +63,7 @@ export default async function (req) {
     const instruction = typeof body?.instruction === 'string' ? body.instruction.slice(0, 2000) : '';
     const currentHtml = typeof body?.currentHtml === 'string' ? body.currentHtml : '';
     const component = ETA_COMPONENTS.includes(body?.component) ? body.component : '';
+    const layout = body?.layout === true;
     const isEdit = !!currentHtml && !!instruction;
     const wantsBuild = body?.mode === 'build' && !!imageUrl;
     const mode = isEdit ? 'edit' : wantsBuild ? 'build' : 'clone';
@@ -72,7 +77,9 @@ export default async function (req) {
     const prompt = mode === 'edit'
       ? kilnEditPrompt({ currentHtml, instruction, hasImage: !!imageUrl })
       : mode === 'build'
-        ? kilnBuildPrompt({ component, instruction })
+        ? layout
+          ? kilnLayoutPrompt({ component, instruction })
+          : kilnBuildPrompt({ component, instruction })
         : kilnClonePrompt({ instruction });
 
     const dimensionNote = hasDimensions
@@ -89,7 +96,7 @@ export default async function (req) {
           ...attach,
           response_json_schema: KILN_RESPONSE_SCHEMA,
         });
-        failure = validate(result, imageUrl, mode, component);
+        failure = validate(result, imageUrl, mode, component, layout);
         if (failure) {
           console.warn('KILN rejected a result:', failure);
           continue;

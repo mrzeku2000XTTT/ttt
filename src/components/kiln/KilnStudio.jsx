@@ -6,7 +6,7 @@ import KilnPixelSteps from './KilnPixelSteps';
 import KilnPreview from './KilnPreview';
 import KilnFullscreen from './KilnFullscreen';
 import KilnComponentRail from './KilnComponentRail';
-import { ETA_LIBRARY } from './kilnComponents';
+import { ETA_LIBRARY, KILN_LAYOUT_TARGET } from './kilnComponents';
 import { KILN_LOGO } from './kilnAssets';
 import './kiln.css';
 
@@ -181,7 +181,8 @@ export default function KilnStudio({ onHome, initialFile }) {
       if (/^https?:\/\//i.test(text)) {
         await loadLink(text);
       } else if (source) {
-        await build('', text);
+        // Asking in plain language for a page becomes a composed layout.
+        await build('', text, /layout|full page|whole page|landing page|realistic page|web ?page/i.test(text));
       } else {
         push({ role: 'user', text });
         push({ role: 'agent', text: 'I need the picture first — drop the image, paste a screenshot, or paste an image link.' });
@@ -205,17 +206,18 @@ export default function KilnStudio({ onHome, initialFile }) {
   const askComponent = () =>
     push({
       role: 'agent',
-      text: 'Uploaded. What should I build from it? Pick a component and I will rebuild the image as that component — or describe it in your own words.',
-      choices: ETA_LIBRARY.map((entry) => entry.name),
+      text: 'Uploaded. Pick a component and I will rebuild the image as that component, or pick Layout to compose a whole realistic page around it — or just describe what you want in your own words.',
+      choices: [KILN_LAYOUT_TARGET.name, ...ETA_LIBRARY.map((entry) => entry.name)],
     });
 
   // A chosen component turns the asset into that component — never a pixel copy of the flat source.
-  const build = async (component, instruction = '') => {
+  const build = async (component, instruction = '', layout = false) => {
     if (busy || !source) return;
-    push({ role: 'user', text: component || instruction });
+    push({ role: 'user', text: layout ? 'Compose a realistic page layout' : component || instruction });
     await runAgent({
       mode: 'build',
       component,
+      layout,
       instruction,
       imageUrl: source.url,
       imageWidth: width,
@@ -225,12 +227,15 @@ export default function KilnStudio({ onHome, initialFile }) {
 
   const choose = async (component) => {
     if (busy || !source) return;
-    if (!html) return build(component);
-    push({ role: 'user', text: `Rebuild as ETA ${component}` });
+    const layout = component === KILN_LAYOUT_TARGET.name;
+    if (!html) return build(layout ? '' : component, '', layout);
+    push({ role: 'user', text: layout ? 'Compose a realistic page layout' : `Rebuild as ETA ${component}` });
     return runAgent({
       mode: 'edit',
       currentHtml: html,
-      instruction: `Rebuild the main block as a real ETA ${component} component using its full anatomy from the component recipes, keeping the source's content, artwork and palette.`,
+      instruction: layout
+        ? 'Compose a realistic full-page layout around the block that is already here: add the surrounding structure — a slim navigation row above it, one supporting card row and a slim footer beneath it — as real ETA components, keeping the existing artwork, wording and palette.'
+        : `Rebuild the main block as a real ETA ${component} component using its full anatomy from the component recipes, keeping the source's content, artwork and palette.`,
       imageUrl: source.url,
       imageWidth: width,
       imageHeight: height,
