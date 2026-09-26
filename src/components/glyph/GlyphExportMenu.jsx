@@ -9,7 +9,7 @@ const FORMATS = [
 const SCALES = [1, 2, 4];
 
 /** Export popover: format + resolution for stills, WEBM for animated styles. */
-export default function GlyphExportMenu({ open, onClose, onExport, animated, busy }) {
+export default function GlyphExportMenu({ open, onClose, onExport, animated, busy, webmSeconds = 4 }) {
   const [format, setFormat] = useState('png');
   const [scale, setScale] = useState(2);
   if (!open) return null;
@@ -60,7 +60,7 @@ export default function GlyphExportMenu({ open, onClose, onExport, animated, bus
           className="glyph-btn glyph-btn-ghost w-full mt-2"
         >
           <Film className="w-3.5 h-3.5" />
-          Export 4s WEBM
+          Export {webmSeconds}s WEBM
         </button>
       )}
 

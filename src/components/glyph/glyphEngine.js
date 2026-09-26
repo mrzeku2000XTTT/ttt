@@ -6,6 +6,8 @@ import { styleById } from './glyphStyles';
 
 export const MAX_DIM = 1100;
 export const MAX_DIM_ANIM = 640;
+// Video is re-rendered every frame, so it works at a smaller size than a still.
+export const MAX_DIM_VIDEO = 480;
 
 export function loadImageFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -37,11 +39,39 @@ export function prepareSource(img, animated) {
   return { width: w, height: h, imageData: g.getImageData(0, 0, w, h) };
 }
 
+// A video is sampled frame by frame into the same shape the renderers already
+// expect, so every style works on moving pictures without changing.
+export function createVideoSource(video) {
+  const vw = video.videoWidth || 640;
+  const vh = video.videoHeight || 360;
+  const scale = Math.min(1, MAX_DIM_VIDEO / Math.max(vw, vh));
+  const width = Math.max(1, Math.round(vw * scale));
+  const height = Math.max(1, Math.round(vh * scale));
+  const c = document.createElement('canvas');
+  c.width = width;
+  c.height = height;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingEnabled = true;
+  let frame = 0;
+  return {
+    width,
+    height,
+    isVideo: true,
+    // null until the element actually has pixels to give
+    sample() {
+      if (!video.videoWidth) return null;
+      g.drawImage(video, 0, 0, width, height);
+      frame += 1;
+      return { width, height, imageData: g.getImageData(0, 0, width, height), frame };
+    },
+  };
+}
+
 /* brightness / contrast / saturation are applied once per render, not per cell */
 let gradeCache = { key: '', data: null };
 
-function graded(source, p) {
-  const key = `${source.width}x${source.height}|${p.brightness}|${p.contrast}|${p.saturation}|${source.imageData.data[0]}|${source.imageData.data.length}`;
+function graded(source, p, stamp = '') {
+  const key = `${source.width}x${source.height}|${p.brightness}|${p.contrast}|${p.saturation}|${source.imageData.data[0]}|${source.imageData.data.length}|${stamp}`;
   if (gradeCache.key === key) return gradeCache.data;
   const src = source.imageData.data;
   const out = new Uint8ClampedArray(src.length);
@@ -71,7 +101,9 @@ export function isAnimated(params) {
   return !!styleById(params.style).animated;
 }
 
-export function renderTo(canvas, source, params, t = 0) {
+// `stamp` only matters for a moving source: two video frames can share a first
+// pixel, so the grade cache needs a nudge to know it is looking at a new frame.
+export function renderTo(canvas, source, params, t = 0, stamp = '') {
   if (!canvas || !source || !params) return;
   const W = source.width;
   const H = source.height;
@@ -85,7 +117,7 @@ export function renderTo(canvas, source, params, t = 0) {
   ctx.globalCompositeOperation = 'source-over';
   ctx.filter = 'none';
   ctx.clearRect(0, 0, W, H);
-  const src = { data: graded(source, params), width: W, height: H };
+  const src = { data: graded(source, params, stamp), width: W, height: H };
   drawStyle(ctx, src, W, H, params, t);
 }
 
@@ -242,7 +274,9 @@ export function recordWebm(source, params, seconds = 4, fps = 24) {
     const t0 = performance.now();
     const loop = () => {
       const t = (performance.now() - t0) / 1000;
-      renderTo(c, source, params, t);
+      // a video source hands back a fresh frame each pass; a still is reused
+      const frame = source.sample ? source.sample() : source;
+      if (frame) renderTo(c, frame, params, t, source.sample ? `v${frame.frame}` : '');
       if (t < seconds) requestAnimationFrame(loop);
       else rec.stop();
     };

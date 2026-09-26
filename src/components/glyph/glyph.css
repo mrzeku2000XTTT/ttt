@@ -127,7 +127,11 @@
   border: 1px solid var(--g-line);
   background: #05080d;
 }
-.glyph-frame > canvas {
+.glyph-plane {
+  position: relative;
+  display: block;
+}
+.glyph-plane > canvas {
   display: block;
   max-width: 100%;
   max-height: 62vh;
@@ -259,5 +263,40 @@
 @media (prefers-reduced-motion: reduce) {
   .glyph-mark-spin {
     animation-duration: 7s;
+  }
+}
+
+/* ── 3D view: the artwork leans back on a plane that sways. The frame itself
+   stays flat and unclipped, so the comparison slider keeps exact math. ── */
+.glyph-frame-3d {
+  overflow: visible;
+  perspective: 1400px;
+  border-color: transparent;
+  background: transparent;
+}
+.glyph-plane-3d {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--g-line);
+  background: #05080d;
+  transform: rotateX(26deg) rotateY(-16deg) scale(0.9);
+  transform-origin: 50% 55%;
+  will-change: transform;
+}
+.glyph-plane-live {
+  animation: glyph-plane-sway 11s ease-in-out infinite;
+}
+@keyframes glyph-plane-sway {
+  0%,
+  100% {
+    transform: rotateX(26deg) rotateY(-16deg) scale(0.9);
+  }
+  50% {
+    transform: rotateX(19deg) rotateY(16deg) scale(0.93);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glyph-plane-live {
+    animation: none;
   }
 }

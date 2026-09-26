@@ -14,6 +14,7 @@ import {
   Store,
 } from 'lucide-react';
 import {
+  createVideoSource,
   downloadBlob,
   isAnimated,
   loadImageFromFile,
@@ -33,9 +34,17 @@ import GlyphExportMenu from './GlyphExportMenu';
 import GlyphChat from './GlyphChat';
 import GlyphMark from './GlyphMark';
 
+// Video is re-rendered every frame, so it is sampled at a steady rate rather
+// than on every animation frame.
+const VIDEO_FPS = 15;
+
 export default function GlyphStudio({ onHome, initialFile }) {
   const [img, setImg] = useState(null);
   const [srcUrl, setSrcUrl] = useState(null);
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [videoSource, setVideoSource] = useState(null);
+  const [playing, setPlaying] = useState(true);
+  const [view3d, setView3d] = useState(false);
   const [params, setParams] = useState(null);
   const [compare, setCompare] = useState(0);
   const [controlsOpen, setControlsOpen] = useState(false);
@@ -48,31 +57,55 @@ export default function GlyphStudio({ onHome, initialFile }) {
   const revealRef = useRef(true);
   const checkedRef = useRef('');
   const canvasRef = useRef(null);
+  const videoRef = useRef(null);
+  const videoUrlRef = useRef(null);
+  const lastFrameRef = useRef(null);
 
   const animated = params ? isAnimated(params) : false;
   const source = useMemo(() => (img ? prepareSource(img, animated) : null), [img, animated]);
 
-  /* ── upload: the image transforms the moment it lands ── */
+  /* ── upload: the picture transforms the moment it lands ── */
   const accept = useCallback(async (file) => {
     if (!file) return;
-    if (!file.type || !file.type.startsWith('image/')) {
-      setError('That file is not an image.');
+    const isVideo = (file.type || '').startsWith('video/');
+    const isImage = (file.type || '').startsWith('image/');
+    if (!isVideo && !isImage) {
+      setError('That file is not an image or a video.');
       return;
     }
     setBusy(true);
     setError('');
-    try {
-      const { img: image, url } = await loadImageFromFile(file);
-      setImg(image);
-      setSrcUrl(url);
+    const reset = () => {
       setParams(randomizeParams(null, {}));
       setCompare(0);
       setControlsOpen(false);
       setNote('');
+      lastFrameRef.current = null;
       revealRef.current = false;
       setReveal(false);
+    };
+    try {
+      if (videoUrlRef.current) URL.revokeObjectURL(videoUrlRef.current);
+      if (isVideo) {
+        const url = URL.createObjectURL(file);
+        videoUrlRef.current = url;
+        setImg(null);
+        setSrcUrl(null);
+        setVideoSource(null);
+        setVideoUrl(url);
+        setPlaying(true);
+        reset();
+      } else {
+        const { img: image, url } = await loadImageFromFile(file);
+        videoUrlRef.current = null;
+        setVideoUrl(null);
+        setVideoSource(null);
+        setImg(image);
+        setSrcUrl(url);
+        reset();
+      }
     } catch (e) {
-      setError(e.message || 'Could not read that image.');
+      setError(e.message || 'Could not read that file.');
     }
     setBusy(false);
   }, []);
@@ -98,6 +131,54 @@ export default function GlyphStudio({ onHome, initialFile }) {
     }
     return () => cancelAnimationFrame(raf);
   }, [source, params, animated]);
+
+  /* ── a video: the element plays in place and is sampled frame by frame ── */
+  useEffect(() => {
+    if (!videoUrl) return undefined;
+    const v = videoRef.current;
+    if (!v) return undefined;
+    v.muted = true;
+    const begin = () => {
+      v.play().catch(() => {});
+      setVideoSource(createVideoSource(v));
+    };
+    if (v.readyState >= 2) begin();
+    else v.addEventListener('loadeddata', begin, { once: true });
+    return () => v.removeEventListener('loadeddata', begin);
+  }, [videoUrl]);
+
+  useEffect(() => {
+    if (!videoSource || !params) return undefined;
+    let raf = 0;
+    let last = 0;
+    const draw = (now) => {
+      raf = requestAnimationFrame(draw);
+      if (now - last < 1000 / VIDEO_FPS) return;
+      last = now;
+      const frame = videoSource.sample();
+      if (!frame) return;
+      lastFrameRef.current = frame;
+      renderTo(canvasRef.current, frame, params, now / 1000, `v${frame.frame}`);
+    };
+    raf = requestAnimationFrame(draw);
+    if (!revealRef.current) {
+      revealRef.current = true;
+      requestAnimationFrame(() => setReveal(true));
+    }
+    return () => cancelAnimationFrame(raf);
+  }, [videoSource, params]);
+
+  const togglePlay = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      v.play().catch(() => {});
+      setPlaying(true);
+    } else {
+      v.pause();
+      setPlaying(false);
+    }
+  }, []);
 
   // A render that has lost the picture is worse than a simple one: if the
   // result no longer correlates with the source, fall back to Pixel Art.
@@ -160,7 +241,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
     const onPaste = (e) => {
       const items = e.clipboardData?.items || [];
       for (let i = 0; i < items.length; i++) {
-        if (items[i].type && items[i].type.startsWith('image/')) {
+        if (items[i].type && (items[i].type.startsWith('image/') || items[i].type.startsWith('video/'))) {
           const f = items[i].getAsFile();
           if (f) {
             accept(f);
@@ -200,15 +281,18 @@ export default function GlyphStudio({ onHome, initialFile }) {
 
   /* ── export ── */
   const doExport = async (format, scale) => {
-    if (!source || !params) return;
+    if (!params) return;
+    const moving = videoSource || null;
+    const still = moving ? lastFrameRef.current : source;
+    if (!moving && !still) return;
     setBusy(true);
     setError('');
     try {
       if (format === 'webm') {
-        const blob = await recordWebm(source, params, 4, 24);
+        const blob = await recordWebm(moving || source, params, moving ? 5 : 4, moving ? 20 : 24);
         downloadBlob(blob, `glyph-${params.seed}.webm`);
       } else {
-        const canvas = renderStill(source, params, scale);
+        const canvas = renderStill(still, params, scale);
         const blob = await stillBlob(canvas, format);
         if (blob) downloadBlob(blob, `glyph-${params.seed}-${scale}x.${format}`);
       }
@@ -233,7 +317,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
               <GlyphMark size={28} />
               <span className="glyph-word text-[13px]">Glyph</span>
             </button>
-            <span className="hidden xl:block glyph-muted text-[11px] ml-2">turn any image into visual code</span>
+            <span className="hidden xl:block glyph-muted text-[11px] ml-2">turn any image or video into visual code</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-1.5">
@@ -242,7 +326,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
               <span className="hidden sm:inline">Upload</span>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 className="hidden"
                 onChange={(e) => {
                   accept(e.target.files?.[0]);
@@ -250,23 +334,39 @@ export default function GlyphStudio({ onHome, initialFile }) {
                 }}
               />
             </label>
-            <button onClick={randomize} disabled={!source} className="glyph-btn glyph-btn-primary">
+            <button onClick={randomize} disabled={!source && !videoSource} className="glyph-btn glyph-btn-primary">
               <Shuffle className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Randomize</span>
             </button>
-            <button onClick={surprise} disabled={!source} className="glyph-btn glyph-btn-ghost">
+            <button onClick={surprise} disabled={!source && !videoSource} className="glyph-btn glyph-btn-ghost">
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden lg:inline">Surprise me</span>
             </button>
+            <div className="flex items-center gap-0.5 rounded-full p-0.5" style={{ border: '1px solid var(--g-line)' }}>
+              {[false, true].map((mode) => (
+                <button
+                  key={String(mode)}
+                  onClick={() => setView3d(mode)}
+                  disabled={!source && !videoSource}
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
+                    view3d === mode ? 'glyph-btn-primary' : 'glyph-muted'
+                  }`}
+                  title={mode ? 'Tilt the artwork back in space' : 'Flat view'}
+                >
+                  {mode ? '3D' : '2D'}
+                </button>
+              ))}
+            </div>
             <div className="relative">
-              <button onClick={() => setExportOpen((v) => !v)} disabled={!source} className="glyph-btn glyph-btn-ghost">
+              <button onClick={() => setExportOpen((v) => !v)} disabled={!source && !videoSource} className="glyph-btn glyph-btn-ghost">
                 <Download className="w-3.5 h-3.5" />
                 <span className="hidden lg:inline">Export</span>
               </button>
               <GlyphExportMenu
                 open={exportOpen}
                 busy={busy}
-                animated={animated}
+                animated={animated || !!videoSource}
+                webmSeconds={videoSource ? 5 : 4}
                 onClose={() => setExportOpen(false)}
                 onExport={doExport}
               />
@@ -276,7 +376,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
                 setControlsOpen((v) => !v);
                 setChatOpen(false);
               }}
-              disabled={!source}
+              disabled={!source && !videoSource}
               className="glyph-btn glyph-btn-ghost"
             >
               <Settings2 className="w-3.5 h-3.5" />
@@ -326,8 +426,13 @@ export default function GlyphStudio({ onHome, initialFile }) {
         <main className="flex-1 min-w-0">
           <GlyphStage
             srcUrl={srcUrl}
+            videoUrl={videoUrl}
+            videoRef={videoRef}
+            playing={playing}
+            onTogglePlay={togglePlay}
+            view3d={view3d}
             canvasRef={canvasRef}
-            source={source}
+            source={source || videoSource}
             compare={compare}
             setCompare={setCompare}
             onFile={accept}
@@ -379,7 +484,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
         {chatOpen && (
           <GlyphChat
             params={params}
-            imageReady={!!source}
+            imageReady={!!(source || videoSource)}
             onApply={applyChat}
             onRandomize={randomize}
             onSurprise={surprise}
