@@ -233,3 +233,31 @@
 .glyph-spin {
   animation: glyph-spin 0.9s linear infinite;
 }
+
+/* GLYPH's mark — the generative gradient tile. It turns while GLYPH answers. */
+.glyph-mark {
+  display: inline-block;
+  flex: 0 0 auto;
+  border-radius: 30%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 20px -10px rgba(74, 144, 226, 0.95);
+}
+.glyph-mark canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.glyph-mark-spin {
+  animation: glyph-mark-turn 2.6s linear infinite;
+}
+@keyframes glyph-mark-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glyph-mark-spin {
+    animation-duration: 7s;
+  }
+}

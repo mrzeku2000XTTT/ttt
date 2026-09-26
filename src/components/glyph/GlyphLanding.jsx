@@ -3,8 +3,7 @@ import { FileText, Store } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import GlyphLandingHero from './GlyphLandingHero';
 import { CtaBox, FeatureBar, LandingFooter, Produces, Workflow } from './GlyphLandingSections';
-
-const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ecfaf781d_generated_image.png';
+import GlyphMark from './GlyphMark';
 
 export default function GlyphLanding({ hasWallet, wallet, loading, error, onConnect, onEnter, onSeed, onExit }) {
   return (
@@ -12,7 +11,7 @@ export default function GlyphLanding({ hasWallet, wallet, loading, error, onConn
       <header className="sticky top-0 z-40 glyph-glass" style={{ borderBottom: '1px solid var(--g-line)' }}>
         <div className="max-w-[1500px] mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <img src={LOGO} alt="GLYPH" className="w-8 h-8 rounded-lg object-cover" />
+            <GlyphMark size={32} />
             <div className="min-w-0">
               <p className="glyph-word text-[13px] leading-none">Glyph</p>
               <p className="glyph-muted text-[10px] mt-1 truncate">image → visual code</p>

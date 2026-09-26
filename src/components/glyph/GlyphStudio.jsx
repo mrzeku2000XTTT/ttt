@@ -6,6 +6,7 @@ import {
   FileText,
   Home,
   Image as ImageIcon,
+  MessageSquare,
   RefreshCw,
   Settings2,
   Shuffle,
@@ -29,8 +30,8 @@ import GlyphStage from './GlyphStage';
 import GlyphStyleBar from './GlyphStyleBar';
 import GlyphControls from './GlyphControls';
 import GlyphExportMenu from './GlyphExportMenu';
-
-const LOGO = 'https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ecfaf781d_generated_image.png';
+import GlyphChat from './GlyphChat';
+import GlyphMark from './GlyphMark';
 
 export default function GlyphStudio({ onHome, initialFile }) {
   const [img, setImg] = useState(null);
@@ -38,6 +39,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
   const [params, setParams] = useState(null);
   const [compare, setCompare] = useState(0);
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [exportOpen, setExportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -129,6 +131,22 @@ export default function GlyphStudio({ onHome, initialFile }) {
     setParams((p) => (p ? { ...p, [key]: value } : p));
   }, []);
 
+  // What the chat hands back: a style change re-rolls the look, then the exact
+  // values it asked for are layered on top of that.
+  const applyChat = useCallback((changes) => {
+    setParams((p) => {
+      if (!p) return p;
+      let next = p;
+      if (changes.style && changes.style !== p.style) {
+        next = randomizeParams(p, { style: changes.style, palette: changes.palette || p.palette });
+      }
+      next = { ...next, ...changes };
+      if (changes.palette) next.paletteObj = paletteById(changes.palette);
+      return next;
+    });
+    setCompare(0);
+  }, []);
+
   const setPalette = useCallback((id) => {
     setParams((p) => (p ? { ...p, palette: id, paletteObj: paletteById(id) } : p));
   }, []);
@@ -170,6 +188,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
       else if (k === 'escape') {
         setControlsOpen(false);
         setExportOpen(false);
+        setChatOpen(false);
       } else if (/^[1-9]$/.test(k)) {
         const st = STYLES[Number(k) - 1];
         if (st) applyStyle(st.id);
@@ -211,7 +230,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
         <div className="max-w-[1500px] mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <button onClick={onHome} className="flex items-center gap-2 min-w-0" title="Back to landing">
-              <img src={LOGO} alt="GLYPH" className="w-7 h-7 rounded-lg object-cover" />
+              <GlyphMark size={28} />
               <span className="glyph-word text-[13px]">Glyph</span>
             </button>
             <span className="hidden xl:block glyph-muted text-[11px] ml-2">turn any image into visual code</span>
@@ -252,9 +271,27 @@ export default function GlyphStudio({ onHome, initialFile }) {
                 onExport={doExport}
               />
             </div>
-            <button onClick={() => setControlsOpen((v) => !v)} disabled={!source} className="glyph-btn glyph-btn-ghost">
+            <button
+              onClick={() => {
+                setControlsOpen((v) => !v);
+                setChatOpen(false);
+              }}
+              disabled={!source}
+              className="glyph-btn glyph-btn-ghost"
+            >
               <Settings2 className="w-3.5 h-3.5" />
               <span className="hidden xl:inline">Controls</span>
+            </button>
+            <button
+              onClick={() => {
+                setChatOpen((v) => !v);
+                setControlsOpen(false);
+              }}
+              className={`glyph-btn ${chatOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+              title="Ask GLYPH for a look"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Chat</span>
             </button>
 
             <div className="hidden md:flex items-center gap-1.5 ml-1 pl-2" style={{ borderLeft: '1px solid var(--g-line)' }}>
@@ -336,6 +373,16 @@ export default function GlyphStudio({ onHome, initialFile }) {
               setParams(randomizeParams(null, {}));
               setCompare(0);
             }}
+          />
+        )}
+
+        {chatOpen && (
+          <GlyphChat
+            params={params}
+            imageReady={!!source}
+            onApply={applyChat}
+            onRandomize={randomize}
+            onSurprise={surprise}
           />
         )}
       </div>
