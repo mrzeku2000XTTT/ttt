@@ -43,7 +43,8 @@ function Chips({ label, options, value, onChange }) {
 
 /**
  * Live controls. Every slider feeds straight into the renderer — no Apply.
- * Right column on desktop, bottom sheet on mobile.
+ * They live in the bottom dock, laid out across the full width so nothing is
+ * squeezed into a narrow column.
  */
 export default function GlyphControls({ params, patch, onClose, onReset }) {
   if (!params) return null;
@@ -51,8 +52,8 @@ export default function GlyphControls({ params, patch, onClose, onReset }) {
   const glyphStyle = ['characters', 'animatedAscii', 'matrix'].includes(params.style);
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-50 max-h-[70vh] overflow-y-auto rounded-t-3xl glyph-card p-4 lg:static lg:z-auto lg:max-h-none lg:w-[300px] lg:shrink-0 lg:rounded-2xl lg:overflow-visible">
-      <div className="flex items-center justify-between mb-3">
+    <aside className="grid gap-x-6 gap-y-1 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mb-3 flex items-center justify-between md:col-span-2 xl:col-span-3">
         <p className="glyph-word text-[11px]">Controls</p>
         <div className="flex items-center gap-1.5">
           <button onClick={onReset} className="glyph-pill rounded-full p-1.5" title="Reset to a fresh random set">
@@ -129,7 +130,7 @@ export default function GlyphControls({ params, patch, onClose, onReset }) {
         </div>
       ))}
 
-      <p className="glyph-muted text-[10px] leading-relaxed pt-2 border-t glyph-hairline">
+      <p className="glyph-muted text-[10px] leading-relaxed pt-2 border-t glyph-hairline md:col-span-2 xl:col-span-3">
         Every style rebuilds the image from the source pixels — the artwork is never replaced by a texture.
       </p>
     </aside>

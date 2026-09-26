@@ -231,6 +231,42 @@ export function renderStill(source, params, scale = 1) {
   return out;
 }
 
+/**
+ * Tune the render to the picture: a small search over cell size and contrast,
+ * scored with the same fidelity measure the fallback uses. It runs on a reduced
+ * copy so it stays quick, then the winning values are applied to the real
+ * source. Brightness is neutralised, which is what keeps a look faithful.
+ */
+export function autoTune(source, params) {
+  const max = 340;
+  const scale = Math.min(1, max / Math.max(source.width, source.height));
+  const w = Math.max(1, Math.round(source.width * scale));
+  const h = Math.max(1, Math.round(source.height * scale));
+  const small = scale === 1 ? source : { width: w, height: h, imageData: scaleSource(source, w, h) };
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const base = Math.max(3, Math.round(params.cellSize * scale));
+  let best = null;
+  for (const cm of [0.65, 0.85, 1.15]) {
+    for (const contrast of [0.95, 1.05, 1.18]) {
+      const cand = { ...params, cellSize: Math.max(3, Math.round(base * cm)), contrast, brightness: 0 };
+      renderTo(canvas, small, cand, 0);
+      const score = reconstructionFidelity(small, canvas, cand);
+      if (!best || score > best.score) best = { score, cm, contrast };
+    }
+  }
+  return {
+    score: best.score,
+    params: {
+      ...params,
+      cellSize: Math.max(2, Math.round(params.cellSize * best.cm)),
+      contrast: best.contrast,
+      brightness: 0,
+    },
+  };
+}
+
 export function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

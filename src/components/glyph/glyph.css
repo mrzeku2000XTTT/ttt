@@ -134,9 +134,25 @@
 .glyph-plane > canvas {
   display: block;
   max-width: 100%;
-  max-height: 62vh;
+  max-height: 70vh;
   width: auto;
   height: auto;
+}
+
+/* ── fullscreen stage: the artwork fills the viewport and the chrome falls
+   away. The canvas element itself is never moved, so it keeps its pixels. ── */
+.glyph-stage-full .glyph-card {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+.glyph-stage-full .glyph-plane > canvas {
+  max-height: 78vh;
+}
+.glyph-frame-full {
+  border-color: transparent;
+  background: transparent;
 }
 .glyph-under {
   position: absolute;

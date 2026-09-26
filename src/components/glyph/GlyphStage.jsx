@@ -1,11 +1,21 @@
 import React, { useRef, useState } from 'react';
-import { ImagePlus, Loader2, Pause, Play, Upload } from 'lucide-react';
+import { ImagePlus, Loader2, Maximize2, Minimize2, Pause, Play, Upload } from 'lucide-react';
+import GlyphTimeline from './GlyphTimeline';
+
+// The three ways to look at a render. Split is the default, so the source is
+// always visible next to what GLYPH made of it.
+const VIEWS = [
+  { label: 'Original', value: 1 },
+  { label: 'Split', value: 0.5 },
+  { label: 'Result', value: 0 },
+];
 
 /**
  * The live canvas: the artwork dominates, with a draggable before/after
  * slider over it. Dropping or pasting an image or a video anywhere here
  * transforms it. In 3D the artwork leans back on a plane that sways — the
- * pointer surface stays flat so the slider keeps exact math.
+ * pointer surface stays flat so the slider keeps exact math. Fullscreen only
+ * restyles this element; the canvas node is never moved, so it keeps its pixels.
  */
 export default function GlyphStage({
   srcUrl,
@@ -14,6 +24,8 @@ export default function GlyphStage({
   playing,
   onTogglePlay,
   view3d,
+  fullscreen,
+  onToggleFullscreen,
   canvasRef,
   source,
   compare,
@@ -56,7 +68,11 @@ export default function GlyphStage({
 
   return (
     <div
-      className="relative"
+      className={
+        fullscreen
+          ? 'glyph-stage-full fixed inset-0 z-[100] flex flex-col justify-center overflow-auto bg-[#05080d]/95 p-3 backdrop-blur-md sm:p-6'
+          : 'relative'
+      }
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -88,7 +104,7 @@ export default function GlyphStage({
         </label>
       ) : (
         <div
-          className={`relative flex items-center justify-center rounded-2xl p-3 sm:p-4 ${dragOver ? 'glyph-drop-active' : ''} glyph-card`}
+          className={`relative flex flex-col items-center justify-center rounded-2xl p-3 sm:p-4 ${dragOver ? 'glyph-drop-active' : ''} glyph-card`}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -98,7 +114,7 @@ export default function GlyphStage({
         >
           <div
             ref={frameRef}
-            className={`glyph-frame ${view3d ? 'glyph-frame-3d' : ''}`}
+            className={`glyph-frame ${view3d ? 'glyph-frame-3d' : ''} ${fullscreen ? 'glyph-frame-full' : ''}`}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
@@ -138,28 +154,38 @@ export default function GlyphStage({
             {videoUrl && (
               <button
                 onClick={onTogglePlay}
-                className="glyph-glass rounded-full w-7 h-7 flex items-center justify-center"
+                className="glyph-glass flex h-7 w-7 items-center justify-center rounded-full"
                 title={playing ? 'Pause' : 'Play'}
               >
                 {playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
               </button>
             )}
           </div>
+
           <div className="absolute right-5 top-5 flex items-center gap-1.5">
+            {VIEWS.map((v) => (
+              <button
+                key={v.label}
+                onClick={() => setCompare(v.value)}
+                className={`glyph-glass rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] font-semibold ${
+                  Math.abs(compare - v.value) < 0.26 ? 'opacity-100' : 'opacity-60'
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
             <button
-              onClick={() => setCompare(1)}
-              className={`glyph-glass rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] font-semibold ${compare > 0.5 ? 'opacity-100' : 'opacity-60'}`}
+              onClick={onToggleFullscreen}
+              className="glyph-glass flex h-7 w-7 items-center justify-center rounded-full"
+              title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
             >
-              Original
-            </button>
-            <button
-              onClick={() => setCompare(0)}
-              className={`glyph-glass rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] font-semibold ${compare < 0.5 ? 'opacity-100' : 'opacity-60'}`}
-            >
-              Result
+              {fullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
             </button>
           </div>
-          <p className="glyph-muted absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide">
+
+          {videoUrl && <GlyphTimeline videoRef={videoRef} playing={playing} onTogglePlay={onTogglePlay} />}
+
+          <p className="glyph-muted mt-2 text-center text-[10px] tracking-wide">
             {videoUrl
               ? 'drag the slider to compare · the video keeps playing underneath'
               : 'drag the slider to compare · drop or paste a new image to transform it'}

@@ -12,8 +12,11 @@ import {
   Shuffle,
   Sparkles,
   Store,
+  Wand2,
+  X,
 } from 'lucide-react';
 import {
+  autoTune,
   createVideoSource,
   downloadBlob,
   isAnimated,
@@ -45,8 +48,11 @@ export default function GlyphStudio({ onHome, initialFile }) {
   const [videoSource, setVideoSource] = useState(null);
   const [playing, setPlaying] = useState(true);
   const [view3d, setView3d] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [tuning, setTuning] = useState(false);
   const [params, setParams] = useState(null);
-  const [compare, setCompare] = useState(0);
+  // Open on a split, so the source is always visible beside the render.
+  const [compare, setCompare] = useState(0.5);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [exportOpen, setExportOpen] = useState(false);
@@ -77,7 +83,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
     setError('');
     const reset = () => {
       setParams(randomizeParams(null, {}));
-      setCompare(0);
+      setCompare(0.5);
       setControlsOpen(false);
       setNote('');
       lastFrameRef.current = null;
@@ -193,19 +199,18 @@ export default function GlyphStudio({ onHome, initialFile }) {
     }
   }, [source, params]);
 
+  // Changing the render never touches the view, so the source stays where the
+  // user left it.
   const randomize = useCallback(() => {
     setParams((p) => randomizeParams(p));
-    setCompare(0);
   }, []);
 
   const surprise = useCallback(() => {
     setParams((p) => surpriseParams(p));
-    setCompare(0);
   }, []);
 
   const applyStyle = useCallback((id) => {
     setParams((p) => randomizeParams(p, { style: id, palette: p?.palette }));
-    setCompare(0);
   }, []);
 
   const patch = useCallback((key, value) => {
@@ -225,8 +230,50 @@ export default function GlyphStudio({ onHome, initialFile }) {
       if (changes.palette) next.paletteObj = paletteById(changes.palette);
       return next;
     });
-    setCompare(0);
   }, []);
+
+  // What the chat hands back for the view itself — 3D, the compare view and
+  // playback. These are not render settings, so they are applied separately.
+  const applyView = useCallback((changes) => {
+    if (typeof changes.view3d === 'boolean') setView3d(changes.view3d);
+    if (changes.view === 'original') setCompare(1);
+    else if (changes.view === 'split') setCompare(0.5);
+    else if (changes.view === 'result') setCompare(0);
+    if (typeof changes.playing === 'boolean') {
+      const v = videoRef.current;
+      if (v) {
+        if (changes.playing) {
+          v.play().catch(() => {});
+          setPlaying(true);
+        } else {
+          v.pause();
+          setPlaying(false);
+        }
+      }
+    }
+  }, []);
+
+  /* ── auto: fit the render to the picture, then say how well it landed ── */
+  const runAuto = useCallback(() => {
+    const src = source || lastFrameRef.current;
+    if (!src || !params || tuning) return;
+    setTuning(true);
+    setError('');
+    setNote('');
+    // let the button paint its busy state before the search blocks the thread
+    window.setTimeout(() => {
+      try {
+        const { params: tuned, score } = autoTune(src, params);
+        setParams(tuned);
+        setNote(
+          `Auto-tuned: ${Math.round(score * 100)}% structural match. Brightness is neutral and the cell size and contrast are fitted to this picture.`,
+        );
+      } catch (e) {
+        setError('Could not auto-tune this picture.');
+      }
+      setTuning(false);
+    }, 30);
+  }, [source, params, tuning]);
 
   const setPalette = useCallback((id) => {
     setParams((p) => (p ? { ...p, palette: id, paletteObj: paletteById(id) } : p));
@@ -266,10 +313,12 @@ export default function GlyphStudio({ onHome, initialFile }) {
       } else if (k === 's') surprise();
       else if (k === 'o') setCompare((c) => (c > 0.5 ? 0 : 1));
       else if (k === 'e') setExportOpen(true);
+      else if (k === 'f') setFullscreen((v) => !v);
       else if (k === 'escape') {
         setControlsOpen(false);
         setExportOpen(false);
         setChatOpen(false);
+        setFullscreen(false);
       } else if (/^[1-9]$/.test(k)) {
         const st = STYLES[Number(k) - 1];
         if (st) applyStyle(st.id);
@@ -337,6 +386,15 @@ export default function GlyphStudio({ onHome, initialFile }) {
             <button onClick={randomize} disabled={!source && !videoSource} className="glyph-btn glyph-btn-primary">
               <Shuffle className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Randomize</span>
+            </button>
+            <button
+              onClick={runAuto}
+              disabled={(!source && !videoSource) || tuning}
+              className="glyph-btn glyph-btn-ghost"
+              title="Fit the settings to this picture"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{tuning ? 'Tuning…' : 'Auto'}</span>
             </button>
             <button onClick={surprise} disabled={!source && !videoSource} className="glyph-btn glyph-btn-ghost">
               <Sparkles className="w-3.5 h-3.5" />
@@ -422,8 +480,8 @@ export default function GlyphStudio({ onHome, initialFile }) {
         </div>
       </header>
 
-      <div className="max-w-[1500px] mx-auto px-3 sm:px-4 py-4 lg:py-6 flex flex-col lg:flex-row gap-5">
-        <main className="flex-1 min-w-0">
+      <div className="max-w-[1700px] mx-auto px-3 sm:px-4 py-4 lg:py-6">
+        <main className="min-w-0">
           <GlyphStage
             srcUrl={srcUrl}
             videoUrl={videoUrl}
@@ -431,6 +489,8 @@ export default function GlyphStudio({ onHome, initialFile }) {
             playing={playing}
             onTogglePlay={togglePlay}
             view3d={view3d}
+            fullscreen={fullscreen}
+            onToggleFullscreen={() => setFullscreen((v) => !v)}
             canvasRef={canvasRef}
             source={source || videoSource}
             compare={compare}
@@ -464,31 +524,68 @@ export default function GlyphStudio({ onHome, initialFile }) {
               <button onClick={reseed} className="inline-flex items-center gap-1 hover:text-[#E8F1F9]">
                 <RefreshCw className="w-3 h-3" /> regenerate
               </button>
-              <span className="hidden sm:inline">R randomize · S surprise · O original · E export</span>
+              <span className="hidden sm:inline">R randomize · S surprise · O original · F fullscreen · E export</span>
             </div>
           )}
         </main>
 
-        {controlsOpen && params && (
-          <GlyphControls
-            params={params}
-            patch={patch}
-            onClose={() => setControlsOpen(false)}
-            onReset={() => {
-              setParams(randomizeParams(null, {}));
-              setCompare(0);
-            }}
-          />
-        )}
-
-        {chatOpen && (
-          <GlyphChat
-            params={params}
-            imageReady={!!(source || videoSource)}
-            onApply={applyChat}
-            onRandomize={randomize}
-            onSurprise={surprise}
-          />
+        {(chatOpen || (controlsOpen && params)) && (
+          <section className="mt-4 overflow-hidden rounded-2xl glyph-card">
+            <div className="flex items-center gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--g-line)' }}>
+              <button
+                onClick={() => {
+                  setChatOpen(true);
+                  setControlsOpen(false);
+                }}
+                className={`glyph-btn ${chatOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Chat
+              </button>
+              <button
+                onClick={() => {
+                  setControlsOpen(true);
+                  setChatOpen(false);
+                }}
+                className={`glyph-btn ${controlsOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+                Controls
+              </button>
+              <button
+                onClick={() => {
+                  setChatOpen(false);
+                  setControlsOpen(false);
+                }}
+                className="glyph-pill ml-auto flex h-7 w-7 items-center justify-center rounded-full"
+                title="Close the panel"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="p-3">
+              {chatOpen ? (
+                <GlyphChat
+                  params={params}
+                  imageReady={!!(source || videoSource)}
+                  view3d={view3d}
+                  onApply={applyChat}
+                  onView={applyView}
+                  onRandomize={randomize}
+                  onSurprise={surprise}
+                />
+              ) : (
+                params && (
+                  <GlyphControls
+                    params={params}
+                    patch={patch}
+                    onClose={() => setControlsOpen(false)}
+                    onReset={() => setParams(randomizeParams(null, {}))}
+                  />
+                )
+              )}
+            </div>
+          </section>
         )}
       </div>
     </div>

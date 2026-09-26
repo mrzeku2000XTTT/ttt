@@ -108,7 +108,13 @@ export function randomizeParams(prev, opts = {}) {
     styleId = pick(rng, pool);
   }
 
-  const palette = opts.palette ? paletteById(opts.palette) : pick(rng, PALETTES);
+  // The source's own colours stay the default more often than not, so a fresh
+  // look still looks like the picture that went in.
+  const palette = opts.palette
+    ? paletteById(opts.palette)
+    : rng() < 0.35
+      ? paletteById('original')
+      : pick(rng, PALETTES);
   const [cMin, cMax] = CELL_RANGE[styleId] || [6, 20];
 
   const glyphStyle = styleId === 'characters' || styleId === 'animatedAscii' || styleId === 'matrix' || styleId === 'mixed';
@@ -121,14 +127,16 @@ export function randomizeParams(prev, opts = {}) {
     paletteObj: palette,
     charSet: styleId === 'matrix' ? 'matrix' : glyphStyle ? charSet : 'classic',
     cellSize: Math.round(between(rng, cMin, cMax)),
-    fontScale: round(between(rng, 0.85, 1.15), 0.05),
+    // Marks stay on the light side of full weight — a fresh look should read as
+    // the picture, not as a wall of ink over it.
+    fontScale: round(between(rng, 0.8, 1), 0.05),
     spacing: styleId === 'mosaic' || styleId === 'dots' ? Math.round(between(rng, 0, 5)) : 0,
     rotation: styleId === 'mosaic' || styleId === 'halftone' || styleId === 'crosshatch' ? Math.round(between(rng, -25, 25)) : 0,
     threshold: 128,
-    brightness: Math.round(between(rng, -12, 12)),
-    contrast: round(between(rng, 0.9, 1.35), 0.05),
-    saturation: round(between(rng, 0.7, 1.4), 0.05),
-    jitter: round(between(rng, 0.2, 0.8), 0.05),
+    brightness: Math.round(between(rng, -6, 6)),
+    contrast: round(between(rng, 0.92, 1.12), 0.05),
+    saturation: round(between(rng, 0.85, 1.15), 0.05),
+    jitter: round(between(rng, 0.1, 0.45), 0.05),
     // 'auto' derives the ground from the image's own mean colour, so bright
     // pictures stay bright and dark ones stay dark.
     plate: 'auto',

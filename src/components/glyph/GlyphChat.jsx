@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Sparkles, Shuffle, Wand2 } from 'lucide-react';
+import { ArrowUp, Box, Contrast, Eye, Grid3x3, Sparkles, Shuffle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { PALETTES, paletteById } from './glyphPalettes';
 import { DITHER_ALGOS, STYLES } from './glyphStyles';
@@ -27,6 +27,9 @@ const SCHEMA = {
     dotShape: { type: 'string', enum: ['circle', 'square', 'diamond', ''] },
     halftoneMode: { type: 'string', enum: ['mono', 'rgb', ''] },
     plate: { type: 'string', enum: ['auto', 'light', 'dark', ''] },
+    view3d: { type: 'string', enum: ['on', 'off', ''], description: 'on tilts the artwork back in 3D, off flattens it.' },
+    view: { type: 'string', enum: ['original', 'split', 'result', ''], description: 'Which way to look at the render.' },
+    playing: { type: 'string', enum: ['play', 'pause', ''], description: 'Play or pause a loaded video.' },
   },
   required: ['reply'],
 };
@@ -43,19 +46,21 @@ const LIMITS = {
 };
 
 const GREETING =
-  'Drop an image and I will rebuild it out of characters, tiles, dots or pixels. Tell me how it should look — or press Randomize.';
+  'Drop an image or a video and I will rebuild it out of characters, tiles, dots or pixels. Tell me how it should look — or press Randomize.';
 
 const QUICK = [
   { label: 'New look', icon: Shuffle, say: 'Give me a new look.' },
   { label: 'Surprise me', icon: Sparkles, say: 'Surprise me.' },
-  { label: 'More contrast', icon: Wand2, say: 'More contrast please.' },
-  { label: 'Smaller cells', icon: Wand2, say: 'Use smaller cells.' },
+  { label: 'More contrast', icon: Contrast, say: 'More contrast please.' },
+  { label: 'Smaller cells', icon: Grid3x3, say: 'Use smaller cells.' },
+  { label: '3D view', icon: Box, say: 'Tilt it in 3D.' },
+  { label: 'Show original', icon: Eye, say: 'Show me the original.' },
 ];
 
-function buildPrompt(text, params) {
+function buildPrompt(text, params, view3d) {
   const current = params
-    ? `style=${params.style}, palette=${params.palette}, cellSize=${params.cellSize}, fontScale=${params.fontScale}, spacing=${params.spacing}, rotation=${params.rotation}, brightness=${params.brightness}, contrast=${params.contrast}, saturation=${params.saturation}, jitter=${params.jitter}, plate=${params.plate}, ditherAlgo=${params.ditherAlgo}, charSet=${params.charSet}`
-    : 'no image loaded yet';
+    ? `style=${params.style}, palette=${params.palette}, cellSize=${params.cellSize}, fontScale=${params.fontScale}, spacing=${params.spacing}, rotation=${params.rotation}, brightness=${params.brightness}, contrast=${params.contrast}, saturation=${params.saturation}, jitter=${params.jitter}, plate=${params.plate}, ditherAlgo=${params.ditherAlgo}, charSet=${params.charSet}, view3d=${view3d ? 'on' : 'off'}`
+    : 'nothing loaded yet';
   return [
     'You are GLYPH, a render assistant inside a local image-transformation studio.',
     'One image is on screen and it is rebuilt by a renderer. You change HOW it is rebuilt — never what the image is.',
@@ -63,13 +68,14 @@ function buildPrompt(text, params) {
     `Palettes: ${PALETTE_IDS.join(', ')}.`,
     'cellSize 2-40, fontScale 0.5-2, spacing 0-8, rotation -45-45, brightness -70-70, contrast 0.4-2.2, saturation 0-2, jitter 0-1.',
     `Current settings: ${current}.`,
+    'You also control the view: view3d "on" tilts the artwork back in space and "off" flattens it, view is "original" / "split" / "result" for the before-and-after comparison, and playing is "play" / "pause" for a loaded video.',
     'Set ONLY the fields that must change. Use "" for every field you want left alone.',
     'Reply with one short sentence, 18 words maximum, no lists and no markdown.',
     `The user says: "${text}"`,
   ].join('\n');
 }
 
-export default function GlyphChat({ params, imageReady, onApply, onRandomize, onSurprise }) {
+export default function GlyphChat({ params, imageReady, view3d, onApply, onView, onRandomize, onSurprise }) {
   const [messages, setMessages] = useState([{ role: 'glyph', text: GREETING }]);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
@@ -90,7 +96,7 @@ export default function GlyphChat({ params, imageReady, onApply, onRandomize, on
     setThinking(true);
     try {
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: buildPrompt(clean, params),
+        prompt: buildPrompt(clean, params, view3d),
         response_json_schema: SCHEMA,
       });
       const patch = {};
@@ -109,8 +115,22 @@ export default function GlyphChat({ params, imageReady, onApply, onRandomize, on
       if (res?.halftoneMode) patch.halftoneMode = res.halftoneMode;
       if (res?.plate) patch.plate = res.plate;
 
+      const view = {};
+      if (res?.view3d === 'on') view.view3d = true;
+      else if (res?.view3d === 'off') view.view3d = false;
+      if (res?.view && ['original', 'split', 'result'].includes(res.view)) view.view = res.view;
+      if (res?.playing === 'play') view.playing = true;
+      else if (res?.playing === 'pause') view.playing = false;
+
       if (Object.keys(patch).length) onApply(patch);
-      say('glyph', res?.reply || (Object.keys(patch).length ? 'Done — the render changed.' : 'Tell me which way to take it.'));
+      if (Object.keys(view).length && onView) onView(view);
+      say(
+        'glyph',
+        res?.reply ||
+          (Object.keys(patch).length || Object.keys(view).length
+            ? 'Done — the view changed.'
+            : 'Tell me which way to take it.'),
+      );
     } catch (e) {
       say('glyph', 'I could not reach the model just now — the quick actions below still work.');
     }
@@ -129,14 +149,20 @@ export default function GlyphChat({ params, imageReady, onApply, onRandomize, on
     } else if (item.label === 'More contrast') {
       onApply({ contrast: Math.min(2.2, (params?.contrast || 1) + 0.3) });
       say('glyph', 'Pushed the contrast up.');
-    } else {
+    } else if (item.label === 'Smaller cells') {
       onApply({ cellSize: Math.max(2, Math.round((params?.cellSize || 12) * 0.7)) });
       say('glyph', 'Smaller cells, so more detail survives.');
+    } else if (item.label === '3D view') {
+      onView({ view3d: true });
+      say('glyph', 'Tilted back in 3D — the 2D button in the header flattens it again.');
+    } else {
+      onView({ view: 'original' });
+      say('glyph', 'Showing the source. Drag the slider to bring the render back.');
     }
   };
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-50 flex max-h-[62vh] min-h-0 flex-col overflow-hidden rounded-t-3xl glyph-card p-3 lg:sticky lg:top-20 lg:z-auto lg:self-start lg:max-h-none lg:h-[560px] lg:w-[324px] lg:shrink-0 lg:rounded-2xl">
+    <aside className="flex h-[340px] min-h-0 flex-col overflow-hidden lg:h-[380px]">
       <div className="flex shrink-0 items-center gap-2.5 pb-3 mb-1" style={{ borderBottom: '1px solid var(--g-line)' }}>
         <GlyphMark size={30} spinning={thinking} />
         <div className="min-w-0 flex-1">
