@@ -126,7 +126,7 @@ export default function GlyphStage({
       )}
 
       {busy && (
-        <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/70 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-[#070b12]/70 backdrop-blur-sm">
           <Loader2 className="glyph-spin w-6 h-6" style={{ color: '#4A90E2' }} />
         </div>
       )}

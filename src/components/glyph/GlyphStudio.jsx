@@ -292,10 +292,10 @@ export default function GlyphStudio({ onHome, initialFile }) {
           {params && (
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 glyph-muted text-[10px] uppercase tracking-[0.16em]">
               <span className="glyph-mono normal-case tracking-normal">seed {params.seed}</span>
-              <button onClick={copySeed} className="inline-flex items-center gap-1 hover:text-[#2D3436]">
+              <button onClick={copySeed} className="inline-flex items-center gap-1 hover:text-[#E8F1F9]">
                 <Copy className="w-3 h-3" /> copy seed
               </button>
-              <button onClick={reseed} className="inline-flex items-center gap-1 hover:text-[#2D3436]">
+              <button onClick={reseed} className="inline-flex items-center gap-1 hover:text-[#E8F1F9]">
                 <RefreshCw className="w-3 h-3" /> regenerate
               </button>
               <span>

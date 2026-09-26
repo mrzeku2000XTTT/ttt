@@ -20,9 +20,9 @@ export default function GlyphLanding({ hasWallet, wallet, loading, error, onConn
           </div>
 
           <nav className="hidden lg:flex items-center gap-6">
-            <a href="#workflow" className="glyph-muted text-[12px] hover:text-[#2D3436]">How it works</a>
-            <a href="#styles" className="glyph-muted text-[12px] hover:text-[#2D3436]">Styles</a>
-            <Link to="/AppDocs/Glyph" className="glyph-muted text-[12px] hover:text-[#2D3436]">Docs</Link>
+            <a href="#workflow" className="glyph-muted text-[12px] hover:text-[#E8F1F9]">How it works</a>
+            <a href="#styles" className="glyph-muted text-[12px] hover:text-[#E8F1F9]">Styles</a>
+            <Link to="/AppDocs/Glyph" className="glyph-muted text-[12px] hover:text-[#E8F1F9]">Docs</Link>
           </nav>
 
           <div className="flex items-center gap-2">
