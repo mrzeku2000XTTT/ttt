@@ -42,7 +42,7 @@ export default function MetaMimicStudio() {
       setImageSize({ width: image.naturalWidth, height: image.naturalHeight });
       setSourceData(dataUrl);
       const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 86400 });
+      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
       setImageUrl(signed_url);
     } catch (err) {
       setError("Upload failed. Please try another image.");

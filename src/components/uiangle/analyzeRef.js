@@ -5,7 +5,7 @@ export async function analyzeReferenceImage(file) {
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPG or WebP reference.');
   if (file.size > 15 * 1024 * 1024) throw new Error('Please choose an image smaller than 15 MB.');
   const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-  const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 86400 });
+  const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
   const image = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error('The reference image could not be opened.')); img.src = signed_url; });
   const result = await base44.integrations.Core.InvokeLLM({
     prompt: 'Analyze visible characters, buildings and important objects, up to 8. Return a tight bounding box x,y,w,h normalized 0..1 in the original image. For EACH subject, trace its visible OUTER silhouette clockwise as 24-60 polygon points with x,y in 0..1 LOCAL TO ITS BOUNDING BOX. Follow head, shoulders, arms, hands, legs and feet; do not return a bounding rectangle for characters. Never infer occluded limbs. Building outlines follow roof and walls. These are editable approximate outlines, not pixel-perfect segmentation. kind is character, building or object.',

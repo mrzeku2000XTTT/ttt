@@ -359,7 +359,7 @@ export default function CAMStudio({ address, onHome }) {
     const tick = setInterval(() => setFusionElapsed((s) => s + 1), 1000);
     try {
       const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 86400 });
+      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
       const res = await base44.functions.invoke('metaMimicClone', { imageUrl: signed_url, cloneMode: true, imageWidth: imgSize.w, imageHeight: imgSize.h });
       const html = res?.data?.html;
       if (!html) throw new Error(res?.data?.error || 'Could not decompose this image.');
