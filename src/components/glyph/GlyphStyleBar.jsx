@@ -2,19 +2,19 @@ import React from 'react';
 import { PALETTES } from './glyphPalettes';
 import { STYLES } from './glyphStyles';
 
-/** Style selector + palette row. Clicking a style re-renders immediately. */
+/** Compact style + palette chip cloud. Clicking a style re-renders immediately. */
 export default function GlyphStyleBar({ params, onStyle, onPalette }) {
   if (!params) return null;
   return (
-    <div className="mt-3">
-      <div className="glyph-stylebar flex gap-1.5 overflow-x-auto pb-1">
+    <div className="mt-2.5 flex flex-col gap-1.5">
+      <div className="flex flex-wrap gap-1">
         {STYLES.map((s, i) => {
           const active = params.style === s.id;
           return (
             <button
               key={s.id}
               onClick={() => onStyle(s.id)}
-              className={`glyph-btn whitespace-nowrap ${active ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+              className={`glyph-chip ${active ? 'glyph-chip-on' : ''}`}
               title={`${s.name} (${i + 1})`}
             >
               {s.name}
@@ -22,8 +22,9 @@ export default function GlyphStyleBar({ params, onStyle, onPalette }) {
           );
         })}
       </div>
-      <div className="glyph-stylebar flex items-center gap-1.5 overflow-x-auto pt-2">
-        <span className="glyph-muted text-[10px] uppercase tracking-[0.18em] shrink-0 pr-1">Palette</span>
+
+      <div className="flex flex-wrap items-center gap-1">
+        <span className="glyph-muted text-[9px] uppercase tracking-[0.16em] pr-0.5">Palette</span>
         {PALETTES.map((p) => {
           const active = params.palette === p.id;
           const swatch = p.colors
@@ -33,18 +34,15 @@ export default function GlyphStyleBar({ params, onStyle, onPalette }) {
             <button
               key={p.id}
               onClick={() => onPalette(p.id)}
-              className={`shrink-0 flex items-center gap-2 rounded-full pl-1.5 pr-3 py-1 text-[10px] uppercase tracking-[0.14em] font-semibold transition-colors ${
-                active ? 'text-[#04202f]' : 'glyph-pill'
-              }`}
-              style={active ? { background: 'linear-gradient(100deg,#6BCAFF,#4A90E2)' } : undefined}
+              className={`glyph-chip flex items-center gap-1 ${active ? 'glyph-chip-on' : ''}`}
               title={p.name}
             >
               <span className="flex">
-                {swatch.map((c, i) => (
+                {swatch.map((c, si) => (
                   <span
-                    key={i}
-                    className="w-3 h-3 rounded-full border border-white/70"
-                    style={{ background: c, marginLeft: i ? -4 : 0 }}
+                    key={si}
+                    className="w-2 h-2 rounded-full border border-white/60"
+                    style={{ background: c, marginLeft: si ? -3 : 0 }}
                   />
                 ))}
               </span>
