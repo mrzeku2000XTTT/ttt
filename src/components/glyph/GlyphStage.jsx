@@ -35,6 +35,7 @@ export default function GlyphStage({
   reveal = true,
   maxHeight,
   styleLabelText,
+  overlay,
 }) {
   const frameRef = useRef(null);
   const dragging = useRef(false);
@@ -198,6 +199,7 @@ export default function GlyphStage({
                   maxHeight: cap ? `${cap}px` : undefined,
                 }}
               />
+              {overlay}
               {compare > 0.001 && <div className="glyph-handle" style={{ left: `${compare * 100}%` }} />}
             </div>
             {view3d && (

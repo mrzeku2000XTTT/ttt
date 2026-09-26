@@ -264,6 +264,15 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+/* The paint surface — sized in JS to sit exactly over the artwork. */
+.glyph-mask {
+  position: absolute;
+  z-index: 6;
+  cursor: crosshair;
+  touch-action: none;
+  transition: opacity 200ms ease;
+}
+
 .glyph-hero-field {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   white-space: pre;

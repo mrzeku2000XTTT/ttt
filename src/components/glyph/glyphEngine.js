@@ -101,9 +101,29 @@ export function isAnimated(params) {
   return !!styleById(params.style).animated;
 }
 
+// Two reusable offscreen canvases: a masked render needs a layer for the style
+// and a layer for the picture underneath, and video would otherwise allocate
+// both on every frame.
+const scratch = {};
+
+function scratchCanvas(key, w, h) {
+  let c = scratch[key];
+  if (!c) {
+    c = document.createElement('canvas');
+    scratch[key] = c;
+  }
+  if (c.width !== w || c.height !== h) {
+    c.width = w;
+    c.height = h;
+  }
+  return c;
+}
+
 // `stamp` only matters for a moving source: two video frames can share a first
 // pixel, so the grade cache needs a nudge to know it is looking at a new frame.
-export function renderTo(canvas, source, params, t = 0, stamp = '') {
+// `mask` (optional) is a canvas the size of the source: the style is only kept
+// where the mask is opaque, and the graded picture shows through everywhere else.
+export function renderTo(canvas, source, params, t = 0, stamp = '', mask = null) {
   if (!canvas || !source || !params) return;
   const W = source.width;
   const H = source.height;
@@ -117,7 +137,29 @@ export function renderTo(canvas, source, params, t = 0, stamp = '') {
   ctx.globalCompositeOperation = 'source-over';
   ctx.filter = 'none';
   ctx.clearRect(0, 0, W, H);
-  const src = { data: graded(source, params, stamp), width: W, height: H };
+  const data = graded(source, params, stamp);
+  const src = { data, width: W, height: H };
+
+  if (mask) {
+    const styled = scratchCanvas('styled', W, H);
+    const sctx = styled.getContext('2d');
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.globalAlpha = 1;
+    sctx.globalCompositeOperation = 'source-over';
+    sctx.clearRect(0, 0, W, H);
+    drawStyle(sctx, src, W, H, params, t);
+    // keep only the painted region
+    sctx.globalCompositeOperation = 'destination-in';
+    sctx.drawImage(mask, 0, 0, W, H);
+    sctx.globalCompositeOperation = 'source-over';
+
+    const base = scratchCanvas('base', W, H);
+    base.getContext('2d').putImageData(new ImageData(data, W, H), 0, 0);
+    ctx.drawImage(base, 0, 0);
+    ctx.drawImage(styled, 0, 0);
+    return;
+  }
+
   drawStyle(ctx, src, W, H, params, t);
 }
 
@@ -211,14 +253,14 @@ function imageDataToCanvas(id) {
 
 // Renders a still at 1× / 2× / 4×. Cell sizes scale too, so the extra
 // resolution carries real detail instead of a blur.
-export function renderStill(source, params, scale = 1) {
+export function renderStill(source, params, scale = 1, mask = null) {
   const w = Math.round(source.width * scale);
   const h = Math.round(source.height * scale);
   const out = document.createElement('canvas');
   out.width = w;
   out.height = h;
   if (scale === 1) {
-    renderTo(out, source, params, 0);
+    renderTo(out, source, params, 0, '', mask);
     return out;
   }
   const scaled = { width: w, height: h, imageData: scaleSource(source, w, h) };
@@ -227,7 +269,7 @@ export function renderStill(source, params, scale = 1) {
     cellSize: Math.max(1, params.cellSize * scale),
     spacing: params.spacing * scale,
   };
-  renderTo(out, scaled, p, 0);
+  renderTo(out, scaled, p, 0, '', mask);
   return out;
 }
 
@@ -284,7 +326,7 @@ export function stillBlob(canvas, format) {
 }
 
 // Animated styles record a real WEBM straight off the canvas.
-export function recordWebm(source, params, seconds = 4, fps = 24) {
+export function recordWebm(source, params, seconds = 4, fps = 24, mask = null) {
   return new Promise((resolve, reject) => {
     const c = document.createElement('canvas');
     c.width = source.width;
@@ -312,7 +354,7 @@ export function recordWebm(source, params, seconds = 4, fps = 24) {
       const t = (performance.now() - t0) / 1000;
       // a video source hands back a fresh frame each pass; a still is reused
       const frame = source.sample ? source.sample() : source;
-      if (frame) renderTo(c, frame, params, t, source.sample ? `v${frame.frame}` : '');
+      if (frame) renderTo(c, frame, params, t, source.sample ? `v${frame.frame}` : '', mask);
       if (t < seconds) requestAnimationFrame(loop);
       else rec.stop();
     };

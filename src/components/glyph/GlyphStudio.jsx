@@ -7,6 +7,7 @@ import {
   Home,
   Image as ImageIcon,
   MessageSquare,
+  Paintbrush,
   RefreshCw,
   Settings2,
   Shuffle,
@@ -30,7 +31,10 @@ import {
 } from './glyphEngine';
 import { randomizeParams, STYLES, styleLabel, surpriseParams } from './glyphStyles';
 import { paletteById } from './glyphPalettes';
+import { createMask } from './glyphMask';
 import GlyphStage from './GlyphStage';
+import GlyphMaskBar from './GlyphMaskBar';
+import GlyphMaskPainter from './GlyphMaskPainter';
 import GlyphStyleBar from './GlyphStyleBar';
 import GlyphControls from './GlyphControls';
 import GlyphExportMenu from './GlyphExportMenu';
@@ -132,6 +136,15 @@ export default function GlyphStudio({ onHome, initialFile }) {
   const videoUrlRef = useRef(null);
   const lastFrameRef = useRef(null);
 
+  // The mask: a canvas the size of the working source, painted where the effect
+  // should land. Painting only ever touches this canvas, never the picture.
+  const maskRef = useRef(null);
+  const [maskMode, setMaskMode] = useState(false);
+  const [hasMask, setHasMask] = useState(false);
+  const [maskVersion, setMaskVersion] = useState(0);
+  const [brush, setBrush] = useState(10);
+  const [erase, setErase] = useState(false);
+
   const animated = params ? isAnimated(params) : false;
   const source = useMemo(() => (img ? prepareSource(img, animated) : null), [img, animated]);
 
@@ -152,6 +165,9 @@ export default function GlyphStudio({ onHome, initialFile }) {
       setControlsOpen(false);
       setNote('');
       lastFrameRef.current = null;
+      maskRef.current = null;
+      setHasMask(false);
+      setMaskMode(false);
       revealRef.current = false;
       setReveal(false);
     };
@@ -192,7 +208,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
     const start = performance.now();
     const draw = () => {
       const t = animated ? (performance.now() - start) / 1000 : 0;
-      renderTo(canvasRef.current, source, params, t);
+      renderTo(canvasRef.current, source, params, t, '', hasMask ? maskRef.current : null);
       if (animated) raf = requestAnimationFrame(draw);
     };
     draw();
@@ -201,7 +217,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
       requestAnimationFrame(() => setReveal(true));
     }
     return () => cancelAnimationFrame(raf);
-  }, [source, params, animated]);
+  }, [source, params, animated, hasMask, maskVersion]);
 
   /* ── a video: the element plays in place and is sampled frame by frame ── */
   useEffect(() => {
@@ -229,7 +245,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
       const frame = videoSource.sample();
       if (!frame) return;
       lastFrameRef.current = frame;
-      renderTo(canvasRef.current, frame, params, now / 1000, `v${frame.frame}`);
+      renderTo(canvasRef.current, frame, params, now / 1000, `v${frame.frame}`, hasMask ? maskRef.current : null);
     };
     raf = requestAnimationFrame(draw);
     if (!revealRef.current) {
@@ -237,7 +253,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
       requestAnimationFrame(() => setReveal(true));
     }
     return () => cancelAnimationFrame(raf);
-  }, [videoSource, params]);
+  }, [videoSource, params, hasMask, maskVersion]);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
@@ -348,6 +364,38 @@ export default function GlyphStudio({ onHome, initialFile }) {
     setParams((p) => randomizeParams(p, { style: p?.style, palette: p?.palette }));
   }, []);
 
+  /* ── mask: paint where the effect should appear ── */
+  const maskTarget = source || videoSource || lastFrameRef.current;
+
+  const openMask = useCallback(() => {
+    if (!maskTarget) return;
+    if (
+      !maskRef.current ||
+      maskRef.current.width !== maskTarget.width ||
+      maskRef.current.height !== maskTarget.height
+    ) {
+      maskRef.current = createMask(maskTarget.width, maskTarget.height);
+      setHasMask(false);
+    }
+    setView3d(false);
+    setCompare(0);
+    setErase(false);
+    setMaskMode(true);
+    setControlsOpen(false);
+  }, [maskTarget]);
+
+  const commitMask = useCallback(() => {
+    setHasMask(true);
+    setMaskVersion((v) => v + 1);
+  }, []);
+
+  const clearMask = useCallback(() => {
+    const m = maskRef.current;
+    if (m) m.getContext('2d').clearRect(0, 0, m.width, m.height);
+    setHasMask(false);
+    setMaskVersion((v) => v + 1);
+  }, []);
+
   /* ── paste from the clipboard ── */
   useEffect(() => {
     const onPaste = (e) => {
@@ -380,6 +428,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
       else if (k === 'e') setExportOpen(true);
       else if (k === 'f') setFullscreen((v) => !v);
       else if (k === 'escape') {
+        setMaskMode(false);
         setControlsOpen(false);
         setExportOpen(false);
         setChatOpen(false);
@@ -403,10 +452,10 @@ export default function GlyphStudio({ onHome, initialFile }) {
     setError('');
     try {
       if (format === 'webm') {
-        const blob = await recordWebm(moving || source, params, moving ? 5 : 4, moving ? 20 : 24);
+        const blob = await recordWebm(moving || source, params, moving ? 5 : 4, moving ? 20 : 24, hasMask ? maskRef.current : null);
         downloadBlob(blob, `glyph-${params.seed}.webm`);
       } else {
-        const canvas = renderStill(still, params, scale);
+        const canvas = renderStill(still, params, scale, hasMask ? maskRef.current : null);
         const blob = await stillBlob(canvas, format);
         if (blob) downloadBlob(blob, `glyph-${params.seed}-${scale}x.${format}`);
       }
@@ -460,6 +509,15 @@ export default function GlyphStudio({ onHome, initialFile }) {
             >
               <Wand2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{tuning ? 'Tuning…' : 'Auto'}</span>
+            </button>
+            <button
+              onClick={() => (maskMode ? setMaskMode(false) : openMask())}
+              disabled={!source && !videoSource}
+              className={`glyph-btn ${maskMode ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+              title="Paint where the effect should appear — the rest of the picture stays untouched"
+            >
+              <Paintbrush className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Paint</span>
             </button>
             <button onClick={surprise} disabled={!source && !videoSource} className="glyph-btn glyph-btn-ghost">
               <Sparkles className="w-3.5 h-3.5" />
@@ -569,6 +627,16 @@ export default function GlyphStudio({ onHome, initialFile }) {
             reveal={reveal}
             maxHeight={stageH}
             styleLabelText={params ? styleLabel(params) : 'GLYPH'}
+            overlay={
+              <GlyphMaskPainter
+                active={maskMode && !view3d}
+                canvasRef={canvasRef}
+                maskRef={maskRef}
+                brush={brush}
+                erase={erase}
+                onCommit={commitMask}
+              />
+            }
           />
 
           {error && (
@@ -584,6 +652,17 @@ export default function GlyphStudio({ onHome, initialFile }) {
           )}
 
           <div ref={ribbonRef}>
+            {maskMode && (
+              <GlyphMaskBar
+                brush={brush}
+                onBrush={setBrush}
+                erase={erase}
+                onErase={setErase}
+                hasMask={hasMask}
+                onClear={clearMask}
+                onDone={() => setMaskMode(false)}
+              />
+            )}
             {params && <GlyphStyleBar params={params} onStyle={applyStyle} onPalette={setPalette} />}
 
           {params && (
