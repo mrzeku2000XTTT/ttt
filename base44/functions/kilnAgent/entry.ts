@@ -39,8 +39,11 @@ function validate(result, imageUrl, mode, wanted) {
   if (wanted && !new RegExp(`data-eta-component=["']${wanted}["']`).test(html)) {
     return `The rebuilt block is not marked as an ETA ${wanted}.`;
   }
-  if (result.usesSourceArtwork && imageUrl && !html.includes(imageUrl) && !html.includes(imageUrl.replace(/&/g, '&amp;'))) {
-    return 'The original artwork is missing.';
+  // Signed links rotate every hour, so compare the file path and ignore the query
+  // signature — an edit that keeps the previous link is still the same artwork.
+  if (result.usesSourceArtwork && imageUrl) {
+    const artworkPath = imageUrl.split('?')[0];
+    if (!html.includes(artworkPath) && !html.includes(imageUrl)) return 'The original artwork is missing.';
   }
   return '';
 }
@@ -78,7 +81,7 @@ export default async function (req) {
 
     const attach = imageUrl ? { file_urls: [imageUrl] } : {};
     let failure = '';
-    for (const model of ['claude-sonnet-5', 'gpt_6_luna']) {
+    for (const model of ['claude-sonnet-5', 'gpt_5_6_luna']) {
       try {
         const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: `${prompt}\n${mode === 'build' ? KILN_BUILD_RULES : KILN_FIDELITY_RULES}\n${dimensionNote}${failure ? `\nA previous attempt was rejected: ${failure}. Return a fresh COMPLETE document, not a continuation.` : ''}`,
@@ -100,7 +103,9 @@ export default async function (req) {
           imageHeight: hasDimensions ? height : null,
         });
       } catch (error) {
-        failure = error.message || 'Generation failed.';
+        // Keep the most useful reason: a rejected result explains more than a
+        // provider error that followed it.
+        failure = failure || error.message || 'Generation failed.';
         console.warn('KILN attempt failed:', failure);
       }
     }
