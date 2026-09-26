@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Loader2, Maximize2, Minimize2, Move, MoveDiagonal2, Pause, Play, Upload } from 'lucide-react';
+import { ImagePlus, Maximize2, Minimize2, Move, MoveDiagonal2, Pause, Play, Upload } from 'lucide-react';
 import GlyphTimeline from './GlyphTimeline';
+import GlyphThinking from './GlyphThinking';
 
 // The three ways to look at a render. Split is the default, so the source is
 // always visible next to what GLYPH made of it.
@@ -287,7 +288,7 @@ export default function GlyphStage({
 
       {busy && (
         <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-[#070b12]/70 backdrop-blur-sm">
-          <Loader2 className="glyph-spin w-6 h-6" style={{ color: '#4A90E2' }} />
+          <GlyphThinking size={132} isThinking showLabel thinkingLabel="working…" />
         </div>
       )}
 

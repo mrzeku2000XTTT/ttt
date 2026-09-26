@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { PALETTES, paletteById } from './glyphPalettes';
 import { DITHER_ALGOS, STYLES } from './glyphStyles';
 import GlyphMark from './GlyphMark';
+import GlyphThinking from './GlyphThinking';
 
 const STYLE_IDS = STYLES.map((s) => s.id);
 const PALETTE_IDS = PALETTES.map((p) => p.id);
@@ -188,9 +189,8 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
         ))}
 
         {thinking && (
-          <div className="flex items-center gap-2.5">
-            <GlyphMark size={22} spinning />
-            <span className="glyph-muted text-[11px]">rebuilding…</span>
+          <div className="flex justify-start">
+            <GlyphThinking size={58} count={13} isThinking showLabel thinkingLabel="rebuilding…" />
           </div>
         )}
       </div>

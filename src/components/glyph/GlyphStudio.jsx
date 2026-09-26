@@ -504,7 +504,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
         <div className="max-w-[1500px] mx-auto px-3 sm:px-4 py-2 min-h-14 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
           <div className="flex items-center gap-2 min-w-0">
             <button onClick={onHome} className="flex items-center gap-2 min-w-0" title="Back to landing">
-              <GlyphMark size={28} />
+              <GlyphMark size={28} spinning={busy || tuning} />
               <span className="glyph-word text-[13px]">Glyph</span>
             </button>
             <span className="hidden xl:block glyph-muted text-[11px] ml-2">turn any image or video into visual code</span>
