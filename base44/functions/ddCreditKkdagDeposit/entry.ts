@@ -86,6 +86,13 @@ async function fetchTx(txId) {
   return { unavailable: true };
 }
 
+// Resolve a wallet by email, and only accept an exact match — a loose filter result
+// must never credit a wallet that belongs to someone else.
+async function findWallet(base44, email) {
+  const rows = await base44.entities.DDKKDAGWallet.filter({ user_email: email });
+  return (rows || []).find((w) => w.user_email === email) || null;
+}
+
 // Returns { amount } when the chain proves the deposit, otherwise { error }.
 async function verifyOnChain({ txId, from, tick }) {
   const fetched = await fetchTx(txId);
@@ -163,8 +170,8 @@ Deno.serve(async (req) => {
     // 1. Idempotent — one credit per txId, ever.
     const existing = await base44.entities.DdCreditDeposit.filter({ txid: cleanTxId });
     if (existing && existing.length > 0) {
-      const wallets = await base44.entities.DDKKDAGWallet.filter({ user_email });
-      const balance = wallets && wallets[0] ? (wallets[0].balance || 0) : 0;
+      const wallet = await findWallet(base44, user_email);
+      const balance = wallet ? (wallet.balance || 0) : 0;
       return Response.json({
         credited: 0,
         balance,
@@ -193,8 +200,7 @@ Deno.serve(async (req) => {
     });
 
     // 4. Add to the user's KKDAG credit balance.
-    const wallets = await base44.entities.DDKKDAGWallet.filter({ user_email });
-    let wallet = wallets && wallets[0];
+    let wallet = await findWallet(base44, user_email);
     if (!wallet) {
       wallet = await base44.entities.DDKKDAGWallet.create({
         user_email,
@@ -211,8 +217,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const finalWallets = await base44.entities.DDKKDAGWallet.filter({ user_email });
-    const finalBalance = finalWallets && finalWallets[0] ? (finalWallets[0].balance || 0) : creditAmount;
+    const finalWallet = await findWallet(base44, user_email);
+    const finalBalance = finalWallet ? (finalWallet.balance || 0) : creditAmount;
 
     return Response.json({
       credited: creditAmount,
