@@ -14,7 +14,7 @@
 // represents, or cover the reconstruction with a full-canvas texture.
 
 import { CHAR_SETS } from './glyphStyles';
-import { luma, mapColor, nearestColor, plateColor, rgbCss } from './glyphPalettes';
+import { luma, mapColor, nearestColor, plateColor, plateRgb, rgbCss } from './glyphPalettes';
 
 /* ── sampling ─────────────────────────────────────────────────────────── */
 
@@ -72,15 +72,20 @@ function sourceMean(src) {
 }
 
 const plateFor = (p, src) => plateColor(p, sourceMean(src));
+const groundFor = (p, src) => plateRgb(p, sourceMean(src));
 
 /* ── grid ─────────────────────────────────────────────────────────────── */
 
 // Every renderer walks the grid through this one walker, so cells always tile
 // the canvas exactly: no gaps, no overlap, and never a drift from the source
 // pixels the cell represents.
-function eachCell(W, H, cs, fn) {
+// `aspect` is the cell's height ÷ its width. A latin monospace glyph is about
+// 0.6 wide for 0.72 tall, so its cell wants to be 1.2× taller than wide —
+// matching the cell to the glyph is what makes the marks tile densely instead
+// of floating apart with air between them.
+function eachCell(W, H, cs, fn, aspect = 1) {
   const cols = Math.max(1, Math.round(W / Math.max(1, cs)));
-  const rows = Math.max(1, Math.round(H / Math.max(1, cs)));
+  const rows = Math.max(1, Math.round(H / (Math.max(1, cs) * aspect)));
   for (let j = 0; j < rows; j++) {
     const y0 = Math.floor((j * H) / rows);
     const y1 = Math.floor(((j + 1) * H) / rows);
@@ -119,16 +124,25 @@ const darken = (col, amount) => col.map((v) => Math.max(0, v * (1 - amount)));
 
 const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
+// Cell shape and glyph size per family: latin glyphs are narrow and tall,
+// full-width katakana are square, so each gets the cell it can fill.
+const LATIN_ASPECT = 1.2;
+const LATIN_FONT = 1.67;
+const WIDE_ASPECT = 0.78;
+
 /* ── Characters ───────────────────────────────────────────────────────── */
 
-// Dark source → dense character, bright source → sparse one, drawn in the
+// Bright source → dense character, dark source → sparse one, drawn in the
 // cell's own colour at the cell's own position.
 function drawCharacters(ctx, src, W, H, p, t) {
   const cs = Math.max(2, p.cellSize);
   const ramp = (CHAR_SETS[p.charSet] || CHAR_SETS.classic).chars;
-  ctx.fillStyle = plateFor(p, src);
+  const ground = groundFor(p, src);
+  ctx.fillStyle = rgbCss(ground);
   ctx.fillRect(0, 0, W, H);
-  const fs = Math.max(4, Math.round(cs * p.fontScale));
+  // Glyphs are ink: on a dark ground a brighter cell gets the heavier mark.
+  const ink = luma(ground[0], ground[1], ground[2]) < 128;
+  const fs = Math.max(4, cs * LATIN_FONT * p.fontScale);
   ctx.font = `${fs}px ${MONO_FONT}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -136,17 +150,18 @@ function drawCharacters(ctx, src, W, H, p, t) {
   const tick = animated ? Math.floor(t * 9) : 0;
   eachCell(W, H, cs, (i, j, x, y, w, h) => {
     const c = cellAvg(src, x, y, w, h);
+    const l = luma(c[0], c[1], c[2]);
     const col = mapColor(c[0], c[1], c[2], p.paletteObj);
-    let idx = rampIndex(ramp, luma(c[0], c[1], c[2]));
+    let idx = rampIndex(ramp, ink ? 255 - l : l);
     if (animated && hash3(i, j, tick + p.seed) < 0.06 * (0.4 + p.jitter * 1.6)) {
       idx = Math.floor(hash3(j, i, tick + p.seed + 7) * ramp.length);
     }
-    toneBase(ctx, x, y, w, h, col, 0.3);
+    toneBase(ctx, x, y, w, h, col, 0.22);
     const ch = ramp[idx];
     if (!ch || ch === ' ') return;
     ctx.fillStyle = rgbCss(col);
     ctx.fillText(ch, x + w / 2, y + h / 2);
-  });
+  }, LATIN_ASPECT);
 }
 
 /* ── Pixel art ────────────────────────────────────────────────────────── */
@@ -324,12 +339,17 @@ function drawMosaic(ctx, src, W, H, p) {
 function drawDots(ctx, src, W, H, p) {
   const cs = Math.max(3, p.cellSize);
   const shape = p.dotShape || 'circle';
-  ctx.fillStyle = plateFor(p, src);
+  const ground = groundFor(p, src);
+  ctx.fillStyle = rgbCss(ground);
   ctx.fillRect(0, 0, W, H);
+  // On a dark ground the brighter cell gets the larger dot, so the marks build
+  // the light instead of the shadow.
+  const ink = luma(ground[0], ground[1], ground[2]) < 128;
   eachCell(W, H, cs, (i, j, x, y, w, h) => {
     const c = cellAvg(src, x, y, w, h);
     const l = luma(c[0], c[1], c[2]);
-    const r = ((1 - l / 255) * (Math.min(w, h) - Math.min(p.spacing, Math.min(w, h) - 1))) / 2;
+    const cover = ink ? l / 255 : 1 - l / 255;
+    const r = (cover * (Math.min(w, h) - Math.min(p.spacing, Math.min(w, h) - 1))) / 2;
     if (r < 0.4) return;
     const col = mapColor(c[0], c[1], c[2], p.paletteObj);
     ctx.fillStyle = rgbCss(col);
@@ -355,7 +375,7 @@ function drawDots(ctx, src, W, H, p) {
 
 /* ── Halftone ─────────────────────────────────────────────────────────── */
 
-function halftonePass(ctx, src, W, H, cs, angle, p, channel, ink) {
+function halftonePass(ctx, src, W, H, cs, angle, p, channel, ink, invert) {
   const a = (angle * Math.PI) / 180;
   const cos = Math.cos(-a);
   const sin = Math.sin(-a);
@@ -370,7 +390,7 @@ function halftonePass(ctx, src, W, H, cs, angle, p, channel, ink) {
       if (sx < 0 || sy < 0 || sx >= W || sy >= H) continue;
       const c = cellAvg(src, sx, sy, cs, cs);
       const l = channel === 'lum' ? luma(c[0], c[1], c[2]) : c[channel];
-      const r = ((1 - l / 255) * cs * 0.74) / 2;
+      const r = ((invert ? l / 255 : 1 - l / 255) * cs * 0.74) / 2;
       if (r < 0.3) continue;
       ctx.fillStyle = ink === 'cell' ? rgbCss(mapColor(c[0], c[1], c[2], p.paletteObj)) : ink;
       ctx.beginPath();
@@ -395,9 +415,11 @@ function drawHalftone(ctx, src, W, H, p) {
     ctx.globalCompositeOperation = 'source-over';
     return;
   }
-  ctx.fillStyle = plateFor(p, src);
+  const ground = groundFor(p, src);
+  ctx.fillStyle = rgbCss(ground);
   ctx.fillRect(0, 0, W, H);
-  halftonePass(ctx, src, W, H, cs, p.rotation, p, 'lum', 'cell');
+  const ink = luma(ground[0], ground[1], ground[2]) < 128;
+  halftonePass(ctx, src, W, H, cs, p.rotation, p, 'lum', 'cell', ink);
 }
 
 /* ── Crosshatch ───────────────────────────────────────────────────────── */
@@ -407,12 +429,14 @@ function drawHalftone(ctx, src, W, H, p) {
 function drawCrosshatch(ctx, src, W, H, p) {
   const cs = Math.max(4, p.cellSize);
   const angles = p.hatchAngles || [45, -45];
-  ctx.fillStyle = plateFor(p, src);
+  const ground = groundFor(p, src);
+  ctx.fillStyle = rgbCss(ground);
   ctx.fillRect(0, 0, W, H);
+  const ink = luma(ground[0], ground[1], ground[2]) < 128;
   eachCell(W, H, cs, (i, j, x, y, w, h) => {
     const c = cellAvg(src, x, y, w, h);
     const col = mapColor(c[0], c[1], c[2], p.paletteObj);
-    const d = 1 - luma(c[0], c[1], c[2]) / 255;
+    const d = ink ? luma(c[0], c[1], c[2]) / 255 : 1 - luma(c[0], c[1], c[2]) / 255;
     toneBase(ctx, x, y, w, h, col, 0.34);
     if (d < 0.06) return;
     ctx.save();
@@ -506,7 +530,7 @@ function drawMatrix(ctx, src, W, H, p, t) {
     ctx.globalAlpha = Math.min(1, 0.35 + (l / 255) * 0.65);
     ctx.fillStyle = rgbCss(col);
     ctx.fillText(ch, x + w / 2, y + h / 2);
-  });
+  }, WIDE_ASPECT);
   ctx.globalAlpha = 1;
 }
 

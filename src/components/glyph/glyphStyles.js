@@ -52,9 +52,9 @@ export const SLIDERS = [
 
 // Cell-size ranges per style — keeps each renderer in its readable band.
 const CELL_RANGE = {
-  characters: [6, 20],
-  animatedAscii: [6, 18],
-  matrix: [7, 16],
+  characters: [5, 16],
+  animatedAscii: [5, 14],
+  matrix: [6, 14],
   dither: [2, 8],
   pixel: [6, 26],
   mosaic: [8, 30],
@@ -115,7 +115,7 @@ export function randomizeParams(prev, opts = {}) {
     paletteObj: palette,
     charSet: styleId === 'matrix' ? 'matrix' : glyphStyle ? charSet : 'classic',
     cellSize: Math.round(between(rng, cMin, cMax)),
-    fontScale: round(between(rng, 0.9, 1.35), 0.05),
+    fontScale: round(between(rng, 0.85, 1.15), 0.05),
     spacing: styleId === 'mosaic' || styleId === 'dots' ? Math.round(between(rng, 0, 5)) : 0,
     rotation: styleId === 'mosaic' || styleId === 'halftone' || styleId === 'crosshatch' ? Math.round(between(rng, -25, 25)) : 0,
     threshold: 128,
@@ -139,6 +139,7 @@ export function surpriseParams(prev) {
   const rng = makeRng(Math.floor(Math.random() * 900000) + 100000);
   const combos = [
     { style: 'characters', palette: 'cyan' },
+    { style: 'characters', palette: 'dusk' },
     { style: 'characters', palette: 'terminal' },
     { style: 'mixed', palette: 'neon' },
     { style: 'dither', palette: 'mono' },
