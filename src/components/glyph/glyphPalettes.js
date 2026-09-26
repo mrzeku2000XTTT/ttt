@@ -39,7 +39,6 @@ export const PALETTES = [
   P('original', 'Original', '#ffffff', null),
   P('nova', 'Nova', '#F5F8FB', ['#6BCAFF', '#4A90E2', '#2D3436', '#9DB4C8']),
   P('mono', 'Mono', '#ffffff', ['#0a0a0a', '#3f3f3f', '#7a7a7a', '#b5b5b5', '#ffffff']),
-  P('white', 'White', '#0b0b0b', ['#ffffff']),
   P('cyan', 'Cyan', '#04121f', ['#6BCAFF', '#4A90E2', '#0ea5e9', '#e6f6ff', '#ffffff']),
   P('electric', 'Electric', '#050b1a', ['#1e3a8a', '#3b82f6', '#60a5fa', '#a5d8ff', '#ffffff']),
   P('magenta', 'Magenta', '#170610', ['#e11d48', '#f472b6', '#ff9ecd', '#fff1f5']),
@@ -78,10 +77,13 @@ export function mapColor(r, g, b, palette) {
   return nearestColor(palette.colors, r, g, b);
 }
 
-export function plateColor(p) {
-  if (p.plate === 'dark') return '#080b0e';
+// The ground the primitives sit on. 'auto' uses the image's own mean colour so
+// the render keeps the picture's overall tone; light/dark are manual overrides.
+export function plateColor(p, mean) {
   if (p.plate === 'light') return '#ffffff';
-  return (p.paletteObj && p.paletteObj.bg) || '#ffffff';
+  if (p.plate === 'dark') return '#080b0e';
+  if (mean) return rgbCss(mean.map((v) => (v < 26 ? 26 : v)));
+  return (p.paletteObj && p.paletteObj.bg) || '#111111';
 }
 
 export function luma(r, g, b) {

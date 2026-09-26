@@ -35,13 +35,7 @@ function usePreview(canvasRef) {
     g.stroke();
     const source = { width: w, height: h, imageData: g.getImageData(0, 0, w, h) };
     const base = randomizeParams(null, { style: 'characters', palette: 'cyan', seed: 482913 });
-    renderTo(c, source, {
-      ...base,
-      cellSize: 6,
-      fontScale: 1.05,
-      plate: 'dark',
-      effects: { ...base.effects, bloom: 0.55, scanlines: 0.22, glow: 0.3, grain: 0, vignette: 0.3 },
-    }, 0);
+    renderTo(c, source, { ...base, cellSize: 6, fontScale: 1.05, plate: 'auto' }, 0);
   }, [canvasRef]);
 }
 

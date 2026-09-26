@@ -1,9 +1,7 @@
 // GLYPH — engine. Loads the source, grades it, runs the chosen renderer and
 // the effect stack, and exports the result. Everything happens locally.
 
-import { makeRng } from './glyphPalettes';
 import { drawStyle } from './glyphRenderers';
-import { applyEffects } from './glyphEffects';
 import { styleById } from './glyphStyles';
 
 export const MAX_DIM = 1100;
@@ -87,10 +85,76 @@ export function renderTo(canvas, source, params, t = 0) {
   ctx.globalCompositeOperation = 'source-over';
   ctx.filter = 'none';
   ctx.clearRect(0, 0, W, H);
-  const rng = makeRng((params.seed + Math.floor(t * 120)) >>> 0);
   const src = { data: graded(source, params), width: W, height: H };
-  drawStyle(ctx, src, W, H, params, rng, t);
-  applyEffects(canvas, params, rng);
+  drawStyle(ctx, src, W, H, params, t);
+}
+
+/**
+ * How closely a render still resembles its source: the graded source and the
+ * canvas are each reduced to the same 24×24 luminance grid and correlated.
+ * A reconstruction scores high (structure survived, whatever the palette);
+ * a texture, noise field or over-eager effect scores near zero. Glyph uses
+ * this to fall back to Pixel Art rather than show something unrecognisable.
+ */
+export function reconstructionFidelity(source, canvas, params) {
+  const N = 24;
+  const sd = graded(source, params);
+  const cw = canvas.width;
+  const ch = canvas.height;
+  if (!cw || !ch) return 1;
+  const cd = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, cw, ch).data;
+
+  const blockLuma = (data, w, h, i, j) => {
+    const x0 = Math.floor((i * w) / N);
+    const x1 = Math.max(x0 + 1, Math.floor(((i + 1) * w) / N));
+    const y0 = Math.floor((j * h) / N);
+    const y1 = Math.max(y0 + 1, Math.floor(((j + 1) * h) / N));
+    const stepX = Math.max(1, Math.floor((x1 - x0) / 6));
+    const stepY = Math.max(1, Math.floor((y1 - y0) / 6));
+    let sum = 0;
+    let n = 0;
+    for (let y = y0; y < y1; y += stepY) {
+      for (let x = x0; x < x1; x += stepX) {
+        const p = (y * w + x) * 4;
+        sum += 0.2126 * data[p] + 0.7152 * data[p + 1] + 0.0722 * data[p + 2];
+        n++;
+      }
+    }
+    return n ? sum / n : 0;
+  };
+
+  const a = [];
+  const b = [];
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      a.push(blockLuma(sd, source.width, source.height, i, j));
+      b.push(blockLuma(cd, cw, ch, i, j));
+    }
+  }
+  const n = a.length;
+  let ma = 0;
+  let mb = 0;
+  for (let i = 0; i < n; i++) {
+    ma += a[i];
+    mb += b[i];
+  }
+  ma /= n;
+  mb /= n;
+  let cov = 0;
+  let va = 0;
+  let vb = 0;
+  for (let i = 0; i < n; i++) {
+    const da = a[i] - ma;
+    const db = b[i] - mb;
+    cov += da * db;
+    va += da * da;
+    vb += db * db;
+  }
+  // A flat source has no structure to preserve, so nothing can be judged.
+  if (va <= 0) return 1;
+  if (vb <= 0) return 0;
+  const r = cov / Math.sqrt(va * vb);
+  return (Math.max(-1, Math.min(1, r)) + 1) / 2;
 }
 
 /* ── export ───────────────────────────────────────────────────────────── */

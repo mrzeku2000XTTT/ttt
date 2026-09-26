@@ -1,6 +1,6 @@
 import React from 'react';
 import { RotateCcw, X } from 'lucide-react';
-import { CHAR_SETS, CHAR_SET_IDS, DITHER_ALGOS, EFFECT_SLIDERS, SLIDERS } from './glyphStyles';
+import { CHAR_SETS, CHAR_SET_IDS, DITHER_ALGOS, SLIDERS } from './glyphStyles';
 
 function Slider({ label, value, min, max, step, onChange }) {
   return (
@@ -45,7 +45,7 @@ function Chips({ label, options, value, onChange }) {
  * Live controls. Every slider feeds straight into the renderer — no Apply.
  * Right column on desktop, bottom sheet on mobile.
  */
-export default function GlyphControls({ params, patch, setEffect, onClose, onReset }) {
+export default function GlyphControls({ params, patch, onClose, onReset }) {
   if (!params) return null;
   const groups = ['Shape', 'Tone'];
   const glyphStyle = ['characters', 'animatedAscii', 'matrix'].includes(params.style);
@@ -129,22 +129,9 @@ export default function GlyphControls({ params, patch, setEffect, onClose, onRes
         </div>
       ))}
 
-      <div className="pt-2 border-t glyph-hairline">
-        <p className="text-[10px] uppercase tracking-[0.14em] glyph-muted mb-2">Effects</p>
-        <div className="space-y-2.5">
-          {EFFECT_SLIDERS.map((e) => (
-            <Slider
-              key={e.key}
-              label={e.label}
-              value={params.effects[e.key] || 0}
-              min={0}
-              max={1}
-              step={0.05}
-              onChange={(v) => setEffect(e.key, v)}
-            />
-          ))}
-        </div>
-      </div>
+      <p className="glyph-muted text-[10px] leading-relaxed pt-2 border-t glyph-hairline">
+        Every style rebuilds the image from the source pixels — the artwork is never replaced by a texture.
+      </p>
     </aside>
   );
 }

@@ -1,6 +1,7 @@
 // GLYPH — the rendering styles, their character sets, and the randomiser.
 // Randomness is controlled: every style has its own ranges, so results stay
-// readable instead of chaotic.
+// readable instead of chaotic. Nothing here picks a post-processing effect —
+// the pipeline is source → sampling → reconstruction, and nothing else.
 
 import { PALETTES, makeRng, paletteById } from './glyphPalettes';
 
@@ -49,20 +50,6 @@ export const SLIDERS = [
   { key: 'jitter', label: 'Motion', min: 0, max: 1, step: 0.05, group: 'Tone' },
 ];
 
-export const EFFECT_SLIDERS = [
-  { key: 'bloom', label: 'Bloom' },
-  { key: 'glow', label: 'Glow' },
-  { key: 'crt', label: 'CRT' },
-  { key: 'scanlines', label: 'Scanlines' },
-  { key: 'grain', label: 'Film grain' },
-  { key: 'vignette', label: 'Vignette' },
-  { key: 'rgbSplit', label: 'RGB split' },
-  { key: 'glitch', label: 'Glitch' },
-  { key: 'blur', label: 'Blur' },
-];
-
-export const EFFECT_KEYS = EFFECT_SLIDERS.map((e) => e.key);
-
 // Cell-size ranges per style — keeps each renderer in its readable band.
 const CELL_RANGE = {
   characters: [6, 20],
@@ -82,20 +69,6 @@ const CELL_RANGE = {
 const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 const between = (rng, a, b) => a + rng() * (b - a);
 const round = (v, step) => Math.round(v / step) * step;
-
-export function randomEffects(rng, min = 1, max = 3) {
-  const effects = {};
-  EFFECT_KEYS.forEach((k) => {
-    effects[k] = 0;
-  });
-  const count = Math.round(between(rng, min, max + 0.49));
-  const pool = EFFECT_KEYS.slice();
-  for (let i = 0; i < count && pool.length; i++) {
-    const key = pool.splice(Math.floor(rng() * pool.length), 1)[0];
-    effects[key] = round(between(rng, 0.35, 0.85), 0.05);
-  }
-  return effects;
-}
 
 // A mixed renderer stacks two or three different renderers in horizontal bands.
 function randomBands(rng, styleId) {
@@ -117,7 +90,7 @@ function randomBands(rng, styleId) {
 /**
  * Build a full, controlled parameter set.
  * @param {object|null} prev  previous params (used to avoid repeating the same style)
- * @param {object} opts       { style, seed, keepEffects }
+ * @param {object} opts       { style, palette, seed }
  */
 export function randomizeParams(prev, opts = {}) {
   const seed = opts.seed != null ? opts.seed : Math.floor(Math.random() * 900000) + 100000;
@@ -135,7 +108,7 @@ export function randomizeParams(prev, opts = {}) {
   const glyphStyle = styleId === 'characters' || styleId === 'animatedAscii' || styleId === 'matrix' || styleId === 'mixed';
   const charSet = pick(rng, CHAR_SET_IDS);
 
-  const params = {
+  return {
     style: styleId,
     seed,
     palette: palette.id,
@@ -146,24 +119,22 @@ export function randomizeParams(prev, opts = {}) {
     spacing: styleId === 'mosaic' || styleId === 'dots' ? Math.round(between(rng, 0, 5)) : 0,
     rotation: styleId === 'mosaic' || styleId === 'halftone' || styleId === 'crosshatch' ? Math.round(between(rng, -25, 25)) : 0,
     threshold: 128,
-    brightness: Math.round(between(rng, -18, 18)),
-    contrast: round(between(rng, 0.85, 1.4), 0.05),
-    saturation: round(between(rng, 0.6, 1.5), 0.05),
+    brightness: Math.round(between(rng, -12, 12)),
+    contrast: round(between(rng, 0.9, 1.35), 0.05),
+    saturation: round(between(rng, 0.7, 1.4), 0.05),
     jitter: round(between(rng, 0.2, 0.8), 0.05),
-    plate: palette.id === 'original' || palette.id === 'mono' || palette.id === 'nova' ? 'light' : rng() > 0.45 ? 'dark' : 'light',
+    // 'auto' derives the ground from the image's own mean colour, so bright
+    // pictures stay bright and dark ones stay dark.
+    plate: 'auto',
     ditherAlgo: pick(rng, DITHER_ALGOS),
     dotShape: pick(rng, ['circle', 'square', 'diamond']),
     halftoneMode: pick(rng, ['mono', 'rgb']),
     hatchAngles: pick(rng, [[45], [45, -45], [45, -45, 0], [45, -45, 0, 90]]),
     bands: randomBands(rng, styleId),
-    effects: randomEffects(rng, 1, 3),
   };
-
-  if (opts.keepEffects && prev) params.effects = { ...prev.effects };
-  return params;
 }
 
-// SURPRISE ME — deliberately unusual stacks, still coherent.
+// SURPRISE ME — deliberately unusual combinations, still faithful renders.
 export function surpriseParams(prev) {
   const rng = makeRng(Math.floor(Math.random() * 900000) + 100000);
   const combos = [
@@ -181,10 +152,10 @@ export function surpriseParams(prev) {
     { style: 'matrix', palette: 'green' },
   ];
   const combo = pick(rng, combos.filter((c) => c.style !== prev?.style));
-  const params = randomizeParams(prev, { style: combo.style, palette: combo.palette, seed: Math.floor(Math.random() * 900000) + 100000 });
-  const wild = rng() > 0.5 ? ['rgbSplit', 'glitch'] : ['bloom', 'crt'];
-  wild.forEach((k) => {
-    params.effects[k] = round(between(rng, 0.45, 0.9), 0.05);
+  const params = randomizeParams(prev, {
+    style: combo.style,
+    palette: combo.palette,
+    seed: Math.floor(Math.random() * 900000) + 100000,
   });
   if (params.style === 'mixed' && !params.bands) params.bands = randomBands(makeRng(params.seed), 'mixed');
   return params;

@@ -17,6 +17,7 @@ import {
   isAnimated,
   loadImageFromFile,
   prepareSource,
+  reconstructionFidelity,
   recordWebm,
   renderStill,
   renderTo,
@@ -40,6 +41,10 @@ export default function GlyphStudio({ onHome, initialFile }) {
   const [exportOpen, setExportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [note, setNote] = useState('');
+  const [reveal, setReveal] = useState(true);
+  const revealRef = useRef(true);
+  const checkedRef = useRef('');
   const canvasRef = useRef(null);
 
   const animated = params ? isAnimated(params) : false;
@@ -61,6 +66,9 @@ export default function GlyphStudio({ onHome, initialFile }) {
       setParams(randomizeParams(null, {}));
       setCompare(0);
       setControlsOpen(false);
+      setNote('');
+      revealRef.current = false;
+      setReveal(false);
     } catch (e) {
       setError(e.message || 'Could not read that image.');
     }
@@ -82,8 +90,25 @@ export default function GlyphStudio({ onHome, initialFile }) {
       if (animated) raf = requestAnimationFrame(draw);
     };
     draw();
+    if (!revealRef.current) {
+      revealRef.current = true;
+      requestAnimationFrame(() => setReveal(true));
+    }
     return () => cancelAnimationFrame(raf);
   }, [source, params, animated]);
+
+  // A render that has lost the picture is worse than a simple one: if the
+  // result no longer correlates with the source, fall back to Pixel Art.
+  useEffect(() => {
+    if (!source || !params || !canvasRef.current || params.style === 'pixel') return;
+    const key = `${params.seed}|${params.style}|${params.cellSize}`;
+    if (checkedRef.current === key) return;
+    checkedRef.current = key;
+    if (reconstructionFidelity(source, canvasRef.current, params) < 0.5) {
+      setParams((prev) => (prev ? { ...prev, style: 'pixel', palette: 'original', plate: 'auto' } : prev));
+      setNote('That style lost the picture, so GLYPH fell back to Pixel Art.');
+    }
+  }, [source, params]);
 
   const randomize = useCallback(() => {
     setParams((p) => randomizeParams(p));
@@ -102,10 +127,6 @@ export default function GlyphStudio({ onHome, initialFile }) {
 
   const patch = useCallback((key, value) => {
     setParams((p) => (p ? { ...p, [key]: value } : p));
-  }, []);
-
-  const setEffect = useCallback((key, value) => {
-    setParams((p) => (p ? { ...p, effects: { ...p.effects, [key]: value } } : p));
   }, []);
 
   const setPalette = useCallback((id) => {
@@ -183,10 +204,6 @@ export default function GlyphStudio({ onHome, initialFile }) {
     if (!params) return;
     navigator.clipboard?.writeText(String(params.seed));
   };
-
-  const activeEffects = params
-    ? Object.keys(params.effects).filter((k) => params.effects[k] > 0)
-    : [];
 
   return (
     <div className="glyph-page">
@@ -278,12 +295,19 @@ export default function GlyphStudio({ onHome, initialFile }) {
             setCompare={setCompare}
             onFile={accept}
             busy={busy}
+            reveal={reveal}
             styleLabelText={params ? styleLabel(params) : 'GLYPH'}
           />
 
           {error && (
             <p className="mt-3 text-[12px] rounded-xl px-3 py-2" style={{ background: 'rgba(239,68,68,0.08)', color: '#b91c1c' }}>
               {error}
+            </p>
+          )}
+
+          {note && (
+            <p className="mt-3 text-[12px] rounded-xl px-3 py-2" style={{ background: 'rgba(107,202,255,0.1)', color: '#9fd4ff' }}>
+              {note}
             </p>
           )}
 
@@ -298,11 +322,6 @@ export default function GlyphStudio({ onHome, initialFile }) {
               <button onClick={reseed} className="inline-flex items-center gap-1 hover:text-[#E8F1F9]">
                 <RefreshCw className="w-3 h-3" /> regenerate
               </button>
-              <span>
-                {activeEffects.length
-                  ? `effects · ${activeEffects.join(' · ')}`
-                  : 'no effects'}
-              </span>
               <span className="hidden sm:inline">R randomize · S surprise · O original · E export</span>
             </div>
           )}
@@ -312,7 +331,6 @@ export default function GlyphStudio({ onHome, initialFile }) {
           <GlyphControls
             params={params}
             patch={patch}
-            setEffect={setEffect}
             onClose={() => setControlsOpen(false)}
             onReset={() => {
               setParams(randomizeParams(null, {}));
