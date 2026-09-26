@@ -326,6 +326,55 @@
   min-height: 0;
 }
 
+/* ── the draggable divider between the artwork and the chat/controls panel:
+   vertical beside it on desktop, horizontal above it on phones. ── */
+.glyph-split-v {
+  position: relative;
+  width: 10px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  touch-action: none;
+}
+.glyph-split-v::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 46px;
+  border-radius: 3px;
+  background: var(--g-line);
+  transition: background 0.15s ease;
+}
+.glyph-split-v:hover::after,
+.glyph-split-v:active::after {
+  background: var(--g-accent-2);
+}
+.glyph-split-h {
+  position: relative;
+  height: 14px;
+  flex-shrink: 0;
+  cursor: row-resize;
+  touch-action: none;
+}
+.glyph-split-h::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--g-line);
+  transition: background 0.15s ease;
+}
+.glyph-split-h:hover::after,
+.glyph-split-h:active::after {
+  background: var(--g-accent-2);
+}
+
 /* ── posing the 3D card: drag the bar to move it, drag the corner to size it ── */
 .glyph-grab {
   position: absolute;

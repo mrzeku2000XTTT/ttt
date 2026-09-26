@@ -79,8 +79,47 @@ export default function GlyphStudio({ onHome, initialFile }) {
       window.removeEventListener('resize', measure);
     };
   }, [hasParams]);
+
+  // The chat/controls panel is a split view: beside the artwork on desktop, and
+  // sliding up from the bottom on phones. Either way the divider drags, so the
+  // panel gets exactly the room it needs without ever covering the preview.
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
+  );
+  const [panelW, setPanelW] = useState(380);
+  const [dockPx, setDockPx] = useState(
+    () => Math.round((typeof window !== 'undefined' ? window.innerHeight : 800) * 0.42)
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = () => setIsDesktop(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const startResize = (e) => {
+    e.preventDefault();
+    const x0 = e.clientX;
+    const y0 = e.clientY;
+    const w0 = panelW;
+    const h0 = dockPx;
+    const move = (ev) => {
+      if (isDesktop) {
+        setPanelW(Math.min(680, Math.max(280, w0 - (ev.clientX - x0))));
+      } else {
+        setDockPx(Math.min(window.innerHeight - 200, Math.max(150, h0 - (ev.clientY - y0))));
+      }
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
   const [controlsOpen, setControlsOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+  const panelOpen = chatOpen || (controlsOpen && params);
   const [exportOpen, setExportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -506,11 +545,12 @@ export default function GlyphStudio({ onHome, initialFile }) {
         </div>
       </header>
 
-      <div
-        ref={scrollRef}
-        className="w-full max-w-[1700px] mx-auto px-3 sm:px-4 pt-3 pb-4 flex-1 min-h-0 overflow-y-auto"
-      >
-        <main className="min-w-0">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
+        <div
+          ref={scrollRef}
+          className="flex-1 min-w-0 min-h-0 overflow-y-auto px-3 sm:px-4 pt-3 pb-4"
+        >
+          <main className="min-w-0">
           <GlyphStage
             srcUrl={srcUrl}
             videoUrl={videoUrl}
@@ -561,66 +601,88 @@ export default function GlyphStudio({ onHome, initialFile }) {
           </div>
         </main>
 
-      </div>
+        </div>
 
-      {(chatOpen || (controlsOpen && params)) && (
-        <section className="shrink-0 mx-2 mb-2 lg:mx-3 lg:mb-3 flex h-[40dvh] max-h-[430px] flex-col overflow-hidden rounded-2xl glyph-card">
-          <div className="flex shrink-0 items-center gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--g-line)' }}>
-            <button
-              onClick={() => {
-                setChatOpen(true);
-                setControlsOpen(false);
-              }}
-              className={`glyph-btn ${chatOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              Chat
-            </button>
-            <button
-              onClick={() => {
-                setControlsOpen(true);
-                setChatOpen(false);
-              }}
-              className={`glyph-btn ${controlsOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
-            >
-              <Settings2 className="w-3.5 h-3.5" />
-              Controls
-            </button>
-            <button
-              onClick={() => {
-                setChatOpen(false);
-                setControlsOpen(false);
-              }}
-              className="glyph-pill ml-auto flex h-7 w-7 items-center justify-center rounded-full"
-              title="Close the panel"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-3">
-            {chatOpen ? (
-              <GlyphChat
-                params={params}
-                imageReady={!!(source || videoSource)}
-                view3d={view3d}
-                onApply={applyChat}
-                onView={applyView}
-                onRandomize={randomize}
-                onSurprise={surprise}
-              />
-            ) : (
-              params && (
-                <GlyphControls
+        {panelOpen && (
+          <div
+            onPointerDown={startResize}
+            className={isDesktop ? 'glyph-split-v hidden lg:block' : 'glyph-split-h flex lg:hidden'}
+            title="Drag to resize"
+          />
+        )}
+
+        {panelOpen && (
+          <section
+            style={isDesktop ? { width: `${panelW}px` } : { height: `${dockPx}px` }}
+            className={`shrink-0 flex flex-col overflow-hidden rounded-2xl glyph-card ${
+              isDesktop ? 'my-3 mr-3' : 'mx-2 mb-2 lg:mx-3 lg:mb-3'
+            }`}
+          >
+            <div className="flex shrink-0 items-center gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--g-line)' }}>
+              <button
+                onClick={() => {
+                  if (chatOpen) {
+                    setChatOpen(false);
+                  } else {
+                    setChatOpen(true);
+                    setControlsOpen(false);
+                  }
+                }}
+                className={`glyph-btn ${chatOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Chat
+              </button>
+              <button
+                onClick={() => {
+                  if (controlsOpen) {
+                    setControlsOpen(false);
+                  } else {
+                    setControlsOpen(true);
+                    setChatOpen(false);
+                  }
+                }}
+                className={`glyph-btn ${controlsOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+                Controls
+              </button>
+              <button
+                onClick={() => {
+                  setChatOpen(false);
+                  setControlsOpen(false);
+                }}
+                className="glyph-pill ml-auto flex h-7 w-7 items-center justify-center rounded-full"
+                title="Close the panel"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+              {chatOpen ? (
+                <GlyphChat
                   params={params}
-                  patch={patch}
-                  onClose={() => setControlsOpen(false)}
-                  onReset={() => setParams(randomizeParams(null, {}))}
+                  imageReady={!!(source || videoSource)}
+                  view3d={view3d}
+                  onApply={applyChat}
+                  onView={applyView}
+                  onRandomize={randomize}
+                  onSurprise={surprise}
                 />
-              )
-            )}
-          </div>
-        </section>
-      )}
+              ) : (
+                params && (
+                  <GlyphControls
+                    params={params}
+                    patch={patch}
+                    onClose={() => setControlsOpen(false)}
+                    onReset={() => setParams(randomizeParams(null, {}))}
+                  />
+                )
+              )}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

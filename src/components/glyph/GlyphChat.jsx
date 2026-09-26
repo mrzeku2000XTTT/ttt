@@ -195,13 +195,14 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
         )}
       </div>
 
-      <div className="flex shrink-0 flex-wrap gap-1.5 pb-2">
+      <div className="flex shrink-0 items-center gap-1 overflow-x-auto scrollbar-hide pb-2">
         {QUICK.map((q) => (
           <button
             key={q.label}
             onClick={() => quick(q)}
             disabled={thinking || !imageReady}
-            className="glyph-pill rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] font-semibold disabled:opacity-40"
+            title={q.label}
+            className="glyph-pill shrink-0 rounded-full px-2 py-[3px] text-[9px] uppercase tracking-[0.06em] disabled:opacity-40"
           >
             {q.label}
           </button>
