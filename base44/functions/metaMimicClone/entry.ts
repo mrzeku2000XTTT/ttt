@@ -29,6 +29,7 @@ ABSOLUTE 1:1 RULES:
 - Render ONLY what is actually visible in the image. If the image shows a single pill button, the HTML contains ONLY that pill button — no hero, no headline, no paragraph, no nav, no footer, no extra sections.
 - NEVER add, guess, invent, or "complete" content. Any element or text not present in the image is FORBIDDEN.
 - Copy the image's text EXACTLY, character for character, preserving per-word colors, weights and emphasis spans.
+- Every string the image shows is typed as HTML exactly once. Never also inherit that string inside an artwork crop — a string visible twice looks like a broken, ghosted duplicate. Crop the artwork so its baked-in text is excluded.
 - Match exact geometry: element width/height ratios, padding, border-radius, font-size, font-weight, letter-spacing, line-height, exact hex colors, borders, shadows. Estimate proportions carefully from the image.
 - Position elements exactly as in the image (centering, spacing, and the image's own background color).
 - Preserve the SOURCE layout, columns and aspect ratio. Do NOT rearrange this desktop screenshot into a mobile layout. The preview scales the source canvas to fit smaller screens.
@@ -45,7 +46,8 @@ EDIT RULES:
 - Apply ONLY the requested change (text, color, background, font, gradient, size, layout, etc.).
 - Do NOT change anything else: keep every other element, style, text, size and structure exactly as it is.
 - Do NOT add new sections or content beyond what the instruction asks.
-- Keep it ONE complete self-contained HTML document with inline CSS, no external frameworks. Return ONLY the raw HTML, no markdown fences, no explanation.
+- Never duplicate a string: if a string is already visible inside an artwork crop, do not draw it again in HTML — the user sees it ghosted twice.
+- Keep it ONE self-contained HTML document with inline CSS, no external frameworks. Return ONLY the raw HTML, no markdown fences, no explanation.
 - Preserve the existing source canvas dimensions, section markers and artwork crops. Do not force a new mobile layout. Use the attached original image as reference when available.
 
 CURRENT HTML:
@@ -90,6 +92,8 @@ Return ONLY the raw HTML document.`;
 SOURCE REFERENCE:
 ${hasDimensions ? `The screenshot is ${width}px wide by ${height}px high. In exact mode use a canvas of precisely these dimensions; use these coordinates for artwork crops.` : 'Infer the source canvas dimensions from the attached screenshot.'}
 ${imageUrl ? `The actual source image URL is: ${JSON.stringify(imageUrl)}. For photographic artwork, hero illustrations, and card images, reuse the ORIGINAL pixels: crop regions of this URL with overflow-hidden containers and an absolutely positioned source image sized to the screenshot dimensions (offset by negative crop x/y). Do not invent image URLs, substitute gradients/emojis, or omit the artwork. Do not stretch the whole screenshot into each image slot. Crop only artwork regions, keeping the rest of the UI as editable HTML/CSS. Never use the entire screenshot as the page or as a full-page background.` : ''}
+EVERY STRING APPEARS EXACTLY ONCE:
+Never let a string appear twice. If the artwork crop you reuse already shows a string — a headline, logo lockup, sub-heading, label or button — do NOT also draw that string in HTML: that doubles it and the result reads as a broken, ghosted duplicate. Preferred: crop the artwork to the region that EXCLUDES the source's baked-in text (the subject, product, logo mark and background stay) and write the text once as HTML in its own block. Only when the text sits directly on top of the subject with no clean edge to crop, keep it inside the crop and write no duplicate at all. Before returning, check every visible string against the document: exactly one occurrence.
 COMPLETENESS:
 Inspect the ENTIRE screenshot, including its bottom edge, before writing HTML. Inventory every visible section, every card in each row, header, hero artwork, floating badge, timer and lower grid. Recreate ALL visible content, not just the first viewport. Keep CSS compact and shared across repeated cards so the complete document fits. No placeholders, ellipses, TODOs or omitted sections. Keep text and controls editable.
 For each source section, supply an id (letters/numbers/hyphens only), label and itemCount (number of repeated cards/items, zero if none). Its HTML container MUST have data-source-section="id". Inside it mark each repeated item with data-source-item="id-1", "id-2", etc. Include every source card, not only a sample. In edit mode inventory the retained sections of the existing HTML.
