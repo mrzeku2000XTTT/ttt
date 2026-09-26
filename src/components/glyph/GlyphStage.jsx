@@ -123,8 +123,9 @@ export default function GlyphStage({
       className={
         fullscreen
           ? 'glyph-stage-full fixed inset-0 z-[100] flex flex-col justify-center overflow-auto bg-[#05080d]/95 p-3 backdrop-blur-md sm:p-6'
-          : 'relative'
+          : 'relative min-h-0'
       }
+      style={!fullscreen && maxHeight && !loaded ? { height: `${maxHeight}px` } : undefined}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -134,7 +135,7 @@ export default function GlyphStage({
     >
       {!loaded ? (
         <label
-          className={`glyph-drop flex flex-col items-center justify-center text-center cursor-pointer px-6 py-20 ${dragOver ? 'glyph-drop-active' : ''}`}
+          className={`glyph-drop flex h-full min-h-0 flex-col items-center justify-center overflow-hidden text-center cursor-pointer px-6 py-6 ${dragOver ? 'glyph-drop-active' : ''}`}
         >
           <input
             type="file"

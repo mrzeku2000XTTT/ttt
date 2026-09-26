@@ -395,7 +395,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
             <span className="hidden xl:block glyph-muted text-[11px] ml-2">turn any image or video into visual code</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <div className="flex flex-nowrap items-center justify-end gap-1.5 overflow-x-auto scrollbar-hide">
             <label className="glyph-btn glyph-btn-ghost cursor-pointer">
               <ImageIcon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Upload</span>
