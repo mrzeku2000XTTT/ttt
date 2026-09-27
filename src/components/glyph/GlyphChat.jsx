@@ -88,6 +88,50 @@ const QUICK = [
   { label: 'Show original', icon: Eye, say: 'Show me the original.' },
 ];
 
+// The quick actions answer instantly, so they rotate through a few lines — the
+// same button pressed twice should never read as a copy-paste.
+const QUICK_LINES = {
+  'New look': [
+    'New renderer, new palette — the image underneath is untouched.',
+    'Swapped the whole treatment. Same pixels, different skin.',
+    'Fresh look on the same picture.',
+  ],
+  'Surprise me': [
+    'Something unusual, still built from your pixels.',
+    'Took a turn nobody asked for — see if it holds.',
+    'Pushed it somewhere odd on purpose.',
+  ],
+  'More contrast': [
+    'Contrast up — the darks bite harder now.',
+    'More contrast, so the structure reads at a glance.',
+    'Deepened the shadows and lifted the highlights.',
+  ],
+  'Smaller cells': [
+    'Smaller cells, so more detail survives.',
+    'Tighter grid — finer detail, heavier render.',
+    'Dropped the cell size; the image gets sharper.',
+  ],
+  '3D view': [
+    'Tilted back in 3D — the 2D button in the header flattens it again.',
+    'Lifted into 3D. Drag to change the angle.',
+    'Now sitting in space — flatten it whenever you want.',
+  ],
+  'Show original': [
+    'Showing the source. Drag the slider to bring the render back.',
+    'That is the untouched image. Slide back for the render.',
+    'Source view — the render is one drag away.',
+  ],
+};
+
+function pickLine(label, memory) {
+  const pool = QUICK_LINES[label] || [];
+  if (!pool.length) return '';
+  const options = pool.filter((t) => t !== memory[label]);
+  const next = options[Math.floor(Math.random() * options.length)] || pool[0];
+  memory[label] = next;
+  return next;
+}
+
 function buildPrompt(text, params, view3d, hasRef) {
   const current = params
     ? `style=${params.style}, palette=${params.palette}, cellSize=${params.cellSize}, fontScale=${params.fontScale}, spacing=${params.spacing}, rotation=${params.rotation}, brightness=${params.brightness}, contrast=${params.contrast}, saturation=${params.saturation}, jitter=${params.jitter}, plate=${params.plate}, ditherAlgo=${params.ditherAlgo}, charSet=${params.charSet}, view3d=${view3d ? 'on' : 'off'}`
@@ -106,7 +150,8 @@ function buildPrompt(text, params, view3d, hasRef) {
     `Current settings: ${current}.`,
     'You also control the view: view3d "on" tilts the artwork back in space and "off" flattens it, view is "original" / "split" / "result" for the before-and-after comparison, and playing is "play" / "pause" for a loaded video.',
     'Set ONLY the fields that must change. Use "" for every field you want left alone.',
-    'Reply with one short sentence, 18 words maximum, no lists and no markdown.',
+    'Every name you return must be copied exactly from the lists above. When the user asks for a look, palette or movement that is not on a list, choose the closest real one and say which one you chose. Never describe a change you did not return in the fields.',
+    'How you talk: one or two short sentences, 32 words maximum, no lists and no markdown. Name the concrete thing you changed — the renderer, the palette, the movement — and what it does to this image. Never open with "Done", never repeat the user\'s words back, and never give a line that would fit any image.',
     `The user says: "${text}"`,
   ]
     .filter(Boolean)
@@ -131,6 +176,8 @@ export default function GlyphChat({
   const listRef = useRef(null);
 
   const say = (role, text) => setMessages((m) => [...m, { role, text }]);
+  const lineMemory = useRef({});
+  const sayLine = (label) => say('glyph', pickLine(label, lineMemory.current));
 
   // A reference sent from the studio is put into storage once, so every
   // following question carries the same image without re-uploading it.
@@ -226,22 +273,22 @@ export default function GlyphChat({
     say('user', item.say);
     if (item.label === 'New look') {
       onRandomize();
-      say('glyph', 'New renderer, new palette, same image.');
+      sayLine('New look');
     } else if (item.label === 'Surprise me') {
       onSurprise();
-      say('glyph', 'Something unusual, still built from your pixels.');
+      sayLine('Surprise me');
     } else if (item.label === 'More contrast') {
       onApply({ contrast: Math.min(2.2, (params?.contrast || 1) + 0.3) });
-      say('glyph', 'Pushed the contrast up.');
+      sayLine('More contrast');
     } else if (item.label === 'Smaller cells') {
       onApply({ cellSize: Math.max(2, Math.round((params?.cellSize || 12) * 0.7)) });
-      say('glyph', 'Smaller cells, so more detail survives.');
+      sayLine('Smaller cells');
     } else if (item.label === '3D view') {
       onView({ view3d: true });
-      say('glyph', 'Tilted back in 3D — the 2D button in the header flattens it again.');
+      sayLine('3D view');
     } else {
       onView({ view: 'original' });
-      say('glyph', 'Showing the source. Drag the slider to bring the render back.');
+      sayLine('Show original');
     }
   };
 
