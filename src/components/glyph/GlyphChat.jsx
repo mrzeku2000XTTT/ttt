@@ -75,7 +75,8 @@ const SCHEMA = {
     },
     filmTitle: {
       type: 'string',
-      description: 'Two to four words naming the film. Only when the user asks for a film or an animation.',
+      description:
+        'Two to four words naming the film — a title with a point of view, not a label. Only when the user asks for a film or an animation.',
     },
     filmBeats: {
       type: 'string',
@@ -181,7 +182,10 @@ function buildPrompt(text, params, view3d, hasRef) {
     'You also direct the camera in 3D: pose3d "random" writes a brand-new random move of the artwork through space and plays it on the timeline, and "stop" ends the move. Return "random" when they ask for a 3D move, a camera move, or movement through space — the move is generated for you, so never invent angles, positions or keyframes yourself.',
     'Set ONLY the fields that must change. Use "" for every field you want left alone.',
     'Every name you return must be copied exactly from the lists above. When the user asks for a look, palette or movement that is not on a list, choose the closest real one and say which one you chose. Never describe a change you did not return in the fields.',
-    'FILMS: when the user asks for a film, an animation, a motion piece, a sequence or a video of the artwork — or asks you to craft one — return "filmTitle" and "filmBeats". A film is 10 to 15 seconds: six to nine beats, each written "motion:seconds:renderer:palette:CAPTION" and joined with "|". Seconds are 1.2 to 4 and must add up to 10-15. Renderer and palette must be copied exactly from the lists above, or left empty to keep the current look. CAPTION is two to five words in capitals with no punctuation — it is the only text on screen, so it has to carry the idea. Change the movement between beats: a film that repeats one movement is a loop, not a film. Then make "reply" one sentence about what the film does.',
+    'FILMS: when the user asks for a film, an animation, a motion piece, a sequence or a video of the artwork — or asks you to craft one — return "filmTitle" and "filmBeats". A film is 10 to 15 seconds: six to nine beats, each written "motion:seconds:renderer:palette:CAPTION" and joined with "|". Seconds are 1.2 to 4 and must add up to 10-15. Renderer and palette must be copied exactly from the lists above, or left empty to keep the current look.',
+    'The captions have to tell a story, never list features: the first beat is the hook that makes a claim, the middle beats build it and turn it — every one a different idea, never a restatement — and the last beat lands the payoff. Two to six words in capitals, no punctuation, concrete and escalating, and never reuse a word that another caption already used. They are the only text on screen, so each one has to carry its idea alone. A caption that would fit any image is a wasted beat.',
+    'You may name the text treatment by putting it before the caption: "motion:seconds:renderer:palette:kinetic:CAPTION". kinetic is the big staggered hook, launch is the boxed line that lands, stamp is a short boxed punch, rule is a quiet line in the lower left. Use kinetic on the first beat and launch on the last unless the story says otherwise; leave the treatment out and the film picks one for that beat.',
+    'Change the movement between beats: a film that repeats one movement is a loop, not a film. Then make "reply" one sentence about what the film does.',
     'How you talk: one or two short sentences, 32 words maximum, no lists and no markdown. Name the concrete thing you changed — the renderer, the palette, the movement — and what it does to this image. Never open with "Done", never repeat the user\'s words back, and never give a line that would fit any image.',
     `The user says: "${text}"`,
   ]

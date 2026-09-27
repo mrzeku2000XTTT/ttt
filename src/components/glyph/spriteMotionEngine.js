@@ -373,24 +373,72 @@ export function renderArticulatedFrame(baseSprite, frameIndex, totalFrames, conf
 
     case 'walk':
     case 'run': {
-      const strideFreq = config.preset === 'run' ? 2 : 1;
-      const stridePhase = phase * strideFreq;
-      const bob = Math.abs(Math.sin(stridePhase)) * (config.preset === 'run' ? 9 : 5) * intensity;
-      const sway = Math.sin(stridePhase) * (config.preset === 'run' ? 0.08 : 0.04) * intensity;
-      const forwardLean = (config.preset === 'run' ? 0.08 : 0.03) * intensity;
+      const isRun = config.preset === 'run';
+      const stridePhase = phase * (isRun ? 2 : 1);
+      const bob = Math.abs(Math.sin(stridePhase)) * (isRun ? 9 : 5) * intensity;
+      const sway = Math.sin(stridePhase) * (isRun ? 0.08 : 0.04) * intensity;
+      const forwardLean = (isRun ? 0.08 : 0.03) * intensity;
+
+      // The legs step against each other while the body rides above them, so the
+      // sheet reads as walking instead of bobbing on the spot. The unshifted band
+      // is drawn first, so a step never leaves a hole behind it.
+      const hipLine = Math.round(size * 0.56);
+      const legHeight = size - hipLine;
+      const halfW = Math.round(size / 2);
+      const step = Math.sin(stridePhase) * (isRun ? 0.1 : 0.06) * size * intensity;
 
       ctx.translate(cx, cy - bob);
       ctx.rotate(sway + forwardLean);
-      ctx.drawImage(baseSprite, -cx, -cy);
+
+      ctx.drawImage(baseSprite, 0, 0, size, hipLine, -cx, -cy, size, hipLine);
+      ctx.drawImage(baseSprite, 0, hipLine, size, legHeight, -cx, -cy + hipLine, size, legHeight);
+      ctx.drawImage(baseSprite, 0, hipLine, halfW, legHeight, -cx + step, -cy + hipLine, halfW, legHeight);
+      ctx.drawImage(
+        baseSprite,
+        halfW,
+        hipLine,
+        size - halfW,
+        legHeight,
+        -cx + halfW - step,
+        -cy + hipLine,
+        size - halfW,
+        legHeight
+      );
       break;
     }
 
     case 'jump': {
-      const jumpY = -Math.sin(phase) * 28 * intensity;
-      const stretch = Math.cos(phase) * 0.18 * intensity;
+      // A real arc: crouch, take off, hang, land, recover. It never sinks below
+      // the ground it left, and the landing carries the weight.
+      const AIR_START = 0.18;
+      const AIR_END = 0.72;
+      let lift = 0;
+      let sx = 1;
+      let sy = 1;
 
-      ctx.translate(cx, cy + jumpY);
-      ctx.scale(1 - stretch * 0.5, 1 + stretch);
+      if (t < AIR_START) {
+        const p = t / AIR_START;
+        const crouch = Math.sin(p * Math.PI * 0.5);
+        sy = 1 - crouch * 0.09 * intensity;
+        sx = 1 + crouch * 0.07 * intensity;
+        lift = crouch * 5 * intensity;
+      } else if (t < AIR_END) {
+        const p = (t - AIR_START) / (AIR_END - AIR_START);
+        const arc = 4 * p * (1 - p);
+        const stretch = Math.sin(p * Math.PI) * 0.14 * intensity;
+        lift = -arc * 34 * intensity;
+        sy = 1 + stretch;
+        sx = 1 - stretch * 0.6;
+      } else {
+        const p = (t - AIR_END) / (1 - AIR_END);
+        const land = Math.sin(p * Math.PI) * Math.exp(-p * 2);
+        sy = 1 - land * 0.12 * intensity;
+        sx = 1 + land * 0.1 * intensity;
+        lift = land * 6 * intensity;
+      }
+
+      ctx.translate(cx, cy + lift);
+      ctx.scale(sx, sy);
       ctx.drawImage(baseSprite, -cx, -cy);
       break;
     }
@@ -431,11 +479,20 @@ export function renderArticulatedFrame(baseSprite, frameIndex, totalFrames, conf
       break;
     }
 
-    case 'spin':
     case 'turn': {
+      // Turning on the spot: it rotates in the plane, all the way round.
+      ctx.translate(cx, cy);
+      ctx.rotate(phase);
+      ctx.drawImage(baseSprite, -cx, -cy);
+      break;
+    }
+
+    case 'spin': {
+      // Spinning in depth: it goes edge-on, mirrors, and comes back around. The
+      // floor keeps it from collapsing to a single line mid-turn.
       const cosAngle = Math.cos(phase);
       ctx.translate(cx, cy);
-      ctx.scale(cosAngle, 1.0);
+      ctx.scale(Math.max(0.12, Math.abs(cosAngle)), 1.0);
       if (cosAngle < 0) ctx.filter = 'brightness(0.85) contrast(1.1)';
       ctx.drawImage(baseSprite, -cx, -cy);
       break;

@@ -2,6 +2,7 @@ import { renderStill } from './glyphEngine';
 import { PALETTES, paletteById } from './glyphPalettes';
 import { STYLES, randomizeParams } from './glyphStyles';
 import { MOTION_PRESETS } from './spriteMotionEngine';
+import { CAPTION_TYPES } from './glyphFilmType';
 
 // A film is 10 to 15 seconds of the artwork, whatever the chat sends back.
 export const FILM_MIN_SECONDS = 10;
@@ -39,12 +40,21 @@ export function parseFilm(title, beats) {
     .split('|')
     .map((chunk) => {
       const parts = String(chunk).split(':');
+      // A text treatment may sit before the caption — "...:launch:THE SIGNAL" —
+      // so the chat can say how a line should land. Captions are written in
+      // capitals, so a lowercase token can only ever be the treatment.
+      const tail = parts.slice(4).map((s) => String(s).trim());
+      let type = '';
+      if (tail.length > 1 && tail[0] === tail[0].toLowerCase() && CAPTION_TYPES.includes(tail[0])) {
+        type = tail.shift();
+      }
       return {
         motion: (parts[0] || '').trim().toLowerCase(),
         seconds: Number(parts[1]),
         style: (parts[2] || '').trim(),
         palette: (parts[3] || '').trim(),
-        caption: parts.slice(4).join(':').trim().slice(0, 48),
+        type,
+        caption: tail.join(':').trim().slice(0, 48),
       };
     })
     .filter((b) => b.motion && Number.isFinite(b.seconds));
@@ -61,6 +71,7 @@ export function normalizeFilm(plan) {
     seconds: Math.min(BEAT_MAX_SECONDS, Math.max(BEAT_MIN_SECONDS, Number(b.seconds) || 2)),
     style: findStyle(b.style) || '',
     palette: findPalette(b.palette) || '',
+    type: CAPTION_TYPES.includes(String(b.type || '').toLowerCase()) ? String(b.type).toLowerCase() : '',
     caption: String(b.caption || '').slice(0, 48),
   }));
   if (beats.length < 3) return null;

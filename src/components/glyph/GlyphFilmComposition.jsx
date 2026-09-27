@@ -1,6 +1,7 @@
 import React from 'react';
 import { AbsoluteFill, Img, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
-import { HyperframeOverlay } from '../kutt/kuttHyperframes';
+import GlyphFilmCaption from './GlyphFilmCaption';
+import { captionTypeFor } from './glyphFilmType';
 import { motionTransform } from './glyphMotionFx';
 
 // Seconds of crossfade between one beat and the next.
@@ -14,7 +15,7 @@ const DISSOLVE = 0.4;
  */
 export default function GlyphFilmComposition({ stills = [], beats = [] }) {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { fps, durationInFrames, width, height } = useVideoConfig();
   const t = frame / fps;
   const total = durationInFrames / fps;
 
@@ -69,15 +70,13 @@ export default function GlyphFilmComposition({ stills = [], beats = [] }) {
       />
 
       {beat.caption && (
-        <HyperframeOverlay
-          clip={{
-            start: 0,
-            duration: beat.seconds || 1,
-            text: beat.caption,
-            animation: 'slide_up',
-            style_preset: 'caption',
-          }}
+        <GlyphFilmCaption
+          text={beat.caption}
+          type={captionTypeFor(beat, index, beats.length)}
           t={local}
+          duration={beat.seconds || 1}
+          width={width}
+          height={height}
         />
       )}
     </AbsoluteFill>
