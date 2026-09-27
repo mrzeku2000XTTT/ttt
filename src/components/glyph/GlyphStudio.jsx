@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  Bookmark,
   Copy,
   Download,
   FileText,
   Home,
   Image as ImageIcon,
+  Lightbulb,
   MessageSquare,
   Paintbrush,
   RefreshCw,
@@ -13,6 +15,7 @@ import {
   Shuffle,
   Sparkles,
   Store,
+  User,
   Wand2,
   X,
 } from 'lucide-react';
@@ -42,12 +45,16 @@ import GlyphControls from './GlyphControls';
 import GlyphExportMenu from './GlyphExportMenu';
 import GlyphChat from './GlyphChat';
 import GlyphMark from './GlyphMark';
+import GlyphProfile from './GlyphProfile';
+import { addWorks, readGallery } from './glyphGalleryStore';
+import { workFromParams } from './glyphInspirations';
+import { sampleFile } from './glyphSampleSource';
 
 // Video is re-rendered every frame, so it is sampled at a steady rate rather
 // than on every animation frame.
 const VIDEO_FPS = 15;
 
-export default function GlyphStudio({ onHome, initialFile }) {
+export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   const [img, setImg] = useState(null);
   const [srcUrl, setSrcUrl] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
@@ -406,6 +413,56 @@ export default function GlyphStudio({ onHome, initialFile }) {
     setMaskVersion((v) => v + 1);
   }, []);
 
+  /* ── profile & gallery: the shelf is kept on the device, per wallet ── */
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileTab, setProfileTab] = useState('gallery');
+  const [autoInspire, setAutoInspire] = useState(false);
+  const [savedCount, setSavedCount] = useState(() => readGallery(owner).length);
+
+  const openProfile = useCallback((tab, inspireNow) => {
+    setProfileTab(tab);
+    setAutoInspire(inspireNow);
+    setProfileOpen(true);
+    setControlsOpen(false);
+    setChatOpen(false);
+    setGalleryOpen(false);
+  }, []);
+
+  // The piece on the canvas, kept with the settings that made it.
+  const saveCurrent = useCallback(() => {
+    const src = source || lastFrameRef.current;
+    if (!src || !params) return;
+    setBusy(true);
+    setError('');
+    window.setTimeout(() => {
+      try {
+        setSavedCount(addWorks(owner, [workFromParams(src, params, 'studio')]).length);
+        setNote('Saved to your gallery — it will still be there after a refresh.');
+      } catch (e) {
+        setError('Could not save that piece.');
+      }
+      setBusy(false);
+    }, 30);
+  }, [source, params, owner]);
+
+  // Opening a piece puts its settings back on the canvas. A piece made from the
+  // built-in picture brings that picture with it when the studio has none.
+  const applyWork = useCallback(
+    async (work) => {
+      if (!source && !lastFrameRef.current) {
+        try {
+          await accept(await sampleFile());
+        } catch (e) {
+          /* the settings still apply to whatever is loaded next */
+        }
+      }
+      setParams(work.params);
+      setProfileOpen(false);
+      setNote('Opened from your gallery.');
+    },
+    [source, accept],
+  );
+
   /* ── the style library ── */
   // A still builds its preview as soon as it is prepared; a video hands one over
   // from its current frame when the library opens.
@@ -459,6 +516,7 @@ export default function GlyphStudio({ onHome, initialFile }) {
         setControlsOpen(false);
         setExportOpen(false);
         setChatOpen(false);
+        setProfileOpen(false);
         setFullscreen(false);
       } else if (/^[1-9]$/.test(k)) {
         const st = STYLES[Number(k) - 1];
@@ -549,6 +607,33 @@ export default function GlyphStudio({ onHome, initialFile }) {
             <button onClick={surprise} disabled={!source && !videoSource} className="glyph-btn glyph-btn-ghost">
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden lg:inline">Surprise me</span>
+            </button>
+            <button
+              onClick={() => openProfile('gallery', true)}
+              disabled={busy}
+              className="glyph-btn glyph-btn-ghost"
+              title="Generate fresh looks for this picture"
+            >
+              <Lightbulb className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Inspire</span>
+            </button>
+            <button
+              onClick={saveCurrent}
+              disabled={(!source && !videoSource) || busy}
+              className="glyph-btn glyph-btn-ghost"
+              title="Keep this piece in your gallery"
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Save</span>
+            </button>
+            <button
+              onClick={() => openProfile('gallery', false)}
+              className="glyph-btn glyph-btn-ghost"
+              title="Your profile and gallery"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Profile</span>
+              {savedCount > 0 && <span className="glyph-mono text-[10px] opacity-70">{savedCount}</span>}
             </button>
             <div className="flex items-center gap-0.5 rounded-full p-0.5" style={{ border: '1px solid var(--g-line)' }}>
               {[false, true].map((mode) => (
@@ -804,6 +889,19 @@ export default function GlyphStudio({ onHome, initialFile }) {
           onApply={applyStyle}
           onRecipe={applyRecipe}
           onClose={() => setGalleryOpen(false)}
+        />
+      )}
+
+      {profileOpen && (
+        <GlyphProfile
+          owner={owner}
+          wallet={wallet}
+          source={source || lastFrameRef.current}
+          onUse={applyWork}
+          onCount={setSavedCount}
+          onClose={() => setProfileOpen(false)}
+          initialTab={profileTab}
+          autoInspire={autoInspire}
         />
       )}
     </div>

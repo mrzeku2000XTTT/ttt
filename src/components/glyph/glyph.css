@@ -118,6 +118,13 @@
 .glyph-btn:active {
   transform: translateY(1px) scale(0.99);
 }
+/* The compact button used inside gallery tiles. */
+.glyph-btn-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
 .glyph-btn-primary {
   background: linear-gradient(100deg, var(--g-accent-2), var(--g-accent));
   color: #04202f;

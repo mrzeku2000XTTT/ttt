@@ -43,5 +43,12 @@ export default function GlyphPage() {
     );
   }
 
-  return <GlyphStudio onHome={home} initialFile={seed} />;
+  return (
+    <GlyphStudio
+      onHome={home}
+      initialFile={seed}
+      owner={address}
+      wallet={address ? shortKaspaAddress(address) : null}
+    />
+  );
 }
