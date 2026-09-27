@@ -177,6 +177,10 @@
   overflow: hidden;
   border: 1px solid var(--g-line);
   background: #05080d;
+  /* The whole artwork is the slider, so a horizontal drag belongs to it while a
+     vertical drag still scrolls the page on touch. */
+  cursor: ew-resize;
+  touch-action: pan-y;
 }
 .glyph-plane {
   position: relative;
@@ -229,6 +233,17 @@
   box-shadow: 0 0 12px rgba(74, 144, 226, 0.7);
   cursor: ew-resize;
   touch-action: none;
+  /* Above the paint surface, so the divider stays grabbable while brushing. */
+  z-index: 7;
+}
+/* The line is 2px, but the thing you actually grab is 22px wide. */
+.glyph-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -11px;
+  right: -11px;
 }
 .glyph-handle::after {
   content: '';
@@ -242,6 +257,12 @@
   background: #fff;
   border: 2px solid var(--g-accent);
   box-shadow: 0 6px 16px -6px rgba(45, 52, 54, 0.6);
+  transition: transform 120ms ease;
+}
+/* The knob answers the pointer, so it reads as something you can pull. */
+.glyph-handle:hover::after,
+.glyph-handle:active::after {
+  transform: scale(1.18);
 }
 
 .glyph-drop {
@@ -382,6 +403,8 @@
   perspective: 1400px;
   border-color: transparent;
   background: transparent;
+  /* In 3D the frame is the pan surface, not the slider. */
+  cursor: grab;
 }
 .glyph-plane-3d {
   border-radius: 16px;

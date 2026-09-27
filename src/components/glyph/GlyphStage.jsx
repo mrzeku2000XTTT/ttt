@@ -105,8 +105,14 @@ export default function GlyphStage({
 
   const onDown = (e) => {
     dragging.current = true;
-    if (frameRef.current) frameRef.current.setPointerCapture?.(e.pointerId);
+    // Move first: if the browser refuses the pointer capture, the press still
+    // lands instead of leaving the slider dead.
     moveTo(e.clientX);
+    try {
+      frameRef.current?.setPointerCapture?.(e.pointerId);
+    } catch (err) {
+      /* capture is a nicety — the window listeners below carry the drag */
+    }
   };
   const onMove = (e) => {
     if (dragging.current) moveTo(e.clientX);
@@ -114,6 +120,25 @@ export default function GlyphStage({
   const onUp = () => {
     dragging.current = false;
   };
+
+  // The drag is followed on the window, so it keeps up when the pointer leaves
+  // the artwork and the slider can never be left stuck mid-drag.
+  useEffect(() => {
+    const move = (e) => {
+      if (dragging.current) moveTo(e.clientX);
+    };
+    const up = () => {
+      dragging.current = false;
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+  }, []);
 
   const drop = (e) => {
     e.preventDefault();
