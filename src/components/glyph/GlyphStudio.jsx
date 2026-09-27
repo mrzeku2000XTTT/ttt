@@ -82,6 +82,11 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   // The film the chat wrote: one rendered still per beat, played through Remotion.
   const [film, setFilm] = useState(null);
 
+  // A 3D move the chat asked for. The cue is handed to the stage, which writes
+  // the random track and plays it — the agent directs the camera, it does not
+  // describe it.
+  const [poseCue, setPoseCue] = useState(null);
+
   // The studio fills the viewport, so the artwork has to fit the space that is
   // genuinely left over. That space is measured and the canvas is capped to it,
   // which is what keeps the page itself from ever scrolling.
@@ -429,6 +434,15 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   const applyMotion = useCallback((id) => {
     setMotion(id || null);
     if (id) setCompare(0);
+    // Stopping the movement stops a 3D move too, so one control ends both.
+    else setPoseCue((c) => ({ action: 'stop', n: (c?.n || 0) + 1 }));
+  }, []);
+
+  // A camera move from the chat. A random one is only visible in 3D, so the view
+  // is switched on here rather than left to chance.
+  const poseMove = useCallback((action) => {
+    if (action === 'random') setView3d(true);
+    setPoseCue((c) => ({ action, n: (c?.n || 0) + 1 }));
   }, []);
 
   // The chat writes a 10-15 second film; this renders one still per beat and
@@ -914,6 +928,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
             styleLabelText={params ? styleLabel(params) : 'GLYPH'}
             motionLabel={motion ? motionName(motion) : ''}
             onStopMotion={() => applyMotion(null)}
+            poseCue={poseCue}
             overlay={
               <GlyphMaskPainter
                 active={maskMode && !view3d}
@@ -1032,6 +1047,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                   onSurprise={surprise}
                   onMotion={applyMotion}
                   onFilm={applyFilm}
+                  onPoseMove={poseMove}
                   reference={agentRef}
                   onClearReference={() => setAgentRef(null)}
                 />

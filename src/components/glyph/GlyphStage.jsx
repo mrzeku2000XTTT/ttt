@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Maximize2, Minimize2, Move, MoveDiagonal2, Pause, Play, Upload, X } from 'lucide-react';
+import { Film, ImagePlus, Maximize2, Minimize2, Move, MoveDiagonal2, Pause, Play, Upload, X } from 'lucide-react';
 import GlyphTimeline from './GlyphTimeline';
 import GlyphThinking from './GlyphThinking';
 import GlyphAxisControls from './GlyphAxisControls';
+import GlyphPoseTimeline from './GlyphPoseTimeline';
+import { addKey, HOME_ANGLE, HOME_POSE, poseAt, randomTrack, TRACK_SECONDS } from './glyphPoseTrack';
 
 // The three ways to look at a render. Split is the default, so the source is
 // always visible next to what GLYPH made of it.
@@ -14,8 +16,9 @@ const VIEWS = [
 
 // The pose the artwork is seen from in 3D. It matches what the plane used to be
 // fixed at, so the view opens exactly as it always did and every axis is then
-// the user's to dial.
-const DEFAULT_ANGLE = { x: 26, y: -16, z: 0 };
+// the user's to dial. It is the timeline's home pose, so a move starts and ends
+// exactly where the artwork already sits.
+const DEFAULT_ANGLE = HOME_ANGLE;
 
 /**
  * The live canvas: the artwork dominates, with a draggable before/after
@@ -45,6 +48,7 @@ export default function GlyphStage({
   styleLabelText,
   motionLabel,
   onStopMotion,
+  poseCue,
   overlay,
 }) {
   const frameRef = useRef(null);
@@ -62,17 +66,93 @@ export default function GlyphStage({
   const poseStart = useRef(null);
   const zoomStart = useRef(null);
 
+  // The 3D move: keyframes of the pose, played on the card. The agent writes a
+  // random one, so it can direct the camera instead of only describing it.
+  const [track, setTrack] = useState([]);
+  const [trackPlaying, setTrackPlaying] = useState(false);
+  const [trackTime, setTrackTime] = useState(0);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const timeRef = useRef(0);
+
+  // Playback: the pose is read off the track every frame, so the card travels
+  // and the axis panel shows where it is while it goes.
+  useEffect(() => {
+    if (!trackPlaying || !track.length) return undefined;
+    let raf = 0;
+    let last = performance.now();
+    const draw = (now) => {
+      raf = requestAnimationFrame(draw);
+      const dt = (now - last) / 1000;
+      last = now;
+      const t = (timeRef.current + dt) % TRACK_SECONDS;
+      timeRef.current = t;
+      const p = poseAt(track, t);
+      setPose(p.position);
+      setAngle(p.angle);
+      setTrackTime(t);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [trackPlaying, track]);
+
+  // A cue from the agent: write a whole random move and play it, or end the one
+  // running and put the artwork back where it started.
+  useEffect(() => {
+    if (!poseCue?.n) return;
+    if (poseCue.action === 'stop') {
+      setTrackPlaying(false);
+      setTrack([]);
+      timeRef.current = 0;
+      setTrackTime(0);
+      setPose({ ...HOME_POSE });
+      setAngle({ ...HOME_ANGLE });
+      return;
+    }
+    setTrack(randomTrack());
+    timeRef.current = 0;
+    setTrackTime(0);
+    setTimelineOpen(true);
+    setTrackPlaying(true);
+  }, [poseCue]);
+
   useEffect(() => {
     setPose({ x: 0, y: 0, z: 0 });
     setAngle(DEFAULT_ANGLE);
     setZoom(1);
   }, [srcUrl, videoUrl]);
 
+  // Taking the wheel back from the timeline, so a reset or a dialled axis is not
+  // immediately overwritten by the move that was playing.
   const reset3d = () => {
+    setTrackPlaying(false);
     setPose({ x: 0, y: 0, z: 0 });
     setAngle(DEFAULT_ANGLE);
     setZoom(1);
   };
+
+  const toggleTimeline = () => {
+    setTimelineOpen((open) => {
+      const next = !open;
+      if (!next) setTrackPlaying(false);
+      else if (!track.length) {
+        // Open on something playable: a random move waiting at its first frame.
+        setTrack(randomTrack());
+        timeRef.current = 0;
+        setTrackTime(0);
+      }
+      return next;
+    });
+  };
+
+  const scrubTimeline = (t) => {
+    timeRef.current = t;
+    setTrackTime(t);
+    const p = poseAt(track, t);
+    setPose(p.position);
+    setAngle(p.angle);
+  };
+
+  const captureKey = () => setTrack((keys) => addKey(keys, timeRef.current, pose, angle));
 
   const startPan = (e) => {
     e.stopPropagation();
@@ -110,7 +190,10 @@ export default function GlyphStage({
   // space instead of pushing the artwork out of the card.
   const cap =
     !fullscreen && maxHeight
-      ? Math.max(120, maxHeight - (videoUrl ? 122 : 78) - (view3d ? 136 : 0))
+      ? Math.max(
+          120,
+          maxHeight - (videoUrl ? 122 : 78) - (view3d ? 136 : 0) - (view3d && timelineOpen ? 118 : 0),
+        )
       : 0;
 
   const moveTo = (clientX) => {
@@ -349,7 +432,7 @@ export default function GlyphStage({
 
           <p className="glyph-muted mt-2 text-center text-[10px] tracking-wide">
             {view3d
-              ? 'drag the bar to move the card · X Y Z move and angle it · the corner grip resizes it · the slider still compares'
+              ? 'drag the bar to move the card · X Y Z move and angle it · the timeline plays a move · the corner grip resizes it'
               : videoUrl
                 ? 'drag the slider to compare · the video keeps playing underneath'
                 : 'drag the slider to compare · drop or paste a new image to transform it'}
@@ -360,12 +443,63 @@ export default function GlyphStage({
       {/* The pose panel is a sibling of the card, so it can only ever sit under
           the artwork — never on top of the thing it is posing. */}
       {loaded && view3d && (
-        <div className="mt-1 flex justify-center px-2">
+        <div className="mt-1 flex flex-col items-center gap-1 px-2">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={toggleTimeline}
+              className={`glyph-btn ${timelineOpen ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
+              title="Keyframes of the 3D pose, played on the card"
+            >
+              <Film className="w-3.5 h-3.5" />
+              Timeline
+            </button>
+            {track.length > 0 && !timelineOpen && (
+              <button
+                type="button"
+                onClick={() => setTrackPlaying((v) => !v)}
+                className="glyph-btn glyph-btn-ghost h-7 w-7 p-0"
+                title={trackPlaying ? 'Pause the move' : 'Play the move'}
+              >
+                {trackPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              </button>
+            )}
+          </div>
+
+          {timelineOpen && (
+            <GlyphPoseTimeline
+              keys={track}
+              time={trackTime}
+              playing={trackPlaying}
+              onTogglePlay={() => setTrackPlaying((v) => !v)}
+              onScrub={scrubTimeline}
+              onKey={captureKey}
+              onRandom={() => {
+                setTrack(randomTrack());
+                timeRef.current = 0;
+                setTrackTime(0);
+                setTrackPlaying(true);
+              }}
+              onClear={() => {
+                setTrackPlaying(false);
+                setTrack([]);
+                timeRef.current = 0;
+                setTrackTime(0);
+              }}
+            />
+          )}
+
           <GlyphAxisControls
             position={pose}
             angle={angle}
-            onPosition={(patch) => setPose((p) => ({ ...p, ...patch }))}
-            onAngle={(patch) => setAngle((a) => ({ ...a, ...patch }))}
+            onPosition={(patch) => {
+              setTrackPlaying(false);
+              setPose((p) => ({ ...p, ...patch }));
+            }}
+            onAngle={(patch) => {
+              setTrackPlaying(false);
+              setAngle((a) => ({ ...a, ...patch }));
+            }}
             onReset={reset3d}
           />
         </div>

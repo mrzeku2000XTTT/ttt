@@ -58,6 +58,12 @@ const SCHEMA = {
     view3d: { type: 'string', enum: ['on', 'off', ''], description: 'on tilts the artwork back in 3D, off flattens it.' },
     view: { type: 'string', enum: ['original', 'split', 'result', ''], description: 'Which way to look at the render.' },
     playing: { type: 'string', enum: ['play', 'pause', ''], description: 'Play or pause a loaded video.' },
+    pose3d: {
+      type: 'string',
+      enum: ['random', 'stop', ''],
+      description:
+        'random writes and plays a brand-new random 3D move of the artwork through space, stop ends the move, "" when a 3D camera move was not mentioned.',
+    },
     motion: {
       type: 'string',
       enum: [...MOTION_IDS, 'none', ''],
@@ -101,6 +107,7 @@ const QUICK = [
   { label: 'Smaller cells', icon: Grid3x3, say: 'Use smaller cells.' },
   { label: '3D view', icon: Box, say: 'Tilt it in 3D.' },
   { label: 'Add motion', icon: Move, say: 'Add some motion to this — gentle movement.', ask: true },
+  { label: '3D move', icon: Box, say: 'Give it a random 3D move.' },
   { label: 'Craft a film', icon: Film, say: 'Craft a twelve second motion film of this — use everything you have.', ask: true },
   { label: 'Show original', icon: Eye, say: 'Show me the original.' },
 ];
@@ -132,6 +139,11 @@ const QUICK_LINES = {
     'Tilted back in 3D — the 2D button in the header flattens it again.',
     'Lifted into 3D. Drag to change the angle.',
     'Now sitting in space — flatten it whenever you want.',
+  ],
+  '3D move': [
+    'Wrote a random move and it is playing — the timeline under the artwork has the keys.',
+    'New camera move: it travels, tilts and settles back home. Timeline is open.',
+    'Random move running. Scrub the timeline, or press Key to keep a pose you like.',
   ],
   'Show original': [
     'Showing the source. Drag the slider to bring the render back.',
@@ -166,6 +178,7 @@ function buildPrompt(text, params, view3d, hasRef) {
     'cellSize 2-40, fontScale 0.5-2, spacing 0-8, rotation -45-45, brightness -70-70, contrast 0.4-2.2, saturation 0-2, jitter 0-1.',
     `Current settings: ${current}.`,
     'You also control the view: view3d "on" tilts the artwork back in space and "off" flattens it, view is "original" / "split" / "result" for the before-and-after comparison, and playing is "play" / "pause" for a loaded video.',
+    'You also direct the camera in 3D: pose3d "random" writes a brand-new random move of the artwork through space and plays it on the timeline, and "stop" ends the move. Return "random" when they ask for a 3D move, a camera move, or movement through space — the move is generated for you, so never invent angles, positions or keyframes yourself.',
     'Set ONLY the fields that must change. Use "" for every field you want left alone.',
     'Every name you return must be copied exactly from the lists above. When the user asks for a look, palette or movement that is not on a list, choose the closest real one and say which one you chose. Never describe a change you did not return in the fields.',
     'FILMS: when the user asks for a film, an animation, a motion piece, a sequence or a video of the artwork — or asks you to craft one — return "filmTitle" and "filmBeats". A film is 10 to 15 seconds: six to nine beats, each written "motion:seconds:renderer:palette:CAPTION" and joined with "|". Seconds are 1.2 to 4 and must add up to 10-15. Renderer and palette must be copied exactly from the lists above, or left empty to keep the current look. CAPTION is two to five words in capitals with no punctuation — it is the only text on screen, so it has to carry the idea. Change the movement between beats: a film that repeats one movement is a loop, not a film. Then make "reply" one sentence about what the film does.',
@@ -186,6 +199,7 @@ export default function GlyphChat({
   onSurprise,
   onMotion,
   onFilm,
+  onPoseMove,
   reference,
   onClearReference,
 }) {
@@ -268,6 +282,10 @@ export default function GlyphChat({
       if (res?.playing === 'play') view.playing = true;
       else if (res?.playing === 'pause') view.playing = false;
 
+      // The camera move is generated in the studio, so the model only has to ask
+      // for one — it never invents the angles itself.
+      if (onPoseMove && (res?.pose3d === 'random' || res?.pose3d === 'stop')) onPoseMove(res.pose3d);
+
       if (Object.keys(patch).length) onApply(patch);
       if (Object.keys(view).length && onView) onView(view);
       // The movement is handed to the studio, which plays it on the artwork.
@@ -323,6 +341,9 @@ export default function GlyphChat({
     } else if (item.label === '3D view') {
       onView({ view3d: true });
       sayLine('3D view');
+    } else if (item.label === '3D move') {
+      onPoseMove?.('random');
+      sayLine('3D move');
     } else {
       onView({ view: 'original' });
       sayLine('Show original');
