@@ -52,6 +52,7 @@ import GlyphPalettePicker from './GlyphPalettePicker';
 import { addWorks, readGallery } from './glyphGalleryStore';
 import { workFromParams } from './glyphInspirations';
 import { sampleFile } from './glyphSampleSource';
+import { motionLabel as motionName, motionTransform } from './glyphMotionFx';
 
 // Video is re-rendered every frame, so it is sampled at a steady rate rather
 // than on every animation frame.
@@ -69,6 +70,10 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   const [params, setParams] = useState(null);
   // Open on a split, so the source is always visible beside the render.
   const [compare, setCompare] = useState(0.5);
+
+  // The movement the chat read off the picture. While it is set the artwork
+  // itself moves, so the answer is something you see rather than only words.
+  const [motion, setMotion] = useState(null);
 
   // The studio fills the viewport, so the artwork has to fit the space that is
   // genuinely left over. That space is measured and the canvas is capped to it,
@@ -193,6 +198,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
       setNote('');
       lastFrameRef.current = null;
       maskRef.current = null;
+      setMotion(null);
       setHasMask(false);
       setMaskMode(false);
       revealRef.current = false;
@@ -245,6 +251,27 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
     }
     return () => cancelAnimationFrame(raf);
   }, [source, params, animated, hasMask, maskVersion, maskMode]);
+
+  /* ── motion: the artwork moves on its own clock, over whatever is rendered ── */
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return undefined;
+    if (!motion) {
+      el.style.transform = '';
+      return undefined;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const draw = () => {
+      el.style.transform = motionTransform(motion, (performance.now() - start) / 1000);
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => {
+      cancelAnimationFrame(raf);
+      el.style.transform = '';
+    };
+  }, [motion, source, videoSource]);
 
   /* ── a video: the element plays in place and is sampled frame by frame ── */
   useEffect(() => {
@@ -365,6 +392,13 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
     }
   }, []);
 
+  // A movement from the chat's vocabulary. It is shown on the result view, so
+  // the whole artwork is what moves instead of half of a comparison.
+  const applyMotion = useCallback((id) => {
+    setMotion(id || null);
+    if (id) setCompare(0);
+  }, []);
+
   /* ── auto: fit the render to the picture, then say how well it landed ── */
   const runAuto = useCallback(() => {
     const src = source || lastFrameRef.current;
@@ -411,6 +445,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
     setView3d(false);
     setCompare(0);
     setErase(false);
+    setMotion(null);
     setMaskMode(true);
     setControlsOpen(false);
   }, [maskTarget]);
@@ -808,6 +843,8 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
             reveal={reveal}
             maxHeight={stageH}
             styleLabelText={params ? styleLabel(params) : 'GLYPH'}
+            motionLabel={motion ? motionName(motion) : ''}
+            onStopMotion={() => applyMotion(null)}
             overlay={
               <GlyphMaskPainter
                 active={maskMode && !view3d}
@@ -924,6 +961,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                   onView={applyView}
                   onRandomize={randomize}
                   onSurprise={surprise}
+                  onMotion={applyMotion}
                   reference={agentRef}
                   onClearReference={() => setAgentRef(null)}
                 />

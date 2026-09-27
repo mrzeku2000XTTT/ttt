@@ -53,8 +53,8 @@ const SCHEMA = {
     playing: { type: 'string', enum: ['play', 'pause', ''], description: 'Play or pause a loaded video.' },
     motion: {
       type: 'string',
-      enum: [...MOTION_IDS, ''],
-      description: 'The motion from the vocabulary that fits what the user asked for, or "" when they did not ask for movement.',
+      enum: [...MOTION_IDS, 'none', ''],
+      description: 'The motion from the vocabulary that fits what the user asked for, "none" to stop the movement, or "" when movement was not mentioned.',
     },
     motionNote: {
       type: 'string',
@@ -145,7 +145,7 @@ function buildPrompt(text, params, view3d, hasRef) {
     `Renderers: ${STYLE_IDS.join(', ')}.`,
     `Palettes: ${PALETTE_IDS.join(', ')}.`,
     `Motion vocabulary: ${MOTION_IDS.join(', ')}.`,
-    'When the user asks for movement, pick the closest motion from that vocabulary and return it in "motion", with "motionNote": one sentence, 20 words maximum, saying how the subject really moves — what leads, what follows, how the loop returns. Never invent a motion name, and leave both empty when no movement was asked for.',
+    'When the user asks for movement, pick the closest motion from that vocabulary and return it in "motion", with "motionNote": one sentence, 20 words maximum, saying how the subject really moves — what leads, what follows, how the loop returns. The artwork then really moves on screen, so choose the movement that fits what you can see in it. Never invent a motion name, return "none" when they ask to stop the movement, and leave both empty when movement was not mentioned.',
     'cellSize 2-40, fontScale 0.5-2, spacing 0-8, rotation -45-45, brightness -70-70, contrast 0.4-2.2, saturation 0-2, jitter 0-1.',
     `Current settings: ${current}.`,
     'You also control the view: view3d "on" tilts the artwork back in space and "off" flattens it, view is "original" / "split" / "result" for the before-and-after comparison, and playing is "play" / "pause" for a loaded video.',
@@ -166,6 +166,7 @@ export default function GlyphChat({
   onView,
   onRandomize,
   onSurprise,
+  onMotion,
   reference,
   onClearReference,
 }) {
@@ -245,6 +246,11 @@ export default function GlyphChat({
 
       if (Object.keys(patch).length) onApply(patch);
       if (Object.keys(view).length && onView) onView(view);
+      // The movement is handed to the studio, which plays it on the artwork.
+      if (onMotion) {
+        if (res?.motion === 'none') onMotion(null);
+        else if (MOTION_PRESETS.some((m) => m.id === res?.motion)) onMotion(res.motion);
+      }
       const motion = MOTION_PRESETS.find((m) => m.id === res?.motion);
       setMessages((m) => [
         ...m,

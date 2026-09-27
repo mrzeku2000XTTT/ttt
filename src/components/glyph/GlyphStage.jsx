@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Maximize2, Minimize2, Move, MoveDiagonal2, Pause, Play, Upload } from 'lucide-react';
+import { ImagePlus, Maximize2, Minimize2, Move, MoveDiagonal2, Pause, Play, Upload, X } from 'lucide-react';
 import GlyphTimeline from './GlyphTimeline';
 import GlyphThinking from './GlyphThinking';
 
@@ -36,6 +36,8 @@ export default function GlyphStage({
   reveal = true,
   maxHeight,
   styleLabelText,
+  motionLabel,
+  onStopMotion,
   overlay,
 }) {
   const frameRef = useRef(null);
@@ -246,6 +248,17 @@ export default function GlyphStage({
             <span className="glyph-glass rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] font-semibold">
               {styleLabelText}
             </span>
+            {motionLabel && (
+              <button
+                onClick={onStopMotion}
+                className="glyph-glass flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] font-semibold"
+                title="Stop the motion"
+              >
+                <Move className="w-3 h-3" />
+                {motionLabel}
+                <X className="w-3 h-3 opacity-60" />
+              </button>
+            )}
             {videoUrl && (
               <button
                 onClick={onTogglePlay}
