@@ -73,37 +73,43 @@ export default function FrameFlowStudio({ onHome, seedStart, seedEnd }) {
     return urls;
   };
 
-  // One frame, drawn against both references plus whichever neighbours already
-  // exist. Knowing the frame on either side — and how far it is from the end —
-  // is what keeps the sequence together instead of drifting off the last frame.
+  // One frame at a time: the frame next to it is sent as the image being edited,
+  // so the drawing carries straight through instead of being invented again.
+  // Neighbours that are the references resolve to their uploaded URL — never the
+  // base64 data URL, which the generator cannot fetch.
   const drawFrame = async ({ index, count, results, urls }) => {
-    const previous = results[index - 1]?.image || null;
-    const upcoming = results[index + 1]?.image || null;
+    const urlAt = (i) => {
+      if (i === 0) return urls.start;
+      if (i === count + 1) return urls.end;
+      return results[i]?.image || null;
+    };
 
-    const images = [urls.start, urls.end];
-    const roles = ["1) the START reference frame", "2) the END reference frame"];
-    if (previous) {
-      images.push(previous);
-      roles.push(`${images.length}) the frame immediately BEFORE this one, already drawn`);
-    }
-    if (upcoming) {
-      images.push(upcoming);
-      roles.push(`${images.length}) the frame immediately AFTER this one, already drawn`);
-    }
+    const base = urlAt(index - 1) || urlAt(index + 1) || urls.start;
+    const references = [urls.start, urls.end].filter((url) => url && url !== base);
+    const roles = references.map(
+      (url, i) => `${i + 1}) ${url === urls.start ? "the START reference frame" : "the END reference frame"}`
+    );
 
-    const { url } = await base44.integrations.Core.GenerateImage({
+    const response = await base44.functions.invoke("frameFlowInbetween", {
       prompt: buildFramePrompt({
         index,
         count,
         progress: frameProgress(index, count, settings.timing),
         settings,
         roles,
-        before: previous ? "the attached previous frame" : "the START reference frame",
-        after: upcoming ? "the attached next frame" : "the END reference frame",
+        base:
+          base === urls.start
+            ? "the START reference frame"
+            : base === urls.end
+              ? "the END reference frame"
+              : "the previous frame of this sequence, already drawn",
       }),
-      existing_image_urls: [...new Set(images)],
+      base_url: base,
+      reference_urls: references,
     });
 
+    const url = response.data?.url;
+    if (!url) throw new Error(response.data?.error || "The frame came back empty.");
     return url;
   };
 

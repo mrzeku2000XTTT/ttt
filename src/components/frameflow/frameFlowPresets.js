@@ -120,31 +120,32 @@ export function buildPayload({ settings, frameCount, fps, hasStart, hasEnd }) {
  * sequence has to land on. A frame that knows both of its neighbours and how far
  * it is from the end stops drifting.
  */
-export function buildFramePrompt({ index, count, progress, settings, roles, before, after }) {
+export function buildFramePrompt({ index, count, progress, settings, roles, base }) {
   const pct = Math.round(progress * 100);
   const remaining = count - index + 1;
   const preserve = settings.preserve.length ? settings.preserve.join(", ") : "everything in the references";
 
   return [
-    `Hand-drawn animation in-between frame ${index} of ${count}. The finished sequence is ${count + 2} frames: the START reference, ${count} in-betweens, and the END reference it must land on.`,
+    "Redraw the image you are given to make ONE in-between frame of a hand-drawn animation sequence.",
     "",
-    `ATTACHED IMAGES, IN THIS ORDER: ${(roles || []).join("; ")}.`,
+    `THE IMAGE YOU ARE EDITING IS ${base}. Treat that image as the drawing itself, not as inspiration: keep the character, the character's design, the proportions, the linework, the shading, the paper and the framing exactly as they are, and advance the pose by a single step. Never redraw the character from scratch and never substitute a different drawing.`,
     "",
+    (roles || []).length ? `EXTRA REFERENCE IMAGES, IN THIS ORDER: ${roles.join("; ")}.` : "",
+    `SEQUENCE: this is in-between ${index} of ${count}. The whole sequence is the START reference, ${count} in-betweens, and the END reference it must land on.`,
     `MOTION: ${settings.motion.trim()}`,
     `POSITION IN THE MOVEMENT: ${pct}% of the way from the START reference to the END reference (${settings.timing} timing).`,
-    `NEIGHBOURS: the frame immediately before this one is ${before}. The frame immediately after this one is ${after}.`,
-    `ENDPOINT: the sequence must finish exactly on the END reference frame — this frame is ${remaining} step${
+    `ENDPOINT: the sequence finishes exactly on the END reference frame — this frame is ${remaining} step${
       remaining === 1 ? "" : "s"
     } away from it.`,
     `CAMERA: ${settings.camera}.`,
-    `MUST STAY IDENTICAL TO THE REFERENCES: ${preserve}.`,
+    `MUST STAY IDENTICAL: ${preserve}.`,
     "",
     `DRAWING STYLE (locked — every frame in the sequence uses this): ${settings.styleLock.trim()}`,
     "",
-    "Draw ONE frame of this sequence. Keep the same character, linework, framing, shading and paper as the references, and change only what the movement at this exact point requires. It has to sit believably between its two neighbours.",
-    "",
     `DO NOT INCLUDE: ${settings.negative.trim()}`,
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /**
