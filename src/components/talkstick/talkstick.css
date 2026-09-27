@@ -1,0 +1,275 @@
+/* TALKSTICK — a light, minimal studio for driving a drawn character's mouth. */
+
+.talkstick {
+  --ts-ink: #0b0d10;
+  --ts-body: #4b5563;
+  --ts-mute: #8b939d;
+  --ts-line: #e9ebef;
+  --ts-line-strong: #d8dbe1;
+  --ts-surface: #ffffff;
+  --ts-stage: #f6f7f9;
+  --ts-accent: #111418;
+  min-height: 100vh;
+  background: #fcfcfd;
+  color: var(--ts-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ts-shell {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 34px 24px 60px;
+}
+
+.ts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.ts-brand {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+}
+
+.ts-badge {
+  padding: 7px 12px;
+  border: 1px solid var(--ts-line);
+  border-radius: 999px;
+  background: var(--ts-surface);
+  color: var(--ts-mute);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ts-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 348px;
+  gap: 20px;
+  align-items: start;
+}
+
+.ts-card {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-line);
+  border-radius: 22px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -32px rgba(16, 24, 40, 0.22);
+}
+
+/* ── Stage ── */
+.ts-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 660px;
+  padding: 22px;
+  background: var(--ts-stage);
+  border-radius: 22px;
+}
+
+.ts-canvas {
+  display: block;
+  max-width: 100%;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
+  cursor: crosshair;
+}
+
+.ts-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+  pointer-events: none;
+  color: var(--ts-mute);
+  font-size: 12.5px;
+}
+
+.ts-empty strong {
+  color: var(--ts-ink);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ── Panel ── */
+.ts-panel { padding: 6px 20px 20px; }
+
+.ts-section {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--ts-line);
+}
+.ts-section:last-child { border-bottom: 0; padding-bottom: 4px; }
+
+.ts-section-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ts-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  border: 1px solid var(--ts-line-strong);
+  border-radius: 6px;
+  color: var(--ts-mute);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ts-hint {
+  margin: 8px 0 0;
+  color: var(--ts-mute);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.ts-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 6px;
+  color: var(--ts-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.ts-label b { color: var(--ts-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.ts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.ts-range {
+  width: 100%;
+  height: 18px;
+  accent-color: var(--ts-accent);
+  cursor: pointer;
+}
+
+.ts-select {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid var(--ts-line-strong);
+  border-radius: 11px;
+  background: var(--ts-surface);
+  color: var(--ts-ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ts-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--ts-line-strong);
+  border-radius: 13px;
+  background: var(--ts-surface);
+  color: var(--ts-ink);
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ts-btn:hover { border-color: #b9bec6; }
+
+.ts-btn-primary {
+  background: var(--ts-accent);
+  border-color: var(--ts-accent);
+  color: #fff;
+}
+.ts-btn-primary:hover { background: #23282f; border-color: #23282f; }
+
+.ts-btn-live {
+  background: #fff;
+  border-color: #f0c9c9;
+  color: #b42318;
+}
+.ts-btn-live:hover { border-color: #e3a9a9; }
+
+.ts-file {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px dashed var(--ts-line-strong);
+  border-radius: 13px;
+  background: #fcfcfd;
+  color: var(--ts-body);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.ts-file:hover { border-color: #b9bec6; color: var(--ts-ink); }
+.ts-file input { display: none; }
+
+.ts-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--ts-body);
+  font-size: 11.5px;
+}
+
+.ts-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c6cbd2;
+  flex-shrink: 0;
+}
+.ts-dot.is-live { background: #17b26a; box-shadow: 0 0 0 4px rgba(23, 178, 106, 0.14); }
+
+.ts-meter {
+  height: 6px;
+  margin-top: 10px;
+  border-radius: 99px;
+  background: #eef0f3;
+  overflow: hidden;
+}
+
+.ts-meter-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #7c8794, #111418);
+  transition: width 0.05s linear;
+}
+
+@media (max-width: 980px) {
+  .talkstick { min-height: auto; }
+  .ts-shell { padding: 24px 16px 48px; }
+  .ts-layout { grid-template-columns: minmax(0, 1fr); }
+  .ts-stage { min-height: 440px; padding: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-btn, .ts-file, .ts-meter-fill { transition: none; }
+}

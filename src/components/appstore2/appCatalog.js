@@ -4,6 +4,7 @@
 
 export const APPS = [
   // ── 🆕 Newest (add new apps HERE at the top) ──
+  { name: "TALKSTICK", path: "TalkStick", cat: "Creative", desc: "Real-time talking character · upload a drawing, click its mouth once and it lip-syncs to your microphone or any audio file — shape, size and style are yours, export the frame as PNG" },
   { name: "FRAMEFLOW", path: "FrameFlow", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/891ca8b62_generated_image.png", desc: "Hand-drawn motion frames · upload a start and an end frame, describe the movement, and get 2–16 connected in-betweens with the drawing style locked — then regenerate any single frame without rebuilding the shot" },
   { name: "KYDONIA", path: "Kydonia", cat: "AI", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/8febce794_generated_image.png", desc: "Paste any URL · it is fetched once, cleaned and folded into a real inverted index on your device — then query it with BM25 and see exactly why each passage ranked where it did. Deterministic, offline, private per user, zero credits per query" },
   { name: "GLYPH", path: "Glyph", cat: "Creative", logo: "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ecfaf781d_generated_image.png", desc: "Image → visual code · drop any photo and it is rebuilt instantly out of characters, dither, tiles, dots, bricks or glyphs — randomize for a new interpretation, stack bloom/CRT/glitch, export up to 4×. Every render happens locally in the browser" },
