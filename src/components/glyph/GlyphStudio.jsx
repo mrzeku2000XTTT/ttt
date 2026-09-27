@@ -4,6 +4,8 @@ import {
   Bookmark,
   Copy,
   Download,
+  Eye,
+  EyeOff,
   FileText,
   Home,
   Image as ImageIcon,
@@ -46,6 +48,7 @@ import GlyphExportMenu from './GlyphExportMenu';
 import GlyphChat from './GlyphChat';
 import GlyphMark from './GlyphMark';
 import GlyphProfile from './GlyphProfile';
+import GlyphPalettePicker from './GlyphPalettePicker';
 import { addWorks, readGallery } from './glyphGalleryStore';
 import { workFromParams } from './glyphInspirations';
 import { sampleFile } from './glyphSampleSource';
@@ -158,6 +161,11 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   // so the ASCII lands exactly where it is brushed and the rest of the picture
   // stays the picture — painting the code onto the image.
   const paintMask = maskRef.current && (maskMode || hasMask) ? maskRef.current : null;
+
+  // The styler strip can be put away entirely, which hands its room to the
+  // artwork — and the palettes open as a library instead of a wall of chips.
+  const [stylersOpen, setStylersOpen] = useState(true);
+  const [palettesOpen, setPalettesOpen] = useState(false);
 
   // The style library, plus the small copy of the picture its tiles render from.
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -532,6 +540,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
         setExportOpen(false);
         setChatOpen(false);
         setProfileOpen(false);
+        setPalettesOpen(false);
         setFullscreen(false);
       } else if (/^[1-9]$/.test(k)) {
         const st = STYLES[Number(k) - 1];
@@ -665,6 +674,15 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                 </button>
               ))}
             </div>
+            <button
+              onClick={() => setStylersOpen((v) => !v)}
+              disabled={!source && !videoSource}
+              className={`glyph-btn ${stylersOpen ? 'glyph-btn-ghost' : 'glyph-btn-primary'}`}
+              title={stylersOpen ? 'Hide the stylers for a bigger preview' : 'Show the stylers again'}
+            >
+              {stylersOpen ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <span className="hidden lg:inline">Stylers</span>
+            </button>
             <div className="relative">
               <button onClick={() => setExportOpen((v) => !v)} disabled={!source && !videoSource} className="glyph-btn glyph-btn-ghost">
                 <Download className="w-3.5 h-3.5" />
@@ -791,16 +809,16 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                 onDone={() => setMaskMode(false)}
               />
             )}
-            {params && (
+            {stylersOpen && params && (
               <GlyphStyleBar
                 params={params}
                 onStyle={applyStyle}
-                onPalette={setPalette}
+                onPalettes={() => setPalettesOpen(true)}
                 onBrowse={openGallery}
               />
             )}
 
-          {params && (
+          {stylersOpen && params && (
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 glyph-muted text-[10px] uppercase tracking-[0.16em]">
               <span className="glyph-mono normal-case tracking-normal">seed {params.seed}</span>
               <button onClick={copySeed} className="inline-flex items-center gap-1 hover:text-[#E8F1F9]">
@@ -897,6 +915,17 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
           </section>
         )}
       </div>
+
+      {palettesOpen && (
+        <GlyphPalettePicker
+          current={params?.palette}
+          onPick={(id) => {
+            setPalette(id);
+            setPalettesOpen(false);
+          }}
+          onClose={() => setPalettesOpen(false)}
+        />
+      )}
 
       {galleryOpen && (
         <GlyphStyleGallery
