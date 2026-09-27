@@ -153,6 +153,13 @@
   object-fit: contain;
   image-rendering: auto;
 }
+/* The playback stage is a square hugging the frame, so the picture lands edge to
+   edge instead of floating in a wide panel with empty ground around it. */
+.gm-stage-frame {
+  align-self: center;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+}
 /* The sheet is inspected at its true size, so it keeps its own dimensions. */
 .gm-stage-sheet img {
   width: auto;

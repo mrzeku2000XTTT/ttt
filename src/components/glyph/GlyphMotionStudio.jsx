@@ -164,6 +164,7 @@ export default function GlyphMotionStudio() {
             setPlaying={setPlaying}
             frameIndex={frameIndex}
             setFrameIndex={setFrameIndex}
+            transparent={cfg.background !== 'gradient'}
           />
         </div>
       </div>

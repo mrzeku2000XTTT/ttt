@@ -22,6 +22,7 @@ export default function GlyphMotionPreview({
   setPlaying,
   frameIndex,
   setFrameIndex,
+  transparent,
 }) {
   const [tab, setTab] = useState('preview');
   const [copied, setCopied] = useState(false);
@@ -91,7 +92,9 @@ export default function GlyphMotionPreview({
 
         {result && tab === 'preview' && (
           <div className="h-full flex flex-col min-h-0">
-            <div className="gm-stage gm-checker flex-1 min-h-0 rounded-2xl border glyph-hairline p-4">
+            {/* The checkerboard is a transparency indicator, so it only appears
+                while the frames really are transparent. */}
+            <div className={`gm-stage gm-stage-frame flex-1 min-h-0 rounded-2xl border glyph-hairline p-4 ${transparent ? 'gm-checker' : ''}`}>
               {frame ? <img src={frame.dataUrl} alt={`Frame ${frame.index}`} /> : null}
             </div>
 
@@ -142,7 +145,7 @@ export default function GlyphMotionPreview({
                     setPlaying(false);
                     setFrameIndex(item.index);
                   }}
-                  className={`gm-thumb gm-checker ${item.index === frameIndex ? 'gm-thumb-on' : ''}`}
+                  className={`gm-thumb ${transparent ? 'gm-checker' : ''} ${item.index === frameIndex ? 'gm-thumb-on' : ''}`}
                   title={`Frame ${item.index + 1}`}
                 >
                   <img src={item.dataUrl} alt="" className="h-full w-full object-contain" />
@@ -154,7 +157,7 @@ export default function GlyphMotionPreview({
 
         {result && tab === 'sheet' && (
           <div className="h-full flex flex-col min-h-0">
-            <div className="gm-stage gm-stage-sheet gm-checker flex-1 min-h-0 rounded-2xl border glyph-hairline p-4 overflow-auto">
+            <div className={`gm-stage gm-stage-sheet flex-1 min-h-0 rounded-2xl border glyph-hairline p-4 overflow-auto ${transparent ? 'gm-checker' : ''}`}>
               <img src={sheetUrl} alt="Sprite sheet" />
             </div>
             <p className="glyph-muted text-[10px] gm-mono mt-3">
