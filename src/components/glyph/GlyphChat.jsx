@@ -11,11 +11,29 @@ const STYLE_IDS = STYLES.map((s) => s.id);
 const PALETTE_IDS = PALETTES.map((p) => p.id);
 const MOTION_IDS = MOTION_PRESETS.map((m) => m.id);
 
+// The renderer shelf is far too long to enumerate inside the request schema, so
+// the model names a renderer in words and this maps it back onto a real style —
+// a near-miss still lands instead of being dropped.
+const norm = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const STYLE_BY_KEY = new Map();
+STYLES.forEach((s) => {
+  STYLE_BY_KEY.set(norm(s.id), s.id);
+  if (s.name) STYLE_BY_KEY.set(norm(s.name), s.id);
+});
+function resolveStyle(value) {
+  const key = norm(value);
+  if (!key) return null;
+  if (STYLE_IDS.includes(value)) return value;
+  if (STYLE_BY_KEY.has(key)) return STYLE_BY_KEY.get(key);
+  const loose = [...STYLE_BY_KEY.keys()].find((k) => k.includes(key) || key.includes(k));
+  return loose ? STYLE_BY_KEY.get(loose) : null;
+}
+
 const SCHEMA = {
   type: 'object',
   properties: {
     reply: { type: 'string', description: 'One short sentence describing what you changed.' },
-    style: { type: 'string', enum: [...STYLE_IDS, ''] },
+    style: { type: 'string', description: 'One renderer id from the list in the prompt, or "" to leave it alone.' },
     palette: { type: 'string', enum: [...PALETTE_IDS, ''] },
     cellSize: { type: 'number' },
     fontScale: { type: 'number' },
@@ -155,7 +173,8 @@ export default function GlyphChat({
         ...(refUrl ? { file_urls: [refUrl] } : {}),
       });
       const patch = {};
-      if (res?.style && STYLE_IDS.includes(res.style)) patch.style = res.style;
+      const styleId = resolveStyle(res?.style);
+      if (styleId) patch.style = styleId;
       if (res?.palette && PALETTE_IDS.includes(res.palette)) {
         patch.palette = res.palette;
         patch.paletteObj = paletteById(res.palette);
