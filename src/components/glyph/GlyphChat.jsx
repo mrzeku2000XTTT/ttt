@@ -112,6 +112,8 @@ export default function GlyphChat({
   const [refUrl, setRefUrl] = useState(null);
   const listRef = useRef(null);
 
+  const say = (role, text) => setMessages((m) => [...m, { role, text }]);
+
   // A reference sent from the studio is put into storage once, so every
   // following question carries the same image without re-uploading it.
   useEffect(() => {
@@ -139,8 +141,6 @@ export default function GlyphChat({
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, thinking]);
-
-  const say = (role, text) => setMessages((m) => [...m, { role, text }]);
 
   const ask = async (text) => {
     const clean = text.trim();

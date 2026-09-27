@@ -603,7 +603,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   return (
     <div className="glyph-page glyph-shell flex flex-col overflow-hidden">
       <header className="z-40 shrink-0 glyph-glass" style={{ borderBottom: '1px solid var(--g-line)' }}>
-        <div className="max-w-[1500px] mx-auto px-3 sm:px-4 py-2 min-h-14 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+        <div className="max-w-[1500px] mx-auto px-3 sm:px-4 py-2 min-h-14 flex flex-wrap items-center gap-x-2 gap-y-1.5">
           <div className="flex items-center gap-2 min-w-0">
             <button onClick={onHome} className="flex items-center gap-2 min-w-0" title="Back to landing">
               <GlyphMark size={28} spinning={busy || tuning} />
@@ -612,7 +612,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
             <span className="hidden xl:block glyph-muted text-[11px] ml-2">turn any image or video into visual code</span>
           </div>
 
-          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <label className="glyph-btn glyph-btn-ghost cursor-pointer">
               <ImageIcon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Upload</span>
@@ -741,7 +741,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
               <span className="hidden xl:inline">Chat</span>
             </button>
 
-            <div className="hidden md:flex shrink-0 items-center gap-1.5 ml-1 pl-2" style={{ borderLeft: '1px solid var(--g-line)' }}>
+            <div className="hidden md:flex shrink-0 items-center gap-1.5 ml-auto pl-2" style={{ borderLeft: '1px solid var(--g-line)' }}>
               <Link to="/AppDocs/Glyph" className="glyph-pill whitespace-nowrap rounded-full px-3 h-8 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em]">
                 <FileText className="w-3 h-3" />
                 docs
