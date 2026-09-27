@@ -168,6 +168,24 @@
 
 /* ── stage ── */
 
+/* Posing the artwork or dragging the divider must never turn into a native text
+   selection — the blue highlight swallows the drag. */
+.glyph-card,
+.glyph-card *:not(input):not(textarea),
+.glyph-frame,
+.glyph-handle {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.glyph-card input,
+.glyph-card textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.glyph-card img {
+  -webkit-user-drag: none;
+}
+
 .glyph-frame {
   position: relative;
   display: inline-block;

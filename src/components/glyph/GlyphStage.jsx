@@ -105,6 +105,11 @@ export default function GlyphStage({
   };
 
   const onDown = (e) => {
+    // A press on a control belongs to that control.
+    if (e.target?.closest?.('button, a, input, textarea, select, label')) return;
+    // Stopping the default is what keeps the press from becoming a native
+    // text/element selection that paints the blue highlight over the divider.
+    e.preventDefault();
     dragging.current = true;
     // Move first: if the browser refuses the pointer capture, the press still
     // lands instead of leaving the slider dead.
