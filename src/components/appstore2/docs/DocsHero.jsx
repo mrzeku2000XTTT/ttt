@@ -4,6 +4,7 @@ import { Crown, ExternalLink, Lock } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import DocsAdminLock from "./DocsAdminLock";
+import DocsSourceLink from "./DocsSourceLink";
 import AppAccessGate from "@/components/appstore2/AppAccessGate";
 import AccessTimePill from "@/components/appstore2/AccessTimePill";
 import { useAppStoreAccess } from "@/lib/useAppStoreAccess";
@@ -119,6 +120,7 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
           <div className="hidden sm:flex flex-col items-end gap-2 flex-shrink-0">
             <AccessTimePill />
             <OpenAppButton />
+            <DocsSourceLink app={app} />
           </div>
         </div>
 
@@ -126,6 +128,7 @@ export default function DocsHero({ app, docs, accent = "zinc" }) {
         <div className="sm:hidden mt-4 space-y-2">
           <AccessTimePill className="w-full justify-center" />
           <OpenAppButton fullWidth />
+          <DocsSourceLink app={app} fullWidth />
         </div>
 
         {isAdmin && <DocsAdminLock app={app} />}
