@@ -12,12 +12,18 @@ const VIEWS = [
   { label: 'Result', value: 0 },
 ];
 
+// The pose the artwork is seen from in 3D. It matches what the plane used to be
+// fixed at, so the view opens exactly as it always did and every axis is then
+// the user's to dial.
+const DEFAULT_ANGLE = { x: 26, y: -16, z: 0 };
+
 /**
  * The live canvas: the artwork dominates, with a draggable before/after
  * slider over it. Dropping or pasting an image or a video anywhere here
- * transforms it. In 3D the artwork leans back on a plane that sways — the
- * pointer surface stays flat so the slider keeps exact math. Fullscreen only
- * restyles this element; the canvas node is never moved, so it keeps its pixels.
+ * transforms it. In 3D the artwork leans back on a plane whose angle, position
+ * and size are all dialled from the pose panel — the pointer surface stays flat
+ * so the slider keeps exact math. Fullscreen only restyles this element; the
+ * canvas node is never moved, so it keeps its pixels.
  */
 export default function GlyphStage({
   srcUrl,
@@ -49,17 +55,22 @@ export default function GlyphStage({
   // so the card can be posed however the user wants it. The transform sits on
   // the frame, leaving the plane free to keep its sway.
   const [pose, setPose] = useState({ x: 0, y: 0, z: 0 });
+  // The angle the card is seen from. It starts on the pose the artwork ships
+  // with, so nothing shifts until it is actually dialled.
+  const [angle, setAngle] = useState(DEFAULT_ANGLE);
   const [zoom, setZoom] = useState(1);
   const poseStart = useRef(null);
   const zoomStart = useRef(null);
 
   useEffect(() => {
     setPose({ x: 0, y: 0, z: 0 });
+    setAngle(DEFAULT_ANGLE);
     setZoom(1);
   }, [srcUrl, videoUrl]);
 
   const reset3d = () => {
     setPose({ x: 0, y: 0, z: 0 });
+    setAngle(DEFAULT_ANGLE);
     setZoom(1);
   };
 
@@ -95,8 +106,12 @@ export default function GlyphStage({
 
   // In the studio shell the artwork is capped to the space actually left over,
   // so the page never has to scroll. Fullscreen keeps its own viewport rule.
+  // The 3D pose panel sits under the artwork, so it takes its own share of the
+  // space instead of pushing the artwork out of the card.
   const cap =
-    !fullscreen && maxHeight ? Math.max(120, maxHeight - (videoUrl ? 122 : 78)) : 0;
+    !fullscreen && maxHeight
+      ? Math.max(120, maxHeight - (videoUrl ? 122 : 78) - (view3d ? 96 : 0))
+      : 0;
 
   const moveTo = (clientX) => {
     const r = frameRef.current?.getBoundingClientRect();
@@ -212,7 +227,14 @@ export default function GlyphStage({
             onPointerUp={onUp}
             onPointerCancel={onUp}
           >
-            <div className={`glyph-plane ${view3d ? 'glyph-plane-3d glyph-plane-live' : ''}`}>
+            <div
+              className={`glyph-plane ${view3d ? 'glyph-plane-3d glyph-plane-live' : ''}`}
+              style={
+                view3d
+                  ? { '--g-rx': `${angle.x}deg`, '--g-ry': `${angle.y}deg`, '--g-rz': `${angle.z}deg` }
+                  : undefined
+              }
+            >
               {videoUrl ? (
                 <video
                   ref={videoRef}
@@ -278,8 +300,10 @@ export default function GlyphStage({
 
           {view3d && (
             <GlyphAxisControls
-              value={pose}
-              onChange={(patch) => setPose((p) => ({ ...p, ...patch }))}
+              position={pose}
+              angle={angle}
+              onPosition={(patch) => setPose((p) => ({ ...p, ...patch }))}
+              onAngle={(patch) => setAngle((a) => ({ ...a, ...patch }))}
               onReset={reset3d}
             />
           )}
@@ -335,7 +359,7 @@ export default function GlyphStage({
 
           <p className="glyph-muted mt-2 text-center text-[10px] tracking-wide">
             {view3d
-              ? 'drag the bar to move the card · X Y Z place it on each axis · the corner grip resizes it · the slider still compares'
+              ? 'drag the bar to move the card · X Y Z move and angle it · the corner grip resizes it · the slider still compares'
               : videoUrl
                 ? 'drag the slider to compare · the video keeps playing underneath'
                 : 'drag the slider to compare · drop or paste a new image to transform it'}
