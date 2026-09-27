@@ -12,6 +12,8 @@ import {
   Lightbulb,
   MessageSquare,
   Paintbrush,
+  PanelLeft,
+  PanelRight,
   RefreshCw,
   Settings2,
   Shuffle,
@@ -109,6 +111,29 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   // The chat/controls panel is a split view: beside the artwork on desktop, and
   // sliding up from the bottom on phones. Either way the divider drags, so the
   // panel gets exactly the room it needs without ever covering the preview.
+  // Two ways to arrange the studio. The default is the agent workspace — the
+  // chat column on the left, the artwork as the canvas it works on. The original
+  // studio (panel on the right) is kept, and whichever is picked is remembered.
+  const [layout, setLayout] = useState(() => {
+    try {
+      return localStorage.getItem('glyph_layout') === 'studio' ? 'studio' : 'split';
+    } catch (e) {
+      return 'split';
+    }
+  });
+  const split = layout === 'split';
+  const toggleLayout = () => {
+    setLayout((l) => {
+      const next = l === 'split' ? 'studio' : 'split';
+      try {
+        localStorage.setItem('glyph_layout', next);
+      } catch (e) {
+        /* the choice just is not remembered */
+      }
+      return next;
+    });
+  };
+
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
   );
@@ -131,7 +156,8 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
     const h0 = dockPx;
     const move = (ev) => {
       if (isDesktop) {
-        setPanelW(Math.min(680, Math.max(280, w0 - (ev.clientX - x0))));
+        const dx = ev.clientX - x0;
+        setPanelW(Math.min(680, Math.max(280, split ? w0 + dx : w0 - dx)));
       } else {
         setDockPx(Math.min(window.innerHeight - 200, Math.max(150, h0 - (ev.clientY - y0))));
       }
@@ -806,6 +832,18 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
               <MessageSquare className="w-3.5 h-3.5" />
               <span className="hidden xl:inline">Chat</span>
             </button>
+            <button
+              onClick={toggleLayout}
+              className="glyph-btn glyph-btn-ghost"
+              title={
+                split
+                  ? 'Chat column on the left — switch back to the studio layout'
+                  : 'Studio layout — switch to the chat column on the left'
+              }
+            >
+              {split ? <PanelLeft className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
+              <span className="hidden xl:inline">{split ? 'Chat left' : 'Studio'}</span>
+            </button>
 
             <div className="hidden md:flex shrink-0 items-center gap-1.5 ml-auto pl-2" style={{ borderLeft: '1px solid var(--g-line)' }}>
               <Link to="/AppDocs/Glyph" className="glyph-pill whitespace-nowrap rounded-full px-3 h-8 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em]">
@@ -838,7 +876,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         <div
           ref={scrollRef}
-          className="flex-1 min-w-0 min-h-0 overflow-y-auto px-3 sm:px-4 pt-3 pb-4"
+          className={`order-1 ${split ? 'lg:order-3' : 'lg:order-1'} flex-1 min-w-0 min-h-0 overflow-y-auto px-3 sm:px-4 pt-3 pb-4`}
         >
           <main className="min-w-0">
           {maskMode && (
@@ -930,7 +968,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
         {panelOpen && (
           <div
             onPointerDown={startResize}
-            className={isDesktop ? 'glyph-split-v hidden lg:block' : 'glyph-split-h flex lg:hidden'}
+            className={`order-2 ${isDesktop ? 'glyph-split-v hidden lg:block' : 'glyph-split-h flex lg:hidden'}`}
             title="Drag to resize"
           />
         )}
@@ -938,8 +976,8 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
         {panelOpen && (
           <section
             style={isDesktop ? { width: `${panelW}px` } : { height: `${dockPx}px` }}
-            className={`shrink-0 flex flex-col overflow-hidden rounded-2xl glyph-card ${
-              isDesktop ? 'my-3 mr-3' : 'mx-2 mb-2 lg:mx-3 lg:mb-3'
+            className={`order-3 ${split ? 'lg:order-1' : 'lg:order-3'} shrink-0 flex flex-col overflow-hidden rounded-2xl glyph-card ${
+              isDesktop ? (split ? 'my-3 ml-3' : 'my-3 mr-3') : 'mx-2 mb-2 lg:mx-3 lg:mb-3'
             }`}
           >
             <div className="flex shrink-0 items-center gap-1.5 px-3 py-2" style={{ borderBottom: '1px solid var(--g-line)' }}>
