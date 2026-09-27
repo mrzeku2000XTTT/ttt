@@ -1,5 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+// The overlay's own opacity does the softening, so strokes are laid down solid:
+// overlapping dabs then read as one even wash instead of building up to an
+// opaque block over the artwork.
+const PAINT = '#6bcaff';
+
+// The mask is white — recolour it through its own alpha so a repaint matches the
+// strokes exactly.
+function paintOverlay(overlay, mask) {
+  const g = overlay.getContext('2d');
+  if (!g) return;
+  g.clearRect(0, 0, overlay.width, overlay.height);
+  if (!mask || !mask.width) return;
+  g.save();
+  g.drawImage(mask, 0, 0, overlay.width, overlay.height);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = PAINT;
+  g.fillRect(0, 0, overlay.width, overlay.height);
+  g.restore();
+}
+
 /**
  * The paint surface. Strokes land in the mask canvas (working-source pixels) and
  * are mirrored onto a translucent overlay that sits exactly on top of the
@@ -39,14 +59,7 @@ export default function GlyphMaskPainter({ canvasRef, maskRef, brush, erase, onC
         overlay.height = hh;
       }
       // repaint the visible mask (a resize wipes the overlay)
-      const g = overlay.getContext('2d');
-      g.clearRect(0, 0, overlay.width, overlay.height);
-      const mask = maskRef.current;
-      if (mask && mask.width) {
-        g.globalAlpha = 0.5;
-        g.drawImage(mask, 0, 0, overlay.width, overlay.height);
-        g.globalAlpha = 1;
-      }
+      paintOverlay(overlay, maskRef.current);
       setReady(true);
     };
     sync();
@@ -96,7 +109,7 @@ export default function GlyphMaskPainter({ canvasRef, maskRef, brush, erase, onC
       ctx.restore();
     };
     dab(mask.getContext('2d'), mask.width, mask.height, '#ffffff');
-    dab(overlay.getContext('2d'), overlay.width, overlay.height, 'rgba(107,202,255,0.9)');
+    dab(overlay.getContext('2d'), overlay.width, overlay.height, PAINT);
   };
 
   const down = (e) => {

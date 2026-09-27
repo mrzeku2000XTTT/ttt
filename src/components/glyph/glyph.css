@@ -286,6 +286,8 @@
   cursor: crosshair;
   touch-action: none;
   transition: opacity 200ms ease;
+  /* A wash, not a cover — the marks underneath stay readable while you paint. */
+  opacity: 0.3;
 }
 
 .glyph-hero-field {
