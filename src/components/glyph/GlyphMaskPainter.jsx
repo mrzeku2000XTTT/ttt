@@ -21,61 +21,49 @@ function paintOverlay(overlay, mask) {
 }
 
 /**
- * The paint surface. Strokes land in the mask canvas (working-source pixels) and
- * are mirrored onto a translucent overlay that sits exactly on top of the
- * artwork, so what you paint is what the effect will cover.
+ * The paint surface. It sits inside the artwork's own plane and CSS stretches it
+ * over the canvas exactly, so there is no measured position to go stale when the
+ * stage, the panels or the scroll position move — the wash can never drift off
+ * the picture. The pointer is read straight off the artwork at the moment of the
+ * stroke, so the brush lands under the cursor wherever the picture happens to be.
+ * Strokes go into the mask canvas (working-source pixels); the picture itself is
+ * never touched.
  */
 export default function GlyphMaskPainter({ canvasRef, maskRef, brush, erase, onCommit, active }) {
   const overlayRef = useRef(null);
-  const rectRef = useRef(null);
   const drawingRef = useRef(false);
   const lastRef = useRef(null);
   const [ready, setReady] = useState(false);
 
-  // Keep the overlay glued to the artwork, whatever size the stage gives it.
+  // The overlay carries the mask at the mask's own resolution, so a stroke lands
+  // on the same pixel of both and the wash is a true preview of the effect.
   useEffect(() => {
     if (!active) {
       setReady(false);
-      return undefined;
+      return;
     }
     const overlay = overlayRef.current;
-    const art = canvasRef.current;
-    if (!overlay || !art) return undefined;
-    const host = overlay.offsetParent || overlay.parentElement;
-    const sync = () => {
-      const a = art.getBoundingClientRect();
-      const h = host.getBoundingClientRect();
-      if (!a.width || !a.height) return;
-      const next = { left: a.left - h.left, top: a.top - h.top, width: a.width, height: a.height };
-      rectRef.current = next;
-      overlay.style.left = `${next.left}px`;
-      overlay.style.top = `${next.top}px`;
-      overlay.style.width = `${next.width}px`;
-      overlay.style.height = `${next.height}px`;
-      const w = Math.round(next.width);
-      const hh = Math.round(next.height);
-      if (overlay.width !== w || overlay.height !== hh) {
-        overlay.width = w;
-        overlay.height = hh;
-      }
-      // repaint the visible mask (a resize wipes the overlay)
-      paintOverlay(overlay, maskRef.current);
-      setReady(true);
-    };
-    sync();
-    const ro = new ResizeObserver(sync);
-    ro.observe(art);
-    window.addEventListener('resize', sync);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', sync);
-    };
-  }, [active, canvasRef, maskRef]);
+    const mask = maskRef.current;
+    if (!overlay || !mask) return;
+    if (overlay.width !== mask.width || overlay.height !== mask.height) {
+      overlay.width = mask.width;
+      overlay.height = mask.height;
+    }
+    paintOverlay(overlay, mask);
+    setReady(true);
+  }, [active, maskRef]);
 
+  // Measured at the moment of the stroke: scrolling the stage, dragging the
+  // split, going fullscreen or resizing the window all stay exact.
   const pointAt = (e) => {
-    const r = rectRef.current;
-    if (!r || !r.width) return null;
-    return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+    const art = canvasRef.current;
+    if (!art) return null;
+    const r = art.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    return {
+      x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
+      y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
+    };
   };
 
   // One dab or segment, drawn at each canvas' own scale so the brush reads the
@@ -155,7 +143,7 @@ export default function GlyphMaskPainter({ canvasRef, maskRef, brush, erase, onC
       onPointerMove={move}
       onPointerUp={up}
       onPointerCancel={up}
-      title="Drag to paint where the effect should appear"
+      title="Brush where the ASCII should land — the rest of the picture stays as it is"
     />
   );
 }

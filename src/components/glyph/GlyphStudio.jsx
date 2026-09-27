@@ -154,6 +154,11 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   const [brush, setBrush] = useState(10);
   const [erase, setErase] = useState(false);
 
+  // The mask the canvas renders with. While the brush is out it is always live,
+  // so the ASCII lands exactly where it is brushed and the rest of the picture
+  // stays the picture — painting the code onto the image.
+  const paintMask = maskRef.current && (maskMode || hasMask) ? maskRef.current : null;
+
   // The style library, plus the small copy of the picture its tiles render from.
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [previewSource, setPreviewSource] = useState(null);
@@ -221,7 +226,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
     const start = performance.now();
     const draw = () => {
       const t = animated ? (performance.now() - start) / 1000 : 0;
-      renderTo(canvasRef.current, source, params, t, '', hasMask ? maskRef.current : null);
+      renderTo(canvasRef.current, source, params, t, '', paintMask);
       if (animated) raf = requestAnimationFrame(draw);
     };
     draw();
@@ -230,7 +235,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
       requestAnimationFrame(() => setReveal(true));
     }
     return () => cancelAnimationFrame(raf);
-  }, [source, params, animated, hasMask, maskVersion]);
+  }, [source, params, animated, hasMask, maskVersion, maskMode]);
 
   /* ── a video: the element plays in place and is sampled frame by frame ── */
   useEffect(() => {
@@ -258,7 +263,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
       const frame = videoSource.sample();
       if (!frame) return;
       lastFrameRef.current = frame;
-      renderTo(canvasRef.current, frame, params, now / 1000, `v${frame.frame}`, hasMask ? maskRef.current : null);
+      renderTo(canvasRef.current, frame, params, now / 1000, `v${frame.frame}`, paintMask);
     };
     raf = requestAnimationFrame(draw);
     if (!revealRef.current) {
@@ -266,7 +271,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
       requestAnimationFrame(() => setReveal(true));
     }
     return () => cancelAnimationFrame(raf);
-  }, [videoSource, params, hasMask, maskVersion]);
+  }, [videoSource, params, hasMask, maskVersion, maskMode]);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
@@ -404,6 +409,16 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   const commitMask = useCallback(() => {
     setHasMask(true);
     setMaskVersion((v) => v + 1);
+  }, []);
+
+  // Render: the brushed area is drawn as ASCII on top of the picture, and the
+  // brush is put away so the result is what you see.
+  const renderMask = useCallback(() => {
+    if (!maskRef.current) return;
+    setHasMask(true);
+    setMaskVersion((v) => v + 1);
+    setMaskMode(false);
+    setNote('Rendered — the ASCII is painted onto the picture where you brushed, and the rest of the image is untouched.');
   }, []);
 
   const clearMask = useCallback(() => {
@@ -599,7 +614,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
               onClick={() => (maskMode ? setMaskMode(false) : openMask())}
               disabled={!source && !videoSource}
               className={`glyph-btn ${maskMode ? 'glyph-btn-primary' : 'glyph-btn-ghost'}`}
-              title="Paint where the effect should appear — the rest of the picture stays untouched"
+              title="Brush the ASCII onto the picture — wherever you paint gets the code, the rest stays as it is"
             >
               <Paintbrush className="w-3.5 h-3.5" />
               <span className="hidden xl:inline">Paint</span>
@@ -772,6 +787,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                 onErase={setErase}
                 hasMask={hasMask}
                 onClear={clearMask}
+                onRender={renderMask}
                 onDone={() => setMaskMode(false)}
               />
             )}

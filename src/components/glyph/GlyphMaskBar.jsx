@@ -1,15 +1,15 @@
 import React from 'react';
-import { Check, Eraser, Trash2 } from 'lucide-react';
+import { Check, Eraser, Sparkles, Trash2 } from 'lucide-react';
 
-/** The paint tool's own little bar: brush size, erase, clear, done. */
-export default function GlyphMaskBar({ brush, onBrush, erase, onErase, hasMask, onClear, onDone }) {
+/** The paint tool's own little bar: brush size, erase, clear, render, done. */
+export default function GlyphMaskBar({ brush, onBrush, erase, onErase, hasMask, onClear, onRender, onDone }) {
   return (
     <div
       className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl px-2.5 py-2"
       style={{ border: '1px solid var(--g-line)', background: 'rgba(107,202,255,0.05)' }}
     >
       <span className="glyph-word text-[10px] glyph-accent-text">Paint mask</span>
-      <span className="glyph-muted text-[10px] uppercase tracking-[0.16em]">drag on the artwork</span>
+      <span className="glyph-muted text-[10px] uppercase tracking-[0.16em]">brush the artwork · render to see the ascii land</span>
 
       <label className="flex items-center gap-2">
         <span className="glyph-muted text-[9px] uppercase tracking-[0.16em]">Brush</span>
@@ -34,6 +34,15 @@ export default function GlyphMaskBar({ brush, onBrush, erase, onErase, hasMask, 
       >
         <Trash2 className="w-3 h-3" />
         Clear
+      </button>
+      <button
+        onClick={onRender}
+        disabled={!hasMask}
+        className="glyph-chip flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+        title="Paint the ASCII onto the picture where you brushed"
+      >
+        <Sparkles className="w-3 h-3" />
+        Render
       </button>
       <button onClick={onDone} className="glyph-chip flex items-center gap-1">
         <Check className="w-3 h-3" />

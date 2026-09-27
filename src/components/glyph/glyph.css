@@ -286,9 +286,12 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-/* The paint surface — sized in JS to sit exactly over the artwork. */
+/* The paint surface — stretched over the artwork by CSS, so it can never drift. */
 .glyph-mask {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 6;
   cursor: crosshair;
   touch-action: none;
