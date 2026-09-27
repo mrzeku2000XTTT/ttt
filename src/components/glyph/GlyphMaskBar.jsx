@@ -5,8 +5,13 @@ import { Check, Eraser, Sparkles, Trash2 } from 'lucide-react';
 export default function GlyphMaskBar({ brush, onBrush, erase, onErase, hasMask, onClear, onRender, onDone }) {
   return (
     <div
-      className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl px-2.5 py-2"
-      style={{ border: '1px solid var(--g-line)', background: 'rgba(107,202,255,0.05)' }}
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl px-2.5 py-2"
+      style={{
+        border: '1px solid var(--g-line)',
+        // Solid enough to read while it floats over the artwork.
+        background: 'rgba(9,14,22,0.94)',
+        backdropFilter: 'blur(10px)',
+      }}
     >
       <span className="glyph-word text-[10px] glyph-accent-text">Paint mask</span>
       <span className="glyph-muted text-[10px] uppercase tracking-[0.16em]">brush the artwork · render to see the ascii land</span>

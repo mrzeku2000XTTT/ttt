@@ -100,8 +100,19 @@ export default function GlyphMaskPainter({ canvasRef, maskRef, brush, erase, onC
     dab(overlay.getContext('2d'), overlay.width, overlay.height, PAINT);
   };
 
+  // A stroke only ever starts on the picture itself. Taps that land anywhere
+  // else are left alone, so the chrome around the artwork stays usable.
+  const onArtwork = (e) => {
+    const art = canvasRef.current;
+    if (!art) return false;
+    const r = art.getBoundingClientRect();
+    if (!r.width || !r.height) return false;
+    return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+  };
+
   const down = (e) => {
     if (!active) return;
+    if (!onArtwork(e)) return;
     // the stage below listens for pointers too — painting owns them while it is on
     e.preventDefault();
     e.stopPropagation();

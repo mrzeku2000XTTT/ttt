@@ -182,7 +182,14 @@
   position: relative;
   display: block;
 }
-.glyph-plane > canvas {
+/* The picture and its paint surface share one box, so the brush can only ever
+   land on the artwork — never on the chrome around it. */
+.glyph-art {
+  position: relative;
+  display: block;
+  line-height: 0;
+}
+.glyph-art > canvas {
   display: block;
   max-width: 100%;
   max-height: 78vh;
@@ -198,7 +205,7 @@
   box-shadow: none;
   padding: 0;
 }
-.glyph-stage-full .glyph-plane > canvas {
+.glyph-stage-full .glyph-art > canvas {
   max-height: 78vh;
 }
 .glyph-frame-full {

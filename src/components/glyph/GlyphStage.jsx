@@ -190,17 +190,19 @@ export default function GlyphStage({
               ) : (
                 <img src={srcUrl} alt="Original" className="glyph-under" draggable={false} />
               )}
-              <canvas
-                ref={canvasRef}
-                className="relative"
-                style={{
-                  clipPath: `inset(0 0 0 ${compare * 100}%)`,
-                  opacity: reveal ? 1 : 0,
-                  transition: 'opacity 650ms ease',
-                  maxHeight: cap ? `${cap}px` : undefined,
-                }}
-              />
-              {overlay}
+              <div className="glyph-art">
+                <canvas
+                  ref={canvasRef}
+                  className="relative"
+                  style={{
+                    clipPath: `inset(0 0 0 ${compare * 100}%)`,
+                    opacity: reveal ? 1 : 0,
+                    transition: 'opacity 650ms ease',
+                    maxHeight: cap ? `${cap}px` : undefined,
+                  }}
+                />
+                {overlay}
+              </div>
               {compare > 0.001 && <div className="glyph-handle" style={{ left: `${compare * 100}%` }} />}
             </div>
             {view3d && (

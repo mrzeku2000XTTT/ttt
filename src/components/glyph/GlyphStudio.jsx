@@ -775,6 +775,21 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
           className="flex-1 min-w-0 min-h-0 overflow-y-auto px-3 sm:px-4 pt-3 pb-4"
         >
           <main className="min-w-0">
+          {maskMode && (
+            <div className="sticky top-0 z-30 pb-2">
+              <GlyphMaskBar
+                brush={brush}
+                onBrush={setBrush}
+                erase={erase}
+                onErase={setErase}
+                hasMask={hasMask}
+                onClear={clearMask}
+                onRender={renderMask}
+                onDone={() => setMaskMode(false)}
+              />
+            </div>
+          )}
+
           <GlyphStage
             srcUrl={srcUrl}
             videoUrl={videoUrl}
@@ -818,18 +833,6 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
           )}
 
           <div ref={ribbonRef}>
-            {maskMode && (
-              <GlyphMaskBar
-                brush={brush}
-                onBrush={setBrush}
-                erase={erase}
-                onErase={setErase}
-                hasMask={hasMask}
-                onClear={clearMask}
-                onRender={renderMask}
-                onDone={() => setMaskMode(false)}
-              />
-            )}
             {stylersOpen && params && (
               <GlyphStyleBar
                 params={params}
