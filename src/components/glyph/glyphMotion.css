@@ -1,0 +1,145 @@
+/* GLYPH Motion — the sprite-sheet studio. Scoped additions on top of the
+   .glyph-page identity; nothing here leaks into the rest of the app. */
+
+.gm-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gm-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .gm-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(180px, 46%) minmax(0, 1fr);
+  }
+}
+
+.gm-panel {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+.gm-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.gm-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+}
+
+.gm-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--g-muted);
+}
+
+.gm-field {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--g-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--g-ink);
+  padding: 0.45rem 0.6rem;
+  outline: none;
+}
+.gm-field:focus {
+  border-color: var(--g-accent-2);
+}
+
+/* Transparency checkerboard behind every sprite preview. */
+.gm-checker {
+  background-color: #05080d;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.055) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.055) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.055) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.055) 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+}
+
+.gm-frame-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+.gm-frame-strip::-webkit-scrollbar {
+  height: 6px;
+}
+.gm-frame-strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+}
+
+.gm-thumb {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--g-line);
+  background: #05080d;
+  overflow: hidden;
+}
+.gm-thumb-on {
+  border-color: var(--g-accent-2);
+  box-shadow: 0 0 0 1px rgba(107, 202, 255, 0.45);
+}
+
+.gm-tabs {
+  display: flex;
+  gap: 4px;
+}
+.gm-tab {
+  border-radius: 999px;
+  border: 1px solid var(--g-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--g-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+.gm-tab:hover {
+  color: var(--g-ink);
+}
+.gm-tab-on {
+  background: linear-gradient(100deg, var(--g-accent-2), var(--g-accent));
+  border-color: transparent;
+  color: #04202f;
+}
+
+.gm-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: auto;
+}
+.gm-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  image-rendering: auto;
+}
+.gm-stage-sheet img {
+  max-height: none;
+}
+
+.gm-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
