@@ -41,7 +41,29 @@ function usePreview(canvasRef) {
 
 export default function GlyphLandingHero({ hasWallet, onSeed, onEnter }) {
   const canvasRef = useRef(null);
+  const stageRef = useRef(null);
   usePreview(canvasRef);
+
+  // Pointer position → a small tilt plus a parallax shift, written straight to
+  // the node so the effect never re-renders the page.
+  const lean = (e) => {
+    const stage = stageRef.current;
+    const frame = canvasRef.current;
+    if (!stage || !frame) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const r = stage.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    const y = ((e.clientY - r.top) / r.height) * 2 - 1;
+    frame.style.transform =
+      `rotateY(${(x * 9).toFixed(2)}deg) rotateX(${(-y * 9).toFixed(2)}deg) ` +
+      `translate3d(${(-x * 7).toFixed(2)}px, ${(-y * 7).toFixed(2)}px, 30px)`;
+  };
+
+  const settle = () => {
+    const frame = canvasRef.current;
+    if (frame) frame.style.transform = '';
+  };
 
   const drop = (e) => {
     e.preventDefault();
@@ -107,7 +129,9 @@ export default function GlyphLandingHero({ hasWallet, onSeed, onEnter }) {
           <span className="glyph-muted text-[10px] uppercase tracking-[0.2em]">Characters · cyan · bloom</span>
           <span className="glyph-muted text-[10px] glyph-mono">seed 482913</span>
         </div>
-        <canvas ref={canvasRef} className="w-full h-auto rounded-2xl" />
+        <div ref={stageRef} className="glyph-hero-stage" onPointerMove={lean} onPointerLeave={settle}>
+          <canvas ref={canvasRef} className="glyph-hero-frame w-full h-auto rounded-2xl" />
+        </div>
         <div className="flex items-center justify-between px-2 pt-3">
           <span className="glyph-muted text-[10px] uppercase tracking-[0.2em]">live renderer output</span>
           <span className="glyph-muted text-[10px]">340 × 208</span>
