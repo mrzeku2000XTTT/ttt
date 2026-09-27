@@ -15,13 +15,14 @@ export function readImageFile(file) {
 }
 
 /**
- * References are stored privately, then signed for the length of a generation
- * run so the image generator can read them. Nothing is publicly listed.
+ * References are uploaded to a plain, permanent URL because the image generator
+ * has to fetch them itself, outside this app, with no signing. A private,
+ * signed URL is not readable by it — the frames then come back with no relation
+ * to the references at all.
  */
 export async function uploadReference(dataUrl, name) {
   const blob = await (await fetch(dataUrl)).blob();
   const file = new File([blob], name, { type: blob.type || "image/png" });
-  const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-  const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
-  return { file_uri, signed_url };
+  const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+  return { file_url };
 }

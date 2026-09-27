@@ -262,8 +262,16 @@
 .ff-frame-hold {
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 8px;
   height: 168px;
   color: #5d636b;
+}
+.ff-frame-hold-text {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6d747d;
 }
 .ff-frame-meta {
   display: flex;
@@ -437,6 +445,11 @@
   flex-direction: column;
   gap: 18px;
 }
+
+/* The column scrolls; the panels keep their full height. Without this the flex
+   column squeezes every panel into the viewport and clips the sequence and the
+   sprite sheet down to nothing. */
+.ff-studio-main > * { flex: 0 0 auto; }
 
 .ff-studio-aside {
   min-height: 0;

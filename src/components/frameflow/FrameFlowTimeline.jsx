@@ -35,7 +35,14 @@ export default function FrameFlowTimeline({ frames, current, onSelect, onRegener
                 <img src={frame.image} alt={`Frame ${index + 1}`} />
               ) : (
                 <span className="ff-frame-hold">
-                  {frame.status === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : "—"}
+                  {frame.status === "pending" ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ff-frame-hold-text">drawing…</span>
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </span>
               )}
 

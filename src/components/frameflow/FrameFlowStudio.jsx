@@ -61,13 +61,14 @@ export default function FrameFlowStudio({ onHome, seedStart, seedEnd }) {
     return () => clearInterval(id);
   }, [playing, frames.length, settings.fps]);
 
-  // References are uploaded privately and signed for the run — reused until a
-  // new reference is dropped.
+  // References are uploaded once per run and reused until a new reference is
+  // dropped. They have to be plain public URLs — the generator fetches them
+  // itself, and a private signed URL never reaches it.
   const ensureRefUrls = async () => {
     if (refUrls.start && refUrls.end) return refUrls;
     const start = await uploadReference(refs.start.dataUrl, "frameflow-start.png");
     const end = await uploadReference(refs.end.dataUrl, "frameflow-end.png");
-    const urls = { start: start.signed_url, end: end.signed_url };
+    const urls = { start: start.file_url, end: end.file_url };
     setRefUrls(urls);
     return urls;
   };
