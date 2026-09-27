@@ -1,0 +1,84 @@
+{
+  "name": "KydoniaSource",
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "description": "Final resolved URL of the pasted page"
+    },
+    "host": {
+      "type": "string",
+      "description": "Hostname, used for grouping and filtering"
+    },
+    "title": {
+      "type": "string",
+      "description": "Page title (weighted 3x in the index)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Meta / og description"
+    },
+    "headings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "H1-H3 headings (weighted 2x in the index)"
+    },
+    "text": {
+      "type": "string",
+      "description": "Cleaned readable text of the page, capped by the fetcher"
+    },
+    "char_count": {
+      "type": "number",
+      "default": 0
+    },
+    "token_count": {
+      "type": "number",
+      "default": 0
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "Hash of the fetched body, for change detection"
+    },
+    "robots_allowed": {
+      "type": "boolean",
+      "default": true
+    },
+    "truncated": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the page was longer than the fetch cap"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "fetching",
+        "ready",
+        "blocked",
+        "failed"
+      ],
+      "default": "ready"
+    },
+    "error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "url",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

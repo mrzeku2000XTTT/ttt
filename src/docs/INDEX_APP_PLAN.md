@@ -3,7 +3,8 @@
 > **Name: KYDONIA** (`/Kydonia`), after the Cydonia region of Mars.
 > Route, page, entity and component names all derive from it. Alternates if you want to swap:
 > **THARSIS**, **PHOBOS**, **SOLIS**.
-> Status: **plan only — nothing built yet.**
+> Status: **phases 1–3 shipped** — fetch, index and query are live at `/Kydonia`.
+> Still to come: the optional AI answer layer (phase 4) and index exports.
 > Follows [`new-app-checklist.md`](./new-app-checklist.md) and [`app-landing-standard.md`](./app-landing-standard.md).
 
 ---
