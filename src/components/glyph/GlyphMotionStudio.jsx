@@ -24,6 +24,8 @@ const DEFAULTS = {
   treatmentIntensity: 1,
   treatmentColor: '#1ff2e1',
   glyphStyle: 'characters',
+  background: 'gradient',
+  gradientId: 'nova',
 };
 
 export default function GlyphMotionStudio() {

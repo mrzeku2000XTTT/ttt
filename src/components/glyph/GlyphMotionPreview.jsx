@@ -55,7 +55,7 @@ export default function GlyphMotionPreview({
   };
 
   return (
-    <section className="flex min-h-0 flex-col">
+    <section className="gm-preview flex min-h-0 flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b glyph-hairline px-4 py-3">
         <div className="gm-tabs">
           {TABS.map(({ id, label, icon: Icon }) => (

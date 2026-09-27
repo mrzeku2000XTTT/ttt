@@ -1,5 +1,6 @@
 import { drawStyle } from './glyphRenderers';
 import { randomizeParams } from './glyphStyles';
+import { PALETTES } from './glyphPalettes';
 
 /**
  * Sprite motion engine — ported from GL-PH's spriteMotionEngine.ts.
@@ -53,6 +54,31 @@ export const GLYPH_ASCII_STYLES = [
   { id: 'animatedAscii', label: 'Animated ASCII' },
   { id: 'matrix', label: 'Matrix' },
 ];
+
+/* ── gradient grounds ─────────────────────────────────────────────────── */
+
+const rgb = (c) => `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
+
+// The app's own palette grounds, turned into gradients: each runs from its dark
+// ground, through the middle of its ramp, to its brightest colour — so a sheet
+// sits in the same colour language as the rest of the app.
+export const GRADIENTS = PALETTES.filter((p) => p.ramp || p.colors).map((p) => {
+  const ramp = p.ramp || p.colors;
+  const mid = rgb(ramp[Math.floor(ramp.length / 2)]);
+  const to = rgb(ramp[ramp.length - 1]);
+  return {
+    id: p.id,
+    label: p.name,
+    from: p.bg,
+    mid,
+    to,
+    css: `linear-gradient(135deg, ${p.bg}, ${mid}, ${to})`,
+  };
+});
+
+export function gradientById(id) {
+  return GRADIENTS.find((g) => g.id === id) || GRADIENTS[0];
+}
 
 /** Optimal grid for packing — works for ANY frame count, not just the presets. */
 export function calculateBestGrid(frameCount) {
@@ -440,6 +466,11 @@ export function renderArticulatedFrame(baseSprite, frameIndex, totalFrames, conf
     applyStylisticTreatment(frameCanvas, config.treatment, config.treatmentIntensity, config.treatmentColor);
   }
 
+  // Last, so the sprite sits ON the ground — a sheet that is not transparent.
+  if (config.background === 'gradient') {
+    applyGradientBackground(frameCanvas, config.gradientId);
+  }
+
   return frameCanvas;
 }
 
@@ -485,6 +516,33 @@ function applyGlyphStyle(canvas, params, t) {
 
   ctx.clearRect(0, 0, W, H);
   ctx.drawImage(styled, 0, 0);
+}
+
+/** Lay a gradient ground under the sprite, so the frame is no longer transparent. */
+function applyGradientBackground(canvas, gradientId) {
+  const g = gradientById(gradientId);
+  if (!g) return;
+  const W = canvas.width;
+  const H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const layer = document.createElement('canvas');
+  layer.width = W;
+  layer.height = H;
+  const lctx = layer.getContext('2d');
+  if (!lctx) return;
+  lctx.drawImage(canvas, 0, 0);
+
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, g.from);
+  grad.addColorStop(0.55, g.mid);
+  grad.addColorStop(1, g.to);
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(layer, 0, 0);
 }
 
 /**
@@ -676,6 +734,7 @@ export async function generateSpriteMotion(sourceImage, config, name = 'sprite',
   const metadata = {
     name,
     style: config.glyphStyle || config.treatment,
+    background: config.background === 'gradient' ? gradientById(config.gradientId).id : 'transparent',
     frameWidth: config.frameSize,
     frameHeight: config.frameSize,
     frames: totalFrames,

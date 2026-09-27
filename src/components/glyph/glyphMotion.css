@@ -16,10 +16,24 @@
   grid-template-columns: 340px minmax(0, 1fr);
 }
 
+/* Phones and narrow windows: the preview takes the top and the larger share,
+   the configuration sits below it in its own scroll area. */
 @media (max-width: 1024px) {
   .gm-body {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(180px, 46%) minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
+  }
+  .gm-preview {
+    order: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .gm-controls {
+    order: 2;
+    flex: 0 0 auto;
+    height: 44vh;
+    border-right: none;
+    border-top: 1px solid var(--g-line);
   }
 }
 
@@ -131,12 +145,19 @@
   min-height: 0;
   overflow: auto;
 }
+/* The frame fills the stage instead of sitting at its pixel size, so a 256px
+   sprite is still readable on a wide screen. */
 .gm-stage img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   image-rendering: auto;
 }
+/* The sheet is inspected at its true size, so it keeps its own dimensions. */
 .gm-stage-sheet img {
+  width: auto;
+  height: auto;
+  max-width: none;
   max-height: none;
 }
 

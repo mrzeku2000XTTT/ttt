@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Image as ImageIcon, Sparkles, Upload } from 'lucide-react';
-import { GLYPH_ASCII_STYLES, MOTION_PRESETS, TREATMENTS, calculateBestGrid } from './spriteMotionEngine';
+import { GRADIENTS, GLYPH_ASCII_STYLES, MOTION_PRESETS, TREATMENTS, calculateBestGrid } from './spriteMotionEngine';
 
 const FRAME_CHIPS = [8, 12, 16, 24, 32, 48, 64];
 const FPS_CHIPS = [6, 8, 12, 15, 24, 30];
@@ -64,7 +64,7 @@ export default function GlyphMotionControls({
   };
 
   return (
-    <aside className="gm-panel border-r glyph-hairline" style={{ background: 'rgba(255,255,255,0.02)' }}>
+    <aside className="gm-panel gm-controls border-r glyph-hairline" style={{ background: 'rgba(255,255,255,0.02)' }}>
       <Section title="Source image">
         <div
           onDragOver={(e) => {
@@ -206,6 +206,33 @@ export default function GlyphMotionControls({
             className="glyph-range mt-2"
           />
         </div>
+      </Section>
+
+      <Section title="Background">
+        <Chips
+          items={[{ id: 'transparent', label: 'Transparent' }, { id: 'gradient', label: 'Gradient' }]}
+          value={cfg.background}
+          onPick={(background) => patch({ background })}
+        />
+        {cfg.background === 'gradient' && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {GRADIENTS.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => patch({ gradientId: g.id })}
+                title={g.label}
+                className={`glyph-chip ${cfg.gradientId === g.id ? 'glyph-chip-on' : ''}`}
+              >
+                <span
+                  className="mr-1.5 inline-block h-3 w-3 rounded-full"
+                  style={{ background: g.css }}
+                />
+                {g.label}
+              </button>
+            ))}
+          </div>
+        )}
       </Section>
 
       <Section title="Background key">
