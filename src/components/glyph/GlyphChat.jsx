@@ -1,15 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Box, Contrast, Eye, Grid3x3, Move, Sparkles, Shuffle, X } from 'lucide-react';
+import { ArrowUp, Box, Contrast, Eye, Film, Grid3x3, Move, Sparkles, Shuffle, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { PALETTES, paletteById } from './glyphPalettes';
 import { DITHER_ALGOS, STYLES } from './glyphStyles';
 import { MOTION_PRESETS } from './spriteMotionEngine';
+import { parseFilm } from './glyphFilmPlan';
 import GlyphMark from './GlyphMark';
 import GlyphThinking from './GlyphThinking';
 
 const STYLE_IDS = STYLES.map((s) => s.id);
 const PALETTE_IDS = PALETTES.map((p) => p.id);
 const MOTION_IDS = MOTION_PRESETS.map((m) => m.id);
+
+// The chat runs on the real Claude Opus — the strongest Claude the platform
+// offers. The looks, the movements and the films are all its call, so it is
+// worth the extra credits here.
+const CHAT_MODEL = 'claude_opus_5';
+const CHAT_MODEL_LABEL = 'opus 5';
 
 // The renderer shelf is far too long to enumerate inside the request schema, so
 // the model names a renderer in words and this maps it back onto a real style —
@@ -60,6 +67,15 @@ const SCHEMA = {
       type: 'string',
       description: 'One sentence on how the subject actually moves: what leads, what follows, how the loop returns. Only with motion.',
     },
+    filmTitle: {
+      type: 'string',
+      description: 'Two to four words naming the film. Only when the user asks for a film or an animation.',
+    },
+    filmBeats: {
+      type: 'string',
+      description:
+        'The beats of the film, written as "motion:seconds:renderer:palette:CAPTION" and joined with "|". Six to nine beats, seconds 1.2-4, adding up to 10-15 seconds. Example: "float:2.2:characters:ice:THE SURFACE|spin:2.8:dots:mono:INTO CODE". Only when the user asks for a film or an animation.',
+    },
   },
   required: ['reply'],
 };
@@ -85,6 +101,7 @@ const QUICK = [
   { label: 'Smaller cells', icon: Grid3x3, say: 'Use smaller cells.' },
   { label: '3D view', icon: Box, say: 'Tilt it in 3D.' },
   { label: 'Add motion', icon: Move, say: 'Add some motion to this — gentle movement.', ask: true },
+  { label: 'Craft a film', icon: Film, say: 'Craft a twelve second motion film of this — use everything you have.', ask: true },
   { label: 'Show original', icon: Eye, say: 'Show me the original.' },
 ];
 
@@ -151,6 +168,7 @@ function buildPrompt(text, params, view3d, hasRef) {
     'You also control the view: view3d "on" tilts the artwork back in space and "off" flattens it, view is "original" / "split" / "result" for the before-and-after comparison, and playing is "play" / "pause" for a loaded video.',
     'Set ONLY the fields that must change. Use "" for every field you want left alone.',
     'Every name you return must be copied exactly from the lists above. When the user asks for a look, palette or movement that is not on a list, choose the closest real one and say which one you chose. Never describe a change you did not return in the fields.',
+    'FILMS: when the user asks for a film, an animation, a motion piece, a sequence or a video of the artwork — or asks you to craft one — return "filmTitle" and "filmBeats". A film is 10 to 15 seconds: six to nine beats, each written "motion:seconds:renderer:palette:CAPTION" and joined with "|". Seconds are 1.2 to 4 and must add up to 10-15. Renderer and palette must be copied exactly from the lists above, or left empty to keep the current look. CAPTION is two to five words in capitals with no punctuation — it is the only text on screen, so it has to carry the idea. Change the movement between beats: a film that repeats one movement is a loop, not a film. Then make "reply" one sentence about what the film does.',
     'How you talk: one or two short sentences, 32 words maximum, no lists and no markdown. Name the concrete thing you changed — the renderer, the palette, the movement — and what it does to this image. Never open with "Done", never repeat the user\'s words back, and never give a line that would fit any image.',
     `The user says: "${text}"`,
   ]
@@ -167,6 +185,7 @@ export default function GlyphChat({
   onRandomize,
   onSurprise,
   onMotion,
+  onFilm,
   reference,
   onClearReference,
 }) {
@@ -218,8 +237,13 @@ export default function GlyphChat({
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: buildPrompt(clean, params, view3d, !!refUrl),
         response_json_schema: SCHEMA,
+        model: CHAT_MODEL,
         ...(refUrl ? { file_urls: [refUrl] } : {}),
       });
+      // A film is the artwork moving for 10-15 seconds, so it is handed to the
+      // studio to render and play rather than described here.
+      const film = parseFilm(res?.filmTitle, res?.filmBeats);
+      if (film && onFilm) onFilm(film);
       const patch = {};
       const styleId = resolveStyle(res?.style);
       if (styleId) patch.style = styleId;
@@ -262,6 +286,13 @@ export default function GlyphChat({
               ? 'Done — the view changed.'
               : 'Tell me which way to take it.'),
           motion: motion ? { label: motion.label, note: res?.motionNote || '' } : null,
+          film: film
+            ? {
+                title: film.title,
+                beats: film.beats.length,
+                seconds: film.beats.reduce((s, b) => s + (b.seconds || 0), 0),
+              }
+            : null,
         },
       ]);
     } catch (e) {
@@ -303,7 +334,10 @@ export default function GlyphChat({
       <div className="flex shrink-0 items-center gap-2.5 pb-3 mb-1" style={{ borderBottom: '1px solid var(--g-line)' }}>
         <GlyphMark size={30} spinning={thinking} />
         <div className="min-w-0 flex-1">
-          <p className="glyph-word text-[11px]">Glyph</p>
+          <p className="glyph-word flex items-center gap-1.5 text-[11px]">
+            Glyph
+            <span className="glyph-mono text-[8px] uppercase tracking-[0.14em] glyph-muted">{CHAT_MODEL_LABEL}</span>
+          </p>
           <p className="glyph-muted text-[10px] truncate">
             {thinking ? 'rendering an answer…' : imageReady ? 'ask for a look' : 'waiting for an image'}
           </p>
@@ -331,6 +365,17 @@ export default function GlyphChat({
                   {m.motion.note && (
                     <p className="mt-0.5 text-[11px] leading-relaxed glyph-muted">{m.motion.note}</p>
                   )}
+                </div>
+              )}
+              {m.film && (
+                <div className="glyph-pill mt-1 rounded-xl px-2.5 py-2">
+                  <p className="flex items-center gap-1 text-[9px] uppercase tracking-[0.14em] glyph-muted">
+                    <Film className="h-3 w-3" /> motion film
+                  </p>
+                  <p className="mt-0.5 text-[11px] font-semibold">{m.film.title}</p>
+                  <p className="mt-0.5 text-[11px] glyph-muted">
+                    {m.film.beats} beats · {m.film.seconds.toFixed(1)}s · playing on the artwork
+                  </p>
                 </div>
               )}
             </div>

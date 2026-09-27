@@ -53,6 +53,8 @@ import { addWorks, readGallery } from './glyphGalleryStore';
 import { workFromParams } from './glyphInspirations';
 import { sampleFile } from './glyphSampleSource';
 import { motionLabel as motionName, motionTransform } from './glyphMotionFx';
+import GlyphFilm from './GlyphFilm';
+import { buildFilmStills, normalizeFilm } from './glyphFilmPlan';
 
 // Video is re-rendered every frame, so it is sampled at a steady rate rather
 // than on every animation frame.
@@ -74,6 +76,9 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   // The movement the chat read off the picture. While it is set the artwork
   // itself moves, so the answer is something you see rather than only words.
   const [motion, setMotion] = useState(null);
+
+  // The film the chat wrote: one rendered still per beat, played through Remotion.
+  const [film, setFilm] = useState(null);
 
   // The studio fills the viewport, so the artwork has to fit the space that is
   // genuinely left over. That space is measured and the canvas is capped to it,
@@ -199,6 +204,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
       lastFrameRef.current = null;
       maskRef.current = null;
       setMotion(null);
+      setFilm(null);
       setHasMask(false);
       setMaskMode(false);
       revealRef.current = false;
@@ -398,6 +404,31 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
     setMotion(id || null);
     if (id) setCompare(0);
   }, []);
+
+  // The chat writes a 10-15 second film; this renders one still per beat and
+  // hands it to Remotion, so the film is the artwork itself moving. It is a
+  // handful of local renders, so it lands in seconds rather than minutes.
+  const applyFilm = useCallback(
+    (plan) => {
+      const src = source || lastFrameRef.current;
+      if (!src || !params || !plan) return;
+      const normalized = normalizeFilm(plan);
+      if (!normalized) return;
+      setBusy(true);
+      setError('');
+      window.setTimeout(() => {
+        try {
+          const built = buildFilmStills(src, params, normalized.beats);
+          setMotion(null);
+          setFilm({ ...normalized, ...built });
+        } catch (e) {
+          setError('Could not render that film.');
+        }
+        setBusy(false);
+      }, 30);
+    },
+    [source, params],
+  );
 
   /* ── auto: fit the render to the picture, then say how well it landed ── */
   const runAuto = useCallback(() => {
@@ -962,6 +993,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                   onRandomize={randomize}
                   onSurprise={surprise}
                   onMotion={applyMotion}
+                  onFilm={applyFilm}
                   reference={agentRef}
                   onClearReference={() => setAgentRef(null)}
                 />
@@ -979,6 +1011,8 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
           </section>
         )}
       </div>
+
+      {film && <GlyphFilm plan={film} onClose={() => setFilm(null)} />}
 
       {palettesOpen && (
         <GlyphPalettePicker
