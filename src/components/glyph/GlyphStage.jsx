@@ -120,14 +120,16 @@ export default function GlyphStage({
     if (file) onFile(file);
   };
 
+  // The stage always claims the space that is genuinely free — loaded or not — so
+  // the workspace never collapses into a strip with a void beneath it.
   return (
     <div
       className={
         fullscreen
           ? 'glyph-stage-full fixed inset-0 z-[100] flex flex-col justify-center overflow-auto bg-[#05080d]/95 p-3 backdrop-blur-md sm:p-6'
-          : 'relative min-h-0'
+          : 'relative min-h-0 flex flex-col'
       }
-      style={!fullscreen && maxHeight && !loaded ? { height: `${maxHeight}px` } : undefined}
+      style={!fullscreen && maxHeight ? { height: `${maxHeight}px` } : undefined}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -159,7 +161,7 @@ export default function GlyphStage({
         </label>
       ) : (
         <div
-          className={`relative flex flex-col items-center justify-center rounded-2xl p-3 sm:p-4 ${dragOver ? 'glyph-drop-active' : ''} glyph-card`}
+          className={`relative flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl p-3 sm:p-4 ${dragOver ? 'glyph-drop-active' : ''} glyph-card`}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
