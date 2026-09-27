@@ -110,7 +110,7 @@ export default function GlyphStage({
   // space instead of pushing the artwork out of the card.
   const cap =
     !fullscreen && maxHeight
-      ? Math.max(120, maxHeight - (videoUrl ? 122 : 78) - (view3d ? 96 : 0))
+      ? Math.max(120, maxHeight - (videoUrl ? 122 : 78) - (view3d ? 136 : 0))
       : 0;
 
   const moveTo = (clientX) => {
@@ -298,16 +298,6 @@ export default function GlyphStage({
             </button>
           )}
 
-          {view3d && (
-            <GlyphAxisControls
-              position={pose}
-              angle={angle}
-              onPosition={(patch) => setPose((p) => ({ ...p, ...patch }))}
-              onAngle={(patch) => setAngle((a) => ({ ...a, ...patch }))}
-              onReset={reset3d}
-            />
-          )}
-
           <div className="absolute left-5 top-5 flex items-center gap-1.5">
             <span className="glyph-glass rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] font-semibold">
               {styleLabelText}
@@ -364,6 +354,20 @@ export default function GlyphStage({
                 ? 'drag the slider to compare · the video keeps playing underneath'
                 : 'drag the slider to compare · drop or paste a new image to transform it'}
           </p>
+        </div>
+      )}
+
+      {/* The pose panel is a sibling of the card, so it can only ever sit under
+          the artwork — never on top of the thing it is posing. */}
+      {loaded && view3d && (
+        <div className="mt-1 flex justify-center px-2">
+          <GlyphAxisControls
+            position={pose}
+            angle={angle}
+            onPosition={(patch) => setPose((p) => ({ ...p, ...patch }))}
+            onAngle={(patch) => setAngle((a) => ({ ...a, ...patch }))}
+            onReset={reset3d}
+          />
         </div>
       )}
 
