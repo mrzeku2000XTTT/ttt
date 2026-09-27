@@ -178,7 +178,7 @@
 
 .ff-drop {
   width: 100%;
-  min-height: 300px;
+  min-height: 190px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -204,7 +204,7 @@
 .ff-ref {
   position: relative;
   background: #0e1011;
-  min-height: 300px;
+  min-height: 190px;
 }
 .ff-ref-label {
   position: absolute;
@@ -221,7 +221,7 @@
 .ff-ref-img {
   width: 100%;
   height: 100%;
-  min-height: 300px;
+  min-height: 190px;
   object-fit: contain;
   display: block;
   background: #ededed;
@@ -238,7 +238,7 @@
 
 .ff-frame {
   position: relative;
-  flex: 0 0 112px;
+  flex: 0 0 168px;
   border: 1px solid var(--ff-line);
   border-radius: 10px;
   background: var(--ff-bg);
@@ -247,7 +247,7 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ff-frame.is-active { border-color: var(--ff-accent); box-shadow: 0 0 0 1px var(--ff-accent); }
-.ff-frame img { display: block; width: 100%; height: 112px; object-fit: cover; background: #e9e9e9; }
+.ff-frame img { display: block; width: 100%; height: 168px; object-fit: contain; background: #e9e9e9; }
 .ff-frame-badge {
   position: absolute;
   top: 6px;
@@ -262,7 +262,7 @@
 .ff-frame-hold {
   display: grid;
   place-items: center;
-  height: 112px;
+  height: 168px;
   color: #5d636b;
 }
 .ff-frame-meta {
@@ -299,10 +299,80 @@
 .ff-canvas {
   display: block;
   width: 100%;
-  max-height: 460px;
+  max-height: 68vh;
+  min-height: 320px;
   object-fit: contain;
   border-radius: 10px;
   background: #ededed;
+}
+
+/* Current frame against both references — the match check. */
+.ff-compare {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ff-compare-tile {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--ff-line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0e1011;
+}
+.ff-compare-tile.is-active { border-color: var(--ff-accent); box-shadow: 0 0 0 1px var(--ff-accent); }
+.ff-compare-tile img { width: 100%; height: 100%; object-fit: contain; background: #ededed; display: block; }
+.ff-compare-label {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 2;
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.7);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+/* The whole sequence at once. */
+.ff-sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+  padding: 18px;
+}
+
+.ff-sheet-tile {
+  position: relative;
+  border: 1px solid var(--ff-line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--ff-bg);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ff-sheet-tile.is-active { border-color: var(--ff-accent); box-shadow: 0 0 0 1px var(--ff-accent); }
+.ff-sheet-tile img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background: #ededed;
+}
+.ff-sheet-label {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 2;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.72);
+  font-size: 8px;
+  letter-spacing: 0.08em;
 }
 
 .ff-pre {
@@ -380,7 +450,9 @@
   .ff-studio-body { grid-template-columns: minmax(0, 1fr); overflow: visible; }
   .ff-studio-aside { border-left: 0; border-top: 1px solid var(--ff-line); }
   .ff-ref-grid { grid-template-columns: 1fr; }
-  .ff-ref, .ff-drop, .ff-ref-img { min-height: 240px; }
+  .ff-ref, .ff-drop, .ff-ref-img { min-height: 200px; }
+  .ff-compare { grid-template-columns: minmax(0, 1fr); }
+  .ff-canvas { min-height: 220px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

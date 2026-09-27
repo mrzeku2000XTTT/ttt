@@ -6,6 +6,7 @@ import FrameFlowRefs from "./FrameFlowRefs";
 import FrameFlowControls from "./FrameFlowControls";
 import FrameFlowTimeline from "./FrameFlowTimeline";
 import FrameFlowPlayer from "./FrameFlowPlayer";
+import FrameFlowSpriteSheet from "./FrameFlowSpriteSheet";
 import FrameFlowPayload from "./FrameFlowPayload";
 import { uploadReference } from "./frameFlowUpload";
 import { buildCrossfadeFrames } from "./frameFlowCrossfade";
@@ -17,6 +18,7 @@ import {
   buildFramePrompt,
   buildPayload,
   frameProgress,
+  generationOrder,
 } from "./frameFlowPresets";
 
 export default function FrameFlowStudio({ onHome, seedStart, seedEnd }) {
@@ -70,7 +72,39 @@ export default function FrameFlowStudio({ onHome, seedStart, seedEnd }) {
     return urls;
   };
 
-  const references = (...candidates) => [...new Set(candidates.filter(Boolean))];
+  // One frame, drawn against both references plus whichever neighbours already
+  // exist. Knowing the frame on either side — and how far it is from the end —
+  // is what keeps the sequence together instead of drifting off the last frame.
+  const drawFrame = async ({ index, count, results, urls }) => {
+    const previous = results[index - 1]?.image || null;
+    const upcoming = results[index + 1]?.image || null;
+
+    const images = [urls.start, urls.end];
+    const roles = ["1) the START reference frame", "2) the END reference frame"];
+    if (previous) {
+      images.push(previous);
+      roles.push(`${images.length}) the frame immediately BEFORE this one, already drawn`);
+    }
+    if (upcoming) {
+      images.push(upcoming);
+      roles.push(`${images.length}) the frame immediately AFTER this one, already drawn`);
+    }
+
+    const { url } = await base44.integrations.Core.GenerateImage({
+      prompt: buildFramePrompt({
+        index,
+        count,
+        progress: frameProgress(index, count, settings.timing),
+        settings,
+        roles,
+        before: previous ? "the attached previous frame" : "the START reference frame",
+        after: upcoming ? "the attached next frame" : "the END reference frame",
+      }),
+      existing_image_urls: [...new Set(images)],
+    });
+
+    return url;
+  };
 
   const generate = async () => {
     if (!ready) {
@@ -95,26 +129,43 @@ export default function FrameFlowStudio({ onHome, seedStart, seedEnd }) {
     try {
       setStage("Uploading references…");
       const urls = await ensureRefUrls();
-      const next = [...strip];
+      const results = [...strip];
 
-      for (let index = 1; index <= count; index += 1) {
-        setStage(`Generating in-between ${index} of ${count}…`);
-        const previous = index === 1 ? urls.start : next[index - 1].image;
-        const { url } = await base44.integrations.Core.GenerateImage({
-          prompt: buildFramePrompt({
-            index,
-            total,
-            progress: frameProgress(index, count, settings.timing),
-            settings,
-          }),
-          existing_image_urls: references(urls.start, urls.end, previous),
-        });
-        next[index] = { index, image: url, status: "ready" };
-        setFrames([...next]);
+      // Drawn from both ends inward — each reference anchors the frames beside it
+      // — and anything that fails is retried, so every frame gets drawn however
+      // many there are.
+      let queue = generationOrder(count);
+      for (let attempt = 0; attempt < 2 && queue.length; attempt += 1) {
+        const pending = queue;
+        queue = [];
+        for (const item of pending) {
+          setStage(`${attempt ? "Retrying" : "Drawing"} frame ${item.index} of ${count} · from the ${item.from}`);
+          try {
+            const url = await drawFrame({ index: item.index, count, results, urls });
+            results[item.index] = { index: item.index, image: url, status: "ready" };
+            setFrames([...results]);
+          } catch (error) {
+            queue.push(item);
+            setFrames((prev) => prev.map((frame, i) => (i === item.index ? { ...frame, status: "error" } : frame)));
+          }
+        }
       }
 
+      const missing = results.filter((frame) => !frame.image);
+      if (missing.length) {
+        const demo = await buildCrossfadeFrames(refs.start.dataUrl, refs.end.dataUrl, count);
+        setFrames(results.map((frame, index) => (frame.image ? frame : demo[index])));
+        toast({
+          title: `${missing.length} frame${missing.length === 1 ? "" : "s"} fell back to the demo strip`,
+          description: "Regenerate those frames individually once generation is available.",
+        });
+      } else {
+        toast({ title: "Sequence generated", description: `${count} in-betweens across ${total} frames.` });
+      }
+
+      // Land on the last in-between so it can be checked against the end frame.
+      setCurrent(Math.max(1, total - 2));
       setStage("");
-      toast({ title: "Sequence generated", description: `${count} in-betweens across ${total} frames.` });
     } catch (error) {
       setStage("");
       const demo = await buildCrossfadeFrames(refs.start.dataUrl, refs.end.dataUrl, count);
@@ -141,17 +192,7 @@ export default function FrameFlowStudio({ onHome, seedStart, seedEnd }) {
 
     try {
       const urls = await ensureRefUrls();
-      const previous = index === 1 ? urls.start : frames[index - 1].image;
-      const upcoming = frames[index + 1].image;
-      const { url } = await base44.integrations.Core.GenerateImage({
-        prompt: buildFramePrompt({
-          index,
-          total: frames.length,
-          progress: frameProgress(index, count, settings.timing),
-          settings,
-        }),
-        existing_image_urls: references(urls.start, urls.end, previous, upcoming),
-      });
+      const url = await drawFrame({ index, count, results: frames, urls });
 
       setFrames((prev) => prev.map((frame, i) => (i === index ? { ...frame, image: url, status: "ready" } : frame)));
       setCurrent(index);
@@ -200,19 +241,22 @@ export default function FrameFlowStudio({ onHome, seedStart, seedEnd }) {
             disabled={generating}
             onError={(message) => toast({ title: message })}
           />
-          <FrameFlowTimeline
-            frames={frames}
-            current={current}
-            onSelect={setCurrent}
-            onRegenerate={regenerate}
-          />
           <FrameFlowPlayer
             frames={frames}
             current={current}
             playing={playing}
             onTogglePlay={togglePlay}
             onSelect={(index) => setCurrent(Math.max(0, Math.min(index, frames.length - 1)))}
+            startSrc={refs.start?.dataUrl || null}
+            endSrc={refs.end?.dataUrl || null}
           />
+          <FrameFlowTimeline
+            frames={frames}
+            current={current}
+            onSelect={setCurrent}
+            onRegenerate={regenerate}
+          />
+          <FrameFlowSpriteSheet frames={frames} current={current} onSelect={setCurrent} />
           <FrameFlowPayload payload={payload} />
         </section>
 

@@ -113,26 +113,52 @@ export function buildPayload({ settings, frameCount, fps, hasStart, hasEnd }) {
 }
 
 /**
- * The prompt for one in-between frame. Position in the movement, the camera and
- * the locked drawing style are all spelled out so the frame lands between its
- * neighbours instead of being a standalone illustration.
+ * The prompt for one in-between frame.
+ *
+ * `roles` names the attached images in order, and `before`/`after` say what the
+ * frames on either side of this one are — including the END reference the
+ * sequence has to land on. A frame that knows both of its neighbours and how far
+ * it is from the end stops drifting.
  */
-export function buildFramePrompt({ index, total, progress, settings }) {
+export function buildFramePrompt({ index, count, progress, settings, roles, before, after }) {
   const pct = Math.round(progress * 100);
+  const remaining = count - index + 1;
   const preserve = settings.preserve.length ? settings.preserve.join(", ") : "everything in the references";
 
   return [
-    `Generate ONE in-between frame of a hand-drawn animation sequence: frame ${index} of ${total - 2} in-betweens, sitting between the START reference frame and the END reference frame.`,
+    `Hand-drawn animation in-between frame ${index} of ${count}. The finished sequence is ${count + 2} frames: the START reference, ${count} in-betweens, and the END reference it must land on.`,
+    "",
+    `ATTACHED IMAGES, IN THIS ORDER: ${(roles || []).join("; ")}.`,
     "",
     `MOTION: ${settings.motion.trim()}`,
-    `MOTION PROGRESS: this frame is at ${pct}% of the movement (${settings.timing} timing).`,
+    `POSITION IN THE MOVEMENT: ${pct}% of the way from the START reference to the END reference (${settings.timing} timing).`,
+    `NEIGHBOURS: the frame immediately before this one is ${before}. The frame immediately after this one is ${after}.`,
+    `ENDPOINT: the sequence must finish exactly on the END reference frame — this frame is ${remaining} step${
+      remaining === 1 ? "" : "s"
+    } away from it.`,
     `CAMERA: ${settings.camera}.`,
     `MUST STAY IDENTICAL TO THE REFERENCES: ${preserve}.`,
     "",
     `DRAWING STYLE (locked — every frame in the sequence uses this): ${settings.styleLock.trim()}`,
     "",
-    "This is one frame of a sequence, not a finished illustration. Keep the same character, linework, framing, shading and paper as the references, and change only what the motion at this point requires.",
+    "Draw ONE frame of this sequence. Keep the same character, linework, framing, shading and paper as the references, and change only what the movement at this exact point requires. It has to sit believably between its two neighbours.",
     "",
     `DO NOT INCLUDE: ${settings.negative.trim()}`,
   ].join("\n");
+}
+
+/**
+ * The order the in-betweens are drawn in: outward from both references at once,
+ * meeting in the middle. Every frame next to a reference is generated with that
+ * reference as its direct neighbour, so the sequence opens on the start frame and
+ * lands on the end frame instead of drifting away from both.
+ */
+export function generationOrder(count) {
+  const order = [];
+  for (let step = 1; step <= Math.floor(count / 2); step += 1) {
+    order.push({ index: step, from: "start" });
+    order.push({ index: count - step + 1, from: "end" });
+  }
+  if (count % 2 === 1) order.push({ index: Math.ceil(count / 2), from: "middle" });
+  return order;
 }
