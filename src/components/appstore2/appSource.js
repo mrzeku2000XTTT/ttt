@@ -11,7 +11,7 @@ export const SOURCE_BRANCH = "main";
 const COMPONENT_FOLDERS = [
   "act", "apex", "arhtuun", "beatcut", "biblia", "bridge", "cam", "camerastudio", "canvas", "cinekas",
   "clutchkas", "dd", "dez", "doom", "doubleo", "eta", "eve", "feed", "flagsense", "framemimic",
-  "framez", "glyph", "hikaru", "hiro", "hunterbeat", "hybrid", "hyper", "isolate", "kanvas", "kascompute",
+  "framez", "frameflow", "glyph", "hikaru", "hiro", "hunterbeat", "hybrid", "hyper", "isolate", "kanvas", "kascompute",
   "kaspacollab", "katagami", "kcc20", "kccnft", "kiln", "kine", "kinezma", "kivr", "klipz", "klock",
   "kutt", "kydonia", "launchreel", "metamimic", "morph", "motion", "motionfly", "narrate", "niche", "oc",
   "orbt", "prism", "productstudio", "prompto", "rion", "rmx", "searchkaspa", "shillz", "silverscript", "simple",

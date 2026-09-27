@@ -4,6 +4,64 @@
 
 // ── Curated docs for flagship apps ──
 const CURATED = {
+  FrameFlow: {
+    tagline: "Two references in, a connected hand-drawn sequence out",
+    overview:
+      "FRAMEFLOW generates the in-between frames of a hand-drawn animation shot. You upload two references — where the movement starts and where it lands — describe the motion (or pick a preset: head turn, walk, run, blink, expression, camera push, camera pan), and it produces a connected sequence of 2–16 in-between frames in order. What makes the sequence hold together is the style lock: the permanent hand-drawn look (fine technical-pen linework, imperfect strokes, pencil underdrawing, grey marker shading, paper texture) is kept separate from the motion instruction and the reference frames, so every frame in the shot speaks the same visual language instead of being re-invented. You control the spacing, the fps, the timing curve (even, ease in, ease out, fast to slow), the camera move, and exactly what must stay identical — character identity, face proportions, clothing, linework, perspective, object positions. Any single frame that breaks the linework can be regenerated on its own from its two neighbours and the references, without rebuilding the whole shot. Every generation also shows the exact request it sent, so the payload stays auditable.",
+    features: [
+      {
+        title: "Start and end references",
+        desc: "Drop two drawings — PNG, JPG or WEBP — and the sequence is anchored to them. They stay in the strip and are never regenerated.",
+      },
+      {
+        title: "Motion instruction",
+        desc: "Describe the movement in plain language, or start from a preset: head turn, walk, run, blink, expression, camera push, camera pan.",
+      },
+      {
+        title: "2–16 in-between frames",
+        desc: "Dial the spacing of the shot. Two for a snap turn, sixteen for a long, slow move.",
+      },
+      {
+        title: "Timing curves",
+        desc: "Even, ease in, ease out, ease in/out, fast to slow, slow to fast — the curve decides how the movement is distributed across the frames.",
+      },
+      {
+        title: "Camera moves",
+        desc: "Locked, subtle handheld, push in, pull out, pan left, pan right — carried through the whole sequence.",
+      },
+      {
+        title: "Preserve list",
+        desc: "Tick what must not drift: character identity, face proportions, clothing, linework, perspective, object positions.",
+      },
+      {
+        title: "Style lock",
+        desc: "The permanent drawing style, written once and applied to every frame, so the sequence looks like one artist drew it.",
+      },
+      {
+        title: "Per-frame regenerate",
+        desc: "One bad in-between is repaired on its own from its neighbours and the two references — the rest of the shot is untouched.",
+      },
+      {
+        title: "Frame-by-frame viewer",
+        desc: "Scrub the strip, step frame by frame, or play the whole sequence back at the shot's fps (6–24).",
+      },
+      {
+        title: "The exact request",
+        desc: "Every generation prints the payload it sent — task type, motion, timing, camera, preserve list, style lock and negative prompt.",
+      },
+    ],
+    howItWorks: [
+      { title: "Upload both references", desc: "A start frame and an end frame. They are uploaded privately and signed only for the length of a generation run." },
+      { title: "Describe the motion", desc: "Write the movement, or pick a preset and edit it. Set the in-between count, fps, timing curve and camera." },
+      { title: "Generate the in-betweens", desc: "Each frame is placed by the timing curve, generated from both references and the frame before it, and the strip fills in as they land." },
+      { title: "Repair and play", desc: "Regenerate any single in-between that breaks the linework, then scrub or play the sequence back at your fps." },
+    ],
+    getStarted: [
+      { title: "Open FRAMEFLOW", desc: "Launch it from the store — no wallet or account needed." },
+      { title: "Start with two drawings", desc: "Drop your start and end frames, or try it with any two images to see how the sequence holds together." },
+      { title: "Tune the style lock", desc: "The default style is hand-drawn ink and marker. Rewrite it for your own line, and it carries across every frame." },
+    ],
+  },
   Hybrid: {
     tagline: "Paste your channel link — see the real channel and what to fix",
     overview: "Hybrid is a social engagement auditor. Paste any public social link — a YouTube channel or video, a TikTok profile, an Instagram reel, an X account, a Twitch channel — and Hybrid finds the creator behind it, opens the channel on the live web, and reads what is actually happening there: recent posts, view counts, titles, posting cadence, comments and any publicly listed follower numbers. It then scores your engagement health out of 100 and tells you the truth: what is already working, what is holding you back, and five to six ranked actions you can do this week to lift engagement. Every action says what to change, why it moves the numbers, and how to do it — never generic advice like 'post consistently'. You also get content ideas with the opening hook written out, a posting cadence with best times and formats, and the metrics worth tracking. Copy the whole plan in one tap and take it into your week.",
