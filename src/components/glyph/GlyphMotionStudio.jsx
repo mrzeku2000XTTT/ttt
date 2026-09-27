@@ -15,12 +15,15 @@ const DEFAULTS = {
   cameraPreset: 'front',
   yaw: 0,
   pitch: 0,
-  chromaEnabled: true,
+  // Off by default: on a photograph a black key eats every dark pixel of the
+  // subject, which is what made uploaded images come out patchy.
+  chromaEnabled: false,
   chromaColor: '#000000',
   chromaTolerance: 18,
-  treatment: 'ascii',
+  treatment: 'none',
   treatmentIntensity: 1,
   treatmentColor: '#1ff2e1',
+  glyphStyle: 'characters',
 };
 
 export default function GlyphMotionStudio() {

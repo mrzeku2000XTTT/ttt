@@ -143,3 +143,15 @@
 .gm-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
+/* The generate action rides the bottom of the panel, so it is in reach whatever
+   the configuration list above it is doing. */
+.gm-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  background: linear-gradient(to top, #070b12 74%, rgba(7, 11, 18, 0.72));
+  border-top: 1px solid var(--g-line);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}

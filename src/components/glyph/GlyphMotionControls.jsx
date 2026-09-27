@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Image as ImageIcon, Sparkles, Upload } from 'lucide-react';
-import { MOTION_PRESETS, TREATMENTS, calculateBestGrid } from './spriteMotionEngine';
+import { GLYPH_ASCII_STYLES, MOTION_PRESETS, TREATMENTS, calculateBestGrid } from './spriteMotionEngine';
 
 const FRAME_CHIPS = [8, 12, 16, 24, 32, 48, 64];
 const FPS_CHIPS = [6, 8, 12, 15, 24, 30];
@@ -245,6 +245,7 @@ export default function GlyphMotionControls({
 
       <Section title="Treatment">
         <Chips items={TREATMENTS} value={cfg.treatment} onPick={(treatment) => patch({ treatment })} />
+        <p className="glyph-muted text-[10px] mt-2">used when no GLYPH style is picked below</p>
         <div className="mt-4">
           <div className="flex items-center justify-between">
             <span className="gm-label">Strength</span>
@@ -272,7 +273,18 @@ export default function GlyphMotionControls({
         </div>
       </Section>
 
-      <div className="px-4 py-4">
+      <Section title="GLYPH ASCII styles">
+        <Chips
+          items={[{ id: 'none', label: 'Off' }, ...GLYPH_ASCII_STYLES]}
+          value={cfg.glyphStyle || 'none'}
+          onPick={(id) => patch({ glyphStyle: id === 'none' ? null : id })}
+        />
+        <p className="glyph-muted text-[10px] mt-2">
+          renders every frame with GLYPH's own engine · the sprite keeps its silhouette
+        </p>
+      </Section>
+
+      <div className="gm-actions px-4 py-4">
         <button
           type="button"
           onClick={onGenerate}

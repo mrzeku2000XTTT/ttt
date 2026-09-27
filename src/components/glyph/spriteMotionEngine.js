@@ -1,3 +1,6 @@
+import { drawStyle } from './glyphRenderers';
+import { randomizeParams } from './glyphStyles';
+
 /**
  * Sprite motion engine — ported from GL-PH's spriteMotionEngine.ts.
  *
@@ -36,6 +39,19 @@ export const TREATMENTS = [
   { id: 'halftone', label: 'Halftone' },
   { id: 'pixel', label: 'Pixel' },
   { id: 'vhs', label: 'VHS' },
+];
+
+// Every ASCII-category style from the GLYPH library, in library order. These
+// render through GLYPH's own engine, so a sprite carries the app's real look.
+export const GLYPH_ASCII_STYLES = [
+  { id: 'characters', label: 'Characters' },
+  { id: 'asciiStudio', label: 'ASCII Studio' },
+  { id: 'block', label: 'Block' },
+  { id: 'dots', label: 'Dots' },
+  { id: 'mixed', label: 'Mixed' },
+  { id: 'braille', label: 'Braille' },
+  { id: 'animatedAscii', label: 'Animated ASCII' },
+  { id: 'matrix', label: 'Matrix' },
 ];
 
 /** Optimal grid for packing — works for ANY frame count, not just the presets. */
@@ -415,11 +431,60 @@ export function renderArticulatedFrame(baseSprite, frameIndex, totalFrames, conf
 
   ctx.restore();
 
-  if (config.treatment && config.treatment !== 'none') {
+  if (config.glyphStyle) {
+    // A GLYPH style rebuilds the frame with the app's real renderer, so the
+    // sprite carries GLYPH's actual ASCII look rather than a lookalike.
+    const params = config.glyphParams || buildGlyphParams(config.glyphStyle, size);
+    applyGlyphStyle(frameCanvas, params, t);
+  } else if (config.treatment && config.treatment !== 'none') {
     applyStylisticTreatment(frameCanvas, config.treatment, config.treatmentIntensity, config.treatmentColor);
   }
 
   return frameCanvas;
+}
+
+/* ── GLYPH styles ─────────────────────────────────────────────────────── */
+
+/**
+ * One parameter set for a whole sequence — GLYPH's own randomiser, with the
+ * source's colours kept so the sprite still looks like the image that went in.
+ * Cell size is scaled to the frame, so a 128px and a 512px sheet read the same.
+ */
+export function buildGlyphParams(styleId, frameSize = 256) {
+  const params = randomizeParams(null, { style: styleId, palette: 'original' });
+  const scale = Math.max(0.5, frameSize / 256);
+  return {
+    ...params,
+    cellSize: Math.max(3, Math.round(params.cellSize * scale)),
+    brightness: 0,
+  };
+}
+
+/** Rebuild one frame through GLYPH's renderer, keeping the sprite's silhouette. */
+function applyGlyphStyle(canvas, params, t) {
+  const W = canvas.width;
+  const H = canvas.height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return;
+
+  const src = { data: ctx.getImageData(0, 0, W, H).data, width: W, height: H };
+
+  const styled = document.createElement('canvas');
+  styled.width = W;
+  styled.height = H;
+  const sctx = styled.getContext('2d');
+  if (!sctx) return;
+
+  drawStyle(sctx, src, W, H, params, t);
+
+  // Every style paints a full ground; clipping that back to the frame's own
+  // alpha is what keeps a sprite sheet transparent between the poses.
+  sctx.globalCompositeOperation = 'destination-in';
+  sctx.drawImage(canvas, 0, 0);
+  sctx.globalCompositeOperation = 'source-over';
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(styled, 0, 0);
 }
 
 /**
@@ -574,11 +639,17 @@ function applyStylisticTreatment(canvas, treatment, intensity, tintColor) {
 export async function generateSpriteMotion(sourceImage, config, name = 'sprite', onProgress) {
   const { canvas: baseSprite } = extractAndCenterSubject(sourceImage, config.frameSize, config.chromaKey);
 
+  // Built ONCE for the whole sequence: a style's seed, cell size and palette
+  // have to stay put, or every frame would come out in a different look.
+  const cfg = config.glyphStyle
+    ? { ...config, glyphParams: buildGlyphParams(config.glyphStyle, config.frameSize) }
+    : config;
+
   const totalFrames = config.frameCount;
   const frames = [];
 
   for (let i = 0; i < totalFrames; i += 1) {
-    const frameCanvas = renderArticulatedFrame(baseSprite, i, totalFrames, config);
+    const frameCanvas = renderArticulatedFrame(baseSprite, i, totalFrames, cfg);
     frames.push({ index: i, canvas: frameCanvas, dataUrl: frameCanvas.toDataURL('image/png') });
     if (onProgress) onProgress(i + 1, totalFrames);
     // Yield to the browser so the progress readout actually paints.
@@ -604,6 +675,7 @@ export async function generateSpriteMotion(sourceImage, config, name = 'sprite',
 
   const metadata = {
     name,
+    style: config.glyphStyle || config.treatment,
     frameWidth: config.frameSize,
     frameHeight: config.frameSize,
     frames: totalFrames,
