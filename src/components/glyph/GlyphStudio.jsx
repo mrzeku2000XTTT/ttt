@@ -612,7 +612,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
             <span className="hidden xl:block glyph-muted text-[11px] ml-2">turn any image or video into visual code</span>
           </div>
 
-          <div className="flex flex-nowrap items-center justify-end gap-1.5 overflow-x-auto scrollbar-hide">
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
             <label className="glyph-btn glyph-btn-ghost cursor-pointer">
               <ImageIcon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Upload</span>
@@ -679,7 +679,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
               <span className="hidden lg:inline">Profile</span>
               {savedCount > 0 && <span className="glyph-mono text-[10px] opacity-70">{savedCount}</span>}
             </button>
-            <div className="flex items-center gap-0.5 rounded-full p-0.5" style={{ border: '1px solid var(--g-line)' }}>
+            <div className="flex shrink-0 items-center gap-0.5 rounded-full p-0.5" style={{ border: '1px solid var(--g-line)' }}>
               {[false, true].map((mode) => (
                 <button
                   key={String(mode)}
@@ -741,8 +741,8 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
               <span className="hidden xl:inline">Chat</span>
             </button>
 
-            <div className="hidden md:flex items-center gap-1.5 ml-1 pl-2" style={{ borderLeft: '1px solid var(--g-line)' }}>
-              <Link to="/AppDocs/Glyph" className="glyph-pill rounded-full px-3 h-8 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em]">
+            <div className="hidden md:flex shrink-0 items-center gap-1.5 ml-1 pl-2" style={{ borderLeft: '1px solid var(--g-line)' }}>
+              <Link to="/AppDocs/Glyph" className="glyph-pill whitespace-nowrap rounded-full px-3 h-8 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em]">
                 <FileText className="w-3 h-3" />
                 docs
               </Link>
@@ -755,12 +755,12 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                   }
                   window.location.href = '/AppStoreV2';
                 }}
-                className="glyph-pill rounded-full px-3 h-8 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em]"
+                className="glyph-pill whitespace-nowrap rounded-full px-3 h-8 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em]"
               >
                 <Store className="w-3 h-3" />
                 exit to store
               </button>
-              <button onClick={onHome} className="glyph-pill rounded-full px-3 h-8 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em]">
+              <button onClick={onHome} className="glyph-pill whitespace-nowrap rounded-full px-3 h-8 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em]">
                 <Home className="w-3 h-3" />
                 home
               </button>

@@ -113,6 +113,8 @@
   padding: 0.55rem 1.05rem;
   border: 1px solid transparent;
   cursor: pointer;
+  /* A label never breaks inside its pill — the row wraps instead. */
+  white-space: nowrap;
   transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease;
 }
 .glyph-btn:active {
