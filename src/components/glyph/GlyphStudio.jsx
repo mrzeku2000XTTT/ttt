@@ -137,6 +137,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
   const [chatOpen, setChatOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const panelOpen = chatOpen || (controlsOpen && params);
   const [exportOpen, setExportOpen] = useState(false);
+  const [agentRef, setAgentRef] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
@@ -580,6 +581,25 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
     navigator.clipboard?.writeText(String(params.seed));
   };
 
+  // Hand the artwork on the canvas to the chat as a reference it can read — a
+  // smaller copy, so the question stays light, and the chat opens on it.
+  const sendToAgent = useCallback(() => {
+    const c = canvasRef.current;
+    if (!c || !params) return;
+    const scale = Math.min(1, 640 / Math.max(c.width, c.height));
+    const snap = document.createElement('canvas');
+    snap.width = Math.max(1, Math.round(c.width * scale));
+    snap.height = Math.max(1, Math.round(c.height * scale));
+    const sctx = snap.getContext('2d');
+    if (!sctx) return;
+    sctx.drawImage(c, 0, 0, snap.width, snap.height);
+    setAgentRef({ url: snap.toDataURL('image/jpeg', 0.9), label: styleLabel(params) });
+    setExportOpen(false);
+    setChatOpen(true);
+    setControlsOpen(false);
+    setNote('Sent to Agent Glyph — the artwork is attached to the chat as a reference, and you can remove it there.');
+  }, [params]);
+
   return (
     <div className="glyph-page glyph-shell flex flex-col overflow-hidden">
       <header className="z-40 shrink-0 glyph-glass" style={{ borderBottom: '1px solid var(--g-line)' }}>
@@ -695,6 +715,7 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                 webmSeconds={videoSource ? 5 : 4}
                 onClose={() => setExportOpen(false)}
                 onExport={doExport}
+                onSendToAgent={sendToAgent}
               />
             </div>
             <button
@@ -900,6 +921,8 @@ export default function GlyphStudio({ onHome, initialFile, owner, wallet }) {
                   onView={applyView}
                   onRandomize={randomize}
                   onSurprise={surprise}
+                  reference={agentRef}
+                  onClearReference={() => setAgentRef(null)}
                 />
               ) : (
                 params && (

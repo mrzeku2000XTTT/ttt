@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Box, Contrast, Eye, Grid3x3, Sparkles, Shuffle } from 'lucide-react';
+import { ArrowUp, Box, Contrast, Eye, Grid3x3, Move, Sparkles, Shuffle, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { PALETTES, paletteById } from './glyphPalettes';
 import { DITHER_ALGOS, STYLES } from './glyphStyles';
+import { MOTION_PRESETS } from './spriteMotionEngine';
 import GlyphMark from './GlyphMark';
 import GlyphThinking from './GlyphThinking';
 
 const STYLE_IDS = STYLES.map((s) => s.id);
 const PALETTE_IDS = PALETTES.map((p) => p.id);
+const MOTION_IDS = MOTION_PRESETS.map((m) => m.id);
 
 const SCHEMA = {
   type: 'object',
@@ -31,6 +33,15 @@ const SCHEMA = {
     view3d: { type: 'string', enum: ['on', 'off', ''], description: 'on tilts the artwork back in 3D, off flattens it.' },
     view: { type: 'string', enum: ['original', 'split', 'result', ''], description: 'Which way to look at the render.' },
     playing: { type: 'string', enum: ['play', 'pause', ''], description: 'Play or pause a loaded video.' },
+    motion: {
+      type: 'string',
+      enum: [...MOTION_IDS, ''],
+      description: 'The motion from the vocabulary that fits what the user asked for, or "" when they did not ask for movement.',
+    },
+    motionNote: {
+      type: 'string',
+      description: 'One sentence on how the subject actually moves: what leads, what follows, how the loop returns. Only with motion.',
+    },
   },
   required: ['reply'],
 };
@@ -55,32 +66,74 @@ const QUICK = [
   { label: 'More contrast', icon: Contrast, say: 'More contrast please.' },
   { label: 'Smaller cells', icon: Grid3x3, say: 'Use smaller cells.' },
   { label: '3D view', icon: Box, say: 'Tilt it in 3D.' },
+  { label: 'Add motion', icon: Move, say: 'Add some motion to this — gentle movement.', ask: true },
   { label: 'Show original', icon: Eye, say: 'Show me the original.' },
 ];
 
-function buildPrompt(text, params, view3d) {
+function buildPrompt(text, params, view3d, hasRef) {
   const current = params
     ? `style=${params.style}, palette=${params.palette}, cellSize=${params.cellSize}, fontScale=${params.fontScale}, spacing=${params.spacing}, rotation=${params.rotation}, brightness=${params.brightness}, contrast=${params.contrast}, saturation=${params.saturation}, jitter=${params.jitter}, plate=${params.plate}, ditherAlgo=${params.ditherAlgo}, charSet=${params.charSet}, view3d=${view3d ? 'on' : 'off'}`
     : 'nothing loaded yet';
   return [
     'You are GLYPH, a render assistant inside a local image-transformation studio.',
     'One image is on screen and it is rebuilt by a renderer. You change HOW it is rebuilt — never what the image is.',
+    hasRef
+      ? 'A reference image of the current artwork is attached. Read it: name what the subject is and which of its parts could move.'
+      : '',
     `Renderers: ${STYLE_IDS.join(', ')}.`,
     `Palettes: ${PALETTE_IDS.join(', ')}.`,
+    `Motion vocabulary: ${MOTION_IDS.join(', ')}.`,
+    'When the user asks for movement, pick the closest motion from that vocabulary and return it in "motion", with "motionNote": one sentence, 20 words maximum, saying how the subject really moves — what leads, what follows, how the loop returns. Never invent a motion name, and leave both empty when no movement was asked for.',
     'cellSize 2-40, fontScale 0.5-2, spacing 0-8, rotation -45-45, brightness -70-70, contrast 0.4-2.2, saturation 0-2, jitter 0-1.',
     `Current settings: ${current}.`,
     'You also control the view: view3d "on" tilts the artwork back in space and "off" flattens it, view is "original" / "split" / "result" for the before-and-after comparison, and playing is "play" / "pause" for a loaded video.',
     'Set ONLY the fields that must change. Use "" for every field you want left alone.',
     'Reply with one short sentence, 18 words maximum, no lists and no markdown.',
     `The user says: "${text}"`,
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
-export default function GlyphChat({ params, imageReady, view3d, onApply, onView, onRandomize, onSurprise }) {
+export default function GlyphChat({
+  params,
+  imageReady,
+  view3d,
+  onApply,
+  onView,
+  onRandomize,
+  onSurprise,
+  reference,
+  onClearReference,
+}) {
   const [messages, setMessages] = useState([{ role: 'glyph', text: GREETING }]);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [refUrl, setRefUrl] = useState(null);
   const listRef = useRef(null);
+
+  // A reference sent from the studio is put into storage once, so every
+  // following question carries the same image without re-uploading it.
+  useEffect(() => {
+    const url = reference?.url;
+    setRefUrl(null);
+    if (!url) return undefined;
+    say('glyph', 'Reference attached — ask for a look, or for some motion.');
+    let alive = true;
+    (async () => {
+      try {
+        const blob = await (await fetch(url)).blob();
+        const file = new File([blob], 'glyph-reference.jpg', { type: blob.type || 'image/jpeg' });
+        const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
+        if (alive) setRefUrl(file_url);
+      } catch (e) {
+        /* the thumbnail still shows — the question just goes without the image */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [reference?.url]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -97,8 +150,9 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
     setThinking(true);
     try {
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: buildPrompt(clean, params, view3d),
+        prompt: buildPrompt(clean, params, view3d, !!refUrl),
         response_json_schema: SCHEMA,
+        ...(refUrl ? { file_urls: [refUrl] } : {}),
       });
       const patch = {};
       if (res?.style && STYLE_IDS.includes(res.style)) patch.style = res.style;
@@ -125,13 +179,19 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
 
       if (Object.keys(patch).length) onApply(patch);
       if (Object.keys(view).length && onView) onView(view);
-      say(
-        'glyph',
-        res?.reply ||
-          (Object.keys(patch).length || Object.keys(view).length
-            ? 'Done — the view changed.'
-            : 'Tell me which way to take it.'),
-      );
+      const motion = MOTION_PRESETS.find((m) => m.id === res?.motion);
+      setMessages((m) => [
+        ...m,
+        {
+          role: 'glyph',
+          text:
+            res?.reply ||
+            (Object.keys(patch).length || Object.keys(view).length
+              ? 'Done — the view changed.'
+              : 'Tell me which way to take it.'),
+          motion: motion ? { label: motion.label, note: res?.motionNote || '' } : null,
+        },
+      ]);
     } catch (e) {
       say('glyph', 'I could not reach the model just now — the quick actions below still work.');
     }
@@ -140,6 +200,10 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
 
   const quick = (item) => {
     if (thinking || !imageReady) return;
+    if (item.ask) {
+      ask(item.say);
+      return;
+    }
     say('user', item.say);
     if (item.label === 'New look') {
       onRandomize();
@@ -177,14 +241,27 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
       <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto space-y-2.5 py-3 pr-1">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <p
-              className={`max-w-[86%] break-words rounded-2xl px-3 py-2 text-[12px] leading-relaxed ${
-                m.role === 'user' ? 'text-[#04202f]' : 'glyph-pill'
-              }`}
-              style={m.role === 'user' ? { background: 'linear-gradient(100deg,#6BCAFF,#4A90E2)' } : undefined}
-            >
-              {m.text}
-            </p>
+            <div className="max-w-[86%]">
+              <p
+                className={`break-words rounded-2xl px-3 py-2 text-[12px] leading-relaxed ${
+                  m.role === 'user' ? 'text-[#04202f]' : 'glyph-pill'
+                }`}
+                style={m.role === 'user' ? { background: 'linear-gradient(100deg,#6BCAFF,#4A90E2)' } : undefined}
+              >
+                {m.text}
+              </p>
+              {m.motion && (
+                <div className="glyph-pill mt-1 rounded-xl px-2.5 py-2">
+                  <p className="flex items-center gap-1 text-[9px] uppercase tracking-[0.14em] glyph-muted">
+                    <Move className="h-3 w-3" /> motion read
+                  </p>
+                  <p className="mt-0.5 text-[11px] font-semibold">{m.motion.label}</p>
+                  {m.motion.note && (
+                    <p className="mt-0.5 text-[11px] leading-relaxed glyph-muted">{m.motion.note}</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ))}
 
@@ -209,6 +286,29 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
         ))}
       </div>
 
+      {reference && (
+        <div
+          className="mb-2 flex shrink-0 items-center gap-2 rounded-xl px-2 py-1.5"
+          style={{ border: '1px solid var(--g-line)' }}
+        >
+          <img src={reference.url} alt="reference" className="h-9 w-9 shrink-0 rounded-md object-cover" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] uppercase tracking-[0.14em] glyph-muted">reference</p>
+            <p className="truncate text-[11px]" style={{ color: 'var(--g-ink)' }}>
+              {refUrl ? 'the agent can see this' : 'preparing…'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClearReference}
+            className="glyph-pill flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+            title="Remove the reference"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -226,7 +326,13 @@ export default function GlyphChat({ params, imageReady, view3d, onApply, onView,
             }
           }}
           rows={1}
-          placeholder={imageReady ? 'Make it look like newsprint…' : 'Load an image first'}
+          placeholder={
+            !imageReady
+              ? 'Load an image first'
+              : reference
+                ? 'Add some motion…'
+                : 'Make it look like newsprint…'
+          }
           disabled={!imageReady}
           className="flex-1 resize-none rounded-xl px-3 py-2 text-[12px] glyph-mono"
           style={{

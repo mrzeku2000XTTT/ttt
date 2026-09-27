@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Film, Image as ImageIcon } from 'lucide-react';
+import { Download, Film, Image as ImageIcon, MessageSquare } from 'lucide-react';
 
 const FORMATS = [
   { id: 'png', label: 'PNG' },
@@ -9,7 +9,15 @@ const FORMATS = [
 const SCALES = [1, 2, 4];
 
 /** Export popover: format + resolution for stills, WEBM for animated styles. */
-export default function GlyphExportMenu({ open, onClose, onExport, animated, busy, webmSeconds = 4 }) {
+export default function GlyphExportMenu({
+  open,
+  onClose,
+  onExport,
+  onSendToAgent,
+  animated,
+  busy,
+  webmSeconds = 4,
+}) {
   const [format, setFormat] = useState('png');
   const [scale, setScale] = useState(2);
   if (!open) return null;
@@ -64,8 +72,15 @@ export default function GlyphExportMenu({ open, onClose, onExport, animated, bus
         </button>
       )}
 
+      <div className="my-3" style={{ borderTop: '1px solid var(--g-line)' }} />
+
+      <button disabled={busy} onClick={onSendToAgent} className="glyph-btn glyph-btn-ghost w-full">
+        <MessageSquare className="w-3.5 h-3.5" />
+        Send to Agent Glyph
+      </button>
+
       <p className="glyph-muted text-[10px] mt-3 leading-relaxed">
-        The file contains only the artwork — never the interface.
+        The file contains only the artwork — never the interface. Sent artwork waits in the chat as a reference you can remove there.
       </p>
 
       <button onClick={onClose} className="glyph-muted text-[10px] uppercase tracking-[0.14em] mt-3 flex items-center gap-1">
