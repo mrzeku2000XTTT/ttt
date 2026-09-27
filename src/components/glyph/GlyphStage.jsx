@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Maximize2, Minimize2, Move, MoveDiagonal2, Pause, Play, Upload, X } from 'lucide-react';
 import GlyphTimeline from './GlyphTimeline';
 import GlyphThinking from './GlyphThinking';
+import GlyphAxisControls from './GlyphAxisControls';
 
 // The three ways to look at a render. Split is the default, so the source is
 // always visible next to what GLYPH made of it.
@@ -44,36 +45,36 @@ export default function GlyphStage({
   const dragging = useRef(false);
   const [dragOver, setDragOver] = useState(false);
 
-  // 3D only: the artwork can be dragged around and scaled, so the card can be
-  // posed however the user wants it. The transform sits on the frame, leaving
-  // the plane free to keep its sway.
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  // 3D only: the artwork can be dragged around, placed on each axis and scaled,
+  // so the card can be posed however the user wants it. The transform sits on
+  // the frame, leaving the plane free to keep its sway.
+  const [pose, setPose] = useState({ x: 0, y: 0, z: 0 });
   const [zoom, setZoom] = useState(1);
-  const panStart = useRef(null);
+  const poseStart = useRef(null);
   const zoomStart = useRef(null);
 
   useEffect(() => {
-    setPan({ x: 0, y: 0 });
+    setPose({ x: 0, y: 0, z: 0 });
     setZoom(1);
   }, [srcUrl, videoUrl]);
 
   const reset3d = () => {
-    setPan({ x: 0, y: 0 });
+    setPose({ x: 0, y: 0, z: 0 });
     setZoom(1);
   };
 
   const startPan = (e) => {
     e.stopPropagation();
-    panStart.current = { x: e.clientX, y: e.clientY, ox: pan.x, oy: pan.y };
+    poseStart.current = { x: e.clientX, y: e.clientY, ox: pose.x, oy: pose.y };
     e.currentTarget.setPointerCapture?.(e.pointerId);
   };
   const movePan = (e) => {
-    const s = panStart.current;
+    const s = poseStart.current;
     if (!s) return;
-    setPan({ x: s.ox + (e.clientX - s.x), y: s.oy + (e.clientY - s.y) });
+    setPose((p) => ({ ...p, x: s.ox + (e.clientX - s.x), y: s.oy + (e.clientY - s.y) }));
   };
   const endPan = () => {
-    panStart.current = null;
+    poseStart.current = null;
   };
 
   const startZoom = (e) => {
@@ -189,6 +190,7 @@ export default function GlyphStage({
       ) : (
         <div
           className={`relative flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl p-3 sm:p-4 ${dragOver ? 'glyph-drop-active' : ''} glyph-card`}
+          style={view3d ? { perspective: '1600px' } : undefined}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -199,7 +201,7 @@ export default function GlyphStage({
           <div
             ref={frameRef}
             className={`glyph-frame ${view3d ? 'glyph-frame-3d' : ''} ${fullscreen ? 'glyph-frame-full' : ''}`}
-            style={view3d ? { transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})` } : undefined}
+            style={view3d ? { transform: `translate3d(${pose.x}px, ${pose.y}px, ${pose.z}px) scale(${zoom})` } : undefined}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
@@ -269,6 +271,14 @@ export default function GlyphStage({
             </button>
           )}
 
+          {view3d && (
+            <GlyphAxisControls
+              value={pose}
+              onChange={(patch) => setPose((p) => ({ ...p, ...patch }))}
+              onReset={reset3d}
+            />
+          )}
+
           <div className="absolute left-5 top-5 flex items-center gap-1.5">
             <span className="glyph-glass rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] font-semibold">
               {styleLabelText}
@@ -320,7 +330,7 @@ export default function GlyphStage({
 
           <p className="glyph-muted mt-2 text-center text-[10px] tracking-wide">
             {view3d
-              ? 'drag the bar to move the card · the corner grip resizes it · the slider still compares'
+              ? 'drag the bar to move the card · X Y Z place it on each axis · the corner grip resizes it · the slider still compares'
               : videoUrl
                 ? 'drag the slider to compare · the video keeps playing underneath'
                 : 'drag the slider to compare · drop or paste a new image to transform it'}
