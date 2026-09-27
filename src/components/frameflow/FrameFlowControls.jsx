@@ -62,7 +62,7 @@ export default function FrameFlowControls({ settings, onChange, onGenerate, gene
               id="ff-count"
               type="range"
               min="2"
-              max="16"
+              max="24"
               value={settings.frameCount}
               onChange={(event) => onChange({ frameCount: Number(event.target.value) })}
               className="w-full accent-[#c8ff4d]"

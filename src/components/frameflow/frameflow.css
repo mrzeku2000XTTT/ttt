@@ -345,10 +345,10 @@
   letter-spacing: 0.12em;
 }
 
-/* The whole sequence at once. */
+/* The whole sequence at once — a fixed sheet so every frame reads at one size. */
 .ff-sheet {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   padding: 18px;
 }
@@ -466,6 +466,22 @@
   .ff-ref, .ff-drop, .ff-ref-img { min-height: 200px; }
   .ff-compare { grid-template-columns: minmax(0, 1fr); }
   .ff-canvas { min-height: 220px; }
+  .ff-sheet { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* The HTML sheet — the same frames, previewed as a page. */
+.ff-html-preview {
+  width: 100%;
+  height: 320px;
+  border: 1px solid var(--ff-line);
+  border-radius: 10px;
+  background: #0b0c0d;
+}
+
+.ff-html-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 @media (prefers-reduced-motion: reduce) {

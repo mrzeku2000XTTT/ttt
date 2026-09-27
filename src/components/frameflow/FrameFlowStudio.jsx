@@ -7,6 +7,7 @@ import FrameFlowControls from "./FrameFlowControls";
 import FrameFlowTimeline from "./FrameFlowTimeline";
 import FrameFlowPlayer from "./FrameFlowPlayer";
 import FrameFlowSpriteSheet from "./FrameFlowSpriteSheet";
+import FrameFlowHtmlSheet from "./FrameFlowHtmlSheet";
 import FrameFlowPayload from "./FrameFlowPayload";
 import { uploadReference } from "./frameFlowUpload";
 import { buildCrossfadeFrames } from "./frameFlowCrossfade";
@@ -264,6 +265,7 @@ export default function FrameFlowStudio({ onHome, seedStart, seedEnd }) {
             onRegenerate={regenerate}
           />
           <FrameFlowSpriteSheet frames={frames} current={current} onSelect={setCurrent} />
+          <FrameFlowHtmlSheet frames={frames} fps={settings.fps} />
           <FrameFlowPayload payload={payload} />
         </section>
 
