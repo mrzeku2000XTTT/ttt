@@ -1,6 +1,7 @@
 import React, { useCallback } from "react";
 import { Download, Mic, Square, Trash2 } from "lucide-react";
 import FaceStyleGrid from "./FaceStyleGrid";
+import StickmanGrid from "./StickmanGrid";
 import { MOUTH_STYLES, drawMouth } from "./mouthStyles";
 import { EYE_STYLES, EYE_ANIMS, drawEyePair } from "./eyeStyles";
 import { NOSE_STYLES, drawNose } from "./noseStyles";
@@ -45,6 +46,8 @@ export default function TalkStickPanel({
   onUpdatePart,
   onChangeVoice,
   onClearPart,
+  stickman,
+  onPickStickman,
   onPickImage,
   onPickAudio,
   onExport,
@@ -54,6 +57,8 @@ export default function TalkStickPanel({
 }) {
   const part = settings[activePart];
   const labels = SIZE_LABELS[activePart];
+  // Small features are a fraction of a percent on a wide stage, so keep a decimal there.
+  const size = (value) => (value < 10 ? value.toFixed(1) : Math.round(value));
   const activeLabel = (PARTS.find((item) => item.id === activePart) || PARTS[0]).label;
 
   // Sampled at the instant each preset is at its most recognisable.
@@ -79,6 +84,13 @@ export default function TalkStickPanel({
           <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => onPickImage(e.target.files[0])} />
         </label>
         <p className="ts-hint">A transparent PNG works especially well.</p>
+
+        <h3 className="ts-sub">Or start from a stickman</h3>
+        <StickmanGrid value={stickman} onChange={onPickStickman} />
+        <p className="ts-hint">
+          Ten characters, each caught mid-action and sized to fill the stage. The face is placed inside the head for
+          you — pick one and press play.
+        </p>
       </Section>
 
       <Section number="2" title="Face">
@@ -107,28 +119,30 @@ export default function TalkStickPanel({
         <div className="ts-row">
           <div>
             <label className="ts-label" htmlFor="ts-w">
-              {labels.width} <b>{Math.round(part.width)}</b>
+              {labels.width} <b>{size(part.width)}</b>
             </label>
             <input
               id="ts-w"
               className="ts-range"
               type="range"
-              min="3"
+              min="0.5"
               max="95"
+              step="0.5"
               value={part.width}
               onChange={(e) => onUpdatePart(activePart, { width: Number(e.target.value) })}
             />
           </div>
           <div>
             <label className="ts-label" htmlFor="ts-h">
-              {labels.height} <b>{Math.round(part.height)}</b>
+              {labels.height} <b>{size(part.height)}</b>
             </label>
             <input
               id="ts-h"
               className="ts-range"
               type="range"
-              min="2"
+              min="0.5"
               max="75"
+              step="0.5"
               value={part.height}
               onChange={(e) => onUpdatePart(activePart, { height: Number(e.target.value) })}
             />

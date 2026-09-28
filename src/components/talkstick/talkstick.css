@@ -353,6 +353,45 @@
 }
 .ts-style-tile.is-active .ts-style-name { color: var(--ts-ink); }
 
+/* ── Stickman library ── */
+.ts-stick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ts-stick-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 4px 6px;
+  border: 1px solid var(--ts-line);
+  border-radius: 13px;
+  background: var(--ts-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.ts-stick-tile:hover { border-color: var(--ts-line-strong); background: #fcfcfd; }
+.ts-stick-tile.is-active {
+  border-color: var(--ts-accent);
+  box-shadow: 0 0 0 3px rgba(17, 20, 24, 0.06);
+}
+.ts-stick-tile:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+.ts-stick-canvas { display: block; }
+
+.ts-stick-name {
+  color: var(--ts-body);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.ts-stick-tile.is-active .ts-stick-name { color: var(--ts-ink); }
+
 .ts-btn {
   display: flex;
   align-items: center;
@@ -446,5 +485,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ts-btn, .ts-file, .ts-meter-fill, .ts-mode, .ts-part, .ts-style-tile { transition: none; }
+  .ts-btn, .ts-file, .ts-meter-fill, .ts-mode, .ts-part, .ts-style-tile, .ts-stick-tile { transition: none; }
 }

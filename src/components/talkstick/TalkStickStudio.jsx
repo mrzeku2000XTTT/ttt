@@ -3,6 +3,7 @@ import TalkStickStage from "./TalkStickStage";
 import TalkStickPanel from "./TalkStickPanel";
 import useMouthEngine from "./useMouthEngine";
 import { fitCanvas } from "./talkStickRender";
+import { stickmanSource } from "./stickmen";
 
 // Every feature carries its own size and look. `width` is a share of the canvas
 // width and `height` too, so a feature keeps its proportions at any artwork size.
@@ -19,6 +20,7 @@ const LIFT = { eyes: 0.17, nose: 0.07 };
 
 export default function TalkStickStudio() {
   const [image, setImage] = useState(null);
+  const [stickman, setStickman] = useState(null);
   const [spots, setSpots] = useState({ mouth: null, eyes: null, nose: null });
   const [activePart, setActivePart] = useState("mouth");
   const [settings, setSettings] = useState(DEFAULTS);
@@ -51,11 +53,41 @@ export default function TalkStickStudio() {
     const url = URL.createObjectURL(file);
     const next = new Image();
     next.onload = () => {
+      setStickman(null);
       setImage(next);
       setSpots({ mouth: null, eyes: null, nose: null });
       URL.revokeObjectURL(url);
     };
     next.src = url;
+  };
+
+  // Draws a ready-made stickman at exactly the size the stage can hold, then lands
+  // the whole face inside its head — eyes, nose and mouth all sized to fit it — so
+  // it is ready to speak the moment it appears.
+  const pickStickman = (id) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const size = {
+      width: Math.max(1, stage.clientWidth - 44),
+      height: Math.max(1, stage.clientHeight - 44),
+    };
+    const { source, head } = stickmanSource(id, size.width, size.height);
+    const share = (px) => (px / size.width) * 100;
+
+    setStickman(id);
+    setImage(source);
+    setCanvasSize(size);
+    setSpots({
+      mouth: { x: head.cx, y: head.cy + head.r * 0.46 },
+      eyes: { x: head.cx, y: head.cy - head.r * 0.26 },
+      nose: { x: head.cx, y: head.cy + head.r * 0.08 },
+    });
+    setSettings((prev) => ({
+      ...prev,
+      mouth: { ...prev.mouth, width: share(head.r * 1.3), height: share(head.r * 0.62), offsetY: 0 },
+      eyes: { ...prev.eyes, width: share(head.r * 1.1), height: share(head.r * 0.3), offsetY: 0 },
+      nose: { ...prev.nose, width: share(head.r * 0.26), height: share(head.r * 0.44), offsetY: 0 },
+    }));
   };
 
   const exportFrame = () => {
@@ -114,6 +146,8 @@ export default function TalkStickStudio() {
             onUpdatePart={updatePart}
             onChangeVoice={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
             onClearPart={clearPart}
+            stickman={stickman}
+            onPickStickman={pickStickman}
             onPickImage={pickImage}
             onPickAudio={engine.playFile}
             onExport={exportFrame}

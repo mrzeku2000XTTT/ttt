@@ -10,9 +10,14 @@ import { drawNose } from "./noseStyles";
  */
 export function fitCanvas(canvas, image, maxWidth, maxHeight) {
   if (!canvas || !image) return null;
-  const scale = Math.min(maxWidth / image.naturalWidth, maxHeight / image.naturalHeight, 1);
-  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  // The artwork is either an uploaded image or a canvas the studio drew, so read
+  // whichever size the source actually exposes.
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  if (!sourceWidth || !sourceHeight) return null;
+  const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
+  canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+  canvas.height = Math.max(1, Math.round(sourceHeight * scale));
   return { width: canvas.width, height: canvas.height };
 }
 
