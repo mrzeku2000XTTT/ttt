@@ -52,13 +52,18 @@ export default function FluxkmailReminderRow({ mail }) {
       </div>
 
       {mail.showPopup ? (
-        <FluxkmailConnectPopup address={mail.address} onAllow={mail.confirmConnect} onCancel={mail.cancelConnect} />
+        <FluxkmailConnectPopup
+          address={mail.address}
+          onChange={mail.setAddress}
+          onAllow={mail.confirmConnect}
+          onCancel={mail.cancelConnect}
+        />
       ) : null}
     </>
   );
 }
 
-function FluxkmailConnectPopup({ address, onAllow, onCancel }) {
+function FluxkmailConnectPopup({ address, onChange, onAllow, onCancel }) {
   const overlayStyle = {
     position: "fixed",
     inset: 0,
@@ -94,8 +99,6 @@ function FluxkmailConnectPopup({ address, onAllow, onCancel }) {
     marginBottom: "14px",
   };
 
-  const short = address ? `${address.slice(0, 10)}…${address.slice(-8)}` : "";
-
   return (
     <div style={overlayStyle} onClick={onCancel}>
       <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
@@ -104,9 +107,28 @@ function FluxkmailConnectPopup({ address, onAllow, onCancel }) {
         <p style={{ fontSize: "13.5px", color: "#444", margin: "0 0 6px", lineHeight: 1.45 }}>
           NUDGE sends your appointment reminders through FluxKmail to your Kaspa address:
         </p>
-        <p style={{ fontSize: "13px", fontWeight: 600, margin: "0 0 12px", wordBreak: "break-all", fontFamily: "monospace" }}>
-          {short || "no address"}
-        </p>
+        <input
+          type="text"
+          value={address || ""}
+          onChange={(e) => onChange(e.target.value.trim())}
+          placeholder="kaspa:q… or q…"
+          spellCheck={false}
+          autoCapitalize="none"
+          autoCorrect="off"
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "9px 11px",
+            margin: "0 0 12px",
+            borderRadius: "10px",
+            border: "1px solid #ddd",
+            background: "#fafafa",
+            color: "#0a0a0a",
+            fontSize: "12.5px",
+            fontFamily: "monospace",
+            outline: "none",
+          }}
+        />
         <p style={{ fontSize: "11.5px", color: "#888", margin: "0 0 16px", lineHeight: 1.4 }}>
           Tap below to open FluxKmail, sign in, and make sure this Kaspa address is on your profile. Then your reminders land in your FluxKmail inbox — no Google account needed.
         </p>

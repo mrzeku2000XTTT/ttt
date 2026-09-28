@@ -10,7 +10,25 @@ import { base44 } from "@/api/base44Client";
  * we remember it against the address; the Booking app then shows reminders as on.
  */
 const STORAGE_KEY = "nudge_fluxkmail_connected";
+const ADDRESS_KEY = "nudge_fluxkmail_address";
 const FLUXKMAIL_APP = "https://fluxkmail.base44.app";
+
+function readOverride() {
+  try {
+    return localStorage.getItem(ADDRESS_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeOverride(addr) {
+  try {
+    if (addr) localStorage.setItem(ADDRESS_KEY, addr);
+    else localStorage.removeItem(ADDRESS_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}
 
 /** The FluxKmail sign-in link, carrying the address to link and where to come back to. */
 export function fluxkmailConnectUrl(address) {
@@ -59,7 +77,9 @@ export function useFluxkmailReminder() {
         if (!authed) return;
         try {
           const me = await base44.auth.me();
-          const addr = me.created_wallet_address || me.data?.kaspa_address || "";
+          const profileAddr = me.created_wallet_address || me.data?.kaspa_address || "";
+          const override = readOverride();
+          const addr = override || profileAddr;
           setAddress(addr);
 
           // Coming back from FluxKmail's sign-in: the address is now linked there.
@@ -81,6 +101,12 @@ export function useFluxkmailReminder() {
   }, []);
 
   const connect = useCallback(() => setShowPopup(true), []);
+
+  // Let the person type any Kaspa address they want — overrides the profile field.
+  const setAddressOverride = useCallback((addr) => {
+    setAddress(addr || "");
+    writeOverride(addr || "");
+  }, []);
 
   // Sends the person to FluxKmail to sign in and link the address. FluxKmail
   // returns them here with ?fluxkmail=connected, which the load effect picks up.
@@ -108,5 +134,5 @@ export function useFluxkmailReminder() {
     }
   }, []);
 
-  return { ready, signedIn, connected, address, showPopup, connect, confirmConnect, cancelConnect, disconnect, remind };
+  return { ready, signedIn, connected, address, setAddress: setAddressOverride, showPopup, connect, confirmConnect, cancelConnect, disconnect, remind };
 }
