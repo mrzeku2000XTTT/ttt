@@ -1,4 +1,4 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
 
 /**
  * NUDGE keeps the appointments on the phone. This is the one thing that leaves it:
