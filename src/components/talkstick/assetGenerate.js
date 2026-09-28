@@ -4,9 +4,9 @@ import { base44 } from "@/api/base44Client";
 // to a clean transparent PNG the moment it comes back.
 const RECIPE = {
   prop:
-    "{subject}. One single subject, centred and fully inside the frame, on a completely flat pure white background — no shadow, no reflection, no scenery, no ground. Crisp clean edges, strong contrast against the white, plain illustration style, no text, no watermark.",
+    "Draw only this one thing: {subject}. Nothing else appears in the frame — no extra people, figures, faces, hands, animals or scenery that were not asked for. The single subject is centred and fully inside the frame, on a completely flat pure white background — no shadow, no reflection, no ground. Crisp clean edges, strong contrast against the white, plain illustration style, no text, no watermark.",
   background:
-    "{subject}. A wide full-bleed scene background with no characters, no text and no watermark. Even lighting, uncluttered, sharp, cinematic.",
+    "Draw only this location: {subject}. A wide full-bleed scene background of the empty place itself, with no characters, no people, no text and no watermark. Even lighting, uncluttered, sharp, cinematic.",
 };
 
 /** The prompt the generator actually sees. */

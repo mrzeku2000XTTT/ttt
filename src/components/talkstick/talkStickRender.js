@@ -63,11 +63,15 @@ function patchColor(ctx, cx, cy, rx, ry) {
   return `rgb(${Math.round(r / taken)}, ${Math.round(g / taken)}, ${Math.round(b / taken)})`;
 }
 
+// Where the character has been dragged to, in canvas pixels. Face spots are
+// stored relative to it, so moving the character carries the whole face along.
+const NO_CHAR = { x: 0, y: 0 };
+
 /** Where a feature sits and how big it is, in canvas pixels. */
-function metrics(canvas, spot, part) {
+function metrics(canvas, spot, part, char) {
   return {
-    x: spot.x,
-    y: spot.y + canvas.height * (part.offsetY / 100),
+    x: spot.x + char.x,
+    y: spot.y + char.y + canvas.height * (part.offsetY / 100),
     w: canvas.width * (part.width / 100),
     h: canvas.width * (part.height / 100),
   };
@@ -92,8 +96,9 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const assets = scene?.assets || [];
+  const char = scene?.char || NO_CHAR;
   paintLayer(ctx, canvas, assets.filter((asset) => asset.kind === KIND_BACKGROUND), scene?.images);
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, char.x, char.y, canvas.width, canvas.height);
   paintLayer(ctx, canvas, assets.filter((asset) => asset.kind === KIND_PROP), scene?.images);
 
   if (!rig) return;
@@ -101,7 +106,7 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   const stroke = Math.max(2, canvas.width / 170);
 
   if (rig.eyes) {
-    const m = metrics(canvas, rig.eyes, settings.eyes);
+    const m = metrics(canvas, rig.eyes, settings.eyes, char);
     ctx.save();
     ctx.translate(m.x, m.y);
     drawEyePair(ctx, settings.eyes.style, settings.eyes.anim, {
@@ -115,7 +120,7 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   }
 
   if (rig.nose) {
-    const m = metrics(canvas, rig.nose, settings.nose);
+    const m = metrics(canvas, rig.nose, settings.nose, char);
     ctx.save();
     ctx.translate(m.x, m.y);
     drawNose(ctx, settings.nose.style, { w: m.w, h: m.h, stroke });
@@ -123,7 +128,7 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   }
 
   if (rig.mouth) {
-    const m = metrics(canvas, rig.mouth, settings.mouth);
+    const m = metrics(canvas, rig.mouth, settings.mouth, char);
     const open = m.h * (0.18 + level * 1.35);
     const w = m.w * (0.88 + level * 0.12);
 

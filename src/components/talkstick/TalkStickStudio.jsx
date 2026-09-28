@@ -31,6 +31,10 @@ const LIFT = { eyes: 0.17, nose: 0.07 };
 
 const NO_SPOTS = { mouth: null, eyes: null, nose: null };
 
+const NO_CHAR = { x: 0, y: 0 };
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
 export default function TalkStickStudio() {
   const [image, setImage] = useState(null);
   const [characterUrl, setCharacterUrl] = useState(null);
@@ -40,6 +44,10 @@ export default function TalkStickStudio() {
   const [settings, setSettings] = useState(DEFAULTS);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [editing, setEditing] = useState(true);
+  // Where the character sits on the stage. Face spots are stored relative to it,
+  // so dragging the character carries its mouth, eyes and nose along with it.
+  const [charPos, setCharPos] = useState(NO_CHAR);
+  const [movingChar, setMovingChar] = useState(false);
 
   const [assets, setAssets] = useState([]);
   const [selectedAssetId, setSelectedAssetId] = useState(null);
@@ -62,7 +70,7 @@ export default function TalkStickStudio() {
     image,
     rig: spots,
     settings,
-    scene: { assets, images: assetImages.current },
+    scene: { assets, images: assetImages.current, char: charPos },
   });
 
   // Fit the artwork to the stage, and again whenever the window changes size.
@@ -117,6 +125,7 @@ export default function TalkStickStudio() {
       setStickman(null);
       setCharacterUrl(url);
       setSpots(NO_SPOTS);
+      setCharPos(NO_CHAR);
       loadCharacter(url);
     });
   };
@@ -132,6 +141,7 @@ export default function TalkStickStudio() {
     setCharacterUrl(null);
     setImage(source);
     setCanvasSize(size);
+    setCharPos(NO_CHAR);
     setSpots({
       mouth: { x: head.cx, y: head.cy + head.r * 0.46 },
       eyes: { x: head.cx, y: head.cy - head.r * 0.26 },
@@ -205,6 +215,7 @@ export default function TalkStickStudio() {
     setSelectedAssetId(null);
     setStickman(project.stickman || null);
     setCharacterUrl(project.characterUrl || null);
+    setCharPos(project.char || NO_CHAR);
 
     if (project.stickman) {
       const built = buildStickman(project.stickman);
@@ -229,6 +240,7 @@ export default function TalkStickStudio() {
       setStickman(null);
       setCharacterUrl(pending);
       setSpots(NO_SPOTS);
+      setCharPos(NO_CHAR);
       loadCharacter(pending);
     } else {
       applyProject(loadCurrent());
@@ -240,10 +252,10 @@ export default function TalkStickStudio() {
 
   useEffect(() => {
     if (!hydrated) return;
-    saveCurrent({ version: 1, stickman, characterUrl, spots, settings, assets });
-  }, [hydrated, stickman, characterUrl, spots, settings, assets]);
+    saveCurrent({ version: 1, stickman, characterUrl, spots, settings, assets, char: charPos });
+  }, [hydrated, stickman, characterUrl, spots, settings, assets, charPos]);
 
-  const snapshot = () => ({ version: 1, stickman, characterUrl, spots, settings, assets });
+  const snapshot = () => ({ version: 1, stickman, characterUrl, spots, settings, assets, char: charPos });
 
   const saveNamedProject = () => {
     setHistory(saveHistory(projectName, snapshot()));
@@ -275,7 +287,21 @@ export default function TalkStickStudio() {
     });
   };
 
-  const placePart = (point) => setSpots((prev) => ({ ...prev, [activePart]: point }));
+  // Spots are kept in the character's own space, so a click on the stage is
+  // converted back out of the character's current position before it is stored.
+  const placePart = (point) =>
+    setSpots((prev) => ({
+      ...prev,
+      [activePart]: { x: point.x - charPos.x, y: point.y - charPos.y },
+    }));
+
+  // Moving the character is all it takes — the face rides along with it. A slice
+  // always stays on the stage, so the character can never be dragged out of reach.
+  const moveCharacter = (next) =>
+    setCharPos({
+      x: clamp(next.x, -canvasSize.width * 0.8, canvasSize.width * 0.8),
+      y: clamp(next.y, -canvasSize.height * 0.8, canvasSize.height * 0.8),
+    });
 
   return (
     <div className="talkstick">
@@ -303,6 +329,10 @@ export default function TalkStickStudio() {
             onToggleEditing={() => setEditing((prev) => !prev)}
             onPlace={placePart}
             onResize={(size) => updatePart(activePart, size)}
+            charPos={charPos}
+            movingChar={movingChar}
+            onToggleMovingChar={() => setMovingChar((prev) => !prev)}
+            onMoveCharacter={moveCharacter}
             assets={assets}
             selectedAssetId={selectedAssetId}
             onSelectAsset={setSelectedAssetId}

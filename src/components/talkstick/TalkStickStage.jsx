@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Eye, ImagePlus, Move } from "lucide-react";
+import { Eye, Hand, ImagePlus, Move } from "lucide-react";
 import AssetLayer from "./AssetLayer";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -24,6 +24,10 @@ export default function TalkStickStage({
   onToggleEditing,
   onPlace,
   onResize,
+  charPos,
+  movingChar,
+  onToggleMovingChar,
+  onMoveCharacter,
   assets,
   selectedAssetId,
   onSelectAsset,
@@ -32,6 +36,9 @@ export default function TalkStickStage({
   onDropFiles,
 }) {
   const [mode, setMode] = useState(null);
+  // The pointer's starting point plus the character's position when the drag
+  // began, so the character follows the pointer exactly.
+  const [drag, setDrag] = useState(null);
   const [over, setOver] = useState(false);
   const wrapRef = useRef(null);
 
@@ -50,8 +57,8 @@ export default function TalkStickStage({
   const box =
     spot && canvasSize.width
       ? {
-          cx: spot.x,
-          cy: spot.y + canvasSize.height * (part.offsetY / 100),
+          cx: spot.x + charPos.x,
+          cy: spot.y + charPos.y + canvasSize.height * (part.offsetY / 100),
           w: canvasSize.width * (part.width / 100),
           h: canvasSize.width * (part.height / 100),
         }
@@ -69,6 +76,11 @@ export default function TalkStickStage({
     if (!point) return;
     event.preventDefault();
     wrapRef.current?.setPointerCapture?.(event.pointerId);
+    if (movingChar) {
+      setDrag({ start: point, origin: charPos });
+      setMode("char");
+      return;
+    }
     setMode("move");
     onPlace(point);
   };
@@ -86,6 +98,14 @@ export default function TalkStickStage({
     const point = toCanvas(event);
     if (!point) return;
 
+    if (mode === "char") {
+      if (!drag) return;
+      onMoveCharacter({
+        x: drag.origin.x + (point.x - drag.start.x),
+        y: drag.origin.y + (point.y - drag.start.y),
+      });
+      return;
+    }
     if (mode === "move") {
       onPlace(point);
       return;
@@ -101,6 +121,7 @@ export default function TalkStickStage({
   const end = (event) => {
     if (!mode) return;
     setMode(null);
+    setDrag(null);
     wrapRef.current?.releasePointerCapture?.(event.pointerId);
   };
 
@@ -141,15 +162,28 @@ export default function TalkStickStage({
       <div className="ts-stage-bar">
         <span className="ts-stage-label">Stage</span>
         {hasImage && (
-          <button
-            type="button"
-            className={`ts-mode ${editing ? "" : "is-ready"}`}
-            aria-pressed={!editing}
-            onClick={onToggleEditing}
-          >
-            {editing ? <Eye className="ts-mode-icon" /> : <Move className="ts-mode-icon" />}
-            {editing ? "Ready view" : "Adjust face"}
-          </button>
+          <div className="ts-stage-actions">
+            {editing && (
+              <button
+                type="button"
+                className={`ts-mode ${movingChar ? "is-on" : ""}`}
+                aria-pressed={movingChar}
+                onClick={onToggleMovingChar}
+              >
+                <Hand className="ts-mode-icon" />
+                {movingChar ? "Moving character" : "Move character"}
+              </button>
+            )}
+            <button
+              type="button"
+              className={`ts-mode ${editing ? "" : "is-ready"}`}
+              aria-pressed={!editing}
+              onClick={onToggleEditing}
+            >
+              {editing ? <Eye className="ts-mode-icon" /> : <Move className="ts-mode-icon" />}
+              {editing ? "Ready view" : "Adjust face"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -171,7 +205,9 @@ export default function TalkStickStage({
           >
             <canvas
               ref={canvasRef}
-              className={`ts-canvas ${mode === "move" ? "is-dragging" : ""} ${editing ? "" : "is-ready"}`}
+              className={`ts-canvas ${
+                mode === "move" || mode === "char" ? "is-dragging" : ""
+              } ${movingChar ? "is-moving" : ""} ${editing ? "" : "is-ready"}`}
             />
             {editing && (
               <AssetLayer
@@ -183,7 +219,7 @@ export default function TalkStickStage({
                 onDelete={onDeleteAsset}
               />
             )}
-            {editing && !selectedAssetId && guideStyle && (
+            {editing && !movingChar && !selectedAssetId && guideStyle && (
               <div className={`ts-guide ${mode ? "is-active" : ""}`} style={guideStyle}>
                 <Move className="ts-guide-icon" />
                 {cornerStyle && (
