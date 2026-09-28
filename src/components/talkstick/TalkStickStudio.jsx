@@ -18,6 +18,7 @@ export default function TalkStickStudio() {
   const [mouth, setMouth] = useState(null);
   const [settings, setSettings] = useState(DEFAULTS);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [editing, setEditing] = useState(true);
 
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
@@ -77,6 +78,8 @@ export default function TalkStickStudio() {
             mouth={mouth}
             settings={settings}
             canvasSize={canvasSize}
+            editing={editing}
+            onToggleEditing={() => setEditing((prev) => !prev)}
             onPlace={setMouth}
           />
           <TalkStickPanel

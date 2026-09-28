@@ -35,7 +35,8 @@ export default function TalkStickPanel({
 
       <Section number="2" title="Mouth position">
         <p className="ts-hint">
-          Click the character to drop the mouth on it, then drag it anywhere — the handle follows your pointer.
+          Click the character to drop the mouth on it, then drag it anywhere. Press <b>Ready view</b> on the stage to
+          hide the guide and see the mouth clean.
         </p>
 
         <div className="ts-row">

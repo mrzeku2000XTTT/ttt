@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { Move } from "lucide-react";
+import { Eye, Move } from "lucide-react";
 
 /**
  * The drawing surface.
  *
- * Press anywhere to drop the mouth on the character, then drag it around — the
- * handle sits exactly where the mouth is drawn, and it lives in the DOM rather
- * than on the canvas, so it never ends up in the exported frame.
+ * Press anywhere to drop the mouth on the character, then drag it around. The
+ * guide around the mouth lives in the DOM rather than on the canvas, so it never
+ * ends up in the exported frame, and "Ready view" hides it for a clean look.
  */
 export default function TalkStickStage({
   canvasRef,
@@ -15,6 +15,8 @@ export default function TalkStickStage({
   mouth,
   settings,
   canvasSize,
+  editing,
+  onToggleEditing,
   onPlace,
 }) {
   const [dragging, setDragging] = useState(false);
@@ -31,7 +33,7 @@ export default function TalkStickStage({
   };
 
   const start = (event) => {
-    if (!hasImage) return;
+    if (!hasImage || !editing) return;
     const point = toCanvas(event);
     if (!point) return;
     event.preventDefault();
@@ -75,14 +77,30 @@ export default function TalkStickStage({
             onPointerUp={end}
             onPointerCancel={end}
           >
-            <canvas ref={canvasRef} className={`ts-canvas ${dragging ? "is-dragging" : ""}`} />
-            {handle && (
+            <canvas
+              ref={canvasRef}
+              className={`ts-canvas ${dragging ? "is-dragging" : ""} ${editing ? "" : "is-ready"}`}
+            />
+            {editing && handle && (
               <div className={`ts-handle ${dragging ? "is-dragging" : ""}`} style={handle}>
                 <Move className="ts-handle-icon" />
               </div>
             )}
           </div>
         )}
+
+        {hasImage && (
+          <button
+            type="button"
+            className={`ts-mode ${editing ? "" : "is-ready"}`}
+            aria-pressed={!editing}
+            onClick={onToggleEditing}
+          >
+            {editing ? <Eye className="ts-mode-icon" /> : <Move className="ts-mode-icon" />}
+            {editing ? "Ready view" : "Adjust mouth"}
+          </button>
+        )}
+
         {!hasImage && (
           <div className="ts-empty">
             <strong>Upload your character</strong>

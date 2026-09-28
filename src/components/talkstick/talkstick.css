@@ -94,7 +94,8 @@
 }
 .ts-canvas.is-dragging { cursor: grabbing; }
 
-/* The draggable mouth handle — DOM, never painted into the export. */
+/* The draggable mouth guide — DOM, never painted into the export, and empty
+   inside so it can never cover the mouth it is tracking. */
 .ts-handle {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -103,21 +104,21 @@
   justify-content: center;
   min-width: 30px;
   min-height: 26px;
-  border: 1.5px dashed #98a0aa;
+  border: 1px dashed #c2c8d0;
   border-radius: 999px;
-  background: rgba(148, 155, 165, 0.16);
+  background: transparent;
   cursor: grab;
   touch-action: none;
   transition: background 0.15s, border-color 0.15s;
 }
 .ts-handle:hover {
-  background: rgba(148, 155, 165, 0.26);
-  border-color: #6b7280;
+  background: rgba(148, 155, 165, 0.1);
+  border-color: #8b939d;
 }
 .ts-handle.is-dragging {
   border-style: solid;
   border-color: #111418;
-  background: rgba(17, 20, 24, 0.12);
+  background: rgba(17, 20, 24, 0.06);
   cursor: grabbing;
 }
 
@@ -125,10 +126,43 @@
   width: 13px;
   height: 13px;
   color: #4b5563;
-  opacity: 0.85;
+  opacity: 0;
   pointer-events: none;
+  transition: opacity 0.15s;
 }
-.ts-handle.is-dragging .ts-handle-icon { color: #111418; }
+.ts-handle:hover .ts-handle-icon { opacity: 0.7; }
+.ts-handle.is-dragging .ts-handle-icon { opacity: 1; color: #111418; }
+
+/* Ready view — the guide is gone, so the stage is just the character. */
+.ts-canvas.is-ready { cursor: default; }
+
+.ts-mode {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--ts-line-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ts-body);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.ts-mode:hover { border-color: #b9bec6; color: var(--ts-ink); }
+.ts-mode.is-ready {
+  border-color: var(--ts-accent);
+  color: var(--ts-ink);
+  box-shadow: 0 0 0 3px rgba(17, 20, 24, 0.06);
+}
+
+.ts-mode-icon { width: 13px; height: 13px; }
 
 .ts-empty {
   position: absolute;
@@ -356,5 +390,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ts-btn, .ts-file, .ts-meter-fill, .ts-handle, .ts-style-tile { transition: none; }
+  .ts-btn, .ts-file, .ts-meter-fill, .ts-handle, .ts-handle-icon, .ts-mode, .ts-style-tile { transition: none; }
 }
