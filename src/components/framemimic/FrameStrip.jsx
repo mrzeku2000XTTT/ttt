@@ -15,7 +15,13 @@ export default function FrameStrip({ frames, selected, onSelect, onRetry }) {
             }`}
             title={`Frame ${f.index + 1}`}
           >
-            <img src={f.dataUrl} alt={`frame ${f.index + 1}`} className="h-16 w-auto object-cover" />
+            <img
+              src={f.dataUrl}
+              alt={`frame ${f.index + 1}`}
+              loading="lazy"
+              decoding="async"
+              className="h-16 w-auto object-cover"
+            />
             <span className="absolute top-1 left-1 text-[9px] font-bold bg-black/70 px-1 rounded text-white/80">
               {f.index + 1}
             </span>

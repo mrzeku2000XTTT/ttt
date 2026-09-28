@@ -2,18 +2,19 @@ import React, { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { Upload, Film, Loader2, Wand2, Sparkles } from "lucide-react";
 import BackToStore from "@/components/BackToStore";
-import { extractFrames, MAX_VIDEO_SECONDS } from "@/components/framemimic/frameCapture";
+import { extractFrames, MAX_VIDEO_SECONDS, MAX_VIDEO_LABEL } from "@/components/framemimic/frameCapture";
 import { cloneFrames, cloneFrame, refineFrame } from "@/components/framemimic/frameCloneEngine";
 import FrameStrip from "@/components/framemimic/FrameStrip";
 import FrameMimicPlayer from "@/components/framemimic/FrameMimicPlayer";
 import FrameMimicLibrary from "@/components/framemimic/FrameMimicLibrary";
 import { saveProject, getProject, genProjectId } from "@/components/framemimic/frameMimicStore";
 
-const FPS_OPTIONS = [2, 4, 6, 8];
+const FPS_OPTIONS = [1, 2, 4, 6, 8];
 
 export default function FrameMimicPage() {
   const fileInputRef = useRef(null);
   const cancelRef = useRef(false);
+  const captureCancelRef = useRef(false);
 
   const [stage, setStage] = useState("upload"); // upload | capturing | ready | cloning | done
   const [fps, setFps] = useState(4);
@@ -39,7 +40,9 @@ export default function FrameMimicPage() {
 
   // Auto-save to the library (debounced) so work survives refresh.
   useEffect(() => {
-    if (!meta || !frames.some((f) => f.html)) return;
+    // Saving mid-clone rewrites the whole project after every single frame, which
+    // gets expensive on long sequences — wait until the run has finished.
+    if (stage === "cloning" || !meta || !frames.some((f) => f.html)) return;
     const id = setTimeout(() => {
       const pid = projectId ?? genProjectId();
       if (projectId == null) setProjectId(pid);
@@ -56,7 +59,7 @@ export default function FrameMimicPage() {
         .catch(() => {});
     }, 1200);
     return () => clearTimeout(id);
-  }, [frames, meta, fps, videoName, projectId]);
+  }, [frames, meta, fps, videoName, projectId, stage]);
 
   const handleVideo = async (e) => {
     const file = e.target.files?.[0];
@@ -65,6 +68,7 @@ export default function FrameMimicPage() {
       toast.error("Pick a video file.");
       return;
     }
+    captureCancelRef.current = false;
     setStage("capturing");
     setCaptureProgress({ done: 0, total: 0 });
     setFrames([]);
@@ -75,16 +79,17 @@ export default function FrameMimicPage() {
         file,
         fps,
         onProgress: ({ done, total }) => setCaptureProgress({ done, total }),
+        shouldCancel: () => captureCancelRef.current,
       });
       if (result.trimmed) {
-        toast.message(`Video trimmed to the first ${MAX_VIDEO_SECONDS}s — 15s max for now.`);
+        toast.message(`Video trimmed to the first ${MAX_VIDEO_LABEL} — that's the current limit.`);
       }
       setMeta(result);
       setFrames(result.frames.map((f) => ({ ...f, status: "captured", html: "" })));
       setSelected(0);
       setStage("ready");
     } catch (err) {
-      toast.error(err?.message || "Frame capture failed.");
+      if (err?.message !== "Capture cancelled.") toast.error(err?.message || "Frame capture failed.");
       setStage("upload");
     }
   };
@@ -177,7 +182,7 @@ export default function FrameMimicPage() {
           <div>
             <h1 className="text-2xl font-black tracking-tight">FrameMimic</h1>
             <p className="text-white/40 text-xs">
-              Video → frame-by-frame HTML clones · {MAX_VIDEO_SECONDS}s max
+              Video → frame-by-frame HTML clones · {MAX_VIDEO_LABEL} max
             </p>
           </div>
         </div>
@@ -209,9 +214,9 @@ export default function FrameMimicPage() {
               className="w-full border-2 border-dashed border-white/15 rounded-2xl py-12 flex flex-col items-center gap-2 hover:border-white/40 transition-all"
             >
               <Upload className="w-7 h-7 text-white/50" />
-              <span className="text-sm font-semibold">Select a video ({MAX_VIDEO_SECONDS} seconds max)</span>
+              <span className="text-sm font-semibold">Select a video ({MAX_VIDEO_LABEL} max)</span>
               <span className="text-xs text-white/40">
-                Every frame gets captured & cloned into HTML — {fps} fps ≈ {Math.floor(MAX_VIDEO_SECONDS * fps)} frames at {MAX_VIDEO_SECONDS}s
+                Every frame gets captured & cloned into HTML — {fps} fps ≈ {Math.floor(MAX_VIDEO_SECONDS * fps)} frames at {MAX_VIDEO_LABEL}
               </span>
             </button>
             <FrameMimicLibrary refreshKey={libKey} onLoad={loadProject} />
@@ -232,6 +237,14 @@ export default function FrameMimicPage() {
             <p className="text-xs text-white/40">
               {captureProgress.done}/{captureProgress.total || "…"} frames
             </p>
+            <button
+              onClick={() => {
+                captureCancelRef.current = true;
+              }}
+              className="text-xs text-white/40 underline"
+            >
+              cancel
+            </button>
           </div>
         )}
 

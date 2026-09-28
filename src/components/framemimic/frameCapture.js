@@ -4,7 +4,8 @@
 // the decoded "seeked" event before drawing. Unlike timeupdate/rAF sampling
 // this never skips a frame and gives exact fps control.
 
-export const MAX_VIDEO_SECONDS = 15;
+export const MAX_VIDEO_SECONDS = 120;
+export const MAX_VIDEO_LABEL = "2 min";
 
 const loadVideo = (file) =>
   new Promise((resolve, reject) => {
@@ -41,7 +42,7 @@ const seekTo = (video, t) =>
     }
   });
 
-export async function extractFrames({ file, fps = 4, maxWidth = 720, onProgress }) {
+export async function extractFrames({ file, fps = 4, maxWidth = 720, onProgress, shouldCancel }) {
   const { video, url } = await loadVideo(file);
   try {
     const rawDuration = video.duration || 0;
@@ -49,16 +50,20 @@ export async function extractFrames({ file, fps = 4, maxWidth = 720, onProgress 
     const trimmed = rawDuration > MAX_VIDEO_SECONDS;
     const duration = trimmed ? MAX_VIDEO_SECONDS : rawDuration;
 
-    const width = Math.min(video.videoWidth, maxWidth);
+    const total = Math.max(1, Math.floor(duration * fps));
+    // A two-minute clip is hundreds of frames, so long captures run at a smaller
+    // width — the whole sequence then stays comfortably inside browser memory.
+    const capWidth = total > 400 ? 480 : maxWidth;
+    const width = Math.min(video.videoWidth, capWidth);
     const height = Math.max(1, Math.round(video.videoHeight * (width / video.videoWidth)));
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
 
-    const total = Math.max(1, Math.floor(duration * fps));
     const frames = [];
     for (let i = 0; i < total; i++) {
+      if (shouldCancel?.()) throw new Error("Capture cancelled.");
       const t = Math.min(i / fps, duration - 0.02);
       await seekTo(video, t);
       ctx.drawImage(video, 0, 0, width, height);
