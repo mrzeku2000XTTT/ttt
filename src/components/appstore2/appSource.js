@@ -15,7 +15,7 @@ const COMPONENT_FOLDERS = [
   "kaspacollab", "katagami", "kcc20", "kccnft", "kiln", "kine", "kinezma", "kivr", "klipz", "klock",
   "kutt", "kydonia", "launchreel", "metamimic", "morph", "motion", "motionfly", "narrate", "niche", "oc",
   "orbt", "prism", "productstudio", "prompto", "rion", "rmx", "searchkaspa", "shillz", "silverscript", "simple",
-  "sky", "slobz", "stakedag", "superzk", "tele", "terra", "thumbnailcreator", "tree", "tttbuilder", "ugc",
+  "sky", "slobz", "stakedag", "superzk", "talkstick", "tele", "terra", "thumbnailcreator", "tree", "tttbuilder", "ugc",
   "ui", "ultramock", "voxa",
 ];
 
