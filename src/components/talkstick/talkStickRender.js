@@ -3,6 +3,7 @@
 import { drawMouth } from "./mouthStyles";
 import { drawEyePair } from "./eyeStyles";
 import { drawNose } from "./noseStyles";
+import { assetBox, KIND_BACKGROUND, KIND_PROP } from "./sceneAssets";
 
 /**
  * Sizes the canvas to the artwork so the whole drawing fits the stage, keeping
@@ -72,10 +73,29 @@ function metrics(canvas, spot, part) {
   };
 }
 
-/** Draws the character and every placed feature at the current voice level. */
-export function drawFrame(ctx, canvas, image, rig, settings, level) {
+/** Paints one layer of assets, in the order they were added. */
+function paintLayer(ctx, canvas, assets, images) {
+  if (!images) return;
+  assets.forEach((asset) => {
+    const art = images.get(asset.url);
+    if (!art) return;
+    const box = assetBox(asset, canvas);
+    ctx.drawImage(art, box.x - box.w / 2, box.y - box.h / 2, box.w, box.h);
+  });
+}
+
+/**
+ * Draws one frame: the background plates, the character, then the props, then
+ * the face on top — so the mouth and eyes always stay visible while they move.
+ */
+export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const assets = scene?.assets || [];
+  paintLayer(ctx, canvas, assets.filter((asset) => asset.kind === KIND_BACKGROUND), scene?.images);
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  paintLayer(ctx, canvas, assets.filter((asset) => asset.kind === KIND_PROP), scene?.images);
+
   if (!rig) return;
 
   const stroke = Math.max(2, canvas.width / 170);

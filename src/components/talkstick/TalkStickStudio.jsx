@@ -1,9 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import TalkStickStage from "./TalkStickStage";
 import TalkStickPanel from "./TalkStickPanel";
 import useMouthEngine from "./useMouthEngine";
 import { fitCanvas } from "./talkStickRender";
 import { stickmanSource } from "./stickmen";
+import { assetFromFile, fileToDataUrl, newAsset, KIND_PROP } from "./sceneAssets";
+import { generateAsset } from "./assetGenerate";
+import {
+  deleteHistory,
+  listHistory,
+  loadCurrent,
+  saveCurrent,
+  saveHistory,
+  takePendingCharacter,
+} from "./talkStickStore";
 
 // Every feature carries its own size and look. `width` is a share of the canvas
 // width and `height` too, so a feature keeps its proportions at any artwork size.
@@ -18,20 +29,41 @@ const DEFAULTS = {
 // How far above the mouth a new feature is first dropped, as a share of height.
 const LIFT = { eyes: 0.17, nose: 0.07 };
 
+const NO_SPOTS = { mouth: null, eyes: null, nose: null };
+
 export default function TalkStickStudio() {
   const [image, setImage] = useState(null);
+  const [characterUrl, setCharacterUrl] = useState(null);
   const [stickman, setStickman] = useState(null);
-  const [spots, setSpots] = useState({ mouth: null, eyes: null, nose: null });
+  const [spots, setSpots] = useState(NO_SPOTS);
   const [activePart, setActivePart] = useState("mouth");
   const [settings, setSettings] = useState(DEFAULTS);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [editing, setEditing] = useState(true);
 
+  const [assets, setAssets] = useState([]);
+  const [selectedAssetId, setSelectedAssetId] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+
+  const [projectName, setProjectName] = useState("");
+  const [history, setHistory] = useState([]);
+  const [hydrated, setHydrated] = useState(false);
+
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
   const meterRef = useRef(null);
+  // Every asset's artwork, keyed by its url, for the renderer to draw each frame.
+  const assetImages = useRef(new Map());
 
-  const engine = useMouthEngine({ canvasRef, meterRef, image, rig: spots, settings });
+  const engine = useMouthEngine({
+    canvasRef,
+    meterRef,
+    image,
+    rig: spots,
+    settings,
+    scene: { assets, images: assetImages.current },
+  });
 
   // Fit the artwork to the stage, and again whenever the window changes size.
   useEffect(() => {
@@ -48,33 +80,56 @@ export default function TalkStickStudio() {
     return () => window.removeEventListener("resize", fit);
   }, [image]);
 
+  // Loads the artwork behind each asset once, and forgets any that left the scene.
+  useEffect(() => {
+    const map = assetImages.current;
+    const live = new Set(assets.map((asset) => asset.url));
+    Array.from(map.keys()).forEach((key) => {
+      if (!live.has(key)) map.delete(key);
+    });
+    assets.forEach((asset) => {
+      if (map.has(asset.url)) return;
+      const art = new Image();
+      art.onload = () => map.set(asset.url, art);
+      art.src = asset.url;
+    });
+  }, [assets]);
+
+  const loadCharacter = (url) => {
+    const next = new Image();
+    next.onload = () => setImage(next);
+    next.src = url;
+  };
+
+  const buildStickman = (id) => {
+    const stage = stageRef.current;
+    const size = {
+      width: Math.max(1, (stage?.clientWidth || 900) - 44),
+      height: Math.max(1, (stage?.clientHeight || 600) - 44),
+    };
+    const { source, head } = stickmanSource(id, size.width, size.height);
+    return { source, size, head };
+  };
+
   const pickImage = (file) => {
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    const next = new Image();
-    next.onload = () => {
+    fileToDataUrl(file).then((url) => {
       setStickman(null);
-      setImage(next);
-      setSpots({ mouth: null, eyes: null, nose: null });
-      URL.revokeObjectURL(url);
-    };
-    next.src = url;
+      setCharacterUrl(url);
+      setSpots(NO_SPOTS);
+      loadCharacter(url);
+    });
   };
 
   // Draws a ready-made stickman at exactly the size the stage can hold, then lands
   // the whole face inside its head — eyes, nose and mouth all sized to fit it — so
   // it is ready to speak the moment it appears.
   const pickStickman = (id) => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const size = {
-      width: Math.max(1, stage.clientWidth - 44),
-      height: Math.max(1, stage.clientHeight - 44),
-    };
-    const { source, head } = stickmanSource(id, size.width, size.height);
+    const { source, size, head } = buildStickman(id);
     const share = (px) => (px / size.width) * 100;
 
     setStickman(id);
+    setCharacterUrl(null);
     setImage(source);
     setCanvasSize(size);
     setSpots({
@@ -88,6 +143,111 @@ export default function TalkStickStudio() {
       eyes: { ...prev.eyes, width: share(head.r * 1.1), height: share(head.r * 0.3), offsetY: 0 },
       nose: { ...prev.nose, width: share(head.r * 0.26), height: share(head.r * 0.44), offsetY: 0 },
     }));
+  };
+
+  const addAssets = (files) => {
+    const pictures = files.filter((file) => file.type.startsWith("image/"));
+    if (!pictures.length) return;
+    Promise.all(pictures.map((file) => assetFromFile(file, KIND_PROP)))
+      .then((created) => {
+        setAssets((prev) => [...prev, ...created]);
+        setSelectedAssetId(created[created.length - 1].id);
+        setError("");
+      })
+      .catch((problem) => setError(problem.message));
+  };
+
+  // Dropping onto the stage gives the scene a prop — unless the stage is still
+  // empty, in which case the first image becomes the character itself.
+  const handleDrop = (files) => {
+    const pictures = files.filter((file) => file.type.startsWith("image/"));
+    if (!pictures.length) return;
+    if (image) {
+      addAssets(pictures);
+      return;
+    }
+    pickImage(pictures[0]);
+    addAssets(pictures.slice(1));
+  };
+
+  const generateSceneAsset = ({ subject, kind, transparent }) => {
+    setGenerating(true);
+    setError("");
+    generateAsset({ subject, kind, transparent })
+      .then(({ url, ratio }) => {
+        const created = newAsset({
+          url,
+          ratio,
+          kind,
+          name: subject.trim().slice(0, 40),
+          prompt: subject,
+        });
+        setAssets((prev) => [...prev, created]);
+        setSelectedAssetId(created.id);
+      })
+      .catch((problem) => setError(problem.message || "That generation did not come back"))
+      .finally(() => setGenerating(false));
+  };
+
+  const changeAsset = (id, patch) =>
+    setAssets((prev) => prev.map((asset) => (asset.id === id ? { ...asset, ...patch } : asset)));
+
+  const deleteAsset = (id) => {
+    setAssets((prev) => prev.filter((asset) => asset.id !== id));
+    setSelectedAssetId((prev) => (prev === id ? null : prev));
+  };
+
+  const applyProject = (project) => {
+    if (!project) return;
+    setSettings({ ...DEFAULTS, ...(project.settings || {}) });
+    setSpots(project.spots || NO_SPOTS);
+    setAssets(project.assets || []);
+    setSelectedAssetId(null);
+    setStickman(project.stickman || null);
+    setCharacterUrl(project.characterUrl || null);
+
+    if (project.stickman) {
+      const built = buildStickman(project.stickman);
+      setImage(built.source);
+      setCanvasSize(built.size);
+      return;
+    }
+    if (project.characterUrl) {
+      loadCharacter(project.characterUrl);
+      return;
+    }
+    setImage(null);
+    setCanvasSize({ width: 0, height: 0 });
+  };
+
+  // Pick up whatever the last visit left behind: the artwork handed over by the
+  // landing page first, then the project that saves itself as you work.
+  useEffect(() => {
+    setHistory(listHistory());
+    const pending = takePendingCharacter();
+    if (pending) {
+      setStickman(null);
+      setCharacterUrl(pending);
+      setSpots(NO_SPOTS);
+      loadCharacter(pending);
+    } else {
+      applyProject(loadCurrent());
+    }
+    setHydrated(true);
+    // Runs once, on the first mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveCurrent({ version: 1, stickman, characterUrl, spots, settings, assets });
+  }, [hydrated, stickman, characterUrl, spots, settings, assets]);
+
+  const snapshot = () => ({ version: 1, stickman, characterUrl, spots, settings, assets });
+
+  const saveNamedProject = () => {
+    setHistory(saveHistory(projectName, snapshot()));
+    setProjectName("");
   };
 
   const exportFrame = () => {
@@ -107,6 +267,7 @@ export default function TalkStickStudio() {
   // Selecting a feature drops it above the mouth the first time, so the face is
   // usable straight away instead of starting from an empty canvas.
   const selectPart = (part) => {
+    setSelectedAssetId(null);
     setActivePart(part);
     setSpots((prev) => {
       if (prev[part] || !prev.mouth || !canvasSize.height) return prev;
@@ -120,7 +281,12 @@ export default function TalkStickStudio() {
     <div className="talkstick">
       <div className="ts-shell">
         <header className="ts-head">
-          <div className="ts-brand">TALKSTICK</div>
+          <div className="ts-head-left">
+            <Link to="/TalkStick" className="ts-back">
+              Overview
+            </Link>
+            <div className="ts-brand">TALKSTICK</div>
+          </div>
           <span className="ts-badge">Real-time face engine</span>
         </header>
 
@@ -137,6 +303,12 @@ export default function TalkStickStudio() {
             onToggleEditing={() => setEditing((prev) => !prev)}
             onPlace={placePart}
             onResize={(size) => updatePart(activePart, size)}
+            assets={assets}
+            selectedAssetId={selectedAssetId}
+            onSelectAsset={setSelectedAssetId}
+            onChangeAsset={changeAsset}
+            onDeleteAsset={deleteAsset}
+            onDropFiles={handleDrop}
           />
           <TalkStickPanel
             settings={settings}
@@ -154,6 +326,21 @@ export default function TalkStickStudio() {
             meterRef={meterRef}
             engine={engine}
             hasImage={Boolean(image)}
+            assets={assets}
+            selectedAssetId={selectedAssetId}
+            onSelectAsset={setSelectedAssetId}
+            onChangeAsset={changeAsset}
+            onDeleteAsset={deleteAsset}
+            onGenerateAsset={generateSceneAsset}
+            onAddAssetFiles={addAssets}
+            generating={generating}
+            generateError={error}
+            history={history}
+            projectName={projectName}
+            onProjectName={setProjectName}
+            onSaveProject={saveNamedProject}
+            onOpenProject={(entry) => applyProject(entry.project)}
+            onDeleteProject={(id) => setHistory(deleteHistory(id))}
           />
         </div>
       </div>

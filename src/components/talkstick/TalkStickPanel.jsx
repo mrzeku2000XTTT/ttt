@@ -2,6 +2,9 @@ import React, { useCallback } from "react";
 import { Download, Mic, Square, Trash2, X } from "lucide-react";
 import FaceStyleGrid from "./FaceStyleGrid";
 import StickmanGrid from "./StickmanGrid";
+import Section from "./PanelSection";
+import ScenePanel from "./ScenePanel";
+import ProjectsPanel from "./ProjectsPanel";
 import { MOUTH_STYLES, drawMouth } from "./mouthStyles";
 import { EYE_STYLES, EYE_ANIMS, drawEyePair } from "./eyeStyles";
 import { NOSE_STYLES, drawNose } from "./noseStyles";
@@ -27,16 +30,6 @@ const PREVIEWS = {
   nose: (ctx, id) => drawNose(ctx, id, { w: 10, h: 18, stroke: 2.4 }),
 };
 
-const Section = ({ number, title, children }) => (
-  <section className="ts-section">
-    <h2 className="ts-section-title">
-      <span className="ts-num">{number}</span>
-      {title}
-    </h2>
-    {children}
-  </section>
-);
-
 /** Everything that shapes the face and drives it. */
 export default function TalkStickPanel({
   settings,
@@ -54,6 +47,21 @@ export default function TalkStickPanel({
   meterRef,
   engine,
   hasImage,
+  assets,
+  selectedAssetId,
+  onSelectAsset,
+  onChangeAsset,
+  onDeleteAsset,
+  onGenerateAsset,
+  onAddAssetFiles,
+  generating,
+  generateError,
+  history,
+  projectName,
+  onProjectName,
+  onSaveProject,
+  onOpenProject,
+  onDeleteProject,
 }) {
   const part = settings[activePart];
   const labels = SIZE_LABELS[activePart];
@@ -93,7 +101,21 @@ export default function TalkStickPanel({
         </p>
       </Section>
 
-      <Section number="2" title="Face">
+      <Section number="2" title="Scene">
+        <ScenePanel
+          assets={assets}
+          selectedId={selectedAssetId}
+          onSelect={onSelectAsset}
+          onChange={onChangeAsset}
+          onDelete={onDeleteAsset}
+          onGenerate={onGenerateAsset}
+          onAddFiles={onAddAssetFiles}
+          generating={generating}
+          error={generateError}
+        />
+      </Section>
+
+      <Section number="3" title="Face">
         <div className="ts-parts" role="radiogroup" aria-label="Feature">
           {PARTS.map((item) => (
             <button
@@ -186,7 +208,7 @@ export default function TalkStickPanel({
         )}
       </Section>
 
-      <Section number="3" title={`${activeLabel} look`}>
+      <Section number="4" title={`${activeLabel} look`}>
         <FaceStyleGrid
           options={STYLE_OPTIONS[activePart]}
           value={part.style}
@@ -218,7 +240,7 @@ export default function TalkStickPanel({
         )}
       </Section>
 
-      <Section number="4" title="Voice">
+      <Section number="5" title="Voice">
         <button
           type="button"
           className={`ts-btn ${engine.listening ? "ts-btn-live" : "ts-btn-primary"}`}
@@ -275,14 +297,25 @@ export default function TalkStickPanel({
         </div>
       </Section>
 
-      <Section number="5" title="Export">
+      <Section number="6" title="Export">
         <button type="button" className="ts-btn" onClick={onExport} disabled={!hasImage}>
           <Download className="h-3.5 w-3.5" />
           Export current frame PNG
         </button>
         <p className="ts-hint">
-          For live video, screen-record the stage or connect this canvas to your own recording pipeline.
+          The frame is saved with its transparent background intact, so it drops straight onto anything.
         </p>
+      </Section>
+
+      <Section number="7" title="Scenes">
+        <ProjectsPanel
+          name={projectName}
+          onName={onProjectName}
+          onSave={onSaveProject}
+          history={history}
+          onOpen={onOpenProject}
+          onDelete={onDeleteProject}
+        />
       </Section>
 
       <p className="ts-hint">Everything runs locally in your browser. The microphone is processed in real time.</p>

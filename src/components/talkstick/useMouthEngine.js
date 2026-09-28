@@ -9,17 +9,17 @@ import { drawFrame } from "./talkStickRender";
  * nothing re-renders sixty times a second — only the meter width is written
  * straight to the DOM.
  */
-export default function useMouthEngine({ canvasRef, meterRef, image, rig, settings }) {
+export default function useMouthEngine({ canvasRef, meterRef, image, rig, settings, scene }) {
   const [listening, setListening] = useState(false);
   const [status, setStatus] = useState("Waiting for voice");
 
-  const live = useRef({ image, rig, settings });
+  const live = useRef({ image, rig, settings, scene });
   const audio = useRef({ ctx: null, analyser: null, stream: null, el: null, data: null });
   const level = useRef(0);
 
   // The loop below reads these every frame, so they always stay current.
   useEffect(() => {
-    live.current = { image, rig, settings };
+    live.current = { image, rig, settings, scene };
   });
 
   const release = () => {
@@ -46,7 +46,7 @@ export default function useMouthEngine({ canvasRef, meterRef, image, rig, settin
     const tick = () => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
-      const { image: art, rig, settings: config } = live.current;
+      const { image: art, rig, settings: config, scene: staged } = live.current;
 
       if (canvas && ctx && art) {
         let target = 0;
@@ -63,7 +63,7 @@ export default function useMouthEngine({ canvasRef, meterRef, image, rig, settin
           target = Math.min(1, Math.max(0, (rms * config.sensitivity - 0.015) * 2.8));
         }
         level.current = level.current * config.smoothing + target * (1 - config.smoothing);
-        drawFrame(ctx, canvas, art, rig, config, level.current);
+        drawFrame(ctx, canvas, art, rig, config, level.current, staged);
         if (meterRef.current) meterRef.current.style.width = `${Math.round(level.current * 100)}%`;
       }
 

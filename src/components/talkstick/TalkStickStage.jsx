@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
-import { Eye, Move } from "lucide-react";
+import { Eye, ImagePlus, Move } from "lucide-react";
+import AssetLayer from "./AssetLayer";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -23,8 +24,15 @@ export default function TalkStickStage({
   onToggleEditing,
   onPlace,
   onResize,
+  assets,
+  selectedAssetId,
+  onSelectAsset,
+  onChangeAsset,
+  onDeleteAsset,
+  onDropFiles,
 }) {
   const [mode, setMode] = useState(null);
+  const [over, setOver] = useState(false);
   const wrapRef = useRef(null);
 
   const toCanvas = (event) => {
@@ -51,6 +59,12 @@ export default function TalkStickStage({
 
   const startMove = (event) => {
     if (!hasImage || !editing) return;
+    // A press on the canvas steps out of whatever asset was selected, so the
+    // click that dismisses an asset never nudges the face as well.
+    if (selectedAssetId) {
+      onSelectAsset(null);
+      return;
+    }
     const point = toCanvas(event);
     if (!point) return;
     event.preventDefault();
@@ -90,6 +104,22 @@ export default function TalkStickStage({
     wrapRef.current?.releasePointerCapture?.(event.pointerId);
   };
 
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    if (!over) setOver(true);
+  };
+
+  const handleDragLeave = (event) => {
+    if (event.currentTarget.contains(event.relatedTarget)) return;
+    setOver(false);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setOver(false);
+    onDropFiles(Array.from(event.dataTransfer?.files || []));
+  };
+
   const guideStyle = box
     ? {
         left: `${(box.cx / canvasSize.width) * 100}%`,
@@ -108,7 +138,13 @@ export default function TalkStickStage({
 
   return (
     <main className="ts-card ts-stage-card">
-      <div className="ts-stage" ref={stageRef}>
+      <div
+        className={`ts-stage ${over ? "is-over" : ""}`}
+        ref={stageRef}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {hasImage && (
           <div
             className="ts-canvas-wrap"
@@ -122,7 +158,17 @@ export default function TalkStickStage({
               ref={canvasRef}
               className={`ts-canvas ${mode === "move" ? "is-dragging" : ""} ${editing ? "" : "is-ready"}`}
             />
-            {editing && guideStyle && (
+            {editing && (
+              <AssetLayer
+                wrapRef={wrapRef}
+                assets={assets}
+                selectedId={selectedAssetId}
+                onSelect={onSelectAsset}
+                onChange={onChangeAsset}
+                onDelete={onDeleteAsset}
+              />
+            )}
+            {editing && !selectedAssetId && guideStyle && (
               <div className={`ts-guide ${mode ? "is-active" : ""}`} style={guideStyle}>
                 <Move className="ts-guide-icon" />
                 {cornerStyle && (
@@ -150,10 +196,17 @@ export default function TalkStickStage({
           </button>
         )}
 
+        {over && (
+          <div className="ts-drop">
+            <ImagePlus className="ts-drop-icon" />
+            Drop to place it
+          </div>
+        )}
+
         {!hasImage && (
           <div className="ts-empty">
             <strong>Upload your character</strong>
-            <span>Then click directly on its face and drag to fine-tune it.</span>
+            <span>Then click directly on its face and drag to fine-tune it — or drop an image anywhere on this stage.</span>
           </div>
         )}
       </div>
