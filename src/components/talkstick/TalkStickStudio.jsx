@@ -5,7 +5,7 @@ import TalkStickPanel from "./TalkStickPanel";
 import useMouthEngine from "./useMouthEngine";
 import { charOrigin, fitCanvas } from "./talkStickRender";
 import { stickmanSource } from "./stickmen";
-import { assetFromFile, fileToDataUrl, newAsset, KIND_PROP, shiftLayer } from "./sceneAssets";
+import { assetFromFile, fileToDataUrl, newAsset, KIND_PROP, paintOrder, shiftLayer } from "./sceneAssets";
 import TalkStickTransport from "./TalkStickTransport";
 import { generateAsset } from "./assetGenerate";
 import {
@@ -31,6 +31,9 @@ const DEFAULTS = {
 const LIFT = { eyes: 0.17, nose: 0.07 };
 
 const NO_SPOTS = { mouth: null, eyes: null, nose: null };
+
+// The order the Cycle tool steps through the face parts.
+const PART_ORDER = ["mouth", "eyes", "nose"];
 
 // The caption laid over the scene, and the template it is dressed in.
 const NO_CAPTION = { text: "", template: "subtitle", color: "#ffffff", accent: "#ffe14d" };
@@ -337,6 +340,38 @@ export default function TalkStickStudio() {
 
   const clearPart = (part) => setSpots((prev) => ({ ...prev, [part]: null }));
 
+  /**
+   * Steps to the next thing that can be moved — the character itself, then each
+   * part placed on its face, then every prop, and around again. Stepping also
+   * arms whichever tool that item needs, so the tool bar is never touched.
+   */
+  const cycleSelection = () => {
+    const steps = [
+      { kind: "character" },
+      ...PART_ORDER.filter((id) => spots[id]).map((id) => ({ kind: "part", id })),
+      ...paintOrder(assets).map((asset) => ({ kind: "asset", id: asset.id })),
+    ];
+    if (steps.length < 2) return;
+
+    const here = steps.findIndex((step) =>
+      step.kind === "character"
+        ? tool === "hand"
+        : step.kind === "asset"
+          ? step.id === selectedAssetId
+          : tool === "mouse" && !selectedAssetId && step.id === activePart,
+    );
+    const next = steps[(here + 1) % steps.length];
+
+    if (next.kind === "character") {
+      setSelectedAssetId(null);
+      setTool("hand");
+      return;
+    }
+    setTool("mouse");
+    if (next.kind === "asset") setSelectedAssetId(next.id);
+    else selectPart(next.id);
+  };
+
   // Selecting a feature drops it above the mouth the first time, so the face is
   // usable straight away instead of starting from an empty canvas.
   const selectPart = (part) => {
@@ -401,6 +436,7 @@ export default function TalkStickStudio() {
             charPos={charPos}
             tool={tool}
             onToolChange={setTool}
+            onCycle={cycleSelection}
             onMoveCharacter={moveCharacter}
             charScale={charScale}
             onScaleCharacter={scaleCharacter}

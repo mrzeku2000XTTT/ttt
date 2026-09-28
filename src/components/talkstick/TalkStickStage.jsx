@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Eye, Hand, ImagePlus, Maximize2, Minimize2, MousePointer2, Move } from "lucide-react";
+import { Eye, Hand, ImagePlus, Maximize2, Minimize2, MousePointer2, Move, Repeat } from "lucide-react";
 import AssetLayer from "./AssetLayer";
 import { charOrigin, featureBox } from "./talkStickRender";
 
@@ -28,6 +28,7 @@ export default function TalkStickStage({
   charPos,
   tool,
   onToolChange,
+  onCycle,
   onMoveCharacter,
   charScale,
   onScaleCharacter,
@@ -47,8 +48,10 @@ export default function TalkStickStage({
   const [drag, setDrag] = useState(null);
   const [over, setOver] = useState(false);
   const wrapRef = useRef(null);
-  // The hand tool turns every press on the stage into a character drag.
+  // The hand tool turns every press on the stage into a character drag, and the
+  // cycle tool turns every press into a step to the next movable thing.
   const movingChar = tool === "hand";
+  const cycling = tool === "cycle";
 
   // Full screen hands the character the whole display for a clean look at it.
   useEffect(() => {
@@ -96,6 +99,13 @@ export default function TalkStickStage({
 
   const startMove = (event) => {
     if (!hasImage || !editing) return;
+    // The cycle tool places nothing — each press just steps to the next thing
+    // you can move, so no button has to be pressed to change the selection.
+    if (cycling) {
+      event.preventDefault();
+      onCycle();
+      return;
+    }
     // A press on the canvas steps out of whatever asset was selected, so the
     // click that dismisses an asset never nudges the face as well.
     if (selectedAssetId && !movingChar) {
@@ -235,6 +245,17 @@ export default function TalkStickStage({
                   <Hand className="ts-mode-icon" />
                   Hand
                 </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={cycling}
+                  className={`ts-mode ${cycling ? "is-on" : ""}`}
+                  title="Cycle — each click steps to the next thing you can move: the character, then each part, then every prop"
+                  onClick={() => onToolChange("cycle")}
+                >
+                  <Repeat className="ts-mode-icon" />
+                  Cycle
+                </button>
               </div>
             )}
             <button
@@ -269,7 +290,7 @@ export default function TalkStickStage({
       >
         {hasImage && (
           <div
-            className="ts-canvas-wrap"
+            className={`ts-canvas-wrap ${cycling ? "is-cycling" : ""}`}
             ref={wrapRef}
             onPointerDown={startMove}
             onPointerMove={move}

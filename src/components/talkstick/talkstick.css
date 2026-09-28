@@ -1001,3 +1001,10 @@
 .ts-parts-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .ts-row .ts-btn-compact { width: 100%; }
+
+/* ── Cycle tool ── */
+/* The overlays stay on screen so you can see what is selected, but they stop
+   taking presses — so every click reaches the stage and steps to the next item. */
+.ts-canvas-wrap.is-cycling .ts-canvas { cursor: pointer; }
+.ts-canvas-wrap.is-cycling .ts-asset,
+.ts-canvas-wrap.is-cycling .ts-guide-corner { pointer-events: none; }
