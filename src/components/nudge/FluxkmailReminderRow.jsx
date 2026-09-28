@@ -102,13 +102,13 @@ function FluxkmailConnectPopup({ address, onAllow, onCancel }) {
         <span style={markStyle}>FluxKmail</span>
         <p style={{ fontSize: "17px", fontWeight: 700, margin: "0 0 8px" }}>Connect FluxKmail</p>
         <p style={{ fontSize: "13.5px", color: "#444", margin: "0 0 6px", lineHeight: 1.45 }}>
-          FluxKmail will send your NUDGE appointment reminders to your Kaspa address:
+          NUDGE sends your appointment reminders through FluxKmail to your Kaspa address:
         </p>
         <p style={{ fontSize: "13px", fontWeight: 600, margin: "0 0 12px", wordBreak: "break-all", fontFamily: "monospace" }}>
           {short || "no address"}
         </p>
         <p style={{ fontSize: "11.5px", color: "#888", margin: "0 0 16px", lineHeight: 1.4 }}>
-          The same Kaspa address must be registered on your FluxKmail account so FluxKmail can route the reminder to your inbox. No Google account needed.
+          Tap below to open FluxKmail, sign in, and make sure this Kaspa address is on your profile. Then your reminders land in your FluxKmail inbox — no Google account needed.
         </p>
         <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
           <button
@@ -143,7 +143,7 @@ function FluxkmailConnectPopup({ address, onAllow, onCancel }) {
               cursor: "pointer",
             }}
           >
-            Allow
+            Sign in & connect
           </button>
         </div>
       </div>

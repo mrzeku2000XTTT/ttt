@@ -4,10 +4,20 @@ import { base44 } from "@/api/base44Client";
 /**
  * FluxKmail sends reminders to the person's own Kaspa address — FluxKmail maps
  * that address to the user's FluxKmail inbox. No per-user OAuth, no email.
- * "Connecting" is the person opting in; we remember that per address so the
- * Booking app can show a Connect button the same way it used to.
+ *
+ * "Connect" opens FluxKmail so the person signs in and their Kaspa address is on
+ * their FluxKmail profile. When FluxKmail hands them back with ?fluxkmail=connected,
+ * we remember it against the address; the Booking app then shows reminders as on.
  */
 const STORAGE_KEY = "nudge_fluxkmail_connected";
+const FLUXKMAIL_APP = "https://fluxkmail.base44.app";
+
+/** The FluxKmail sign-in link, carrying the address to link and where to come back to. */
+export function fluxkmailConnectUrl(address) {
+  const returnTo = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams({ kaspa: address || "", return: returnTo });
+  return `${FLUXKMAIL_APP}/connect?${params.toString()}`;
+}
 
 function readMap() {
   try {
@@ -37,7 +47,7 @@ function setConnected(address, value) {
 export function useFluxkmailReminder() {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
-  const [connected, setConnected] = useState(false);
+  const [connected, setConnectedState] = useState(false);
   const [address, setAddress] = useState("");
   const [showPopup, setShowPopup] = useState(false);
 
@@ -46,15 +56,24 @@ export function useFluxkmailReminder() {
       .isAuthenticated()
       .then(async (authed) => {
         setSignedIn(authed);
-        if (authed) {
-          try {
-            const me = await base44.auth.me();
-            const addr = me.created_wallet_address || me.data?.kaspa_address || "";
-            setAddress(addr);
-            setConnected(isConnected(addr));
-          } catch {
-            /* not signed in for real */
+        if (!authed) return;
+        try {
+          const me = await base44.auth.me();
+          const addr = me.created_wallet_address || me.data?.kaspa_address || "";
+          setAddress(addr);
+
+          // Coming back from FluxKmail's sign-in: the address is now linked there.
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("fluxkmail") === "connected" && addr) {
+            setConnected(addr, true);
+            params.delete("fluxkmail");
+            const qs = params.toString();
+            window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
           }
+
+          setConnectedState(isConnected(addr));
+        } catch {
+          /* not signed in for real */
         }
       })
       .catch(() => setSignedIn(false))
@@ -63,9 +82,17 @@ export function useFluxkmailReminder() {
 
   const connect = useCallback(() => setShowPopup(true), []);
 
+  // Opens FluxKmail to sign in and link the address, then marks it on for NUDGE.
   const confirmConnect = useCallback(() => {
+    if (address) {
+      try {
+        window.open(fluxkmailConnectUrl(address), "_blank", "noopener");
+      } catch {
+        /* popup blocked — the row still marks it on */
+      }
+    }
     setConnected(address, true);
-    setConnected(true);
+    setConnectedState(true);
     setShowPopup(false);
   }, [address]);
 
@@ -73,7 +100,7 @@ export function useFluxkmailReminder() {
 
   const disconnect = useCallback(() => {
     setConnected(address, false);
-    setConnected(false);
+    setConnectedState(false);
   }, [address]);
 
   // A reminder that fails is never worth interrupting a booking over.
