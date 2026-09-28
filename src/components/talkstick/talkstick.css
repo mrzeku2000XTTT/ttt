@@ -839,6 +839,33 @@
   gap: 14px;
 }
 
+.ts-head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The controls toggle is only there on phones, where the panel becomes a sheet. */
+.ts-head-panel {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--ts-line);
+  border-radius: 999px;
+  background: var(--ts-surface);
+  color: var(--ts-ink);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ts-head-panel.is-on { border-color: var(--ts-ink); }
+
+/* The panel rides in this wrapper. On a desktop it is just a grid column; on a
+   phone it turns into the sheet that keeps the stage on screen. */
+.ts-sheet { min-width: 0; }
+.ts-sheet-scrim { display: none; }
+
 .ts-back {
   padding: 6px 11px;
   border: 1px solid var(--ts-line);
@@ -863,6 +890,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ts-btn, .ts-file, .ts-meter-fill, .ts-mode, .ts-part, .ts-style-tile, .ts-stick-tile { transition: none; }
+  .ts-sheet, .ts-sheet-scrim { transition: none; }
   .ts-spin { animation-duration: 2.4s; }
 }
 
@@ -1008,3 +1036,110 @@
 .ts-canvas-wrap.is-cycling .ts-canvas { cursor: pointer; }
 .ts-canvas-wrap.is-cycling .ts-asset,
 .ts-canvas-wrap.is-cycling .ts-guide-corner { pointer-events: none; }
+
+/* ── Phone ── */
+/* The whole studio fits one screen: the header, the stage and its timeline stay
+   pinned, so nothing ever scrolls away while you are working. The controls ride
+   in a sheet instead of pushing the stage off the bottom of the display. */
+@media (max-width: 760px) {
+  .talkstick {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .ts-shell {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    height: 100%;
+    padding: 0;
+  }
+
+  .ts-head {
+    flex: none;
+    margin: 0;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .ts-head-left { gap: 8px; }
+  .ts-brand { font-size: 18px; }
+  .ts-head .ts-badge { display: none; }
+  .ts-head-panel { display: inline-flex; }
+
+  .ts-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 0;
+    padding: 0 12px 12px;
+  }
+
+  /* The stage takes every pixel the header and the timeline leave behind. */
+  .ts-stage-card {
+    position: static;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .ts-stage {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .ts-transport {
+    flex: none;
+    max-height: 34dvh;
+  }
+
+  .ts-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 78dvh;
+    transform: translateY(101%);
+    transition: transform 0.24s ease;
+  }
+  .ts-sheet.is-open { transform: translateY(0); }
+
+  .ts-sheet-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    padding: 0;
+    border: 0;
+    background: rgba(11, 13, 16, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.24s ease;
+  }
+  .ts-sheet.is-open .ts-sheet-scrim { opacity: 1; pointer-events: auto; }
+
+  .ts-sheet .ts-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    border-radius: 22px 22px 0 0;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* A very narrow phone still has to fit Store, Home, the mark and the controls
+   across one row — so the header tightens up rather than pushing anything off. */
+@media (max-width: 400px) {
+  .ts-head { padding: 10px 12px; }
+  .ts-head-left { gap: 6px; }
+  .ts-back { padding: 6px 9px; letter-spacing: 0.08em; }
+  .ts-brand { font-size: 16px; }
+  .ts-head-panel { padding: 7px 10px; }
+}

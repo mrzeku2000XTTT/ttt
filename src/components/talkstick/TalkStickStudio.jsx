@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { SlidersHorizontal } from "lucide-react";
 import TalkStickStage from "./TalkStickStage";
 import TalkStickPanel from "./TalkStickPanel";
 import useMouthEngine from "./useMouthEngine";
@@ -73,6 +74,9 @@ export default function TalkStickStudio() {
   const [projectName, setProjectName] = useState("");
   const [history, setHistory] = useState([]);
   const [hydrated, setHydrated] = useState(false);
+  // On a phone the controls ride in a sheet so the stage and timeline never
+  // have to scroll out of the way to reach them.
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
@@ -412,12 +416,27 @@ export default function TalkStickStudio() {
       <div className="ts-shell">
         <header className="ts-head">
           <div className="ts-head-left">
+            <Link to="/AppStoreV2" className="ts-back">
+              Store
+            </Link>
             <Link to="/TalkStick" className="ts-back">
-              Overview
+              Home
             </Link>
             <div className="ts-brand">TALKSTICK</div>
           </div>
-          <span className="ts-badge">Real-time face engine</span>
+          <div className="ts-head-right">
+            <span className="ts-badge">Real-time face engine</span>
+            <button
+              type="button"
+              className={`ts-head-panel ${panelOpen ? "is-on" : ""}`}
+              aria-expanded={panelOpen}
+              aria-controls="ts-controls"
+              onClick={() => setPanelOpen((prev) => !prev)}
+            >
+              <SlidersHorizontal className="ts-mode-icon" />
+              {panelOpen ? "Close" : "Controls"}
+            </button>
+          </div>
         </header>
 
         <div className="ts-layout">
@@ -452,7 +471,14 @@ export default function TalkStickStudio() {
           >
             <TalkStickTransport engine={engine} caption={caption} onCaption={setCaption} />
           </TalkStickStage>
-          <TalkStickPanel
+          <div id="ts-controls" className={`ts-sheet ${panelOpen ? "is-open" : ""}`}>
+            <button
+              type="button"
+              className="ts-sheet-scrim"
+              aria-label="Close the controls"
+              onClick={() => setPanelOpen(false)}
+            />
+            <TalkStickPanel
             settings={settings}
             activePart={activePart}
             spots={spots}
@@ -487,6 +513,7 @@ export default function TalkStickStudio() {
             onOpenProject={(entry) => applyProject(entry.project)}
             onDeleteProject={(id) => setHistory(deleteHistory(id))}
           />
+          </div>
         </div>
       </div>
     </div>
