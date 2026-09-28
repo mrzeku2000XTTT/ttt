@@ -113,10 +113,13 @@
 .nudge-note-date { font-size: 11px; opacity: .5; white-space: nowrap; }
 /* A dot only when a day really is sitting in front of the time. */
 .nudge-note-date + .nudge-note-time::before { content: "·"; margin-right: 5px; opacity: .6; }
-.nudge-note-title { margin: 0; font-size: 15px; font-weight: 640; letter-spacing: -.012em; line-height: 1.24; }
-.nudge-note-body { margin: 2px 0 0; font-size: 14.5px; line-height: 1.33; opacity: .93; }
+/* Both are spans inside a button, so they have to be told to take their own line —
+   otherwise the headline and the body run together. */
+.nudge-note-title { display: block; font-size: 15px; font-weight: 640; letter-spacing: -.012em; line-height: 1.24; }
+.nudge-note-body { display: block; margin-top: 3px; font-size: 14.5px; line-height: 1.33; opacity: .93; }
 .nudge-note-detail {
-  margin: 7px 0 0; padding-top: 7px; font-size: 13px; line-height: 1.4; opacity: .82;
+  display: block;
+  margin-top: 7px; padding-top: 7px; font-size: 13px; line-height: 1.4; opacity: .82;
   border-top: .5px solid rgba(255, 255, 255, .22);
 }
 
