@@ -107,7 +107,7 @@ export default function TalkStickStage({
     : null;
 
   return (
-    <main className="ts-card">
+    <main className="ts-card ts-stage-card">
       <div className="ts-stage" ref={stageRef}>
         {hasImage && (
           <div

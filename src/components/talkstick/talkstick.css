@@ -64,12 +64,22 @@
 }
 
 /* ── Stage ── */
+/* Pinned while the panel scrolls, so the character stays in view at any depth —
+   and capped to the viewport so the whole figure is always on screen. */
+.ts-stage-card {
+  position: sticky;
+  top: 18px;
+  align-self: start;
+  max-height: calc(100vh - 36px);
+  overflow: hidden;
+}
+
 .ts-stage {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 660px;
+  min-height: min(660px, calc(100vh - 96px));
   padding: 22px;
   background: var(--ts-stage);
   border-radius: 22px;
@@ -176,6 +186,30 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+
+.ts-clear-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ts-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 6px;
+  border: 1px solid var(--ts-line-strong);
+  border-radius: 10px;
+  background: var(--ts-surface);
+  color: var(--ts-body);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.ts-chip:hover:not(:disabled) { border-color: #e3a9a9; color: #b42318; }
+.ts-chip:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .ts-check {
   display: flex;

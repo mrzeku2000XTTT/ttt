@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { Download, Mic, Square, Trash2 } from "lucide-react";
+import { Download, Mic, Square, Trash2, X } from "lucide-react";
 import FaceStyleGrid from "./FaceStyleGrid";
 import StickmanGrid from "./StickmanGrid";
 import { MOUTH_STYLES, drawMouth } from "./mouthStyles";
@@ -115,6 +115,22 @@ export default function TalkStickPanel({
           Click the character to drop the <b>{activeLabel}</b> on it, drag to position, and pull the corner handle to
           resize. Press <b>Ready view</b> to hide the guide.
         </p>
+
+        <h3 className="ts-sub">Remove a part</h3>
+        <div className="ts-clear-row">
+          {PARTS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="ts-chip"
+              disabled={!spots[item.id]}
+              onClick={() => onClearPart(item.id)}
+            >
+              <X className="h-3 w-3" />
+              {item.label}
+            </button>
+          ))}
+        </div>
 
         <div className="ts-row">
           <div>
