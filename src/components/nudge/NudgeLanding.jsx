@@ -50,7 +50,7 @@ export default function NudgeLanding({ onEnter }) {
       <input
         ref={fileRef}
         type="file"
-        accept=".ics,text/calendar"
+        accept="image/*,.ics,.txt,.csv,.tsv,.md,.json,text/calendar,text/*"
         className="hidden"
         onChange={(e) => {
           const picked = e.target.files?.[0];

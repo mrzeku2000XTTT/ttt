@@ -44,7 +44,7 @@ export default function NudgeLandingExtracts({ onDrop }) {
                 Your calendar, as notifications.
               </p>
               <p className="mt-1.5 text-[12px] leading-relaxed text-white/60">
-                Nothing uploaded. Nothing saved but in this browser.
+                Nothing saved but in this browser. A screenshot is sent privately, only when you ask.
               </p>
             </div>
             <button

@@ -36,8 +36,8 @@ export default function NudgeLandingHero({ onEnter, onPick, connecting, error })
       </h1>
 
       <p className="mt-4 max-w-xl text-[14px] leading-relaxed text-[#666666]">
-        Paste a schedule or drop a calendar file and NUDGE writes what is actually happening —
-        one Apple-style notification at a time, so the day reads itself.
+        Paste a schedule, drop a screenshot of one, or a calendar file — and NUDGE writes what is
+        actually happening, one Apple-style notification at a time, so the day reads itself.
       </p>
 
       <div className="mt-6 max-w-xl">
@@ -60,13 +60,13 @@ export default function NudgeLandingHero({ onEnter, onPick, connecting, error })
           }`}
         >
           <Upload className="mx-auto h-4 w-4 text-[#8a8a94]" />
-          <span className="mt-1.5 block text-[12px] font-semibold text-black">Drop a calendar file (.ics)</span>
+          <span className="mt-1.5 block text-[12px] font-semibold text-black">Drop a screenshot, .ics or text file</span>
           <span className="mt-0.5 block text-[10.5px] text-[#a3a3a3]">or click to browse · read in your browser</span>
         </div>
         <input
           ref={fileRef}
           type="file"
-          accept=".ics,text/calendar"
+          accept="image/*,.ics,.txt,.csv,.tsv,.md,.json,text/calendar,text/*"
           className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onEnter({ file: f }); }}
         />
@@ -90,7 +90,8 @@ export default function NudgeLandingHero({ onEnter, onPick, connecting, error })
 
         <div className="mt-3 flex items-center gap-1.5 text-[11px] text-[#666666]">
           <Lock className="h-3.5 w-3.5" />
-          Stored in this browser only. Nothing is uploaded — no account, no server copy.
+          Stored in this browser only — no account, no server copy. A screenshot leaves the device
+          privately only when you press the button, so the AI can read it.
         </div>
         {error && <p className="mt-2 text-[11px] text-red-500">{error}</p>}
       </div>

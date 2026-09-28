@@ -2,18 +2,18 @@ import React from "react";
 import { Lock, FileInput, BellRing, Rows3, SunMoon } from "lucide-react";
 
 const FEATURES = [
-  { Icon: Lock, title: "Local only", body: "Lives in your browser. No upload, no account." },
-  { Icon: FileInput, title: "Any schedule", body: "Paste plain text or drop an .ics export." },
+  { Icon: Lock, title: "Local only", body: "Lives in your browser. No account, no server copy." },
+  { Icon: FileInput, title: "Any schedule", body: "Paste text, drop a screenshot, or an .ics export." },
   { Icon: BellRing, title: "Real iOS template", body: "The notification Apple actually ships." },
   { Icon: Rows3, title: "Both faces", body: "Lock screen stack, or one banner at a time." },
   { Icon: SunMoon, title: "Light and dark", body: "See the same day on either lock screen." },
 ];
 
 const STEPS = [
-  { n: "01", title: "Bring the schedule", body: "Paste it, or drop the .ics your calendar exports." },
+  { n: "01", title: "Bring the schedule", body: "Paste it, drop a screenshot, or the .ics your calendar exports." },
   { n: "02", title: "NUDGE reads the day", body: "The agent finds what is actually happening, in order." },
   { n: "03", title: "Read it as notifications", body: "Each moment arrives as its own notification card." },
-  { n: "04", title: "Take it with you", body: "Copy the brief out by hand. Nothing else leaves." },
+  { n: "04", title: "Take it with you", body: "Copy the brief out by hand, whenever you like." },
 ];
 
 /** Feature bar + the workflow, straight from the landing standard. */
@@ -36,7 +36,7 @@ export default function NudgeLandingFeatures() {
         <div className="text-center">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#a3a3a3]">The workflow</p>
           <h2 className="mt-3 text-[26px] font-semibold tracking-[-0.02em] text-black sm:text-[34px]">
-            Four steps, none of them uploads.
+            Four steps, no account needed.
           </h2>
           <p className="mt-2 text-[13px] text-[#666666]">
             The whole loop happens in the tab you already have open.
