@@ -1,11 +1,6 @@
 import React from "react";
 import { Download, Mic, Square } from "lucide-react";
-
-const STYLES = [
-  { value: "oval", label: "Oval" },
-  { value: "smile", label: "Smile" },
-  { value: "line", label: "Line" },
-];
+import MouthStyleGrid from "./MouthStyleGrid";
 
 const Section = ({ number, title, children }) => (
   <section className="ts-section">
@@ -39,7 +34,9 @@ export default function TalkStickPanel({
       </Section>
 
       <Section number="2" title="Mouth position">
-        <p className="ts-hint">Click the character's mouth on the canvas. Click again to move it.</p>
+        <p className="ts-hint">
+          Click the character to drop the mouth on it, then drag it anywhere — the handle follows your pointer.
+        </p>
 
         <div className="ts-row">
           <div>
@@ -72,42 +69,28 @@ export default function TalkStickPanel({
           </div>
         </div>
 
-        <div className="ts-row">
-          <div>
-            <label className="ts-label" htmlFor="ts-y">
-              Vertical <b>{settings.offsetY}</b>
-            </label>
-            <input
-              id="ts-y"
-              className="ts-range"
-              type="range"
-              min="-40"
-              max="40"
-              value={settings.offsetY}
-              onChange={(e) => onChange({ offsetY: Number(e.target.value) })}
-            />
-          </div>
-          <div>
-            <label className="ts-label" htmlFor="ts-style">
-              Style
-            </label>
-            <select
-              id="ts-style"
-              className="ts-select"
-              value={settings.style}
-              onChange={(e) => onChange({ style: e.target.value })}
-            >
-              {STYLES.map((style) => (
-                <option key={style.value} value={style.value}>
-                  {style.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <label className="ts-label" htmlFor="ts-y">
+          Vertical <b>{settings.offsetY}</b>
+        </label>
+        <input
+          id="ts-y"
+          className="ts-range"
+          type="range"
+          min="-40"
+          max="40"
+          value={settings.offsetY}
+          onChange={(e) => onChange({ offsetY: Number(e.target.value) })}
+        />
       </Section>
 
-      <Section number="3" title="Voice">
+      <Section number="3" title="Mouth look">
+        <MouthStyleGrid value={settings.style} onChange={(style) => onChange({ style })} />
+        <p className="ts-hint">
+          Every look is animated by the same voice engine — pick the one that suits your character.
+        </p>
+      </Section>
+
+      <Section number="4" title="Voice">
         <button
           type="button"
           className={`ts-btn ${engine.listening ? "ts-btn-live" : "ts-btn-primary"}`}
@@ -164,7 +147,7 @@ export default function TalkStickPanel({
         </div>
       </Section>
 
-      <Section number="4" title="Export">
+      <Section number="5" title="Export">
         <button type="button" className="ts-btn" onClick={onExport} disabled={!hasImage}>
           <Download className="h-3.5 w-3.5" />
           Export current frame PNG

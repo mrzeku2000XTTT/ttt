@@ -17,6 +17,7 @@ export default function TalkStickStudio() {
   const [image, setImage] = useState(null);
   const [mouth, setMouth] = useState(null);
   const [settings, setSettings] = useState(DEFAULTS);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
@@ -31,7 +32,8 @@ export default function TalkStickStudio() {
       const stage = stageRef.current;
       const canvas = canvasRef.current;
       if (!stage || !canvas) return;
-      fitCanvas(canvas, image, stage.clientWidth - 44, stage.clientHeight - 44);
+      const fitted = fitCanvas(canvas, image, stage.clientWidth - 44, stage.clientHeight - 44);
+      if (fitted) setCanvasSize(fitted);
     };
     fit();
     window.addEventListener("resize", fit);
@@ -72,6 +74,9 @@ export default function TalkStickStudio() {
             canvasRef={canvasRef}
             stageRef={stageRef}
             hasImage={Boolean(image)}
+            mouth={mouth}
+            settings={settings}
+            canvasSize={canvasSize}
             onPlace={setMouth}
           />
           <TalkStickPanel

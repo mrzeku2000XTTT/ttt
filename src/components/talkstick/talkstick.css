@@ -75,14 +75,60 @@
   border-radius: 22px;
 }
 
+/* Wraps the canvas exactly, so the handle can be positioned in percentages. */
+.ts-canvas-wrap {
+  position: relative;
+  display: flex;
+  max-width: 100%;
+  min-width: 0;
+  touch-action: none;
+}
+
 .ts-canvas {
   display: block;
   max-width: 100%;
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
-  cursor: crosshair;
+  cursor: grab;
 }
+.ts-canvas.is-dragging { cursor: grabbing; }
+
+/* The draggable mouth handle — DOM, never painted into the export. */
+.ts-handle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 26px;
+  border: 1.5px dashed #98a0aa;
+  border-radius: 999px;
+  background: rgba(148, 155, 165, 0.16);
+  cursor: grab;
+  touch-action: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ts-handle:hover {
+  background: rgba(148, 155, 165, 0.26);
+  border-color: #6b7280;
+}
+.ts-handle.is-dragging {
+  border-style: solid;
+  border-color: #111418;
+  background: rgba(17, 20, 24, 0.12);
+  cursor: grabbing;
+}
+
+.ts-handle-icon {
+  width: 13px;
+  height: 13px;
+  color: #4b5563;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.ts-handle.is-dragging .ts-handle-icon { color: #111418; }
 
 .ts-empty {
   position: absolute;
@@ -178,6 +224,45 @@
   font-weight: 500;
 }
 
+/* ── Mouth look library ── */
+.ts-style-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ts-style-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 6px 7px;
+  border: 1px solid var(--ts-line);
+  border-radius: 13px;
+  background: var(--ts-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.ts-style-tile:hover { border-color: var(--ts-line-strong); background: #fcfcfd; }
+.ts-style-tile.is-active {
+  border-color: var(--ts-accent);
+  box-shadow: 0 0 0 3px rgba(17, 20, 24, 0.06);
+}
+.ts-style-tile:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+.ts-style-canvas { display: block; }
+
+.ts-style-name {
+  color: var(--ts-body);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.ts-style-tile.is-active .ts-style-name { color: var(--ts-ink); }
+
 .ts-btn {
   display: flex;
   align-items: center;
@@ -271,5 +356,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ts-btn, .ts-file, .ts-meter-fill { transition: none; }
+  .ts-btn, .ts-file, .ts-meter-fill, .ts-handle, .ts-style-tile { transition: none; }
 }

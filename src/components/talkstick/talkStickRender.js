@@ -1,5 +1,7 @@
 // Drawing one frame of the character: the artwork, then the animated mouth on top.
 
+import { drawMouth } from "./mouthStyles";
+
 /**
  * Sizes the canvas to the artwork so the whole drawing fits the stage, keeping
  * its aspect ratio. Returns the fitted size.
@@ -65,34 +67,20 @@ export function drawFrame(ctx, canvas, image, mouth, settings, level) {
   const open = baseH * (0.18 + level * 1.35);
   const w = baseW * (0.88 + level * 0.12);
 
+  // The patch that covers the mouth already drawn on the artwork — sized from the
+  // mouth actually being painted, so a wide look never lets the original show through.
+  const patchX = Math.max(baseW * 0.62, w * 0.58);
+  const patchY = Math.max(baseH * 0.78, open * 0.85);
+
   ctx.save();
   ctx.translate(mouth.x, cy);
 
-  ctx.fillStyle = patchColor(ctx, mouth.x, cy, baseW * 0.62, baseH * 0.78);
+  ctx.fillStyle = patchColor(ctx, mouth.x, cy, patchX, patchY);
   ctx.beginPath();
-  ctx.ellipse(0, 0, baseW * 0.62, baseH * 0.78, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, patchX, patchY, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = "#111";
-  ctx.fillStyle = "#111";
-  ctx.lineWidth = Math.max(2, canvas.width / 170);
-
-  if (settings.style === "line") {
-    ctx.beginPath();
-    ctx.moveTo(-w / 2, 0);
-    ctx.lineTo(w / 2, 0);
-    ctx.stroke();
-  } else if (settings.style === "smile") {
-    ctx.beginPath();
-    ctx.moveTo(-w / 2, 0);
-    ctx.quadraticCurveTo(0, open * 1.5, w / 2, 0);
-    ctx.stroke();
-  } else {
-    ctx.beginPath();
-    ctx.ellipse(0, 0, w / 2, Math.max(2, open / 2), 0, 0, Math.PI * 2);
-    if (level > 0.16) ctx.fill();
-    else ctx.stroke();
-  }
+  drawMouth(ctx, settings.style, { w, open, level, weight: Math.max(2, canvas.width / 170) });
 
   ctx.restore();
 }
