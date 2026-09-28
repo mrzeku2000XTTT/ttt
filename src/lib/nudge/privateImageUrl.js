@@ -11,3 +11,17 @@ export async function signedImageUrl(file) {
   if (!signed_url) throw new Error("That screenshot could not be read — try typing it instead.");
   return signed_url;
 }
+
+/**
+ * The same terms for a tray of references, a few at a time so a long list does
+ * not trip a rate limit halfway through a booking. One that will not upload is
+ * dropped rather than failing the whole booking.
+ */
+export async function signedImageUrls(files, batch = 5) {
+  const urls = [];
+  for (let i = 0; i < files.length; i += batch) {
+    const group = await Promise.all(files.slice(i, i + batch).map((f) => signedImageUrl(f).catch(() => "")));
+    urls.push(...group);
+  }
+  return urls.filter(Boolean);
+}

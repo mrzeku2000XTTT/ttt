@@ -64,7 +64,7 @@ function normalise(raw) {
  * Turns what a person said or dropped into real appointments: either something
  * they want to book, or appointments they already have and want to bring in.
  */
-export async function planBookings({ text, imageUrl }) {
+export async function planBookings({ text, imageUrls }) {
   const now = new Date();
   const nowString = now.toLocaleString(undefined, {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -72,16 +72,17 @@ export async function planBookings({ text, imageUrl }) {
   });
 
   const body = String(text || "").trim();
-  const fromImage = Boolean(imageUrl);
+  const images = (Array.isArray(imageUrls) ? imageUrls : []).filter(Boolean);
+  const fromImage = images.length > 0;
   const zone = zoneLabel();
 
   const prompt = `You are the booking agent inside a phone that keeps everything on the device.
 
 RIGHT NOW IT IS: ${nowString}${zone ? ` — ${zone}` : ""}
 
-WHAT THE PERSON GAVE YOU${fromImage ? " — the appointments are in the attached image: read what it actually shows, and never guess at a value you cannot read." : ""}
+WHAT THE PERSON GAVE YOU${fromImage ? ` — the appointments are in the ${images.length > 1 ? `${images.length} attached images` : "attached image"}: read what they actually show, and never guess at a value you cannot read.` : ""}
 ---
-${body || "(nothing typed — the appointments are the attached image)"}
+${body || "(nothing typed — the appointments are in the attached screenshots)"}
 ---
 
 Two things arrive here and both are handled the same way:
@@ -105,7 +106,7 @@ Return JSON only.`;
   const result = await base44.integrations.Core.InvokeLLM({
     prompt,
     response_json_schema: SCHEMA,
-    ...(fromImage ? { file_urls: [imageUrl], model: "gemini_3_flash" } : {}),
+    ...(fromImage ? { file_urls: images, model: "gemini_3_flash" } : {}),
   });
 
   return normalise(result);

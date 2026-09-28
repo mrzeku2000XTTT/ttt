@@ -1,47 +1,121 @@
 import React, { useState } from "react";
-import { Sparkles, Image as ImageIcon, X } from "lucide-react";
+import { Image as ImageIcon, X } from "lucide-react";
 import AppleNotification from "./AppleNotification";
+import GmailReminderRow from "./GmailReminderRow";
+import { BookItGlyph } from "./NudgeGlyphs";
 import { planBookings } from "@/lib/nudge/bookingAgent";
 import { makeBookingId, makeRef, bookingToNotification } from "@/lib/nudge/bookingStore";
 import { shrinkForLocal } from "@/lib/nudge/sourcePreview";
-import { signedImageUrl } from "@/lib/nudge/privateImageUrl";
+import { signedImageUrls } from "@/lib/nudge/privateImageUrl";
+import { useGmailReminder } from "@/lib/nudge/useGmailReminder";
 
 const PLACEHOLDER = "Book something, or paste the appointments you already have.\n\nHaircut with Dana next Tuesday at 3, about 45 min\nDentist Fri Oct 2, 9am, 30 min";
 
+/** How many references the agent will read at once. */
+const MAX_SHOTS = 20;
+
+let seq = 0;
+const nextShotId = () => {
+  seq += 1;
+  return `shot-${Date.now()}-${seq}`;
+};
+
 /**
- * The booking app. The agent turns what you say or drop into real appointments,
- * which are kept in this browser and come back as the same notifications.
+ * The booking app. The agent turns what you say, paste or drop into real
+ * appointments, which are kept in this browser and come back as the same
+ * notifications.
  */
 export default function BookingApp({ onBook }) {
   const [text, setText] = useState("");
-  const [shot, setShot] = useState(null);
+  const [shots, setShots] = useState([]);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
+  const [mailNote, setMailNote] = useState("");
   const [made, setMade] = useState([]);
+  const mail = useGmailReminder();
 
-  const addShot = async (file) => {
-    if (!file?.type?.startsWith("image/")) return;
+  // Paste, drop and pick all land here, so the cap and the ordering hold
+  // whichever way a reference arrives.
+  const addFiles = async (list) => {
+    const all = Array.from(list || []);
+    if (!all.length) return;
+
+    const images = all.filter((f) => f?.type?.startsWith("image/"));
+    if (!images.length) {
+      setError("Only images and screenshots can be read.");
+      return;
+    }
+
+    const room = MAX_SHOTS - shots.length;
+    if (room <= 0) {
+      setError(`That is all ${MAX_SHOTS} references — remove one to add another.`);
+      return;
+    }
+
     setError("");
-    setShot({ source: file, preview: await shrinkForLocal(file, 620) });
+    const taken = images.slice(0, room);
+    const added = await Promise.all(
+      taken.map(async (file) => ({ id: nextShotId(), file, preview: await shrinkForLocal(file, 340) })),
+    );
+
+    setShots((cur) => [...cur, ...added]);
+    if (images.length > room) setError(`The first ${room} went in — ${MAX_SHOTS} references at a time.`);
+  };
+
+  // An image on the clipboard attaches the moment it is pasted; text pastes as usual.
+  const onPaste = (e) => {
+    const images = Array.from(e.clipboardData?.items || [])
+      .filter((i) => i.kind === "file" && i.type.startsWith("image/"))
+      .map((i) => i.getAsFile())
+      .filter(Boolean);
+
+    if (!images.length) return;
+    e.preventDefault();
+    addFiles(images);
+  };
+
+  const emailReminders = async (bookings) => {
+    if (!mail.connected) return;
+
+    const sent = await mail.remind(
+      bookings.map((b) => {
+        const n = bookingToNotification(b);
+        return {
+          title: b.title,
+          when: [n.date, n.time].filter(Boolean).join(" · "),
+          minutes: b.minutes,
+          where: b.where,
+          who: b.who,
+          notes: b.notes,
+        };
+      }),
+    );
+
+    if (sent > 0) setMailNote(`Reminder emailed to ${mail.email}`);
   };
 
   const book = async () => {
-    if (!text.trim() && !shot) {
-      setError("Say what you want to book, or drop a screenshot of the appointments.");
+    if (!text.trim() && !shots.length) {
+      setError("Say what you want to book, or paste a screenshot of the appointments.");
       return;
     }
     setBusy(true);
     setError("");
     setNote("");
+    setMailNote("");
     setMade([]);
     try {
-      // The screenshot leaves the device here and nowhere else — and only because
-      // the agent has to see it to read the appointments out of it.
-      const imageUrl = shot?.source ? await signedImageUrl(shot.source) : "";
-      const result = await planBookings({ text, imageUrl });
+      // Every reference leaves the device here and nowhere else — and only because
+      // the agent has to see them to read the appointments out of them.
+      const files = shots.map((s) => s.file);
+      const imageUrls = files.length ? await signedImageUrls(files) : [];
+      if (files.length && !imageUrls.length) throw new Error("Those references could not be read — try again.");
+
+      const result = await planBookings({ text, imageUrls });
       setNote(result.note);
+      // Nothing booked: keep what they gave us so they can fix it and press again.
       if (!result.appointments.length) return;
 
       const created = result.appointments.map((a) => ({
@@ -58,7 +132,8 @@ export default function BookingApp({ onBook }) {
       onBook(created);
       setMade(created);
       setText("");
-      setShot(null);
+      setShots([]);
+      await emailReminders(created);
     } catch (e) {
       setError(e?.message || "The booking agent could not read that. Try again.");
     } finally {
@@ -72,36 +147,72 @@ export default function BookingApp({ onBook }) {
         className="nudge-book-input"
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onPaste={onPaste}
         placeholder={PLACEHOLDER}
         spellCheck={false}
       />
 
-      {shot ? (
-        <div className="nudge-book-shot">
-          <img src={shot.preview} alt="The appointments you dropped" />
-          <button type="button" onClick={() => setShot(null)} aria-label="Remove that screenshot">
-            <X className="w-3 h-3" />
-          </button>
+      {shots.length ? (
+        <div className="nudge-book-tray">
+          <div className="nudge-book-tray-head">
+            <span>Attached</span>
+            <span>
+              {shots.length} / {MAX_SHOTS}
+            </span>
+          </div>
+          <div className="nudge-book-tray-grid">
+            {shots.map((s) => (
+              <div key={s.id} className="nudge-book-thumb">
+                <img src={s.preview} alt="" />
+                <button
+                  type="button"
+                  onClick={() => setShots((cur) => cur.filter((x) => x.id !== s.id))}
+                  aria-label="Remove that reference"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
-      ) : (
-        <label
-          className={`nudge-book-drop ${over ? "is-over" : ""}`}
-          onDragOver={(e) => { e.preventDefault(); setOver(true); }}
-          onDragLeave={() => setOver(false)}
-          onDrop={(e) => { e.preventDefault(); setOver(false); addShot(e.dataTransfer.files?.[0]); }}
-        >
-          <ImageIcon className="w-3.5 h-3.5" /> Drop a screenshot of your appointments
-          <input type="file" accept="image/*" hidden onChange={(e) => addShot(e.target.files?.[0])} />
-        </label>
-      )}
+      ) : null}
+
+      <label
+        className={`nudge-book-drop ${over ? "is-over" : ""}`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setOver(false);
+          addFiles(e.dataTransfer.files);
+        }}
+      >
+        <ImageIcon className="w-3.5 h-3.5" /> Paste, drop or pick a screenshot — up to {MAX_SHOTS}
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(e) => {
+            addFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+      </label>
 
       <button type="button" className="nudge-book-go" onClick={book} disabled={busy}>
-        {busy ? <span className="nudge-book-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+        {busy ? <span className="nudge-book-spin" /> : <BookItGlyph className="nudge-book-glyph" />}
         {busy ? "Booking…" : "Book it"}
       </button>
 
+      <GmailReminderRow mail={mail} />
+
       {error ? <p className="nudge-book-err">{error}</p> : null}
       {note ? <p className="nudge-book-note">{note}</p> : null}
+      {mailNote ? <p className="nudge-book-note">{mailNote}</p> : null}
 
       {made.length ? (
         <>
