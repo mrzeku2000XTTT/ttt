@@ -12,6 +12,7 @@ import { analyzeSchedule } from "@/lib/nudge/nudgeAgent";
 import { shrinkForLocal } from "@/lib/nudge/sourcePreview";
 import { signedImageUrl } from "@/lib/nudge/privateImageUrl";
 import { loadBookings, saveBookings } from "@/lib/nudge/bookingStore";
+import { loadReminders, saveReminders } from "@/lib/nudge/reminderStore";
 import "./nudge.css";
 
 const LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/17f6a9185_generated_image.png";
@@ -35,6 +36,7 @@ export default function NudgeStudio({ seed, onHome }) {
   const [copied, setCopied] = useState(false);
   const [showDate, setShowDate] = useState(true);
   const [bookings, setBookings] = useState([]);
+  const [reminders, setReminders] = useState([]);
 
   // Everything comes back from this browser's own storage.
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function NudgeStudio({ seed, onHome }) {
     setBriefs(stored.briefs);
     setActiveId(stored.activeId);
     setBookings(loadBookings());
+    setReminders(loadReminders());
   }, []);
 
   const persist = (nextBriefs, nextActive) => saveStore({ briefs: nextBriefs, activeId: nextActive });
@@ -59,6 +62,23 @@ export default function NudgeStudio({ seed, onHome }) {
     setBookings((cur) => {
       const next = cur.filter((b) => b.id !== id);
       saveBookings(next);
+      return next;
+    });
+  }, []);
+
+  /** Reminders set from the Schedule screen, or offered by the assistant. */
+  const addReminders = useCallback((created) => {
+    setReminders((cur) => {
+      const next = [...cur, ...created].slice(-80);
+      saveReminders(next);
+      return next;
+    });
+  }, []);
+
+  const removeReminder = useCallback((id) => {
+    setReminders((cur) => {
+      const next = cur.filter((r) => r.id !== id);
+      saveReminders(next);
       return next;
     });
   }, []);
@@ -271,8 +291,11 @@ export default function NudgeStudio({ seed, onHome }) {
             mode={mode}
             showDate={showDate}
             bookings={bookings}
+            reminders={reminders}
             onBook={addBookings}
             onCancelBooking={cancelBooking}
+            onRemind={addReminders}
+            onRemoveReminder={removeReminder}
             expandedId={expandedId}
             onToggle={(i) => setExpandedId((cur) => (cur === i ? null : i))}
           />

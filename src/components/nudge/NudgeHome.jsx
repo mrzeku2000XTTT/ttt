@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarPlus, CalendarDays, FileText, Lock } from "lucide-react";
+import { CalendarPlus, CalendarDays, FileText, Lock, ListChecks } from "lucide-react";
 
 /**
  * The apps on this phone. Every one of them opens something that works — nothing
@@ -9,6 +9,7 @@ export const NUDGE_APPS = [
   { id: "booking", name: "Booking", Icon: CalendarPlus, bg: "linear-gradient(#5ce07a, #34c759)", fg: "#ffffff" },
   { id: "calendar", name: "Calendar", Icon: CalendarDays, bg: "linear-gradient(#ffffff, #f1f1f4)", fg: "#ff3b30" },
   { id: "schedule", name: "Schedule", Icon: FileText, bg: "linear-gradient(#54b7ff, #1c6ef2)", fg: "#ffffff" },
+  { id: "reminders", name: "Reminders", Icon: ListChecks, bg: "linear-gradient(#ffffff, #f1f1f4)", fg: "#ff9500" },
 ];
 
 /** The home screen, reached by unlocking. */

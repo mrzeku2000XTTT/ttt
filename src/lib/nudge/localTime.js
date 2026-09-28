@@ -14,6 +14,27 @@ export function dayLabel(date) {
   return date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 }
 
+/** "9:30 AM" read back as a clock time, or null when it is not one. */
+export function parseClockLabel(label) {
+  const match = String(label || "").match(/(\d{1,2}):(\d{2})\s*([ap]\.?m\.?)?/i);
+  if (!match) return null;
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const suffix = String(match[3] || "").toLowerCase().replace(/\./g, "");
+  if (suffix === "pm" && hours < 12) hours += 12;
+  if (suffix === "am" && hours === 12) hours = 0;
+  if (hours > 23 || minutes > 59) return null;
+
+  return { hours, minutes };
+}
+
+/** "Tuesday, September 29 at 9:30 AM" — one moment, spelled all the way out. */
+export function momentLabel(ms) {
+  const date = new Date(Number(ms) || Date.now());
+  return `${date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })} at ${clockLabel(date)}`;
+}
+
 /** "Today", "Tomorrow", or "Wed Oct 1" — for anything tied to a real day. */
 export function shortDayLabel(date, now = new Date()) {
   const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();

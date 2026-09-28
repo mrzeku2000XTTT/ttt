@@ -1,13 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronUp, BellOff } from "lucide-react";
 import AppleNotification from "./AppleNotification";
 import NudgeHome, { NUDGE_APPS } from "./NudgeHome";
 import NudgeAppScreen from "./NudgeAppScreen";
 import BookingApp from "./BookingApp";
 import CalendarApp from "./CalendarApp";
-import ScheduleSheet from "./ScheduleSheet";
+import RemindersApp from "./RemindersApp";
+import ScheduleApp from "./ScheduleApp";
+import ScheduleChat from "./ScheduleChat";
 import { clockLabel, dayLabel, useLocalNow } from "@/lib/nudge/localTime";
 import { bookingsToNotifications, upcomingBookings } from "@/lib/nudge/bookingStore";
+import { briefEvents } from "@/lib/nudge/scheduleEvents";
+import { reminderToNotification, remindersToNotifications, upcomingReminders } from "@/lib/nudge/reminderStore";
 
 // How far the lock screen has to be pulled up before the phone opens.
 const UNLOCK_AT = 64;
@@ -25,23 +29,41 @@ export default function NudgePhone({
   onToggle,
   showDate,
   bookings = [],
+  reminders = [],
   onBook,
   onCancelBooking,
+  onRemind,
+  onRemoveReminder,
 }) {
   const [index, setIndex] = useState(0);
   const [open, setOpen] = useState(false);
   const [app, setApp] = useState(null);
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [buzzed, setBuzzed] = useState(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const screenRef = useRef(null);
   const pull = useRef(null);
   const pulled = useRef(0);
 
-  // The brief's own notifications, and then the appointments this person booked
-  // or brought in — drawn as the same notification, in the same stack.
-  const notes = [...(brief?.notifications || []), ...bookingsToNotifications(bookings)];
-  const badges = { calendar: upcomingBookings(bookings).length };
+  // The moments the schedule screen offers, and the reminders whose moment it is.
+  const events = useMemo(() => briefEvents(brief), [brief]);
+  const dueNotes = remindersToNotifications(reminders, new Date(nowMs));
+
+  // Everything this phone is showing, newest first: a reminder that just buzzed,
+  // then each reminder whose moment has come, then the brief's own notifications,
+  // and last the appointments this person booked — all the same card.
+  const notes = [
+    ...(buzzed ? [buzzed] : []),
+    ...dueNotes,
+    ...(brief?.notifications || []),
+    ...bookingsToNotifications(bookings),
+  ];
+  const badges = {
+    calendar: upcomingBookings(bookings).length,
+    reminders: upcomingReminders(reminders).length,
+  };
   const appName = NUDGE_APPS.find((a) => a.id === app)?.name || "";
 
   // A different brief is a different day: the phone closes and starts at the top.
@@ -50,7 +72,23 @@ export default function NudgePhone({
     setOpen(false);
     setApp(null);
     setOffset(0);
+    setBuzzed(null);
   }, [brief?.id]);
+
+  // The reminders keep their own clock: this wakes the phone once a minute, so one
+  // that has come due lands on the lock screen by itself.
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  /** "Show me" in the reminders app: buzz this phone with it, here and now. */
+  const buzz = (reminder) => {
+    setBuzzed(reminderToNotification(reminder));
+    setIndex(0);
+    setApp(null);
+    setOpen(false);
+  };
 
   const startPull = (e) => {
     pull.current = { y: e.clientY };
@@ -148,10 +186,28 @@ export default function NudgePhone({
 
             {/* And any app opened from it. */}
             {open && app ? (
-              <NudgeAppScreen title={appName} onHome={() => setApp(null)}>
+              <NudgeAppScreen
+                title={appName}
+                onHome={() => setApp(null)}
+                footer={
+                  app === "schedule" ? (
+                    <ScheduleChat
+                      brief={brief}
+                      events={events}
+                      reminders={reminders}
+                      onAddReminders={onRemind}
+                    />
+                  ) : null
+                }
+              >
                 {app === "booking" ? <BookingApp onBook={onBook} /> : null}
                 {app === "calendar" ? <CalendarApp bookings={bookings} onCancel={onCancelBooking} /> : null}
-                {app === "schedule" ? <ScheduleSheet brief={brief} /> : null}
+                {app === "schedule" ? (
+                  <ScheduleApp brief={brief} events={events} reminders={reminders} onRemind={onRemind} />
+                ) : null}
+                {app === "reminders" ? (
+                  <RemindersApp reminders={reminders} onRemove={onRemoveReminder} onBuzz={buzz} />
+                ) : null}
               </NudgeAppScreen>
             ) : null}
 

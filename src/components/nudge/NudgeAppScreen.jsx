@@ -2,7 +2,7 @@ import React from "react";
 import { ArrowLeft } from "lucide-react";
 
 /** The frame every app opens into: a way back to the home screen, and a scrolling body. */
-export default function NudgeAppScreen({ title, onHome, children }) {
+export default function NudgeAppScreen({ title, onHome, children, footer }) {
   return (
     <div className="nudge-app">
       <div className="nudge-app-head">
@@ -12,6 +12,7 @@ export default function NudgeAppScreen({ title, onHome, children }) {
         <span className="nudge-app-title">{title}</span>
       </div>
       <div className="nudge-app-body">{children}</div>
+      {footer}
     </div>
   );
 }

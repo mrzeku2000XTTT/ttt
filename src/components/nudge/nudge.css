@@ -371,7 +371,7 @@
   border: 1px solid rgba(255, 255, 255, .14); background: #101014;
 }
 .nudge-doc-text {
-  margin: 10px 0 0; padding: 10px 11px; border-radius: 12px;
+  display: block; margin: 10px 0 0; padding: 10px 11px; border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .05);
   color: #e9e9ef; font-size: 11px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -384,6 +384,192 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .nudge-doc-foot svg { flex-shrink: 0; }
+
+/* ── Schedule: the assistant-assisted screen ── */
+.nudge-sched { display: flex; flex-direction: column; gap: 12px; }
+.nudge-src {
+  display: block; width: 100%; padding: 0; border: 0; background: transparent;
+  text-align: left; cursor: pointer; font: inherit;
+}
+.nudge-src:hover .nudge-src-open { background: rgba(255, 255, 255, .14); color: #fff; }
+.nudge-src-open {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-top: 8px; height: 38px; border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .06);
+  color: #eaeaef; font-size: 13px; font-weight: 650;
+}
+.nudge-sched-hint { font-size: 12px; line-height: 1.5; color: #9a9aa4; }
+.nudge-sched-set { display: flex; flex-direction: column; gap: 4px; }
+
+.nudge-ev-list { display: flex; flex-direction: column; gap: 7px; margin-top: 7px; }
+.nudge-ev {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  padding: 11px 10px; border-radius: 12px; cursor: pointer; font: inherit;
+  border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .04);
+}
+.nudge-ev:hover { border-color: rgba(255, 255, 255, .3); background: rgba(255, 255, 255, .08); }
+.nudge-ev-time { flex-shrink: 0; width: 62px; font-size: 12.5px; font-weight: 700; color: #f2f2f5; }
+.nudge-ev-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.nudge-ev-title { font-size: 13.5px; font-weight: 650; color: #f5f5f7; }
+.nudge-ev-sub {
+  font-size: 11.5px; color: #8a8a94;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nudge-ev-go { flex-shrink: 0; width: 16px; height: 16px; color: #6c6c76; }
+
+/* Full screen, when the schedule is the only thing on the screen. */
+.nudge-viewer {
+  position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
+  background: #05050a; animation: nudge-app-in .24s cubic-bezier(.22, 1, .36, 1);
+}
+.nudge-viewer-head {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 52px 12px 9px; border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.nudge-viewer-stage { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; }
+.nudge-viewer-shot { display: block; width: 100%; border-radius: 12px; background: #101014; }
+.nudge-viewer-text {
+  margin: 0; color: #eef0f4; font-size: 14px; line-height: 1.6; white-space: pre-wrap;
+  word-break: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.nudge-viewer-name { flex-shrink: 0; padding: 6px 12px 0; }
+.nudge-viewer-foot {
+  flex-shrink: 0; display: flex; gap: 8px;
+  padding: 9px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
+.nudge-big {
+  flex: 1; height: 42px; border-radius: 11px; cursor: pointer; font: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .08);
+  color: #fff; font-size: 13px; font-weight: 650;
+}
+.nudge-big:hover:not(:disabled) { background: rgba(255, 255, 255, .16); }
+.nudge-big:disabled { opacity: .35; cursor: not-allowed; }
+
+/* The reminder sheet, drawn over the phone rather than over the page. */
+.nudge-scrim--phone { position: absolute; inset: 0; z-index: 17; background: rgba(0, 0, 0, .62); }
+.nudge-sheet--phone {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 18;
+  display: flex; flex-direction: column; max-height: 88%;
+  background: #0d0d12; border-top: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 18px 18px 0 0; box-shadow: 0 -18px 44px -18px rgba(0, 0, 0, .9);
+}
+.nudge-sheet-phone-body {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.nudge-when { font-size: 13px; line-height: 1.5; color: #c9c9d2; }
+.nudge-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 12px; border-radius: 12px; cursor: pointer; font: inherit;
+  border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .04);
+  color: #e9e9ef; font-size: 13px; font-weight: 600;
+}
+.nudge-opt.is-on { border-color: rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .12); color: #fff; }
+.nudge-opt-dot {
+  width: 16px; height: 16px; border-radius: 999px; flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, .35);
+}
+.nudge-opt.is-on .nudge-opt-dot { border-color: #fff; background: #fff; }
+.nudge-go {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; height: 44px; border: 0; border-radius: 12px; cursor: pointer; font: inherit;
+  background: #f5f5f7; color: #0a0a0c; font-size: 14px; font-weight: 700;
+}
+.nudge-go:hover:not(:disabled) { opacity: .9; }
+.nudge-go:disabled { opacity: .4; cursor: not-allowed; }
+.nudge-go-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; height: 44px; border-radius: 12px; cursor: pointer; font: inherit;
+  border: 1px solid rgba(255, 255, 255, .16); background: transparent;
+  color: #e6e6ea; font-size: 13.5px; font-weight: 600;
+}
+.nudge-go-ghost:hover { background: rgba(255, 255, 255, .08); }
+
+/* The assistant's dock, under the Schedule screen. */
+.nudge-chat {
+  position: relative; z-index: 1; flex-shrink: 0; display: flex; flex-direction: column;
+  max-height: 58%; background: #0b0b10; border-top: 1px solid rgba(255, 255, 255, .1);
+}
+.nudge-chat-head {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 9px 12px 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #8a8a94;
+}
+.nudge-chat-log {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 2px 12px 0;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.nudge-chat-msg { border-radius: 12px; padding: 9px 11px; font-size: 13px; line-height: 1.5; }
+.nudge-chat-msg.from-you { align-self: flex-end; max-width: 88%; background: rgba(255, 255, 255, .12); color: #fff; }
+.nudge-chat-msg.from-nudge {
+  background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .09); color: #e9e9ef;
+}
+.nudge-chat-chips {
+  flex-shrink: 0; display: flex; gap: 6px; overflow-x: auto; padding: 8px 12px 0;
+  scrollbar-width: none;
+}
+.nudge-chat-chips::-webkit-scrollbar { display: none; }
+.nudge-chat-chip {
+  flex-shrink: 0; height: 32px; padding: 0 12px; border-radius: 999px; cursor: pointer; font: inherit;
+  border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .05);
+  color: #e6e6ea; font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.nudge-chat-chip:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+.nudge-chat-form {
+  flex-shrink: 0; display: flex; gap: 8px;
+  padding: 9px 12px calc(9px + env(safe-area-inset-bottom, 0px));
+}
+.nudge-chat-input {
+  flex: 1; min-height: 42px; max-height: 84px; resize: none; padding: 10px 11px; border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, .13); background: #131318; color: #f2f2f5;
+  font-family: inherit; font-size: 14px; line-height: 1.4;
+}
+.nudge-chat-input::placeholder { color: #61616b; }
+.nudge-chat-input:focus { outline: none; border-color: rgba(255, 255, 255, .3); }
+.nudge-chat-send {
+  flex-shrink: 0; width: 44px; height: 42px; border: 0; border-radius: 11px; cursor: pointer;
+  background: #f5f5f7; color: #0a0a0c; display: flex; align-items: center; justify-content: center;
+}
+.nudge-chat-send:disabled { opacity: .4; cursor: not-allowed; }
+.nudge-chat-proposals { display: flex; flex-direction: column; gap: 7px; }
+.nudge-chat-proposal {
+  display: flex; flex-direction: column; gap: 5px; margin-top: 8px; padding: 9px;
+  border-radius: 11px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05);
+}
+.nudge-chat-proposal-title { font-size: 12.5px; font-weight: 650; color: #f5f5f7; }
+.nudge-chat-proposal-when { font-size: 11.5px; color: #9a9aa4; }
+.nudge-chat-add {
+  height: 34px; border-radius: 9px; border: 0; cursor: pointer; font: inherit;
+  background: #f5f5f7; color: #0a0a0c; font-size: 12.5px; font-weight: 700;
+}
+.nudge-chat-add.is-done { background: rgba(255, 255, 255, .12); color: #cfcfd6; cursor: default; }
+.nudge-chat-err { padding: 0 12px 6px; font-size: 11.5px; color: #ff8f8f; }
+.nudge-spin-dark {
+  width: 14px; height: 14px; border-radius: 999px;
+  border: 2px solid rgba(10, 10, 12, .3); border-top-color: #0a0a0c;
+  animation: nudge-spin .7s linear infinite;
+}
+
+/* ── Reminders ── */
+.nudge-rem { display: flex; flex-direction: column; gap: 8px; }
+.nudge-rem-item {
+  display: flex; align-items: center; gap: 9px; padding: 10px; border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .04);
+}
+.nudge-rem-when { flex-shrink: 0; width: 84px; font-size: 12px; font-weight: 700; color: #f2f2f5; }
+.nudge-rem-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.nudge-rem-title {
+  font-size: 13px; font-weight: 650; color: #f5f5f7;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nudge-rem-sub { font-size: 11px; color: #8a8a94; }
+.nudge-rem-go {
+  flex-shrink: 0; height: 30px; padding: 0 10px; border-radius: 9px; cursor: pointer; font: inherit;
+  border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .06);
+  color: #eaeaef; font-size: 11.5px; font-weight: 650;
+}
+.nudge-rem-go:hover { background: rgba(255, 255, 255, .14); color: #fff; }
 
 /* ── Panel (desktop rail + mobile sheet) ── */
 .nudge-panel { display: flex; flex-direction: column; min-height: 0; }

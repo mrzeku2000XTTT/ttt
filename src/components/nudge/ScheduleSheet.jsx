@@ -1,22 +1,37 @@
 import React from "react";
-import { Image as ImageIcon, FileText } from "lucide-react";
+import { Image as ImageIcon, FileText, Maximize2 } from "lucide-react";
 
 /**
- * The Schedule app: the schedule exactly as it was handed over — the screenshot
- * that was dropped, or the text that was pasted, untouched. It was kept in this
- * browser, so it is read from here too.
+ * The schedule exactly as it was handed over — the screenshot that was dropped, or
+ * the text that was pasted. Tapping it opens it full screen, because a schedule is
+ * easier to read when it is the only thing on the screen.
  */
-export default function ScheduleSheet({ brief }) {
+export default function ScheduleSheet({ brief, onOpen }) {
   const text = brief?.sourceText || "";
   const shot = brief?.sourcePreview || "";
+  const kept = Boolean(shot || text);
 
   return (
     <div className="nudge-doc">
-      {shot ? <img className="nudge-doc-shot" src={shot} alt="The schedule you gave NUDGE" /> : null}
+      {shot ? (
+        <button type="button" className="nudge-src" onClick={onOpen}>
+          <img className="nudge-doc-shot" src={shot} alt="The schedule you gave NUDGE" />
+          <span className="nudge-src-open">
+            <Maximize2 className="w-3.5 h-3.5" /> Open full screen
+          </span>
+        </button>
+      ) : null}
 
-      {text ? <pre className="nudge-doc-text">{text}</pre> : null}
+      {text ? (
+        <button type="button" className="nudge-src" onClick={onOpen}>
+          <span className="nudge-doc-text">{text}</span>
+          <span className="nudge-src-open">
+            <Maximize2 className="w-3.5 h-3.5" /> Open full screen
+          </span>
+        </button>
+      ) : null}
 
-      {!shot && !text ? (
+      {!kept ? (
         <p className="nudge-doc-empty">
           {brief
             ? "This brief was made before NUDGE started keeping a copy of the original."
