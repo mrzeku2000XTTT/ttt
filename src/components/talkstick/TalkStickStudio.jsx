@@ -9,6 +9,7 @@ import { stickmanSource } from "./stickmen";
 import { assetFromFile, fileToDataUrl, newAsset, KIND_PROP, paintOrder, shiftLayer } from "./sceneAssets";
 import TalkStickTransport from "./TalkStickTransport";
 import { generateAsset } from "./assetGenerate";
+import { MOTION_DEFAULTS } from "./captionMotion";
 import {
   deleteHistory,
   listHistory,
@@ -44,6 +45,9 @@ const NO_CAPTION = {
   template: "subtitle",
   color: "#ffffff",
   accent: "#ffe14d",
+  // How the words arrive, and when — see captionMotion.js. "off" leaves the whole
+  // caption on the frame, which is how a scene behaved before the words moved.
+  ...MOTION_DEFAULTS,
   x: null,
   y: null,
   width: null,

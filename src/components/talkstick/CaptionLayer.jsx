@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Type } from "lucide-react";
 import { layoutCaption } from "./captionText";
+import { sampleCaption } from "./captionMotion";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -24,9 +25,10 @@ export default function CaptionLayer({
   const [mode, setMode] = useState(null);
 
   // Measured with the very same layout the renderer uses, so the outline always
-  // sits exactly where the words were painted.
+  // sits exactly where the words were painted. Once the words are cut per word the
+  // outline covers the longest card, which is the whole area they move through.
   const ctx = canvasRef.current?.getContext("2d");
-  const box = ctx && canvasSize.width ? layoutCaption(ctx, canvasSize, caption) : null;
+  const box = ctx && canvasSize.width ? layoutCaption(ctx, canvasSize, sampleCaption(caption)) : null;
   if (!box) return null;
 
   const cxPct = (box.cx / canvasSize.width) * 100;

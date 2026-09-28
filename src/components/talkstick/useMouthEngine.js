@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { drawFrame } from "./talkStickRender";
+import { cueAt, cueSheet, shownCaption } from "./captionMotion";
 
 /**
  * The voice → mouth engine.
@@ -21,6 +22,9 @@ export default function useMouthEngine({ canvasRef, meterRef, scrubRef, image, r
   const live = useRef({ image, rig, settings, scene });
   const audio = useRef({ ctx: null, analyser: null, stream: null, el: null, data: null });
   const level = useRef(0);
+  // Which card of the caption the voice is on, written here so the studio's word
+  // controls can read it back without the caption re-rendering on every frame.
+  const cue = useRef({ index: -1, total: 0, text: "" });
   // The loaded file, so play can pick it back up after the microphone has had the
   // stage. `scrubbing` stops the playhead fighting the drag.
   const fileRef = useRef(null);
@@ -57,6 +61,7 @@ export default function useMouthEngine({ canvasRef, meterRef, scrubRef, image, r
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       const { image: art, rig, settings: config, scene: staged } = live.current;
+      const el = audio.current.el;
 
       if (canvas && ctx && art) {
         let target = 0;
@@ -73,12 +78,32 @@ export default function useMouthEngine({ canvasRef, meterRef, scrubRef, image, r
           target = Math.min(1, Math.max(0, (rms * config.sensitivity - 0.015) * 2.8));
         }
         level.current = level.current * config.smoothing + target * (1 - config.smoothing);
-        drawFrame(ctx, canvas, art, rig, config, level.current, staged);
+
+        // The caption is cut down to the words the voice has actually reached, so
+        // the frame shows what is being said rather than the whole speech.
+        const shown = shownCaption(staged?.caption, {
+          time: el ? el.currentTime || 0 : 0,
+          duration: el?.duration || 0,
+          running: Boolean(el && !el.paused && !el.ended),
+        });
+        const scene = shown === staged?.caption ? staged : { ...staged, caption: shown };
+        drawFrame(ctx, canvas, art, rig, config, level.current, scene);
         if (meterRef.current) meterRef.current.style.width = `${Math.round(level.current * 100)}%`;
+
+        // Hand the studio the card that is on screen, for its own readout.
+        const cues =
+          staged?.caption?.anim && staged.caption.anim !== "off" && el?.duration
+            ? cueSheet(staged.caption, el.duration)
+            : [];
+        if (cues.length) {
+          const current = cueAt(cues, el.currentTime || 0);
+          cue.current = { index: cues.indexOf(current), total: cues.length, text: current.text };
+        } else if (cue.current.total) {
+          cue.current = { index: -1, total: 0, text: "" };
+        }
       }
 
       // The playhead follows the track, unless the scrubber is being dragged.
-      const el = audio.current.el;
       if (el && scrubRef?.current && !scrubbing.current) {
         scrubRef.current.value = String(el.currentTime || 0);
       }
@@ -178,5 +203,6 @@ export default function useMouthEngine({ canvasRef, meterRef, scrubRef, image, r
     togglePlay,
     seek,
     scrubbing,
+    cue,
   };
 }

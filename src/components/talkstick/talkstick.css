@@ -1033,6 +1033,22 @@
   gap: 8px;
 }
 
+/* ── Text motion ── */
+/* The live readout under the motion controls: the card the voice is on right now,
+   so the sync offset can be dialled in by eye. */
+.ts-motion-now {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border: 1px dashed var(--ts-line-strong);
+  border-radius: 11px;
+  color: var(--ts-mute);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.ts-motion-now.is-live { border-style: solid; border-color: var(--ts-accent); color: var(--ts-ink); }
+.ts-motion-now b { font-weight: 750; }
+
 /* ── Text library ── */
 /* A single scrolling row of templates, and dark tiles so a light caption reads
    the same way it will on the stage. */

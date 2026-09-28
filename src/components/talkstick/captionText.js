@@ -8,6 +8,8 @@
 // its proportions at any stage size. When any of them is left unset the template's
 // own value is used, so a fresh caption still lands where the look intends.
 
+import { groupWords, MOTION_ENTER } from "./captionMotion";
+
 const STACK = 'Inter, "Helvetica Regular", system-ui, sans-serif';
 const INK = "#111418";
 
@@ -82,6 +84,24 @@ function wrapLines(ctx, text, maxWidth) {
 }
 
 /**
+ * What the block is measured against. Normally the words themselves — but once the
+ * caption is cut per word, the longest card, so the type holds one size across
+ * every word instead of stepping up and down as the words change.
+ *
+ * The widths are read at the template's own size, which is where the sizing starts
+ * anyway, so the comparison is valid.
+ */
+function fitSource(ctx, caption, tpl, sentence) {
+  const mode = caption?.anim || "off";
+  if (mode === "off") return sentence;
+  const cards = groupWords(caption.text, mode, caption.chunk).map((card) =>
+    tpl.upper ? card.toUpperCase() : card,
+  );
+  if (!cards.length) return sentence;
+  return cards.reduce((best, card) => (ctx.measureText(card).width > ctx.measureText(best).width ? card : best), cards[0]);
+}
+
+/**
  * Measures the caption block: the type size, the lines it wrapped into, and
  * where the block sits on the canvas — all in canvas pixels.
  *
@@ -109,7 +129,8 @@ export function layoutCaption(ctx, canvas, caption) {
 
   let size = Math.max(floor, canvas.width * (caption.size ?? tpl.size));
   setFont(ctx, size, tpl.weight, tpl.track);
-  let lines = wrapLines(ctx, sentence, boxW);
+  const fitting = fitSource(ctx, caption, tpl, sentence);
+  let lines = wrapLines(ctx, fitting, boxW);
 
   // A word with no space in it can still be wider than the block, so the width is
   // checked alongside the height on every pass.
@@ -122,8 +143,12 @@ export function layoutCaption(ctx, canvas, caption) {
     const ratio = Math.min(overWidth ? boxW / widest : 1, overHeight ? maxHeight / height : 1);
     size = Math.max(floor, size * ratio * 0.995);
     setFont(ctx, size, tpl.weight, tpl.track);
-    lines = wrapLines(ctx, sentence, boxW);
+    lines = wrapLines(ctx, fitting, boxW);
   }
+
+  // The card actually painted is the one the voice is on, wrapped at the size the
+  // block settled on — so the words on the frame are the words being said.
+  lines = wrapLines(ctx, sentence, boxW);
 
   const widest = Math.max(...lines.map((line) => ctx.measureText(line).width));
   ctx.restore();
@@ -153,6 +178,69 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// The entrance runs on its own clock, so every card arrives at the same speed
+// however long it happens to be on screen.
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+const backOut = (t) => {
+  const s = 1.32;
+  const u = t - 1;
+  return 1 + u * u * ((s + 1) * u + s);
+};
+
+/**
+ * How far a card's entrance has run, 0 to 1. A card with no age at all is at rest
+ * — which is what a whole-line caption, and a card on a paused track, both report.
+ */
+function arrivalAt(caption) {
+  const style = caption?.motionStyle || "pop";
+  if (style === "snap") return 1;
+  const age = Number(caption?.motionAge);
+  if (!Number.isFinite(age)) return 1;
+  const span = Math.min(MOTION_ENTER, Math.max(0.08, (caption?.motionLife || MOTION_ENTER) * 0.6));
+  return Math.min(1, Math.max(0, age / span));
+}
+
+/**
+ * Folds the entrance into the canvas, around the block itself so the words stay
+ * where the caption put them. Called before anything is painted, and undone by the
+ * caller's own restore.
+ */
+function applyArrival(ctx, style, t, box) {
+  if (style === "type") {
+    // A sweep across the words, left to right. The block never reflows, because
+    // what is revealed is clipped rather than re-laid out.
+    ctx.beginPath();
+    ctx.rect(
+      box.inkLeft - box.size * 0.75,
+      box.top - box.size * 0.8,
+      (box.widest + box.size * 1.5) * easeOut(t),
+      box.blockHeight + box.size * 1.6,
+    );
+    ctx.clip();
+    return;
+  }
+
+  const eased = easeOut(t);
+  if (style === "rise") {
+    ctx.globalAlpha = eased;
+    ctx.translate(0, (1 - eased) * box.size * 0.85);
+    return;
+  }
+  if (style === "fade") {
+    ctx.globalAlpha = eased * eased;
+    return;
+  }
+
+  // Pop: a short spring from just under its own size.
+  const anchorX = box.cx;
+  const anchorY = box.top + box.blockHeight / 2;
+  const scale = 0.74 + 0.26 * backOut(t);
+  ctx.globalAlpha = eased;
+  ctx.translate(anchorX, anchorY);
+  ctx.scale(scale, scale);
+  ctx.translate(-anchorX, -anchorY);
+}
+
 /**
  * Draws the caption over the frame. The layout is measured from the canvas, so a
  * template reads the same on a small preview tile as it does on the full stage.
@@ -170,6 +258,15 @@ export function drawCaption(ctx, canvas, caption) {
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   setFont(ctx, size, tpl.weight, tpl.track);
+
+  // ── The entrance ──
+  // Cut per word, every card arrives on its own. The animation is measured against
+  // how long the card has been on screen, so it plays at the same speed however
+  // long the card lasts — and a card that has already settled simply paints at rest.
+  const arrival = arrivalAt(caption);
+  if (arrival < 1) {
+    applyArrival(ctx, caption?.motionStyle || "pop", arrival, { cx, top, blockHeight, inkLeft, widest, size });
+  }
 
   const lineY = (index) => top + lineHeight * index + lineHeight / 2;
   const lineX = (line) => (tpl.align === "left" ? inkLeft : cx - ctx.measureText(line).width / 2);

@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Captions, Loader2, Pause, Play } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import TextTemplatePicker from "./TextTemplatePicker";
+import CaptionMotionPanel from "./CaptionMotionPanel";
 
 const clock = (value) => {
   const total = Number.isFinite(value) ? Math.max(0, value) : 0;
@@ -98,6 +99,8 @@ export default function TalkStickTransport({ engine, caption, onCaption }) {
         </button>
       </div>
       {error && <p className="ts-note">{error}</p>}
+
+      <CaptionMotionPanel caption={caption} onChange={patch} engine={engine} />
 
       <h3 className="ts-sub">Text library</h3>
       <TextTemplatePicker
