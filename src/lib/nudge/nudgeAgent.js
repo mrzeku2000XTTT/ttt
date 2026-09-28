@@ -15,7 +15,7 @@ const SCHEMA = {
     },
     notifications: {
       type: "array",
-      description: "4 to 8 notifications, ordered the way the day happens.",
+      description: "One notification per shift or event, up to 16, ordered by when they happen. Cover every day the source shows — including days that have already passed.",
       items: {
         type: "object",
         properties: {
@@ -52,7 +52,7 @@ function normalise(raw) {
       tone: ["now", "next", "later", "heads-up", "conflict"].includes(n?.tone) ? n.tone : "later",
     }))
     .filter((n) => n.title && n.title !== "Untitled")
-    .slice(0, 10);
+    .slice(0, 16);
 
   return {
     headline: clip(raw?.headline || "Your schedule at a glance", 46),
@@ -86,13 +86,13 @@ The source can arrive in any shape, and none of them are wrong: a tidy list, a s
 Write the notifications a phone would have shown this person about this schedule. Each one must read exactly like a real iOS notification: a short bold headline, then ONE plain sentence of what is happening. State the fact. No greetings, no encouragement, no "don't forget", no exclamation marks, no emoji.
 
 Rules:
-- Between 4 and 8 notifications, ordered the way the day actually happens.
+- Write one notification per shift or event the source shows, in the order they happen, up to 16. When the source covers a range of days — a roster, a week grid, or a month of shifts — cover EVERY day it shows, from its first day to its last, including days that have already passed. Never start at today, and never drop a day just because it is in the past.
 - "time" is the short timestamp shown top-right: "9:30 AM", "in 20 min", "now", or "later". Use the real times from the schedule, in the local clock above.
-- "date" is the short day that goes with that timestamp: "Today", "Tomorrow", or a weekday and date such as "Wed Oct 1". When the source is a whole week, a roster or a grid, give every notification the day it actually falls on. Leave it empty only when the source carries no date at all.
+- "date" is the short day that goes with that timestamp: "Today", "Tomorrow", or a weekday and date such as "Wed Oct 1". When the source is a whole week, a roster or a grid, give every notification the day it actually falls on — a day already past keeps its real weekday and date, exactly the same way. Leave it empty only when the source carries no date at all.
 - "app" is the app the notification would come from. Use Calendar for events. Use Maps when the person has to travel somewhere. Use Reminders for something they must bring or do. Use Mail when a document or a reply is involved. Use Clock for an unusually early start. Only use Weather if the schedule itself mentions weather.
 - "title" is at most 42 characters. "body" is at most 130 characters. "detail" is at most 200 characters and only when there is genuinely useful extra context — what to bring, who else is there, how long the walk is. Otherwise return an empty string for "detail".
 - "tone" is exactly one of: "now" (happening this moment), "next" (the very next thing), "later" (anything after), "heads-up" (prep or travel), "conflict" (two things genuinely overlap or the gaps are impossible).
-- Include exactly one "heads-up" notification about the tightest moment of the day.
+- Include exactly one "heads-up" notification about the tightest moment in the whole schedule.
 - Include a "conflict" notification ONLY if the schedule really contains an overlap or an impossible gap. Never invent one.
 - If the schedule is empty, vague or has no times, say so plainly in "headline" and write notifications that describe what IS there.
 - "headline" is the one-line summary at the top of the list, at most 46 characters, e.g. "Tuesday — 5 things, first at 9:30".
