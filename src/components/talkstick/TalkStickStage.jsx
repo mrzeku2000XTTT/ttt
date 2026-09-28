@@ -5,6 +5,13 @@ import { charOrigin, featureBox } from "./talkStickRender";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+// The share of the stage the character's resize frame covers, how far a press
+// must travel before it counts as a drag, and the padding a press gets while it
+// looks for a feature to grab — both measured in canvas pixels.
+const CHAR_FRAME = 0.42;
+const DRAG_MIN = 4;
+const HIT_PAD = 8;
+
 /**
  * The drawing surface.
  *
@@ -20,6 +27,9 @@ export default function TalkStickStage({
   activePart,
   spot,
   part,
+  spots,
+  settings,
+  onSelectPart,
   canvasSize,
   editing,
   onToggleEditing,
@@ -46,6 +56,8 @@ export default function TalkStickStage({
   // The pointer's starting point plus the character's position when the drag
   // began, so the character follows the pointer exactly.
   const [drag, setDrag] = useState(null);
+  // Where the character's grip is being held, in canvas pixels.
+  const [grip, setGrip] = useState(null);
   const [over, setOver] = useState(false);
   const wrapRef = useRef(null);
   // The hand tool turns every press on the stage into a character drag, and the
@@ -79,23 +91,52 @@ export default function TalkStickStage({
   // Where the active feature actually sits, in canvas pixels.
   const box = spot && canvasSize.width ? featureBox(canvasSize, spot, part, charPos, charScale) : null;
 
-  // The character's own frame — shown while the hand tool is held, so the whole
-  // character can be dragged around and pulled bigger from the same corner.
+  // Every feature already on the face, so a press can tell which one it landed on.
+  const partBoxes =
+    canvasSize.width && spots && settings
+      ? ["mouth", "eyes", "nose"]
+          .filter((id) => spots[id] && settings[id])
+          .map((id) => ({ id, box: featureBox(canvasSize, spots[id], settings[id], charPos, charScale) }))
+      : [];
+
+  // The character's handle — a compact frame around its middle rather than the
+  // whole canvas, so the corner grip stays within easy reach and never sprawls
+  // across the stage. Shown while the hand tool is held.
   const origin = canvasSize.width ? charOrigin(canvasSize, charPos, charScale) : null;
-  const charBox = origin
+  const frame = origin
     ? {
-        left: `${(origin.x / canvasSize.width) * 100}%`,
-        top: `${(origin.y / canvasSize.height) * 100}%`,
-        width: `${charScale * 100}%`,
-        height: `${charScale * 100}%`,
+        cx: origin.x + (canvasSize.width * charScale) / 2,
+        cy: origin.y + (canvasSize.height * charScale) / 2,
+        w: canvasSize.width * CHAR_FRAME,
+        h: canvasSize.height * CHAR_FRAME,
       }
     : null;
-  const charCorner = origin
+  const charBox = frame
     ? {
-        left: `${((origin.x + canvasSize.width * charScale) / canvasSize.width) * 100}%`,
-        top: `${((origin.y + canvasSize.height * charScale) / canvasSize.height) * 100}%`,
+        left: `${((frame.cx - frame.w / 2) / canvasSize.width) * 100}%`,
+        top: `${((frame.cy - frame.h / 2) / canvasSize.height) * 100}%`,
+        width: `${CHAR_FRAME * 100}%`,
+        height: `${CHAR_FRAME * 100}%`,
       }
     : null;
+  const charCorner = (() => {
+    // While the grip is being pulled it tracks the pointer, so the handle stays
+    // under the cursor even though the frame itself is a fixed size.
+    const at = grip || (frame ? { x: frame.cx + frame.w / 2, y: frame.cy + frame.h / 2 } : null);
+    return at
+      ? {
+          left: `${(at.x / canvasSize.width) * 100}%`,
+          top: `${(at.y / canvasSize.height) * 100}%`,
+        }
+      : null;
+  })();
+
+  // The feature under a press, padded so a small part is still easy to grab.
+  const partAt = (point) =>
+    partBoxes.find(
+      ({ box: b }) =>
+        Math.abs(point.x - b.cx) <= b.w / 2 + HIT_PAD && Math.abs(point.y - b.cy) <= b.h / 2 + HIT_PAD,
+    );
 
   const startMove = (event) => {
     if (!hasImage || !editing) return;
@@ -121,6 +162,18 @@ export default function TalkStickStage({
       setMode("char");
       return;
     }
+
+    // Pressing a feature that is already on the face picks it up instead of
+    // dropping the active one on top of it — so a plain click changes what you
+    // are editing and never shifts anything. Only a real drag moves it.
+    const hit = partAt(point);
+    if (hit) {
+      onSelectPart(hit.id);
+      setDrag({ start: point, grab: { x: point.x - hit.box.cx, y: point.y - hit.box.cy } });
+      setMode("select");
+      return;
+    }
+
     setMode("move");
     onPlace(point);
   };
@@ -133,12 +186,21 @@ export default function TalkStickStage({
     setMode("resize");
   };
 
-  // The hand tool's corner grip scales the whole character, face included.
+  // The hand tool's corner grip scales the whole character, face included. The
+  // drag is read as a ratio against where it started, so the character grows in
+  // proportion to how far the grip is pulled.
   const startCharResize = (event) => {
-    if (!hasImage || !editing || !movingChar || !origin) return;
+    if (!hasImage || !editing || !movingChar || !frame) return;
+    const point = toCanvas(event);
+    if (!point) return;
     event.preventDefault();
     event.stopPropagation();
     wrapRef.current?.setPointerCapture?.(event.pointerId);
+    setDrag({
+      dist: Math.max(1, Math.hypot(point.x - frame.cx, point.y - frame.cy)),
+      scale: charScale,
+    });
+    setGrip(point);
     setMode("charResize");
   };
 
@@ -156,13 +218,26 @@ export default function TalkStickStage({
       return;
     }
     if (mode === "charResize") {
+      if (!drag || !frame) return;
       // Measured from the character's centre, so it grows around its middle.
-      const centre = origin.x + (canvasSize.width * charScale) / 2;
-      onScaleCharacter(((point.x - centre) * 2) / canvasSize.width);
+      const dist = Math.hypot(point.x - frame.cx, point.y - frame.cy);
+      setGrip(point);
+      onScaleCharacter((drag.scale * dist) / drag.dist);
+      return;
+    }
+    if (mode === "select") {
+      if (!drag) return;
+      // A press that never travelled is just a selection — nothing moves.
+      if (Math.hypot(point.x - drag.start.x, point.y - drag.start.y) < DRAG_MIN) return;
+      setMode("move");
+      onPlace({ x: point.x - drag.grab.x, y: point.y - drag.grab.y });
       return;
     }
     if (mode === "move") {
-      onPlace(point);
+      // Carrying the grab point through keeps the feature under the cursor
+      // instead of snapping its centre to it.
+      const grab = drag?.grab;
+      onPlace(grab ? { x: point.x - grab.x, y: point.y - grab.y } : point);
       return;
     }
     if (!box) return;
@@ -179,6 +254,7 @@ export default function TalkStickStage({
     if (!mode) return;
     setMode(null);
     setDrag(null);
+    setGrip(null);
     wrapRef.current?.releasePointerCapture?.(event.pointerId);
   };
 

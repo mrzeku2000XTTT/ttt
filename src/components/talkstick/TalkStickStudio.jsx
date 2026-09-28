@@ -428,6 +428,9 @@ export default function TalkStickStudio() {
             activePart={activePart}
             spot={spots[activePart]}
             part={settings[activePart]}
+            spots={spots}
+            settings={settings}
+            onSelectPart={selectPart}
             canvasSize={canvasSize}
             editing={editing}
             onToggleEditing={() => setEditing((prev) => !prev)}
