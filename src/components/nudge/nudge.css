@@ -1,0 +1,238 @@
+/* NUDGE — scoped theme. The studio is a dark iOS surface; nothing here leaks
+   into the rest of the store. The landing follows app-landing-standard.md and
+   carries its own light styling inline. */
+
+.nudge-studio {
+  background: #060608;
+  color: #f5f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.nudge-studio * { box-sizing: border-box; }
+.nudge-studio ::-webkit-scrollbar { width: 6px; height: 6px; }
+.nudge-studio ::-webkit-scrollbar-track { background: transparent; }
+.nudge-studio ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .14); border-radius: 3px; }
+
+/* ── Shell ── */
+.nudge-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(6, 6, 8, .92); backdrop-filter: blur(20px); flex-shrink: 0;
+}
+.nudge-mark {
+  display: inline-flex; align-items: center; gap: 8px; min-width: 0;
+  font-size: 12px; font-weight: 800; letter-spacing: .26em;
+}
+.nudge-mark img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; }
+.nudge-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+  color: #9a9aa2; border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px; padding: 3px 8px;
+}
+.nudge-ghost {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px;
+  border-radius: 9px; border: 1px solid rgba(255, 255, 255, .12);
+  background: transparent; color: #b9b9c2; font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: color .15s, border-color .15s, background .15s;
+}
+.nudge-ghost:hover { color: #fff; border-color: rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .04); }
+.nudge-ghost:disabled { opacity: .45; cursor: not-allowed; }
+.nudge-ghost.is-on { color: #fff; border-color: rgba(255, 255, 255, .34); background: rgba(255, 255, 255, .09); }
+
+/* ── Phone ── */
+.nudge-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 14px; }
+/* Height first, then the phone's own 9:19.5 ratio sets the width — so the frame
+   keeps a phone silhouette on a short phone screen and on a tall desktop one. */
+.nudge-phone {
+  position: relative; height: min(100%, 700px); aspect-ratio: 9 / 19.5; max-width: 100%;
+  border-radius: 46px; padding: 9px;
+  background: linear-gradient(150deg, #4a4a52, #101013 42%, #2a2a31);
+  box-shadow: 0 34px 80px -24px rgba(0, 0, 0, .95), inset 0 0 0 1px rgba(255, 255, 255, .1);
+}
+.nudge-screen {
+  position: relative; height: 100%; border-radius: 38px; overflow: hidden;
+  background: #000; display: flex; flex-direction: column;
+}
+.nudge-wall { position: absolute; inset: 0; transition: opacity .25s ease; }
+.nudge-island {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  width: 92px; height: 25px; border-radius: 999px; background: #000; z-index: 6;
+}
+
+/* Lock screen */
+.nudge-lock { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; padding: 58px 11px 12px; }
+.nudge-lock-clock { text-align: center; font-size: 60px; font-weight: 300; letter-spacing: -.035em; line-height: 1; color: #fff; }
+.nudge-lock-date { text-align: center; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, .9); margin-top: 3px; }
+.nudge-lock-stack {
+  flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+  gap: 7px; padding: 18px 2px 6px; scrollbar-width: none;
+}
+.nudge-lock-stack::-webkit-scrollbar { display: none; }
+.nudge-lock-foot {
+  height: 5px; width: 116px; border-radius: 999px; background: rgba(255, 255, 255, .55);
+  margin: 8px auto 4px; flex-shrink: 0;
+}
+
+/* ── The notification itself ── */
+.nudge-note {
+  display: block; width: 100%; text-align: left; border: 0; font: inherit;
+  padding: 10px 12px 11px; border-radius: 21px;
+  background: rgba(255, 255, 255, .15);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .2);
+  color: #fff; cursor: pointer;
+  animation: nudge-drop .32s cubic-bezier(.22, 1, .36, 1) both;
+}
+.nudge-note.is-static { animation: none; }
+@keyframes nudge-drop { from { opacity: 0; transform: translateY(-9px) scale(.985); } to { opacity: 1; transform: none; } }
+
+.nudge-note-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.nudge-note-icon {
+  width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+}
+.nudge-note-icon-glyph { width: 21px; height: 21px; }
+.nudge-note-app {
+  font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  opacity: .82; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nudge-note-time { margin-left: auto; font-size: 11.5px; opacity: .62; flex-shrink: 0; }
+.nudge-note-title { margin: 0; font-size: 15px; font-weight: 640; letter-spacing: -.012em; line-height: 1.24; }
+.nudge-note-body { margin: 2px 0 0; font-size: 14.5px; line-height: 1.33; opacity: .93; }
+.nudge-note-detail {
+  margin: 7px 0 0; padding-top: 7px; font-size: 13px; line-height: 1.4; opacity: .82;
+  border-top: .5px solid rgba(255, 255, 255, .22);
+}
+
+/* Light lock screen */
+.nudge-studio.is-light .nudge-wall {
+  background:
+    radial-gradient(120% 80% at 22% 0%, rgba(255, 205, 235, .95), transparent 62%),
+    radial-gradient(110% 76% at 88% 16%, rgba(200, 222, 255, .95), transparent 64%),
+    radial-gradient(120% 90% at 50% 112%, rgba(255, 236, 200, .9), transparent 62%),
+    #f4f4f8;
+}
+.nudge-studio.is-light .nudge-lock-clock,
+.nudge-studio.is-light .nudge-lock-date { color: #101014; }
+.nudge-studio.is-light .nudge-lock-foot { background: rgba(0, 0, 0, .38); }
+.nudge-studio.is-light .nudge-note {
+  background: rgba(255, 255, 255, .76);
+  box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .07), 0 6px 18px -10px rgba(0, 0, 0, .35);
+  color: #0a0a0c;
+}
+.nudge-studio.is-light .nudge-note-detail { border-top-color: rgba(0, 0, 0, .12); }
+
+/* Banner mode */
+.nudge-banner-stage { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.nudge-banner-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(110% 70% at 30% 8%, rgba(70, 60, 160, .5), transparent 60%),
+    radial-gradient(90% 60% at 82% 30%, rgba(20, 110, 190, .38), transparent 62%),
+    #0a0a10;
+}
+.nudge-banner-top { position: relative; z-index: 3; padding: 12px 10px 0; }
+.nudge-banner-grid {
+  position: relative; z-index: 1; flex: 1; display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px 12px; padding: 34px 20px; align-content: start; opacity: .26;
+}
+.nudge-banner-app { aspect-ratio: 1; border-radius: 13px; background: rgba(255, 255, 255, .12); }
+.nudge-banner-nav {
+  position: relative; z-index: 3; display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 0 14px 14px;
+}
+.nudge-dots { display: flex; gap: 5px; }
+.nudge-dot { width: 5px; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .28); }
+.nudge-dot.is-on { background: #fff; }
+
+/* ── Panel (desktop rail + mobile sheet) ── */
+.nudge-panel { display: flex; flex-direction: column; min-height: 0; }
+.nudge-sec { border-bottom: 1px solid rgba(255, 255, 255, .07); padding: 14px 14px 16px; }
+.nudge-sec:last-child { border-bottom: 0; }
+.nudge-sec-title {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 9px;
+  font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #8a8a94;
+}
+.nudge-input {
+  width: 100%; min-height: 118px; resize: vertical; padding: 10px 11px;
+  border-radius: 11px; border: 1px solid rgba(255, 255, 255, .12);
+  background: #101014; color: #f2f2f5; font-size: 16px; line-height: 1.45; font-family: inherit;
+}
+.nudge-input::placeholder { color: #5c5c66; }
+.nudge-input:focus { outline: none; border-color: rgba(255, 255, 255, .32); }
+.nudge-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; height: 42px; border: 0; border-radius: 11px; cursor: pointer;
+  background: #f5f5f7; color: #0a0a0c; font-size: 13px; font-weight: 700; font-family: inherit;
+  transition: opacity .15s, transform .12s;
+}
+.nudge-primary:hover:not(:disabled) { opacity: .9; }
+.nudge-primary:active:not(:disabled) { transform: scale(.99); }
+.nudge-primary:disabled { opacity: .38; cursor: not-allowed; }
+.nudge-row { display: flex; gap: 7px; }
+.nudge-note-line { display: flex; gap: 7px; font-size: 11px; line-height: 1.5; color: #7e7e88; }
+.nudge-note-line svg { flex-shrink: 0; margin-top: 2px; }
+.nudge-file {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 9px;
+  border-radius: 10px; border: 1px solid rgba(255, 255, 255, .12); background: #101014;
+  font-size: 11.5px; color: #d6d6dc;
+}
+.nudge-file span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nudge-drop {
+  border: 1px dashed rgba(255, 255, 255, .18); border-radius: 11px; padding: 13px 10px;
+  text-align: center; font-size: 11px; color: #8a8a94; cursor: pointer; transition: border-color .15s, color .15s;
+}
+.nudge-drop:hover, .nudge-drop.is-over { border-color: rgba(255, 255, 255, .42); color: #e6e6ea; }
+.nudge-list { display: flex; flex-direction: column; gap: 6px; }
+.nudge-item {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  padding: 9px 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .09);
+  background: transparent; color: #cfcfd6; font-size: 12px; font-family: inherit; cursor: pointer;
+}
+.nudge-item:hover { border-color: rgba(255, 255, 255, .24); color: #fff; }
+.nudge-item.is-on { border-color: rgba(255, 255, 255, .38); background: rgba(255, 255, 255, .07); color: #fff; }
+.nudge-item-body { min-width: 0; flex: 1; }
+.nudge-item-title { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nudge-item-sub { font-size: 10.5px; color: #7e7e88; margin-top: 1px; }
+.nudge-x {
+  width: 24px; height: 24px; border-radius: 7px; border: 0; background: transparent;
+  color: #6c6c76; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.nudge-x:hover { color: #ff6b6b; background: rgba(255, 107, 107, .1); }
+
+/* Mobile sheet */
+.nudge-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
+  max-height: 78dvh; transform: translateY(101%); transition: transform .26s cubic-bezier(.22, 1, .36, 1);
+  background: #0b0b0f; border-top: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 18px 18px 0 0; display: flex; flex-direction: column;
+  box-shadow: 0 -20px 50px -20px rgba(0, 0, 0, .9);
+}
+.nudge-sheet.is-open { transform: translateY(0); }
+.nudge-sheet-head {
+  display: flex; align-items: center; gap: 8px; padding: 11px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07); flex-shrink: 0;
+}
+.nudge-sheet-grab { width: 36px; height: 4px; border-radius: 999px; background: rgba(255, 255, 255, .22); margin: 0 auto; }
+.nudge-sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.nudge-scrim { position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, .6); backdrop-filter: blur(2px); }
+
+.nudge-bottom {
+  flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px calc(9px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255, 255, 255, .08); background: rgba(6, 6, 8, .94);
+}
+
+.nudge-spin { width: 14px; height: 14px; border-radius: 999px; border: 2px solid rgba(10, 10, 12, .3); border-top-color: #0a0a0c; animation: nudge-spin .7s linear infinite; }
+@keyframes nudge-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .nudge-note, .nudge-sheet { animation: none; transition: none; }
+}
+@media (max-width: 400px) {
+  .nudge-head { padding: 9px 10px; }
+  .nudge-badge { display: none; }
+}
