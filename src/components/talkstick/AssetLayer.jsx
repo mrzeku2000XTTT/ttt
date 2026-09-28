@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Move, Trash2 } from "lucide-react";
+import { paintOrder } from "./sceneAssets";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -61,7 +62,7 @@ export default function AssetLayer({
 
   return (
     <div className="ts-assets">
-      {assets.map((asset) => {
+      {paintOrder(assets).map((asset) => {
         const active = asset.id === selectedId;
         return (
           <div
@@ -72,6 +73,10 @@ export default function AssetLayer({
               top: `${asset.y}%`,
               width: `${asset.width}%`,
               aspectRatio: `${asset.ratio || 1}`,
+              // The overlay stacks in the same order the canvas paints, so the
+              // stage and the export always agree — and the picked asset stays
+              // reachable above the rest.
+              zIndex: active ? 2 : 1,
             }}
             onPointerDown={(event) => start(event, asset, "move")}
             onPointerMove={move}

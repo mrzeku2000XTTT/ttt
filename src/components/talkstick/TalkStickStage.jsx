@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import { Eye, Hand, ImagePlus, MousePointer2, Move } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Eye, Hand, ImagePlus, Maximize2, Minimize2, MousePointer2, Move } from "lucide-react";
 import AssetLayer from "./AssetLayer";
 import { charOrigin, featureBox } from "./talkStickRender";
 
@@ -37,8 +37,11 @@ export default function TalkStickStage({
   onChangeAsset,
   onDeleteAsset,
   onDropFiles,
+  children,
 }) {
   const [mode, setMode] = useState(null);
+  const [full, setFull] = useState(false);
+  const cardRef = useRef(null);
   // The pointer's starting point plus the character's position when the drag
   // began, so the character follows the pointer exactly.
   const [drag, setDrag] = useState(null);
@@ -46,6 +49,18 @@ export default function TalkStickStage({
   const wrapRef = useRef(null);
   // The hand tool turns every press on the stage into a character drag.
   const movingChar = tool === "hand";
+
+  // Full screen hands the character the whole display for a clean look at it.
+  useEffect(() => {
+    const sync = () => setFull(document.fullscreenElement === cardRef.current);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
+  const toggleFull = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else cardRef.current?.requestFullscreen?.();
+  };
 
   const toCanvas = (event) => {
     const canvas = canvasRef.current;
@@ -190,11 +205,12 @@ export default function TalkStickStage({
     : null;
 
   return (
-    <main className="ts-card ts-stage-card">
+    <main className={`ts-card ts-stage-card ${full ? "is-full" : ""}`} ref={cardRef}>
       <div className="ts-stage-bar">
         <span className="ts-stage-label">Stage</span>
-        {hasImage && (
-          <div className="ts-stage-actions">
+        <div className="ts-stage-actions">
+          {hasImage && (
+            <>
             {editing && (
               <div className="ts-tools" role="radiogroup" aria-label="Tool">
                 <button
@@ -230,8 +246,18 @@ export default function TalkStickStage({
               {editing ? <Eye className="ts-mode-icon" /> : <Move className="ts-mode-icon" />}
               {editing ? "Ready view" : "Adjust face"}
             </button>
-          </div>
-        )}
+            </>
+          )}
+          <button
+            type="button"
+            className={`ts-mode ${full ? "is-on" : ""}`}
+            onClick={toggleFull}
+            title={full ? "Leave full screen" : "Fill the screen with the stage"}
+          >
+            {full ? <Minimize2 className="ts-mode-icon" /> : <Maximize2 className="ts-mode-icon" />}
+            {full ? "Exit" : "Full screen"}
+          </button>
+        </div>
       </div>
 
       <div
@@ -308,6 +334,8 @@ export default function TalkStickStage({
           </div>
         )}
       </div>
+
+      {children}
     </main>
   );
 }

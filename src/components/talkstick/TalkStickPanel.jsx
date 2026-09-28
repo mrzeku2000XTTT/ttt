@@ -54,6 +54,7 @@ export default function TalkStickPanel({
   onSelectAsset,
   onChangeAsset,
   onDeleteAsset,
+  onReorder,
   onGenerateAsset,
   onAddAssetFiles,
   generating,
@@ -133,6 +134,7 @@ export default function TalkStickPanel({
           onSelect={onSelectAsset}
           onChange={onChangeAsset}
           onDelete={onDeleteAsset}
+          onReorder={onReorder}
           onGenerate={onGenerateAsset}
           onAddFiles={onAddAssetFiles}
           generating={generating}

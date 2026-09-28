@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BringToFront, Loader2, SendToBack, Sparkles, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BringToFront, Loader2, SendToBack, Sparkles, Trash2 } from "lucide-react";
 import { isBehind, KIND_BACKGROUND, KIND_LABELS, KIND_PROP } from "./sceneAssets";
 
 /**
@@ -12,6 +12,7 @@ export default function ScenePanel({
   onSelect,
   onChange,
   onDelete,
+  onReorder,
   onGenerate,
   onAddFiles,
   generating,
@@ -20,12 +21,18 @@ export default function ScenePanel({
   const [subject, setSubject] = useState("");
   const [kind, setKind] = useState(KIND_PROP);
   const [transparent, setTransparent] = useState(true);
+  const [count, setCount] = useState(2);
 
   const selected = assets.find((asset) => asset.id === selectedId) || null;
 
   const make = () => {
     if (!subject.trim() || generating) return;
-    onGenerate({ subject, kind, transparent: kind === KIND_PROP && transparent });
+    onGenerate({
+      subject,
+      kind,
+      transparent: kind === KIND_PROP && transparent,
+      count: kind === KIND_PROP ? count : 1,
+    });
   };
 
   return (
@@ -66,10 +73,29 @@ export default function ScenePanel({
       </div>
 
       {kind === KIND_PROP && (
-        <label className="ts-check">
-          <input type="checkbox" checked={transparent} onChange={(event) => setTransparent(event.target.checked)} />
-          Cut out the white background
-        </label>
+        <>
+          <label className="ts-check">
+            <input type="checkbox" checked={transparent} onChange={(event) => setTransparent(event.target.checked)} />
+            Cut out the white background
+          </label>
+
+          <h3 className="ts-sub">How many</h3>
+          <div className="ts-parts ts-parts-4" role="radiogroup" aria-label="How many props">
+            {[1, 2, 3, 4].map((n) => (
+              <button
+                key={n}
+                type="button"
+                role="radio"
+                aria-checked={count === n}
+                className={`ts-part ${count === n ? "is-active" : ""}`}
+                onClick={() => setCount(n)}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <p className="ts-hint">Each one is fanned out across the stage, so they never land on top of each other.</p>
+        </>
       )}
 
       <button
@@ -79,7 +105,7 @@ export default function ScenePanel({
         disabled={generating || !subject.trim()}
       >
         {generating ? <Loader2 className="ts-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-        {generating ? "Generating…" : "Generate"}
+        {generating ? "Generating…" : kind === KIND_PROP && count > 1 ? `Generate ${count} props` : "Generate"}
       </button>
 
       {error && <p className="ts-note">{error}</p>}
@@ -171,6 +197,21 @@ export default function ScenePanel({
               : isBehind(selected)
                 ? "Behind the character — it never covers the artwork."
                 : "In front of the character."}
+          </p>
+
+          <div className="ts-row">
+            <button type="button" className="ts-btn ts-btn-compact" onClick={() => onReorder(selected.id, 1)}>
+              <ArrowUp className="h-3.5 w-3.5" />
+              Forward
+            </button>
+            <button type="button" className="ts-btn ts-btn-compact" onClick={() => onReorder(selected.id, -1)}>
+              <ArrowDown className="h-3.5 w-3.5" />
+              Back
+            </button>
+          </div>
+          <p className="ts-hint">
+            Stacks {selected.name.toLowerCase()} against the other assets in the same layer — it never crosses the
+            character.
           </p>
 
           <button type="button" className="ts-btn ts-btn-quiet" onClick={() => onDelete(selected.id)}>

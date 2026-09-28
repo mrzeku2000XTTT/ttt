@@ -17,6 +17,39 @@ export const KIND_LABELS = {
  */
 export const isBehind = (asset) => asset.kind === KIND_BACKGROUND || asset.back !== false;
 
+// The three layers, bottom to top: backgrounds, props behind the character,
+// props in front of it.
+const rank = (asset) => (asset.kind === KIND_BACKGROUND ? 0 : asset.back !== false ? 1 : 2);
+
+/**
+ * The order assets are stacked in — the single source of truth for both the
+ * canvas and the stage overlay, so what you see is what gets painted. Every
+ * background goes down first, then the props behind the character, then the
+ * props in front. Within each layer the scene's own order is kept, which is
+ * what "bring forward" and "send back" move around.
+ */
+export const paintOrder = (assets) =>
+  assets
+    .map((asset, index) => ({ asset, index }))
+    .sort((a, b) => rank(a.asset) - rank(b.asset) || a.index - b.index)
+    .map((entry) => entry.asset);
+
+/**
+ * Moves an asset one place up or down inside its own layer. It never crosses the
+ * character, so a prop sitting behind the artwork can never jump in front of it
+ * by accident — the layer button is what changes sides.
+ */
+export function shiftLayer(assets, id, delta) {
+  const order = paintOrder(assets);
+  const at = order.findIndex((asset) => asset.id === id);
+  const to = at + delta;
+  if (at < 0 || to < 0 || to >= order.length) return assets;
+  if (rank(order[at]) !== rank(order[to])) return assets;
+  const next = order.slice();
+  [next[at], next[to]] = [next[to], next[at]];
+  return next;
+}
+
 let counter = 0;
 
 /** A new asset, dropped at the middle of the stage at a sensible size. */

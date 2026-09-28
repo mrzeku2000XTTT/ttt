@@ -3,7 +3,8 @@
 import { drawMouth } from "./mouthStyles";
 import { drawEyePair } from "./eyeStyles";
 import { drawNose } from "./noseStyles";
-import { assetBox, isBehind } from "./sceneAssets";
+import { assetBox, isBehind, paintOrder } from "./sceneAssets";
+import { drawCaption } from "./captionText";
 
 /**
  * Sizes the canvas to the artwork so the whole drawing fits the stage, keeping
@@ -102,10 +103,10 @@ const metrics = (canvas, spot, part, char, scale) => {
   return { x: box.cx, y: box.cy, w: box.w, h: box.h };
 };
 
-/** Paints one layer of assets, in the order they were added. */
+/** Paints one layer of assets, in the scene's own stacking order. */
 function paintLayer(ctx, canvas, assets, images) {
   if (!images) return;
-  assets.forEach((asset) => {
+  paintOrder(assets).forEach((asset) => {
     const art = images.get(asset.url);
     if (!art) return;
     const box = assetBox(asset, canvas);
@@ -129,8 +130,16 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   ctx.drawImage(image, origin.x, origin.y, canvas.width * scale, canvas.height * scale);
   paintLayer(ctx, canvas, assets.filter((asset) => !isBehind(asset)), scene?.images);
 
-  if (!rig) return;
+  if (rig) drawFace(ctx, canvas, rig, settings, level, char, scale);
+  // The caption goes on last, so it reads over everything else in the frame.
+  drawCaption(ctx, canvas, scene?.caption);
+}
 
+/**
+ * The face itself: eyes, nose and mouth, each drawn at its placed spot and sized
+ * from the character's own measurements.
+ */
+function drawFace(ctx, canvas, rig, settings, level, char, scale) {
   const stroke = Math.max(2, canvas.width / 170);
 
   if (rig.eyes) {

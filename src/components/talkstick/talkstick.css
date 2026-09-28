@@ -70,6 +70,8 @@
   position: sticky;
   top: 18px;
   align-self: start;
+  display: flex;
+  flex-direction: column;
   max-height: calc(100vh - 36px);
   overflow: hidden;
 }
@@ -97,10 +99,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: min(660px, calc(100vh - 96px));
+  flex: 1 1 auto;
+  min-height: min(440px, calc(100vh - 450px));
   padding: 22px;
   background: var(--ts-stage);
-  border-radius: 0 0 21px 21px;
 }
 
 /* Wraps the canvas exactly, so the handle can be positioned in percentages. */
@@ -855,6 +857,7 @@
   .talkstick { min-height: auto; }
   .ts-shell { padding: 24px 16px 48px; }
   .ts-layout { grid-template-columns: minmax(0, 1fr); }
+  .ts-stage-card { position: static; max-height: none; }
   .ts-stage { min-height: 440px; padding: 16px; }
 }
 
@@ -862,3 +865,139 @@
   .ts-btn, .ts-file, .ts-meter-fill, .ts-mode, .ts-part, .ts-style-tile, .ts-stick-tile { transition: none; }
   .ts-spin { animation-duration: 2.4s; }
 }
+
+/* ── Full screen ── */
+/* The character gets the whole display, and everything that is only there to
+   drive it steps out of the way. */
+.ts-stage-card.is-full {
+  position: static;
+  max-height: none;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #0b0d10;
+}
+.ts-stage-card.is-full .ts-stage { min-height: 0; background: #0b0d10; }
+.ts-stage-card.is-full .ts-transport { display: none; }
+
+/* ── Timeline transport ── */
+.ts-transport {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--ts-line);
+  border-radius: 0 0 21px 21px;
+}
+
+.ts-transport-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ts-transport-label {
+  color: var(--ts-mute);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ts-transport-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 1px solid var(--ts-accent);
+  border-radius: 50%;
+  background: var(--ts-accent);
+  color: #fff;
+  cursor: pointer;
+}
+.ts-transport-play:hover:not(:disabled) { background: #23282f; border-color: #23282f; }
+.ts-transport-play:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.ts-scrub {
+  flex: 1;
+  min-width: 0;
+  height: 18px;
+  accent-color: var(--ts-accent);
+  cursor: pointer;
+}
+.ts-scrub:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ts-time {
+  flex-shrink: 0;
+  color: var(--ts-body);
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-caption-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* ── Text library ── */
+/* A single scrolling row of templates, and dark tiles so a light caption reads
+   the same way it will on the stage. */
+.ts-template-grid {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.ts-template-tile {
+  flex: 0 0 148px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 5px 5px 6px;
+  border: 1px solid var(--ts-line);
+  border-radius: 12px;
+  background: #0b0d10;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ts-template-tile:hover { border-color: #4a515b; }
+.ts-template-tile.is-active {
+  border-color: var(--ts-accent);
+  box-shadow: 0 0 0 3px rgba(17, 20, 24, 0.1);
+}
+.ts-template-tile:focus-visible { outline: 2px solid var(--ts-accent); outline-offset: 2px; }
+
+.ts-template-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.ts-template-name {
+  color: #c6cbd2;
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.ts-template-tile.is-active .ts-template-name { color: #fff; }
+
+.ts-colour {
+  width: 100%;
+  height: 36px;
+  padding: 3px;
+  border: 1px solid var(--ts-line-strong);
+  border-radius: 10px;
+  background: var(--ts-surface);
+  cursor: pointer;
+}
+
+.ts-parts-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.ts-row .ts-btn-compact { width: 100%; }

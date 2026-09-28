@@ -5,7 +5,8 @@ import TalkStickPanel from "./TalkStickPanel";
 import useMouthEngine from "./useMouthEngine";
 import { charOrigin, fitCanvas } from "./talkStickRender";
 import { stickmanSource } from "./stickmen";
-import { assetFromFile, fileToDataUrl, newAsset, KIND_PROP } from "./sceneAssets";
+import { assetFromFile, fileToDataUrl, newAsset, KIND_PROP, shiftLayer } from "./sceneAssets";
+import TalkStickTransport from "./TalkStickTransport";
 import { generateAsset } from "./assetGenerate";
 import {
   deleteHistory,
@@ -30,6 +31,9 @@ const DEFAULTS = {
 const LIFT = { eyes: 0.17, nose: 0.07 };
 
 const NO_SPOTS = { mouth: null, eyes: null, nose: null };
+
+// The caption laid over the scene, and the template it is dressed in.
+const NO_CAPTION = { text: "", template: "subtitle", color: "#ffffff", accent: "#ffe14d" };
 
 const NO_CHAR = { x: 0, y: 0 };
 
@@ -57,6 +61,7 @@ export default function TalkStickStudio() {
   // props, "hand" drags the whole character around.
   const [tool, setTool] = useState("mouse");
 
+  const [caption, setCaption] = useState(NO_CAPTION);
   const [assets, setAssets] = useState([]);
   const [selectedAssetId, setSelectedAssetId] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -69,16 +74,19 @@ export default function TalkStickStudio() {
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
   const meterRef = useRef(null);
+  // The timeline's playhead, written to directly so scrubbing never re-renders.
+  const scrubRef = useRef(null);
   // Every asset's artwork, keyed by its url, for the renderer to draw each frame.
   const assetImages = useRef(new Map());
 
   const engine = useMouthEngine({
     canvasRef,
     meterRef,
+    scrubRef,
     image,
     rig: spots,
     settings,
-    scene: { assets, images: assetImages.current, char: charPos, scale: charScale },
+    scene: { assets, images: assetImages.current, char: charPos, scale: charScale, caption },
   });
 
   // Fit the artwork to the stage, and again whenever the window changes size.
@@ -190,20 +198,37 @@ export default function TalkStickStudio() {
     addAssets(pictures.slice(1));
   };
 
-  const generateSceneAsset = ({ subject, kind, transparent }) => {
+  // One request can bring back several props at once. They are fanned out across
+  // the stage as they land, so a batch never stacks up in the same spot.
+  const generateSceneAsset = ({ subject, kind, transparent, count = 1 }) => {
+    const many = kind === KIND_PROP ? clamp(count, 1, 4) : 1;
     setGenerating(true);
     setError("");
-    generateAsset({ subject, kind, transparent })
-      .then(({ url, ratio }) => {
-        const created = newAsset({
-          url,
-          ratio,
-          kind,
-          name: subject.trim().slice(0, 40),
-          prompt: subject,
+    const runs = Array.from({ length: many }, () => generateAsset({ subject, kind, transparent }));
+
+    Promise.allSettled(runs)
+      .then((results) => {
+        const made = results.filter((result) => result.status === "fulfilled").map((result) => result.value);
+        if (!made.length) throw new Error("That generation did not come back");
+
+        const created = made.map(({ url, ratio }, index) => {
+          const asset = newAsset({
+            url,
+            ratio,
+            kind,
+            name: many > 1 ? `${subject.trim().slice(0, 30)} ${index + 1}` : subject.trim().slice(0, 40),
+            prompt: subject,
+          });
+          if (many > 1) {
+            asset.x = clamp(50 + (index - (many - 1) / 2) * 20, 8, 92);
+            asset.y = clamp(50 + (index % 2 ? 9 : -9), 8, 92);
+          }
+          return asset;
         });
-        setAssets((prev) => [...prev, created]);
-        setSelectedAssetId(created.id);
+
+        setAssets((prev) => [...prev, ...created]);
+        setSelectedAssetId(created[created.length - 1].id);
+        setError(made.length < many ? `${many - made.length} of the ${many} did not come back — try those again.` : "");
       })
       .catch((problem) => setError(problem.message || "That generation did not come back"))
       .finally(() => setGenerating(false));
@@ -217,6 +242,9 @@ export default function TalkStickStudio() {
     setSelectedAssetId((prev) => (prev === id ? null : prev));
   };
 
+  // Restacks an asset inside its own layer, so the scene's order is the paint order.
+  const reorderAsset = (id, delta) => setAssets((prev) => shiftLayer(prev, id, delta));
+
   const applyProject = (project) => {
     if (!project) return;
     setSettings({ ...DEFAULTS, ...(project.settings || {}) });
@@ -227,6 +255,7 @@ export default function TalkStickStudio() {
     setCharacterUrl(project.characterUrl || null);
     setCharPos(project.char || NO_CHAR);
     setCharScale(project.scale || 1);
+    setCaption({ ...NO_CAPTION, ...(project.caption || {}) });
 
     if (project.stickman) {
       const built = buildStickman(project.stickman);
@@ -264,10 +293,30 @@ export default function TalkStickStudio() {
 
   useEffect(() => {
     if (!hydrated) return;
-    saveCurrent({ version: 1, stickman, characterUrl, spots, settings, assets, char: charPos, scale: charScale });
-  }, [hydrated, stickman, characterUrl, spots, settings, assets, charPos, charScale]);
+    saveCurrent({
+      version: 1,
+      stickman,
+      characterUrl,
+      spots,
+      settings,
+      assets,
+      char: charPos,
+      scale: charScale,
+      caption,
+    });
+  }, [hydrated, stickman, characterUrl, spots, settings, assets, charPos, charScale, caption]);
 
-  const snapshot = () => ({ version: 1, stickman, characterUrl, spots, settings, assets, char: charPos, scale: charScale });
+  const snapshot = () => ({
+    version: 1,
+    stickman,
+    characterUrl,
+    spots,
+    settings,
+    assets,
+    char: charPos,
+    scale: charScale,
+    caption,
+  });
 
   const saveNamedProject = () => {
     setHistory(saveHistory(projectName, snapshot()));
@@ -361,7 +410,9 @@ export default function TalkStickStudio() {
             onChangeAsset={changeAsset}
             onDeleteAsset={deleteAsset}
             onDropFiles={handleDrop}
-          />
+          >
+            <TalkStickTransport engine={engine} caption={caption} onCaption={setCaption} />
+          </TalkStickStage>
           <TalkStickPanel
             settings={settings}
             activePart={activePart}
@@ -385,6 +436,7 @@ export default function TalkStickStudio() {
             onSelectAsset={setSelectedAssetId}
             onChangeAsset={changeAsset}
             onDeleteAsset={deleteAsset}
+            onReorder={reorderAsset}
             onGenerateAsset={generateSceneAsset}
             onAddAssetFiles={addAssets}
             generating={generating}
