@@ -26,6 +26,13 @@
 - Full working feature, no stubs: every button works, content renders, export/finish flow completes.
 - Non-scrollable dashboard where appropriate; big-box widgets avoided; minimal neon-green iconography.
 
+## 3b. Mobile (phone) layout — required for every studio
+- The studio must **fit the phone screen**: pin the root to the viewport (`h-[100dvh] overflow-hidden`, relaxed at `lg:`) and stop the page from scrolling — header, main surface and tool bar all stay put.
+- Never stack the whole desktop column down the page. Either show **one panel at a time** behind a bottom tab bar (FRAMEZ: Director / Film / Code) or move the controls into a **slide-up sheet** (TALKSTICK studio).
+- **Nothing may overlap.** Leave a clear lane for the global floating "Exit to Store" button (`pr-20 sm:pr-40` on the top bar), or add the route to `HIDDEN_PATHS` in `src/components/BackToStore.jsx` when the app has its own Store link (TALKSTICK does this for `/TalkStick` and `/TalkStickStudio`).
+- Reserve the home indicator: `padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px))`. Touch targets ≥ 40px; inputs stay 16px so iOS never zooms.
+- Anything that can outgrow the screen scrolls **inside itself**, never the page. Test at **320 / 360 / 390 / 440px** — see [`mobile-layout-standard.md`](./mobile-layout-standard.md).
+
 ## 4. Routing
 - Add an explicit `<Route>` in `src/App.jsx` (the pagesConfig loop does NOT pick up new pages).
 - Import the page near the other page imports.
@@ -45,8 +52,14 @@
 
 > Landing pages: every app opens on a landing built to the shared layout in
 > [`app-landing-standard.md`](./app-landing-standard.md). PRISM is the reference implementation.
+>
+> Phone layouts: every studio fits the screen with nothing overlapping — see
+> [`mobile-layout-standard.md`](./mobile-layout-standard.md). TALKSTICK studio
+> (sheet) and FRAMEZ (bottom tabs) are the reference implementations.
 
 ## Apps built with this checklist
+- **TALKSTICK** (`/TalkStick`) — real-time talking characters: drop in artwork or pick a stickman, place the eyes/nose/mouth, drive the mouth from a mic or an audio file, build the scene from generated or uploaded props and caption it, then export frames. Landing at `/TalkStick`, studio at `/TalkStickStudio`. **Phone layout:** the stage and its timeline stay pinned and the whole controls panel moves into a slide-up sheet — reference implementation for the sheet pattern in [`mobile-layout-standard.md`](./mobile-layout-standard.md).
+- **FRAMEZ** (`/FrameZ`) — coded motion films (HyperFrames for everyone): describe a film and the agent plans the shots, writes the HTML/JS for each one live as thinking bubbles, renders it in a same-origin iframe and exports a real video file. **Phone layout:** one panel at a time behind a Director / Film / Code bottom tab bar, auto-switching to the film when the build finishes — reference implementation for the tab pattern in [`mobile-layout-standard.md`](./mobile-layout-standard.md).
 - **KYDONIA** (`/Kydonia`) — pasted-URL searchable database. Paste one link or a whole reading list; each page is fetched once (robots.txt honoured, no paywall or login bypass), cleaned and folded into a real inverted index built in the browser, then queried with BM25 — ranked verbatim passages with the match highlighted, plus a ranking explainer showing the per-term tf, idf and field boosts behind every score. Deterministic, offline, private per user (RLS owner-scoped), zero credits per query. Landing-first, KCC20-gated; Martian identity — near-black with rust→ember accents, monospace throughout, and a procedural ASCII Mars globe as the hero (drawn live in characters, no image asset). Logo generated 2026-09-26.
 - **GLYPH** (`/Glyph`) — image → visual code. Drop any photo and it is rebuilt on the spot out of characters, dither, mosaic tiles, dots, halftone, crosshatch, LEGO, disco, matrix or mixed bands — 12 renderers plus a stackable effect pass (bloom, glow, CRT, scanlines, film grain, vignette, RGB split, glitch, blur), all drawn on canvas in the browser. Uploading always transforms: a controlled randomiser picks the renderer, character set, cell size, palette and 1–3 effects, and a seed makes every result reproducible. Draggable before/after slider, live sliders with no Apply, 1×/2×/4× PNG/JPG/WEBP export and a real WEBM recorder for the animated styles. Landing-first, KCC20-gated; soft-glass cyan→blue identity. Logo + hero generated 2026-09-26.
 - **PRISM** (`/Prism`) — video inspector: drop any MP4 and it is decoded in the browser — sampled frames are measured for cuts, shot lengths, pacing, motion between samples, brightness, white coverage and palette by area, then a vision read reports the typography, the animation on each element and a keyframe recipe to rebuild the piece. Minimal white-light identity (scoped `.prism-page` theme, the only colour is the prism spectrum). Landing-first, KCC20-gated. Original logo + hero generated 2026-09-24.
