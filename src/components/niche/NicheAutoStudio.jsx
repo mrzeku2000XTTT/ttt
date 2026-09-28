@@ -339,17 +339,28 @@ export default function NicheAutoStudio({ niches }) {
         return;
       }
 
-      // A pasted YouTube URL goes straight to the animation-language learner.
+      // A pasted YouTube URL teaches the animation language. When the message
+      // also carries the user's own brief, THAT is what gets built — the link
+      // only supplies the look, it never replaces what they actually asked for.
       const youtubeUrl = text.match(/https?:\/\/(?:www\.|m\.)?(?:youtube\.com|youtu\.be)\/[^\s]+/i)?.[0];
+      let forcedStyle = null;
       if (youtubeUrl) {
+        const brief = text.replace(youtubeUrl, ' ').replace(/https?:\/\/\S+/gi, ' ').replace(/\s+/g, ' ').trim();
         setWork('Watching YouTube and learning the animation');
         setMessages((m) => m.map((x) => x.id === workId ? { ...x, tips: LEARNING_LESSONS } : x));
-        const learning = await analyzeYouTubeStyle(youtubeUrl);
+        const learning = await analyzeYouTubeStyle(youtubeUrl, brief);
         if (token.cancelled) { audioContext.close().catch(() => {}); return; }
-        audioContext.close().catch(() => {});
         setLearnedStyles((prev) => prev.some((s) => s.id === learning.style.id) ? prev : [...prev, learning.style]);
-        finish({ text: `I learned “${learning.style.name}” without copying the source’s characters, words, or branding. Pick an original direction below.`, youtubeLearning: learning });
-        return;
+        if (!brief) {
+          // A bare link — show what was learned and let them pick a direction.
+          audioContext.close().catch(() => {});
+          finish({ text: `I learned “${learning.style.name}” without copying the source’s characters, words, or branding. Pick an original direction below.`, youtubeLearning: learning });
+          return;
+        }
+        // They said what to make — build exactly that, in the look they pointed at.
+        forcedStyle = learning.style;
+        text = brief;
+        setWork(`Learned “${learning.style.name}” — now building the video you asked for`);
       }
 
       // If the user pasted another link, read its actual content first — X posts
@@ -539,8 +550,8 @@ Decide what to do:
 
       if (res.kind === 'video' && res.video?.scenes?.length) {
         const v = res.video;
-        const learned = learnedStyles.find((s) => s.id === v.style);
-        const styleId = learned ? v.style : ANIMATION_STYLES.some((s) => s.id === v.style) ? v.style : 'neutral';
+        const learned = forcedStyle || learnedStyles.find((s) => s.id === v.style);
+        const styleId = learned ? learned.id : ANIMATION_STYLES.some((s) => s.id === v.style) ? v.style : 'neutral';
         setWork('Fact-checking with live sources');
         const checked = await factCheckExplainer({ topic: v.title, title: v.title, scenes: v.scenes.slice(0, 15), source: linkContext || text });
         const scenes = checked.scenes.slice(0, 15);
@@ -608,7 +619,7 @@ Decide what to do:
 
         // Per-scene style resolution — the AI can remix styles scene by scene;
         // anything it names that we don't have falls back to the video default
-        const validStyle = (sid) => ANIMATION_STYLES.some((x) => x.id === sid) || learnedStyles.some((x) => x.id === sid);
+        const validStyle = (sid) => ANIMATION_STYLES.some((x) => x.id === sid) || learnedStyles.some((x) => x.id === sid) || forcedStyle?.id === sid;
         const sceneStyles = scenes.map((s) => (s.style && validStyle(s.style) ? s.style : styleId));
         // Real UI Clone: research the actual app's UI once — needed when the whole
         // video OR any single remixed scene uses the real-ui style
@@ -694,7 +705,7 @@ Decide what to do:
           const sid = sceneStyles[i];
           const basePrompt = (() => {
             if (sid === 'real-ui') return realUiPrompt(s.app || v.app || v.title, uiDesc, s.action, v.color_mode);
-            const ls = learnedStyles.find((x) => x.id === sid);
+            const ls = learnedStyles.find((x) => x.id === sid) || (forcedStyle?.id === sid ? forcedStyle : null);
             if (ls) return customStylePrompt(ls.description, s.action, v.color_mode);
             return stylePrompt(sid, s.action, v.color_mode);
           })();

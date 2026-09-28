@@ -16,13 +16,14 @@ function canonicalYouTubeUrl(value) {
   return `https://www.youtube.com/watch?v=${id}`;
 }
 
-export async function analyzeYouTubeStyle(value) {
+export async function analyzeYouTubeStyle(value, brief = '') {
   const url = canonicalYouTubeUrl(value);
+  const briefText = String(brief || '').trim();
   const response = await base44.functions.invoke('analyzeYouTubeForMotion', { url, focus_hint: 'Study animation grammar, pacing, transitions, easing, story beats, hook, escalation, payoff, and retention pattern.' });
   const motion = response?.data || response;
   if (motion?.error) throw new Error(motion.error);
   const learned = await base44.integrations.Core.InvokeLLM({
-    prompt: `Turn this motion analysis into a reusable ORIGINAL animation language and story blueprint. Do not copy names, characters, dialogue, branding, or subject matter from the source. Analysis: ${JSON.stringify(motion).slice(0, 12000)}. Produce a memorable style name, a precise visual/motion prompt, a concise story structure, and 3 distinct viral video ideas with strong hooks and complete generation prompts.`,
+    prompt: `Turn this motion analysis into a reusable ORIGINAL animation language and story blueprint. Do not copy names, characters, dialogue, branding, or subject matter from the source. Analysis: ${JSON.stringify(motion).slice(0, 12000)}. Produce a memorable style name, a precise visual/motion prompt, a concise story structure, and 3 distinct viral video ideas with strong hooks and complete generation prompts.${briefText ? `\n\nTHE USER ALREADY TOLD YOU WHAT THEY WANT: """${briefText}""". All 3 ideas must be genuine, specific takes on THAT brief — never the source video's own subject, never a generic direction. Each idea's video_prompt must describe that same subject.` : ''}`,
     response_json_schema: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, story_structure: { type: 'string' }, ideas: { type: 'array', items: ideaSchema } }, required: ['name', 'description', 'story_structure', 'ideas'] }
   });
   let style = { id: `style-${Date.now()}`, name: learned.name, description: `${learned.description}\n\nStory blueprint: ${learned.story_structure}` };
