@@ -3,11 +3,11 @@ import { secrets } from 'base44:runtime';
 
 /**
  * NUDGE keeps appointments on the phone. This is the one thing that leaves it:
- * a reminder, sent through FluxKmail's own mail service to the person's own
- * email address — no Google account, no per-user OAuth.
+ * a reminder, sent through FluxKmail to the person's own Kaspa address — FluxKmail
+ * maps that address to the user's FluxKmail inbox. No Google account, no email.
  *
- * The recipient is always the signed-in user's own email, never taken from the
- * request body, so this can only ever mail someone their own reminders.
+ * The recipient is always the signed-in user's own Kaspa address, never taken
+ * from the request body, so this can only ever reach the person themselves.
  */
 const MAX_REMINDERS = 12;
 
@@ -25,7 +25,7 @@ function reminderBody(b) {
     `${b.when}${b.minutes ? ` · ${b.minutes} min` : ""}`,
     ...(meta.length ? ["", ...meta] : []),
     "",
-    "Sent from NUDGE via FluxKmail. Your appointments stay on the device — this reminder is the one copy that left it, and it went to your own inbox.",
+    "Sent from NUDGE via FluxKmail. Your appointments stay on the device — this reminder is the one copy that left it, routed to your Kaspa address.",
   ].join("\n");
 }
 
@@ -46,22 +46,22 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const action = body?.action === "remind" ? "remind" : "status";
 
-    const email = user.email;
-    if (!email) {
-      return Response.json({ signedIn: true, connected: false, error: "No email on your account." });
+    const address = user.created_wallet_address || user.data?.kaspa_address || "";
+    if (!address) {
+      return Response.json({ signedIn: true, connected: false, error: "No Kaspa address on your account." });
     }
 
     if (action === "status") {
-      return Response.json({ signedIn: true, connected: true, email });
+      return Response.json({ signedIn: true, connected: true, address });
     }
 
     const list = Array.isArray(body?.bookings) ? body.bookings.slice(0, MAX_REMINDERS) : [];
-    if (!list.length) return Response.json({ connected: true, email, sent: 0 });
+    if (!list.length) return Response.json({ connected: true, address, sent: 0 });
 
     const url = resolveEndpoint(secrets.get("FLUXKMAIL_API_URL"));
     const key = secrets.get("FLUXKMAIL_API_KEY");
     if (!url || !key) {
-      return Response.json({ connected: true, email, sent: 0, error: "FluxKmail is not configured." });
+      return Response.json({ connected: true, address, sent: 0, error: "FluxKmail is not configured." });
     }
 
     let sent = 0;
@@ -85,7 +85,7 @@ export default async function (req) {
         const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-API-Key": key },
-          body: JSON.stringify({ to: email, subject, body: text, from_name: "NUDGE" }),
+          body: JSON.stringify({ to: address, subject, body: text, from_name: "NUDGE" }),
         });
         if (res.ok) {
           sent += 1;
@@ -97,7 +97,7 @@ export default async function (req) {
       }
     }
 
-    return Response.json({ connected: true, email, sent, error: sent ? "" : lastError });
+    return Response.json({ connected: true, address, sent, error: sent ? "" : lastError });
   } catch (error) {
     return Response.json({ error: error?.message || "The reminder could not be sent." }, { status: 500 });
   }

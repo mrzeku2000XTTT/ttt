@@ -3,25 +3,27 @@ import { Mail, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 /**
- * The row that decides where a reminder lands: the person's own inbox, via
- * FluxKmail's own mail service. No Google account is involved — clicking
- * Connect opens a FluxKmail popup to confirm the address.
+ * The row that decides where a reminder lands: the person's own Kaspa address,
+ * via FluxKmail's mail service. No Google account, no email — clicking Connect
+ * opens a FluxKmail popup to confirm the address.
  */
 export default function FluxkmailReminderRow({ mail }) {
   const sub = !mail.ready
-    ? "Checking your inbox…"
+    ? "Checking…"
     : !mail.signedIn
-      ? "Sign in to have reminders emailed to you"
-      : mail.connected
-        ? mail.email
-        : "Reminders sent via FluxKmail";
+      ? "Sign in to have reminders sent to your Kaspa address"
+      : !mail.address
+        ? "Connect a Kaspa wallet to receive reminders"
+        : mail.connected
+          ? `${mail.address.slice(0, 12)}…${mail.address.slice(-6)}`
+          : "Reminders sent via FluxKmail to your Kaspa address";
 
   return (
     <>
       <div className="nudge-book-mail">
         <Mail className="nudge-book-mail-icon" />
         <div className="nudge-book-mail-body">
-          <span className="nudge-book-mail-title">{mail.connected ? "Reminders on" : "Email reminders"}</span>
+          <span className="nudge-book-mail-title">{mail.connected ? "Reminders on" : "Kaspa reminders"}</span>
           <span className="nudge-book-mail-sub">{sub}</span>
         </div>
 
@@ -29,12 +31,16 @@ export default function FluxkmailReminderRow({ mail }) {
           <button type="button" className="nudge-book-mail-go" onClick={() => base44.auth.redirectToLogin()}>
             Sign in
           </button>
+        ) : !mail.address ? (
+          <button type="button" className="nudge-book-mail-go" onClick={() => base44.auth.redirectToLogin()}>
+            Connect wallet
+          </button>
         ) : mail.connected ? (
           <button
             type="button"
             className="nudge-book-mail-x"
             onClick={mail.disconnect}
-            aria-label="Stop emailing reminders"
+            aria-label="Stop sending reminders"
           >
             <X className="w-3 h-3" />
           </button>
@@ -46,13 +52,13 @@ export default function FluxkmailReminderRow({ mail }) {
       </div>
 
       {mail.showPopup ? (
-        <FluxkmailConnectPopup email={mail.email} onAllow={mail.confirmConnect} onCancel={mail.cancelConnect} />
+        <FluxkmailConnectPopup address={mail.address} onAllow={mail.confirmConnect} onCancel={mail.cancelConnect} />
       ) : null}
     </>
   );
 }
 
-function FluxkmailConnectPopup({ email, onAllow, onCancel }) {
+function FluxkmailConnectPopup({ address, onAllow, onCancel }) {
   const overlayStyle = {
     position: "fixed",
     inset: 0,
@@ -88,19 +94,21 @@ function FluxkmailConnectPopup({ email, onAllow, onCancel }) {
     marginBottom: "14px",
   };
 
+  const short = address ? `${address.slice(0, 10)}…${address.slice(-8)}` : "";
+
   return (
     <div style={overlayStyle} onClick={onCancel}>
       <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
         <span style={markStyle}>FluxKmail</span>
         <p style={{ fontSize: "17px", fontWeight: 700, margin: "0 0 8px" }}>Connect FluxKmail</p>
         <p style={{ fontSize: "13.5px", color: "#444", margin: "0 0 6px", lineHeight: 1.45 }}>
-          FluxKmail will send your NUDGE appointment reminders to:
+          FluxKmail will send your NUDGE appointment reminders to your Kaspa address:
         </p>
-        <p style={{ fontSize: "14px", fontWeight: 600, margin: "0 0 12px", wordBreak: "break-all" }}>
-          {email || "your email"}
+        <p style={{ fontSize: "13px", fontWeight: 600, margin: "0 0 12px", wordBreak: "break-all", fontFamily: "monospace" }}>
+          {short || "no address"}
         </p>
         <p style={{ fontSize: "11.5px", color: "#888", margin: "0 0 16px", lineHeight: 1.4 }}>
-          No Google account needed. Reminders come from FluxKmail's own mail service — the one copy that leaves your phone.
+          The same Kaspa address must be registered on your FluxKmail account so FluxKmail can route the reminder to your inbox. No Google account needed.
         </p>
         <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
           <button

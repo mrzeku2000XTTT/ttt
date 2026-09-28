@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
 /**
- * FluxKmail sends reminders from its own mail service — no per-user OAuth, no
- * Google account. "Connecting" is the person opting in; we remember that per
- * email so the Booking app can show a Connect button the same way it used to.
+ * FluxKmail sends reminders to the person's own Kaspa address — FluxKmail maps
+ * that address to the user's FluxKmail inbox. No per-user OAuth, no email.
+ * "Connecting" is the person opting in; we remember that per address so the
+ * Booking app can show a Connect button the same way it used to.
  */
 const STORAGE_KEY = "nudge_fluxkmail_connected";
 
@@ -16,17 +17,17 @@ function readMap() {
   }
 }
 
-function isConnected(email) {
-  if (!email) return false;
-  return Boolean(readMap()[email]);
+function isConnected(address) {
+  if (!address) return false;
+  return Boolean(readMap()[address]);
 }
 
-function setConnected(email, value) {
-  if (!email) return;
+function setConnected(address, value) {
+  if (!address) return;
   try {
     const map = readMap();
-    if (value) map[email] = true;
-    else delete map[email];
+    if (value) map[address] = true;
+    else delete map[address];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   } catch {
     /* storage unavailable — connection just won't persist across reloads */
@@ -37,7 +38,7 @@ export function useFluxkmailReminder() {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
@@ -48,8 +49,8 @@ export function useFluxkmailReminder() {
         if (authed) {
           try {
             const me = await base44.auth.me();
-            const addr = me.email || "";
-            setEmail(addr);
+            const addr = me.created_wallet_address || me.data?.kaspa_address || "";
+            setAddress(addr);
             setConnected(isConnected(addr));
           } catch {
             /* not signed in for real */
@@ -63,17 +64,17 @@ export function useFluxkmailReminder() {
   const connect = useCallback(() => setShowPopup(true), []);
 
   const confirmConnect = useCallback(() => {
-    setConnected(email, true);
+    setConnected(address, true);
     setConnected(true);
     setShowPopup(false);
-  }, [email]);
+  }, [address]);
 
   const cancelConnect = useCallback(() => setShowPopup(false), []);
 
   const disconnect = useCallback(() => {
-    setConnected(email, false);
+    setConnected(address, false);
     setConnected(false);
-  }, [email]);
+  }, [address]);
 
   // A reminder that fails is never worth interrupting a booking over.
   const remind = useCallback(async (bookings) => {
@@ -85,5 +86,5 @@ export function useFluxkmailReminder() {
     }
   }, []);
 
-  return { ready, signedIn, connected, email, showPopup, connect, confirmConnect, cancelConnect, disconnect, remind };
+  return { ready, signedIn, connected, address, showPopup, connect, confirmConnect, cancelConnect, disconnect, remind };
 }

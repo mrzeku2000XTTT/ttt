@@ -93,7 +93,7 @@ export default function BookingApp({ onBook }) {
       }),
     );
 
-    if (sent > 0) setMailNote(`Reminder emailed to ${mail.email}`);
+    if (sent > 0) setMailNote(`Reminder sent to your Kaspa address`);
   };
 
   const book = async () => {
