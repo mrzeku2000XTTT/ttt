@@ -335,6 +335,24 @@
 }
 .nudge-book-mail-x:hover { color: #ff6b6b; background: rgba(255, 107, 107, .12); }
 
+/* The paid remind step — only shown after booking, only used on demand. */
+.nudge-book-remind { display: flex; flex-direction: column; gap: 6px; padding-top: 2px; }
+.nudge-book-remind-go {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; height: 34px; border: 0; border-radius: 10px; cursor: pointer;
+  background: #f5f5f7; color: #0a0a0c; font: inherit; font-size: 11.5px; font-weight: 700;
+}
+.nudge-book-remind-go:hover:not(:disabled) { opacity: .9; }
+.nudge-book-remind-go:disabled { opacity: .4; cursor: not-allowed; }
+.nudge-book-remind-fee { font-size: 10px; line-height: 1.45; color: #8a8a94; }
+.nudge-book-receipt {
+  display: inline-flex; align-items: center; gap: 5px; align-self: flex-start;
+  padding: 5px 9px; border-radius: 8px; font-size: 10px; font-weight: 650;
+  border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05);
+  color: #cfcfd6; text-decoration: none;
+}
+.nudge-book-receipt:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+
 /* ── Calendar ── */
 .nudge-cal { display: flex; flex-direction: column; gap: 14px; }
 .nudge-cal-label {

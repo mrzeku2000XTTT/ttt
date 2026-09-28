@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Image as ImageIcon, X } from "lucide-react";
 import AppleNotification from "./AppleNotification";
 import FluxkmailReminderRow from "./FluxkmailReminderRow";
+import BookingRemindBar from "./BookingRemindBar";
 import { BookItGlyph } from "./NudgeGlyphs";
 import { planBookings } from "@/lib/nudge/bookingAgent";
 import { makeBookingId, makeRef, bookingToNotification } from "@/lib/nudge/bookingStore";
@@ -32,7 +33,6 @@ export default function BookingApp({ onBook }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
-  const [mailNote, setMailNote] = useState("");
   const [made, setMade] = useState([]);
   const mail = useFluxkmailReminder();
 
@@ -76,26 +76,6 @@ export default function BookingApp({ onBook }) {
     addFiles(images);
   };
 
-  const emailReminders = async (bookings) => {
-    if (!mail.connected) return;
-
-    const sent = await mail.remind(
-      bookings.map((b) => {
-        const n = bookingToNotification(b);
-        return {
-          title: b.title,
-          when: [n.date, n.time].filter(Boolean).join(" · "),
-          minutes: b.minutes,
-          where: b.where,
-          who: b.who,
-          notes: b.notes,
-        };
-      }),
-    );
-
-    if (sent > 0) setMailNote(`Reminder sent to your Kaspa address`);
-  };
-
   const book = async () => {
     if (!text.trim() && !shots.length) {
       setError("Say what you want to book, or paste a screenshot of the appointments.");
@@ -104,7 +84,6 @@ export default function BookingApp({ onBook }) {
     setBusy(true);
     setError("");
     setNote("");
-    setMailNote("");
     setMade([]);
     try {
       // Every reference leaves the device here and nowhere else — and only because
@@ -133,7 +112,6 @@ export default function BookingApp({ onBook }) {
       setMade(created);
       setText("");
       setShots([]);
-      await emailReminders(created);
     } catch (e) {
       setError(e?.message || "The booking agent could not read that. Try again.");
     } finally {
@@ -212,7 +190,6 @@ export default function BookingApp({ onBook }) {
 
       {error ? <p className="nudge-book-err">{error}</p> : null}
       {note ? <p className="nudge-book-note">{note}</p> : null}
-      {mailNote ? <p className="nudge-book-note">{mailNote}</p> : null}
 
       {made.length ? (
         <>
@@ -222,6 +199,7 @@ export default function BookingApp({ onBook }) {
               <AppleNotification key={b.id} note={bookingToNotification(b)} animate={false} showDate />
             ))}
           </div>
+          <BookingRemindBar bookings={made} mail={mail} />
         </>
       ) : null}
     </div>

@@ -13,20 +13,56 @@ const MAX_REMINDERS = 12;
 
 const clip = (value, max) => String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 
-function reminderBody(b) {
-  const meta = [
-    b.where ? `Where: ${b.where}` : "",
-    b.who ? `With: ${b.who}` : "",
-    b.notes ? `Note: ${b.notes}` : "",
-  ].filter(Boolean);
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 
-  return [
-    `${b.title}`,
-    `${b.when}${b.minutes ? ` · ${b.minutes} min` : ""}`,
-    ...(meta.length ? ["", ...meta] : []),
-    "",
-    "Sent from NUDGE via FluxKmail. Your appointments stay on the device — this reminder is the one copy that left it, routed to your Kaspa address.",
-  ].join("\n");
+// A short plain-text fallback — every mail client renders this even if it
+// ignores the html field.
+function reminderText(b) {
+  const meta = [b.where ? `Where: ${b.where}` : "", b.who ? `With: ${b.who}` : "", b.notes ? `Note: ${b.notes}` : ""].filter(Boolean);
+  return [`${b.title}`, `${b.when}${b.minutes ? ` · ${b.minutes} min` : ""}`, ...(meta.length ? ["", ...meta] : [])].join("\n");
+}
+
+// The whole notification UI, the way it looks on the phone: a stack of dark
+// frosted cards with the red Calendar tile, the app name, the timestamp, the
+// bold headline and the detail line. This is what lands in the FluxKmail inbox.
+function cardHtml(b) {
+  const title = escapeHtml(b.title);
+  const when = escapeHtml(b.when);
+  const dur = b.minutes ? `${b.minutes} min` : "";
+  const body = [dur, b.where, b.who].filter(Boolean).map(escapeHtml).join(" · ");
+  const notes = b.notes ? escapeHtml(b.notes) : "";
+  return `
+  <div style="background:#1c1c1e;border-radius:16px;padding:14px 16px;margin:0 0 10px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:7px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#ff3b30;color:#fff;font-size:9px;font-weight:800;letter-spacing:.04em">CAL</span>
+        <span style="font-size:10px;color:#98989f;text-transform:uppercase;letter-spacing:.08em">Calendar</span>
+      </div>
+      <span style="font-size:13px;color:#ffffff;font-weight:600">${when}</span>
+    </div>
+    <div style="font-size:17px;color:#ffffff;font-weight:700;margin-top:10px;line-height:1.25">${title}</div>
+    ${body ? `<div style="font-size:13px;color:#d1d1d6;margin-top:3px">${body}</div>` : ""}
+    ${notes ? `<div style="font-size:11px;color:#98989f;margin-top:7px;line-height:1.45">${notes}</div>` : ""}
+  </div>`;
+}
+
+function notificationHtml(list, address) {
+  const cards = list.map(cardHtml).join("");
+  const count = list.length;
+  const addrShort = address.length > 18 ? `${address.slice(0, 12)}…${address.slice(-6)}` : address;
+  return `
+<div style="background:#0a0a0c;padding:22px 16px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif">
+  <div style="text-align:center;margin-bottom:16px">
+    <div style="font-size:10px;letter-spacing:.16em;color:#8a8a94;text-transform:uppercase">NUDGE · your schedule</div>
+    <div style="font-size:19px;color:#ffffff;font-weight:700;margin-top:5px">${count} appointment${count === 1 ? "" : "s"} booked</div>
+  </div>
+  ${cards}
+  <div style="text-align:center;font-size:10px;color:#6c6c76;margin-top:14px;line-height:1.5">
+    Sent from NUDGE via FluxKmail to<br/><span style="font-family:monospace">${escapeHtml(addrShort)}</span>
+  </div>
+</div>`.trim();
 }
 
 // Always hit FluxKmail's real sendMail function. Earlier the configured URL
@@ -80,21 +116,23 @@ export default async function (req) {
       const when = clip(entry?.when, 80);
       if (!title || !when) continue;
 
-      const subject = `Reminder: ${title} · ${when}`;
-      const text = reminderBody({
+      const item = {
         title,
         when,
         minutes: Math.min(600, Math.max(0, Math.round(Number(entry?.minutes) || 0))),
         where: clip(entry?.where, 80),
         who: clip(entry?.who, 60),
         notes: clip(entry?.notes, 240),
-      });
+      };
+      const subject = `Reminder: ${title} · ${when}`;
+      const text = reminderText(item);
+      const html = cardHtml(item);
 
       try {
         const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-API-Key": key },
-          body: JSON.stringify({ to: address, subject, body: text, from_name: "NUDGE" }),
+          body: JSON.stringify({ to: address, subject, body: text, html, from_name: "NUDGE" }),
         });
         if (res.ok) {
           sent += 1;
