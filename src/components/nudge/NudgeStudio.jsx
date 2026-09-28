@@ -9,8 +9,9 @@ import NudgeBriefList from "./NudgeBriefList";
 import { loadStore, saveStore, makeId, briefToText } from "@/lib/nudge/nudgeStore";
 import { parseIcs, icsToLines } from "@/lib/nudge/parseIcs";
 import { analyzeSchedule } from "@/lib/nudge/nudgeAgent";
-import { base44 } from "@/api/base44Client";
 import { shrinkForLocal } from "@/lib/nudge/sourcePreview";
+import { signedImageUrl } from "@/lib/nudge/privateImageUrl";
+import { loadBookings, saveBookings } from "@/lib/nudge/bookingStore";
 import "./nudge.css";
 
 const LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/17f6a9185_generated_image.png";
@@ -33,15 +34,34 @@ export default function NudgeStudio({ seed, onHome }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showDate, setShowDate] = useState(true);
+  const [bookings, setBookings] = useState([]);
 
   // Everything comes back from this browser's own storage.
   useEffect(() => {
     const stored = loadStore();
     setBriefs(stored.briefs);
     setActiveId(stored.activeId);
+    setBookings(loadBookings());
   }, []);
 
   const persist = (nextBriefs, nextActive) => saveStore({ briefs: nextBriefs, activeId: nextActive });
+
+  /** Appointments booked, or brought in, from the phone's own Booking app. */
+  const addBookings = useCallback((created) => {
+    setBookings((cur) => {
+      const next = [...cur, ...created].slice(-60);
+      saveBookings(next);
+      return next;
+    });
+  }, []);
+
+  const cancelBooking = useCallback((id) => {
+    setBookings((cur) => {
+      const next = cur.filter((b) => b.id !== id);
+      saveBookings(next);
+      return next;
+    });
+  }, []);
 
   const clearImage = useCallback(() => setImage(null), []);
 
@@ -120,16 +140,10 @@ export default function NudgeStudio({ seed, onHome }) {
     try {
       // The screenshot leaves the device here and nowhere else — and only because
       // the agent has to see it to read the schedule out of it.
-      let imageUrl = "";
-      if (image?.source) {
-        // Private storage and a link that expires: the agent needs one look at the
-        // picture to read the schedule out of it, and nothing after that stays
-        // reachable.
-        const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: image.source });
-        const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
-        imageUrl = signed_url || "";
-        if (!imageUrl) throw new Error("That screenshot could not be read — try pasting the schedule text instead.");
-      }
+      // Private storage and a link that expires: the agent needs one look at the
+      // picture to read the schedule out of it, and nothing after that stays
+      // reachable.
+      const imageUrl = image?.source ? await signedImageUrl(image.source) : "";
       const result = await analyzeSchedule({ scheduleText: schedule, imageUrl, sourceLabel: fileName });
       if (!result.notifications.length) {
         setError(`The agent could not find anything scheduled in that ${imageUrl ? "screenshot" : "text"}.`);
@@ -256,6 +270,9 @@ export default function NudgeStudio({ seed, onHome }) {
             brief={active}
             mode={mode}
             showDate={showDate}
+            bookings={bookings}
+            onBook={addBookings}
+            onCancelBooking={cancelBooking}
             expandedId={expandedId}
             onToggle={(i) => setExpandedId((cur) => (cur === i ? null : i))}
           />

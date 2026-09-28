@@ -1,22 +1,36 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronUp, BellOff } from "lucide-react";
 import AppleNotification from "./AppleNotification";
+import NudgeHome, { NUDGE_APPS } from "./NudgeHome";
+import NudgeAppScreen from "./NudgeAppScreen";
+import BookingApp from "./BookingApp";
+import CalendarApp from "./CalendarApp";
 import ScheduleSheet from "./ScheduleSheet";
 import { clockLabel, dayLabel, useLocalNow } from "@/lib/nudge/localTime";
+import { bookingsToNotifications, upcomingBookings } from "@/lib/nudge/bookingStore";
 
 // How far the lock screen has to be pulled up before the phone opens.
 const UNLOCK_AT = 64;
 
 /**
  * The phone. Two faces of the same template:
- *  · "lock"   — the iOS lock screen with the whole notification stack. It can be
- *               pulled up, the way a real lock screen is, to open the phone and
- *               read the schedule exactly as it was given.
+ *  · "lock"   — the iOS lock screen with the whole notification stack. Pulling it
+ *               up opens the phone onto its home screen, where the apps live.
  *  · "banner" — a single notification dropping in over the home screen.
  */
-export default function NudgePhone({ brief, mode, expandedId, onToggle, showDate }) {
+export default function NudgePhone({
+  brief,
+  mode,
+  expandedId,
+  onToggle,
+  showDate,
+  bookings = [],
+  onBook,
+  onCancelBooking,
+}) {
   const [index, setIndex] = useState(0);
   const [open, setOpen] = useState(false);
+  const [app, setApp] = useState(null);
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
 
@@ -24,12 +38,17 @@ export default function NudgePhone({ brief, mode, expandedId, onToggle, showDate
   const pull = useRef(null);
   const pulled = useRef(0);
 
-  const notes = brief?.notifications || [];
+  // The brief's own notifications, and then the appointments this person booked
+  // or brought in — drawn as the same notification, in the same stack.
+  const notes = [...(brief?.notifications || []), ...bookingsToNotifications(bookings)];
+  const badges = { calendar: upcomingBookings(bookings).length };
+  const appName = NUDGE_APPS.find((a) => a.id === app)?.name || "";
 
   // A different brief is a different day: the phone closes and starts at the top.
   useEffect(() => {
     setIndex(0);
     setOpen(false);
+    setApp(null);
     setOffset(0);
   }, [brief?.id]);
 
@@ -59,6 +78,11 @@ export default function NudgePhone({ brief, mode, expandedId, onToggle, showDate
     if (travel > UNLOCK_AT || travel < 4) setOpen(true);
   };
 
+  const lock = () => {
+    setApp(null);
+    setOpen(false);
+  };
+
   return (
     <div className="nudge-phone">
       <div className="nudge-screen" ref={screenRef}>
@@ -75,7 +99,7 @@ export default function NudgePhone({ brief, mode, expandedId, onToggle, showDate
                 </div>
                 <div className="nudge-banner-top">
                   <AppleNotification
-                    key={`${brief.id}-${index}`}
+                    key={`${brief?.id}-${index}`}
                     note={notes[index]}
                     showDate={showDate}
                     expanded={expandedId === index}
@@ -119,8 +143,17 @@ export default function NudgePhone({ brief, mode, expandedId, onToggle, showDate
           <>
             <div className="nudge-wall" />
 
-            {/* Behind the lock screen, revealed as it slides away. */}
-            <ScheduleSheet brief={brief} open={open} onLock={() => setOpen(false)} />
+            {/* Behind the lock screen: the home screen it opens onto. */}
+            <NudgeHome open={open} badges={badges} onOpenApp={setApp} onLock={lock} />
+
+            {/* And any app opened from it. */}
+            {open && app ? (
+              <NudgeAppScreen title={appName} onHome={() => setApp(null)}>
+                {app === "booking" ? <BookingApp onBook={onBook} /> : null}
+                {app === "calendar" ? <CalendarApp bookings={bookings} onCancel={onCancelBooking} /> : null}
+                {app === "schedule" ? <ScheduleSheet brief={brief} /> : null}
+              </NudgeAppScreen>
+            ) : null}
 
             <div
               className="nudge-lock"
@@ -154,10 +187,10 @@ export default function NudgePhone({ brief, mode, expandedId, onToggle, showDate
                 onPointerMove={movePull}
                 onPointerUp={endPull}
                 onPointerCancel={endPull}
-                title="Open the phone and read the original schedule"
+                title="Swipe up to open the phone"
               >
                 <ChevronUp className="w-3.5 h-3.5" />
-                <span>Swipe up for your schedule</span>
+                <span>Swipe up to unlock</span>
                 <span className="nudge-lock-foot" />
               </button>
             </div>
