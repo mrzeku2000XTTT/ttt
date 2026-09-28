@@ -29,12 +29,17 @@ function reminderBody(b) {
   ].join("\n");
 }
 
-// FLUXKMAIL_API_URL may still be the app root; normalize to the sendMail endpoint.
+// Always hit FluxKmail's real sendMail function. Earlier the configured URL
+// sometimes already carried a wrong /functions/<name> path, which 404'd.
+// Rebuild from the origin so the host stays configurable but the path is fixed.
 function resolveEndpoint(url) {
-  if (!url) return "";
-  const trimmed = String(url).trim().replace(/\/$/, "");
-  if (trimmed.includes("/functions/")) return trimmed;
-  return `${trimmed}/functions/sendMail`;
+  const fallback = "https://fluxkmail.base44.app/functions/sendMail";
+  if (!url) return fallback;
+  try {
+    return `${new URL(String(url).trim()).origin}/functions/sendMail`;
+  } catch {
+    return fallback;
+  }
 }
 
 export default async function (req) {
@@ -46,7 +51,11 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const action = body?.action === "remind" ? "remind" : "status";
 
-    const address = user.created_wallet_address || user.data?.kaspa_address || "";
+    // The person may type a different Kaspa address than the profile wallet
+    // (the one their FluxKmail inbox is actually mapped to). Trust that override
+    // — it's still self-directed: a reminder to their own Kaspa address.
+    const override = typeof body?.address === "string" ? body.address.trim() : "";
+    const address = override || user.created_wallet_address || user.data?.kaspa_address || "";
     if (!address) {
       return Response.json({ signedIn: true, connected: false, error: "No Kaspa address on your account." });
     }

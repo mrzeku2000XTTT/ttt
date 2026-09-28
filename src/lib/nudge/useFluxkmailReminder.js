@@ -127,12 +127,12 @@ export function useFluxkmailReminder() {
   // A reminder that fails is never worth interrupting a booking over.
   const remind = useCallback(async (bookings) => {
     try {
-      const res = await base44.functions.invoke("nudgeFluxkmailReminder", { action: "remind", bookings });
+      const res = await base44.functions.invoke("nudgeFluxkmailReminder", { action: "remind", bookings, address });
       return Number(res?.data?.sent) || 0;
     } catch {
       return 0;
     }
-  }, []);
+  }, [address]);
 
   return { ready, signedIn, connected, address, setAddress: setAddressOverride, showPopup, connect, confirmConnect, cancelConnect, disconnect, remind };
 }
