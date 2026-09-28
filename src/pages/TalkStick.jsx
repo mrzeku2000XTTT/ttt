@@ -1,13 +1,6 @@
 import React from "react";
-import BackToStore from "@/components/BackToStore";
-import TalkStickStudio from "@/components/talkstick/TalkStickStudio";
-import "@/components/talkstick/talkstick.css";
+import TalkStickLanding from "@/components/talkstick/landing/TalkStickLanding";
 
 export default function TalkStickPage() {
-  return (
-    <>
-      <BackToStore />
-      <TalkStickStudio />
-    </>
-  );
+  return <TalkStickLanding />;
 }

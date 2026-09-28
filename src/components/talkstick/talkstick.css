@@ -74,6 +74,24 @@
   overflow: hidden;
 }
 
+/* The stage toolbar sits above the canvas rather than over it, so nothing ever
+   covers an asset you are trying to click. */
+.ts-stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 10px;
+}
+
+.ts-stage-label {
+  color: var(--ts-mute);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .ts-stage {
   position: relative;
   display: flex;
@@ -82,7 +100,7 @@
   min-height: min(660px, calc(100vh - 96px));
   padding: 22px;
   background: var(--ts-stage);
-  border-radius: 22px;
+  border-radius: 0 0 21px 21px;
 }
 
 /* Wraps the canvas exactly, so the handle can be positioned in percentages. */
@@ -227,17 +245,13 @@
 .ts-btn-quiet:hover { border-color: #e3a9a9; }
 
 .ts-mode {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 7px 12px;
   border: 1px solid var(--ts-line-strong);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--ts-surface);
   color: var(--ts-body);
   font-size: 11px;
   font-weight: 650;

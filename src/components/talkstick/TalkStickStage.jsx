@@ -138,6 +138,21 @@ export default function TalkStickStage({
 
   return (
     <main className="ts-card ts-stage-card">
+      <div className="ts-stage-bar">
+        <span className="ts-stage-label">Stage</span>
+        {hasImage && (
+          <button
+            type="button"
+            className={`ts-mode ${editing ? "" : "is-ready"}`}
+            aria-pressed={!editing}
+            onClick={onToggleEditing}
+          >
+            {editing ? <Eye className="ts-mode-icon" /> : <Move className="ts-mode-icon" />}
+            {editing ? "Ready view" : "Adjust face"}
+          </button>
+        )}
+      </div>
+
       <div
         className={`ts-stage ${over ? "is-over" : ""}`}
         ref={stageRef}
@@ -182,18 +197,6 @@ export default function TalkStickStage({
               </div>
             )}
           </div>
-        )}
-
-        {hasImage && (
-          <button
-            type="button"
-            className={`ts-mode ${editing ? "" : "is-ready"}`}
-            aria-pressed={!editing}
-            onClick={onToggleEditing}
-          >
-            {editing ? <Eye className="ts-mode-icon" /> : <Move className="ts-mode-icon" />}
-            {editing ? "Ready view" : "Adjust face"}
-          </button>
         )}
 
         {over && (

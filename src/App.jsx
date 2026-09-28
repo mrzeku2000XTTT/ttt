@@ -240,6 +240,7 @@ import GlyphMotionPage from './pages/GlyphMotion';
 import KydoniaPage from './pages/Kydonia';
 import FrameFlowPage from './pages/FrameFlow';
 import TalkStickPage from './pages/TalkStick';
+import TalkStickStudioPage from './pages/TalkStickStudio';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -405,6 +406,7 @@ const AuthenticatedApp = () => {
       <Route path="/Kydonia" element={<KydoniaPage />} />
       <Route path="/FrameFlow" element={<FrameFlowPage />} />
       <Route path="/TalkStick" element={<TalkStickPage />} />
+      <Route path="/TalkStickStudio" element={<TalkStickStudioPage />} />
       <Route path="/Hybrid" element={<HybridPage />} />
       <Route path="/ORINLanding" element={<ORINLandingPage />} />
       <Route path="/ORIN" element={<ORINPage />} />
