@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Eye, Hand, ImagePlus, Move } from "lucide-react";
+import { Eye, Hand, ImagePlus, MousePointer2, Move } from "lucide-react";
 import AssetLayer from "./AssetLayer";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -25,8 +25,8 @@ export default function TalkStickStage({
   onPlace,
   onResize,
   charPos,
-  movingChar,
-  onToggleMovingChar,
+  tool,
+  onToolChange,
   onMoveCharacter,
   assets,
   selectedAssetId,
@@ -41,6 +41,8 @@ export default function TalkStickStage({
   const [drag, setDrag] = useState(null);
   const [over, setOver] = useState(false);
   const wrapRef = useRef(null);
+  // The hand tool turns every press on the stage into a character drag.
+  const movingChar = tool === "hand";
 
   const toCanvas = (event) => {
     const canvas = canvasRef.current;
@@ -68,7 +70,7 @@ export default function TalkStickStage({
     if (!hasImage || !editing) return;
     // A press on the canvas steps out of whatever asset was selected, so the
     // click that dismisses an asset never nudges the face as well.
-    if (selectedAssetId) {
+    if (selectedAssetId && !movingChar) {
       onSelectAsset(null);
       return;
     }
@@ -164,15 +166,30 @@ export default function TalkStickStage({
         {hasImage && (
           <div className="ts-stage-actions">
             {editing && (
-              <button
-                type="button"
-                className={`ts-mode ${movingChar ? "is-on" : ""}`}
-                aria-pressed={movingChar}
-                onClick={onToggleMovingChar}
-              >
-                <Hand className="ts-mode-icon" />
-                {movingChar ? "Moving character" : "Move character"}
-              </button>
+              <div className="ts-tools" role="radiogroup" aria-label="Tool">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={!movingChar}
+                  className={`ts-mode ${movingChar ? "" : "is-on"}`}
+                  title="Mouse — click the face to place features, drag props and backgrounds"
+                  onClick={() => onToolChange("mouse")}
+                >
+                  <MousePointer2 className="ts-mode-icon" />
+                  Mouse
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={movingChar}
+                  className={`ts-mode ${movingChar ? "is-on" : ""}`}
+                  title="Hand — drag the whole character around the stage"
+                  onClick={() => onToolChange("hand")}
+                >
+                  <Hand className="ts-mode-icon" />
+                  Hand
+                </button>
+              </div>
             )}
             <button
               type="button"
@@ -209,7 +226,7 @@ export default function TalkStickStage({
                 mode === "move" || mode === "char" ? "is-dragging" : ""
               } ${movingChar ? "is-moving" : ""} ${editing ? "" : "is-ready"}`}
             />
-            {editing && (
+            {editing && !movingChar && (
               <AssetLayer
                 wrapRef={wrapRef}
                 assets={assets}

@@ -47,7 +47,9 @@ export default function TalkStickStudio() {
   // Where the character sits on the stage. Face spots are stored relative to it,
   // so dragging the character carries its mouth, eyes and nose along with it.
   const [charPos, setCharPos] = useState(NO_CHAR);
-  const [movingChar, setMovingChar] = useState(false);
+  // Which tool the stage is holding: "mouse" places face features and drags
+  // props, "hand" drags the whole character around.
+  const [tool, setTool] = useState("mouse");
 
   const [assets, setAssets] = useState([]);
   const [selectedAssetId, setSelectedAssetId] = useState(null);
@@ -330,8 +332,8 @@ export default function TalkStickStudio() {
             onPlace={placePart}
             onResize={(size) => updatePart(activePart, size)}
             charPos={charPos}
-            movingChar={movingChar}
-            onToggleMovingChar={() => setMovingChar((prev) => !prev)}
+            tool={tool}
+            onToolChange={setTool}
             onMoveCharacter={moveCharacter}
             assets={assets}
             selectedAssetId={selectedAssetId}

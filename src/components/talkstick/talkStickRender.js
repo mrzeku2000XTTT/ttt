@@ -3,7 +3,7 @@
 import { drawMouth } from "./mouthStyles";
 import { drawEyePair } from "./eyeStyles";
 import { drawNose } from "./noseStyles";
-import { assetBox, KIND_BACKGROUND, KIND_PROP } from "./sceneAssets";
+import { assetBox, isBehind } from "./sceneAssets";
 
 /**
  * Sizes the canvas to the artwork so the whole drawing fits the stage, keeping
@@ -89,17 +89,18 @@ function paintLayer(ctx, canvas, assets, images) {
 }
 
 /**
- * Draws one frame: the background plates, the character, then the props, then
- * the face on top — so the mouth and eyes always stay visible while they move.
+ * Draws one frame: everything sitting behind (background plates and props sent
+ * back), the character, anything sent to the front, then the face on top — so
+ * the mouth and eyes always stay visible while they move.
  */
 export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const assets = scene?.assets || [];
   const char = scene?.char || NO_CHAR;
-  paintLayer(ctx, canvas, assets.filter((asset) => asset.kind === KIND_BACKGROUND), scene?.images);
+  paintLayer(ctx, canvas, assets.filter(isBehind), scene?.images);
   ctx.drawImage(image, char.x, char.y, canvas.width, canvas.height);
-  paintLayer(ctx, canvas, assets.filter((asset) => asset.kind === KIND_PROP), scene?.images);
+  paintLayer(ctx, canvas, assets.filter((asset) => !isBehind(asset)), scene?.images);
 
   if (!rig) return;
 

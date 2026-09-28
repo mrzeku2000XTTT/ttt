@@ -13,9 +13,12 @@ const RECIPE = {
 export const buildPrompt = (subject, kind) =>
   (RECIPE[kind] || RECIPE.prop).replace("{subject}", subject.trim());
 
-function loadImage(src) {
+function loadImage(src, cors) {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    // Without a CORS-approved load the browser taints the canvas, reading the
+    // pixels back throws, and the cut-out silently keeps its white sheet.
+    if (cors) img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error("The generated image could not be loaded"));
     img.src = src;
@@ -35,7 +38,11 @@ function keepArtwork(img) {
   return sheetFor(img).toDataURL("image/png");
 }
 
-/** Turns the flat white sheet into transparency, with a soft edge falloff. */
+/**
+ * Erases the flat white sheet to transparency and crops down to the subject, so
+ * a prop fills its box on the stage instead of floating in the middle of an
+ * invisible square. Returns the new artwork and its aspect ratio.
+ */
 function cutOut(img, tolerance = 46) {
   const canvas = sheetFor(img);
   const ctx = canvas.getContext("2d");
@@ -44,18 +51,48 @@ function cutOut(img, tolerance = 46) {
   const threshold = 255 - tolerance;
   const soft = 26;
 
-  for (let i = 0; i < px.length; i += 4) {
-    const min = Math.min(px[i], px[i + 1], px[i + 2]);
-    if (min >= threshold) {
-      px[i + 3] = 0;
-    } else if (min >= threshold - soft) {
-      const t = (min - (threshold - soft)) / soft;
-      px[i + 3] = Math.round(px[i + 3] * (1 - t));
+  let minX = canvas.width;
+  let minY = canvas.height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const i = (y * canvas.width + x) * 4;
+      const min = Math.min(px[i], px[i + 1], px[i + 2]);
+      if (min >= threshold) {
+        px[i + 3] = 0;
+      } else if (min >= threshold - soft) {
+        const t = (min - (threshold - soft)) / soft;
+        px[i + 3] = Math.round(px[i + 3] * (1 - t));
+      }
+      if (px[i + 3] > 8) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
     }
   }
 
   ctx.putImageData(data, 0, 0);
-  return canvas.toDataURL("image/png");
+
+  if (maxX < minX || maxY < minY) {
+    return { url: canvas.toDataURL("image/png"), ratio: canvas.width / canvas.height };
+  }
+
+  // A hair of padding keeps soft edges from being clipped.
+  const pad = Math.max(2, Math.round(Math.min(canvas.width, canvas.height) * 0.02));
+  const x0 = Math.max(0, minX - pad);
+  const y0 = Math.max(0, minY - pad);
+  const w = Math.min(canvas.width - x0, maxX - minX + 1 + pad * 2);
+  const h = Math.min(canvas.height - y0, maxY - minY + 1 + pad * 2);
+
+  const tight = document.createElement("canvas");
+  tight.width = w;
+  tight.height = h;
+  tight.getContext("2d").drawImage(canvas, x0, y0, w, h, 0, 0, w, h);
+  return { url: tight.toDataURL("image/png"), ratio: w / h };
 }
 
 /**
@@ -70,14 +107,20 @@ export async function generateAsset({ subject, kind, transparent }) {
   const url = result?.url;
   if (!url) throw new Error("The generator did not return an image");
 
-  const img = await loadImage(url);
+  let img;
+  try {
+    img = await loadImage(url, true);
+  } catch (error) {
+    img = await loadImage(url, false);
+  }
+
   const ratio = img.naturalWidth / img.naturalHeight || 1;
 
   try {
-    return { url: transparent ? cutOut(img) : keepArtwork(img), ratio };
+    return transparent ? cutOut(img) : { url: keepArtwork(img), ratio };
   } catch (error) {
-    // The artwork was served without cross-origin access, so its pixels cannot
-    // be read. Keep the original rather than losing the asset.
+    // The artwork could not be read back, so the generator's own image is kept
+    // rather than losing the asset entirely.
     return { url, ratio };
   }
 }

@@ -10,6 +10,13 @@ export const KIND_LABELS = {
   [KIND_PROP]: "Prop",
 };
 
+/**
+ * Whether an asset is painted behind the character. A background plate always
+ * is; a prop is too unless it has been sent to the front. New props start
+ * behind, so nothing ever lands on top of the artwork uninvited.
+ */
+export const isBehind = (asset) => asset.kind === KIND_BACKGROUND || asset.back !== false;
+
 let counter = 0;
 
 /** A new asset, dropped at the middle of the stage at a sensible size. */
@@ -26,6 +33,7 @@ export function newAsset({ url, ratio, kind, name, prompt }) {
     x: 50,
     y: 50,
     width: background ? 100 : 32,
+    back: true,
   };
 }
 

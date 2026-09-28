@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Loader2, Sparkles, Trash2 } from "lucide-react";
-import { KIND_BACKGROUND, KIND_LABELS, KIND_PROP } from "./sceneAssets";
+import { BringToFront, Loader2, SendToBack, Sparkles, Trash2 } from "lucide-react";
+import { isBehind, KIND_BACKGROUND, KIND_LABELS, KIND_PROP } from "./sceneAssets";
 
 /**
  * Everything around the character: a background plate, props, and the generator
@@ -151,27 +151,27 @@ export default function ScenePanel({
             onChange={(event) => onChange(selected.id, { y: Number(event.target.value) })}
           />
 
-          <div className="ts-parts ts-parts-2" role="radiogroup" aria-label="Layer">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={selected.kind === KIND_PROP}
-              className={`ts-part ${selected.kind === KIND_PROP ? "is-active" : ""}`}
-              onClick={() => onChange(selected.id, { kind: KIND_PROP })}
-            >
-              In front
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={selected.kind === KIND_BACKGROUND}
-              className={`ts-part ${selected.kind === KIND_BACKGROUND ? "is-active" : ""}`}
-              onClick={() => onChange(selected.id, { kind: KIND_BACKGROUND })}
-            >
-              Behind
-            </button>
-          </div>
-          <p className="ts-hint">Behind sits under the character; in front sits over it.</p>
+          <h3 className="ts-sub">Layer</h3>
+          <button
+            type="button"
+            className="ts-btn ts-btn-quiet"
+            disabled={selected.kind === KIND_BACKGROUND}
+            onClick={() => onChange(selected.id, { back: !isBehind(selected) })}
+          >
+            {isBehind(selected) ? (
+              <BringToFront className="h-3.5 w-3.5" />
+            ) : (
+              <SendToBack className="h-3.5 w-3.5" />
+            )}
+            {isBehind(selected) ? "Bring to front" : "Send to back"}
+          </button>
+          <p className="ts-hint">
+            {selected.kind === KIND_BACKGROUND
+              ? "A background always sits behind the character."
+              : isBehind(selected)
+                ? "Behind the character — it never covers the artwork."
+                : "In front of the character."}
+          </p>
 
           <button type="button" className="ts-btn ts-btn-quiet" onClick={() => onDelete(selected.id)}>
             <Trash2 className="h-3.5 w-3.5" />
