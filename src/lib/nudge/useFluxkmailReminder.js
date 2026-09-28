@@ -82,18 +82,13 @@ export function useFluxkmailReminder() {
 
   const connect = useCallback(() => setShowPopup(true), []);
 
-  // Opens FluxKmail to sign in and link the address, then marks it on for NUDGE.
+  // Sends the person to FluxKmail to sign in and link the address. FluxKmail
+  // returns them here with ?fluxkmail=connected, which the load effect picks up.
   const confirmConnect = useCallback(() => {
-    if (address) {
-      try {
-        window.open(fluxkmailConnectUrl(address), "_blank", "noopener");
-      } catch {
-        /* popup blocked — the row still marks it on */
-      }
-    }
     setConnected(address, true);
     setConnectedState(true);
     setShowPopup(false);
+    if (address) window.location.href = fluxkmailConnectUrl(address);
   }, [address]);
 
   const cancelConnect = useCallback(() => setShowPopup(false), []);
