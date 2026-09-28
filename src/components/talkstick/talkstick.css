@@ -162,6 +162,28 @@
 }
 .ts-guide.is-active .ts-guide-corner { background: #111418; }
 
+/* The character's own frame — shown while the hand tool is held, so the whole
+   character can be dragged and pulled bigger from one corner grip. */
+.ts-charbox {
+  position: absolute;
+  border: 1px dashed #111418;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.ts-charbox-corner {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 13px;
+  height: 13px;
+  border: 1px solid #111418;
+  border-radius: 3px;
+  background: #111418;
+  pointer-events: auto;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
 /* Ready view — the guide is gone, so the stage is just the character. */
 .ts-canvas.is-ready { cursor: default; }
 

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import TalkStickStage from "./TalkStickStage";
 import TalkStickPanel from "./TalkStickPanel";
 import useMouthEngine from "./useMouthEngine";
-import { fitCanvas } from "./talkStickRender";
+import { charOrigin, fitCanvas } from "./talkStickRender";
 import { stickmanSource } from "./stickmen";
 import { assetFromFile, fileToDataUrl, newAsset, KIND_PROP } from "./sceneAssets";
 import { generateAsset } from "./assetGenerate";
@@ -33,6 +33,10 @@ const NO_SPOTS = { mouth: null, eyes: null, nose: null };
 
 const NO_CHAR = { x: 0, y: 0 };
 
+// How far the character can be scaled, either way.
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 3;
+
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 export default function TalkStickStudio() {
@@ -47,6 +51,8 @@ export default function TalkStickStudio() {
   // Where the character sits on the stage. Face spots are stored relative to it,
   // so dragging the character carries its mouth, eyes and nose along with it.
   const [charPos, setCharPos] = useState(NO_CHAR);
+  // How big the character is drawn. The artwork and its whole face grow together.
+  const [charScale, setCharScale] = useState(1);
   // Which tool the stage is holding: "mouse" places face features and drags
   // props, "hand" drags the whole character around.
   const [tool, setTool] = useState("mouse");
@@ -72,7 +78,7 @@ export default function TalkStickStudio() {
     image,
     rig: spots,
     settings,
-    scene: { assets, images: assetImages.current, char: charPos },
+    scene: { assets, images: assetImages.current, char: charPos, scale: charScale },
   });
 
   // Fit the artwork to the stage, and again whenever the window changes size.
@@ -128,6 +134,7 @@ export default function TalkStickStudio() {
       setCharacterUrl(url);
       setSpots(NO_SPOTS);
       setCharPos(NO_CHAR);
+      setCharScale(1);
       loadCharacter(url);
     });
   };
@@ -144,6 +151,7 @@ export default function TalkStickStudio() {
     setImage(source);
     setCanvasSize(size);
     setCharPos(NO_CHAR);
+    setCharScale(1);
     setSpots({
       mouth: { x: head.cx, y: head.cy + head.r * 0.46 },
       eyes: { x: head.cx, y: head.cy - head.r * 0.26 },
@@ -218,6 +226,7 @@ export default function TalkStickStudio() {
     setStickman(project.stickman || null);
     setCharacterUrl(project.characterUrl || null);
     setCharPos(project.char || NO_CHAR);
+    setCharScale(project.scale || 1);
 
     if (project.stickman) {
       const built = buildStickman(project.stickman);
@@ -243,6 +252,7 @@ export default function TalkStickStudio() {
       setCharacterUrl(pending);
       setSpots(NO_SPOTS);
       setCharPos(NO_CHAR);
+      setCharScale(1);
       loadCharacter(pending);
     } else {
       applyProject(loadCurrent());
@@ -254,10 +264,10 @@ export default function TalkStickStudio() {
 
   useEffect(() => {
     if (!hydrated) return;
-    saveCurrent({ version: 1, stickman, characterUrl, spots, settings, assets, char: charPos });
-  }, [hydrated, stickman, characterUrl, spots, settings, assets, charPos]);
+    saveCurrent({ version: 1, stickman, characterUrl, spots, settings, assets, char: charPos, scale: charScale });
+  }, [hydrated, stickman, characterUrl, spots, settings, assets, charPos, charScale]);
 
-  const snapshot = () => ({ version: 1, stickman, characterUrl, spots, settings, assets, char: charPos });
+  const snapshot = () => ({ version: 1, stickman, characterUrl, spots, settings, assets, char: charPos, scale: charScale });
 
   const saveNamedProject = () => {
     setHistory(saveHistory(projectName, snapshot()));
@@ -291,11 +301,16 @@ export default function TalkStickStudio() {
 
   // Spots are kept in the character's own space, so a click on the stage is
   // converted back out of the character's current position before it is stored.
-  const placePart = (point) =>
+  const placePart = (point) => {
+    const origin = charOrigin(canvasSize, charPos, charScale);
     setSpots((prev) => ({
       ...prev,
-      [activePart]: { x: point.x - charPos.x, y: point.y - charPos.y },
+      [activePart]: {
+        x: (point.x - origin.x) / charScale,
+        y: (point.y - origin.y) / charScale,
+      },
     }));
+  };
 
   // Moving the character is all it takes — the face rides along with it. A slice
   // always stays on the stage, so the character can never be dragged out of reach.
@@ -304,6 +319,9 @@ export default function TalkStickStudio() {
       x: clamp(next.x, -canvasSize.width * 0.8, canvasSize.width * 0.8),
       y: clamp(next.y, -canvasSize.height * 0.8, canvasSize.height * 0.8),
     });
+
+  // Resizing keeps the character centred where it is, and the face rides along.
+  const scaleCharacter = (next) => setCharScale(clamp(next, MIN_SCALE, MAX_SCALE));
 
   return (
     <div className="talkstick">
@@ -335,6 +353,8 @@ export default function TalkStickStudio() {
             tool={tool}
             onToolChange={setTool}
             onMoveCharacter={moveCharacter}
+            charScale={charScale}
+            onScaleCharacter={scaleCharacter}
             assets={assets}
             selectedAssetId={selectedAssetId}
             onSelectAsset={setSelectedAssetId}
@@ -357,6 +377,8 @@ export default function TalkStickStudio() {
             onExport={exportFrame}
             meterRef={meterRef}
             engine={engine}
+            charScale={charScale}
+            onScaleCharacter={scaleCharacter}
             hasImage={Boolean(image)}
             assets={assets}
             selectedAssetId={selectedAssetId}

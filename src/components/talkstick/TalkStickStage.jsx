@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Eye, Hand, ImagePlus, MousePointer2, Move } from "lucide-react";
 import AssetLayer from "./AssetLayer";
+import { charOrigin, featureBox } from "./talkStickRender";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -28,6 +29,8 @@ export default function TalkStickStage({
   tool,
   onToolChange,
   onMoveCharacter,
+  charScale,
+  onScaleCharacter,
   assets,
   selectedAssetId,
   onSelectAsset,
@@ -56,15 +59,25 @@ export default function TalkStickStage({
   };
 
   // Where the active feature actually sits, in canvas pixels.
-  const box =
-    spot && canvasSize.width
-      ? {
-          cx: spot.x + charPos.x,
-          cy: spot.y + charPos.y + canvasSize.height * (part.offsetY / 100),
-          w: canvasSize.width * (part.width / 100),
-          h: canvasSize.width * (part.height / 100),
-        }
-      : null;
+  const box = spot && canvasSize.width ? featureBox(canvasSize, spot, part, charPos, charScale) : null;
+
+  // The character's own frame — shown while the hand tool is held, so the whole
+  // character can be dragged around and pulled bigger from the same corner.
+  const origin = canvasSize.width ? charOrigin(canvasSize, charPos, charScale) : null;
+  const charBox = origin
+    ? {
+        left: `${(origin.x / canvasSize.width) * 100}%`,
+        top: `${(origin.y / canvasSize.height) * 100}%`,
+        width: `${charScale * 100}%`,
+        height: `${charScale * 100}%`,
+      }
+    : null;
+  const charCorner = origin
+    ? {
+        left: `${((origin.x + canvasSize.width * charScale) / canvasSize.width) * 100}%`,
+        top: `${((origin.y + canvasSize.height * charScale) / canvasSize.height) * 100}%`,
+      }
+    : null;
 
   const startMove = (event) => {
     if (!hasImage || !editing) return;
@@ -95,6 +108,15 @@ export default function TalkStickStage({
     setMode("resize");
   };
 
+  // The hand tool's corner grip scales the whole character, face included.
+  const startCharResize = (event) => {
+    if (!hasImage || !editing || !movingChar || !origin) return;
+    event.preventDefault();
+    event.stopPropagation();
+    wrapRef.current?.setPointerCapture?.(event.pointerId);
+    setMode("charResize");
+  };
+
   const move = (event) => {
     if (!mode) return;
     const point = toCanvas(event);
@@ -108,15 +130,23 @@ export default function TalkStickStage({
       });
       return;
     }
+    if (mode === "charResize") {
+      // Measured from the character's centre, so it grows around its middle.
+      const centre = origin.x + (canvasSize.width * charScale) / 2;
+      onScaleCharacter(((point.x - centre) * 2) / canvasSize.width);
+      return;
+    }
     if (mode === "move") {
       onPlace(point);
       return;
     }
     if (!box) return;
     // Sized from the corner being dragged, so the feature grows with the pointer.
+    // The distances are read back into the character's own space, so a feature
+    // keeps its share of the face whatever size the character is drawn at.
     onResize({
-      width: clamp(((Math.abs(point.x - box.cx) * 2) / canvasSize.width) * 100, 3, 95),
-      height: clamp(((Math.abs(point.y - box.cy) * 2) / canvasSize.width) * 100, 2, 75),
+      width: clamp((((Math.abs(point.x - box.cx) * 2) / charScale) / canvasSize.width) * 100, 3, 95),
+      height: clamp((((Math.abs(point.y - box.cy) * 2) / charScale) / canvasSize.width) * 100, 2, 75),
     });
   };
 
@@ -147,7 +177,7 @@ export default function TalkStickStage({
     ? {
         left: `${(box.cx / canvasSize.width) * 100}%`,
         top: `${(box.cy / canvasSize.height) * 100}%`,
-        width: `${part.width}%`,
+        width: `${(box.w / canvasSize.width) * 100}%`,
         height: `${(box.h / canvasSize.height) * 100}%`,
       }
     : null;
@@ -223,9 +253,21 @@ export default function TalkStickStage({
             <canvas
               ref={canvasRef}
               className={`ts-canvas ${
-                mode === "move" || mode === "char" ? "is-dragging" : ""
+                mode === "move" || mode === "char" || mode === "charResize" ? "is-dragging" : ""
               } ${movingChar ? "is-moving" : ""} ${editing ? "" : "is-ready"}`}
             />
+            {editing && movingChar && charBox && (
+              <div className="ts-charbox" style={charBox}>
+                {charCorner && (
+                  <span
+                    className="ts-charbox-corner"
+                    style={charCorner}
+                    onPointerDown={startCharResize}
+                    role="presentation"
+                  />
+                )}
+              </div>
+            )}
             {editing && !movingChar && (
               <AssetLayer
                 wrapRef={wrapRef}

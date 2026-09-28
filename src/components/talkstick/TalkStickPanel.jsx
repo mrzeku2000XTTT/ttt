@@ -44,6 +44,8 @@ export default function TalkStickPanel({
   onPickImage,
   onPickAudio,
   onExport,
+  charScale,
+  onScaleCharacter,
   meterRef,
   engine,
   hasImage,
@@ -99,6 +101,29 @@ export default function TalkStickPanel({
           Ten characters, each caught mid-action and sized to fill the stage. The face is placed inside the head for
           you — pick one and press play.
         </p>
+
+        {hasImage && (
+          <>
+            <h3 className="ts-sub">Character size</h3>
+            <label className="ts-label" htmlFor="ts-char-size">
+              Scale <b>{Math.round(charScale * 100)}%</b>
+            </label>
+            <input
+              id="ts-char-size"
+              className="ts-range"
+              type="range"
+              min="0.3"
+              max="3"
+              step="0.05"
+              value={charScale}
+              onChange={(e) => onScaleCharacter(Number(e.target.value))}
+            />
+            <p className="ts-hint">
+              The face grows with the character. On the stage, switch to <b>Hand</b> and drag the corner grip to size
+              it directly.
+            </p>
+          </>
+        )}
       </Section>
 
       <Section number="2" title="Scene">

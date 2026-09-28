@@ -67,15 +67,40 @@ function patchColor(ctx, cx, cy, rx, ry) {
 // stored relative to it, so moving the character carries the whole face along.
 const NO_CHAR = { x: 0, y: 0 };
 
-/** Where a feature sits and how big it is, in canvas pixels. */
-function metrics(canvas, spot, part, char) {
+/**
+ * The character's top-left corner once it has been resized. It grows and shrinks
+ * around its own centre, so the corner shifts as the scale changes.
+ */
+export function charOrigin(size, char, scale = 1) {
+  const box = char || NO_CHAR;
+  const s = scale || 1;
   return {
-    x: spot.x + char.x,
-    y: spot.y + char.y + canvas.height * (part.offsetY / 100),
-    w: canvas.width * (part.width / 100),
-    h: canvas.width * (part.height / 100),
+    x: box.x + (size.width * (1 - s)) / 2,
+    y: box.y + (size.height * (1 - s)) / 2,
   };
 }
+
+/**
+ * Where a feature sits and how big it is, in canvas pixels. Features are stored
+ * in the character's own space, so the scale multiplies both their position and
+ * their size — the whole face stays glued to the face at any character size.
+ */
+export function featureBox(size, spot, part, char, scale = 1) {
+  const origin = charOrigin(size, char, scale);
+  const s = scale || 1;
+  return {
+    cx: origin.x + spot.x * s,
+    cy: origin.y + (spot.y + size.height * (part.offsetY / 100)) * s,
+    w: size.width * (part.width / 100) * s,
+    h: size.width * (part.height / 100) * s,
+  };
+}
+
+/** The renderer's own view of a feature box: its centre plus its size. */
+const metrics = (canvas, spot, part, char, scale) => {
+  const box = featureBox(canvas, spot, part, char, scale);
+  return { x: box.cx, y: box.cy, w: box.w, h: box.h };
+};
 
 /** Paints one layer of assets, in the order they were added. */
 function paintLayer(ctx, canvas, assets, images) {
@@ -98,8 +123,10 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
 
   const assets = scene?.assets || [];
   const char = scene?.char || NO_CHAR;
+  const scale = scene?.scale || 1;
+  const origin = charOrigin(canvas, char, scale);
   paintLayer(ctx, canvas, assets.filter(isBehind), scene?.images);
-  ctx.drawImage(image, char.x, char.y, canvas.width, canvas.height);
+  ctx.drawImage(image, origin.x, origin.y, canvas.width * scale, canvas.height * scale);
   paintLayer(ctx, canvas, assets.filter((asset) => !isBehind(asset)), scene?.images);
 
   if (!rig) return;
@@ -107,7 +134,7 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   const stroke = Math.max(2, canvas.width / 170);
 
   if (rig.eyes) {
-    const m = metrics(canvas, rig.eyes, settings.eyes, char);
+    const m = metrics(canvas, rig.eyes, settings.eyes, char, scale);
     ctx.save();
     ctx.translate(m.x, m.y);
     drawEyePair(ctx, settings.eyes.style, settings.eyes.anim, {
@@ -121,7 +148,7 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   }
 
   if (rig.nose) {
-    const m = metrics(canvas, rig.nose, settings.nose, char);
+    const m = metrics(canvas, rig.nose, settings.nose, char, scale);
     ctx.save();
     ctx.translate(m.x, m.y);
     drawNose(ctx, settings.nose.style, { w: m.w, h: m.h, stroke });
@@ -129,7 +156,7 @@ export function drawFrame(ctx, canvas, image, rig, settings, level, scene) {
   }
 
   if (rig.mouth) {
-    const m = metrics(canvas, rig.mouth, settings.mouth, char);
+    const m = metrics(canvas, rig.mouth, settings.mouth, char, scale);
     const open = m.h * (0.18 + level * 1.35);
     const w = m.w * (0.88 + level * 0.12);
 
