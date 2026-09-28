@@ -661,6 +661,67 @@
 .ts-asset-remove:hover { border-color: #e3a9a9; background: #fff5f5; }
 .ts-asset-remove-icon { width: 12px; height: 12px; }
 
+/* ── Caption on the stage ── */
+/* The words are painted onto the canvas, so this only marks the block they were
+   wrapped inside: drag it to move it, pull the corner to set how wide the words
+   wrap. It sits above the props, because that is where the caption is painted. */
+.ts-captions {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ts-caption {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-height: 20px;
+  border: 1px dashed #c2c8d0;
+  border-radius: 6px;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: move;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ts-caption.is-active {
+  border-style: solid;
+  border-color: #111418;
+}
+.ts-caption.is-busy { cursor: grabbing; }
+
+.ts-caption-tag {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translate(-50%, -8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #111418;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ts-caption-tag-icon { width: 11px; height: 11px; }
+
+/* The width grip — the words re-wrap to whatever width it is pulled to. */
+.ts-caption-handle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  border: 1px solid #111418;
+  border-radius: 3px;
+  background: #111418;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
 /* ── Drop target ── */
 .ts-stage.is-over { box-shadow: inset 0 0 0 2px #111418; }
 
@@ -1035,6 +1096,7 @@
    taking presses — so every click reaches the stage and steps to the next item. */
 .ts-canvas-wrap.is-cycling .ts-canvas { cursor: pointer; }
 .ts-canvas-wrap.is-cycling .ts-asset,
+.ts-canvas-wrap.is-cycling .ts-caption,
 .ts-canvas-wrap.is-cycling .ts-guide-corner { pointer-events: none; }
 
 /* ── Phone ── */

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Eye, Hand, ImagePlus, Maximize2, Minimize2, MousePointer2, Move, Repeat } from "lucide-react";
 import AssetLayer from "./AssetLayer";
+import CaptionLayer from "./CaptionLayer";
 import { charOrigin, featureBox } from "./talkStickRender";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -48,6 +49,10 @@ export default function TalkStickStage({
   onChangeAsset,
   onDeleteAsset,
   onDropFiles,
+  caption,
+  captionSelected,
+  onSelectCaption,
+  onChangeCaption,
   children,
 }) {
   const [mode, setMode] = useState(null);
@@ -151,6 +156,11 @@ export default function TalkStickStage({
     // click that dismisses an asset never nudges the face as well.
     if (selectedAssetId && !movingChar) {
       onSelectAsset(null);
+      return;
+    }
+    // The same goes for the caption: the press that dismisses it does nothing else.
+    if (captionSelected && !movingChar) {
+      onSelectCaption(false);
       return;
     }
     const point = toCanvas(event);
@@ -399,6 +409,16 @@ export default function TalkStickStage({
                 onSelect={onSelectAsset}
                 onChange={onChangeAsset}
                 onDelete={onDeleteAsset}
+              />
+            )}
+            {editing && !movingChar && (
+              <CaptionLayer
+                canvasRef={canvasRef}
+                canvasSize={canvasSize}
+                caption={caption}
+                selected={captionSelected}
+                onSelect={onSelectCaption}
+                onChange={onChangeCaption}
               />
             )}
             {editing && !movingChar && !selectedAssetId && guideStyle && (

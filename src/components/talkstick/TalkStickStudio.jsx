@@ -36,8 +36,19 @@ const NO_SPOTS = { mouth: null, eyes: null, nose: null };
 // The order the Cycle tool steps through the face parts.
 const PART_ORDER = ["mouth", "eyes", "nose"];
 
-// The caption laid over the scene, and the template it is dressed in.
-const NO_CAPTION = { text: "", template: "subtitle", color: "#ffffff", accent: "#ffe14d" };
+// The caption laid over the scene, and the template it is dressed in. `x`, `y`,
+// `width` and `size` are left open until the block is dragged or resized, so a
+// fresh caption still lands where its template intends.
+const NO_CAPTION = {
+  text: "",
+  template: "subtitle",
+  color: "#ffffff",
+  accent: "#ffe14d",
+  x: null,
+  y: null,
+  width: null,
+  size: null,
+};
 
 const NO_CHAR = { x: 0, y: 0 };
 
@@ -68,6 +79,9 @@ export default function TalkStickStudio() {
   const [caption, setCaption] = useState(NO_CAPTION);
   const [assets, setAssets] = useState([]);
   const [selectedAssetId, setSelectedAssetId] = useState(null);
+  // The caption is the last thing painted on the frame, so it is picked up on its
+  // own rather than sharing the props' selection.
+  const [captionSelected, setCaptionSelected] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
 
@@ -244,6 +258,24 @@ export default function TalkStickStudio() {
   const changeAsset = (id, patch) =>
     setAssets((prev) => prev.map((asset) => (asset.id === id ? { ...asset, ...patch } : asset)));
 
+  // Only one thing is ever picked up at a time, so choosing a prop puts the
+  // caption down and the other way round.
+  const selectAsset = (id) => {
+    setSelectedAssetId(id);
+    if (id) setCaptionSelected(false);
+  };
+
+  const selectCaption = (on) => {
+    setCaptionSelected(on);
+    if (on) setSelectedAssetId(null);
+  };
+
+  const patchCaption = (patch) => {
+    setCaption((prev) => ({ ...prev, ...patch }));
+    // With the words gone there is nothing left to hold, so the block lets go too.
+    if (patch.text !== undefined && !String(patch.text).trim()) setCaptionSelected(false);
+  };
+
   const deleteAsset = (id) => {
     setAssets((prev) => prev.filter((asset) => asset.id !== id));
     setSelectedAssetId((prev) => (prev === id ? null : prev));
@@ -354,25 +386,27 @@ export default function TalkStickStudio() {
       { kind: "character" },
       ...PART_ORDER.filter((id) => spots[id]).map((id) => ({ kind: "part", id })),
       ...paintOrder(assets).map((asset) => ({ kind: "asset", id: asset.id })),
+      ...(caption.text.trim() ? [{ kind: "caption" }] : []),
     ];
     if (steps.length < 2) return;
 
-    const here = steps.findIndex((step) =>
-      step.kind === "character"
-        ? tool === "hand"
-        : step.kind === "asset"
-          ? step.id === selectedAssetId
-          : tool === "mouse" && !selectedAssetId && step.id === activePart,
-    );
+    const here = steps.findIndex((step) => {
+      if (step.kind === "character") return tool === "hand";
+      if (step.kind === "caption") return captionSelected;
+      if (step.kind === "asset") return step.id === selectedAssetId;
+      return tool === "mouse" && !selectedAssetId && !captionSelected && step.id === activePart;
+    });
     const next = steps[(here + 1) % steps.length];
 
     if (next.kind === "character") {
+      selectCaption(false);
       setSelectedAssetId(null);
       setTool("hand");
       return;
     }
     setTool("mouse");
-    if (next.kind === "asset") setSelectedAssetId(next.id);
+    if (next.kind === "caption") selectCaption(true);
+    else if (next.kind === "asset") selectAsset(next.id);
     else selectPart(next.id);
   };
 
@@ -380,6 +414,7 @@ export default function TalkStickStudio() {
   // usable straight away instead of starting from an empty canvas.
   const selectPart = (part) => {
     setSelectedAssetId(null);
+    setCaptionSelected(false);
     setActivePart(part);
     setSpots((prev) => {
       if (prev[part] || !prev.mouth || !canvasSize.height) return prev;
@@ -464,10 +499,14 @@ export default function TalkStickStudio() {
             onScaleCharacter={scaleCharacter}
             assets={assets}
             selectedAssetId={selectedAssetId}
-            onSelectAsset={setSelectedAssetId}
+            onSelectAsset={selectAsset}
             onChangeAsset={changeAsset}
             onDeleteAsset={deleteAsset}
             onDropFiles={handleDrop}
+            caption={caption}
+            captionSelected={captionSelected}
+            onSelectCaption={selectCaption}
+            onChangeCaption={patchCaption}
           >
             <TalkStickTransport engine={engine} caption={caption} onCaption={setCaption} />
           </TalkStickStage>
@@ -498,7 +537,7 @@ export default function TalkStickStudio() {
             hasImage={Boolean(image)}
             assets={assets}
             selectedAssetId={selectedAssetId}
-            onSelectAsset={setSelectedAssetId}
+            onSelectAsset={selectAsset}
             onChangeAsset={changeAsset}
             onDeleteAsset={deleteAsset}
             onReorder={reorderAsset}
