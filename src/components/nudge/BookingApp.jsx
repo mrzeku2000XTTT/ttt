@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Image as ImageIcon, X } from "lucide-react";
 import AppleNotification from "./AppleNotification";
-import GmailReminderRow from "./GmailReminderRow";
+import FluxkmailReminderRow from "./FluxkmailReminderRow";
 import { BookItGlyph } from "./NudgeGlyphs";
 import { planBookings } from "@/lib/nudge/bookingAgent";
 import { makeBookingId, makeRef, bookingToNotification } from "@/lib/nudge/bookingStore";
 import { shrinkForLocal } from "@/lib/nudge/sourcePreview";
 import { signedImageUrls } from "@/lib/nudge/privateImageUrl";
-import { useGmailReminder } from "@/lib/nudge/useGmailReminder";
+import { useFluxkmailReminder } from "@/lib/nudge/useFluxkmailReminder";
 
 const PLACEHOLDER = "Book something, or paste the appointments you already have.\n\nHaircut with Dana next Tuesday at 3, about 45 min\nDentist Fri Oct 2, 9am, 30 min";
 
@@ -34,7 +34,7 @@ export default function BookingApp({ onBook }) {
   const [note, setNote] = useState("");
   const [mailNote, setMailNote] = useState("");
   const [made, setMade] = useState([]);
-  const mail = useGmailReminder();
+  const mail = useFluxkmailReminder();
 
   // Paste, drop and pick all land here, so the cap and the ordering hold
   // whichever way a reference arrives.
@@ -208,7 +208,7 @@ export default function BookingApp({ onBook }) {
         {busy ? "Booking…" : "Book it"}
       </button>
 
-      <GmailReminderRow mail={mail} />
+      <FluxkmailReminderRow mail={mail} />
 
       {error ? <p className="nudge-book-err">{error}</p> : null}
       {note ? <p className="nudge-book-note">{note}</p> : null}
