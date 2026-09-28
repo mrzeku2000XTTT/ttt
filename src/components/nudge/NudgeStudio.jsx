@@ -9,6 +9,7 @@ import NudgeBriefList from "./NudgeBriefList";
 import { loadStore, saveStore, makeId, briefToText } from "@/lib/nudge/nudgeStore";
 import { parseIcs, icsToLines } from "@/lib/nudge/parseIcs";
 import { analyzeSchedule } from "@/lib/nudge/nudgeAgent";
+import { base44 } from "@/api/base44Client";
 import "./nudge.css";
 
 const LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/17f6a9185_generated_image.png";
@@ -18,6 +19,9 @@ export default function NudgeStudio({ seed, onHome }) {
 
   const [text, setText] = useState("");
   const [fileName, setFileName] = useState("");
+  // A dropped screenshot is held here as the raw file, on the device, and only
+  // leaves it inside analyze() — the moment the button is pressed.
+  const [image, setImage] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [briefs, setBriefs] = useState([]);
@@ -37,21 +41,68 @@ export default function NudgeStudio({ seed, onHome }) {
 
   const persist = (nextBriefs, nextActive) => saveStore({ briefs: nextBriefs, activeId: nextActive });
 
+  const clearImage = useCallback(() => {
+    setImage((cur) => {
+      if (cur?.previewUrl) URL.revokeObjectURL(cur.previewUrl);
+      return null;
+    });
+  }, []);
+
+  const clearFile = useCallback(() => {
+    setFileName("");
+    clearImage();
+  }, [clearImage]);
+
+  /**
+   * Whatever lands here, NUDGE tries to read it. A screenshot is kept as a file for
+   * the agent to look at; a calendar file is parsed right here in the browser; and
+   * everything else is taken as text, which is what a pasted roster, a copied
+   * spreadsheet or plain notes arrive as.
+   */
   const handleFile = useCallback(async (file) => {
     if (!file) return;
     setError("");
+    const name = String(file.name || "");
+    const lower = name.toLowerCase();
+
+    // Judged by type, and by name for the odd file that arrives without one.
+    if (file.type?.startsWith("image/") || /\.(png|jpe?g|gif|webp|bmp|heic|heif|avif)$/i.test(lower)) {
+      clearImage();
+      setFileName(name);
+      setImage({ source: file, previewUrl: URL.createObjectURL(file) });
+      return;
+    }
+
+    let raw = "";
     try {
-      const events = parseIcs(await file.text());
-      if (!events.length) {
-        setError("That file had no calendar events in it — try pasting the schedule instead.");
-        return;
-      }
-      setFileName(file.name);
-      setText(icsToLines(events));
+      raw = await file.text();
     } catch {
       setError("Could not read that file — try pasting the schedule instead.");
+      return;
     }
-  }, []);
+
+    // A calendar file, however it happens to be named.
+    if (lower.endsWith(".ics") || file.type === "text/calendar" || /BEGIN:VEVENT/i.test(raw)) {
+      const events = parseIcs(raw);
+      if (!events.length) {
+        setError("That calendar file had no events in it — try pasting the schedule or dropping a screenshot instead.");
+        return;
+      }
+      setFileName(name);
+      clearImage();
+      setText(icsToLines(events));
+      return;
+    }
+
+    if (!raw.trim()) {
+      setError("That file was empty — try pasting the schedule or dropping a screenshot instead.");
+      return;
+    }
+
+    setFileName(name);
+    clearImage();
+    setText(raw);
+  }, [clearImage]);
 
   // Whatever the landing collected is handed straight to the studio's own input.
   useEffect(() => {
@@ -62,16 +113,28 @@ export default function NudgeStudio({ seed, onHome }) {
 
   const analyze = async () => {
     const schedule = text.trim();
-    if (!schedule) {
-      setError("Paste a schedule or drop a calendar file first.");
+    if (!schedule && !image) {
+      setError("Paste a schedule, drop a screenshot, or drop a calendar file first.");
       return;
     }
     setBusy(true);
     setError("");
     try {
-      const result = await analyzeSchedule({ scheduleText: schedule, sourceLabel: fileName });
+      // The screenshot leaves the device here and nowhere else — and only because
+      // the agent has to see it to read the schedule out of it.
+      let imageUrl = "";
+      if (image?.source) {
+        // Private storage and a link that expires: the agent needs one look at the
+        // picture to read the schedule out of it, and nothing after that stays
+        // reachable.
+        const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: image.source });
+        const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 3600 });
+        imageUrl = signed_url || "";
+        if (!imageUrl) throw new Error("That screenshot could not be read — try pasting the schedule text instead.");
+      }
+      const result = await analyzeSchedule({ scheduleText: schedule, imageUrl, sourceLabel: fileName });
       if (!result.notifications.length) {
-        setError("The agent could not find anything scheduled in that text.");
+        setError(`The agent could not find anything scheduled in that ${imageUrl ? "screenshot" : "text"}.`);
         return;
       }
       const brief = {
@@ -130,10 +193,12 @@ export default function NudgeStudio({ seed, onHome }) {
         text={text}
         onText={setText}
         fileName={fileName}
+        image={image}
         onFile={handleFile}
-        onClearFile={() => setFileName("")}
+        onClearFile={clearFile}
         onAnalyze={analyze}
         busy={busy}
+        canAnalyze={Boolean(text.trim() || image)}
         error={error}
       />
       <NudgeDisplayOptions

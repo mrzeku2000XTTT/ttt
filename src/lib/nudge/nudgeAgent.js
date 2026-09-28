@@ -1,8 +1,9 @@
 import { base44 } from "@/api/base44Client";
 
-// The agent only ever sees the schedule text the user pasted or dropped, and only
-// at the moment they press Analyze. Nothing it returns is stored anywhere but the
-// browser — NUDGE has no entity and no backend function.
+// The agent only ever sees the schedule the user pasted, dropped or photographed,
+// and only at the moment they press Analyze — a dropped screenshot is uploaded at
+// that moment and nowhere else. Nothing it returns is stored anywhere but the
+// browser: NUDGE has no entity and no backend function.
 
 const SCHEMA = {
   type: "object",
@@ -56,21 +57,26 @@ function normalise(raw) {
   };
 }
 
-export async function analyzeSchedule({ scheduleText, sourceLabel }) {
+export async function analyzeSchedule({ scheduleText, imageUrl, sourceLabel }) {
   const now = new Date();
   const nowString = now.toLocaleString(undefined, {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
     hour: "numeric", minute: "2-digit",
   });
 
-  const prompt = `You turn a person's raw calendar into the notifications their phone would show them.
+  const text = String(scheduleText || "").trim();
+  const fromImage = Boolean(imageUrl);
+
+  const prompt = `You turn whatever a person gives you about their day into the notifications their phone would show them.
 
 RIGHT NOW IT IS: ${nowString}
 
-THE SCHEDULE${sourceLabel ? ` (from ${sourceLabel})` : ""} — this is the only source of truth. Never invent an event, a person, a place or a time that is not in it:
+THE SOURCE${sourceLabel ? ` (${sourceLabel})` : ""} — this is the only source of truth.${fromImage ? " The schedule is in the attached image: read what it actually shows, and never guess at a value you cannot read." : ""}
 ---
-${scheduleText}
+${text || "(nothing typed — the schedule is the attached image)"}
 ---
+
+The source can arrive in any shape, and none of them are wrong: a tidy list, a spreadsheet or staff roster pasted as columns and rows, a week grid of people against days, a screenshot of a scheduling app, or half-finished notes. Work out the shape first, then take from it whatever is genuinely an event or a shift — a day or a date, a time or a range such as "9am - 5pm", "7:30am - 5:30pm" or "12:00-12:30", a title, and a place when one is given. Let go of everything that is not one: column headings, day totals, hours-worked sums, dollar amounts, week numbers. If it lists several people, keep the rows of the one whose schedule it is when the source makes that clear; when it does not say whose it is, keep the shifts as written. Never invent an event, a person, a place or a time that is not in the source.
 
 Write the notifications a phone would have shown this person about this schedule. Each one must read exactly like a real iOS notification: a short bold headline, then ONE plain sentence of what is happening. State the fact. No greetings, no encouragement, no "don't forget", no exclamation marks, no emoji.
 
@@ -87,9 +93,13 @@ Rules:
 
 Return JSON only.`;
 
+  if (!text && !fromImage) return { headline: "", notifications: [] };
+
+  // A picture only reads if the model can actually see it.
   const result = await base44.integrations.Core.InvokeLLM({
     prompt,
     response_json_schema: SCHEMA,
+    ...(fromImage ? { file_urls: [imageUrl], model: "gemini_3_flash" } : {}),
   });
 
   return normalise(result);
