@@ -32,8 +32,8 @@ export default function NudgeComposer({
 
       {fileName && (
         <div className="nudge-file">
-          {image?.previewUrl ? (
-            <img className="nudge-file-thumb" src={image.previewUrl} alt="The screenshot you dropped" />
+          {image?.preview ? (
+            <img className="nudge-file-thumb" src={image.preview} alt="The screenshot you dropped" />
           ) : (
             <FileText className="w-3.5 h-3.5 shrink-0 text-white/60" />
           )}

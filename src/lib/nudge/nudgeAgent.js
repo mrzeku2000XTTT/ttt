@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { zoneLabel } from "@/lib/nudge/localTime";
 
 // The agent only ever sees the schedule the user pasted, dropped or photographed,
 // and only at the moment they press Analyze — a dropped screenshot is uploaded at
@@ -20,12 +21,13 @@ const SCHEMA = {
         properties: {
           app: { type: "string", description: "Which app the notification comes from — Calendar, Maps, Reminders, Mail, Clock, Messages, Weather, Fitness, Notes." },
           time: { type: "string", description: "Short timestamp shown top-right, e.g. '9:30 AM', 'in 20 min', 'now', 'later'." },
+          date: { type: "string", description: "The short day that goes with that timestamp — 'Today', 'Tomorrow', or 'Wed Oct 1'. Empty only when the source carries no date." },
           title: { type: "string", description: "Bold headline, max 42 characters." },
           body: { type: "string", description: "One plain sentence of what is happening, max 130 characters." },
           detail: { type: "string", description: "Optional extra line for the expanded state, max 200 characters. Empty string when there is nothing genuinely useful to add." },
           tone: { type: "string", enum: ["now", "next", "later", "heads-up", "conflict"] },
         },
-        required: ["app", "time", "title", "body", "tone"],
+        required: ["app", "time", "date", "title", "body", "tone"],
       },
     },
   },
@@ -43,6 +45,7 @@ function normalise(raw) {
     .map((n) => ({
       app: clip(n?.app || "Calendar", 24),
       time: clip(n?.time || "later", 16),
+      date: clip(n?.date || "", 18),
       title: clip(n?.title || "Untitled", 42),
       body: clip(n?.body || "", 130),
       detail: clip(n?.detail || "", 200),
@@ -66,10 +69,12 @@ export async function analyzeSchedule({ scheduleText, imageUrl, sourceLabel }) {
 
   const text = String(scheduleText || "").trim();
   const fromImage = Boolean(imageUrl);
+  // The reader's own zone, so a time without one is read in the right local clock.
+  const zone = zoneLabel();
 
   const prompt = `You turn whatever a person gives you about their day into the notifications their phone would show them.
 
-RIGHT NOW IT IS: ${nowString}
+RIGHT NOW IT IS: ${nowString}${zone ? ` — ${zone}` : ""}
 
 THE SOURCE${sourceLabel ? ` (${sourceLabel})` : ""} — this is the only source of truth.${fromImage ? " The schedule is in the attached image: read what it actually shows, and never guess at a value you cannot read." : ""}
 ---
@@ -82,7 +87,8 @@ Write the notifications a phone would have shown this person about this schedule
 
 Rules:
 - Between 4 and 8 notifications, ordered the way the day actually happens.
-- "time" is the short timestamp shown top-right: "9:30 AM", "in 20 min", "now", or "later". Use the real times from the schedule.
+- "time" is the short timestamp shown top-right: "9:30 AM", "in 20 min", "now", or "later". Use the real times from the schedule, in the local clock above.
+- "date" is the short day that goes with that timestamp: "Today", "Tomorrow", or a weekday and date such as "Wed Oct 1". When the source is a whole week, a roster or a grid, give every notification the day it actually falls on. Leave it empty only when the source carries no date at all.
 - "app" is the app the notification would come from. Use Calendar for events. Use Maps when the person has to travel somewhere. Use Reminders for something they must bring or do. Use Mail when a document or a reply is involved. Use Clock for an unusually early start. Only use Weather if the schedule itself mentions weather.
 - "title" is at most 42 characters. "body" is at most 130 characters. "detail" is at most 200 characters and only when there is genuinely useful extra context — what to bring, who else is there, how long the walk is. Otherwise return an empty string for "detail".
 - "tone" is exactly one of: "now" (happening this moment), "next" (the very next thing), "later" (anything after), "heads-up" (prep or travel), "conflict" (two things genuinely overlap or the gaps are impossible).

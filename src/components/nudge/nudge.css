@@ -71,8 +71,17 @@
 .nudge-lock-stack::-webkit-scrollbar { display: none; }
 .nudge-lock-foot {
   height: 5px; width: 116px; border-radius: 999px; background: rgba(255, 255, 255, .55);
-  margin: 8px auto 4px; flex-shrink: 0;
+  margin: 3px auto 3px; flex-shrink: 0;
 }
+/* The handle at the bottom of a real lock screen. Pull it up — or just tap it — to
+   open the phone and read the schedule the brief was built from. */
+.nudge-lock-grab {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%;
+  padding: 6px 0 0; border: 0; background: transparent; cursor: pointer; flex-shrink: 0;
+  color: rgba(255, 255, 255, .48); font: inherit; font-size: 10.5px; font-weight: 600;
+  touch-action: none; -webkit-user-select: none; user-select: none;
+}
+.nudge-lock-grab:hover { color: rgba(255, 255, 255, .88); }
 
 /* ── The notification itself ── */
 .nudge-note {
@@ -99,7 +108,11 @@
   font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
   opacity: .82; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.nudge-note-time { margin-left: auto; font-size: 11.5px; opacity: .62; flex-shrink: 0; }
+.nudge-note-when { margin-left: auto; display: inline-flex; align-items: center; flex-shrink: 0; }
+.nudge-note-time { font-size: 11.5px; opacity: .62; flex-shrink: 0; white-space: nowrap; }
+.nudge-note-date { font-size: 11px; opacity: .5; white-space: nowrap; }
+/* A dot only when a day really is sitting in front of the time. */
+.nudge-note-date + .nudge-note-time::before { content: "·"; margin-right: 5px; opacity: .6; }
 .nudge-note-title { margin: 0; font-size: 15px; font-weight: 640; letter-spacing: -.012em; line-height: 1.24; }
 .nudge-note-body { margin: 2px 0 0; font-size: 14.5px; line-height: 1.33; opacity: .93; }
 .nudge-note-detail {
@@ -118,6 +131,8 @@
 .nudge-studio.is-light .nudge-lock-clock,
 .nudge-studio.is-light .nudge-lock-date { color: #101014; }
 .nudge-studio.is-light .nudge-lock-foot { background: rgba(0, 0, 0, .38); }
+.nudge-studio.is-light .nudge-lock-grab { color: rgba(0, 0, 0, .46); }
+.nudge-studio.is-light .nudge-lock-grab:hover { color: rgba(0, 0, 0, .82); }
 .nudge-studio.is-light .nudge-note {
   background: rgba(255, 255, 255, .76);
   box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .07), 0 6px 18px -10px rgba(0, 0, 0, .35);
@@ -147,6 +162,49 @@
 .nudge-dots { display: flex; gap: 5px; }
 .nudge-dot { width: 5px; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .28); }
 .nudge-dot.is-on { background: #fff; }
+
+/* ── Unlocked: the schedule exactly as it was given ── */
+.nudge-unlocked {
+  position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column;
+  padding: 54px 12px 12px;
+  background: rgba(8, 8, 11, .74);
+  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+  opacity: 0; transform: scale(.965); transform-origin: 50% 40%; pointer-events: none;
+  transition: opacity .34s ease .05s, transform .46s cubic-bezier(.22, 1, .36, 1) .05s;
+}
+.nudge-unlocked.is-open { opacity: 1; transform: none; pointer-events: auto; }
+.nudge-unlocked-head { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.nudge-unlocked-title {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+  color: rgba(255, 255, 255, .68);
+}
+.nudge-unlocked-body { flex: 1; min-height: 0; overflow-y: auto; padding-right: 2px; }
+.nudge-unlocked-shot {
+  display: block; width: 100%; border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .14); background: #101014;
+}
+.nudge-unlocked-text {
+  margin: 10px 0 0; padding: 10px 11px; border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .05);
+  color: #e9e9ef; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.nudge-unlocked-shot + .nudge-unlocked-text { margin-top: 9px; }
+.nudge-unlocked-empty { font-size: 11.5px; line-height: 1.5; color: rgba(255, 255, 255, .52); }
+.nudge-unlocked-foot {
+  margin: 8px 0 0; flex-shrink: 0; font-size: 10.5px; color: rgba(255, 255, 255, .42);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nudge-studio.is-light .nudge-unlocked { background: rgba(248, 248, 252, .82); }
+.nudge-studio.is-light .nudge-unlocked-title { color: rgba(0, 0, 0, .58); }
+.nudge-studio.is-light .nudge-unlocked-text {
+  background: rgba(0, 0, 0, .05); border-color: rgba(0, 0, 0, .1); color: #14141a;
+}
+.nudge-studio.is-light .nudge-unlocked-shot { border-color: rgba(0, 0, 0, .12); }
+.nudge-studio.is-light .nudge-unlocked-empty,
+.nudge-studio.is-light .nudge-unlocked-foot { color: rgba(0, 0, 0, .45); }
+.nudge-studio.is-light .nudge-unlocked .nudge-ghost { color: rgba(0, 0, 0, .62); border-color: rgba(0, 0, 0, .16); }
 
 /* ── Panel (desktop rail + mobile sheet) ── */
 .nudge-panel { display: flex; flex-direction: column; min-height: 0; }
@@ -233,6 +291,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .nudge-note, .nudge-sheet { animation: none; transition: none; }
+  .nudge-unlocked { transition: none; }
 }
 @media (max-width: 400px) {
   .nudge-head { padding: 9px 10px; }

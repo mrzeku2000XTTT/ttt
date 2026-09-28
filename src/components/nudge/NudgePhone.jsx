@@ -1,27 +1,67 @@
-import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, BellOff } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, ChevronUp, BellOff } from "lucide-react";
 import AppleNotification from "./AppleNotification";
+import ScheduleSheet from "./ScheduleSheet";
+import { clockLabel, dayLabel, useLocalNow } from "@/lib/nudge/localTime";
 
-const LOCK_CLOCK = "9:41";
+// How far the lock screen has to be pulled up before the phone opens.
+const UNLOCK_AT = 64;
 
 /**
  * The phone. Two faces of the same template:
- *  · "lock"   — the iOS lock screen with the whole notification stack.
+ *  · "lock"   — the iOS lock screen with the whole notification stack. It can be
+ *               pulled up, the way a real lock screen is, to open the phone and
+ *               read the schedule exactly as it was given.
  *  · "banner" — a single notification dropping in over the home screen.
  */
-export default function NudgePhone({ brief, mode, expandedId, onToggle }) {
+export default function NudgePhone({ brief, mode, expandedId, onToggle, showDate }) {
   const [index, setIndex] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
+
+  const screenRef = useRef(null);
+  const pull = useRef(null);
+  const pulled = useRef(0);
+
   const notes = brief?.notifications || [];
 
-  useEffect(() => { setIndex(0); }, [brief?.id]);
+  // A different brief is a different day: the phone closes and starts at the top.
+  useEffect(() => {
+    setIndex(0);
+    setOpen(false);
+    setOffset(0);
+  }, [brief?.id]);
 
-  const dateLabel = brief?.dateLabel || new Date().toLocaleDateString(undefined, {
-    weekday: "long", month: "long", day: "numeric",
-  });
+  const startPull = (e) => {
+    pull.current = { y: e.clientY };
+    pulled.current = 0;
+    setDragging(true);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const movePull = (e) => {
+    if (!pull.current) return;
+    const travel = pull.current.y - e.clientY;
+    const max = screenRef.current?.clientHeight || 600;
+    pulled.current = Math.max(0, Math.min(travel, max));
+    setOffset(pulled.current);
+  };
+
+  const endPull = () => {
+    if (!pull.current) return;
+    pull.current = null;
+    setDragging(false);
+    const travel = pulled.current;
+    pulled.current = 0;
+    setOffset(0);
+    // A real pull opens the phone — and so does a plain tap on the handle.
+    if (travel > UNLOCK_AT || travel < 4) setOpen(true);
+  };
 
   return (
     <div className="nudge-phone">
-      <div className="nudge-screen">
+      <div className="nudge-screen" ref={screenRef}>
         <span className="nudge-island" />
 
         {mode === "banner" ? (
@@ -37,6 +77,7 @@ export default function NudgePhone({ brief, mode, expandedId, onToggle }) {
                   <AppleNotification
                     key={`${brief.id}-${index}`}
                     note={notes[index]}
+                    showDate={showDate}
                     expanded={expandedId === index}
                     onToggle={() => onToggle(index)}
                   />
@@ -77,16 +118,26 @@ export default function NudgePhone({ brief, mode, expandedId, onToggle }) {
         ) : (
           <>
             <div className="nudge-wall" />
-            <div className="nudge-lock">
-              <p className="nudge-lock-clock">{LOCK_CLOCK}</p>
-              <p className="nudge-lock-date">{dateLabel}</p>
+
+            {/* Behind the lock screen, revealed as it slides away. */}
+            <ScheduleSheet brief={brief} open={open} onLock={() => setOpen(false)} />
+
+            <div
+              className="nudge-lock"
+              style={{
+                transform: open ? "translateY(-100%)" : `translateY(${-offset}px)`,
+                transition: dragging ? "none" : "transform .44s cubic-bezier(.22, 1, .36, 1)",
+              }}
+            >
+              <LiveClock />
 
               <div className="nudge-lock-stack">
                 {notes.length ? (
                   notes.map((note, i) => (
                     <AppleNotification
-                      key={`${brief.id}-${i}`}
+                      key={`${brief?.id}-${i}`}
                       note={note}
+                      showDate={showDate}
                       expanded={expandedId === i}
                       onToggle={() => onToggle(i)}
                     />
@@ -96,12 +147,35 @@ export default function NudgePhone({ brief, mode, expandedId, onToggle }) {
                 )}
               </div>
 
-              <span className="nudge-lock-foot" />
+              <button
+                type="button"
+                className="nudge-lock-grab"
+                onPointerDown={startPull}
+                onPointerMove={movePull}
+                onPointerUp={endPull}
+                onPointerCancel={endPull}
+                title="Open the phone and read the original schedule"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+                <span>Swipe up for your schedule</span>
+                <span className="nudge-lock-foot" />
+              </button>
             </div>
           </>
         )}
       </div>
     </div>
+  );
+}
+
+/** The reader's real local time — kept in its own tick so nothing else redraws. */
+function LiveClock() {
+  const now = useLocalNow();
+  return (
+    <>
+      <p className="nudge-lock-clock">{clockLabel(now)}</p>
+      <p className="nudge-lock-date">{dayLabel(now)}</p>
+    </>
   );
 }
 

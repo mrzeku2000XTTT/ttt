@@ -10,6 +10,7 @@ import { loadStore, saveStore, makeId, briefToText } from "@/lib/nudge/nudgeStor
 import { parseIcs, icsToLines } from "@/lib/nudge/parseIcs";
 import { analyzeSchedule } from "@/lib/nudge/nudgeAgent";
 import { base44 } from "@/api/base44Client";
+import { shrinkForLocal } from "@/lib/nudge/sourcePreview";
 import "./nudge.css";
 
 const LOGO = "https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/17f6a9185_generated_image.png";
@@ -31,6 +32,7 @@ export default function NudgeStudio({ seed, onHome }) {
   const [expandedId, setExpandedId] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showDate, setShowDate] = useState(true);
 
   // Everything comes back from this browser's own storage.
   useEffect(() => {
@@ -41,12 +43,7 @@ export default function NudgeStudio({ seed, onHome }) {
 
   const persist = (nextBriefs, nextActive) => saveStore({ briefs: nextBriefs, activeId: nextActive });
 
-  const clearImage = useCallback(() => {
-    setImage((cur) => {
-      if (cur?.previewUrl) URL.revokeObjectURL(cur.previewUrl);
-      return null;
-    });
-  }, []);
+  const clearImage = useCallback(() => setImage(null), []);
 
   const clearFile = useCallback(() => {
     setFileName("");
@@ -67,9 +64,10 @@ export default function NudgeStudio({ seed, onHome }) {
 
     // Judged by type, and by name for the odd file that arrives without one.
     if (file.type?.startsWith("image/") || /\.(png|jpe?g|gif|webp|bmp|heic|heif|avif)$/i.test(lower)) {
-      clearImage();
+      // Kept small enough to live in this browser beside the brief it becomes, so
+      // the phone can still be unlocked to it days later.
       setFileName(name);
-      setImage({ source: file, previewUrl: URL.createObjectURL(file) });
+      setImage({ source: file, preview: await shrinkForLocal(file) });
       return;
     }
 
@@ -142,6 +140,9 @@ export default function NudgeStudio({ seed, onHome }) {
         headline: result.headline,
         notifications: result.notifications,
         source: fileName || "Pasted schedule",
+        // The original itself, kept so the phone can be unlocked to it later.
+        sourceText: schedule,
+        sourcePreview: image?.preview || "",
         dateLabel: new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }),
         createdAt: Date.now(),
       };
@@ -207,6 +208,8 @@ export default function NudgeStudio({ seed, onHome }) {
         onMode={setMode}
         light={light}
         onLight={setLight}
+        showDate={showDate}
+        onShowDate={setShowDate}
         onCopy={copyBrief}
         copied={copied}
       />
@@ -252,6 +255,7 @@ export default function NudgeStudio({ seed, onHome }) {
           <NudgePhone
             brief={active}
             mode={mode}
+            showDate={showDate}
             expandedId={expandedId}
             onToggle={(i) => setExpandedId((cur) => (cur === i ? null : i))}
           />

@@ -1,11 +1,25 @@
 import React from "react";
-import { Bell, Trash2, Copy, Check, Smartphone, Rows3, Sun, Moon } from "lucide-react";
+import { Bell, Trash2, Copy, Check, Smartphone, Rows3, Sun, Moon, Calendar, Clock } from "lucide-react";
+import { zoneLabel } from "@/lib/nudge/localTime";
 
 /**
- * How the notification is shown — the two real iOS faces — plus the way the
- * brief leaves the app: by the user's own clipboard, never by upload.
+ * How the notification is shown — the two real iOS faces, whether the day is put
+ * on the card, and the way the brief leaves the app: by the user's own clipboard,
+ * never by upload.
  */
-export default function NudgeDisplayOptions({ brief, mode, onMode, light, onLight, onCopy, copied }) {
+export default function NudgeDisplayOptions({
+  brief,
+  mode,
+  onMode,
+  light,
+  onLight,
+  showDate,
+  onShowDate,
+  onCopy,
+  copied,
+}) {
+  const zone = zoneLabel();
+
   return (
     <div className="nudge-sec">
       <p className="nudge-sec-title">
@@ -49,7 +63,25 @@ export default function NudgeDisplayOptions({ brief, mode, onMode, light, onLigh
         </button>
       </div>
 
+      {/* The date and time a notification carries are the schedule's own. */}
+      <button
+        type="button"
+        className={`nudge-ghost w-full justify-center mt-2 ${showDate ? "is-on" : ""}`}
+        onClick={() => onShowDate(!showDate)}
+        aria-pressed={showDate}
+      >
+        <Calendar className="w-3.5 h-3.5" />
+        {showDate ? "Date and time on the card" : "Date hidden"}
+      </button>
+
       <p className="nudge-note-line mt-3">
+        <Clock className="w-3.5 h-3.5" />
+        <span>
+          The phone keeps your own clock{zone ? ` — ${zone}` : ""}, and every notification is read in
+          that local time.
+        </span>
+      </p>
+      <p className="nudge-note-line mt-1.5">
         <Trash2 className="w-3.5 h-3.5" />
         <span>Tap any notification on the phone to open its full detail.</span>
       </p>

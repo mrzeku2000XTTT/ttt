@@ -6,7 +6,7 @@ import { appIdentity } from "./appIdentity";
  * Frosted card, app tile top-left, uppercase app name, timestamp on the right,
  * then the bold headline and one line of body. Tapping reveals the extra detail.
  */
-export default function AppleNotification({ note, expanded, onToggle, animate = true }) {
+export default function AppleNotification({ note, expanded, onToggle, animate = true, showDate }) {
   const { Icon, bg, fg } = appIdentity(note.app);
 
   return (
@@ -21,7 +21,11 @@ export default function AppleNotification({ note, expanded, onToggle, animate = 
           <Icon className="nudge-note-icon-glyph" strokeWidth={2.1} />
         </span>
         <span className="nudge-note-app">{note.app}</span>
-        <span className="nudge-note-time">{note.time}</span>
+        {/* The day, when the schedule says which one it falls on, beside the time. */}
+        <span className="nudge-note-when">
+          {showDate && note.date ? <span className="nudge-note-date">{note.date}</span> : null}
+          {note.time ? <span className="nudge-note-time">{note.time}</span> : null}
+        </span>
       </span>
       <span className="nudge-note-title">{note.title}</span>
       <span className="nudge-note-body">{note.body}</span>
