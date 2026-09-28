@@ -94,9 +94,9 @@
 }
 .ts-canvas.is-dragging { cursor: grabbing; }
 
-/* The draggable mouth guide — DOM, never painted into the export, and empty
-   inside so it can never cover the mouth it is tracking. */
-.ts-handle {
+/* The feature guide — DOM, never painted into the export, hollow so it can never
+   cover the feature it is tracking, and click-through so the whole canvas drags. */
+.ts-guide {
   position: absolute;
   transform: translate(-50%, -50%);
   display: flex;
@@ -106,35 +106,91 @@
   min-height: 26px;
   border: 1px dashed #c2c8d0;
   border-radius: 999px;
-  background: transparent;
-  cursor: grab;
-  touch-action: none;
-  transition: background 0.15s, border-color 0.15s;
+  pointer-events: none;
 }
-.ts-handle:hover {
-  background: rgba(148, 155, 165, 0.1);
-  border-color: #8b939d;
-}
-.ts-handle.is-dragging {
-  border-style: solid;
-  border-color: #111418;
-  background: rgba(17, 20, 24, 0.06);
-  cursor: grabbing;
-}
+.ts-guide.is-active { border-color: #111418; border-style: solid; }
 
-.ts-handle-icon {
+.ts-guide-icon {
   width: 13px;
   height: 13px;
-  color: #4b5563;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s;
+  color: #6b7280;
+  opacity: 0.5;
 }
-.ts-handle:hover .ts-handle-icon { opacity: 0.7; }
-.ts-handle.is-dragging .ts-handle-icon { opacity: 1; color: #111418; }
+
+/* The resize grip, pinned to the guide's bottom-right corner. */
+.ts-guide-corner {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 11px;
+  height: 11px;
+  border: 1px solid #111418;
+  border-radius: 3px;
+  background: #ffffff;
+  pointer-events: auto;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+.ts-guide.is-active .ts-guide-corner { background: #111418; }
 
 /* Ready view — the guide is gone, so the stage is just the character. */
 .ts-canvas.is-ready { cursor: default; }
+
+/* ── Feature picker ── */
+.ts-parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ts-part {
+  position: relative;
+  padding: 9px 6px;
+  border: 1px solid var(--ts-line);
+  border-radius: 11px;
+  background: var(--ts-surface);
+  color: var(--ts-body);
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.ts-part:hover { border-color: var(--ts-line-strong); }
+.ts-part.is-active { border-color: var(--ts-accent); background: var(--ts-accent); color: #fff; }
+.ts-part.is-placed::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #17b26a;
+}
+.ts-part.is-active.is-placed::after { background: #8ce8b4; }
+
+.ts-sub {
+  margin: 16px 0 10px;
+  color: var(--ts-body);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ts-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--ts-body);
+  font-size: 11px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.ts-check input { margin-top: 1px; accent-color: var(--ts-accent); cursor: pointer; }
+
+.ts-btn-quiet { color: #b42318; border-color: #f0c9c9; }
+.ts-btn-quiet:hover { border-color: #e3a9a9; }
 
 .ts-mode {
   position: absolute;
@@ -390,5 +446,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ts-btn, .ts-file, .ts-meter-fill, .ts-handle, .ts-handle-icon, .ts-mode, .ts-style-tile { transition: none; }
+  .ts-btn, .ts-file, .ts-meter-fill, .ts-mode, .ts-part, .ts-style-tile { transition: none; }
 }

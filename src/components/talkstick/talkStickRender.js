@@ -1,6 +1,8 @@
-// Drawing one frame of the character: the artwork, then the animated mouth on top.
+// Drawing one frame of the character: the artwork, then every placed feature on top.
 
 import { drawMouth } from "./mouthStyles";
+import { drawEyePair } from "./eyeStyles";
+import { drawNose } from "./noseStyles";
 
 /**
  * Sizes the canvas to the artwork so the whole drawing fits the stage, keeping
@@ -17,7 +19,7 @@ export function fitCanvas(canvas, image, maxWidth, maxHeight) {
 /**
  * The colour to cover the original mouth with: sampled from a ring of pixels
  * just outside the mouth, so it matches the face or the paper behind it instead
- * of assuming a white background.
+ * of assuming a white background. Only used when the cover is switched on.
  */
 function patchColor(ctx, cx, cy, rx, ry) {
   const outer = 1.55;
@@ -55,32 +57,65 @@ function patchColor(ctx, cx, cy, rx, ry) {
   return `rgb(${Math.round(r / taken)}, ${Math.round(g / taken)}, ${Math.round(b / taken)})`;
 }
 
-/** Draws the character and its mouth at the current voice level (0 → 1). */
-export function drawFrame(ctx, canvas, image, mouth, settings, level) {
+/** Where a feature sits and how big it is, in canvas pixels. */
+function metrics(canvas, spot, part) {
+  return {
+    x: spot.x,
+    y: spot.y + canvas.height * (part.offsetY / 100),
+    w: canvas.width * (part.width / 100),
+    h: canvas.width * (part.height / 100),
+  };
+}
+
+/** Draws the character and every placed feature at the current voice level. */
+export function drawFrame(ctx, canvas, image, rig, settings, level) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-  if (!mouth) return;
+  if (!rig) return;
 
-  const baseW = canvas.width * (settings.width / 100);
-  const baseH = canvas.width * (settings.height / 100);
-  const cy = mouth.y + canvas.height * (settings.offsetY / 100);
-  const open = baseH * (0.18 + level * 1.35);
-  const w = baseW * (0.88 + level * 0.12);
+  const stroke = Math.max(2, canvas.width / 170);
 
-  // The patch that covers the mouth already drawn on the artwork — sized from the
-  // mouth actually being painted, so a wide look never lets the original show through.
-  const patchX = Math.max(baseW * 0.62, w * 0.58);
-  const patchY = Math.max(baseH * 0.78, open * 0.85);
+  if (rig.eyes) {
+    const m = metrics(canvas, rig.eyes, settings.eyes);
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    drawEyePair(ctx, settings.eyes.style, settings.eyes.anim, {
+      size: m.h,
+      spacing: m.w,
+      level,
+      stroke,
+      time: performance.now() / 1000,
+    });
+    ctx.restore();
+  }
 
-  ctx.save();
-  ctx.translate(mouth.x, cy);
+  if (rig.nose) {
+    const m = metrics(canvas, rig.nose, settings.nose);
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    drawNose(ctx, settings.nose.style, { w: m.w, h: m.h, stroke });
+    ctx.restore();
+  }
 
-  ctx.fillStyle = patchColor(ctx, mouth.x, cy, patchX, patchY);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, patchX, patchY, 0, 0, Math.PI * 2);
-  ctx.fill();
+  if (rig.mouth) {
+    const m = metrics(canvas, rig.mouth, settings.mouth);
+    const open = m.h * (0.18 + level * 1.35);
+    const w = m.w * (0.88 + level * 0.12);
 
-  drawMouth(ctx, settings.style, { w, open, level, weight: Math.max(2, canvas.width / 170) });
+    ctx.save();
+    ctx.translate(m.x, m.y);
 
-  ctx.restore();
+    // The cover is off by default — the mouth is drawn straight onto the artwork.
+    if (settings.mouth.patch) {
+      const patchX = Math.max(m.w * 0.62, w * 0.58);
+      const patchY = Math.max(m.h * 0.78, open * 0.85);
+      ctx.fillStyle = patchColor(ctx, m.x, m.y, patchX, patchY);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, patchX, patchY, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    drawMouth(ctx, settings.mouth.style, { w, open, level, weight: stroke });
+    ctx.restore();
+  }
 }

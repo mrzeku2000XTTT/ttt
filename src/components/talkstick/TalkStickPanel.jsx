@@ -1,6 +1,30 @@
-import React from "react";
-import { Download, Mic, Square } from "lucide-react";
-import MouthStyleGrid from "./MouthStyleGrid";
+import React, { useCallback } from "react";
+import { Download, Mic, Square, Trash2 } from "lucide-react";
+import FaceStyleGrid from "./FaceStyleGrid";
+import { MOUTH_STYLES, drawMouth } from "./mouthStyles";
+import { EYE_STYLES, EYE_ANIMS, drawEyePair } from "./eyeStyles";
+import { NOSE_STYLES, drawNose } from "./noseStyles";
+
+const PARTS = [
+  { id: "mouth", label: "Mouth" },
+  { id: "eyes", label: "Eyes" },
+  { id: "nose", label: "Nose" },
+];
+
+const STYLE_OPTIONS = { mouth: MOUTH_STYLES, eyes: EYE_STYLES, nose: NOSE_STYLES };
+
+const SIZE_LABELS = {
+  mouth: { width: "Width", height: "Height" },
+  eyes: { width: "Spacing", height: "Eye size" },
+  nose: { width: "Width", height: "Height" },
+};
+
+// Each tile is drawn with the same renderer the stage uses.
+const PREVIEWS = {
+  mouth: (ctx, id) => drawMouth(ctx, id, { w: 40, open: 22, level: 0.72, weight: 2.4 }),
+  eyes: (ctx, id) => drawEyePair(ctx, id, "open", { size: 13, spacing: 30, level: 0.5, stroke: 2.4, time: 0 }),
+  nose: (ctx, id) => drawNose(ctx, id, { w: 10, h: 18, stroke: 2.4 }),
+};
 
 const Section = ({ number, title, children }) => (
   <section className="ts-section">
@@ -12,10 +36,15 @@ const Section = ({ number, title, children }) => (
   </section>
 );
 
-/** Everything that shapes the mouth and drives it. */
+/** Everything that shapes the face and drives it. */
 export default function TalkStickPanel({
   settings,
-  onChange,
+  activePart,
+  spots,
+  onActivePart,
+  onUpdatePart,
+  onChangeVoice,
+  onClearPart,
   onPickImage,
   onPickAudio,
   onExport,
@@ -23,6 +52,25 @@ export default function TalkStickPanel({
   engine,
   hasImage,
 }) {
+  const part = settings[activePart];
+  const labels = SIZE_LABELS[activePart];
+  const activeLabel = (PARTS.find((item) => item.id === activePart) || PARTS[0]).label;
+
+  // Sampled at the instant each preset is at its most recognisable.
+  const animPreview = useCallback(
+    (ctx, id) => {
+      const anim = EYE_ANIMS.find((item) => item.id === id) || EYE_ANIMS[0];
+      drawEyePair(ctx, settings.eyes.style, id, {
+        size: 13,
+        spacing: 30,
+        level: anim.preview.level,
+        stroke: 2.4,
+        time: anim.preview.t,
+      });
+    },
+    [settings.eyes.style]
+  );
+
   return (
     <aside className="ts-card ts-panel">
       <Section number="1" title="Character">
@@ -33,45 +81,62 @@ export default function TalkStickPanel({
         <p className="ts-hint">A transparent PNG works especially well.</p>
       </Section>
 
-      <Section number="2" title="Mouth position">
+      <Section number="2" title="Face">
+        <div className="ts-parts" role="radiogroup" aria-label="Feature">
+          {PARTS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="radio"
+              aria-checked={activePart === item.id}
+              className={`ts-part ${activePart === item.id ? "is-active" : ""} ${
+                spots[item.id] ? "is-placed" : ""
+              }`}
+              onClick={() => onActivePart(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
         <p className="ts-hint">
-          Click the character to drop the mouth on it, then drag it anywhere. Press <b>Ready view</b> on the stage to
-          hide the guide and see the mouth clean.
+          Click the character to drop the <b>{activeLabel}</b> on it, drag to position, and pull the corner handle to
+          resize. Press <b>Ready view</b> to hide the guide.
         </p>
 
         <div className="ts-row">
           <div>
             <label className="ts-label" htmlFor="ts-w">
-              Width <b>{settings.width}</b>
+              {labels.width} <b>{Math.round(part.width)}</b>
             </label>
             <input
               id="ts-w"
               className="ts-range"
               type="range"
-              min="8"
-              max="80"
-              value={settings.width}
-              onChange={(e) => onChange({ width: Number(e.target.value) })}
+              min="3"
+              max="95"
+              value={part.width}
+              onChange={(e) => onUpdatePart(activePart, { width: Number(e.target.value) })}
             />
           </div>
           <div>
             <label className="ts-label" htmlFor="ts-h">
-              Height <b>{settings.height}</b>
+              {labels.height} <b>{Math.round(part.height)}</b>
             </label>
             <input
               id="ts-h"
               className="ts-range"
               type="range"
-              min="5"
-              max="60"
-              value={settings.height}
-              onChange={(e) => onChange({ height: Number(e.target.value) })}
+              min="2"
+              max="75"
+              value={part.height}
+              onChange={(e) => onUpdatePart(activePart, { height: Number(e.target.value) })}
             />
           </div>
         </div>
 
         <label className="ts-label" htmlFor="ts-y">
-          Vertical <b>{settings.offsetY}</b>
+          Vertical <b>{part.offsetY}</b>
         </label>
         <input
           id="ts-y"
@@ -79,16 +144,48 @@ export default function TalkStickPanel({
           type="range"
           min="-40"
           max="40"
-          value={settings.offsetY}
-          onChange={(e) => onChange({ offsetY: Number(e.target.value) })}
+          value={part.offsetY}
+          onChange={(e) => onUpdatePart(activePart, { offsetY: Number(e.target.value) })}
         />
+
+        {spots[activePart] && (
+          <button type="button" className="ts-btn ts-btn-quiet" onClick={() => onClearPart(activePart)}>
+            <Trash2 className="h-3.5 w-3.5" />
+            Remove {activeLabel.toLowerCase()}
+          </button>
+        )}
       </Section>
 
-      <Section number="3" title="Mouth look">
-        <MouthStyleGrid value={settings.style} onChange={(style) => onChange({ style })} />
-        <p className="ts-hint">
-          Every look is animated by the same voice engine — pick the one that suits your character.
-        </p>
+      <Section number="3" title={`${activeLabel} look`}>
+        <FaceStyleGrid
+          options={STYLE_OPTIONS[activePart]}
+          value={part.style}
+          onChange={(style) => onUpdatePart(activePart, { style })}
+          preview={PREVIEWS[activePart]}
+        />
+
+        {activePart === "eyes" && (
+          <>
+            <h3 className="ts-sub">Animation</h3>
+            <FaceStyleGrid
+              options={EYE_ANIMS}
+              value={settings.eyes.anim}
+              onChange={(anim) => onUpdatePart("eyes", { anim })}
+              preview={animPreview}
+            />
+          </>
+        )}
+
+        {activePart === "mouth" && (
+          <label className="ts-check">
+            <input
+              type="checkbox"
+              checked={settings.mouth.patch}
+              onChange={(e) => onUpdatePart("mouth", { patch: e.target.checked })}
+            />
+            Cover the mouth already drawn on the artwork
+          </label>
+        )}
       </Section>
 
       <Section number="4" title="Voice">
@@ -127,7 +224,7 @@ export default function TalkStickPanel({
               max="4"
               step="0.1"
               value={settings.sensitivity}
-              onChange={(e) => onChange({ sensitivity: Number(e.target.value) })}
+              onChange={(e) => onChangeVoice({ sensitivity: Number(e.target.value) })}
             />
           </div>
           <div>
@@ -142,7 +239,7 @@ export default function TalkStickPanel({
               max="0.95"
               step="0.01"
               value={settings.smoothing}
-              onChange={(e) => onChange({ smoothing: Number(e.target.value) })}
+              onChange={(e) => onChangeVoice({ smoothing: Number(e.target.value) })}
             />
           </div>
         </div>

@@ -1,25 +1,31 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Eye, Move } from "lucide-react";
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 /**
  * The drawing surface.
  *
- * Press anywhere to drop the mouth on the character, then drag it around. The
- * guide around the mouth lives in the DOM rather than on the canvas, so it never
- * ends up in the exported frame, and "Ready view" hides it for a clean look.
+ * Press anywhere to drop the active feature on the character, drag to position
+ * it, and pull the corner handle to resize it. The guide lives in the DOM rather
+ * than on the canvas, so it never ends up in the exported frame, and "Ready view"
+ * hides it for a clean look.
  */
 export default function TalkStickStage({
   canvasRef,
   stageRef,
   hasImage,
-  mouth,
-  settings,
+  activePart,
+  spot,
+  part,
   canvasSize,
   editing,
   onToggleEditing,
   onPlace,
+  onResize,
 }) {
-  const [dragging, setDragging] = useState(false);
+  const [mode, setMode] = useState(null);
+  const wrapRef = useRef(null);
 
   const toCanvas = (event) => {
     const canvas = canvasRef.current;
@@ -32,39 +38,73 @@ export default function TalkStickStage({
     };
   };
 
-  const start = (event) => {
+  // Where the active feature actually sits, in canvas pixels.
+  const box =
+    spot && canvasSize.width
+      ? {
+          cx: spot.x,
+          cy: spot.y + canvasSize.height * (part.offsetY / 100),
+          w: canvasSize.width * (part.width / 100),
+          h: canvasSize.width * (part.height / 100),
+        }
+      : null;
+
+  const startMove = (event) => {
     if (!hasImage || !editing) return;
     const point = toCanvas(event);
     if (!point) return;
     event.preventDefault();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    setDragging(true);
+    wrapRef.current?.setPointerCapture?.(event.pointerId);
+    setMode("move");
     onPlace(point);
   };
 
+  const startResize = (event) => {
+    if (!hasImage || !editing || !box) return;
+    event.preventDefault();
+    event.stopPropagation();
+    wrapRef.current?.setPointerCapture?.(event.pointerId);
+    setMode("resize");
+  };
+
   const move = (event) => {
-    if (!dragging) return;
+    if (!mode) return;
     const point = toCanvas(event);
-    if (point) onPlace(point);
+    if (!point) return;
+
+    if (mode === "move") {
+      onPlace(point);
+      return;
+    }
+    if (!box) return;
+    // Sized from the corner being dragged, so the feature grows with the pointer.
+    onResize({
+      width: clamp(((Math.abs(point.x - box.cx) * 2) / canvasSize.width) * 100, 3, 95),
+      height: clamp(((Math.abs(point.y - box.cy) * 2) / canvasSize.width) * 100, 2, 75),
+    });
   };
 
   const end = (event) => {
-    if (!dragging) return;
-    setDragging(false);
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    if (!mode) return;
+    setMode(null);
+    wrapRef.current?.releasePointerCapture?.(event.pointerId);
   };
 
-  // The handle tracks the mouth where it is actually painted, so the drag target
-  // and the mouth never drift apart.
-  const handle =
-    mouth && canvasSize.width
-      ? {
-          left: `${(mouth.x / canvasSize.width) * 100}%`,
-          top: `${((mouth.y + canvasSize.height * (settings.offsetY / 100)) / canvasSize.height) * 100}%`,
-          width: `${settings.width}%`,
-          height: `${((canvasSize.width * (settings.height / 100)) / canvasSize.height) * 100}%`,
-        }
-      : null;
+  const guideStyle = box
+    ? {
+        left: `${(box.cx / canvasSize.width) * 100}%`,
+        top: `${(box.cy / canvasSize.height) * 100}%`,
+        width: `${part.width}%`,
+        height: `${(box.h / canvasSize.height) * 100}%`,
+      }
+    : null;
+
+  const cornerStyle = box
+    ? {
+        left: `${((box.cx + box.w / 2) / canvasSize.width) * 100}%`,
+        top: `${((box.cy + box.h / 2) / canvasSize.height) * 100}%`,
+      }
+    : null;
 
   return (
     <main className="ts-card">
@@ -72,18 +112,27 @@ export default function TalkStickStage({
         {hasImage && (
           <div
             className="ts-canvas-wrap"
-            onPointerDown={start}
+            ref={wrapRef}
+            onPointerDown={startMove}
             onPointerMove={move}
             onPointerUp={end}
             onPointerCancel={end}
           >
             <canvas
               ref={canvasRef}
-              className={`ts-canvas ${dragging ? "is-dragging" : ""} ${editing ? "" : "is-ready"}`}
+              className={`ts-canvas ${mode === "move" ? "is-dragging" : ""} ${editing ? "" : "is-ready"}`}
             />
-            {editing && handle && (
-              <div className={`ts-handle ${dragging ? "is-dragging" : ""}`} style={handle}>
-                <Move className="ts-handle-icon" />
+            {editing && guideStyle && (
+              <div className={`ts-guide ${mode ? "is-active" : ""}`} style={guideStyle}>
+                <Move className="ts-guide-icon" />
+                {cornerStyle && (
+                  <span
+                    className="ts-guide-corner"
+                    style={cornerStyle}
+                    onPointerDown={startResize}
+                    role="presentation"
+                  />
+                )}
               </div>
             )}
           </div>
@@ -97,14 +146,14 @@ export default function TalkStickStage({
             onClick={onToggleEditing}
           >
             {editing ? <Eye className="ts-mode-icon" /> : <Move className="ts-mode-icon" />}
-            {editing ? "Ready view" : "Adjust mouth"}
+            {editing ? "Ready view" : "Adjust face"}
           </button>
         )}
 
         {!hasImage && (
           <div className="ts-empty">
             <strong>Upload your character</strong>
-            <span>Then click directly on its mouth and drag to fine-tune it.</span>
+            <span>Then click directly on its face and drag to fine-tune it.</span>
           </div>
         )}
       </div>
