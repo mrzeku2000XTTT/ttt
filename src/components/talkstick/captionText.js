@@ -28,21 +28,34 @@ export const CAPTION_TEMPLATES = [
 
 export const findTemplate = (id) => CAPTION_TEMPLATES.find((item) => item.id === id) || CAPTION_TEMPLATES[0];
 
-/** The words broken into lines that fit the given width. */
-function wrap(ctx, words, maxWidth) {
-  const lines = [];
-  let line = "";
-  words.forEach((word) => {
-    const next = line ? `${line} ${word}` : word;
-    if (line && ctx.measureText(next).width > maxWidth) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = next;
+/**
+ * A caption is always one line. Rather than wrapping a long sentence into a
+ * block, the type is set smaller until the whole thing fits the width it has —
+ * so a caption stays a caption and never runs off the frame. Leaves the font and
+ * tracking set on the context, ready to draw.
+ */
+function fitOneLine(ctx, text, size, weight, track, maxWidth) {
+  const measure = (candidate) => {
+    ctx.font = `${weight} ${candidate}px ${STACK}`;
+    // Tracking is only honoured where the browser supports it; elsewhere the
+    // template simply reads a little tighter.
+    try {
+      ctx.letterSpacing = `${track * candidate}px`;
+    } catch (error) {
+      /* not supported — the template still draws */
     }
-  });
-  if (line) lines.push(line);
-  return lines;
+    return ctx.measureText(text).width;
+  };
+
+  let fitted = size;
+  // Each pass lands close to the answer; a couple more settle it exactly.
+  for (let pass = 0; pass < 4 && fitted > 6; pass += 1) {
+    const width = measure(fitted);
+    if (width <= maxWidth) break;
+    fitted = Math.max(6, fitted * (maxWidth / width) * 0.995);
+  }
+  measure(fitted);
+  return fitted;
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -67,23 +80,22 @@ export function drawCaption(ctx, canvas, caption) {
   const tpl = findTemplate(caption.template);
   const colour = caption.color || "#ffffff";
   const accent = caption.accent || "#ffe14d";
-  const size = Math.max(8, canvas.width * tpl.size);
-  const words = tpl.upper ? text.toUpperCase().split(" ") : text.split(" ");
+  const sentence = tpl.upper ? text.toUpperCase() : text;
 
   ctx.save();
-  ctx.font = `${tpl.weight} ${size}px ${STACK}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  // Tracking is only honoured where the browser supports it; elsewhere the
-  // template simply reads a little tighter.
-  try {
-    ctx.letterSpacing = `${tpl.track * size}px`;
-  } catch (error) {
-    /* not supported — the template still draws */
-  }
 
   const maxWidth = canvas.width * (tpl.align === "left" ? 0.72 : 0.88);
-  const lines = wrap(ctx, words, maxWidth);
+  const size = fitOneLine(
+    ctx,
+    sentence,
+    Math.max(8, canvas.width * tpl.size),
+    tpl.weight,
+    tpl.track,
+    maxWidth,
+  );
+  const lines = [sentence];
   const lineHeight = size * 1.2;
   const blockHeight = lineHeight * lines.length;
   const centreX = tpl.align === "left" ? canvas.width * 0.07 : canvas.width / 2;
