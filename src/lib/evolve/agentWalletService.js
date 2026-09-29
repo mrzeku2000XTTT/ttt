@@ -11,52 +11,15 @@
  *   → WorldEngine settlement
  *
  * The LLM itself NEVER receives signing secrets.
- * This frontend module only creates wallet IDENTITY records (address only).
- * Actual signing happens in the backend function (evolveAiEconomyTick).
+ * This frontend module may read public identity records only.
+ * Wallet creation and signing are blocked until a supported server vault exists.
  */
 
 import { base44 } from "@/api/base44Client";
 
-const ALPHABET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
-
-function generateAddress(seed) {
-  let s = (seed * 2654435761) >>> 0;
-  let out = "";
-  for (let i = 0; i < 58; i += 1) {
-    s = (s * 1664525 + 1013904223) >>> 0;
-    out += ALPHABET[s >>> 24];
-  }
-  return `kaspatest:${out}`;
-}
-
-/**
- * Create a wallet identity record for an AI agent.
- * Stores ONLY the public address — never private keys.
- */
-export async function createAgentWalletIdentity({ experimentId, agentId, agentCode, organizationId = "", isTreasury = false }) {
-  if (!base44?.entities?.EvolveAgentWallet) return null;
-  const walletId = `W${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 1000).toString(36).toUpperCase()}`;
-  const seed = Date.now() + Math.floor(Math.random() * 1e9);
-  const address = generateAddress(seed);
-
-  try {
-    return await base44.entities.EvolveAgentWallet.create({
-      experiment_id: experimentId,
-      agent_id: agentId,
-      agent_code: agentCode,
-      wallet_id: walletId,
-      network: "kaspa_testnet_10",
-      address,
-      status: "active",
-      last_known_balance_sompi: 0,
-      created_at: new Date().toISOString(),
-      organization_id: organizationId,
-      is_treasury: isTreasury,
-    });
-  } catch (e) {
-    console.warn("EVOLVE: could not create agent wallet identity", e);
-    return null;
-  }
+/** No frontend key generation or fabricated kaspatest identity is permitted. */
+export async function createAgentWalletIdentity() {
+  return { ok: false, reason: 'TN10_RUNTIME_BLOCKED', message: 'Agent signing vault is not configured; no wallet was created.' };
 }
 
 /**
@@ -86,11 +49,9 @@ export async function getAgentBalance(experimentId, agentId) {
       experimentId,
       agentId,
     });
-    return result;
+    return result.data;
   } catch (e) {
-    // Backend function may not be deployed — fall back to cached balance.
-    const wallet = await getAgentWallet(experimentId, agentId);
-    return { ok: false, cachedSompi: wallet?.last_known_balance_sompi || 0, error: e?.message };
+    return e?.response?.data || { ok: false, reason: 'RPC_UNAVAILABLE', source: 'unavailable', confirmedSompi: null };
   }
 }
 

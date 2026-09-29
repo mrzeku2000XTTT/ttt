@@ -21,6 +21,7 @@
  */
 
 import { TxStatus } from "./txStateMachine";
+import { blockedPayment } from '@/lib/evolve/tn10Safety';
 import {
   createPaymentIntent,
   linkBroadcast,
@@ -49,6 +50,8 @@ export async function preparePayment({
   settlementData = null,
   day = 0,
 }) {
+  const readiness = (await base44.functions.invoke('evolveConfirmTick', { readinessOnly: true })).data;
+  if (!readiness?.ready) return readiness || blockedPayment();
   const intentRes = await createPaymentIntent({
     experimentId,
     idempotencyKey,
@@ -81,6 +84,8 @@ export async function preparePayment({
 export async function broadcastPayment({ wallet, base44, experimentId, intent, reservation, onBroadcast }) {
   if (!wallet?.isTN10) return { ok: false, reason: "WALLET_NOT_TN10" };
   if (!intent) return { ok: false, reason: "NO_INTENT" };
+  const readiness = (await base44.functions.invoke('evolveConfirmTick', { readinessOnly: true })).data;
+  if (!readiness?.ready) return readiness || blockedPayment();
 
   // Update intent to AWAITING_SIGNATURE.
   await updateIntentStatus(intent.id, TxStatus.AWAITING_SIGNATURE);
@@ -144,20 +149,9 @@ export async function broadcastPayment({ wallet, base44, experimentId, intent, r
  * Settle a confirmed payment — transfer world resources.
  * Called by the settlement service after the confirmation watcher detects CONFIRMED.
  */
-export async function settleConfirmedPayment({ base44, experimentId, intent, onSettle }) {
-  await updateIntentStatus(intent.id, TxStatus.CONFIRMED, {
-    confirmed_at: new Date().toISOString(),
-  });
-
-  if (onSettle) {
-    await onSettle(intent);
-  }
-
-  await updateIntentStatus(intent.id, TxStatus.SETTLED, {
-    settled_at: new Date().toISOString(),
-  });
-
-  return { ok: true };
+export async function settleConfirmedPayment({ base44, experimentId, intent }) {
+  // Backend alone may settle; no local CONFIRMED/SETTLED writes or resource callbacks.
+  return (await base44.functions.invoke('evolveSettleTx', { experimentId, intentId: intent.id })).data;
 }
 
 /**

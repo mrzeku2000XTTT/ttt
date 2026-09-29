@@ -97,6 +97,9 @@ export async function createPaymentIntent({
  * Update an intent's status. Validates the transition.
  */
 export async function updateIntentStatus(intentId, newStatus, extra = {}) {
+  if ([TxStatus.CONFIRMED, TxStatus.SETTLED].includes(newStatus)) {
+    throw new Error('BACKEND_EVIDENCE_REQUIRED: frontend cannot confirm or settle payments');
+  }
   try {
     return await base44.entities.EvolvePaymentIntent.update(intentId, {
       status: newStatus,

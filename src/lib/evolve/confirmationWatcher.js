@@ -36,12 +36,14 @@ export function useConfirmationWatcher({ experimentId, enabled, onSettled, onFai
       // The backend checks TN10 status and updates the intent + chain tx.
       for (const intent of pending) {
         try {
-          const result = await base44.functions.invoke("evolveConfirmTick", {
+          const response = await base44.functions.invoke("evolveConfirmTick", {
             experimentId,
             intentId: intent.id,
             txId: intent.tx_id,
           });
-          if (result?.status === TxStatus.CONFIRMED || result?.status === TxStatus.SETTLED) {
+          const result = response.data;
+          if (!result?.ok) continue;
+          if (result.status === TxStatus.SETTLED) {
             callbacksRef.current.onSettled?.(intent, result);
           } else if (result?.status === TxStatus.FAILED || result?.status === TxStatus.EXPIRED) {
             callbacksRef.current.onFailed?.(intent, result);

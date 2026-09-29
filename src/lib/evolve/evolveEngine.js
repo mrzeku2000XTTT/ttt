@@ -1,6 +1,7 @@
 import { WorldEngine } from "./worldEngine";
 import { EventService } from "./eventService";
 import { createKaspaService } from "./kaspaService";
+import { isolatedMockEnabled, blockedPayment, tn10BlockedMessage } from '@/lib/evolve/tn10Safety';
 import { ActionValidator } from "./actionValidator";
 import { EvolutionService, REPRODUCTION_REQUIREMENTS } from "./evolutionService";
 import { createAgent, decide, recordDecision, agentName, OPERATING_COSTS } from "./agentEngine";
@@ -57,7 +58,7 @@ export const DEFAULT_CONFIG = {
   world_size: "medium",
   selection: "economic",
   objective: "Maximize long-term economic survival",
-  ledger_mode: "mock",
+  ledger_mode: isolatedMockEnabled ? 'mock' : 'tn10',
 };
 
 /**
@@ -114,7 +115,8 @@ export class EvolveEngine {
 
     // Bind player actions to this engine instance.
     Object.keys(PlayerActions).forEach((k) => {
-      this[k] = PlayerActions[k].bind(this);
+      const action = PlayerActions[k].bind(this);
+      this[k] = (...args) => isolatedMockEnabled ? action(...args) : blockedPayment();
     });
   }
 
@@ -144,6 +146,7 @@ export class EvolveEngine {
 
   /* -------------------------------------------------------------- genesis */
   async bootstrap(onStage = () => {}) {
+    if (!isolatedMockEnabled) throw new Error(tn10BlockedMessage);
     const cfg = this.config;
     const stage = async (label) => {
       this.genesisStage = label;
@@ -303,6 +306,7 @@ export class EvolveEngine {
 
   /* ------------------------------------------------------------ main tick */
   tick(quiet = false) {
+    if (!isolatedMockEnabled) return;
     this.tickCount += 1;
     const rng = this.rng;
     const dayBefore = this.world.day;
@@ -395,6 +399,7 @@ export class EvolveEngine {
   }
 
   runProposal(agent, proposal, quiet) {
+    if (!isolatedMockEnabled) return blockedPayment();
     switch (proposal.action) {
       case "CLAIM_JOB": {
         const job = this.jobs.find((j) => j.id === proposal.targetId && j.status === "OPEN");
@@ -632,6 +637,7 @@ export class EvolveEngine {
 
   /** Verified work is the only thing the treasury pays for. */
   payJob(job, agent, quiet) {
+    if (!isolatedMockEnabled) return blockedPayment();
     job.status = "PAYMENT_PENDING";
     // Player-posted jobs pay from escrow; treasury jobs pay from the treasury.
     const isPlayerJob = !!job.is_player_job;
@@ -1023,6 +1029,7 @@ export class EvolveEngine {
   }
 
   trade({ assetId, resource, qty, direction, agentId }) {
+    if (!isolatedMockEnabled) return blockedPayment();
     const agent = this.agentById.get(agentId);
     if (!agent) return { ok: false, message: "Select an agent first" };
     const price = priceOf(this.world, resource);
@@ -1126,6 +1133,7 @@ export class EvolveEngine {
   }
 
   contributeToOrg(agentId, amount) {
+    if (!isolatedMockEnabled) return blockedPayment();
     const agent = this.agentById.get(agentId);
     const org = this.orgs.find((o) => o.id === agent?.organization_id);
     if (!agent || !org) return { ok: false, message: "Agent is not in an organization" };
@@ -1145,6 +1153,7 @@ export class EvolveEngine {
   }
 
   payContract(orgId, agentId, amount) {
+    if (!isolatedMockEnabled) return blockedPayment();
     const org = this.orgs.find((o) => o.id === orgId);
     const agent = this.agentById.get(agentId);
     if (!org || !agent) return { ok: false, message: "Pick an organization and an agent" };
@@ -1256,7 +1265,7 @@ export class EvolveEngine {
       world_size: experiment.world_size,
       selection: experiment.selection,
       objective: experiment.objective,
-      ledger_mode: experiment.ledger_mode || "mock",
+      ledger_mode: isolatedMockEnabled ? 'mock' : 'tn10',
     };
     this.rng = makeRng(experiment.seed);
     this.kaspa = createKaspaService(this.config.ledger_mode);
@@ -1323,7 +1332,7 @@ export class EvolveEngine {
     }));
 
     this.treasury = {
-      address: "kaspatest:treasury",
+      address: isolatedMockEnabled ? 'mock:treasury' : '',
       balance: experiment.treasury_balance || 0,
       totalPaid: this.transactions.reduce((s, t) => s + (t.amount || 0), 0),
       pending: 0,

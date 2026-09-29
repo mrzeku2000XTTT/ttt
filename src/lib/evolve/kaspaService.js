@@ -7,15 +7,8 @@
  * addresses, balances and transaction records.
  */
 
+import { isolatedMockEnabled, tn10BlockedMessage } from '@/lib/evolve/tn10Safety';
 export const NETWORK = "kaspa-tn10";
-
-const ALPHABET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
-
-function encodeAddress(bytes) {
-  let out = "";
-  for (let i = 0; i < bytes.length; i += 1) out += ALPHABET[bytes[i] % 32];
-  return `kaspatest:${out}`;
-}
 
 export class KaspaService {
   constructor() {
@@ -28,7 +21,7 @@ export class KaspaService {
   watchAddress() { throw new Error("watchAddress not implemented"); }
   getTransaction() { throw new Error("getTransaction not implemented"); }
   confirmTransaction() { throw new Error("confirmTransaction not implemented"); }
-  tick() {}
+  tick() { return []; }
 }
 
 /**
@@ -39,6 +32,7 @@ export class KaspaService {
 export class MockKaspaService extends KaspaService {
   constructor({ confirmAfterMs = 9000 } = {}) {
     super();
+    if (!isolatedMockEnabled) throw new Error('MOCK_LEDGER_DISABLED: isolated development opt-in required');
     this.ledger = "mock";
     this.confirmAfterMs = confirmAfterMs;
     this.seq = 0;
@@ -50,13 +44,8 @@ export class MockKaspaService extends KaspaService {
 
   createAgentWallet(agentId) {
     this.seq += 1;
-    const bytes = [];
-    let s = (this.seq * 2654435761) >>> 0;
-    for (let i = 0; i < 58; i += 1) {
-      s = (s * 1664525 + 1013904223) >>> 0;
-      bytes.push(s >>> 24);
-    }
-    const address = encodeAddress(bytes);
+    // Deliberately non-blockchain identifier, never a fabricated kaspatest address.
+    const address = `mock:${agentId}:${this.seq}`;
     this.watched.add(address);
     return { walletId: `W${String(this.seq).padStart(5, "0")}`, address, agentId, network: this.network, ledger: "mock" };
   }
@@ -136,7 +125,7 @@ export class TN10KaspaService extends KaspaService {
     this.rpcUrl = rpcUrl || "";
   }
   _todo() {
-    throw new Error("TN10KaspaService is not wired up yet — the app is running on the DEVELOPMENT LEDGER.");
+    throw new Error(tn10BlockedMessage);
   }
   createAgentWallet() { return this._todo(); }
   getBalance() { return this._todo(); }
@@ -146,6 +135,7 @@ export class TN10KaspaService extends KaspaService {
   confirmTransaction() { return this._todo(); }
 }
 
-export function createKaspaService(mode = "mock") {
-  return mode === "tn10" ? new TN10KaspaService() : new MockKaspaService();
+export function createKaspaService(mode = "tn10") {
+  // Legacy experiment settings cannot opt production into mock execution.
+  return mode === 'mock' && isolatedMockEnabled ? new MockKaspaService() : new TN10KaspaService();
 }

@@ -3,7 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { EvolveEngine, DEFAULT_CONFIG } from "./evolveEngine";
 import { evolveRepo } from "./repo";
 import { useScorpionWallet } from "./useScorpionWallet";
-import { preparePayment, broadcastPayment, settleConfirmedPayment, releaseFailedPayment } from "./evolvePayment";
+import { preparePayment as preparePersistentPayment, broadcastPayment } from "./evolvePayment";
+import { isolatedMockEnabled, tn10BlockedMessage, blockedPayment } from '@/lib/evolve/tn10Safety';
 import { makeIdempotencyKey } from "./paymentIntentService";
 import { useConfirmationWatcher } from "./confirmationWatcher";
 import { TxStatus } from "./txStateMachine";
@@ -100,6 +101,7 @@ export function EvolveProvider({ children }) {
       }
       if (!eng) eng = new EvolveEngine(DEFAULT_CONFIG);
       if (cancelled) return;
+      if (!isolatedMockEnabled) eng.paused = true;
       engineRef.current = eng;
       setEngine(eng);
       setLoading(false);
@@ -124,7 +126,7 @@ export function EvolveProvider({ children }) {
 
   /* Periodic checkpoint so the civilization survives a reload. */
   useEffect(() => {
-    if (!engine || !experimentId || !engine.started) return undefined;
+    if (!isolatedMockEnabled || !engine || !experimentId || !engine.started) return undefined;
     const id = setInterval(() => {
       evolveRepo.checkpoint(experimentId, engine.toRecords(experimentId)).catch(() => {});
     }, 45000);
@@ -133,6 +135,10 @@ export function EvolveProvider({ children }) {
 
   const createGenesis = useCallback(
     async (config) => {
+      if (!isolatedMockEnabled) {
+        say(tn10BlockedMessage, false);
+        return blockedPayment();
+      }
       const eng = new EvolveEngine({ ...DEFAULT_CONFIG, ...config });
       engineRef.current = eng;
       setEngine(eng);
@@ -187,7 +193,8 @@ export function EvolveProvider({ children }) {
     async ({ country, position }) => {
       if (!engine) return { ok: false, reason: "NO_ENGINE" };
       if (!user?.id) return { ok: false, reason: "NO_USER" };
-      const addr = wallet.isTN10 && wallet.address ? wallet.address : `kaspatest:dev_${user.id.slice(-8)}`;
+      if (!isolatedMockEnabled) return blockedPayment();
+      const addr = wallet.isTN10 && wallet.address ? wallet.address : `mock:player:${user.id}`;
       const res = engine.spawnPlayer({
         userId: user.id,
         country,
@@ -363,8 +370,8 @@ export function EvolveProvider({ children }) {
     if (!pending) return { ok: false, reason: "NO_PENDING" };
     const { callbacks, idempotencyKey } = pending;
 
-    // 1. Create persistent payment intent (idempotency check).
-    const prepRes = await preparePayment({
+    // 1. Backend readiness check precedes intent creation and Scorpion approval.
+    const prepRes = await preparePersistentPayment({
       base44,
       experimentId,
       idempotencyKey,
@@ -391,6 +398,8 @@ export function EvolveProvider({ children }) {
         });
         return { ok: false, reason: "DUPLICATE", existing: prepRes.existing };
       }
+      say(prepRes.message || tn10BlockedMessage, false);
+      setPendingPayment(null);
       return prepRes;
     }
 
@@ -451,26 +460,11 @@ export function EvolveProvider({ children }) {
     setPendingPayment(null);
   }, [pendingPayment]);
 
-  // Settlement callback — called by the confirmation watcher when a payment is CONFIRMED.
-  const handleSettled = useCallback(async (intent, confirmResult) => {
-    const pending = pendingPayment;
-    // Apply world state changes (resource transfer, balance update, etc.)
-    const callbacks = pending?.callbacks;
-    if (callbacks?.onSettle) {
-      await callbacks.onSettle(intent, confirmResult);
-    }
-    // Mark as SETTLED via backend function.
-    try {
-      await base44.functions.invoke("evolveSettleTx", {
-        experimentId,
-        intentId: intent.id,
-        eventMetadata: { amountLabel: `${intent.amount_sompi} sompi` },
-      });
-    } catch (e) {
-      // Non-fatal — settlement is best-effort.
-    }
-    setPaymentStatus((prev) => prev ? { ...prev, status: TxStatus.SETTLED } : null);
-  }, [pendingPayment, experimentId]);
+  // Observe only: never transfer resources or turn CONFIRMED into SETTLED locally.
+  const handleSettled = useCallback((intent, result) => {
+    if (!result?.ok || result.status !== TxStatus.SETTLED) return;
+    setPaymentStatus(prev => prev?.intent?.id === intent.id ? { ...prev, status: TxStatus.SETTLED } : prev);
+  }, []);
 
   const handleFailed = useCallback(async (intent, failResult) => {
     const pending = pendingPayment;
