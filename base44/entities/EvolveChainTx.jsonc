@@ -1,0 +1,101 @@
+{
+  "name": "EvolveChainTx",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "txid": {
+      "type": "string",
+      "description": "On-chain TN10 transaction id returned by Scorpion pushTx/sendKaspa"
+    },
+    "network": {
+      "type": "string",
+      "default": "kaspa_testnet_10"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "SCORPION",
+        "KASWARE",
+        "EXPERIMENT_SIGNER"
+      ],
+      "default": "SCORPION"
+    },
+    "sender_actor_id": {
+      "type": "string"
+    },
+    "sender_code": {
+      "type": "string"
+    },
+    "sender_address": {
+      "type": "string",
+      "description": "kaspatest: sender"
+    },
+    "recipient_actor_id": {
+      "type": "string"
+    },
+    "recipient_code": {
+      "type": "string"
+    },
+    "recipient_address": {
+      "type": "string",
+      "description": "kaspatest: recipient"
+    },
+    "amount_sompi": {
+      "type": "number",
+      "default": 0,
+      "description": "KAS amount in sompi (integer; 1 KAS = 100,000,000 sompi)"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "EVOLVE economic purpose: TRADE, JOB_PAYMENT, ORG_CONTRIBUTION, HIRE_AI, BUILD"
+    },
+    "world_ref": {
+      "type": "string",
+      "description": "Optional EVOLVE object reference (job id, trade id, contract id)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "BROADCAST",
+        "CONFIRMING",
+        "CONFIRMED",
+        "FAILED",
+        "CANCELLED"
+      ],
+      "default": "BROADCAST"
+    },
+    "confirmations": {
+      "type": "number",
+      "default": 0
+    },
+    "error": {
+      "type": "string"
+    },
+    "day": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "txid",
+    "provider",
+    "amount_sompi",
+    "status"
+  ],
+  "rls": {
+    "read": null,
+    "create": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

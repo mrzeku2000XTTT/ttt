@@ -25,6 +25,9 @@ import SimulationControls from "./SimulationControls";
 import DebugPanel from "./DebugPanel";
 import { PaneModeProvider } from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
+import ConnectScorpion from "./ConnectScorpion";
+import PlayerWalletBar from "./PlayerWalletBar";
+import PaymentPreview from "./PaymentPreview";
 import "./evolve.css";
 
 /**
@@ -33,7 +36,7 @@ import "./evolve.css";
  * Desktop and landscape phones get the same console, only the panel widths change.
  */
 export default function EvolveApp() {
-  const { engine, loading, flash, genesisStage } = useEvolve();
+  const { engine, loading, flash, genesisStage, wallet, player, pendingPayment, confirmPayment, cancelPayment } = useEvolve();
   const [view, setView] = useState("WORLD");
   const [cam, setCam] = useState({ x: 0, y: 0, scale: 6 });
   const [mapSize, setMapSize] = useState({ w: 0, h: 0 });
@@ -90,7 +93,17 @@ export default function EvolveApp() {
     <div className="ev-root">
       <div className="ev-hud">
         <TopStatusHUD onMenu={() => open("sim")} onView={setView} onTreasury={() => open("treasury")} />
+        {wallet.connState !== "DISCONNECTED" && wallet.connState !== "CONNECTING" && (
+          <PlayerWalletBar onActivity={() => open("chainTx")} />
+        )}
       </div>
+
+      {/* Scorpion connect prompt — shown when no wallet connected. */}
+      {wallet.connState !== "CONNECTED_TN10" && engine?.started && (
+        <div style={{ position: "absolute", top: 60, right: 12, zIndex: 40, width: 240 }}>
+          <ConnectScorpion />
+        </div>
+      )}
 
       <div className="ev-mid">
         <LeftNavigation view={view} onView={setView} onDebug={() => open("debug")} />
@@ -158,6 +171,14 @@ export default function EvolveApp() {
       )}
 
       {flash && <Toast flash={flash} />}
+
+      {pendingPayment && (
+        <PaymentPreview
+          intent={pendingPayment}
+          onConfirm={confirmPayment}
+          onCancel={cancelPayment}
+        />
+      )}
     </div>
   );
 }

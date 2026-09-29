@@ -32,11 +32,14 @@ const PLAYER_BUILD_OUTPUT = {
 
 export const PlayerActions = {
   /** Spawn a new human player or return their existing actor. */
-  spawnPlayer({ userId, country, position }) {
+  spawnPlayer({ userId, country, position, walletAddress }) {
     const existing = this.players.find((p) => p.user_id === userId);
     if (existing) return { ok: true, player: existing, existing: true };
 
+    // Humans use their connected Scorpion TN10 wallet — we never create or hold keys.
+    // The mock ledger still tracks the in-world starting balance for simulation logic.
     const wallet = this.kaspa.createAgentWallet(`PLR_${this.playerSeq + 1}`);
+    if (walletAddress) wallet.address = walletAddress; // override mock address with real kaspatest:
     const player = createPlayer({
       userId,
       experimentId: this.config.label,
@@ -47,6 +50,8 @@ export const PlayerActions = {
       day: this.world.day,
     });
     applyStartingInventory(player);
+    player.walletProvider = "SCORPION";
+    player.network = "kaspa_testnet_10";
     this.kaspa.credit(wallet.address, 15);
 
     this.players.push(player);
