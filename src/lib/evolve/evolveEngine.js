@@ -118,6 +118,7 @@ export class EvolveEngine {
     const stage = async (label) => {
       this.genesisStage = label;
       this.notify();
+      onStage(label);
       await new Promise((r) => setTimeout(r, 120));
     };
 

@@ -98,6 +98,7 @@ export function EvolveProvider({ children }) {
     genesisStage,
     flash,
     say,
+    createGenesis,
   };
 
   return <EvolveContext.Provider value={value}>{children}</EvolveContext.Provider>;
