@@ -1,0 +1,74 @@
+{
+  "name": "EvolveOrganization",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "faction": {
+      "type": "string",
+      "enum": [
+        "blue",
+        "green",
+        "yellow",
+        "red",
+        "purple",
+        "neutral"
+      ],
+      "default": "neutral"
+    },
+    "founder_id": {
+      "type": "string"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "treasury": {
+      "type": "number",
+      "default": 0
+    },
+    "resources": {
+      "type": "object"
+    },
+    "territory": {
+      "type": "number",
+      "default": 0
+    },
+    "jobs_completed": {
+      "type": "number",
+      "default": 0
+    },
+    "reputation": {
+      "type": "number",
+      "default": 0
+    },
+    "alliances": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "enemies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "founded_day": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "name": "EvolveAsset",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "sim_id": {
+      "type": "string",
+      "description": "Simulated world id, e.g. SIM_SERVER_0091. Conflict targets are always world ids."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "server",
+        "city",
+        "energy",
+        "compute",
+        "storage",
+        "deposit"
+      ]
+    },
+    "x": {
+      "type": "number"
+    },
+    "y": {
+      "type": "number"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "Owning agent id, empty when unclaimed"
+    },
+    "faction": {
+      "type": "string",
+      "enum": [
+        "blue",
+        "green",
+        "yellow",
+        "red",
+        "purple",
+        "neutral"
+      ],
+      "default": "neutral"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "value": {
+      "type": "number",
+      "default": 0
+    },
+    "defense": {
+      "type": "number",
+      "default": 0
+    },
+    "damage": {
+      "type": "number",
+      "default": 0
+    },
+    "level": {
+      "type": "number",
+      "default": 1
+    },
+    "output": {
+      "type": "number",
+      "default": 0,
+      "description": "Per-day resource output"
+    }
+  },
+  "required": [
+    "sim_id",
+    "kind",
+    "x",
+    "y"
+  ]
+}

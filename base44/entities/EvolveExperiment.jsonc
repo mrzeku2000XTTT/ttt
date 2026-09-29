@@ -1,0 +1,96 @@
+{
+  "name": "EvolveExperiment",
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "description": "Experiment name"
+    },
+    "network": {
+      "type": "string",
+      "default": "kaspa-tn10",
+      "description": "Settlement network"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "genesis",
+        "running",
+        "paused",
+        "archived"
+      ],
+      "default": "genesis"
+    },
+    "genesis_agents": {
+      "type": "number",
+      "default": 10
+    },
+    "initial_test_kas": {
+      "type": "number",
+      "default": 1000,
+      "description": "Starting test KAS per genesis agent"
+    },
+    "mutation_rate": {
+      "type": "number",
+      "default": 0.05
+    },
+    "scarcity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    "world_size": {
+      "type": "string",
+      "enum": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "default": "medium"
+    },
+    "selection": {
+      "type": "string",
+      "default": "economic"
+    },
+    "objective": {
+      "type": "string",
+      "default": "Maximize long-term economic survival"
+    },
+    "seed": {
+      "type": "number",
+      "default": 0
+    },
+    "world_day": {
+      "type": "number",
+      "default": 0
+    },
+    "generation": {
+      "type": "number",
+      "default": 0
+    },
+    "population": {
+      "type": "number",
+      "default": 0
+    },
+    "treasury_balance": {
+      "type": "number",
+      "default": 0
+    },
+    "ledger_mode": {
+      "type": "string",
+      "enum": [
+        "mock",
+        "tn10"
+      ],
+      "default": "mock",
+      "description": "mock = DEVELOPMENT LEDGER"
+    }
+  },
+  "required": [
+    "label"
+  ]
+}

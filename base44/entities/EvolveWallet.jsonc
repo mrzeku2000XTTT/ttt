@@ -1,0 +1,41 @@
+{
+  "name": "EvolveWallet",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string",
+      "description": "Public address only"
+    },
+    "network": {
+      "type": "string",
+      "default": "kaspa-tn10"
+    },
+    "ledger": {
+      "type": "string",
+      "enum": [
+        "mock",
+        "tn10"
+      ],
+      "default": "mock",
+      "description": "mock = DEVELOPMENT LEDGER"
+    },
+    "balance": {
+      "type": "number",
+      "default": 0
+    },
+    "created_day": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "address",
+    "network"
+  ]
+}

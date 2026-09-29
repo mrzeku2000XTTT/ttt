@@ -1,0 +1,44 @@
+{
+  "name": "EvolveSnapshot",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "generation": {
+      "type": "number",
+      "default": 0
+    },
+    "day": {
+      "type": "number",
+      "default": 0
+    },
+    "population": {
+      "type": "number",
+      "default": 0
+    },
+    "treasury": {
+      "type": "number",
+      "default": 0
+    },
+    "total_paid": {
+      "type": "number",
+      "default": 0
+    },
+    "jobs_completed": {
+      "type": "number",
+      "default": 0
+    },
+    "faction_share": {
+      "type": "object",
+      "description": "Territory share per faction, 0..1"
+    },
+    "mean_genome": {
+      "type": "object",
+      "description": "Population mean per trait \u2014 shows which strategies survived"
+    }
+  },
+  "required": [
+    "generation"
+  ]
+}

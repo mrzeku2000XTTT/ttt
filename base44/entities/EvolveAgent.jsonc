@@ -1,0 +1,114 @@
+{
+  "name": "EvolveAgent",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string",
+      "description": "Display id, e.g. A#134"
+    },
+    "name": {
+      "type": "string"
+    },
+    "generation": {
+      "type": "number",
+      "default": 0
+    },
+    "parent_id": {
+      "type": "string"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "lineage_root": {
+      "type": "string",
+      "description": "Genesis ancestor of this lineage"
+    },
+    "faction": {
+      "type": "string",
+      "enum": [
+        "blue",
+        "green",
+        "yellow",
+        "red",
+        "purple",
+        "neutral"
+      ],
+      "default": "neutral"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "wallet_id": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string",
+      "description": "Public testnet address only \u2014 signing material never leaves the backend"
+    },
+    "balance": {
+      "type": "number",
+      "default": 0
+    },
+    "lifetime_earnings": {
+      "type": "number",
+      "default": 0
+    },
+    "lifetime_expenses": {
+      "type": "number",
+      "default": 0
+    },
+    "genome": {
+      "type": "object",
+      "description": "Ten strategy traits, each 0..1"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "working",
+        "moving",
+        "trading",
+        "researching",
+        "defending",
+        "attacking",
+        "reproducing",
+        "archived"
+      ],
+      "default": "idle"
+    },
+    "current_job_id": {
+      "type": "string"
+    },
+    "position": {
+      "type": "object",
+      "description": "{ x, y } tile coordinates"
+    },
+    "assets": {
+      "type": "object",
+      "description": "Owned simulated assets: compute, energy, servers, information"
+    },
+    "age_days": {
+      "type": "number",
+      "default": 0
+    },
+    "fitness": {
+      "type": "number",
+      "default": 0
+    },
+    "reproductions": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "code",
+    "generation"
+  ]
+}

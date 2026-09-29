@@ -1,0 +1,96 @@
+{
+  "name": "EvolveJob",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string",
+      "description": "Display id, e.g. JOB #182"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "RESEARCH",
+        "SUMMARIZATION",
+        "DATA_EXTRACTION",
+        "CLASSIFICATION",
+        "SANDBOXED_CODING",
+        "DOCUMENT_GENERATION",
+        "VERIFICATION"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "brief": {
+      "type": "string",
+      "description": "What the agent must actually produce"
+    },
+    "reward": {
+      "type": "number",
+      "description": "Test KAS paid on verification"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "default": "MEDIUM"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "CLAIMED",
+        "RUNNING",
+        "SUBMITTED",
+        "VERIFYING",
+        "VERIFIED",
+        "PAYMENT_PENDING",
+        "PAID",
+        "FAILED"
+      ],
+      "default": "OPEN"
+    },
+    "verification": {
+      "type": "string",
+      "enum": [
+        "SCHEMA",
+        "TESTS",
+        "MULTI_MODEL",
+        "HUMAN"
+      ],
+      "default": "SCHEMA"
+    },
+    "claimed_by": {
+      "type": "string"
+    },
+    "submission": {
+      "type": "string"
+    },
+    "verification_notes": {
+      "type": "string"
+    },
+    "progress": {
+      "type": "number",
+      "default": 0
+    },
+    "created_day": {
+      "type": "number",
+      "default": 0
+    },
+    "completed_day": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "code",
+    "type",
+    "title",
+    "reward"
+  ]
+}

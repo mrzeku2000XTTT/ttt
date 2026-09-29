@@ -1,0 +1,57 @@
+{
+  "name": "EvolveEvent",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "description": "AGENT_CREATED, JOB_COMPLETED, SIM_ATTACK_SUCCESS, ..."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "ECONOMY",
+        "JOB",
+        "EVOLUTION",
+        "CONFLICT",
+        "ORG",
+        "WORLD",
+        "PAYMENT"
+      ],
+      "default": "WORLD"
+    },
+    "message": {
+      "type": "string"
+    },
+    "actor_id": {
+      "type": "string"
+    },
+    "actor_code": {
+      "type": "string"
+    },
+    "target_id": {
+      "type": "string"
+    },
+    "target_code": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "default": 0
+    },
+    "day": {
+      "type": "number",
+      "default": 0
+    },
+    "clock": {
+      "type": "string",
+      "description": "World clock stamp, e.g. 12:41"
+    }
+  },
+  "required": [
+    "type",
+    "message"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "name": "EvolveWorld",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "number",
+      "description": "World is regenerated deterministically from this seed"
+    },
+    "size": {
+      "type": "string",
+      "enum": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "default": "medium"
+    },
+    "width": {
+      "type": "number"
+    },
+    "height": {
+      "type": "number"
+    },
+    "scarcity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    "ownership": {
+      "type": "string",
+      "description": "Compact per-tile owner grid, one char per tile (0 = neutral, 1-5 = faction index)"
+    },
+    "sculpted": {
+      "type": "string",
+      "description": "Compact per-tile biome override grid, '-' = untouched"
+    },
+    "day": {
+      "type": "number",
+      "default": 0
+    },
+    "resources": {
+      "type": "object",
+      "description": "World resource pool: compute, energy, storage, data, information, materials"
+    },
+    "market": {
+      "type": "object",
+      "description": "Current simulated resource prices"
+    }
+  },
+  "required": [
+    "seed",
+    "width",
+    "height"
+  ]
+}
