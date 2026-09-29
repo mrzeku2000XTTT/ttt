@@ -159,7 +159,7 @@ export default function EvolveApp() {
         <RightIntelPanel cam={cam} setCam={setCam} mapSize={mapSize} onPickEvent={handleEvent} />
       </div>
 
-      <WorldToolbar onOpenJobs={() => open("jobs")} />
+      {playerMode !== "player" && <WorldToolbar onOpenJobs={() => open("jobs")} />}
 
       {/* -------------------------------------------------- player overlays */}
       {engine?.started && showHome && playerMode === "observer" && !enterFlow && (

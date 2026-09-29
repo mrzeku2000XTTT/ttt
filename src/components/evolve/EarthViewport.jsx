@@ -64,6 +64,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   const [mapReady, setMapReady] = useState(false);
   const [labels, setLabels] = useState([]);
   const [showCells, setShowCells] = useState(true);
+  const didFitRef = useRef(false);
 
   /* measure container */
   useEffect(() => {
@@ -114,6 +115,15 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       loadCountries50().then((c50) => addCountryBorders(map, c50, { id: "ev-countries-50", minzoom: 4, color: EVOLVE_COLORS.border, width: 0.6 }));
       loadStates50().then((s50) => addStateBorders(map, s50, { minzoom: 5 }));
       loadPlaces110().then((p) => { places110Ref.current = p; });
+      // On first load / restore, frame the ENTIRE world so the player starts
+      // with a global view, not a clamped corner. Sync the engine cam to match
+      // so the minimap and cam→map effect agree with the fitted view.
+      if (!didFitRef.current) {
+        didFitRef.current = true;
+        map.fitBounds([[-180, -72], [180, 80]], { animate: false });
+        const c = map.getCenter();
+        setCam(viewToCam([c.lat, c.lng], map.getZoom(), world, size));
+      }
     });
     map.on("move", onMove);
     map.on("zoom", onMove);

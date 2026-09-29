@@ -75,7 +75,7 @@
 .ev-metric-label { font-size: 8px; letter-spacing: 0.13em; color: #54657c; text-transform: uppercase; white-space: nowrap; }
 .ev-metric-value { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; }
 .ev-metric-delta { font-size: 9px; font-weight: 700; margin-left: 5px; }
-.ev-clock { display: flex; align-items: center; gap: 6px; padding: 0 12px; flex: none; }
+.ev-clock { display: flex; align-items: center; gap: 6px; padding: 0 140px 0 12px; flex: none; }
 
 /* --------------------------------------------------------------- nav */
 .ev-nav-item {
@@ -205,6 +205,8 @@
   .ev-brand { padding: 0 10px; }
   .ev-brand-mark { font-size: 13px; letter-spacing: 0.16em; }
   .ev-tool { min-width: 54px; padding: 6px; }
+  /* Exit-to-Store pill shrinks to icon-only on phones; reserve less room. */
+  .ev-clock { padding-right: 56px; }
 }
 /* Phone on its side: the HUD and toolbar tighten so the world keeps the height. */
 @media (max-height: 520px) {
