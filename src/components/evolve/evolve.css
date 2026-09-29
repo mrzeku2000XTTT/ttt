@@ -3,6 +3,7 @@
    Everything is scoped under .ev-root so no other app in the store is affected. */
 
 .ev-root {
+  position: relative;
   height: 100vh;
   height: 100dvh;
   display: flex;
@@ -18,7 +19,7 @@
 .ev-root button { font-family: inherit; cursor: pointer; }
 
 /* ------------------------------------------------------------- structure */
-.ev-hud { flex: none; }
+.ev-hud { flex: none; position: relative; z-index: 30; }
 .ev-mid { flex: 1; min-height: 0; display: flex; position: relative; }
 .ev-nav { flex: none; width: 64px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .ev-nav::-webkit-scrollbar { display: none; }
@@ -180,9 +181,11 @@
 .ev-minimap { width: 100%; aspect-ratio: 3 / 2; background: #04080f; border: 1px solid rgba(120,160,200,0.18); border-radius: 4px; display: block; cursor: crosshair; }
 
 /* Compact player stat strip pinned under the HUD. */
+/* Lives in the header flow (below the status bar / dashboard toggle) so it can
+   never land on top of the toggle button. */
 .ev-player-hud {
-  position: absolute; top: 50px; left: 60px; z-index: 15;
-  display: flex; background: rgba(7,11,19,0.88);
+  display: flex; width: fit-content; margin: 6px 0 0 60px;
+  background: rgba(7,11,19,0.88);
   border: 1px solid rgba(120,160,200,0.16); border-radius: 6px;
   backdrop-filter: blur(6px); max-height: 36px; overflow: hidden;
   max-width: calc(100vw - 72px);
@@ -252,7 +255,7 @@
   .ev-nav-item .h-4 { width: 18px; height: 18px; }
   .ev-tools-row { padding: 6px 6px; }
   /* Player HUD spans the free width and scrolls instead of overflowing. */
-  .ev-player-hud { left: 52px; right: 8px; max-width: none; overflow-x: auto; scrollbar-width: none; }
+  .ev-player-hud { width: auto; margin: 6px 8px 0 52px; max-width: none; overflow-x: auto; scrollbar-width: none; }
   .ev-player-hud::-webkit-scrollbar { display: none; }
   /* Wallet address is redundant on a phone — the dashboard shows it in full. */
   .ev-wallet-addr { display: none; }

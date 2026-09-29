@@ -123,6 +123,7 @@ export default function EvolveApp() {
       <div className="ev-hud">
         <TopStatusHUD onMenu={() => open("sim")} onView={setView} onTreasury={() => open("treasury")} />
         <HumanDashboardButton open={showDash} onToggle={() => setShowDash((v) => !v)} />
+        {playerMode === "player" && currentPlayer && <PlayerHUD />}
       </div>
 
       <div className="ev-mid">
@@ -186,10 +187,6 @@ export default function EvolveApp() {
 
       {enterFlow === "CELL" && selectedCountry && (
         <CellSelect onClose={() => setEnterFlow(null)} />
-      )}
-
-      {playerMode === "player" && currentPlayer && (
-        <PlayerHUD />
       )}
 
       {playerMode === "player" && currentPlayer && (
