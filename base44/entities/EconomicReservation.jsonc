@@ -1,0 +1,94 @@
+{
+  "name": "EconomicReservation",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "reservation_key": {
+      "type": "string",
+      "description": "Stable internal id (RES_0001)"
+    },
+    "resource_type": {
+      "type": "string",
+      "description": "compute, energy, servers, storage, information, data, materials"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 0
+    },
+    "seller_actor_id": {
+      "type": "string",
+      "description": "Current owner of the resource"
+    },
+    "seller_code": {
+      "type": "string"
+    },
+    "buyer_actor_id": {
+      "type": "string",
+      "description": "Actor who will receive the resource after settlement"
+    },
+    "buyer_code": {
+      "type": "string"
+    },
+    "price_sompi": {
+      "type": "number",
+      "default": 0,
+      "description": "Agreed price in sompi"
+    },
+    "payment_intent_id": {
+      "type": "string",
+      "description": "Linked EvolvePaymentIntent"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "AVAILABLE",
+        "RESERVED",
+        "TRANSFERRED",
+        "RELEASED",
+        "EXPIRED"
+      ],
+      "default": "RESERVED"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Auto-release if not settled by this time"
+    },
+    "settled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "day": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "reservation_key",
+    "resource_type",
+    "quantity",
+    "seller_actor_id",
+    "buyer_actor_id",
+    "status"
+  ],
+  "rls": {
+    "read": null,
+    "create": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

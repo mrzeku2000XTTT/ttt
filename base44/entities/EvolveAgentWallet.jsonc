@@ -1,0 +1,85 @@
+{
+  "name": "EvolveAgentWallet",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "EvolveAgent agent_key (AGT_0134)"
+    },
+    "agent_code": {
+      "type": "string",
+      "description": "Display code (A#134)"
+    },
+    "wallet_id": {
+      "type": "string",
+      "description": "Internal wallet id (W00001)"
+    },
+    "network": {
+      "type": "string",
+      "default": "kaspa_testnet_10"
+    },
+    "address": {
+      "type": "string",
+      "description": "Public kaspatest: address only \u2014 signing material never stored here"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "funded",
+        "depleted",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "last_known_balance_sompi": {
+      "type": "number",
+      "default": 0,
+      "description": "Cached balance \u2014 blockchain is authoritative, this is a cache only"
+    },
+    "last_balance_check": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "organization_id": {
+      "type": "string",
+      "description": "Org wallet if this belongs to an organization"
+    },
+    "is_treasury": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if this is an experiment or org treasury wallet"
+    }
+  },
+  "required": [
+    "agent_id",
+    "wallet_id",
+    "network",
+    "address"
+  ],
+  "rls": {
+    "read": null,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

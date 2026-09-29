@@ -1,0 +1,96 @@
+{
+  "name": "AgentEconomicPolicy",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "EvolveAgent agent_key, or 'GLOBAL' for experiment-wide defaults"
+    },
+    "agent_code": {
+      "type": "string"
+    },
+    "max_transaction_sompi": {
+      "type": "number",
+      "default": 200000000,
+      "description": "Max single transaction in sompi (2 tKAS default)"
+    },
+    "max_hourly_spend_sompi": {
+      "type": "number",
+      "default": 500000000,
+      "description": "Max spend per hour (5 tKAS)"
+    },
+    "max_daily_spend_sompi": {
+      "type": "number",
+      "default": 2000000000,
+      "description": "Max spend per day (20 tKAS)"
+    },
+    "allowed_purposes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "JOB_PAYMENT",
+        "RESOURCE_PURCHASE",
+        "SERVICE_PAYMENT",
+        "CONTRACT_PAYMENT",
+        "ORG_CONTRIBUTION",
+        "DESCENDANT_FUNDING"
+      ],
+      "description": "Only these purposes are permitted"
+    },
+    "minimum_reserve_sompi": {
+      "type": "number",
+      "default": 10000000,
+      "description": "Agent must keep this reserve (0.1 tKAS)"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "hourly_spent_sompi": {
+      "type": "number",
+      "default": 0,
+      "description": "Running counter \u2014 reset by confirmation tick"
+    },
+    "daily_spent_sompi": {
+      "type": "number",
+      "default": 0,
+      "description": "Running counter \u2014 reset by confirmation tick"
+    },
+    "last_hour_reset": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_day_reset": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "agent_id",
+    "experiment_id",
+    "enabled"
+  ],
+  "rls": {
+    "read": null,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

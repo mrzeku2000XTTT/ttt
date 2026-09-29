@@ -3,7 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { EvolveEngine, DEFAULT_CONFIG } from "./evolveEngine";
 import { evolveRepo } from "./repo";
 import { useScorpionWallet } from "./useScorpionWallet";
-import { settlePlayerPayment } from "./evolvePayment";
+import { preparePayment, broadcastPayment, settleConfirmedPayment, releaseFailedPayment } from "./evolvePayment";
+import { makeIdempotencyKey } from "./paymentIntentService";
+import { useConfirmationWatcher } from "./confirmationWatcher";
+import { TxStatus } from "./txStateMachine";
 import { kasToSompi } from "./evolveTxBuilder";
 import { COUNTRIES, countryByName } from "./countryMap";
 
@@ -37,6 +40,8 @@ export function EvolveProvider({ children }) {
   const [selectedSpawnCell, setSelectedSpawnCell] = useState(null);
   const [cameraMode, setCameraMode] = useState("FREE");
   const [pendingPayment, setPendingPayment] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [pendingTxCount, setPendingTxCount] = useState(0);
 
   const wallet = useScorpionWallet();
 
@@ -330,10 +335,11 @@ export function EvolveProvider({ children }) {
    * Scorpion is NOT opened yet — the user must click "REVIEW IN SCORPION" first.
    */
   const preparePayment = useCallback(
-    ({ toAddress, amountKas, purpose, worldRef, recipient, receive, callbacks }) => {
+    ({ toAddress, amountKas, purpose, worldRef, recipient, receive, callbacks, idempotencySuffix }) => {
       if (!wallet.isTN10) return { ok: false, reason: "WALLET_NOT_TN10" };
       if (!player) return { ok: false, reason: "NO_PLAYER" };
       const amountSompi = kasToSompi(amountKas);
+      const idempotencyKey = makeIdempotencyKey(purpose, worldRef || player.id, idempotencySuffix || "");
       const intent = {
         toAddress,
         amountSompi,
@@ -341,9 +347,10 @@ export function EvolveProvider({ children }) {
         worldRef,
         receive,
         day: engine?.world?.day || 0,
-        sender: { actorId: player.id, code: player.code, address: wallet.address },
+        sender: { actorId: player.id, code: player.code, address: wallet.address, type: "player" },
         recipient,
         callbacks: callbacks || {},
+        idempotencyKey,
       };
       setPendingPayment(intent);
       return { ok: true };
@@ -352,26 +359,135 @@ export function EvolveProvider({ children }) {
   );
 
   const confirmPayment = useCallback(async () => {
-    const intent = pendingPayment;
-    if (!intent) return { ok: false, reason: "NO_PENDING" };
-    const { callbacks } = intent;
-    const res = await settlePlayerPayment({
+    const pending = pendingPayment;
+    if (!pending) return { ok: false, reason: "NO_PENDING" };
+    const { callbacks, idempotencyKey } = pending;
+
+    // 1. Create persistent payment intent (idempotency check).
+    const prepRes = await preparePayment({
+      base44,
+      experimentId,
+      idempotencyKey,
+      sender: pending.sender,
+      recipient: pending.recipient,
+      amountSompi: pending.amountSompi,
+      purpose: pending.purpose,
+      provider: "SCORPION",
+      relatedEntityType: pending.worldRef ? "world_action" : "",
+      relatedEntityId: pending.worldRef || "",
+      settlementData: pending.receive ? { receive: pending.receive } : null,
+      day: pending.day,
+    });
+
+    if (!prepRes.ok) {
+      if (prepRes.reason === "DUPLICATE" && prepRes.existing) {
+        // An in-flight intent already exists — don't create another payment.
+        setPendingPayment(null);
+        setPaymentStatus({
+          intent: prepRes.existing,
+          txId: prepRes.existing.tx_id,
+          status: prepRes.existing.status,
+          receive: pending.receive,
+        });
+        return { ok: false, reason: "DUPLICATE", existing: prepRes.existing };
+      }
+      return prepRes;
+    }
+
+    const intent = prepRes.intent;
+
+    // 2. Broadcast through Scorpion (user signs).
+    const broadcastRes = await broadcastPayment({
       wallet,
       base44,
       experimentId,
-      intent: { ...intent, callbacks: undefined },
-      onSettle: callbacks?.onSettle,
-      onRelease: callbacks?.onRelease,
+      intent: {
+        id: intent.id,
+        sender_actor_id: pending.sender.actorId,
+        sender_code: pending.sender.code,
+        sender_address: pending.sender.address,
+        recipient_actor_id: pending.recipient?.actorId,
+        recipient_code: pending.recipient?.code,
+        recipient_address: pending.toAddress,
+        amount_sompi: pending.amountSompi,
+        purpose: pending.purpose,
+        related_entity_id: pending.worldRef || "",
+        reservation_id: "",
+        idempotency_key: idempotencyKey,
+        day: pending.day,
+      },
+      onBroadcast: (txId) => {
+        setPaymentStatus({
+          intent: { ...intent, tx_id: txId },
+          txId,
+          status: TxStatus.BROADCAST,
+          receive: pending.receive,
+        });
+      },
     });
+
     setPendingPayment(null);
-    return res;
+
+    if (!broadcastRes.ok) {
+      if (callbacks?.onRelease) callbacks.onRelease(broadcastRes);
+      setPaymentStatus({
+        intent: { ...intent, tx_id: broadcastRes.txId },
+        txId: broadcastRes.txId,
+        status: TxStatus.FAILED,
+        receive: pending.receive,
+        onRetry: callbacks?.onRetry,
+      });
+      return broadcastRes;
+    }
+
+    // 3. DO NOT settle here — the confirmation watcher will detect CONFIRMED
+    // and the settlement callback will transfer world resources.
+    return { ok: true, txId: broadcastRes.txId, intent };
   }, [pendingPayment, wallet, experimentId]);
 
   const cancelPayment = useCallback(() => {
-    const intent = pendingPayment;
-    if (intent?.callbacks?.onRelease) intent.callbacks.onRelease({ ok: false, reason: "USER_CANCELLED" });
+    const pending = pendingPayment;
+    if (pending?.callbacks?.onRelease) pending.callbacks.onRelease({ ok: false, reason: "USER_CANCELLED" });
     setPendingPayment(null);
   }, [pendingPayment]);
+
+  // Settlement callback — called by the confirmation watcher when a payment is CONFIRMED.
+  const handleSettled = useCallback(async (intent, confirmResult) => {
+    const pending = pendingPayment;
+    // Apply world state changes (resource transfer, balance update, etc.)
+    const callbacks = pending?.callbacks;
+    if (callbacks?.onSettle) {
+      await callbacks.onSettle(intent, confirmResult);
+    }
+    // Mark as SETTLED via backend function.
+    try {
+      await base44.functions.invoke("evolveSettleTx", {
+        experimentId,
+        intentId: intent.id,
+        eventMetadata: { amountLabel: `${intent.amount_sompi} sompi` },
+      });
+    } catch (e) {
+      // Non-fatal — settlement is best-effort.
+    }
+    setPaymentStatus((prev) => prev ? { ...prev, status: TxStatus.SETTLED } : null);
+  }, [pendingPayment, experimentId]);
+
+  const handleFailed = useCallback(async (intent, failResult) => {
+    const pending = pendingPayment;
+    const callbacks = pending?.callbacks;
+    if (callbacks?.onRelease) {
+      await callbacks.onRelease(failResult);
+    }
+    setPaymentStatus((prev) => prev ? { ...prev, status: TxStatus.FAILED } : null);
+  }, [pendingPayment]);
+
+  // Confirmation watcher — polls pending intents and checks TN10 status.
+  useConfirmationWatcher({
+    experimentId,
+    enabled: !!experimentId && !!player,
+    onSettled: handleSettled,
+    onFailed: handleFailed,
+  });
 
   /* --------------------------------------------------- derived state */
   const playerNotifications = player?.notifications || [];
@@ -424,6 +540,9 @@ export function EvolveProvider({ children }) {
     cancelPayment,
     pendingPayment,
     setPendingPayment,
+    paymentStatus,
+    setPaymentStatus,
+    pendingTxCount,
   };
 
   return <EvolveContext.Provider value={value}>{children}</EvolveContext.Provider>;

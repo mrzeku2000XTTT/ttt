@@ -1,0 +1,98 @@
+{
+  "name": "AgentEconomicMemory",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "EvolveAgent agent_key"
+    },
+    "agent_code": {
+      "type": "string"
+    },
+    "jobs_won": {
+      "type": "number",
+      "default": 0
+    },
+    "jobs_lost": {
+      "type": "number",
+      "default": 0
+    },
+    "total_payments_sent_sompi": {
+      "type": "number",
+      "default": 0
+    },
+    "total_payments_received_sompi": {
+      "type": "number",
+      "default": 0
+    },
+    "resource_purchases": {
+      "type": "number",
+      "default": 0
+    },
+    "resource_sales": {
+      "type": "number",
+      "default": 0
+    },
+    "contracts_completed": {
+      "type": "number",
+      "default": 0
+    },
+    "contracts_failed": {
+      "type": "number",
+      "default": 0
+    },
+    "total_profit_sompi": {
+      "type": "number",
+      "default": 0
+    },
+    "total_operating_costs_sompi": {
+      "type": "number",
+      "default": 0
+    },
+    "counterparties": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [],
+      "description": "Summary of interactions with other actors: { actorId, code, count, totalSompi, lastTick }"
+    },
+    "price_observations": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [],
+      "description": "Recent price observations: { resource, price, tick }"
+    },
+    "last_updated_tick": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "agent_id",
+    "experiment_id"
+  ],
+  "rls": {
+    "read": null,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

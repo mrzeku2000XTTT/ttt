@@ -1,0 +1,162 @@
+{
+  "name": "EvolvePaymentIntent",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Unique key: TRADE:{id}:PAYMENT, JOB:{id}:REWARD, etc. Prevents duplicate payments."
+    },
+    "sender_actor_id": {
+      "type": "string"
+    },
+    "sender_actor_type": {
+      "type": "string",
+      "enum": [
+        "player",
+        "agent",
+        "treasury",
+        "org"
+      ],
+      "default": "player"
+    },
+    "sender_code": {
+      "type": "string"
+    },
+    "sender_address": {
+      "type": "string",
+      "description": "kaspatest: sender address"
+    },
+    "recipient_actor_id": {
+      "type": "string"
+    },
+    "recipient_actor_type": {
+      "type": "string",
+      "enum": [
+        "player",
+        "agent",
+        "treasury",
+        "org"
+      ],
+      "default": "agent"
+    },
+    "recipient_code": {
+      "type": "string"
+    },
+    "recipient_address": {
+      "type": "string",
+      "description": "kaspatest: recipient address"
+    },
+    "amount_sompi": {
+      "type": "number",
+      "default": 0,
+      "description": "KAS amount in sompi (integer)"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "JOB_PAYMENT, RESOURCE_PURCHASE, SERVICE_PAYMENT, CONTRACT_PAYMENT, ORG_CONTRIBUTION, DESCENDANT_FUNDING, GENESIS_FUNDING, BUILD"
+    },
+    "related_entity_type": {
+      "type": "string",
+      "description": "job, trade, contract, reservation, etc."
+    },
+    "related_entity_id": {
+      "type": "string"
+    },
+    "reservation_id": {
+      "type": "string",
+      "description": "EconomicReservation id if resources are reserved"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "SCORPION",
+        "AGENT_WALLET",
+        "TREASURY"
+      ],
+      "default": "SCORPION"
+    },
+    "network": {
+      "type": "string",
+      "default": "kaspa_testnet_10"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "CREATED",
+        "AWAITING_SIGNATURE",
+        "SIGNED",
+        "BROADCAST",
+        "CONFIRMING",
+        "CONFIRMED",
+        "SETTLED",
+        "FAILED",
+        "CANCELLED",
+        "EXPIRED"
+      ],
+      "default": "CREATED"
+    },
+    "tx_id": {
+      "type": "string",
+      "description": "On-chain txid once broadcast"
+    },
+    "chain_tx_id": {
+      "type": "string",
+      "description": "EvolveChainTx record id"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "broadcast_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "settled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "error_code": {
+      "type": "string"
+    },
+    "error_message": {
+      "type": "string"
+    },
+    "settlement_data": {
+      "type": "object",
+      "description": "Opaque payload for settlement (resource transfers, job refs, etc.)"
+    },
+    "day": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "idempotency_key",
+    "sender_actor_id",
+    "recipient_actor_id",
+    "amount_sompi",
+    "purpose",
+    "status"
+  ],
+  "rls": {
+    "read": null,
+    "create": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

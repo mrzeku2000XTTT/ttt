@@ -18,7 +18,8 @@
       "enum": [
         "SCORPION",
         "KASWARE",
-        "EXPERIMENT_SIGNER"
+        "EXPERIMENT_SIGNER",
+        "AGENT_WALLET"
       ],
       "default": "SCORPION"
     },
@@ -49,29 +50,63 @@
     },
     "purpose": {
       "type": "string",
-      "description": "EVOLVE economic purpose: TRADE, JOB_PAYMENT, ORG_CONTRIBUTION, HIRE_AI, BUILD"
+      "description": "EVOLVE economic purpose: TRADE, JOB_PAYMENT, ORG_CONTRIBUTION, HIRE_AI, BUILD, RESOURCE_PURCHASE, SERVICE_PAYMENT, CONTRACT_PAYMENT, DESCENDANT_FUNDING, GENESIS_FUNDING"
     },
     "world_ref": {
       "type": "string",
       "description": "Optional EVOLVE object reference (job id, trade id, contract id)"
     },
+    "payment_intent_id": {
+      "type": "string",
+      "description": "Link to EvolvePaymentIntent record"
+    },
+    "reservation_id": {
+      "type": "string",
+      "description": "Link to EconomicReservation record"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Unique key preventing duplicate payments"
+    },
     "status": {
       "type": "string",
       "enum": [
+        "CREATED",
+        "AWAITING_SIGNATURE",
+        "SIGNED",
         "BROADCAST",
         "CONFIRMING",
         "CONFIRMED",
+        "SETTLED",
         "FAILED",
-        "CANCELLED"
+        "CANCELLED",
+        "EXPIRED"
       ],
-      "default": "BROADCAST"
+      "default": "CREATED"
     },
     "confirmations": {
       "type": "number",
       "default": 0
     },
+    "required_confirmations": {
+      "type": "number",
+      "default": 1,
+      "description": "TN10 confirmations needed for settlement"
+    },
     "error": {
       "type": "string"
+    },
+    "broadcast_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "settled_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "day": {
       "type": "number",

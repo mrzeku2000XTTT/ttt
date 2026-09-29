@@ -10,15 +10,17 @@
 import React from "react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { ScorpionConnectionState as State } from "@/lib/evolve/scorpionAdapter";
+import { TxStatus } from "@/lib/evolve/txStateMachine";
 
 export default function PlayerWalletBar({ onActivity }) {
-  const { wallet } = useEvolve();
+  const { wallet, paymentStatus, pendingTxCount } = useEvolve();
 
   if (wallet.connState === State.DISCONNECTED || wallet.connState === State.CONNECTING) return null;
 
   const tn10 = wallet.isTN10;
   const addr = wallet.address || "";
   const shortAddr = addr ? `${addr.slice(0, 12)}…${addr.slice(-4)}` : "";
+  const hasPending = paymentStatus && [TxStatus.BROADCAST, TxStatus.CONFIRMING].includes(paymentStatus.status);
 
   return (
     <div style={barStyle(tn10)}>
@@ -37,6 +39,12 @@ export default function PlayerWalletBar({ onActivity }) {
           <span style={{ fontSize: 10.5, color: "#eef3f9", fontWeight: 700, marginLeft: 4 }}>
             {wallet.balanceKasShort} tKAS
           </span>
+        )}
+        {hasPending && (
+          <button style={pendingBtn} onClick={onActivity} title="Pending transactions">
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22d3ee", boxShadow: "0 0 4px #22d3ee", animation: "ev-pulse 1s infinite" }} />
+            PENDING
+          </button>
         )}
       </div>
       <div style={{ display: "flex", gap: 4 }}>
@@ -78,4 +86,10 @@ const miniBtn = {
   padding: "3px 7px",
   borderRadius: 4,
   cursor: "pointer",
+};
+const pendingBtn = {
+  display: "flex", alignItems: "center", gap: 4,
+  background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.35)",
+  color: "#22d3ee", fontSize: 8, letterSpacing: "0.1em", fontWeight: 700,
+  padding: "2px 6px", borderRadius: 3, cursor: "pointer",
 };

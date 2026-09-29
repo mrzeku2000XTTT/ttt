@@ -2,134 +2,171 @@
  * evolvePayment — orchestrates the EVOLVE economic flow through Scorpion.
  *
  *   EVOLVE BUILDS → SCORPION SIGNS → KASPA TN10 BROADCASTS → EVOLVE OBSERVES TX
- *   → WORLD ENGINE SETTLES ACTION
+ *   → CONFIRMATION WATCHER → CONFIRMED → WORLD ENGINE SETTLES
  *
- * EVOLVE determines who pays, who receives, the amount, and the economic purpose.
- * Scorpion only approves and signs. We NEVER auto-sign human transactions.
+ * CRITICAL: A TXID means BROADCAST, not settlement.
+ * World resources transfer ONLY after TN10 confirmation (CONFIRMED / SETTLED).
  *
- * Game resources transfer ONLY after successful settlement (txid recorded + confirmed).
- * If the user cancels in Scorpion, reservations are released and nothing transfers.
+ * Flow:
+ *   1. Create payment intent (idempotency check)
+ *   2. Reserve game resources (if applicable)
+ *   3. Show preview to user
+ *   4. Scorpion signs + broadcasts → TXID
+ *   5. Record chain tx, update intent to BROADCAST
+ *   6. Confirmation watcher polls TN10 → CONFIRMED
+ *   7. Settlement service transfers world resources → SETTLED
+ *
+ * If the user cancels in Scorpion, the intent is CANCELLED and reservations
+ * are released. Nothing transfers.
  */
+
+import { TxStatus } from "./txStateMachine";
+import {
+  createPaymentIntent,
+  linkBroadcast,
+  markCancelled,
+  markFailed,
+  updateIntentStatus,
+} from "./paymentIntentService";
+import { recordChainTx } from "./chainTxRecorder";
 
 /**
- * Execute a simple KAS payment through Scorpion's sendKaspa (user-confirmed).
- * Returns { ok, txId } on broadcast, or { ok:false, reason } on cancel/failure.
- *
- * `onPreview` is called BEFORE opening Scorpion so the UI can show the review sheet.
- * `onBroadcast` is called with the txId once Scorpion returns it.
+ * Prepare a payment: create the intent + reservation, then show preview.
+ * Does NOT open Scorpion yet.
  */
-export async function payWithScorpion({ wallet, intent, onPreview, onBroadcast }) {
-  if (!wallet?.isTN10) {
-    return { ok: false, reason: "WALLET_NOT_TN10" };
-  }
-  if (!intent || !intent.toAddress || !intent.amountSompi) {
-    return { ok: false, reason: "BAD_INTENT" };
-  }
-  // Show the review sheet in EVOLVE before opening Scorpion.
-  if (onPreview) onPreview(intent);
-
-  wallet.setConnState("SIGNING");
-  wallet.setBusy(true);
-  let result;
-  try {
-    result = await wallet.adapter.sendKaspa({
-      to: intent.toAddress,
-      amountSompi: intent.amountSompi,
-    });
-  } catch (e) {
-    wallet.setConnState("CONNECTED_TN10");
-    wallet.setBusy(false);
-    // User cancelled or rejected in Scorpion.
-    const reason = e?.message?.toLowerCase?.().includes("reject") ? "USER_CANCELLED" : "SIGN_FAILED";
-    return { ok: false, reason, error: e };
-  }
-  const { txId } = result;
-  wallet.setConnState("BROADCASTING");
-  if (onBroadcast) onBroadcast(txId);
-  wallet.setConnState("CONNECTED_TN10");
-  wallet.setBusy(false);
-  // Refresh balance after a short delay so the broadcast settles.
-  setTimeout(() => wallet.silentRefresh(wallet.address).catch(() => {}), 1500);
-  return { ok: true, txId };
-}
-
-/**
- * Record a broadcast transaction to the EvolveChainTx entity for settlement tracking.
- * The confirmation worker (engine tick) updates status to CONFIRMED.
- */
-export async function recordChainTx({
+export async function preparePayment({
   base44,
   experimentId,
-  txId,
+  idempotencyKey,
   sender,
   recipient,
   amountSompi,
   purpose,
-  worldRef,
-  day,
+  provider = "SCORPION",
+  relatedEntityType = "",
+  relatedEntityId = "",
+  reservationId = "",
+  settlementData = null,
+  day = 0,
 }) {
-  if (!base44?.entities?.EvolveChainTx) return null;
-  try {
-    return await base44.entities.EvolveChainTx.create({
-      experiment_id: experimentId || "",
-      txid: txId,
-      network: "kaspa_testnet_10",
-      provider: "SCORPION",
-      sender_actor_id: sender?.actorId || "",
-      sender_code: sender?.code || "",
-      sender_address: sender?.address || "",
-      recipient_actor_id: recipient?.actorId || "",
-      recipient_code: recipient?.code || "",
-      recipient_address: recipient?.address || "",
-      amount_sompi: Number(amountSompi.toString()),
-      purpose,
-      world_ref: worldRef || "",
-      status: "BROADCAST",
-      confirmations: 0,
-      day: day || 0,
-    });
-  } catch (e) {
-    console.warn("EVOLVE: could not record chain tx", e);
-    return null;
+  const intentRes = await createPaymentIntent({
+    experimentId,
+    idempotencyKey,
+    sender,
+    recipient,
+    amountSompi,
+    purpose,
+    provider,
+    relatedEntityType,
+    relatedEntityId,
+    reservationId,
+    settlementData,
+    day,
+  });
+
+  if (!intentRes.ok) {
+    return intentRes; // { ok: false, reason: "DUPLICATE", existing }
   }
+
+  return { ok: true, intent: intentRes.intent };
 }
 
 /**
- * Full economic settlement for a player action that costs KAS.
+ * Execute the Scorpion signing + broadcast phase.
+ * This is called AFTER the user clicks "REVIEW IN SCORPION" in the preview.
  *
- * 1. Reserve the game-side resource (caller does this before calling).
- * 2. Show preview.
- * 3. Scorpion signs + broadcasts.
- * 4. Record txid.
- * 5. On success, settle the world action (onSettle callback).
- * 6. On cancel/failure, release the reservation (onRelease callback).
+ * Returns { ok: true, txId, intent } on broadcast, or { ok: false, reason } on cancel/failure.
+ * World resources are NOT transferred here — only after confirmation.
  */
-export async function settlePlayerPayment({
-  wallet,
-  base44,
-  experimentId,
-  intent, // { toAddress, amountSompi, purpose, worldRef, sender, recipient }
-  onSettle,
-  onRelease,
-  onPreview,
-  onBroadcast,
-}) {
-  const res = await payWithScorpion({ wallet, intent, onPreview, onBroadcast });
-  if (!res.ok) {
-    if (onRelease) onRelease(res);
-    return res;
+export async function broadcastPayment({ wallet, base44, experimentId, intent, reservation, onBroadcast }) {
+  if (!wallet?.isTN10) return { ok: false, reason: "WALLET_NOT_TN10" };
+  if (!intent) return { ok: false, reason: "NO_INTENT" };
+
+  // Update intent to AWAITING_SIGNATURE.
+  await updateIntentStatus(intent.id, TxStatus.AWAITING_SIGNATURE);
+
+  wallet.setConnState("SIGNING");
+  wallet.setBusy(true);
+
+  let result;
+  try {
+    result = await wallet.adapter.sendKaspa({
+      to: intent.recipient_address,
+      amountSompi: intent.amount_sompi,
+    });
+  } catch (e) {
+    wallet.setConnState("CONNECTED_TN10");
+    wallet.setBusy(false);
+    const reason = e?.message?.toLowerCase?.().includes("reject") ? "USER_CANCELLED" : "SIGN_FAILED";
+    if (reason === "USER_CANCELLED") {
+      await markCancelled(intent.id);
+    } else {
+      await markFailed(intent.id, reason, e?.message || "");
+    }
+    return { ok: false, reason, error: e, intent };
   }
-  await recordChainTx({
+
+  const { txId } = result;
+  wallet.setConnState("BROADCASTING");
+
+  // Record the chain tx.
+  const chainTx = await recordChainTx({
     base44,
     experimentId,
-    txId: res.txId,
-    sender: intent.sender,
-    recipient: intent.recipient,
-    amountSompi: intent.amountSompi,
+    txId,
+    sender: { actorId: intent.sender_actor_id, code: intent.sender_code, address: intent.sender_address },
+    recipient: { actorId: intent.recipient_actor_id, code: intent.recipient_code, address: intent.recipient_address },
+    amountSompi: intent.amount_sompi,
     purpose: intent.purpose,
-    worldRef: intent.worldRef,
+    worldRef: intent.related_entity_id,
+    paymentIntentId: intent.id,
+    reservationId: intent.reservation_id,
+    idempotencyKey: intent.idempotency_key,
     day: intent.day,
   });
-  if (onSettle) onSettle(res.txId);
-  return { ok: true, txId: res.txId };
+
+  // Link the broadcast to the intent.
+  await linkBroadcast(intent.id, txId, chainTx?.id || "");
+
+  if (onBroadcast) onBroadcast(txId, intent);
+
+  wallet.setConnState("CONNECTED_TN10");
+  wallet.setBusy(false);
+
+  // Refresh balance after a short delay.
+  setTimeout(() => wallet.silentRefresh(wallet.address).catch(() => {}), 1500);
+
+  // DO NOT settle here. The confirmation watcher will handle that.
+  return { ok: true, txId, intent, chainTx };
+}
+
+/**
+ * Settle a confirmed payment — transfer world resources.
+ * Called by the settlement service after the confirmation watcher detects CONFIRMED.
+ */
+export async function settleConfirmedPayment({ base44, experimentId, intent, onSettle }) {
+  await updateIntentStatus(intent.id, TxStatus.CONFIRMED, {
+    confirmed_at: new Date().toISOString(),
+  });
+
+  if (onSettle) {
+    await onSettle(intent);
+  }
+
+  await updateIntentStatus(intent.id, TxStatus.SETTLED, {
+    settled_at: new Date().toISOString(),
+  });
+
+  return { ok: true };
+}
+
+/**
+ * Release a failed/cancelled payment — release reservations.
+ * Called when the payment fails or the user cancels.
+ */
+export async function releaseFailedPayment({ intent, onRelease }) {
+  if (onRelease) {
+    await onRelease(intent);
+  }
+  return { ok: true };
 }

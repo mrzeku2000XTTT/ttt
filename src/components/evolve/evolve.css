@@ -214,3 +214,16 @@
   .ev-tool { padding: 5px 6px; min-width: 54px; }
   .ev-tools-row { padding: 5px 6px; }
 }
+
+/* Payment pulse animation — used by confirmation indicators and world map pulses. */
+@keyframes ev-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+@keyframes ev-payment-pulse {
+  0% { stroke-dashoffset: 0; opacity: 0.9; }
+  100% { stroke-dashoffset: -40; opacity: 0; }
+}
+.ev-payment-line {
+  animation: ev-payment-pulse 1.5s ease-out forwards;
+}
