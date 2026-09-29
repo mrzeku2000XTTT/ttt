@@ -1321,5 +1321,5 @@ export class EvolveEngine {
 export const WORLD_SIZE_KEYS = Object.keys(WORLD_SIZES);
 export const RESOURCE_KEYS = RESOURCE_IDS;
 export const ASSET_KINDS = Object.keys(BUILD_STATS);
-export const clampFaction = (f) => (FACTIONS.some((x) => x.id === f) ? f : "neutral");
+export const clampFaction = (f) => (typeof f === "string" && f !== "neutral" ? f : "neutral");
 export { clamp01 };
