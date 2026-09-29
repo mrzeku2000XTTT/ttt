@@ -1,6 +1,6 @@
 import React from "react";
 import { Mountain, Waves, Trees, Landmark, Pickaxe, Cpu, Zap, Server, Building2, Briefcase, Flag, Crosshair, Shield, ArrowLeftRight, Eye } from "lucide-react";
-import { TOOLS, BIOMES, FACTIONS } from "@/lib/evolve/constants";
+import { TOOLS, BIOMES, orgColor } from "@/lib/evolve/constants";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 
 const ICONS = {
@@ -51,17 +51,21 @@ export default function WorldToolbar({ onOpenJobs }) {
               </button>
             ))}
           {needsFaction &&
-            FACTIONS.map((f) => (
+            engine.orgs.length > 0 &&
+            engine.orgs.slice(0, 8).map((org) => (
               <button
-                key={f.id}
-                className={`ev-chip ${engine.paintFaction === f.id ? "is-on" : ""}`}
-                onClick={() => engine.setPaintFaction(f.id)}
+                key={org.id}
+                className={`ev-chip ${engine.paintFaction === org.id ? "is-on" : ""}`}
+                onClick={() => engine.setPaintFaction(org.id)}
                 style={{ flex: "none" }}
               >
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: f.color }} />
-                {f.label}
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: org.color || orgColor(org.id) }} />
+                {org.name}
               </button>
             ))}
+          {needsFaction && engine.orgs.length === 0 && (
+            <span style={{ fontSize: 8.5, color: "#54657c", letterSpacing: "0.08em", padding: "0 6px" }}>No organizations yet</span>
+          )}
         </div>
       )}
 

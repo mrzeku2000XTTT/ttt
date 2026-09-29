@@ -2,7 +2,7 @@ import React from "react";
 import { Shield, Crosshair } from "lucide-react";
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
-import { factionColor, fmt } from "@/lib/evolve/constants";
+import { orgColor, fmt } from "@/lib/evolve/constants";
 
 /** AssetInspector — a single simulated world object and its condition. */
 export default function AssetInspector({ simId, onClose, onAttack, onFortify }) {
@@ -17,7 +17,7 @@ export default function AssetInspector({ simId, onClose, onAttack, onFortify }) 
     <PanelShell title={asset.sim_id} subtitle={`${asset.kind.toUpperCase()} · built day ${asset.built_day}`} onClose={onClose} width={320}>
       <div className="ev-section">
         <div className="ev-grid2">
-          <Stat label="Faction" value={asset.faction.toUpperCase()} color={factionColor(asset.faction)} />
+          <Stat label="Owner" value={asset.org_slot > 0 && engine.world.orgSlots?.[asset.org_slot] ? (engine.orgs.find((o) => o.id === engine.world.orgSlots[asset.org_slot])?.name || "Org") : "Unowned"} color={asset.org_slot > 0 && engine.world.orgSlots?.[asset.org_slot] ? orgColor(engine.world.orgSlots[asset.org_slot]) : "#94a3b8"} />
           <Stat label="Level" value={asset.level} />
           <Stat label="Value" value={asset.value} />
           <Stat label="Defence" value={Math.round(asset.defense)} />

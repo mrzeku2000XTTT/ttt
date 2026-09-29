@@ -40,7 +40,7 @@ export default function AgentInspector({ agentId, onClose, onLineage }) {
           <div className="ev-section">
             <div className="ev-grid2">
               <Stat label="Status" value={agent.status.toUpperCase()} color={agent.status === "working" ? "#22d3ee" : "#eef3f9"} />
-              <Stat label="Faction" value={agent.faction.toUpperCase()} />
+              <Stat label="Organization" value={agent.organization_id ? (engine.orgs.find((o) => o.id === agent.organization_id)?.name || "—") : "Independent"} />
               <Stat label="Generation" value={agent.generation} />
               <Stat label="Age" value={`${agent.age_days.toFixed(1)} days`} />
             </div>

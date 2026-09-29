@@ -3,7 +3,7 @@ import { Handshake, Swords } from "lucide-react";
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { organizationStanding } from "@/lib/evolve/organizationService";
-import { factionColor, fmt } from "@/lib/evolve/constants";
+import { orgColor, fmt } from "@/lib/evolve/constants";
 
 /** Organizations: shared treasury, territory, reputation, alliances and rivals. */
 export default function OrganizationInspector({ orgId, onClose, onSelectAgent }) {
@@ -19,7 +19,7 @@ export default function OrganizationInspector({ orgId, onClose, onSelectAgent })
     <PanelShell title={org.name} subtitle={`${org.id} · founded day ${org.founded_day}`} onClose={onClose} width={344}>
       <div className="ev-section">
         <div className="ev-grid2">
-          <Stat label="Faction" value={org.faction.toUpperCase()} color={factionColor(org.faction)} />
+          <Stat label="Color" value={org.name} color={org.color || orgColor(org.id)} />
           <Stat label="Standing" value={standing.standing.toFixed(1)} />
           <Stat label="Members" value={standing.memberCount} />
           <Stat label="Member wealth" value={`${fmt(standing.wealth)}`} color="#34d399" />
