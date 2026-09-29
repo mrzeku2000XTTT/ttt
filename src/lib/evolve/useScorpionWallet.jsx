@@ -5,6 +5,8 @@
  *               → SIGNING → BROADCASTING → back to CONNECTED_TN10.
  *
  * On reload, silently restores a previously-approved session without re-prompting.
+ * Listens for live SDK events (accountsChanged / networkChanged / disconnect) so the
+ * dashboard reacts when the user connects inside the wallet popup itself.
  * Exposes the adapter, connection state, address, balance (sompi BigInt), and
  * the payment orchestrator. Private keys never enter this layer.
  */
@@ -98,9 +100,89 @@ export function useScorpionWallet() {
   /** KIP-12 provider discovery. */
   useEffect(() => {
     return discoverProviders((p) => {
-      setProviders((prev) => (prev.find((x) => x.rdns === p.rdns) ? prev : [...prev, p]));
+      setProviders((prev) => (prev.find((x) => x.rds === p.rdns) ? prev : [...prev, p]));
     });
   }, []);
+
+  /**
+   * Listen for live SDK events so the dashboard reacts when the user
+   * connects / switches network inside the wallet popup — without needing
+   * to click CONNECT SCORPION again here.
+   */
+  useEffect(() => {
+    let off = () => {};
+    let mounted = true;
+    (async () => {
+      try {
+        const kcc = await scorpion._sdk();
+        if (!mounted || !kcc?.on) return;
+        const onAccounts = (accts) => {
+          const addr = Array.isArray(accts) && accts[0];
+          if (addr && isTN10Address(addr)) {
+            setAddress(addr);
+            setConnState(State.CONNECTED_TN10);
+            saveSession({ address: addr, connectedAt: Date.now() });
+            silentRefresh(addr);
+          } else if (!accts?.length) {
+            saveSession(null);
+            setAddress("");
+            setConnState(State.DISCONNECTED);
+          }
+        };
+        const onNetwork = (net) => {
+          setNetwork(net);
+          setConnState(isTN10Network(net) ? State.CONNECTED_TN10 : State.CONNECTED_WRONG_NETWORK);
+        };
+        const onDisconnect = () => {
+          saveSession(null);
+          setAddress("");
+          setNetwork("");
+          setBalance({ confirmed: 0n, unconfirmed: 0n });
+          setConnState(State.DISCONNECTED);
+        };
+        kcc.on("accountsChanged", onAccounts);
+        kcc.on("networkChanged", onNetwork);
+        kcc.on("disconnect", onDisconnect);
+        off = () => {
+          try { kcc.off?.("accountsChanged", onAccounts); } catch {}
+          try { kcc.off?.("networkChanged", onNetwork); } catch {}
+          try { kcc.off?.("disconnect", onDisconnect); } catch {}
+        };
+      } catch {}
+    })();
+    return () => { mounted = false; off(); };
+  }, [silentRefresh]);
+
+  /**
+   * While disconnected, periodically probe the SDK for a session that was
+   * established in the wallet popup. Some KCC20 flows connect the wallet
+   * without an explicit dApp connect() call, so we poll until we see it.
+   */
+  useEffect(() => {
+    if (connState === State.CONNECTED_TN10 || connState === State.CONNECTING) return undefined;
+    let stopped = false;
+    const probe = async () => {
+      try {
+        const accts = await scorpion.silentAccounts();
+        if (stopped) return;
+        const addr = accts?.[0];
+        if (addr && isTN10Address(addr)) {
+          const net = await scorpion.getNetwork();
+          if (stopped) return;
+          if (isTN10Network(net)) {
+            setAddress(addr);
+            setNetwork(net);
+            setConnState(State.CONNECTED_TN10);
+            saveSession({ address: addr, connectedAt: Date.now() });
+            silentRefresh(addr);
+          }
+        }
+      } catch {}
+    };
+    const iv = setInterval(probe, 3000);
+    probe();
+    return () => { stopped = true; clearInterval(iv); };
+  }, [connState, silentRefresh]);
 
   /** Poll balance every 20s while connected. */
   useEffect(() => {
