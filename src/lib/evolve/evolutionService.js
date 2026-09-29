@@ -7,7 +7,7 @@ import { OPERATING_COSTS } from "./agentEngine";
  */
 
 export const REPRODUCTION_REQUIREMENTS = {
-  minWealth: 14,
+  minWealth: 22,
   minAgeDays: 6,
   minCompute: 3,
   minEnergy: 3,

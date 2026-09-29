@@ -18,7 +18,7 @@ export default function AttackPlanner({ simId, onClose }) {
   const asset = engine?.world.findAsset(simId);
   const candidates = useMemo(
     () => (engine ? [...engine.agents.filter((a) => a.status !== "archived")].sort((a, b) => b.fitness - a.fitness) : []),
-    [engine]
+    [engine, engine?.tickCount]
   );
   if (!asset) return null;
   const actor = engine.agentById.get(actorId) || candidates[0];

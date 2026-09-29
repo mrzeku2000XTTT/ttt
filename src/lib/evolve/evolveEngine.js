@@ -23,6 +23,8 @@ import { FACTIONS, TOOLS, RESOURCE_IDS, WORLD_SIZES, BUILD_STATS } from "./const
 const ACTIONS_PER_TICK = 48;
 const TICKS_PER_DAY = 8;
 const TREASURY_SEED_MULTIPLIER = 3;
+/* External research grants — the money supply that keeps verified work payable. */
+const TREASURY_GRANT_PER_DAY = 140;
 
 export const DEFAULT_CONFIG = {
   label: "EVOLVE-01",
@@ -190,7 +192,7 @@ export class EvolveEngine {
     for (let i = 0; i < 400; i += 1) {
       const x = Math.floor(this.rng() * this.world.width);
       const y = Math.floor(this.rng() * this.world.height);
-      if (this.world.tile(x, y).buildable) return { x, y };
+      if (this.world.isBuildable(x, y)) return { x, y };
     }
     return { x: Math.floor(this.world.width / 2), y: Math.floor(this.world.height / 2) };
   }
@@ -238,7 +240,21 @@ export class EvolveEngine {
   tick(quiet = false) {
     this.tickCount += 1;
     const rng = this.rng;
+    const dayBefore = this.world.day;
     this.world.produce(rng);
+    if (this.world.day !== dayBefore) {
+      this.treasury.balance = Number((this.treasury.balance + TREASURY_GRANT_PER_DAY).toFixed(2));
+      this.kaspa.credit(this.treasury.address, TREASURY_GRANT_PER_DAY);
+      if (!quiet) {
+        this.emit({
+          type: "TREASURY_GRANT",
+          category: "ECONOMY",
+          message: `Research grant received · +${TREASURY_GRANT_PER_DAY} tKAS`,
+          amount: TREASURY_GRANT_PER_DAY,
+        });
+        this.maybePostJob();
+      }
+    }
 
     // Ledger confirmations are wall-clock driven and never accelerated.
     const confirmed = this.kaspa.tick();
@@ -263,9 +279,6 @@ export class EvolveEngine {
     this.chargeUpkeep();
     this.rebalanceFactions();
 
-    if (this.world.dayTicks === 0 && !quiet) {
-      this.maybePostJob();
-    }
     if (!quiet && this.tickCount % 240 === 0) this.snapshot();
     this.notify(true);
   }
@@ -1043,7 +1056,7 @@ export class EvolveEngine {
     if (world?.market) this.world.market = { ...this.world.market, ...world.market };
 
     this.world.assets = assets.map((a) => ({ ...a }));
-    this.world.assetById = new Map(this.world.assets.map((a) => [a.sim_id, a]));
+    this.world.reindexAssets();
     this.world.syncAssetSeq();
 
     this.evolution = new EvolutionService({ world: this.world, mutationRate: this.config.mutation_rate, rng: this.rng });

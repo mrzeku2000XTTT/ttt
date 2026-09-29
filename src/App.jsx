@@ -243,6 +243,7 @@ import TalkStickPage from './pages/TalkStick';
 import TalkStickStudioPage from './pages/TalkStickStudio';
 import NudgePage from './pages/Nudge';
 import NudgeStudioPage from './pages/NudgeStudio';
+import EvolvePage from './pages/Evolve';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -411,6 +412,7 @@ const AuthenticatedApp = () => {
       <Route path="/TalkStickStudio" element={<TalkStickStudioPage />} />
       <Route path="/Nudge" element={<NudgePage />} />
       <Route path="/NudgeStudio" element={<NudgeStudioPage />} />
+      <Route path="/Evolve" element={<EvolvePage />} />
       <Route path="/Hybrid" element={<HybridPage />} />
       <Route path="/ORINLanding" element={<ORINLandingPage />} />
       <Route path="/ORIN" element={<ORINPage />} />

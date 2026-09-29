@@ -89,7 +89,7 @@ export function decide(agent, ctx) {
   const roll = rng();
 
   // Reproduction is a real economic decision — it costs and it needs headroom.
-  if (agent.balance > 14 && agent.age_days > 6 && agent.reproductions < 4 && roll < 0.05 + g.investment * 0.06) {
+  if (agent.balance > 22 && agent.age_days > 6 && agent.reproductions < 3 && roll < 0.02 + g.investment * 0.03) {
     return { action: "REPRODUCE", targetId: "", reason: "Wealth and age clear the reproduction threshold.", confidence: 0.7 };
   }
 

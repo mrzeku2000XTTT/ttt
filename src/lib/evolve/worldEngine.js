@@ -33,6 +33,7 @@ export class WorldEngine {
 
     this.assets = [];
     this.assetById = new Map();
+    this.assetsByTile = new Map();
     this.assetSeq = KINDS.reduce((m, k) => ({ ...m, [k]: 0 }), {});
 
     this.resources = { compute: 420, energy: 380, storage: 300, data: 260, information: 180, materials: 520 };
@@ -60,7 +61,14 @@ export class WorldEngine {
     return surveyTile(this.biome, this.elevation, this.width, x, y, this.yieldMul);
   }
   assetsAt(x, y) {
-    return this.assets.filter((a) => a.x === x && a.y === y);
+    return this.assetsByTile.get(this.idx(x, y)) || [];
+  }
+  /** Cheap buildability check that never walks the asset list. */
+  isBuildable(x, y) {
+    if (!this.inBounds(x, y)) return false;
+    const i = this.idx(x, y);
+    const b = BIOMES[this.sculpt[i] >= 0 ? this.sculpt[i] : this.biome[i]];
+    return !!b.build && !b.water;
   }
   tile(x, y) {
     if (!this.inBounds(x, y)) return null;
@@ -144,6 +152,8 @@ export class WorldEngine {
     };
     this.assets.push(asset);
     this.assetById.set(sim_id, asset);
+    const key = this.idx(x, y);
+    this.assetsByTile.set(key, [...(this.assetsByTile.get(key) || []), asset]);
     if (faction !== "neutral") this.claim(x, y, faction);
     return { ok: true, asset };
   }
@@ -244,6 +254,17 @@ export class WorldEngine {
         this.sculpt[i] = sculpted[i] === "-" ? -1 : Number(sculpted[i]);
       }
     }
+  }
+
+  /** Rebuilds the tile and id indexes after a reload. */
+  reindexAssets() {
+    this.assetById = new Map();
+    this.assetsByTile = new Map();
+    this.assets.forEach((a) => {
+      this.assetById.set(a.sim_id, a);
+      const key = this.idx(a.x, a.y);
+      this.assetsByTile.set(key, [...(this.assetsByTile.get(key) || []), a]);
+    });
   }
 
   /** Keeps an incrementing counter valid after a reload. */

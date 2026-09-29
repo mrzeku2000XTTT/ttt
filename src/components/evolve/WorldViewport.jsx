@@ -88,11 +88,15 @@ export default function WorldViewport({ cam, setCam, onSize }) {
 
   const zoomAt = useCallback(
     (factor, cx, cy) => {
+      const rect = wrapRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const rx = cx - rect.left;
+      const ry = cy - rect.top;
       setCam((prev) => {
         const scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prev.scale * factor));
-        const wx = (cx - (wrapRef.current?.getBoundingClientRect().left || 0)) / prev.scale + prev.x;
-        const wy = (cy - (wrapRef.current?.getBoundingClientRect().top || 0)) / prev.scale + prev.y;
-        return clamp({ scale, x: wx - cx / scale + (wrapRef.current?.getBoundingClientRect().left || 0) / scale, y: wy - cy / scale + (wrapRef.current?.getBoundingClientRect().top || 0) / scale });
+        const wx = prev.x + rx / prev.scale;
+        const wy = prev.y + ry / prev.scale;
+        return clamp({ scale, x: wx - rx / scale, y: wy - ry / scale });
       });
     },
     [clamp, setCam]
