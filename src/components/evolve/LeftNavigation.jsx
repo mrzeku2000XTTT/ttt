@@ -1,5 +1,5 @@
 import React from "react";
-import { Globe2, Users, Briefcase, Coins, Flag, FlaskConical, Radio, GitBranch } from "lucide-react";
+import { Globe2, Users, Briefcase, Coins, Flag, FlaskConical, Radio, GitBranch, Terminal } from "lucide-react";
 
 export const NAV_ITEMS = [
   { id: "WORLD", label: "World", icon: Globe2 },
@@ -12,7 +12,7 @@ export const NAV_ITEMS = [
   { id: "EVENTS", label: "Events", icon: Radio },
 ];
 
-export default function LeftNavigation({ view, onView }) {
+export default function LeftNavigation({ view, onView, onDebug }) {
   return (
     <nav className="ev-nav ev-panel" style={{ borderTop: "none", borderBottom: "none", borderLeft: "none" }}>
       {NAV_ITEMS.map((item) => {
@@ -29,6 +29,16 @@ export default function LeftNavigation({ view, onView }) {
           </button>
         );
       })}
+      <div style={{ flex: 1 }} />
+      <button
+        className="ev-nav-item"
+        onClick={onDebug}
+        title="Debug Inspector"
+        style={{ borderTop: "1px solid rgba(120,160,200,0.16)" }}
+      >
+        <Terminal className="h-4 w-4" />
+        <span className="ev-nav-label">Debug</span>
+      </button>
     </nav>
   );
 }

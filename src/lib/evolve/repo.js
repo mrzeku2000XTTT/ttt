@@ -92,4 +92,23 @@ export const evolveRepo = {
     if (!experimentId || !events.length) return null;
     return base44.entities.EvolveEvent.bulkCreate(events.map((e) => ({ ...strip(e), experiment_id: experimentId })));
   },
+
+  /** Deletes every record belonging to an experiment so a new genesis can begin. */
+  async resetExperiment(experimentId) {
+    if (!experimentId) return null;
+    await Promise.all([
+      base44.entities.EvolveAgent.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolveAsset.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolveJob.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolveOrganization.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolveTransaction.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolveEvent.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolveSnapshot.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolveWallet.deleteMany({ experiment_id: experimentId }),
+    ]);
+    const worlds = await base44.entities.EvolveWorld.filter({ experiment_id: experimentId }, "-created_date", 1);
+    if (worlds[0]) await base44.entities.EvolveWorld.delete(worlds[0].id);
+    await base44.entities.EvolveExperiment.delete(experimentId);
+    return true;
+  },
 };

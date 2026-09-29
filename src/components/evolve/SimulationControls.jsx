@@ -1,5 +1,5 @@
 import React from "react";
-import { Pause, Play, Save } from "lucide-react";
+import { Pause, Play, Save, StepForward } from "lucide-react";
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { evolveRepo } from "@/lib/evolve/repo";
@@ -26,6 +26,9 @@ export default function SimulationControls({ onClose }) {
               {v}×
             </button>
           ))}
+          <button className="ev-btn ev-btn-ghost" style={{ padding: "7px 9px", fontSize: 9, letterSpacing: "0.04em" }} onClick={() => engine.step()} title="Advance exactly one tick">
+            <StepForward className="h-3.5 w-3.5" /> STEP
+          </button>
         </div>
         <div style={{ fontSize: 9.5, color: "#54657c", marginTop: 7, lineHeight: 1.45 }}>
           Simulation speed never accelerates blockchain confirmation — settlements resolve on wall-clock time.

@@ -98,8 +98,8 @@ export const TRAITS = [
 
 /* ------------------------------------------------------- agent decisions */
 export const ACTIONS = [
-  "WORK", "CLAIM_JOB", "SUBMIT_JOB", "BUY", "SELL", "TRADE", "MOVE", "RESEARCH",
-  "RECON", "COOPERATE", "JOIN_ORG", "CREATE_ORG", "REPRODUCE",
+  "IDLE", "WORK", "CLAIM_JOB", "SUBMIT_JOB", "BUY", "SELL", "TRADE", "MOVE", "RESEARCH",
+  "RECON", "COOPERATE", "JOIN_ORG", "LEAVE_ORG", "CREATE_ORG", "REPRODUCE",
   "ATTACK_SIM_ASSET", "DEFEND_SIM_ASSET", "FORTIFY_SIM_ASSET",
 ];
 

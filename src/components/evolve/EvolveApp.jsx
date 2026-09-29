@@ -22,6 +22,7 @@ import AttackPlanner from "./AttackPlanner";
 import TradePanel from "./TradePanel";
 import GenesisModal from "./GenesisModal";
 import SimulationControls from "./SimulationControls";
+import DebugPanel from "./DebugPanel";
 import { PaneModeProvider } from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import "./evolve.css";
@@ -92,7 +93,7 @@ export default function EvolveApp() {
       </div>
 
       <div className="ev-mid">
-        <LeftNavigation view={view} onView={setView} />
+        <LeftNavigation view={view} onView={setView} onDebug={() => open("debug")} />
 
         {view === "WORLD" ? (
           <div style={{ flex: 1, minWidth: 0, position: "relative", display: "flex" }}>
@@ -144,6 +145,7 @@ export default function EvolveApp() {
       {sheet?.type === "attack" && <AttackPlanner simId={sheet.id} onClose={close} />}
       {sheet?.type === "trade" && <TradePanel simId={sheet.id} onClose={close} />}
       {sheet?.type === "sim" && <SimulationControls onClose={close} />}
+      {sheet?.type === "debug" && <DebugPanel onClose={close} />}
 
       {!engine.started && <GenesisModal />}
       {genesisStage && engine.started && (

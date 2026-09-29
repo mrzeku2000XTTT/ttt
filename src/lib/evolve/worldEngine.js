@@ -190,20 +190,81 @@ export class WorldEngine {
   }
 
   /* ---------------------------------------------------------- per tick */
-  /** Assets produce, the market drifts, the day advances. */
+  /**
+   * Resource production with dependencies — the economic pressure chain.
+   * Phase 1: energy assets and deposits produce from nothing.
+   * Phase 2: compute/storage consume energy to produce.
+   * Phase 3: servers/cities consume energy+compute/materials to produce data/information.
+   * Damaged assets (damage >= value) produce nothing.
+   * Market prices then move toward equilibrium based on pool pressure.
+   */
   produce(rng) {
     let gained = 0;
+    const active = (a) => a.output > 0 && a.damage < a.value;
+
+    // Phase 1: energy + materials are the base of the chain.
     this.assets.forEach((a) => {
-      if (a.output <= 0) return;
-      const out = a.output * (a.kind === "energy" ? 1 : 0.6);
-      const bucket = a.kind === "energy" ? "energy" : a.kind === "compute" ? "compute" : a.kind === "storage" ? "storage" : "materials";
-      this.resources[bucket] = Number((this.resources[bucket] + out * 0.05).toFixed(2));
-      gained += out * 0.05;
+      if (!active(a)) return;
+      if (a.kind === "energy") {
+        const out = a.output * 0.08;
+        this.resources.energy = Number((this.resources.energy + out).toFixed(2));
+        gained += out;
+      } else if (a.kind === "deposit") {
+        const out = a.output * 0.06;
+        this.resources.materials = Number((this.resources.materials + out).toFixed(2));
+        gained += out;
+      }
     });
 
+    // Phase 2: compute + storage need energy.
+    this.assets.forEach((a) => {
+      if (!active(a)) return;
+      if (a.kind === "compute" || a.kind === "storage") {
+        const eNeed = a.output * 0.04;
+        if (this.resources.energy >= eNeed) {
+          this.resources.energy = Number((this.resources.energy - eNeed).toFixed(2));
+          const bucket = a.kind === "compute" ? "compute" : "storage";
+          const out = a.output * 0.06;
+          this.resources[bucket] = Number((this.resources[bucket] + out).toFixed(2));
+          gained += out;
+        }
+      }
+    });
+
+    // Phase 3: servers need energy+compute → data; cities need energy+materials → information.
+    this.assets.forEach((a) => {
+      if (!active(a)) return;
+      if (a.kind === "server") {
+        const eNeed = a.output * 0.03;
+        const cNeed = a.output * 0.02;
+        if (this.resources.energy >= eNeed && this.resources.compute >= cNeed) {
+          this.resources.energy = Number((this.resources.energy - eNeed).toFixed(2));
+          this.resources.compute = Number((this.resources.compute - cNeed).toFixed(2));
+          const out = a.output * 0.05;
+          this.resources.data = Number((this.resources.data + out).toFixed(2));
+          gained += out;
+        }
+      } else if (a.kind === "city") {
+        const eNeed = a.output * 0.04;
+        const mNeed = a.output * 0.02;
+        if (this.resources.energy >= eNeed && this.resources.materials >= mNeed) {
+          this.resources.energy = Number((this.resources.energy - eNeed).toFixed(2));
+          this.resources.materials = Number((this.resources.materials - mNeed).toFixed(2));
+          const out = a.output * 0.04;
+          this.resources.information = Number((this.resources.information + out).toFixed(2));
+          gained += out;
+        }
+      }
+    });
+
+    // Market: prices drift toward equilibrium based on pool pressure.
+    // Scarce resources (low pool) rise; abundant resources (high pool) fall.
     Object.keys(this.market).forEach((k) => {
-      const drift = (rng() - 0.5) * 0.06;
-      const next = Math.max(0.2, Number((this.market[k] * (1 + drift)).toFixed(3)));
+      const pool = this.resources[k] || 0;
+      const target = 300;
+      const pressure = (target - pool) / 1200;
+      const noise = (rng() - 0.5) * 0.03;
+      const next = Math.max(0.2, Number((this.market[k] * (1 + pressure * 0.05 + noise)).toFixed(3)));
       this.market[k] = next;
     });
 

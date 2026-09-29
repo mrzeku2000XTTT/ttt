@@ -18,7 +18,7 @@ import { planAttack, resolveAttack, recon } from "./conflictService";
 import { charge, priceOf } from "./economyService";
 import { randomGenome, calculateFitness, meanGenome } from "./genome";
 import { makeRng, clamp01 } from "./rng";
-import { FACTIONS, TOOLS, RESOURCE_IDS, WORLD_SIZES, BUILD_STATS } from "./constants";
+import { FACTIONS, TOOLS, RESOURCE_IDS, WORLD_SIZES, BUILD_STATS, BASE_PRICES } from "./constants";
 
 const ACTIONS_PER_TICK = 48;
 const TICKS_PER_DAY = 8;
@@ -91,10 +91,16 @@ export class EvolveEngine {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
   }
+  /**
+   * Hard notify = an explicit action, repaint immediately.
+   * Soft notify = a simulation tick: coalesced so a fast clock cannot thrash React
+   * while the canvas keeps drawing from live state.
+   */
   notify(soft = false) {
     if (soft) {
-      this.dirty = true;
-      return;
+      const now = Date.now();
+      if (this._lastSoft && now - this._lastSoft < 110) return;
+      this._lastSoft = now;
     }
     this.dirty = false;
     this.listeners.forEach((fn) => fn());
@@ -233,6 +239,38 @@ export class EvolveEngine {
   }
   togglePause() {
     this.paused = !this.paused;
+    this.notify();
+  }
+
+  /** Advances exactly one tick regardless of pause state. For debugging. */
+  step() {
+    this.tick(false);
+    this.notify();
+  }
+
+  /** Clears all simulation state so a new genesis can begin. */
+  reset() {
+    this.agents = [];
+    this.agentById = new Map();
+    this.jobs = [];
+    this.orgs = [];
+    this.transactions = [];
+    this.world.assets = [];
+    this.world.assetById = new Map();
+    this.world.assetsByTile = new Map();
+    this.world.resources = { compute: 420, energy: 380, storage: 300, data: 260, information: 180, materials: 520 };
+    this.world.market = { ...BASE_PRICES };
+    this.world.day = 0;
+    this.world.dayTicks = 0;
+    this.world.owner.fill(0);
+    this.world.sculpt.fill(-1);
+    this.treasury = { address: "", balance: 0, totalPaid: 0, pending: 0 };
+    this.agentSeq = 0;
+    this.tickCount = 0;
+    this.events = new EventService();
+    this.started = false;
+    this.paused = false;
+    this.selection = null;
     this.notify();
   }
 
@@ -378,6 +416,37 @@ export class EvolveEngine {
           { type: "ORGANIZATION_JOINED", category: "ORG", message: `${agent.code} joined ${org.name}`, actor_id: agent.id, actor_code: agent.code, target_id: org.id, target_code: org.name },
           quiet
         );
+        return;
+      }
+      case "CREATE_ORG": {
+        if (agent.organization_id) return;
+        const org = createOrganization({ rng: this.rng, faction: agent.faction, founderId: agent.id, day: this.world.day });
+        this.orgs.push(org);
+        agent.organization_id = org.id;
+        charge(agent, ["membership", "defense"]);
+        recordDecision(agent, "CREATE_ORG", { note: `Founded ${org.name}` });
+        this.emit(
+          { type: "ORGANIZATION_CREATED", category: "ORG", message: `${agent.code} founded ${org.name}`, actor_id: agent.id, actor_code: agent.code, target_id: org.id, target_code: org.name },
+          quiet
+        );
+        return;
+      }
+      case "LEAVE_ORG": {
+        const org = this.orgs.find((o) => o.id === agent.organization_id);
+        if (!org) return;
+        const idx = org.members.indexOf(agent.id);
+        if (idx >= 0) org.members.splice(idx, 1);
+        agent.organization_id = "";
+        recordDecision(agent, "LEAVE_ORG", { note: `Left ${org.name}` });
+        this.emit(
+          { type: "ORGANIZATION_LEFT", category: "ORG", message: `${agent.code} left ${org.name}`, actor_id: agent.id, actor_code: agent.code, target_id: org.id, target_code: org.name },
+          quiet
+        );
+        return;
+      }
+      case "IDLE": {
+        agent.status = "idle";
+        recordDecision(agent, "IDLE", { note: "No positive-expected-return action" });
         return;
       }
       case "REPRODUCE": {

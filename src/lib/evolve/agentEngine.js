@@ -104,9 +104,17 @@ export function decide(agent, ctx) {
     };
   }
 
+  if (agent.organization_id && roll < 0.008 + (1 - g.cooperation) * 0.03) {
+    return { action: "LEAVE_ORG", targetId: agent.organization_id, reason: "Membership cost exceeds the shared benefit.", confidence: 0.4 };
+  }
+
   if (!agent.organization_id && roll < 0.10 + g.cooperation * 0.12 && orgs.length) {
     const org = orgs[Math.floor(rng() * orgs.length)];
     return { action: "JOIN_ORG", targetId: org.id, reason: "Membership buys shared territory and cheaper resources.", confidence: Number((0.5 + g.cooperation * 0.4).toFixed(2)) };
+  }
+
+  if (!agent.organization_id && agent.balance > 30 && roll < 0.015 + g.cooperation * 0.035 && orgs.length < 12) {
+    return { action: "CREATE_ORG", targetId: "", reason: "Wealth and cooperation justify founding a new organization.", confidence: Number((0.4 + g.cooperation * 0.4).toFixed(2)) };
   }
 
   const foreign = foreignPool.length ? foreignPool[Math.floor(rng() * foreignPool.length)] : null;
@@ -126,6 +134,9 @@ export function decide(agent, ctx) {
   }
   if (roll < 0.55 + g.information * 0.2) {
     return { action: "RESEARCH", targetId: "", reason: "Information compounds; buying it now is cheaper than later.", confidence: Number((0.4 + g.information * 0.5).toFixed(2)) };
+  }
+  if (roll > 0.93) {
+    return { action: "IDLE", targetId: "", reason: "No action with positive expected return this tick.", confidence: 0.3 };
   }
   return { action: "WORK", targetId: agent.current_job_id || "", reason: "No better expected return this tick.", confidence: 0.5 };
 }
