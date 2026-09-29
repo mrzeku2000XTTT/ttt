@@ -124,14 +124,34 @@ export function EvolveProvider({ children }) {
     return () => clearInterval(id);
   }, [engine, engine?.speed, engine?.paused, engine?.started]);
 
+  /* Persist right now — the AI a user generated must still be here after a refresh. */
+  const persistNow = useCallback(() => {
+    const eng = engineRef.current;
+    if (!eng || !experimentId || !eng.started) return;
+    evolveRepo.checkpoint(experimentId, eng.toRecords(experimentId)).catch(() => {});
+  }, [experimentId]);
+
   /* Periodic checkpoint so the civilization survives a reload. */
   useEffect(() => {
-    if (!isolatedMockEnabled || !engine || !experimentId || !engine.started) return undefined;
+    if (!engine || !experimentId || !engine.started) return undefined;
     const id = setInterval(() => {
       evolveRepo.checkpoint(experimentId, engine.toRecords(experimentId)).catch(() => {});
     }, 45000);
     return () => clearInterval(id);
   }, [engine, experimentId]);
+
+  /* Flush the latest state when the tab is hidden or the page is being left. */
+  useEffect(() => {
+    if (!engine || !experimentId) return undefined;
+    const flush = () => persistNow();
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [engine, experimentId, persistNow]);
 
   const createGenesis = useCallback(
     async (config) => {
@@ -207,11 +227,12 @@ export function EvolveProvider({ children }) {
         setCameraMode("FOLLOW_ME");
         setSelectedCountry(null);
         setSelectedSpawnCell(null);
+        persistNow();
         say(`${res.player.code} entered ${country}`, true);
       }
       return res;
     },
-    [engine, user, wallet]
+    [engine, user, wallet, persistNow]
   );
 
   /* --------------------------------------------------- player game actions
