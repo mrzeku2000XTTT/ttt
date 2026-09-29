@@ -73,7 +73,7 @@ export function recon(asset, rng) {
     simId: asset.sim_id,
     kind: asset.kind,
     owner: asset.owner_id || "UNCLAIMED",
-    faction: asset.faction,
+    orgSlot: asset.org_slot || 0,
     value: asset.value,
     defense: Number((asset.defense * (1 + noise)).toFixed(1)),
     confidence: Number((0.7 + rng() * 0.25).toFixed(2)),

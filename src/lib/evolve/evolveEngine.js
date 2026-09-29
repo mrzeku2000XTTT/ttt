@@ -79,7 +79,7 @@ export class EvolveEngine {
     this.selection = null;
     this.tool = "OBSERVE";
     this.paintBiome = "PLAINS";
-    this.paintFaction = "blue";
+    this.paintFaction = "neutral";
     this.pendingTarget = null;
     this.started = false;
     this.genesisStage = "";

@@ -58,7 +58,7 @@ export class EvolutionService {
       parent_id: parent.id,
       lineage_root: parent.lineage_root,
       children: [],
-      faction: faction || parent.faction,
+      faction: "neutral",
       organization_id: parent.organization_id || "",
       wallet_id: wallet?.walletId || "",
       address: wallet?.address || "",

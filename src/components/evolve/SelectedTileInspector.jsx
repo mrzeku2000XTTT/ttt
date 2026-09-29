@@ -1,7 +1,7 @@
 import React from "react";
 import { Crosshair, Wrench, Shield, ArrowLeftRight, Eye } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
-import { LEVEL_WORD, factionColor } from "@/lib/evolve/constants";
+import { LEVEL_WORD, orgColor } from "@/lib/evolve/constants";
 
 /**
  * SelectedTileInspector — what the tapped tile actually is, its survey, its owner
@@ -12,7 +12,7 @@ export default function SelectedTileInspector({ onAttack, onTrade, onFortify, on
   const tile = engine?.selection;
   if (!tile) return null;
 
-  const ownerColor = factionColor(tile.owner);
+  const ownerColor = tile.ownerColor || orgColor(tile.ownerOrg) || "#94a3b8";
   const asset = tile.assets?.[0];
 
   return (

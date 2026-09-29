@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
-import { factionColor, fmt } from "@/lib/evolve/constants";
+import { orgColor, fmt } from "@/lib/evolve/constants";
 
 const SORTS = [
   { id: "fitness", label: "Fitness" },
@@ -72,7 +72,7 @@ export default function AgentList({ onSelect }) {
             {rows.map((a) => (
               <tr key={a.id} onClick={() => onSelect(a.id)} style={{ cursor: "pointer", borderTop: "1px solid rgba(120,160,200,0.07)" }}>
                 <td style={td}>
-                  <span style={{ color: factionColor(a.faction), marginRight: 5 }}>●</span>
+                  <span style={{ color: a.organization_id ? orgColor(a.organization_id) : "#e2e8f0", marginRight: 5 }}>●</span>
                   {a.code} <span style={{ color: "#54657c" }}>{a.name}</span>
                 </td>
                 <td style={td}>{a.generation}</td>
