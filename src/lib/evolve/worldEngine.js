@@ -141,10 +141,11 @@ export class WorldEngine {
     });
   }
 
-  placeAsset(kind, x, y, { ownerId = "", orgSlot = 0, organizationId = "" } = {}) {
+  placeAsset(kind, x, y, { ownerId = "", orgSlot = 0, organizationId = "", landOverride = false } = {}) {
     if (!KINDS.includes(kind) || !this.inBounds(x, y)) return { ok: false, reason: "Invalid build site" };
     const t = this.tile(x, y);
-    if (!t.buildable) return { ok: false, reason: `${t.label} cannot carry structures` };
+    // landOverride: a geographic land cell overrides the abstract biome's buildability.
+    if (!t.buildable && !landOverride) return { ok: false, reason: `${t.label} cannot carry structures` };
     const cost = BUILD_COST[kind] || {};
     if (!this.canAfford(cost)) return { ok: false, reason: "Insufficient world resources" };
     this.pay(cost);

@@ -32,7 +32,11 @@ import {
   cellsInViewport,
   geoCellToEnginePos,
   latLngToGeoCell,
+  isLand,
 } from "@/lib/evolve/geoCells";
+
+// Land cells render with a land tone so they never read as ocean.
+const LAND_CELL_COLOR = "#1a2e22";
 
 const ASSET_COLOR = {
   server: "#60a5fa",
@@ -199,7 +203,10 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       const ownerSlot = world.owner ? world.owner[i] : 0;
       const orgId = ownerSlot > 0 && world.orgSlots ? world.orgSlots[ownerSlot] : null;
       const biome = world.biome[i];
-      const color = orgId ? orgColor(orgId) : BIOMES[biome] ? BIOMES[biome].color : "#0a121e";
+      const land = isLand(c.centerLat, c.centerLng);
+      const biomeColor = BIOMES[biome] ? BIOMES[biome].color : "#0a121e";
+      // A real-world land cell never renders as ocean, regardless of the abstract biome.
+      const color = orgId ? orgColor(orgId) : land ? LAND_CELL_COLOR : biomeColor;
       const isSel = sel && sel.geo ? sel.geo.cellId === c.cellId : (sel && sel.x === ep.x && sel.y === ep.y);
       return {
         type: "Feature",

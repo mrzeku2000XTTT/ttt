@@ -19,6 +19,8 @@ export default function PlayerBuild({ onClose }) {
 
   if (!engine || !currentPlayer) return null;
   const cell = selectedSpawnCell || currentPlayer.position;
+  const geoLat = selectedSpawnCell?.centerLat ?? currentPlayer.geo_lat ?? null;
+  const geoLng = selectedSpawnCell?.centerLng ?? currentPlayer.geo_lng ?? null;
 
   return (
     <div className="ev-sheet" style={{ bottom: 56, left: 60, right: 12, maxHeight: "55vh" }}>
@@ -51,7 +53,7 @@ export default function PlayerBuild({ onClose }) {
         </div>
         <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 9, color: C.textFaint }}>BALANCE: {currentPlayer.balance.toFixed(2)} tKAS</span>
-          <button className="ev-btn" disabled={!sel} onClick={() => { const r = buildAsset({ kind: sel, x: cell.x, y: cell.y }); if (r?.ok) setSel(null); }}>BUILD</button>
+          <button className="ev-btn" disabled={!sel} onClick={() => { const r = buildAsset({ kind: sel, x: cell.x, y: cell.y, geoLat, geoLng }); if (r?.ok) setSel(null); }}>BUILD</button>
         </div>
       </div>
     </div>

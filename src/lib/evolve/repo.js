@@ -110,6 +110,40 @@ export const evolveRepo = {
         await base44.entities.EvolvePlayer.update(u.id, u);
       }
     }
+    // Sync agents (upsert by agent_key) — the roster must survive a reload.
+    if (records.agents?.length) {
+      const existing = await base44.entities.EvolveAgent.filter({ experiment_id: experimentId }, "code", 500);
+      const byKey = new Map(existing.map((a) => [a.agent_key, a]));
+      const toCreate = [];
+      const toUpdate = [];
+      records.agents.forEach((a) => {
+        const rec = byKey.get(a.agent_key);
+        if (rec) {
+          toUpdate.push({ id: rec.id, ...a, experiment_id: experimentId });
+        } else {
+          toCreate.push({ ...a, experiment_id: experimentId });
+        }
+      });
+      if (toCreate.length) await base44.entities.EvolveAgent.bulkCreate(toCreate);
+      if (toUpdate.length) await base44.entities.EvolveAgent.bulkUpdate(toUpdate);
+    }
+    // Sync assets (upsert by sim_id) — built infrastructure must survive a reload.
+    if (records.assets?.length) {
+      const existing = await base44.entities.EvolveAsset.filter({ experiment_id: experimentId }, "sim_id", 500);
+      const byId = new Map(existing.map((a) => [a.sim_id, a]));
+      const toCreate = [];
+      const toUpdate = [];
+      records.assets.forEach((a) => {
+        const rec = byId.get(a.sim_id);
+        if (rec) {
+          toUpdate.push({ id: rec.id, ...a, experiment_id: experimentId });
+        } else {
+          toCreate.push({ ...a, experiment_id: experimentId });
+        }
+      });
+      if (toCreate.length) await base44.entities.EvolveAsset.bulkCreate(toCreate);
+      if (toUpdate.length) await base44.entities.EvolveAsset.bulkUpdate(toUpdate);
+    }
     return base44.entities.EvolveSnapshot.create({ experiment_id: experimentId, ...records.snapshot });
   },
 

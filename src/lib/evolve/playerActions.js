@@ -6,6 +6,7 @@
 import { createPlayerJob } from "./jobService";
 import { createOrganization } from "./organizationService";
 import { orgColor, RESOURCE_IDS, BUILD_COST, BUILD_STATS } from "./constants";
+import { isLand } from "./geoCells";
 import {
   createPlayer,
   applyStartingInventory,
@@ -231,13 +232,16 @@ export const PlayerActions = {
   },
 
   /** Player builds infrastructure. Costs tKAS, creates an asset owned by the player. */
-  playerBuild(playerId, { kind, x, y }) {
+  playerBuild(playerId, { kind, x, y, geoLat, geoLng }) {
     const player = this.playerById.get(playerId);
     if (!player) return { ok: false, message: "Player not found" };
     const validKinds = ["energy", "compute", "server", "storage"];
     if (!validKinds.includes(kind)) return { ok: false, message: "Invalid structure" };
     if (!this.world.inBounds(x, y)) return { ok: false, message: "Out of bounds" };
-    if (!this.world.isBuildable(x, y)) return { ok: false, message: "Cannot build here" };
+    // Geographic land is authoritative: a real-world land cell is always buildable,
+    // even if the abstract biome underneath resolved to water.
+    const geoIsLand = Number.isFinite(geoLat) && Number.isFinite(geoLng) && isLand(geoLat, geoLng);
+    if (!geoIsLand && !this.world.isBuildable(x, y)) return { ok: false, message: "Cannot build here" };
     const cost = PLAYER_BUILD_COST[kind] || 5;
     if (player.balance < cost) return { ok: false, message: `Need ${cost} tKAS` };
     const org = this.orgs.find((o) => o.id === player.organization_id);
@@ -245,6 +249,7 @@ export const PlayerActions = {
       ownerId: playerId,
       orgSlot: org?.slot || 0,
       organizationId: org?.id || "",
+      landOverride: geoIsLand,
     });
     if (!res.ok) return { ok: false, message: res.reason };
     player.balance = Number((player.balance - cost).toFixed(2));

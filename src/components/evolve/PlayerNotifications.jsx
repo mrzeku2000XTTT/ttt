@@ -35,7 +35,7 @@ export default function PlayerNotifications({ onClose }) {
   };
 
   return (
-    <div className="ev-sheet" style={{ top: 50, right: 12, width: 280, maxHeight: "65vh" }}>
+    <div className="ev-sheet" style={{ top: 50, right: 12, width: 280, bottom: 64, maxHeight: "65vh" }}>
       <div className="ev-panel-head">
         <span className="ev-panel-title">NOTIFICATIONS</span>
         <button className="ev-btn ev-btn-ghost" style={{ marginLeft: "auto", padding: "3px 8px" }} onClick={markAll}>READ ALL</button>
