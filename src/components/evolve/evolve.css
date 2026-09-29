@@ -188,6 +188,30 @@
   max-width: calc(100vw - 72px);
 }
 
+/* Human Dashboard toggle — appears only once Scorpion is connected. */
+.ev-dash-row { display: flex; padding: 6px 10px; }
+.ev-dash-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(9,14,24,0.92);
+  border: 1px solid rgba(34,211,238,0.35);
+  color: #eef3f9; border-radius: 6px;
+  padding: 7px 12px; font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
+}
+.ev-dash-toggle:hover { background: rgba(34,211,238,0.12); }
+.ev-dash-toggle.is-open { background: rgba(34,211,238,0.16); border-color: #22d3ee; }
+.ev-dash-toggle-code { color: #22d3ee; font-weight: 800; }
+.ev-dash-toggle-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.ev-dash-toggle-dot.is-on { background: #22d3ee; box-shadow: 0 0 6px #22d3ee; }
+.ev-dash-toggle-dot.is-off { background: #f87171; box-shadow: 0 0 6px #f87171; }
+.ev-dash-toggle-bal { font-weight: 700; font-variant-numeric: tabular-nums; }
+.ev-dash-toggle-pending {
+  color: #22d3ee; font-size: 8px; border: 1px solid rgba(34,211,238,0.4);
+  border-radius: 3px; padding: 1px 5px; letter-spacing: 0.08em;
+}
+@media (max-width: 760px) {
+  .ev-dash-toggle { min-height: 34px; padding: 8px 12px; }
+}
+
 /* ------------------------------------------------------------ overlays */
 .ev-sheet-backdrop { position: absolute; inset: 0; background: rgba(3,6,11,0.6); z-index: 40; }
 .ev-sheet {

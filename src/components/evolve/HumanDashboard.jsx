@@ -14,8 +14,8 @@ import { ScorpionConnectionState as State } from "@/lib/evolve/scorpionAdapter";
  *  - Roster of AI agents the player has generated, each with its real
  *    kaspatest: address as evidence of TN-10 connection
  */
-export default function HumanDashboard({ onClose, onInspectAgent }) {
-  const { engine, currentPlayer: player, wallet, generateAgent } = useEvolve();
+export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) {
+  const { engine, currentPlayer: player, wallet, generateAgent, pendingTxCount } = useEvolve();
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState("");
 
@@ -51,7 +51,7 @@ export default function HumanDashboard({ onClose, onInspectAgent }) {
   const balanceLabel = walletConnected ? `${(Number(balSompi) / 1e8).toFixed(4)} KAS` : "—";
 
   return (
-    <div className="ev-sheet ev-sheet-sm" style={{ top: 50, right: 12, width: 320, maxHeight: "78vh" }}>
+    <div className="ev-sheet ev-sheet-sm" style={{ bottom: 56, left: 64, width: 320, maxHeight: "78vh" }}>
       <div className="ev-panel-head">
         <span className="ev-panel-title">Human Dashboard</span>
         <span style={{ fontSize: 10, color: C.cyan, fontWeight: 700, marginLeft: 6 }}>{player.code}</span>
@@ -95,6 +95,34 @@ export default function HumanDashboard({ onClose, onInspectAgent }) {
           )}
           {wallet.error && !walletConnected && (
             <div style={{ fontSize: 8.5, color: C.red, marginTop: 5, wordBreak: "break-word" }}>{wallet.error}</div>
+          )}
+          {walletConnected && (
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <button
+                className="ev-btn ev-btn-ghost"
+                style={{ flex: 1, justifyContent: "center", padding: "6px 8px", fontSize: 9 }}
+                onClick={() => wallet.openWallet()}
+                title="Open Scorpion wallet"
+              >
+                WALLET
+              </button>
+              {onActivity && (
+                <button
+                  className="ev-btn ev-btn-ghost"
+                  style={{ flex: 1, justifyContent: "center", padding: "6px 8px", fontSize: 9 }}
+                  onClick={onActivity}
+                >
+                  ACTIVITY{pendingTxCount > 0 ? ` (${pendingTxCount})` : ""}
+                </button>
+              )}
+              <button
+                className="ev-btn ev-btn-ghost"
+                style={{ flex: 1, justifyContent: "center", padding: "6px 8px", fontSize: 9, color: C.red }}
+                onClick={() => wallet.disconnect()}
+              >
+                DISCONNECT
+              </button>
+            </div>
           )}
         </div>
 

@@ -25,7 +25,7 @@ import SimulationControls from "./SimulationControls";
 import DebugPanel from "./DebugPanel";
 import { PaneModeProvider } from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
-import PlayerWalletBar from "./PlayerWalletBar";
+import HumanDashboardButton from "./HumanDashboardButton";
 import PaymentPreview from "./PaymentPreview";
 import PlayerHome from "./PlayerHome";
 import CountrySelect from "./CountrySelect";
@@ -69,6 +69,7 @@ export default function EvolveApp() {
   const [showHome, setShowHome] = useState(true);
   const [enterFlow, setEnterFlow] = useState(null); // null | "COUNTRY" | "CELL"
   const [txInspector, setTxInspector] = useState(null); // chain tx for ObserverTransactionInspector
+  const [showDash, setShowDash] = useState(false); // Human Dashboard toggled by the wallet button
 
   const topAgent = useMemo(() => {
     if (!engine) return null;
@@ -121,9 +122,7 @@ export default function EvolveApp() {
     <div className="ev-root">
       <div className="ev-hud">
         <TopStatusHUD onMenu={() => open("sim")} onView={setView} onTreasury={() => open("treasury")} />
-        {wallet.connState !== "DISCONNECTED" && wallet.connState !== "CONNECTING" && (
-          <PlayerWalletBar onActivity={() => open("chainTx")} />
-        )}
+        <HumanDashboardButton open={showDash} onToggle={() => setShowDash((v) => !v)} />
       </div>
 
       <div className="ev-mid">
@@ -230,10 +229,11 @@ export default function EvolveApp() {
       )}
 
       {/* actor inspector (clicking AI/human markers) */}
-      {actorInspector && actorInspector.type === "player" && (
+      {actorInspector?.type !== "agent" && (showDash || actorInspector?.type === "player") && (
         <HumanDashboard
-          onClose={() => setActorInspector(null)}
-          onInspectAgent={(id) => { setActorInspector(null); open("agent", id); }}
+          onClose={() => { setShowDash(false); if (actorInspector?.type === "player") setActorInspector(null); }}
+          onInspectAgent={(id) => { setShowDash(false); setActorInspector(null); open("agent", id); }}
+          onActivity={() => open("chainTx")}
         />
       )}
       {actorInspector && actorInspector.type === "agent" && (
