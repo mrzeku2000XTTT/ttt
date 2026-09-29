@@ -63,7 +63,7 @@ export default function EvolveApp() {
       case "AGENTS":
         return <AgentList onSelect={(id) => open("agent", id)} />;
       case "JOBS":
-        return <JobMarket onSelectJob={(id) => open("job", id)} />;
+        return <JobMarket onClose={() => setView("WORLD")} onSelectJob={(id) => open("job", id)} />;
       case "ECONOMY":
         return <EconomyPanel />;
       case "FACTIONS":

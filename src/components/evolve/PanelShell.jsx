@@ -27,7 +27,7 @@ export default function PanelShell({ title, subtitle, onClose, children, side = 
           <div className="ev-panel-title" style={{ color: "#eef3f9", fontSize: 11, letterSpacing: "0.1em" }}>{title}</div>
           {subtitle ? <div style={{ fontSize: 9, color: "#54657c", marginTop: 2, letterSpacing: "0.06em" }}>{subtitle}</div> : null}
         </div>
-        {onClose && mode !== "center" ? (
+        {onClose ? (
           <button className="ev-btn ev-btn-ghost" style={{ padding: 6 }} onClick={onClose} title="Close">
             <X className="h-3.5 w-3.5" />
           </button>
