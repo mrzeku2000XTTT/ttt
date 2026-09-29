@@ -84,7 +84,7 @@ export const OPERATING_COSTS = {
  * agent with a different genome genuinely behaves differently.
  */
 export function decide(agent, ctx) {
-  const { jobs, orgs, rng, foreignPool = [], myAsset = null } = ctx;
+  const { jobs, orgs, rng, foreignPool = [], myAsset = null, nearbyAgents = [], relationships = null } = ctx;
   const g = agent.genome;
   const roll = rng();
 
@@ -104,24 +104,36 @@ export function decide(agent, ctx) {
     };
   }
 
+  // Leave org if cooperation is low.
   if (agent.organization_id && roll < 0.008 + (1 - g.cooperation) * 0.03) {
     return { action: "LEAVE_ORG", targetId: agent.organization_id, reason: "Membership cost exceeds the shared benefit.", confidence: 0.4 };
   }
 
-  if (!agent.organization_id && roll < 0.10 + g.cooperation * 0.12 && orgs.length) {
+  // Join an existing org if cooperative and one exists.
+  if (!agent.organization_id && roll < 0.08 + g.cooperation * 0.10 && orgs.length) {
     const org = orgs[Math.floor(rng() * orgs.length)];
     return { action: "JOIN_ORG", targetId: org.id, reason: "Membership buys shared territory and cheaper resources.", confidence: Number((0.5 + g.cooperation * 0.4).toFixed(2)) };
   }
 
-  if (!agent.organization_id && agent.balance > 30 && roll < 0.015 + g.cooperation * 0.035 && orgs.length < 12) {
-    return { action: "CREATE_ORG", targetId: "", reason: "Wealth and cooperation justify founding a new organization.", confidence: Number((0.4 + g.cooperation * 0.4).toFixed(2)) };
+  // Encounter nearby agents — cooperation must be LEARNED, not scripted.
+  if (nearbyAgents.length && roll < 0.12 + g.cooperation * 0.15) {
+    const other = nearbyAgents[Math.floor(rng() * nearbyAgents.length)];
+    return { action: "COOPERATE", targetId: other.id, reason: "Encountered another agent — evaluating trade or cooperation.", confidence: Number((0.4 + g.cooperation * 0.4).toFixed(2)) };
+  }
+
+  // Form an organization — only after proven cooperation with a specific partner.
+  if (!agent.organization_id && agent.balance > 25 && relationships && roll < 0.008 + g.cooperation * 0.02) {
+    const partner = relationships.bestPartner(agent.id, nearbyAgents);
+    if (partner) {
+      return { action: "CREATE_ORG", targetId: partner.id, reason: "Repeated cooperation justifies a persistent organization.", confidence: Number((0.5 + g.cooperation * 0.3).toFixed(2)) };
+    }
   }
 
   const foreign = foreignPool.length ? foreignPool[Math.floor(rng() * foreignPool.length)] : null;
-  if (foreign && roll < 0.04 + g.risk * 0.10) {
+  if (foreign && roll < 0.03 + g.risk * 0.08) {
     return { action: "RECON", targetId: foreign.sim_id, reason: "Cheap intelligence before committing resources.", confidence: Number((0.4 + g.information * 0.5).toFixed(2)) };
   }
-  if (foreign && roll < 0.06 + g.risk * 0.12) {
+  if (foreign && roll < 0.05 + g.risk * 0.10) {
     return { action: "ATTACK_SIM_ASSET", targetId: foreign.sim_id, reason: "Expected spoils exceed the cost of the attempt.", confidence: Number((0.3 + g.risk * 0.6).toFixed(2)) };
   }
 

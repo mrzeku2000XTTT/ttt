@@ -1230,6 +1230,8 @@ export class EvolveEngine {
     this.events = new EventService();
     [...events].reverse().forEach((e) => this.events.push(e));
 
+    if (records.relationships) this.relationships.hydrate(records.relationships);
+
     this.treasury = {
       address: "kaspatest:treasury",
       balance: experiment.treasury_balance || 0,
@@ -1310,6 +1312,7 @@ export class EvolveEngine {
         day: e.day,
         clock: e.clock,
       })),
+      relationships: this.relationships.serialize().slice(0, 200),
       snapshot: this.snapshot(),
     };
   }

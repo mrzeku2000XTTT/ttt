@@ -9,14 +9,20 @@ const NAME_B = ["Compact", "Guild", "Syndicate", "Concord", "Directorate", "Coll
 let seq = 0;
 export const resetOrgSeq = (n = 0) => { seq = n; };
 
-export function createOrganization({ rng, name, faction, founderId, day = 0, treasury = 0 }) {
+import { orgColor } from "./constants";
+
+export function createOrganization({ rng, name, founderId, day = 0, treasury = 0, members = [] }) {
   seq += 1;
+  const id = `ORG_${String(seq).padStart(3, "0")}`;
+  const founder = founderId || members[0] || "";
+  const initialMembers = members.length ? [...members] : founder ? [founder] : [];
   return {
-    id: `ORG_${String(seq).padStart(3, "0")}`,
+    id,
     name: name || `${NAME_A[Math.floor(rng() * NAME_A.length)]} ${NAME_B[Math.floor(rng() * NAME_B.length)]}`,
-    faction: faction || "neutral",
-    founder_id: founderId || "",
-    members: founderId ? [founderId] : [],
+    color: orgColor(id),
+    slot: 0, // assigned by WorldEngine.registerOrg
+    founder_id: founder,
+    members: initialMembers,
     treasury: Number(treasury.toFixed(2)),
     resources: { compute: 0, energy: 0, storage: 0, data: 0, information: 0, materials: 0 },
     territory: 0,
@@ -32,7 +38,6 @@ export function joinOrganization(org, agent) {
   if (org.members.includes(agent.id)) return { ok: false, reason: "Already a member" };
   org.members.push(agent.id);
   agent.organization_id = org.id;
-  if (org.faction !== "neutral") agent.faction = org.faction;
   return { ok: true };
 }
 

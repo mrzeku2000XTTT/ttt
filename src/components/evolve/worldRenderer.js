@@ -1,13 +1,17 @@
-import { BIOMES, factionColor } from "../../lib/evolve/constants";
+import { BIOMES, orgColor } from "../../lib/evolve/constants";
 
 /**
  * WorldRenderer — draws the world straight onto a canvas.
  * Kept completely separate from world state: it reads a snapshot and paints.
  * One draw call per visible tile, never one DOM node per tile.
+ *
+ * At genesis the world is empty: no territory, no factions.
+ * Agents are tiny white dots. Organization colors appear only when
+ * agents form organizations through learned cooperation.
  */
 
-const AGENT_COLOR = {
-  idle: "#7d90a8",
+const AGENT_NEUTRAL = "#e2e8f0";
+const AGENT_STATUS_RING = {
   working: "#22d3ee",
   moving: "#38bdf8",
   trading: "#34d399",
@@ -66,15 +70,17 @@ export function drawWorld(canvas, opts) {
     }
   }
 
-  // Faction territory — a subtle wash, never a repaint of the terrain.
+  // Organization territory — a subtle wash, only where orgs have claimed land.
   if (showTerritory && ts >= 2.2) {
-    ctx.globalAlpha = 0.3;
+    ctx.globalAlpha = 0.28;
     for (let y = y0; y <= y1; y += 1) {
       const row = y * world.width;
       for (let x = x0; x <= x1; x += 1) {
-        const o = world.owner[row + x];
-        if (!o) continue;
-        ctx.fillStyle = factionColor(["neutral", "blue", "green", "yellow", "red", "purple"][o]);
+        const slot = world.owner[row + x];
+        if (!slot) continue;
+        const orgId = world.orgSlots ? world.orgSlots[slot] : null;
+        if (!orgId) continue;
+        ctx.fillStyle = orgColor(orgId);
         ctx.fillRect((x - cam.x) * ts, (y - cam.y) * ts, px, px);
       }
     }
@@ -110,8 +116,10 @@ export function drawWorld(canvas, opts) {
     ctx.globalAlpha = a.damage >= a.value ? 0.35 : 1;
     ctx.fillRect(cx - size / 2, cy - size / 2, size, size);
     ctx.globalAlpha = 1;
-    if (a.faction !== "neutral") {
-      ctx.strokeStyle = factionColor(a.faction);
+    // Assets get an org-colored border if owned by an org.
+    const orgId = a.org_slot > 0 && world.orgSlots ? world.orgSlots[a.org_slot] : null;
+    if (orgId) {
+      ctx.strokeStyle = orgColor(orgId);
       ctx.lineWidth = 1.5;
       ctx.strokeRect(cx - size / 2 - 1, cy - size / 2 - 1, size + 2, size + 2);
     }
@@ -122,16 +130,27 @@ export function drawWorld(canvas, opts) {
     }
   });
 
-  // Agents.
+  // Agents — white/neutral when independent, org-colored when in an organization.
   if (showAgents) {
     const r = Math.max(1.2, Math.min(3.2, ts * 0.16));
     agents.forEach((ag) => {
       const p = ag.position;
       if (!p || p.x < x0 - 1 || p.x > x1 + 1 || p.y < y0 - 1 || p.y > y1 + 1) return;
-      ctx.fillStyle = AGENT_COLOR[ag.status] || "#7d90a8";
+      // Organization members get the org's color; independent agents are white.
+      const org = ag.organization_id;
+      ctx.fillStyle = org ? orgColor(org) : AGENT_NEUTRAL;
       ctx.beginPath();
       ctx.arc((p.x - cam.x) * ts + ts / 2, (p.y - cam.y) * ts + ts / 2, r, 0, Math.PI * 2);
       ctx.fill();
+      // Status ring for active agents.
+      const ring = AGENT_STATUS_RING[ag.status];
+      if (ring && ag.status !== "idle" && ts >= 4) {
+        ctx.strokeStyle = ring;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc((p.x - cam.x) * ts + ts / 2, (p.y - cam.y) * ts + ts / 2, r + 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     });
   }
 
@@ -166,12 +185,15 @@ export function drawMinimap(canvas, { world, cam, viewW, viewH, dpr = 1 }) {
       const b = world.sculpt[i] >= 0 ? world.sculpt[i] : world.biome[i];
       ctx.fillStyle = BIOMES[b].color;
       ctx.fillRect(x * sx, y * sy, sx * step + 0.6, sy * step + 0.6);
-      const o = world.owner[i];
-      if (o) {
-        ctx.globalAlpha = 0.42;
-        ctx.fillStyle = factionColor(["neutral", "blue", "green", "yellow", "red", "purple"][o]);
-        ctx.fillRect(x * sx, y * sy, sx * step + 0.6, sy * step + 0.6);
-        ctx.globalAlpha = 1;
+      const slot = world.owner[i];
+      if (slot > 0) {
+        const orgId = world.orgSlots ? world.orgSlots[slot] : null;
+        if (orgId) {
+          ctx.globalAlpha = 0.42;
+          ctx.fillStyle = orgColor(orgId);
+          ctx.fillRect(x * sx, y * sy, sx * step + 0.6, sy * step + 0.6);
+          ctx.globalAlpha = 1;
+        }
       }
     }
   }
