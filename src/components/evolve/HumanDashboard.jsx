@@ -46,7 +46,8 @@ export default function HumanDashboard({ onClose, onInspectAgent }) {
   };
 
   const walletConnected = wallet?.isTN10 && wallet?.address;
-  const balanceLabel = wallet?.balance != null ? `${Number(wallet.balance).toFixed(4)} KAS` : "—";
+  const balSompi = wallet?.balance?.confirmed ?? 0n;
+  const balanceLabel = walletConnected ? `${(Number(balSompi) / 1e8).toFixed(4)} KAS` : "—";
 
   return (
     <div className="ev-sheet" style={{ top: 50, right: 12, width: 320, maxHeight: "78vh" }}>
