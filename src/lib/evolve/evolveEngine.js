@@ -51,7 +51,7 @@ export const DEFAULT_CONFIG = {
   label: "EVOLVE-01",
   seed: 20260929,
   network: "kaspa-tn10",
-  genesis_agents: 10,
+  genesis_agents: 0,
   initial_test_kas: 60,
   mutation_rate: 0.05,
   scarcity: "medium",
@@ -247,6 +247,45 @@ export class EvolveEngine {
       balance,
       day: this.world.day,
     });
+  }
+
+  /**
+   * Create an AI agent owned by a human player, using a REAL Kaspa testnet
+   * address (minted server-side by evolveCreateAgentWallet). The agent starts
+   * with zero balance — the player funds it on TN10. It can sign its own
+   * transactions autonomously via the stored server-side key.
+   */
+  createAgentForPlayer({ player, address, name }) {
+    this.agentSeq += 1;
+    const id = `AGT_${String(this.agentSeq).padStart(4, "0")}`;
+    const agent = createAgent({
+      id,
+      code: this.code(this.agentSeq),
+      name: name || agentName(this.rng),
+      generation: 0,
+      genome: randomGenome(this.rng),
+      faction: player.faction || "neutral",
+      position: { ...player.position },
+      wallet: { walletId: "", address, agentId: id, network: "kaspa_testnet_10", ledger: "tn10" },
+      balance: 0,
+      day: this.world.day,
+    });
+    agent.owner_user_id = player.user_id;
+    agent.owner_player_id = player.id;
+    agent.address = address;
+    this.agents.push(agent);
+    this.agentById.set(id, agent);
+    this.emit({
+      type: "AGENT_CREATED",
+      category: "EVOLUTION",
+      message: `${player.code} generated AI agent ${agent.code} · Kaspa TN-10`,
+      actor_id: player.id,
+      actor_code: player.code,
+      target_id: id,
+      target_code: agent.code,
+    });
+    this.notify();
+    return { ok: true, agent };
   }
 
   /* ----------------------------------------------------------- clock/label */
@@ -1297,6 +1336,12 @@ export class EvolveEngine {
       ...a,
       id: a.agent_key || `AGT_${String(i + 1).padStart(4, "0")}`,
     }));
+    // Drop legacy mock agents (fake genesis roster) — only real kaspatest:/kaspa:
+    // addresses belong in the world. Player-generated agents survive.
+    this.agents = this.agents.filter((a) => {
+      const addr = String(a.address || "");
+      return !addr.startsWith("mock:");
+    });
     this.agentById = new Map(this.agents.map((a) => [a.id, a]));
     this.agentSeq = this.agents.reduce((m, a) => Math.max(m, Number(String(a.code).replace(/\D/g, "")) || 0), 0);
 
@@ -1398,6 +1443,8 @@ export class EvolveEngine {
         age_days: Number(a.age_days.toFixed(2)),
         fitness: a.fitness,
         reproductions: a.reproductions,
+        owner_user_id: a.owner_user_id || "",
+        owner_player_id: a.owner_player_id || "",
       })),
       assets: this.world.assets.map((a) => ({ ...a })),
       jobs: this.jobs.map((j) => ({ ...j })),

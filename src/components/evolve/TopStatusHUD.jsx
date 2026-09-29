@@ -79,9 +79,9 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
         <button className="ev-btn ev-btn-ghost" style={{ padding: 7 }} onClick={onMenu} title="Simulation settings">
           <span style={{ fontSize: 12, lineHeight: 1 }}>⋯</span>
         </button>
-        <button className="ev-btn ev-btn-ghost" style={{ padding: 7 }} onClick={exitToStore} title="Exit to Store">
+        <button className="ev-btn" style={{ padding: "7px 11px" }} onClick={exitToStore} title="Exit to Store">
           <Store className="h-3.5 w-3.5" />
-          <span style={{ fontSize: 10 }}>EXIT</span>
+          <span style={{ fontSize: 10, fontWeight: 800 }}>EXIT TO STORE</span>
         </button>
       </div>
     </div>

@@ -37,6 +37,7 @@ import PlayerTrade from "./PlayerTrade";
 import PlayerBuild from "./PlayerBuild";
 import PlayerMove from "./PlayerMove";
 import ActorInspector from "./ActorInspector";
+import HumanDashboard from "./HumanDashboard";
 import PlayerContracts from "./PlayerContracts";
 import PlayerNotifications from "./PlayerNotifications";
 import PaymentStatusOverlay from "./PaymentStatusOverlay";
@@ -229,7 +230,13 @@ export default function EvolveApp() {
       )}
 
       {/* actor inspector (clicking AI/human markers) */}
-      {actorInspector && (
+      {actorInspector && actorInspector.type === "player" && (
+        <HumanDashboard
+          onClose={() => setActorInspector(null)}
+          onInspectAgent={(id) => { setActorInspector(null); open("agent", id); }}
+        />
+      )}
+      {actorInspector && actorInspector.type === "agent" && (
         <ActorInspector
           actorId={actorInspector.id}
           actorType={actorInspector.type}

@@ -383,6 +383,47 @@ export function EvolveProvider({ children }) {
     return res;
   }, [engine, player]);
 
+  /**
+   * Generate a fresh AI agent on Kaspa TN-10. Mints a real kaspatest: wallet
+   * server-side (mnemonic never reaches the browser) and adds the agent to
+   * the world owned by the current human player.
+   */
+  const generateAgent = useCallback(
+    async ({ name } = {}) => {
+      if (!engine || !player || !experimentId) return { ok: false, reason: "NO_PLAYER" };
+      const nextSeq = engine.agentSeq + 1;
+      const agentId = `AGT_${String(nextSeq).padStart(4, "0")}`;
+      const agentCode = `A#${String(nextSeq).padStart(3, "0")}`;
+      try {
+        const res = await base44.functions.invoke("evolveCreateAgentWallet", {
+          experimentId,
+          agentId,
+          agentCode,
+          label: name || agentCode,
+        });
+        const data = res?.data || res;
+        if (!data?.ok || !data.address) {
+          say(data?.error || "Could not create agent wallet", false);
+          return { ok: false, reason: "WALLET_FAILED" };
+        }
+        const result = engine.createAgentForPlayer({
+          player,
+          address: data.address,
+          name,
+        });
+        if (result?.ok) {
+          persistNow();
+          say(`${result.agent.code} generated on Kaspa TN-10`, true);
+        }
+        return result;
+      } catch (e) {
+        say(e?.message || "Agent generation failed", false);
+        return { ok: false, reason: "EXCEPTION" };
+      }
+    },
+    [engine, player, experimentId, persistNow]
+  );
+
   /* --------------------------------------------------- payment flow
    * Prepare a player KAS payment: build the intent and show the PaymentPreview.
    * Scorpion is NOT opened yet — the user must click "REVIEW IN SCORPION" first.
@@ -573,6 +614,7 @@ export function EvolveProvider({ children }) {
     proposeOrganization,
     joinOrganization,
     leaveOrganization,
+    generateAgent,
     // wallet / payment
     wallet,
     preparePayment,
