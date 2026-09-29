@@ -208,11 +208,33 @@ export function cellBox(x, y, world) {
   };
 }
 
+/* --------------------------------------------------- coordinate boundary
+ * toValidLngLat — the ONE canonical validation boundary every EVOLVE overlay
+ * must pass through before touching MapLibre. MapLibre coordinates are
+ * [lng, lat] (NOT [lat, lng]) with ranges lng: -180..180, lat: -90..90.
+ *
+ * Returns [lng, lat] for valid finite values, or null for invalid data
+ * (NaN, Infinity, undefined, out of range). Callers skip null instead of
+ * crashing the console. NEVER silently swaps coordinates based on guessing.
+ */
+export function toValidLngLat(lng, lat) {
+  const L = Number(lng);
+  const A = Number(lat);
+  if (!Number.isFinite(L) || !Number.isFinite(A)) return null;
+  if (A < -90 || A > 90) return null;
+  if (L < -180 || L > 180) return null;
+  return [L, A];
+}
+
 /* ----------------------------------------------- engine grid-cam <-> map view
  * The engine camera is grid-space { x, y, scale } (pixels per cell).
  * The map view is { center: [lat, lng], zoom }. The mapping is exact so the
  * minimap rectangle still matches the visible region:
  *   scale = 256 * 2^z / world.width.
+ *
+ * The projected center is clamped to valid geographic bounds so a viewport
+ * wider than the world (at low zoom) cannot push the center past ±180/±90
+ * and crash MapLibre's LngLat constructor.
  */
 const MIN_SCALE = 1.6;
 const MAX_SCALE = 26;
@@ -220,12 +242,20 @@ const MIN_ZOOM = 2;
 const MAX_ZOOM = 11;
 
 export function camToView(cam, world, size) {
-  const scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, cam.scale));
+  const scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, cam.scale || MIN_SCALE));
   const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.log2((scale * world.width) / 256)));
   const vw = size && size.w ? size.w / scale : world.width / 2;
   const vh = size && size.h ? size.h / scale : world.height / 2;
-  const lng = ((cam.x + vw / 2) / world.width) * 360 - 180;
-  const lat = 90 - ((cam.y + vh / 2) / world.height) * 180;
+  let lng = ((cam.x + vw / 2) / world.width) * 360 - 180;
+  let lat = 90 - ((cam.y + vh / 2) / world.height) * 180;
+  // Clamp the projected center to valid geographic bounds. When the viewport
+  // (in grid cells) is wider than the world, the raw center overshoots the
+  // world edge; clamping pins it to the edge rather than producing an
+  // out-of-range LngLat that crashes MapLibre.
+  if (!Number.isFinite(lng)) lng = 0;
+  if (!Number.isFinite(lat)) lat = 0;
+  lng = Math.max(-180, Math.min(180, lng));
+  lat = Math.max(-90, Math.min(90, lat));
   return { center: [lat, lng], zoom };
 }
 

@@ -27,6 +27,7 @@ import {
   ensureCellsLayer,
   ensureActorsLayer,
 } from "@/lib/evolve/evolveMapStyle";
+import { toValidLngLat } from "@/lib/evolve/geoService";
 
 const ASSET_COLOR = {
   server: "#60a5fa",
@@ -81,10 +82,13 @@ export default function EarthViewport({ cam, setCam, onSize }) {
     registerPmtilesProtocol();
     const world = engine.world;
     const view = camToView(cam, world, size);
+    // Validate the initial center through the boundary; fall back to a safe
+    // world center if the projected coordinate is invalid rather than crashing.
+    const initialCenter = toValidLngLat(view.center[1], view.center[0]) || [0, 20];
     const map = new maplibregl.Map({
       container: wrapRef.current,
       style: initialStyle(),
-      center: [view.center[1], view.center[0]],
+      center: initialCenter,
       zoom: view.zoom,
       minZoom: 2,
       maxZoom: 11,
@@ -126,7 +130,9 @@ export default function EarthViewport({ cam, setCam, onSize }) {
     const cur = map.getCenter();
     const curZ = map.getZoom();
     if (Math.abs(view.center[0] - cur.lat) < 0.01 && Math.abs(view.center[1] - cur.lng) < 0.01 && Math.abs(view.zoom - curZ) < 0.05) return;
-    map.jumpTo({ center: [view.center[1], view.center[0]], zoom: view.zoom });
+    const valid = toValidLngLat(view.center[1], view.center[0]);
+    if (!valid) return; // skip invalid camera coordinate rather than crash
+    map.jumpTo({ center: valid, zoom: view.zoom });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cam, mapReady, size.w]);
 
@@ -186,19 +192,25 @@ export default function EarthViewport({ cam, setCam, onSize }) {
     if (!map.getSource("ev-actors")) return;
     const toLngLat = (p) => {
       const ll = gridToLatLng((p.x || 0) + 0.5, (p.y || 0) + 0.5, world.width, world.height);
-      return [ll.lng, ll.lat];
+      return toValidLngLat(ll.lng, ll.lat);
     };
     const feats = [];
     for (const a of world.assets) {
-      feats.push({ type: "Feature", properties: { color: ASSET_COLOR[a.kind] || "#94a3b8", r: 4, kind: "asset", x: a.x, y: a.y }, geometry: { type: "Point", coordinates: toLngLat(a) } });
+      const coords = toLngLat(a);
+      if (!coords) continue; // skip invalid asset coordinate
+      feats.push({ type: "Feature", properties: { color: ASSET_COLOR[a.kind] || "#94a3b8", r: 4, kind: "asset", x: a.x, y: a.y }, geometry: { type: "Point", coordinates: coords } });
     }
     for (const ag of engine.agents.filter((a) => a.status !== "archived" && a.position)) {
+      const coords = toLngLat(ag.position);
+      if (!coords) continue; // skip invalid agent coordinate
       const org = ag.organization_id;
-      feats.push({ type: "Feature", properties: { color: org ? orgColor(org) : "#e2e8f0", r: 3, kind: "agent", x: ag.position.x, y: ag.position.y }, geometry: { type: "Point", coordinates: toLngLat(ag.position) } });
+      feats.push({ type: "Feature", properties: { color: org ? orgColor(org) : "#e2e8f0", r: 3, kind: "agent", x: ag.position.x, y: ag.position.y }, geometry: { type: "Point", coordinates: coords } });
     }
     for (const pl of (engine.players || []).filter((p) => p.position)) {
+      const coords = toLngLat(pl.position);
+      if (!coords) continue; // skip invalid player coordinate
       const org = pl.organization_id;
-      feats.push({ type: "Feature", properties: { color: "#22d3ee", r: 5, kind: "player", x: pl.position.x, y: pl.position.y }, geometry: { type: "Point", coordinates: toLngLat(pl.position) } });
+      feats.push({ type: "Feature", properties: { color: "#22d3ee", r: 5, kind: "player", x: pl.position.x, y: pl.position.y }, geometry: { type: "Point", coordinates: coords } });
     }
     map.getSource("ev-actors").setData({ type: "FeatureCollection", features: feats });
   }

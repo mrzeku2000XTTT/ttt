@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { countryGridBounds, randomCellInCountry, cellStats } from "@/lib/evolve/countryMap";
-import { cellBox, loadLand50, loadCountries110, loadCountries50, loadStates50 } from "@/lib/evolve/geoService";
+import { cellBox, loadLand50, loadCountries110, loadCountries50, loadStates50, toValidLngLat } from "@/lib/evolve/geoService";
 import { BIOMES, C } from "@/lib/evolve/constants";
 import {
   initialStyle,
@@ -35,10 +35,12 @@ export default function CellSelect({ onClose }) {
     if (!engine || !selectedCountry || !bounds || mapRef.current) return undefined;
     registerPmtilesProtocol();
     const world = engine.world;
+    const rawCenter = [(selectedCountry.lng0 + selectedCountry.lng1) / 2, (selectedCountry.lat0 + selectedCountry.lat1) / 2];
+    const center = toValidLngLat(rawCenter[0], rawCenter[1]) || [0, 20];
     const map = new maplibregl.Map({
       container: wrapRef.current,
       style: initialStyle(),
-      center: [(selectedCountry.lng0 + selectedCountry.lng1) / 2, (selectedCountry.lat0 + selectedCountry.lat1) / 2],
+      center,
       zoom: 6,
       minZoom: 2,
       maxZoom: 11,
@@ -136,7 +138,7 @@ export default function CellSelect({ onClose }) {
     const cell = randomCellInCountry(engine.world, engine.rng, selectedCountry);
     selectSpawnCell(cell);
     setHover(cell);
-    mapRef.current?.flyTo({ center: [((cell.x + 0.5) / engine.world.width) * 360 - 180, 90 - ((cell.y + 0.5) / engine.world.height) * 180], zoom: 9 });
+    mapRef.current?.flyTo({ center: toValidLngLat(((cell.x + 0.5) / engine.world.width) * 360 - 180, 90 - ((cell.y + 0.5) / engine.world.height) * 180) || [0, 20], zoom: 9 });
   };
 
   const handleSpawn = async () => {
