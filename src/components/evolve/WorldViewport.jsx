@@ -10,7 +10,7 @@ const MAX_SCALE = 26;
  * WorldViewport — pan, zoom and every tap on the world.
  * The canvas is drawn imperatively; React never re-renders per tile.
  */
-export default function WorldViewport({ cam, setCam }) {
+export default function WorldViewport({ cam, setCam, onSize }) {
   const { engine, say } = useEvolve();
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
@@ -27,10 +27,13 @@ export default function WorldViewport({ cam, setCam }) {
     if (!el) return undefined;
     const ro = new ResizeObserver(() => {
       setSize({ w: el.clientWidth, h: el.clientHeight });
+      onSize?.({ w: el.clientWidth, h: el.clientHeight });
     });
     ro.observe(el);
     setSize({ w: el.clientWidth, h: el.clientHeight });
+    onSize?.({ w: el.clientWidth, h: el.clientHeight });
     return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
