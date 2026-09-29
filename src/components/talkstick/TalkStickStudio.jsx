@@ -48,6 +48,9 @@ const NO_CAPTION = {
   // How the words arrive, and when — see captionMotion.js. "off" leaves the whole
   // caption on the frame, which is how a scene behaved before the words moved.
   ...MOTION_DEFAULTS,
+  // Word-level timings from the voice track, when it has been transcribed with
+  // them. Empty means the words are timed from the words themselves.
+  words: null,
   x: null,
   y: null,
   width: null,

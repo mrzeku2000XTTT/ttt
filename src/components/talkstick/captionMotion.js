@@ -79,8 +79,36 @@ const weight = (group) => {
 };
 
 /**
+ * The cards cut from the recogniser's own word timings, when the caption carries
+ * them. This is the frame-accurate path: every card starts and ends when the voice
+ * does, rather than when a share of the track says it should.
+ *
+ * Returns null when there are no timings — or when the caption is one whole block,
+ * which needs no cues at all — so the caller can fall back to the estimate.
+ */
+export function timedCards(caption) {
+  const words = caption?.words;
+  const mode = caption?.anim || "off";
+  if (!Array.isArray(words) || !words.length || mode === "off") return null;
+
+  const size = mode === "word" ? 1 : clamp(Math.round(caption?.chunk || 3), 2, 6);
+  const cards = [];
+  for (let i = 0; i < words.length; i += size) {
+    const slice = words.slice(i, i + size);
+    const start = Number(slice[0]?.start);
+    const end = Number(slice[slice.length - 1]?.end);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) continue;
+    cards.push({ text: slice.map((word) => word.text).join(" "), start, end });
+  }
+  return cards.length ? cards : null;
+}
+
+/**
  * The cue sheet: one entry per card, with the moment it starts and ends. Cached,
  * because the renderer asks for it sixty times a second.
+ *
+ * Word timings from the voice win whenever they are there; without them the track
+ * is shared out across the words by how long each takes to say.
  */
 let cache = null;
 
@@ -90,18 +118,34 @@ export function cueSheet(caption, duration) {
   const chunk = caption?.chunk ?? 3;
   const offset = caption?.syncOffset || 0;
   const span = Number(duration) > 0 ? Number(duration) : 0;
-  const key = `${mode}|${chunk}|${offset}|${span}|${text}`;
+  const stamp =
+    Array.isArray(caption?.words) && caption.words.length
+      ? `${caption.words.length}:${caption.words[0]?.start}`
+      : "none";
+  const key = `${mode}|${chunk}|${offset}|${span}|${text}|${stamp}`;
   if (cache && cache.key === key) return cache.cues;
 
-  const groups = groupWords(text, mode, chunk);
-  const total = groups.reduce((sum, group) => sum + weight(group), 0) || 1;
-  let at = 0;
-  const cues = groups.map((group) => {
-    const length = span * (weight(group) / total);
-    const cue = { text: group, start: at + offset, end: at + length + offset };
-    at += length;
-    return cue;
-  });
+  const timed = timedCards(caption);
+  let cues;
+
+  if (timed) {
+    // Straight off the voice: a card runs from its first word to its last.
+    cues = timed.map((card) => ({
+      text: card.text,
+      start: card.start + offset,
+      end: card.end + offset,
+    }));
+  } else {
+    const groups = groupWords(text, mode, chunk);
+    const total = groups.reduce((sum, group) => sum + weight(group), 0) || 1;
+    let at = 0;
+    cues = groups.map((group) => {
+      const length = span * (weight(group) / total);
+      const cue = { text: group, start: at + offset, end: at + length + offset };
+      at += length;
+      return cue;
+    });
+  }
 
   cache = { key, cues };
   return cues;
@@ -123,7 +167,10 @@ export function cueAt(cues, time) {
  */
 export function shownCaption(caption, { time, duration, running }) {
   if (!caption || (caption.anim || "off") === "off") return caption;
-  if (!(Number(duration) > 0)) return caption;
+  // Word timings stand on their own, so the words can be cut before the track has
+  // finished reporting its length.
+  const timed = Array.isArray(caption.words) && caption.words.length > 0;
+  if (!timed && !(Number(duration) > 0)) return caption;
 
   const cue = cueAt(cueSheet(caption, duration), time);
   if (!cue) return caption;

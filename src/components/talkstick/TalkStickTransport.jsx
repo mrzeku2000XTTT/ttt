@@ -29,18 +29,30 @@ export default function TalkStickTransport({ engine, caption, onCaption }) {
     if (!engine.audioFile || busy) return;
     setBusy(true);
     setError("");
+    // Transcribing means wanting the words to follow the voice, so a caption still
+    // sitting as one block starts moving with the track.
+    const follow = (caption.anim || "off") === "off" ? { anim: "chunk" } : {};
+    const tidy = (value) => String(value || "").replace(/\s+/g, " ").trim();
+
     base44.integrations.Core.UploadPublicFile({ file: engine.audioFile })
-      .then(({ file_url }) => base44.integrations.Core.TranscribeAudio({ audio_url: file_url }))
-      .then((result) => {
-        const spoken = typeof result === "string" ? result : result?.text || "";
-        // The whole transcript, so the words still cover the end of a long take —
-        // cutting it short left the caption sitting on its last line while the
-        // voice carried on.
-        // Transcribing means wanting the words to follow the voice, so a caption
-        // still sitting as one block starts moving with the track.
-        const follow = (caption.anim || "off") === "off" ? { anim: "chunk" } : {};
-        patch({ text: spoken.replace(/\s+/g, " ").trim().slice(0, 1500), ...follow });
-      })
+      .then(({ file_url }) =>
+        // The recogniser hands back the moment each word was spoken, so the caption
+        // is cut from the voice itself instead of estimated from the words.
+        base44.functions
+          .invoke("talkStickTranscribe", { audio_url: file_url })
+          .then(({ data }) => {
+            if (!data?.words?.length) throw new Error(data?.error || "No speech found");
+            patch({ text: tidy(data.text), words: data.words, ...follow });
+          })
+          .catch(() =>
+            // No timings came back — the words still follow the track, shared out
+            // across it by how long each one takes to say.
+            base44.integrations.Core.TranscribeAudio({ audio_url: file_url }).then((result) => {
+              const spoken = typeof result === "string" ? result : result?.text || "";
+              patch({ text: tidy(spoken).slice(0, 1500), words: null, ...follow });
+            }),
+          ),
+      )
       .catch(() => setError("That audio could not be transcribed."))
       .finally(() => setBusy(false));
   };
@@ -92,7 +104,10 @@ export default function TalkStickTransport({ engine, caption, onCaption }) {
           type="text"
           placeholder="Type a caption, or transcribe the audio"
           value={caption.text}
-          onChange={(event) => patch({ text: event.target.value })}
+          onChange={(event) =>
+            // Typing new words means the old timings no longer describe them.
+            patch({ text: event.target.value, words: null })
+          }
         />
         <button
           type="button"

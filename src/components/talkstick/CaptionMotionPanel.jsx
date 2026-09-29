@@ -16,6 +16,9 @@ export default function CaptionMotionPanel({ caption, onChange, engine }) {
   const offset = caption.syncOffset || 0;
   const words = String(caption.text || "").split(/\s+/).filter(Boolean).length;
   const cards = groupWords(caption.text, mode, chunk).length;
+  // True once the track has been transcribed with word-level timings, which is what
+  // makes the cards land on the voice instead of on a share of the track.
+  const timed = Array.isArray(caption.words) && caption.words.length > 0;
   const [now, setNow] = useState(null);
 
   // The renderer already works out which card the voice is on; this only reads it
@@ -122,8 +125,10 @@ export default function CaptionMotionPanel({ caption, onChange, engine }) {
           <p className={`ts-motion-now ${now ? "is-live" : ""}`}>{readout()}</p>
 
           <p className="ts-hint">
-            {words} word{words === 1 ? "" : "s"} cut into {cards} card{cards === 1 ? "" : "s"} across the track. Sync
-            nudges every card earlier or later so the words land with the voice.
+            {timed
+              ? `Timed to the voice — ${cards} card${cards === 1 ? "" : "s"}, each starting when its words are spoken.`
+              : `${words} word${words === 1 ? "" : "s"} cut into ${cards} card${cards === 1 ? "" : "s"} across the track.`}{" "}
+            Sync nudges every card earlier or later so the words land with the voice.
           </p>
         </>
       )}
