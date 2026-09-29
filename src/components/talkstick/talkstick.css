@@ -1147,6 +1147,27 @@
   .ts-head .ts-badge { display: none; }
   .ts-head-panel { display: inline-flex; }
 
+  /* The stage toolbar carries five controls in one row. The words come off the
+     tool pills so the row fits a phone, and everything may wrap rather than run
+     off the edge — the stage is directly under it, so a second row costs almost
+     nothing. Touch targets stay tall enough to hit with a thumb. */
+  .ts-stage-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px 8px;
+  }
+  .ts-stage-label { display: none; }
+  .ts-stage-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+  .ts-tools .ts-mode-text { display: none; }
+  .ts-stage-actions .ts-mode {
+    padding: 9px 11px;
+    min-height: 40px;
+  }
+
   .ts-layout {
     display: flex;
     flex-direction: column;
@@ -1213,11 +1234,27 @@
 }
 
 /* A very narrow phone still has to fit Store, Home, the mark and the controls
-   across one row — so the header tightens up rather than pushing anything off. */
+   across one row — so the header tightens up rather than pushing anything off,
+   and the last words come off the stage toolbar so it is icons only. */
 @media (max-width: 400px) {
-  .ts-head { padding: 10px 12px; }
+  .ts-head {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
   .ts-head-left { gap: 6px; }
+  .ts-head-right { margin-left: auto; }
   .ts-back { padding: 6px 9px; letter-spacing: 0.08em; }
   .ts-brand { font-size: 16px; }
   .ts-head-panel { padding: 7px 10px; }
+
+  .ts-stage-bar { padding: 8px 10px 6px; }
+  .ts-stage-actions .ts-mode-text { display: none; }
+  .ts-stage-actions .ts-mode { padding: 10px; }
+}
+
+/* A phone on its side has very little height, so the timeline gives most of it
+   back to the stage and keeps only what it needs to stay scrubbable. */
+@media (max-width: 900px) and (max-height: 520px) {
+  .ts-transport { max-height: 30dvh; }
+  .ts-stage { padding: 10px; }
 }

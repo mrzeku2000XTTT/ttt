@@ -318,7 +318,7 @@ export default function TalkStickStage({
                   onClick={() => onToolChange("mouse")}
                 >
                   <MousePointer2 className="ts-mode-icon" />
-                  Mouse
+                  <span className="ts-mode-text">Mouse</span>
                 </button>
                 <button
                   type="button"
@@ -329,7 +329,7 @@ export default function TalkStickStage({
                   onClick={() => onToolChange("hand")}
                 >
                   <Hand className="ts-mode-icon" />
-                  Hand
+                  <span className="ts-mode-text">Hand</span>
                 </button>
                 <button
                   type="button"
@@ -340,7 +340,7 @@ export default function TalkStickStage({
                   onClick={() => onToolChange("cycle")}
                 >
                   <Repeat className="ts-mode-icon" />
-                  Cycle
+                  <span className="ts-mode-text">Cycle</span>
                 </button>
               </div>
             )}
@@ -348,10 +348,11 @@ export default function TalkStickStage({
               type="button"
               className={`ts-mode ${editing ? "" : "is-ready"}`}
               aria-pressed={!editing}
+              title={editing ? "Hide the guides for a clean look" : "Show the guides and adjust the face"}
               onClick={onToggleEditing}
             >
               {editing ? <Eye className="ts-mode-icon" /> : <Move className="ts-mode-icon" />}
-              {editing ? "Ready view" : "Adjust face"}
+              <span className="ts-mode-text">{editing ? "Ready view" : "Adjust face"}</span>
             </button>
             </>
           )}
@@ -362,7 +363,7 @@ export default function TalkStickStage({
             title={full ? "Leave full screen" : "Fill the screen with the stage"}
           >
             {full ? <Minimize2 className="ts-mode-icon" /> : <Maximize2 className="ts-mode-icon" />}
-            {full ? "Exit" : "Full screen"}
+            <span className="ts-mode-text">{full ? "Exit" : "Full screen"}</span>
           </button>
         </div>
       </div>

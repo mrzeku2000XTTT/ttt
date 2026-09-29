@@ -66,4 +66,31 @@ scrolls inside itself.
 
 Check every studio at **320, 360, 390 and 440px** wide, portrait and landscape:
 nothing overflows, nothing overlaps, no horizontal scrollbar, and the primary
-action is reachable without scrolling.
+action is reachable without scrolling. **320px is the floor** — if it fits there,
+it fits everywhere.
+
+## 6. Fit any screen — no row may assume a width
+
+A control row is where a layout usually breaks. A row must **wrap** or **drop its
+words** — never push past the edge, and never be given a minimum width it cannot
+shrink out of.
+
+- **Wrap, don't overflow.** Give every toolbar `flex-wrap: wrap`, and put
+  `margin-left: auto` on its trailing group so the row reflows onto a second line
+  instead of running off screen. The TALKSTICK studio's stage toolbar
+  (`.ts-stage-bar`) is the pattern.
+- **Drop the words, keep the icon.** Below 760px the labelled pills lose their
+  text; below 400px the stage toolbar is icons only. Wrap each label in a span
+  (`.ts-mode-text`) and hide the span at the breakpoint — and always leave the
+  button a `title` plus its `aria-*` state, so an icon-only control still says
+  what it does and what it is set to.
+- **Never hide a control to make room.** Shrink it, wrap it or reflow it; the
+  primary action must still be reachable at 320px.
+- **Height is a screen size too.** `100dvh` already covers the browser bars; give
+  the middle surface `min-h-0` so it shrinks rather than pushing the toolbar off
+  the bottom. On a phone on its side (`max-height: 520px`) hand the height back to
+  the main surface and leave the secondary strip only what it needs.
+- **Touch targets stay ≥ 40px tall** at every breakpoint — icon-only pills
+  included.
+- **Test the widest content, not the empty state.** A row of five controls is at
+  its worst with the longest label and the longest number in it.
