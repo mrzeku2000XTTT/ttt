@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { orgColor, fmt } from "@/lib/evolve/constants";
 
@@ -11,7 +11,7 @@ const SORTS = [
 ];
 
 /** The agent roster — sortable, searchable, and the way into any inspector. */
-export default function AgentList({ onSelect }) {
+export default function AgentList({ onSelect, onClose }) {
   const { engine } = useEvolve();
   const [sort, setSort] = useState("fitness");
   const [q, setQ] = useState("");
@@ -36,6 +36,11 @@ export default function AgentList({ onSelect }) {
       <div className="ev-panel-head">
         <span className="ev-panel-title">Agents · {engine.stats().agents}</span>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5 }}>
+          {onClose && (
+            <button className="ev-btn ev-btn-ghost" style={{ padding: 6 }} onClick={onClose} title="Close">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
           <Search className="h-3 w-3" style={{ color: "#54657c" }} />
           <input
             value={q}

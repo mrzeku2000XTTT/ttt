@@ -61,19 +61,19 @@ export default function EvolveApp() {
   const centre = () => {
     switch (view) {
       case "AGENTS":
-        return <AgentList onSelect={(id) => open("agent", id)} />;
+        return <AgentList onClose={() => setView("WORLD")} onSelect={(id) => open("agent", id)} />;
       case "JOBS":
         return <JobMarket onClose={() => setView("WORLD")} onSelectJob={(id) => open("job", id)} />;
       case "ECONOMY":
-        return <EconomyPanel />;
+        return <EconomyPanel onClose={() => setView("WORLD")} />;
       case "FACTIONS":
-        return <FactionsGrid onSelect={(id) => open("faction", id)} onSelectOrg={(id) => open("org", id)} />;
+        return <FactionsGrid onClose={() => setView("WORLD")} onSelect={(id) => open("faction", id)} onSelectOrg={(id) => open("org", id)} />;
       case "RESEARCH":
-        return <ResearchPanel onSelectAgent={(id) => open("agent", id)} />;
+        return <ResearchPanel onClose={() => setView("WORLD")} onSelectAgent={(id) => open("agent", id)} />;
       case "LINEAGE":
-        return topAgent ? <LineageViewer agentId={topAgent.id} onSelect={(id) => open("agent", id)} /> : null;
+        return topAgent ? <LineageViewer agentId={topAgent.id} onClose={() => setView("WORLD")} onSelect={(id) => open("agent", id)} /> : null;
       case "EVENTS":
-        return <EventExplorer onPick={handleEvent} />;
+        return <EventExplorer onClose={() => setView("WORLD")} onPick={handleEvent} />;
       default:
         return null;
     }

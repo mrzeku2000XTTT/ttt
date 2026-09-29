@@ -1,4 +1,5 @@
 import React from "react";
+import { X } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { orgColor, fmt, fmtInt } from "@/lib/evolve/constants";
 
@@ -7,7 +8,7 @@ import { orgColor, fmt, fmtInt } from "@/lib/evolve/constants";
  * At genesis there are zero organizations. They appear when independent agents
  * discover that repeated cooperation improves their economic survival.
  */
-export default function FactionsGrid({ onSelect, onSelectOrg }) {
+export default function FactionsGrid({ onSelect, onSelectOrg, onClose }) {
   const { engine } = useEvolve();
   if (!engine) return null;
 
@@ -21,6 +22,11 @@ export default function FactionsGrid({ onSelect, onSelectOrg }) {
         <div className="ev-panel-head">
           <span className="ev-panel-title">Organizations</span>
           <span style={{ marginLeft: "auto", fontSize: 9, color: "#54657c", letterSpacing: "0.1em" }}>0 FORMED</span>
+          {onClose && (
+            <button className="ev-btn ev-btn-ghost" style={{ padding: 6, marginLeft: 6 }} onClick={onClose} title="Close">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         <div style={{ padding: 32, textAlign: "center" }}>
           <div style={{ fontSize: 11, color: "#54657c", letterSpacing: "0.18em", marginBottom: 12 }}>NO ORGANIZATIONS YET</div>
@@ -42,6 +48,11 @@ export default function FactionsGrid({ onSelect, onSelectOrg }) {
       <div className="ev-panel-head">
         <span className="ev-panel-title">Organizations</span>
         <span style={{ marginLeft: "auto", fontSize: 9, color: "#54657c", letterSpacing: "0.1em" }}>{engine.orgs.length} ACTIVE · {independent.length} INDEPENDENT</span>
+        {onClose && (
+          <button className="ev-btn ev-btn-ghost" style={{ padding: 6, marginLeft: 6 }} onClick={onClose} title="Close">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10, padding: 12 }}>
