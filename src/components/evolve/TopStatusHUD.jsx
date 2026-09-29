@@ -1,5 +1,6 @@
 import React from "react";
-import { Landmark, Play, Pause } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Landmark, Play, Pause, Store } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { fmt, fmtInt } from "@/lib/evolve/constants";
 import ConnectScorpion from "./ConnectScorpion";
@@ -12,8 +13,14 @@ const SPEEDS = [1, 2, 5, 10];
  */
 export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
   const { engine } = useEvolve();
+  const navigate = useNavigate();
   if (!engine) return null;
   const s = engine.stats();
+
+  const exitToStore = () => {
+    try { localStorage.removeItem("came_from_categories"); } catch {}
+    navigate("/AppStoreV2");
+  };
 
   const Metric = ({ label, value, delta, color, onClick, title }) => (
     <button
@@ -71,6 +78,10 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
         </button>
         <button className="ev-btn ev-btn-ghost" style={{ padding: 7 }} onClick={onMenu} title="Simulation settings">
           <span style={{ fontSize: 12, lineHeight: 1 }}>⋯</span>
+        </button>
+        <button className="ev-btn ev-btn-ghost" style={{ padding: 7 }} onClick={exitToStore} title="Exit to Store">
+          <Store className="h-3.5 w-3.5" />
+          <span style={{ fontSize: 10 }}>EXIT</span>
         </button>
       </div>
     </div>
