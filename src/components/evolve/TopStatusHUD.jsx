@@ -61,7 +61,7 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
           {engine.paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
           <span style={{ fontSize: 10 }}>{engine.paused ? "PAUSED" : `${engine.speed}×`}</span>
         </button>
-        <div style={{ display: "flex", gap: 2 }}>
+        <div className="ev-speeds" style={{ display: "flex", gap: 2 }}>
           {SPEEDS.map((v) => (
             <button
               key={v}
@@ -73,7 +73,7 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
             </button>
           ))}
         </div>
-        <button className="ev-btn ev-btn-ghost" style={{ padding: 7 }} onClick={onTreasury} title="Treasury">
+        <button className="ev-btn ev-btn-ghost ev-opt-sm" style={{ padding: 7 }} onClick={onTreasury} title="Treasury">
           <Landmark className="h-3.5 w-3.5" />
         </button>
         <button className="ev-btn ev-btn-ghost" style={{ padding: 7 }} onClick={onMenu} title="Simulation settings">
@@ -81,7 +81,7 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
         </button>
         <button className="ev-btn" style={{ padding: "7px 11px" }} onClick={exitToStore} title="Exit to Store">
           <Store className="h-3.5 w-3.5" />
-          <span style={{ fontSize: 10, fontWeight: 800 }}>EXIT TO STORE</span>
+          <span className="ev-exit-label" style={{ fontSize: 10, fontWeight: 800 }}>EXIT TO STORE</span>
         </button>
       </div>
     </div>

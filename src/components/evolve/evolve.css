@@ -20,7 +20,8 @@
 /* ------------------------------------------------------------- structure */
 .ev-hud { flex: none; }
 .ev-mid { flex: 1; min-height: 0; display: flex; position: relative; }
-.ev-nav { flex: none; width: 64px; }
+.ev-nav { flex: none; width: 64px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.ev-nav::-webkit-scrollbar { display: none; }
 .ev-map { flex: 1; min-width: 0; position: relative; background: #04080f; }
 .ev-intel { flex: none; width: 272px; }
 .ev-tools { flex: none; }
@@ -75,7 +76,8 @@
 .ev-metric-label { font-size: 8px; letter-spacing: 0.13em; color: #54657c; text-transform: uppercase; white-space: nowrap; }
 .ev-metric-value { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; }
 .ev-metric-delta { font-size: 9px; font-weight: 700; margin-left: 5px; }
-.ev-clock { display: flex; align-items: center; gap: 6px; padding: 0 12px; flex: none; }
+.ev-clock { display: flex; align-items: center; gap: 6px; padding: 0 12px; flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.ev-clock::-webkit-scrollbar { display: none; }
 
 /* --------------------------------------------------------------- nav */
 .ev-nav-item {
@@ -177,6 +179,15 @@
 
 .ev-minimap { width: 100%; aspect-ratio: 3 / 2; background: #04080f; border: 1px solid rgba(120,160,200,0.18); border-radius: 4px; display: block; cursor: crosshair; }
 
+/* Compact player stat strip pinned under the HUD. */
+.ev-player-hud {
+  position: absolute; top: 50px; left: 60px; z-index: 15;
+  display: flex; background: rgba(7,11,19,0.88);
+  border: 1px solid rgba(120,160,200,0.16); border-radius: 6px;
+  backdrop-filter: blur(6px); max-height: 36px; overflow: hidden;
+  max-width: calc(100vw - 72px);
+}
+
 /* ------------------------------------------------------------ overlays */
 .ev-sheet-backdrop { position: absolute; inset: 0; background: rgba(3,6,11,0.6); z-index: 40; }
 .ev-sheet {
@@ -184,6 +195,7 @@
   border: 1px solid rgba(120,160,200,0.22); display: flex; flex-direction: column;
   border-radius: 8px; overflow: hidden;
   box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  max-width: calc(100vw - 16px);
 }
 
 /* ---------------------------------------------------------- responsive */
@@ -200,13 +212,41 @@
   .ev-metric-value { font-size: 12px; }
   .ev-brand-sub { display: none; }
 }
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   .ev-nav { width: 44px; }
   .ev-brand { padding: 0 10px; }
   .ev-brand-mark { font-size: 13px; letter-spacing: 0.16em; }
-  .ev-tool { min-width: 54px; padding: 6px; }
-  /* Exit-to-Store pill shrinks to icon-only on phones; reserve less room. */
-  .ev-clock { padding-right: 56px; }
+  .ev-tool { min-width: 54px; padding: 6px; min-height: 46px; }
+  .ev-clock { padding: 0 8px; }
+  /* Secondary clock controls drop so the bar never clips on a phone. */
+  .ev-opt-sm { display: none !important; }
+  .ev-exit-label { display: none; }
+  /* Touch-friendly targets everywhere on phones. */
+  .ev-btn { min-height: 34px; padding: 8px 12px; }
+  .ev-btn[style*="padding: 3px"] , .ev-btn[style*="padding: 2px"] { min-height: 28px; }
+  .ev-nav-item { min-height: 46px; }
+  .ev-nav-item .h-4 { width: 18px; height: 18px; }
+  .ev-tools-row { padding: 6px 6px; }
+  /* Player HUD spans the free width and scrolls instead of overflowing. */
+  .ev-player-hud { left: 52px; right: 8px; max-width: none; overflow-x: auto; scrollbar-width: none; }
+  .ev-player-hud::-webkit-scrollbar { display: none; }
+  /* Wallet address is redundant on a phone — the dashboard shows it in full. */
+  .ev-wallet-addr { display: none; }
+  /* Right-anchored sheets span the free width instead of overflowing. */
+  .ev-sheet-sm { left: 52px !important; right: 8px !important; width: auto !important; max-width: none !important; }
+  /* Stacked side panels so grids keep their full width. */
+  .ev-stack-sm { flex-direction: column !important; }
+  .ev-stack-sm > .ev-side-sm {
+    width: 100% !important; max-width: none !important;
+    border-left: none !important; border-right: none !important;
+    border-top: 1px solid rgba(120,160,200,0.16);
+    max-height: 55vh; overflow-y: auto;
+  }
+}
+@media (max-width: 560px) {
+  .ev-speeds { display: none !important; }
+  .ev-metric { min-width: 62px; padding: 0 8px; }
+  .ev-section { padding: 8px 9px; }
 }
 /* Phone on its side: the HUD and toolbar tighten so the world keeps the height. */
 @media (max-height: 520px) {
@@ -215,6 +255,11 @@
   .ev-metric-value { font-size: 12px; }
   .ev-tool { padding: 5px 6px; min-width: 54px; }
   .ev-tools-row { padding: 5px 6px; }
+  .ev-clock { padding: 0 8px; }
+  .ev-opt-sm { display: none !important; }
+  .ev-exit-label { display: none; }
+  .ev-speeds { display: none !important; }
+  .ev-nav-item { padding: 7px 2px; }
 }
 
 /* Payment pulse animation — used by confirmation indicators and world map pulses. */

@@ -71,8 +71,8 @@ export default function CountrySelect({ onExplore, onStartHere, onClose }) {
   };
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 36, display: "flex", background: "rgba(3,6,11,0.96)" }}>
-      <div className="ev-panel" style={{ flex: "1 1 45%", maxWidth: 460, borderRight: `1px solid ${C.line}` }}>
+    <div className="ev-stack-sm" style={{ position: "absolute", inset: 0, zIndex: 36, display: "flex", background: "rgba(3,6,11,0.96)" }}>
+      <div className="ev-panel ev-side-sm" style={{ flex: "1 1 45%", maxWidth: 460, borderRight: `1px solid ${C.line}` }}>
         <div className="ev-panel-head">
           <span className="ev-panel-title">SEARCH · REAL EARTH</span>
           <button className="ev-btn ev-btn-ghost" style={{ marginLeft: "auto", padding: "4px 10px" }} onClick={onClose}>CLOSE</button>

@@ -29,12 +29,7 @@ export default function PlayerHUD() {
   ];
 
   return (
-    <div style={{
-      position: "absolute", top: 50, left: 60, zIndex: 15,
-      display: "flex", gap: 0, background: "rgba(7,11,19,0.88)",
-      border: `1px solid ${C.line}`, borderRadius: 6, backdropFilter: "blur(6px)",
-      maxHeight: 36, overflow: "hidden",
-    }}>
+    <div className="ev-player-hud" style={{ gap: 0 }}>
       {items.map((it, i) => (
         <div key={it.label} style={{
           display: "flex", flexDirection: "column", justifyContent: "center",

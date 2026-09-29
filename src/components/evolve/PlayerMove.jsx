@@ -41,7 +41,7 @@ export default function PlayerMove({ onClose, onMoved }) {
         <span className="ev-panel-title">MOVE · CURRENT {p.position.x},{p.position.y}</span>
         <button className="ev-btn ev-btn-ghost" style={{ marginLeft: "auto", padding: "3px 8px" }} onClick={onClose}>CLOSE</button>
       </div>
-      <div className="ev-panel-body ev-scroll" style={{ display: "flex" }}>
+      <div className="ev-panel-body ev-scroll ev-stack-sm" style={{ display: "flex" }}>
         <div style={{ flex: 1, overflow: "auto", padding: 10, display: "flex", justifyContent: "center" }}>
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${x1 - x0 + 1}, ${cellSize}px)`, gap: 1 }}>
             {Array.from({ length: (x1 - x0 + 1) * (y1 - y0 + 1) }).map((_, i) => {
@@ -65,7 +65,7 @@ export default function PlayerMove({ onClose, onMoved }) {
             })}
           </div>
         </div>
-        <div style={{ width: 200, padding: 12, borderLeft: `1px solid ${C.line}` }}>
+        <div className="ev-side-sm" style={{ width: 200, padding: 12, borderLeft: `1px solid ${C.line}` }}>
           {dest ? (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginBottom: 8 }}>DEST {dest.x},{dest.y}</div>

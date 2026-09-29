@@ -31,7 +31,7 @@ export default function PlayerWalletBar({ onActivity }) {
           {tn10 ? "TN-10" : "WRONG NET"}
         </span>
         {shortAddr && (
-          <span style={{ fontSize: 9, color: "#7d8da3", fontFamily: "monospace", letterSpacing: "0.02em" }} title={addr}>
+          <span className="ev-wallet-addr" style={{ fontSize: 9, color: "#7d8da3", fontFamily: "monospace", letterSpacing: "0.02em" }} title={addr}>
             {shortAddr}
           </span>
         )}

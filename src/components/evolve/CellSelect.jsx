@@ -177,7 +177,7 @@ export default function CellSelect({ onClose }) {
   const placeName = selectedCountry?._place?.name || selectedCountry.name;
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 37, display: "flex", background: "rgba(3,6,11,0.96)" }}>
+    <div className="ev-stack-sm" style={{ position: "absolute", inset: 0, zIndex: 37, display: "flex", background: "rgba(3,6,11,0.96)" }}>
       <div className="ev-panel" style={{ flex: 1, borderRight: `1px solid ${C.line}`, minWidth: 0 }}>
         <div className="ev-panel-head">
           <span className="ev-panel-title">{placeName.toUpperCase()} · CELL SELECT</span>
@@ -199,7 +199,7 @@ export default function CellSelect({ onClose }) {
         </div>
       </div>
 
-      <div style={{ width: 260, padding: 14, overflowY: "auto" }}>
+      <div className="ev-side-sm" style={{ width: 260, padding: 14, overflowY: "auto" }}>
         {selectedSpawnCell ? (
           <>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2, wordBreak: "break-all" }}>

@@ -50,7 +50,7 @@ export default function HumanDashboard({ onClose, onInspectAgent }) {
   const balanceLabel = walletConnected ? `${(Number(balSompi) / 1e8).toFixed(4)} KAS` : "—";
 
   return (
-    <div className="ev-sheet" style={{ top: 50, right: 12, width: 320, maxHeight: "78vh" }}>
+    <div className="ev-sheet ev-sheet-sm" style={{ top: 50, right: 12, width: 320, maxHeight: "78vh" }}>
       <div className="ev-panel-head">
         <span className="ev-panel-title">Human Dashboard</span>
         <span style={{ fontSize: 10, color: C.cyan, fontWeight: 700, marginLeft: 6 }}>{player.code}</span>
