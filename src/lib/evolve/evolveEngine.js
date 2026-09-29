@@ -776,6 +776,11 @@ export class EvolveEngine {
   chargeUpkeep() {
     const slice = this.agents.slice(0, 60).filter((a) => a.status !== "archived");
     slice.forEach((a) => {
+      // A human player's own AI agents are funded by the player on TN-10, not by
+      // the simulated ledger. They must never bleed out or be archived by the
+      // economy — otherwise the player's lineage silently disappears.
+      const owned = !!(a.owner_player_id || a.owner_user_id);
+      if (owned) return;
       charge(a, ["storage"]);
       if (a.balance < -6) {
         this.evolution.archiveAgent(a, "Insolvent");
@@ -1345,6 +1350,16 @@ export class EvolveEngine {
     this.agents = this.agents.filter((a) => {
       const addr = String(a.address || "");
       return !addr.startsWith("mock:");
+    });
+    // Repair player-owned agents that an earlier insolvency rule wrongly archived,
+    // so a player's lineage is always present after a reload.
+    this.agents.forEach((a) => {
+      const owned = !!(a.owner_player_id || a.owner_user_id);
+      if (owned && a.status === "archived") {
+        a.status = "idle";
+        delete a.archive_reason;
+      }
+      if (owned && a.balance < 0) a.balance = 0;
     });
     this.agentById = new Map(this.agents.map((a) => [a.id, a]));
     this.agentSeq = this.agents.reduce((m, a) => Math.max(m, Number(String(a.code).replace(/\D/g, "")) || 0), 0);
