@@ -137,12 +137,12 @@ export function addStateBorders(map, geo, opts = {}) {
 /** Cells overlay: a dynamic GeoJSON source of cell polygons + a selection outline. */
 export function ensureCellsLayer(map) {
   if (hasLayer(map, "ev-cells-fill")) return;
-  map.addSource("ev-cells", { type: "geojson", data: { type: "FeatureCollection", features: [] }, maxzoom: 11 });
+  map.addSource("ev-cells", { type: "geojson", data: { type: "FeatureCollection", features: [] }, maxzoom: 13 });
   map.addLayer({
     id: "ev-cells-fill",
     type: "fill",
     source: "ev-cells",
-    minzoom: 5,
+    minzoom: 10,
     paint: {
       "fill-color": ["coalesce", ["get", "color"], EVOLVE_COLORS.land],
       "fill-opacity": ["coalesce", ["get", "opacity"], 0.4],
@@ -152,7 +152,7 @@ export function ensureCellsLayer(map) {
     id: "ev-cells-sel",
     type: "line",
     source: "ev-cells",
-    minzoom: 5,
+    minzoom: 10,
     filter: ["==", ["get", "sel"], 1],
     paint: { "line-color": EVOLVE_COLORS.cell, "line-width": 2 },
   });

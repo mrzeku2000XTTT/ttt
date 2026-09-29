@@ -9,7 +9,8 @@ import { makeIdempotencyKey } from "./paymentIntentService";
 import { useConfirmationWatcher } from "./confirmationWatcher";
 import { TxStatus } from "./txStateMachine";
 import { kasToSompi } from "./evolveTxBuilder";
-import { COUNTRIES, countryByName } from "./countryMap";
+import { COUNTRIES, countryByName, latLngToGrid } from "./countryMap";
+import { geoCellToEnginePos } from "./geoCells";
 
 const EvolveContext = createContext(null);
 
@@ -219,13 +220,33 @@ export function EvolveProvider({ children }) {
       if (!user?.id) return { ok: false, reason: "NO_USER" };
       if (!isolatedMockEnabled) return blockedPayment();
       const addr = wallet.isTN10 && wallet.address ? wallet.address : `mock:player:${user.id}`;
+      // Geographic cell (from geoCells) → engine X/Y position (simulation substrate).
+      // The user-facing selection is the precise geographic cell; the engine
+      // keeps its internal grid. Both are stored on the player record.
+      let enginePos = position;
+      let geoCellId = "";
+      let geoLat = null;
+      let geoLng = null;
+      if (position && position.cellId) {
+        enginePos = geoCellToEnginePos(position, engine.world);
+        geoCellId = position.cellId;
+        geoLat = position.centerLat;
+        geoLng = position.centerLng;
+      } else if (position && Number.isFinite(position.centerLat)) {
+        enginePos = latLngToGrid(position.centerLat, position.centerLng, engine.world.width, engine.world.height);
+      }
       const res = engine.spawnPlayer({
         userId: user.id,
         country,
-        position,
+        position: enginePos,
         walletAddress: addr,
       });
       if (res?.ok) {
+        if (geoCellId) {
+          res.player.geo_cell_id = geoCellId;
+          res.player.geo_lat = geoLat;
+          res.player.geo_lng = geoLng;
+        }
         setPlayer(res.player);
         setPlayerMode("player");
         setCameraMode("FOLLOW_ME");

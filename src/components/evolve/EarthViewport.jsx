@@ -13,8 +13,6 @@ import {
   loadPlaces50,
   camToView,
   viewToCam,
-  cellBox,
-  gridRangeFromBox,
   gridToLatLng,
 } from "@/lib/evolve/geoService";
 import {
@@ -28,6 +26,13 @@ import {
   ensureActorsLayer,
 } from "@/lib/evolve/evolveMapStyle";
 import { toValidLngLat } from "@/lib/evolve/geoService";
+import {
+  CELL_MIN_ZOOM,
+  setLandIndex,
+  cellsInViewport,
+  geoCellToEnginePos,
+  latLngToGeoCell,
+} from "@/lib/evolve/geoCells";
 
 const ASSET_COLOR = {
   server: "#60a5fa",
@@ -91,7 +96,7 @@ export default function EarthViewport({ cam, setCam, onSize }) {
       center: initialCenter,
       zoom: view.zoom,
       minZoom: 2,
-      maxZoom: 11,
+      maxZoom: 13,
       attributionControl: false,
       antialias: true,
     });
@@ -100,6 +105,7 @@ export default function EarthViewport({ cam, setCam, onSize }) {
       // progressive self-hosted basemap
       const [land, c110] = await Promise.all([loadLand50(), loadCountries110()]);
       addLandLayer(map, land);
+      setLandIndex(land); // geographic land index for cell spawnability
       addCountryBorders(map, c110, { id: "ev-countries-110", minzoom: 0, maxzoom: 4, color: EVOLVE_COLORS.borderStrong, width: 0.8 });
       ensureCellsLayer(map);
       ensureActorsLayer(map);
@@ -111,6 +117,8 @@ export default function EarthViewport({ cam, setCam, onSize }) {
     });
     map.on("move", onMove);
     map.on("zoom", onMove);
+    map.on("moveend", onMoveEnd);
+    map.on("zoomend", onMoveEnd);
     map.on("click", onClick);
     return () => {
       map.remove();
@@ -136,55 +144,59 @@ export default function EarthViewport({ cam, setCam, onSize }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cam, mapReady, size.w]);
 
-  /* overlay + label refresh on move/zoom */
+  /* overlay + label refresh on move/zoom (cheap layers) */
   function onMove() {
     const map = mapRef.current;
     if (!map || !world) return;
     const z = map.getZoom();
-    updateCells(map, z);
     updateActors(map);
     updateLabels(map, z);
+  }
+
+  /* cell overlay refresh on moveend/zoomend (LOD + land-filtered) */
+  function onMoveEnd() {
+    const map = mapRef.current;
+    if (!map || !world) return;
+    updateCells(map, map.getZoom());
   }
 
   /* overlay refresh when engine state changes */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !world || !mapReady) return;
-    const z = map.getZoom();
-    updateCells(map, z);
+    updateCells(map, map.getZoom());
     updateActors(map);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine, mapReady, showCells]);
 
+  // Geographic cells: deterministic from lat/lng, land-only, LOD-gated.
+  // No giant grid — cells only appear at city zoom and conform to real land.
   function updateCells(map, z) {
     if (!map.getSource("ev-cells")) return;
-    if (!showCells || z < 5) {
+    if (!showCells || z < CELL_MIN_ZOOM) {
       map.getSource("ev-cells").setData({ type: "FeatureCollection", features: [] });
       return;
     }
-    const range = gridRangeFromBox(map.getBounds(), world);
-    const count = (range.x1 - range.x0 + 1) * (range.y1 - range.y0 + 1);
-    if (count > 2500) {
+    const cells = cellsInViewport(map.getBounds());
+    if (!cells.length) {
       map.getSource("ev-cells").setData({ type: "FeatureCollection", features: [] });
       return;
     }
     const sel = engine.selection;
-    const feats = [];
-    for (let y = range.y0; y <= range.y1; y += 1) {
-      for (let x = range.x0; x <= range.x1; x += 1) {
-        const i = y * world.width + x;
-        const ownerSlot = world.owner ? world.owner[i] : 0;
-        const orgId = ownerSlot > 0 && world.orgSlots ? world.orgSlots[ownerSlot] : null;
-        const biome = world.biome[i];
-        const color = orgId ? orgColor(orgId) : BIOMES[biome] ? BIOMES[biome].color : "#0a121e";
-        const b = cellBox(x, y, world);
-        feats.push({
-          type: "Feature",
-          properties: { color, opacity: orgId ? 0.5 : 0.32, sel: sel && sel.x === x && sel.y === y ? 1 : 0, x, y },
-          geometry: { type: "Polygon", coordinates: [[[b.west, b.south], [b.east, b.south], [b.east, b.north], [b.west, b.north], [b.west, b.south]]] },
-        });
-      }
-    }
+    const feats = cells.map((c) => {
+      const ep = geoCellToEnginePos(c, world);
+      const i = ep.y * world.width + ep.x;
+      const ownerSlot = world.owner ? world.owner[i] : 0;
+      const orgId = ownerSlot > 0 && world.orgSlots ? world.orgSlots[ownerSlot] : null;
+      const biome = world.biome[i];
+      const color = orgId ? orgColor(orgId) : BIOMES[biome] ? BIOMES[biome].color : "#0a121e";
+      const isSel = sel && sel.x === ep.x && sel.y === ep.y;
+      return {
+        type: "Feature",
+        properties: { color, opacity: orgId ? 0.5 : 0.3, sel: isSel ? 1 : 0, cellId: c.cellId },
+        geometry: { type: "Polygon", coordinates: [[[c.west, c.south], [c.east, c.south], [c.east, c.north], [c.west, c.north], [c.west, c.south]]] },
+      };
+    });
     map.getSource("ev-cells").setData({ type: "FeatureCollection", features: feats });
   }
 
@@ -247,10 +259,12 @@ export default function EarthViewport({ cam, setCam, onSize }) {
       }
     }
     const { lat, lng } = e.lngLat;
-    const x = Math.floor(((lng + 180) / 360) * world.width);
-    const y = Math.floor(((90 - lat) / 180) * world.height);
-    if (!world.inBounds(x, y)) return;
-    const res = engine.applyTool(x, y);
+    // Ground click → geographic cell → engine position. The cell the user
+    // clicked is the cell that gets selected; no offset, no projection drift.
+    const cell = latLngToGeoCell(lat, lng);
+    const ep = geoCellToEnginePos(cell, world);
+    if (!world.inBounds(ep.x, ep.y)) return;
+    const res = engine.applyTool(ep.x, ep.y);
     if (res?.message) say(res.message, res.ok !== false);
   }
 
