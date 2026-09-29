@@ -1,0 +1,48 @@
+{
+  "name": "EvolveAgentKey",
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "EVOLVE agent id this signing key belongs to"
+    },
+    "label": {
+      "type": "string"
+    },
+    "network": {
+      "type": "string",
+      "default": "kaspa_testnet_10"
+    },
+    "address": {
+      "type": "string",
+      "description": "Public kaspatest: address"
+    },
+    "mnemonic": {
+      "type": "string",
+      "description": "SERVER-ONLY signing material. Never returned to the browser, logs, or the AI."
+    },
+    "derivation_path": {
+      "type": "string",
+      "default": "m/44'/111111'/0'/0/0"
+    }
+  },
+  "required": [
+    "agent_id",
+    "address",
+    "mnemonic"
+  ],
+  "rls": {
+    "read": false,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": false
+  }
+}
