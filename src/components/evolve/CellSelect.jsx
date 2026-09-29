@@ -1,57 +1,142 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, GeoJSON, Rectangle, useMap, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { countryGridBounds, randomCellInCountry, cellStats } from "@/lib/evolve/countryMap";
-import { cellBounds, loadCountries, loadRegions } from "@/lib/evolve/geoService";
-import { BIOMES } from "@/lib/evolve/constants";
-import { C } from "@/lib/evolve/constants";
+import { cellBox, loadLand50, loadCountries110, loadCountries50, loadStates50 } from "@/lib/evolve/geoService";
+import { BIOMES, C } from "@/lib/evolve/constants";
+import {
+  initialStyle,
+  EVOLVE_COLORS,
+  registerPmtilesProtocol,
+  addLandLayer,
+  addCountryBorders,
+  addStateBorders,
+} from "@/lib/evolve/evolveMapStyle";
 
 /**
- * CellSelect — real map of the chosen region.
- * A Leaflet map is fit to the selected country/place bounds. The user zooms
- * into real geography and clicks a buildable cell to spawn. No fake grid.
+ * CellSelect — REAL EARTH map of the chosen region (MapLibre GL).
+ * The map is fit to the selected country/place bounds. The user zooms into
+ * real geography and clicks a buildable cell to spawn. No fake grid, no
+ * CARTO, no API key.
  */
 export default function CellSelect({ onClose }) {
   const { engine, selectedCountry, selectSpawnCell, selectedSpawnCell, spawnPlayer } = useEvolve();
+  const wrapRef = useRef(null);
+  const mapRef = useRef(null);
   const [hover, setHover] = useState(null);
-
-  useEffect(() => {
-    loadCountries();
-    loadRegions();
-  }, []);
 
   const bounds = useMemo(() => {
     if (!engine || !selectedCountry) return null;
     return countryGridBounds(engine.world, selectedCountry);
   }, [engine, selectedCountry]);
 
+  useEffect(() => {
+    if (!engine || !selectedCountry || !bounds || mapRef.current) return undefined;
+    registerPmtilesProtocol();
+    const world = engine.world;
+    const map = new maplibregl.Map({
+      container: wrapRef.current,
+      style: initialStyle(),
+      center: [(selectedCountry.lng0 + selectedCountry.lng1) / 2, (selectedCountry.lat0 + selectedCountry.lat1) / 2],
+      zoom: 6,
+      minZoom: 2,
+      maxZoom: 11,
+      attributionControl: false,
+      antialias: true,
+    });
+    mapRef.current = map;
+    map.on("load", async () => {
+      const [land, c110] = await Promise.all([loadLand50(), loadCountries110()]);
+      addLandLayer(map, land);
+      addCountryBorders(map, c110, { id: "ev-countries-110", minzoom: 0, maxzoom: 4, color: EVOLVE_COLORS.borderStrong, width: 0.8 });
+      loadCountries50().then((c50) => addCountryBorders(map, c50, { id: "ev-countries-50", minzoom: 4, color: EVOLVE_COLORS.border, width: 0.6 }));
+      loadStates50().then((s50) => addStateBorders(map, s50, { minzoom: 5 }));
+      map.addSource("ev-spawn-cells", { type: "geojson", data: { type: "FeatureCollection", features: [] }, maxzoom: 11 });
+      map.addLayer({
+        id: "ev-spawn-cells-fill",
+        type: "fill",
+        source: "ev-spawn-cells",
+        paint: {
+          "fill-color": ["coalesce", ["get", "color"], "#1a2a1a"],
+          "fill-opacity": ["coalesce", ["get", "opacity"], 0.28],
+        },
+      });
+      map.addLayer({
+        id: "ev-spawn-cells-sel",
+        type: "line",
+        source: "ev-spawn-cells",
+        filter: ["==", ["get", "sel"], 1],
+        paint: { "line-color": EVOLVE_COLORS.cell, "line-width": 2 },
+      });
+      drawCells(map);
+      map.fitBounds(
+        [[selectedCountry.lng0, selectedCountry.lat0], [selectedCountry.lng1, selectedCountry.lat1]],
+        { padding: 24 }
+      );
+    });
+    map.on("click", (e) => {
+      const { lat, lng } = e.lngLat;
+      const x = Math.floor(((lng + 180) / 360) * world.width);
+      const y = Math.floor(((90 - lat) / 180) * world.height);
+      if (!world.inBounds(x, y) || !world.isBuildable(x, y)) return;
+      selectSpawnCell({ x, y });
+      setHover({ x, y });
+    });
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine, selectedCountry, bounds]);
+
+  // redraw cells when selection changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && map.getSource("ev-spawn-cells")) drawCells(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSpawnCell]);
+
+  function drawCells(map) {
+    if (!engine || !bounds) return;
+    const world = engine.world;
+    const total = (bounds.x1 - bounds.x0 + 1) * (bounds.y1 - bounds.y0 + 1);
+    const maxCells = 3000;
+    const feats = [];
+    if (total <= maxCells) {
+      for (let y = bounds.y0; y <= bounds.y1; y += 1) {
+        for (let x = bounds.x0; x <= bounds.x1; x += 1) {
+          if (!world.isBuildable(x, y)) continue;
+          const isSel = selectedSpawnCell?.x === x && selectedSpawnCell?.y === y;
+          const i = y * world.width + x;
+          const biome = world.biome[i];
+          const b = cellBox(x, y, world);
+          feats.push({
+            type: "Feature",
+            properties: {
+              color: isSel ? "#22d3ee" : BIOMES[biome] ? BIOMES[biome].color : "#1a2a1a",
+              opacity: isSel ? 0.5 : 0.28,
+              sel: isSel ? 1 : 0,
+            },
+            geometry: { type: "Polygon", coordinates: [[[b.west, b.south], [b.east, b.south], [b.east, b.north], [b.west, b.north], [b.west, b.south]]] },
+          });
+        }
+      }
+    }
+    map.getSource("ev-spawn-cells").setData({ type: "FeatureCollection", features: feats });
+  }
+
   const stats = useMemo(() => {
     if (!engine || !hover) return null;
     return cellStats(engine.world, engine.agents, engine.players, engine.world.assets, hover.x, hover.y);
   }, [engine, hover]);
 
-  if (!engine || !selectedCountry || !bounds) return null;
-
-  const world = engine.world;
-  const fit = [
-    [selectedCountry.lat0, selectedCountry.lng0],
-    [selectedCountry.lat1, selectedCountry.lng1],
-  ];
-
-  const onMapClick = (lat, lng) => {
-    const x = Math.floor(((lng + 180) / 360) * world.width);
-    const y = Math.floor(((90 - lat) / 180) * world.height);
-    if (!world.inBounds(x, y)) return;
-    if (!world.isBuildable(x, y)) return;
-    selectSpawnCell({ x, y });
-    setHover({ x, y });
-  };
-
   const pickRandom = () => {
-    const cell = randomCellInCountry(world, engine.rng, selectedCountry);
+    if (!engine || !selectedCountry) return;
+    const cell = randomCellInCountry(engine.world, engine.rng, selectedCountry);
     selectSpawnCell(cell);
     setHover(cell);
+    mapRef.current?.flyTo({ center: [((cell.x + 0.5) / engine.world.width) * 360 - 180, 90 - ((cell.y + 0.5) / engine.world.height) * 180], zoom: 9 });
   };
 
   const handleSpawn = async () => {
@@ -59,33 +144,7 @@ export default function CellSelect({ onClose }) {
     await spawnPlayer({ country: selectedCountry.name, position: selectedSpawnCell });
   };
 
-  // Build cell rectangles for the country grid range (buildable highlight).
-  const cells = [];
-  const maxCells = 3000;
-  const total = (bounds.x1 - bounds.x0 + 1) * (bounds.y1 - bounds.y0 + 1);
-  if (total <= maxCells) {
-    for (let y = bounds.y0; y <= bounds.y1; y += 1) {
-      for (let x = bounds.x0; x <= bounds.x1; x += 1) {
-        if (!world.isBuildable(x, y)) continue;
-        const isSel = selectedSpawnCell?.x === x && selectedSpawnCell?.y === y;
-        const i = y * world.width + x;
-        const biome = world.biome[i];
-        cells.push(
-          <Rectangle
-            key={`${x},${y}`}
-            bounds={cellBounds(x, y, world)}
-            pathOptions={{
-              color: isSel ? "#22d3ee" : "rgba(120,160,200,0.10)",
-              weight: isSel ? 2 : 0,
-              fillColor: isSel ? "#22d3ee" : BIOMES[biome] ? BIOMES[biome].color : "#1a2a1a",
-              fillOpacity: isSel ? 0.5 : 0.28,
-            }}
-
-          />
-        );
-      }
-    }
-  }
+  if (!engine || !selectedCountry || !bounds) return null;
 
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 37, display: "flex", background: "rgba(3,6,11,0.96)" }}>
@@ -95,22 +154,7 @@ export default function CellSelect({ onClose }) {
           <button className="ev-btn ev-btn-ghost" style={{ marginLeft: "auto", padding: "4px 10px" }} onClick={onClose}>BACK</button>
         </div>
         <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
-          <MapContainer
-            center={[(selectedCountry.lat0 + selectedCountry.lat1) / 2, (selectedCountry.lng0 + selectedCountry.lng1) / 2]}
-            zoom={6}
-            minZoom={2}
-            maxZoom={11}
-            zoomControl={false}
-            attributionControl={false}
-            preferCanvas
-            style={{ width: "100%", height: "100%", background: "#03080a" }}
-            eventHandlers={{ click: (e) => onMapClick(e.latlng.lat, e.latlng.lng) }}
-          >
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
-            <CountryBorders />
-            {cells}
-            <FitBounds bounds={fit} />
-          </MapContainer>
+          <div ref={wrapRef} style={{ width: "100%", height: "100%", background: EVOLVE_COLORS.ocean }} />
         </div>
         <div style={{ padding: "8px 12px", borderTop: `1px solid ${C.line}`, display: "flex", gap: 8 }}>
           <button className="ev-btn ev-btn-ghost" onClick={pickRandom}>RANDOM CELL</button>
@@ -140,30 +184,6 @@ export default function CellSelect({ onClose }) {
         )}
       </div>
     </div>
-  );
-}
-
-function FitBounds({ bounds }) {
-  const map = useMap();
-  useEffect(() => {
-    map.fitBounds(bounds, { padding: [20, 20] });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return null;
-}
-
-function CountryBorders() {
-  const [countries, setCountries] = useState(null);
-  const [regions, setRegions] = useState(null);
-  useEffect(() => {
-    loadCountries().then(setCountries);
-    loadRegions().then(setRegions);
-  }, []);
-  return (
-    <>
-      {countries && <GeoJSON key="c" data={countries} style={{ color: "#3a5a7a", weight: 0.8, opacity: 0.7, fill: false }} />}
-      {regions && <GeoJSON key="r" data={regions} style={{ color: "#2a3a4a", weight: 0.4, opacity: 0.5, fill: false }} />}
-    </>
   );
 }
 

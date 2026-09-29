@@ -1,18 +1,32 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, TileLayer, GeoJSON, Rectangle, CircleMarker, useMap, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { ZoomIn, ZoomOut, Maximize2, Layers } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
-import { BIOMES, orgColor } from "@/lib/evolve/constants";
+import { BIOMES, orgColor, C } from "@/lib/evolve/constants";
 import {
-  loadCountries,
-  loadRegions,
+  loadLand50,
+  loadCountries110,
+  loadCountries50,
+  loadStates50,
+  loadPlaces110,
+  loadPlaces50,
   camToView,
   viewToCam,
-  cellBounds,
-  boundsToGridRange,
+  cellBox,
+  gridRangeFromBox,
   gridToLatLng,
 } from "@/lib/evolve/geoService";
+import {
+  initialStyle,
+  EVOLVE_COLORS,
+  registerPmtilesProtocol,
+  addLandLayer,
+  addCountryBorders,
+  addStateBorders,
+  ensureCellsLayer,
+  ensureActorsLayer,
+} from "@/lib/evolve/evolveMapStyle";
 
 const ASSET_COLOR = {
   server: "#60a5fa",
@@ -24,25 +38,35 @@ const ASSET_COLOR = {
 };
 
 /**
- * EarthViewport — real Earth map (Leaflet) that replaces the canvas WorldViewport.
- * Same props contract: { cam, setCam, onSize }. The engine grid-cam is kept as the
- * single source of truth (so the minimap and panels still work); this component
- * converts to/from a Leaflet view. Real coastlines + borders come from CARTO
- * tiles and Natural Earth GeoJSON; EVOLVE cells, agents, players and assets
- * overlay the geography at their real lat/lng positions.
+ * EarthViewport — REAL EARTH map (MapLibre GL) that replaces the canvas/Leaflet
+ * viewport. Same props contract: { cam, setCam, onSize }.
+ *
+ * The engine grid-cam stays the single source of truth (minimap + panels still
+ * work); this component converts to/from a MapLibre { center:[lng,lat], zoom }
+ * view. Real coastlines + borders come from SELF-HOSTED Natural Earth vector
+ * data (no CARTO, no API key). EVOLVE cells, agents, players and assets overlay
+ * the geography at their real lat/lng positions. Geographic labels are
+ * DOM-projected (no external glyph server).
  */
 export default function EarthViewport({ cam, setCam, onSize }) {
   const { engine, say } = useEvolve();
   const wrapRef = useRef(null);
+  const mapRef = useRef(null);
+  const places110Ref = useRef(null);
+  const places50Ref = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [mapInstance, setMapInstance] = useState(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [labels, setLabels] = useState([]);
+  const [showCells, setShowCells] = useState(true);
 
+  /* measure container */
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return undefined;
     const apply = () => {
-      setSize({ w: el.clientWidth, h: el.clientHeight });
-      onSize?.({ w: el.clientWidth, h: el.clientHeight });
+      const s = { w: el.clientWidth, h: el.clientHeight };
+      setSize(s);
+      onSize?.(s);
     };
     const ro = new ResizeObserver(apply);
     ro.observe(el);
@@ -51,304 +75,222 @@ export default function EarthViewport({ cam, setCam, onSize }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!engine) return <div className="ev-map" ref={wrapRef} />;
-
-  const world = engine.world;
-  const view = camToView(cam, world, size);
-
-  const onCellClick = (x, y) => {
-    if (!world.inBounds(x, y)) return;
-    const res = engine.applyTool(x, y);
-    if (res?.message) say(res.message, res.ok !== false);
-  };
-
-  return (
-    <div className="ev-map" ref={wrapRef}>
-      {size.w > 0 && (
-        <MapContainer
-          center={view.center}
-          zoom={view.zoom}
-          minZoom={2}
-          maxZoom={11}
-          zoomControl={false}
-          attributionControl={false}
-          preferCanvas
-          worldCopyJump
-          style={{ width: "100%", height: "100%", background: "#03080a" }}
-          eventHandlers={{
-            click: (e) => {
-              const { lat, lng } = e.latlng;
-              const g = { x: Math.floor(((lng + 180) / 360) * world.width), y: Math.floor(((90 - lat) / 180) * world.height) };
-              onCellClick(g.x, g.y);
-            },
-          }}
-        >
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
-          <BordersLayer />
-          <CellsLayer world={world} selection={engine.selection} />
-          <ActorsLayer engine={engine} onPick={onCellClick} />
-          <MapBinder cam={cam} setCam={setCam} world={world} size={size} />
-          <MapResize onSize={onSize} />
-          <MapRef onReady={setMapInstance} />
-        </MapContainer>
-      )}
-
-      <div className="ev-map-overlay" style={{ top: 8, right: 8, display: "flex", flexDirection: "column", gap: 5 }}>
-        <ZoomButtons map={mapInstance} />
-      </div>
-
-      <div className="ev-coords">
-        {world.width}×{world.height} · {cam.scale.toFixed(1)}× · {view.zoom.toFixed(1)}z
-      </div>
-
-      {engine.tool && engine.tool !== "OBSERVE" && (
-        <div className="ev-map-overlay" style={{ top: 8, left: 8 }}>
-          <div className="ev-overlay-card" style={{ padding: "5px 9px", fontSize: 9, letterSpacing: "0.12em", color: "#22d3ee", textTransform: "uppercase" }}>
-            {engine.tool} tool · tap the world
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ----------------------------------------------------------- map binder
- * Two-way sync between the engine grid-cam and the Leaflet view, without loops.
- */
-function MapBinder({ cam, setCam, world, size }) {
-  const map = useMap();
-  const lastRef = useRef(null);
-
-  // cam -> map (external changes: minimap jump, country explore, etc.)
+  /* create the map once the engine + size are ready */
   useEffect(() => {
+    if (!engine || !size.w || mapRef.current) return undefined;
+    registerPmtilesProtocol();
+    const world = engine.world;
     const view = camToView(cam, world, size);
-    const last = lastRef.current;
-    if (!last) {
-      map.setView(view.center, view.zoom, { animate: false });
-      lastRef.current = view;
+    const map = new maplibregl.Map({
+      container: wrapRef.current,
+      style: initialStyle(),
+      center: [view.center[1], view.center[0]],
+      zoom: view.zoom,
+      minZoom: 2,
+      maxZoom: 11,
+      attributionControl: false,
+      antialias: true,
+    });
+    mapRef.current = map;
+    map.on("load", async () => {
+      // progressive self-hosted basemap
+      const [land, c110] = await Promise.all([loadLand50(), loadCountries110()]);
+      addLandLayer(map, land);
+      addCountryBorders(map, c110, { id: "ev-countries-110", minzoom: 0, maxzoom: 4, color: EVOLVE_COLORS.borderStrong, width: 0.8 });
+      ensureCellsLayer(map);
+      ensureActorsLayer(map);
+      setMapReady(true);
+      // detail tiers
+      loadCountries50().then((c50) => addCountryBorders(map, c50, { id: "ev-countries-50", minzoom: 4, color: EVOLVE_COLORS.border, width: 0.6 }));
+      loadStates50().then((s50) => addStateBorders(map, s50, { minzoom: 5 }));
+      loadPlaces110().then((p) => { places110Ref.current = p; });
+    });
+    map.on("move", onMove);
+    map.on("zoom", onMove);
+    map.on("click", onClick);
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      setMapReady(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine, size.w]);
+
+  const world = engine?.world;
+
+  /* cam (external) -> map */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !world || !size.w) return;
+    const view = camToView(cam, world, size);
+    const cur = map.getCenter();
+    const curZ = map.getZoom();
+    if (Math.abs(view.center[0] - cur.lat) < 0.01 && Math.abs(view.center[1] - cur.lng) < 0.01 && Math.abs(view.zoom - curZ) < 0.05) return;
+    map.jumpTo({ center: [view.center[1], view.center[0]], zoom: view.zoom });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cam, mapReady, size.w]);
+
+  /* overlay + label refresh on move/zoom */
+  function onMove() {
+    const map = mapRef.current;
+    if (!map || !world) return;
+    const z = map.getZoom();
+    updateCells(map, z);
+    updateActors(map);
+    updateLabels(map, z);
+  }
+
+  /* overlay refresh when engine state changes */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !world || !mapReady) return;
+    const z = map.getZoom();
+    updateCells(map, z);
+    updateActors(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine, mapReady, showCells]);
+
+  function updateCells(map, z) {
+    if (!map.getSource("ev-cells")) return;
+    if (!showCells || z < 5) {
+      map.getSource("ev-cells").setData({ type: "FeatureCollection", features: [] });
       return;
     }
-    const moved =
-      Math.abs(view.center[0] - last.center[0]) > 0.01 ||
-      Math.abs(view.center[1] - last.center[1]) > 0.01 ||
-      Math.abs(view.zoom - last.zoom) > 0.05;
-    if (moved) {
-      map.setView(view.center, view.zoom, { animate: false });
-      lastRef.current = view;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cam]);
-
-  // map -> cam
-  useMapEvents({
-    moveend: (e) => {
-      const m = e.target;
-      lastRef.current = { center: [m.getCenter().lat, m.getCenter().lng], zoom: m.getZoom() };
-      setCam(viewToCam([m.getCenter().lat, m.getCenter().lng], m.getZoom(), world, size));
-    },
-    zoomend: (e) => {
-      const m = e.target;
-      lastRef.current = { center: [m.getCenter().lat, m.getCenter().lng], zoom: m.getZoom() };
-      setCam(viewToCam([m.getCenter().lat, m.getCenter().lng], m.getZoom(), world, size));
-    },
-  });
-
-  return null;
-}
-
-/* ----------------------------------------------------------- resize */
-function MapResize({ onSize }) {
-  const map = useMap();
-  useEffect(() => {
-    const handler = () => {
-      map.invalidateSize();
-      onSize?.({ w: map.getSize().x, h: map.getSize().y });
-    };
-    const id = setTimeout(handler, 200);
-    return () => clearTimeout(id);
-  }, [map, onSize]);
-  return null;
-}
-
-/* ----------------------------------------------------------- borders */
-function BordersLayer() {
-  const [countries, setCountries] = useState(null);
-  const [regions, setRegions] = useState(null);
-  const [zoom, setZoom] = useState(2);
-
-  useMapEvents({
-    zoomend: (e) => setZoom(e.target.getZoom()),
-  });
-
-  useEffect(() => {
-    loadCountries().then(setCountries);
-  }, []);
-
-  useEffect(() => {
-    if (zoom >= 5 && !regions) loadRegions().then(setRegions);
-  }, [zoom, regions]);
-
-  return (
-    <>
-      {countries && (
-        <GeoJSON
-          key="countries"
-          data={countries}
-          style={{ color: "#3a5a7a", weight: 0.8, opacity: 0.7, fill: false, fillOpacity: 0 }}
-        />
-      )}
-      {regions && (
-        <GeoJSON
-          key="regions"
-          data={regions}
-          style={{ color: "#2a3a4a", weight: 0.4, opacity: 0.5, fill: false, fillOpacity: 0 }}
-        />
-      )}
-    </>
-  );
-}
-
-/* ----------------------------------------------------------- cells overlay */
-function CellsLayer({ world, selection }) {
-  const [tick, setTick] = useState(0);
-  useMapEvents({
-    moveend: () => setTick((t) => t + 1),
-    zoomend: () => setTick((t) => t + 1),
-  });
-  const map = useMap();
-
-  const cells = useMemo(() => {
-    if (!map) return [];
-    const z = map.getZoom();
-    if (z < 5) return [];
-    const range = boundsToGridRange(map.getBounds(), world);
+    const range = gridRangeFromBox(map.getBounds(), world);
     const count = (range.x1 - range.x0 + 1) * (range.y1 - range.y0 + 1);
-    if (count > 2500) return [];
-    const out = [];
+    if (count > 2500) {
+      map.getSource("ev-cells").setData({ type: "FeatureCollection", features: [] });
+      return;
+    }
+    const sel = engine.selection;
+    const feats = [];
     for (let y = range.y0; y <= range.y1; y += 1) {
       for (let x = range.x0; x <= range.x1; x += 1) {
         const i = y * world.width + x;
         const ownerSlot = world.owner ? world.owner[i] : 0;
         const orgId = ownerSlot > 0 && world.orgSlots ? world.orgSlots[ownerSlot] : null;
         const biome = world.biome[i];
-        out.push({
-          x,
-          y,
-          b: cellBounds(x, y, world),
-          color: orgId ? orgColor(orgId) : BIOMES[biome] ? BIOMES[biome].color : "#0a121e",
-          org: !!orgId,
+        const color = orgId ? orgColor(orgId) : BIOMES[biome] ? BIOMES[biome].color : "#0a121e";
+        const b = cellBox(x, y, world);
+        feats.push({
+          type: "Feature",
+          properties: { color, opacity: orgId ? 0.5 : 0.32, sel: sel && sel.x === x && sel.y === y ? 1 : 0, x, y },
+          geometry: { type: "Polygon", coordinates: [[[b.west, b.south], [b.east, b.south], [b.east, b.north], [b.west, b.north], [b.west, b.south]]] },
         });
       }
     }
-    return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick, world]);
+    map.getSource("ev-cells").setData({ type: "FeatureCollection", features: feats });
+  }
+
+  function updateActors(map) {
+    if (!map.getSource("ev-actors")) return;
+    const toLngLat = (p) => {
+      const ll = gridToLatLng((p.x || 0) + 0.5, (p.y || 0) + 0.5, world.width, world.height);
+      return [ll.lng, ll.lat];
+    };
+    const feats = [];
+    for (const a of world.assets) {
+      feats.push({ type: "Feature", properties: { color: ASSET_COLOR[a.kind] || "#94a3b8", r: 4, kind: "asset", x: a.x, y: a.y }, geometry: { type: "Point", coordinates: toLngLat(a) } });
+    }
+    for (const ag of engine.agents.filter((a) => a.status !== "archived" && a.position)) {
+      const org = ag.organization_id;
+      feats.push({ type: "Feature", properties: { color: org ? orgColor(org) : "#e2e8f0", r: 3, kind: "agent", x: ag.position.x, y: ag.position.y }, geometry: { type: "Point", coordinates: toLngLat(ag.position) } });
+    }
+    for (const pl of (engine.players || []).filter((p) => p.position)) {
+      const org = pl.organization_id;
+      feats.push({ type: "Feature", properties: { color: "#22d3ee", r: 5, kind: "player", x: pl.position.x, y: pl.position.y }, geometry: { type: "Point", coordinates: toLngLat(pl.position) } });
+    }
+    map.getSource("ev-actors").setData({ type: "FeatureCollection", features: feats });
+  }
+
+  function updateLabels(map, z) {
+    const src = z >= 6 ? places50Ref.current || places110Ref.current : places110Ref.current;
+    if (!src) { setLabels([]); return; }
+    if (z >= 6 && !places50Ref.current) loadPlaces50().then((p) => { places50Ref.current = p; });
+    const b = map.getBounds();
+    const out = [];
+    for (const f of src.features) {
+      if (!f.geometry || f.geometry.type !== "Point") continue;
+      const [lng, lat] = f.geometry.coordinates;
+      if (lng < b.getWest() || lng > b.getEast() || lat < b.getSouth() || lat > b.getNorth()) continue;
+      const p = f.properties || {};
+      const pp = map.project([lng, lat]);
+      out.push({ x: pp.x, y: pp.y, name: p.NAME || p.NAMEASCII || "", major: (p.FEATURECLA || "").includes("capital") || (p.POP_MAX || 0) > 500000 });
+      if (out.length >= 80) break;
+    }
+    setLabels(out);
+  }
+
+  function onClick(e) {
+    if (!world) return;
+    const map = mapRef.current;
+    // actor hit-test first
+    const hits = map.queryRenderedFeatures(e.point, { layers: ["ev-actors-circle"] });
+    if (hits.length) {
+      const p = hits[0].properties || {};
+      if (p.x != null && p.y != null && world.inBounds(p.x, p.y)) {
+        const res = engine.applyTool(p.x, p.y);
+        if (res?.message) say(res.message, res.ok !== false);
+        return;
+      }
+    }
+    const { lat, lng } = e.lngLat;
+    const x = Math.floor(((lng + 180) / 360) * world.width);
+    const y = Math.floor(((90 - lat) / 180) * world.height);
+    if (!world.inBounds(x, y)) return;
+    const res = engine.applyTool(x, y);
+    if (res?.message) say(res.message, res.ok !== false);
+  }
+
+  const view = useMemo(() => (world && size.w ? camToView(cam, world, size) : null), [cam, world, size]);
 
   return (
-    <>
-      {cells.map((c) => (
-        <Rectangle
-          key={`${c.x},${c.y}`}
-          bounds={c.b}
-          pathOptions={{ color: c.org ? c.color : "rgba(120,160,200,0.12)", weight: c.org ? 0.5 : 0, fillColor: c.color, fillOpacity: 0.42 }}
-        />
+    <div className="ev-map" ref={wrapRef}>
+      {/* geographic labels (DOM-projected, no glyph server) */}
+      {mapReady && labels.map((l, i) => (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            left: l.x, top: l.y,
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+            fontSize: l.major ? 10 : 8.5,
+            color: l.major ? "#cbd5e1" : "#7c8a9a",
+            textShadow: "0 0 4px #03070d, 0 0 2px #03070d",
+            letterSpacing: "0.04em",
+            whiteSpace: "nowrap",
+            zIndex: 5,
+          }}
+        >
+          {l.name}
+        </span>
       ))}
-      {selection && (
-        <Rectangle
-          bounds={cellBounds(selection.x, selection.y, world)}
-          pathOptions={{ color: "#22d3ee", weight: 2, fill: false }}
-        />
+
+      <div className="ev-map-overlay" style={{ top: 8, right: 8, display: "flex", flexDirection: "column", gap: 5 }}>
+        <div className="ev-overlay-card" style={{ display: "flex", flexDirection: "column", padding: 3, gap: 2 }}>
+          <button className="ev-btn ev-btn-ghost" style={{ padding: 6 }} onClick={() => mapRef.current?.zoomIn()} title="Zoom in"><ZoomIn className="h-3.5 w-3.5" /></button>
+          <button className="ev-btn ev-btn-ghost" style={{ padding: 6 }} onClick={() => mapRef.current?.zoomOut()} title="Zoom out"><ZoomOut className="h-3.5 w-3.5" /></button>
+          <button className="ev-btn ev-btn-ghost" style={{ padding: 6 }} onClick={() => mapRef.current?.flyTo({ center: [0, 20], zoom: 3 })} title="Centre the world"><Maximize2 className="h-3.5 w-3.5" /></button>
+          <button className={`ev-btn ${showCells ? "" : "ev-btn-ghost"}`} style={{ padding: 6 }} onClick={() => setShowCells((s) => !s)} title="Cell overlay"><Layers className="h-3.5 w-3.5" /></button>
+        </div>
+      </div>
+
+      <div className="ev-coords">
+        {world ? `${world.width}×${world.height} · ${cam.scale.toFixed(1)}× · ${view?.zoom.toFixed(1) || "—"}z` : "—"}
+      </div>
+
+      {engine?.tool && engine.tool !== "OBSERVE" && (
+        <div className="ev-map-overlay" style={{ top: 8, left: 8 }}>
+          <div className="ev-overlay-card" style={{ padding: "5px 9px", fontSize: 9, letterSpacing: "0.12em", color: "#22d3ee", textTransform: "uppercase" }}>
+            {engine.tool} tool · tap the world
+          </div>
+        </div>
       )}
-    </>
-  );
-}
 
-/* ----------------------------------------------------------- actors overlay */
-function ActorsLayer({ engine, onPick }) {
-  const world = engine.world;
-  const toLatLng = (p) => gridToLatLng((p.x || 0) + 0.5, (p.y || 0) + 0.5, world.width, world.height);
-
-  return (
-    <>
-      {world.assets.map((a) => {
-        const ll = toLatLng({ x: a.x, y: a.y });
-        return (
-          <CircleMarker
-            key={a.sim_id}
-            center={[ll.lat, ll.lng]}
-            radius={4}
-            pathOptions={{ color: ASSET_COLOR[a.kind] || "#94a3b8", fillColor: ASSET_COLOR[a.kind] || "#94a3b8", fillOpacity: 0.8, weight: 1 }}
-            eventHandlers={{ click: () => onPick(a.x, a.y) }}
-          />
-        );
-      })}
-      {engine.agents.filter((a) => a.status !== "archived" && a.position).map((ag) => {
-        const ll = toLatLng(ag.position);
-        const org = ag.organization_id;
-        return (
-          <CircleMarker
-            key={ag.id}
-            center={[ll.lat, ll.lng]}
-            radius={3}
-            pathOptions={{ color: org ? orgColor(org) : "#e2e8f0", fillColor: org ? orgColor(org) : "#e2e8f0", fillOpacity: 0.9, weight: 1 }}
-            eventHandlers={{ click: () => onPick(ag.position.x, ag.position.y) }}
-          />
-        );
-      })}
-      {(engine.players || []).filter((p) => p.position).map((pl) => {
-        const ll = toLatLng(pl.position);
-        const org = pl.organization_id;
-        return (
-          <CircleMarker
-            key={pl.id}
-            center={[ll.lat, ll.lng]}
-            radius={5}
-            pathOptions={{ color: "#22d3ee", fillColor: org ? orgColor(org) : "#22d3ee", fillOpacity: 0.95, weight: 2 }}
-            eventHandlers={{ click: () => onPick(pl.position.x, pl.position.y) }}
-          />
-        );
-      })}
-    </>
-  );
-}
-
-/* ----------------------------------------------------------- map ref */
-function MapRef({ onReady }) {
-  const map = useMap();
-  useEffect(() => {
-    onReady?.(map);
-  }, [map, onReady]);
-  return null;
-}
-
-/* ----------------------------------------------------------- zoom buttons */
-function ZoomButtons({ map }) {
-  const [layers, setLayers] = useState({ borders: true, cells: true });
-  if (!map) return null;
-  return (
-    <div className="ev-overlay-card" style={{ display: "flex", flexDirection: "column", padding: 3, gap: 2 }}>
-      <button className="ev-btn ev-btn-ghost" style={{ padding: 6 }} onClick={() => map.zoomIn()} title="Zoom in">
-        <ZoomIn className="h-3.5 w-3.5" />
-      </button>
-      <button className="ev-btn ev-btn-ghost" style={{ padding: 6 }} onClick={() => map.zoomOut()} title="Zoom out">
-        <ZoomOut className="h-3.5 w-3.5" />
-      </button>
-      <button
-        className="ev-btn ev-btn-ghost"
-        style={{ padding: 6 }}
-        onClick={() => map.setView([20, 0], 3, { animate: true })}
-        title="Centre the world"
-      >
-        <Maximize2 className="h-3.5 w-3.5" />
-      </button>
-      <button
-        className={`ev-btn ${layers.cells ? "" : "ev-btn-ghost"}`}
-        style={{ padding: 6 }}
-        onClick={() => setLayers((l) => ({ ...l, cells: !l.cells }))}
-        title="Cell overlay"
-      >
-        <Layers className="h-3.5 w-3.5" />
-      </button>
+      <div style={{ position: "absolute", bottom: 4, left: 8, fontSize: 8, color: C.textFaint, letterSpacing: "0.08em", pointerEvents: "none" }}>
+        © Natural Earth · OpenStreetMap contributors
+      </div>
     </div>
   );
 }

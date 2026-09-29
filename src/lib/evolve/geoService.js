@@ -1,68 +1,81 @@
 /**
- * geoService — REAL EARTH geography layer for EVOLVE.
+ * geoService — SELF-HOSTED REAL EARTH geography layer for EVOLVE.
+ *
+ * No CARTO. No external tile API. No public Nominatim. No API key.
+ *
+ * Natural Earth vector GeoJSON (public domain) is served from the app's own
+ * static storage at /evolve-earth/*.geojson. These files ship with the app,
+ * so the map renders with zero third-party dependencies.
  *
  * The simulation grid stays the substrate; this module maps it to the real
  * planet and provides:
- *   - Natural Earth country + state/province borders (GeoJSON, public domain)
+ *   - self-hosted Natural Earth country / state / land / populated-place data
  *   - point-in-polygon country / region resolution
- *   - place search via the evolveGeoSearch backend function (Nominatim)
  *   - grid <-> lat/lng projection helpers (delegated to countryMap)
- *   - camera conversion between the engine grid-cam and a Leaflet view
+ *   - camera conversion between the engine grid-cam and a map view
  *
- * No fake rectangular country grids. No hardcoded city lists.
+ * A PMTiles vector archive (planet.pmtiles) can be dropped into
+ * /evolve-earth/ to upgrade the basemap to full OSM detail — the PMTiles
+ * protocol is registered in evolveMapStyle.js. Until then, the GeoJSON
+ * sources are the authoritative, always-on basemap.
  */
 
-import { base44 } from "@/api/base44Client";
 import { gridToLatLng, latLngToGrid } from "./countryMap";
 
 export { gridToLatLng, latLngToGrid };
 
-/* ----------------------------------------------------------- boundaries
- * Natural Earth vector GeoJSON (public domain). 110m for countries (light),
- * 50m for states/provinces (loaded only when zoomed in).
- */
-const COUNTRIES_URL =
-  "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
-const REGIONS_URL =
-  "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_1_states_provinces.geojson";
+const BASE = `${import.meta.env.BASE_URL}evolve-earth/`;
+const FILES = {
+  land110: "ne_110m_land.geojson",
+  land50: "ne_50m_land.geojson",
+  countries110: "ne_110m_admin_0_countries.geojson",
+  countries50: "ne_50m_admin_0_countries.geojson",
+  states50: "ne_50m_admin_1_states_provinces.geojson",
+  places110: "ne_110m_populated_places.geojson",
+  places50: "ne_50m_populated_places.geojson",
+};
 
-let countriesGeo = null;
-let regionsGeo = null;
-let countriesPromise = null;
-let regionsPromise = null;
+const cache = {};
+const pending = {};
 
+async function loadGeo(key) {
+  if (cache[key]) return cache[key];
+  if (pending[key]) return pending[key];
+  pending[key] = fetch(BASE + FILES[key])
+    .then((r) => (r.ok ? r.json() : null))
+    .then((g) => {
+      cache[key] = g;
+      pending[key] = null;
+      return g;
+    })
+    .catch(() => {
+      pending[key] = null;
+      return null;
+    });
+  return pending[key];
+}
+
+export const loadLand110 = () => loadGeo("land110");
+export const loadLand50 = () => loadGeo("land50");
+export const loadCountries110 = () => loadGeo("countries110");
+export const loadCountries50 = () => loadGeo("countries50");
+export const loadStates50 = () => loadGeo("states50");
+export const loadPlaces110 = () => loadGeo("places110");
+export const loadPlaces50 = () => loadGeo("places50");
+
+/** Back-compat: the 110m countries are the canonical country layer. */
 export function loadCountries() {
-  if (countriesGeo) return Promise.resolve(countriesGeo);
-  if (countriesPromise) return countriesPromise;
-  countriesPromise = fetch(COUNTRIES_URL)
-    .then((r) => (r.ok ? r.json() : null))
-    .then((g) => {
-      countriesGeo = g;
-      return g;
-    })
-    .catch(() => null);
-  return countriesPromise;
+  return loadCountries110();
 }
-
 export function loadRegions() {
-  if (regionsGeo) return Promise.resolve(regionsGeo);
-  if (regionsPromise) return regionsPromise;
-  regionsPromise = fetch(REGIONS_URL)
-    .then((r) => (r.ok ? r.json() : null))
-    .then((g) => {
-      regionsGeo = g;
-      return g;
-    })
-    .catch(() => null);
-  return regionsPromise;
+  return loadStates50();
 }
-
 export function hasCountries() {
-  return !!countriesGeo;
+  return !!cache.countries110;
 }
 
 /* ------------------------------------------------------- point in polygon
- * Ray-cast test for GeoJSON Polygon / MultiPolygon coordinates.
+ * Ray-cast test for GeoJSON Polygon / MultiPolygon coordinates (lng,lat rings).
  */
 function pointInRing(lat, lng, ring) {
   let inside = false;
@@ -81,7 +94,6 @@ function pointInRing(lat, lng, ring) {
 
 function pointInGeometry(lat, lng, coords) {
   if (!coords) return false;
-  // Polygon: array of rings; coords[0] is outer, rest are holes.
   if (typeof coords[0][0][0] === "number") {
     if (!pointInRing(lat, lng, coords[0])) return false;
     for (let h = 1; h < coords.length; h += 1) {
@@ -89,7 +101,6 @@ function pointInGeometry(lat, lng, coords) {
     }
     return true;
   }
-  // MultiPolygon: array of polygons.
   for (const poly of coords) {
     if (pointInRing(lat, lng, poly[0])) {
       let inHole = false;
@@ -105,7 +116,7 @@ function pointInGeometry(lat, lng, coords) {
   return false;
 }
 
-function featureBounds(f) {
+export function featureBounds(f) {
   let lat0 = 90;
   let lat1 = -90;
   let lng0 = 180;
@@ -125,15 +136,16 @@ function featureBounds(f) {
 }
 
 export function latLngToCountry(lat, lng) {
-  if (!countriesGeo) return null;
-  for (const f of countriesGeo.features) {
+  const geo = cache.countries110;
+  if (!geo) return null;
+  for (const f of geo.features) {
     if (!f.geometry) continue;
     if (pointInGeometry(lat, lng, f.geometry.coordinates)) {
       const p = f.properties || {};
       const b = featureBounds(f);
       return {
-        iso: p.ISO_A2 || p.iso_a2 || p.ADMIN ? p.ISO_A2 || "" : "",
-        name: p.NAME || p.name || p.ADMIN || "",
+        iso: p.ISO_A2 || p.ISO_A3 || "",
+        name: p.ADMIN || p.NAME || p.NAME_LONG || "",
         lat0: b.lat0,
         lat1: b.lat1,
         lng0: b.lng0,
@@ -145,15 +157,16 @@ export function latLngToCountry(lat, lng) {
 }
 
 export function latLngToRegion(lat, lng) {
-  if (!regionsGeo) return null;
-  for (const f of regionsGeo.features) {
+  const geo = cache.states50;
+  if (!geo) return null;
+  for (const f of geo.features) {
     if (!f.geometry) continue;
     if (pointInGeometry(lat, lng, f.geometry.coordinates)) {
       const p = f.properties || {};
       const b = featureBounds(f);
       return {
         name: p.name || p.NAME_1 || p.gn_name || "",
-        country: p.admin || p.sov_a3 || "",
+        country: p.admin || p.ADM0_NAME || "",
         lat0: b.lat0,
         lat1: b.lat1,
         lng0: b.lng0,
@@ -164,21 +177,9 @@ export function latLngToRegion(lat, lng) {
   return null;
 }
 
-/* ------------------------------------------------------------- place search
- * Delegates to the evolveGeoSearch backend function (Nominatim proxy).
- */
-export async function searchPlaces(query) {
-  if (!query) return [];
-  try {
-    const res = await base44.functions.invoke("evolveGeoSearch", { query });
-    return res?.data?.results || [];
-  } catch {
-    return [];
-  }
-}
-
 /* --------------------------------------------------------- grid <-> lat/lng
- * cellBounds returns a Leaflet-style [[south, west], [north, east]] box.
+ * cellBounds returns [[south, west], [north, east]] (Leaflet-style) for
+ * compatibility; MapLibre components convert to [lng,lat] as needed.
  */
 export function cellBounds(x, y, world) {
   const w = world.width;
@@ -193,10 +194,23 @@ export function cellBounds(x, y, world) {
   ];
 }
 
-/* ----------------------------------------------- engine grid-cam <-> leaflet
+/** Cell bounds as a plain lng/lat box (MapLibre-friendly). */
+export function cellBox(x, y, world) {
+  const w = world.width;
+  const h = world.height;
+  return {
+    west: (x / w) * 360 - 180,
+    east: ((x + 1) / w) * 360 - 180,
+    north: 90 - (y / h) * 180,
+    south: 90 - ((y + 1) / h) * 180,
+  };
+}
+
+/* ----------------------------------------------- engine grid-cam <-> map view
  * The engine camera is grid-space { x, y, scale } (pixels per cell).
- * Leaflet is { center: [lat, lng], zoom }. The mapping is exact so the minimap
- * rectangle still matches the visible region: scale = 256 * 2^z / world.width.
+ * The map view is { center: [lat, lng], zoom }. The mapping is exact so the
+ * minimap rectangle still matches the visible region:
+ *   scale = 256 * 2^z / world.width.
  */
 const MIN_SCALE = 1.6;
 const MAX_SCALE = 26;
@@ -231,14 +245,15 @@ export function viewToCam(center, zoom, world, size) {
   };
 }
 
-/* --------------------------------------------------------- bounds -> grid range
- * Converts a Leaflet LatLngBounds to the grid cell range it covers.
+/* ------------------------------------------------- viewport bbox -> grid range
+ * Accepts a plain box { north, south, east, west } (MapLibre LngLatBounds-like
+ * via getNorth()/getSouth()/getEast()/getWest(), or raw numbers).
  */
-export function boundsToGridRange(bounds, world) {
-  const north = bounds.getNorth();
-  const south = bounds.getSouth();
-  const west = bounds.getWest();
-  const east = bounds.getEast();
+export function gridRangeFromBox(box, world) {
+  const north = typeof box.getNorth === "function" ? box.getNorth() : box.north;
+  const south = typeof box.getSouth === "function" ? box.getSouth() : box.south;
+  const west = typeof box.getWest === "function" ? box.getWest() : box.west;
+  const east = typeof box.getEast === "function" ? box.getEast() : box.east;
   const x0 = Math.max(0, Math.floor(((west + 180) / 360) * world.width));
   const x1 = Math.min(world.width - 1, Math.ceil(((east + 180) / 360) * world.width));
   const y0 = Math.max(0, Math.floor(((90 - north) / 180) * world.height));
