@@ -33,6 +33,7 @@ const FILES = {
   states50: "ne_50m_admin_1_states_provinces.geojson",
   places110: "ne_110m_populated_places.geojson",
   places50: "ne_50m_populated_places.geojson",
+  places10: "ne_10m_populated_places.geojson",
 };
 
 const cache = {};
@@ -62,6 +63,7 @@ export const loadCountries50 = () => loadGeo("countries50");
 export const loadStates50 = () => loadGeo("states50");
 export const loadPlaces110 = () => loadGeo("places110");
 export const loadPlaces50 = () => loadGeo("places50");
+export const loadPlaces10 = () => loadGeo("places10");
 
 /** Back-compat: the 110m countries are the canonical country layer. */
 export function loadCountries() {
