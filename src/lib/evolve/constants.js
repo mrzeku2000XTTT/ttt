@@ -25,7 +25,11 @@ export const C = {
   blue: "#60a5fa",
 };
 
-/* -------------------------------------------------------------- factions */
+/* -------------------------------------------------------------- factions
+ * Factions are NOT assigned at genesis. They are an observer classification
+ * for mature persistent organizations. Organizations get dynamically generated
+ * colors — there are no predefined BLUE/GREEN/RED factions.
+ */
 export const FACTIONS = [
   { id: "blue", label: "BLUE", color: "#3b82f6", css: "#3b82f6" },
   { id: "green", label: "GREEN", color: "#22c55e", css: "#22c55e" },
@@ -33,10 +37,25 @@ export const FACTIONS = [
   { id: "red", label: "RED", color: "#ef4444", css: "#ef4444" },
   { id: "purple", label: "PURPLE", color: "#a855f7", css: "#a855f7" },
 ];
+/* Kept for backward compatibility with components that still reference factions. */
 export const FACTION_INDEX = { neutral: 0, blue: 1, green: 2, yellow: 3, red: 4, purple: 5 };
 export const FACTION_BY_INDEX = ["neutral", "blue", "green", "yellow", "red", "purple"];
 export const factionColor = (id) =>
   (FACTIONS.find((f) => f.id === id) || { color: C.textFaint }).color;
+
+/**
+ * Generates a deterministic color for an organization from its id.
+ * No two orgs share a color unless their ids hash to the same hue.
+ */
+export const orgColor = (orgId) => {
+  if (!orgId) return "#94a3b8";
+  let hash = 0;
+  for (let i = 0; i < orgId.length; i++) hash = (hash * 31 + orgId.charCodeAt(i)) | 0;
+  const h = Math.abs(hash) % 360;
+  const s = 55 + (Math.abs(hash >> 8) % 20);
+  const l = 50 + (Math.abs(hash >> 16) % 15);
+  return `hsl(${h}, ${s}%, ${l}%)`;
+};
 
 /* ---------------------------------------------------------------- biomes */
 /* idx must stay stable — the persisted world stores biome as a byte. */

@@ -4,8 +4,7 @@ import {
   BUILD_COST,
   BUILD_STATS,
   BASE_PRICES,
-  FACTION_INDEX,
-  FACTION_BY_INDEX,
+  orgColor,
 } from "./constants";
 import { generateWorld, surveyTile } from "./worldGen";
 
@@ -28,7 +27,8 @@ export class WorldEngine {
     this.yieldMul = gen.yieldMul;
 
     const n = this.width * this.height;
-    this.owner = new Uint8Array(n);
+    this.owner = new Uint8Array(n); // 0 = unowned, 1+ = org slot
+    this.orgSlots = [null]; // index 0 is unused; orgSlots[slot] = orgId
     this.sculpt = new Int8Array(n).fill(-1);
 
     this.assets = [];
@@ -54,8 +54,15 @@ export class WorldEngine {
     const b = this.sculpt[i] >= 0 ? this.sculpt[i] : this.biome[i];
     return BIOMES[b];
   }
-  ownerAt(x, y) {
-    return FACTION_BY_INDEX[this.owner[this.idx(x, y)]] || "neutral";
+  /** Returns the org_id that owns a tile, or null if unclaimed. */
+  ownerOrg(x, y) {
+    const slot = this.owner[this.idx(x, y)];
+    return slot > 0 ? this.orgSlots[slot] || null : null;
+  }
+  /** Returns the color for the org owning a tile (for rendering). */
+  ownerColor(x, y) {
+    const orgId = this.ownerOrg(x, y);
+    return orgId ? orgColor(orgId) : null;
   }
   survey(x, y) {
     return surveyTile(this.biome, this.elevation, this.width, x, y, this.yieldMul);
@@ -74,6 +81,7 @@ export class WorldEngine {
     if (!this.inBounds(x, y)) return null;
     const b = this.biomeKeyAt(x, y);
     const s = this.survey(x, y);
+    const orgId = this.ownerOrg(x, y);
     return {
       x,
       y,
@@ -81,7 +89,9 @@ export class WorldEngine {
       label: b.label,
       color: b.color,
       water: !!b.water,
-      owner: this.ownerAt(x, y),
+      owner: orgId || "neutral",
+      ownerOrg: orgId,
+      ownerColor: orgId ? orgColor(orgId) : null,
       sculpted: this.sculpt[this.idx(x, y)] >= 0,
       wood: s.wood,
       energy: s.energy,
@@ -92,10 +102,18 @@ export class WorldEngine {
   }
 
   /* ------------------------------------------------------------- mutate */
-  claim(x, y, faction) {
+  /** Claims a tile for an organization slot (1+). Slot 0 means unclaim. */
+  claim(x, y, orgSlot) {
     if (!this.inBounds(x, y)) return false;
-    this.owner[this.idx(x, y)] = FACTION_INDEX[faction] || 0;
+    this.owner[this.idx(x, y)] = orgSlot || 0;
     return true;
+  }
+
+  /** Registers an org and returns its territory slot. */
+  registerOrg(orgId) {
+    const slot = this.orgSlots.length;
+    this.orgSlots.push(orgId);
+    return slot;
   }
 
   sculptTile(x, y, key) {
@@ -123,7 +141,7 @@ export class WorldEngine {
     });
   }
 
-  placeAsset(kind, x, y, { ownerId = "", faction = "neutral", organizationId = "" } = {}) {
+  placeAsset(kind, x, y, { ownerId = "", orgSlot = 0, organizationId = "" } = {}) {
     if (!KINDS.includes(kind) || !this.inBounds(x, y)) return { ok: false, reason: "Invalid build site" };
     const t = this.tile(x, y);
     if (!t.buildable) return { ok: false, reason: `${t.label} cannot carry structures` };
@@ -141,7 +159,7 @@ export class WorldEngine {
       x,
       y,
       owner_id: ownerId,
-      faction,
+      org_slot: orgSlot,
       organization_id: organizationId,
       value: stats.value,
       defense: stats.defense,
@@ -154,7 +172,16 @@ export class WorldEngine {
     this.assetById.set(sim_id, asset);
     const key = this.idx(x, y);
     this.assetsByTile.set(key, [...(this.assetsByTile.get(key) || []), asset]);
-    if (faction !== "neutral") this.claim(x, y, faction);
+    // Buying an asset claims the tile and its immediate neighbours for the org.
+    if (orgSlot > 0) {
+      this.claim(x, y, orgSlot);
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          if (dx === 0 && dy === 0) continue;
+          if (this.owner[this.idx(x + dx, y + dy)] === 0) this.claim(x + dx, y + dy, orgSlot);
+        }
+      }
+    }
     return { ok: true, asset };
   }
 
@@ -178,10 +205,10 @@ export class WorldEngine {
     return a;
   }
 
-  destroyAsset(simId, faction) {
+  destroyAsset(simId, orgSlot) {
     const a = this.findAsset(simId);
     if (!a) return null;
-    if (faction) a.faction = faction;
+    if (orgSlot) a.org_slot = orgSlot;
     a.owner_id = "";
     a.damage = a.value;
     a.defense = 0;
@@ -276,39 +303,52 @@ export class WorldEngine {
     return gained;
   }
 
-  factionShare() {
-    const counts = { blue: 0, green: 0, yellow: 0, red: 0, purple: 0 };
+  /** Territory share per organization — computed from actual claimed tiles. */
+  orgShare() {
+    const counts = {};
     let claimed = 0;
     for (let i = 0; i < this.owner.length; i += 1) {
-      const f = FACTION_BY_INDEX[this.owner[i]];
-      if (f && f !== "neutral") {
-        counts[f] += 1;
+      const slot = this.owner[i];
+      if (slot > 0) {
+        const orgId = this.orgSlots[slot] || `ORG_${slot}`;
+        counts[orgId] = (counts[orgId] || 0) + 1;
         claimed += 1;
       }
     }
     const total = this.owner.length || 1;
-    const share = {};
-    Object.keys(counts).forEach((f) => {
-      share[f] = total ? counts[f] / total : 0;
+    const share = { claimed: claimed / total };
+    Object.keys(counts).forEach((orgId) => {
+      share[orgId] = counts[orgId] / total;
     });
-    share.claimed = claimed / total;
     return share;
   }
 
   /* ------------------------------------------------------- persistence */
+  /** Ownership is stored as a compact list of claimed tiles, not per-tile. */
   serialize() {
-    const ownership = FACTION_BY_INDEX.map((_, i) => i).length
-      ? Array.from(this.owner).map((v) => String(v)).join("")
-      : "";
+    const claimed = [];
+    for (let i = 0; i < this.owner.length; i += 1) {
+      if (this.owner[i] > 0) claimed.push(`${i}:${this.owner[i]}`);
+    }
     const sculpted = Array.from(this.sculpt)
       .map((v) => (v < 0 ? "-" : String(v)))
       .join("");
-    return { ownership, sculpted };
+    return { ownership: claimed.join(","), orgSlots: this.orgSlots, sculpted };
   }
 
-  applySerialized({ ownership, sculpted }) {
-    if (ownership && ownership.length === this.owner.length) {
-      for (let i = 0; i < ownership.length; i += 1) this.owner[i] = Number(ownership[i]) || 0;
+  applySerialized({ ownership, orgSlots, sculpted }) {
+    this.owner.fill(0);
+    if (ownership && typeof ownership === "string") {
+      ownership.split(",").forEach((entry) => {
+        if (!entry) return;
+        const [idx, slot] = entry.split(":").map(Number);
+        if (Number.isFinite(idx) && Number.isFinite(slot) && idx < this.owner.length) {
+          this.owner[idx] = slot;
+        }
+      });
+    }
+    if (orgSlots && Array.isArray(orgSlots)) {
+      this.orgSlots = [null, ...orgSlots.filter(Boolean)];
     }
     if (sculpted && sculpted.length === this.sculpt.length) {
       for (let i = 0; i < sculpted.length; i += 1) {

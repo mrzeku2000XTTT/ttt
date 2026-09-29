@@ -18,7 +18,8 @@ import { planAttack, resolveAttack, recon } from "./conflictService";
 import { charge, priceOf } from "./economyService";
 import { randomGenome, calculateFitness, meanGenome } from "./genome";
 import { makeRng, clamp01 } from "./rng";
-import { FACTIONS, TOOLS, RESOURCE_IDS, WORLD_SIZES, BUILD_STATS, BASE_PRICES } from "./constants";
+import { TOOLS, RESOURCE_IDS, WORLD_SIZES, BUILD_STATS, BASE_PRICES, orgColor } from "./constants";
+import { RelationshipService, ORG_FORMATION_REQUIREMENTS } from "./relationshipService";
 
 const ACTIONS_PER_TICK = 48;
 const TICKS_PER_DAY = 8;
@@ -68,6 +69,7 @@ export class EvolveEngine {
     this.jobs = [];
     this.orgs = [];
     this.transactions = [];
+    this.relationships = new RelationshipService();
     this.treasury = { address: "", balance: 0, totalPaid: 0, pending: 0 };
 
     this.agentSeq = 0;
@@ -130,41 +132,30 @@ export class EvolveEngine {
     this.treasury.balance = treasurySeed;
     this.kaspa.credit(tw.address, treasurySeed);
 
+    // Genesis agents are SOLO, INDEPENDENT, NEUTRAL.
+    // No factions, no organizations, no territory — civilization emerges from them.
     const spots = this.spawnSpots(cfg.genesis_agents);
     for (let i = 0; i < cfg.genesis_agents; i += 1) {
-      const faction = FACTIONS[i % FACTIONS.length].id;
       const spot = spots[i] || this.randomLandTile();
       const agent = this.newAgent({
         generation: 0,
         genome: randomGenome(this.rng),
-        faction,
+        faction: "neutral",
         position: spot,
         balance: cfg.initial_test_kas,
       });
       this.agents.push(agent);
       this.agentById.set(agent.id, agent);
-      this.world.claim(spot.x, spot.y, faction);
+      // No territory claim at genesis — the world starts unowned.
     }
 
-    await stage("Founding organizations");
-    for (let i = 0; i < 5; i += 1) {
-      const faction = FACTIONS[i].id;
-      const founder = this.agents.find((a) => a.faction === faction);
-      const org = createOrganization({
-        rng: this.rng,
-        faction,
-        founderId: founder?.id,
-        day: this.world.day,
-        treasury: 40 + this.rng() * 60,
-      });
-      this.orgs.push(org);
-      if (founder) founder.organization_id = org.id;
-    }
+    // No organizations are founded at genesis.
+    // They emerge later when agents discover that cooperation improves survival.
 
     await stage("Seeding the job market");
     for (let i = 0; i < 23; i += 1) this.jobs.push(createJob(this.rng, this.world.day));
 
-    await stage("Running generations");
+    await stage("Running early economy");
     this.quiet = true;
     for (let i = 0; i < 1024; i += 1) this.tick(true);
     this.quiet = false;
@@ -175,7 +166,7 @@ export class EvolveEngine {
     this.events.push({
       type: "WORLD_ONLINE",
       category: "WORLD",
-      message: `World online — ${this.agents.length} agents across ${this.maxGeneration()} generations`,
+      message: `World online — ${this.agents.length} independent agents, 0 organizations, 0 territories`,
       day: this.world.day,
       clock: this.clockLabel(),
     });
@@ -315,7 +306,6 @@ export class EvolveEngine {
     this.advanceJobs(quiet);
     this.actAgents(quiet);
     this.chargeUpkeep();
-    this.rebalanceFactions();
 
     if (!quiet && this.tickCount % 240 === 0) this.snapshot();
     this.notify(true);
@@ -334,12 +324,24 @@ export class EvolveEngine {
       const agent = pool[(start + i) % pool.length];
       agent.age_days += 1 / TICKS_PER_DAY;
       const mine = this.world.assets.find((a) => a.owner_id === agent.id && a.defense < 40);
+      // Agents only know what they have discovered — nearby agents, not the whole world.
+      const nearby = pool
+        .filter(
+          (o) =>
+            o.id !== agent.id &&
+            Math.abs(o.position.x - agent.position.x) < 12 &&
+            Math.abs(o.position.y - agent.position.y) < 12
+        )
+        .slice(0, 6);
       const proposal = decide(agent, {
         jobs: this.jobs,
         orgs: this.orgs,
         rng: this.rng,
         foreignPool,
         myAsset: mine || null,
+        nearbyAgents: nearby,
+        relationships: this.relationships,
+        tick: this.tickCount,
       });
       const check = this.validator.validate(proposal, agent);
       if (!check.ok) continue;
@@ -420,15 +422,58 @@ export class EvolveEngine {
       }
       case "CREATE_ORG": {
         if (agent.organization_id) return;
-        const org = createOrganization({ rng: this.rng, faction: agent.faction, founderId: agent.id, day: this.world.day });
+        // Organization formation requires proven cooperation history.
+        const partner = this.agentById.get(proposal.targetId);
+        if (!partner || partner.id === agent.id || partner.organization_id) return;
+        const check = this.relationships.canFormOrg(agent.id, partner.id);
+        if (!check.ok) return;
+        if (agent.balance < ORG_FORMATION_REQUIREMENTS.formationCost) return;
+        const org = createOrganization({
+          rng: this.rng,
+          founderId: agent.id,
+          day: this.world.day,
+          members: [agent.id, partner.id],
+        });
+        org.color = orgColor(org.id);
+        org.slot = this.world.registerOrg(org.id);
         this.orgs.push(org);
         agent.organization_id = org.id;
-        charge(agent, ["membership", "defense"]);
-        recordDecision(agent, "CREATE_ORG", { note: `Founded ${org.name}` });
+        partner.organization_id = org.id;
+        agent.balance = Number((agent.balance - ORG_FORMATION_REQUIREMENTS.formationCost).toFixed(2));
+        agent.lifetime_expenses = Number((agent.lifetime_expenses + ORG_FORMATION_REQUIREMENTS.formationCost).toFixed(2));
+        recordDecision(agent, "CREATE_ORG", { note: `Founded ${org.name} with ${partner.code}` });
         this.emit(
-          { type: "ORGANIZATION_CREATED", category: "ORG", message: `${agent.code} founded ${org.name}`, actor_id: agent.id, actor_code: agent.code, target_id: org.id, target_code: org.name },
+          { type: "ORGANIZATION_CREATED", category: "ORG", message: `${agent.code} and ${partner.code} formed ${org.name} — the world's first organization`, actor_id: agent.id, actor_code: agent.code, target_id: org.id, target_code: org.name },
           quiet
         );
+        return;
+      }
+      case "COOPERATE": {
+        const other = this.agentById.get(proposal.targetId);
+        if (!other || other.id === agent.id || other.status === "archived") return;
+        this.relationships.encounter(agent.id, other.id, this.tickCount);
+        const rel = this.relationships.get(agent.id, other.id);
+        // After enough trust, agents can trade resources.
+        if (rel && rel.trustScore > 5 && agent.balance > 3 && this.rng() < 0.35) {
+          const resource = RESOURCE_IDS[Math.floor(this.rng() * RESOURCE_IDS.length)];
+          const qty = 1 + Math.floor(this.rng() * 3);
+          const price = priceOf(this.world, resource);
+          const value = Number((price * qty).toFixed(2));
+          if (agent.balance >= value) {
+            agent.balance = Number((agent.balance - value).toFixed(2));
+            other.balance = Number((other.balance + value).toFixed(2));
+            agent.lifetime_expenses = Number((agent.lifetime_expenses + value).toFixed(2));
+            other.lifetime_earnings = Number((other.lifetime_earnings + value).toFixed(2));
+            this.relationships.recordTrade(agent.id, other.id, true, value, this.tickCount);
+            recordDecision(agent, "COOPERATE", { note: `Traded with ${other.code} · ${value.toFixed(2)} tKAS` });
+            this.emit(
+              { type: "AGENT_TRADE", category: "ECONOMY", message: `${agent.code} traded with ${other.code} · ${value.toFixed(2)} tKAS`, actor_id: agent.id, actor_code: agent.code, target_id: other.id, target_code: other.code, amount: value },
+              quiet
+            );
+          }
+        } else {
+          recordDecision(agent, "COOPERATE", { note: `Encountered ${other.code}` });
+        }
         return;
       }
       case "LEAVE_ORG": {
@@ -704,11 +749,17 @@ export class EvolveEngine {
   resolveSimAction(actor, asset, plan, quiet = false) {
     const cost = charge(actor, ["defense"], plan.commit);
     const result = resolveAttack(plan, this.rng);
+    const actorOrg = this.orgs.find((o) => o.id === actor.organization_id);
+    const actorSlot = actorOrg?.slot || 0;
     if (result.success) {
       this.world.damageAsset(asset.sim_id, result.damage);
       if (asset.damage >= asset.value) {
-        this.world.destroyAsset(asset.sim_id, actor.faction);
-        this.world.claim(asset.x, asset.y, actor.faction);
+        this.world.destroyAsset(asset.sim_id, actorSlot);
+        if (actorSlot > 0) this.world.claim(asset.x, asset.y, actorSlot);
+        // Record conflict in relationships if the asset owner is known
+        if (asset.owner_id && asset.owner_id !== actor.id) {
+          this.relationships.recordConflict(actor.id, asset.owner_id, this.tickCount);
+        }
       }
       actor.balance = Number((actor.balance + result.spoils).toFixed(2));
       actor.lifetime_earnings = Number((actor.lifetime_earnings + result.spoils).toFixed(2));
@@ -806,19 +857,23 @@ export class EvolveEngine {
       }
 
       case "FACTION": {
-        if (tile.owner !== "neutral" && tile.owner !== this.paintFaction) {
-          return { ok: false, message: `${tile.label} already held by ${tile.owner.toUpperCase()}` };
+        // Territory is claimed for an organization, not a predefined faction.
+        if (!this.orgs.length) return { ok: false, message: "No organizations exist yet — civilization must emerge first" };
+        const org = this.orgs[0];
+        if (tile.ownerOrg && tile.ownerOrg !== org.id) {
+          return { ok: false, message: `${tile.label} already held by another organization` };
         }
-        this.world.claim(x, y, this.paintFaction);
+        this.world.claim(x, y, org.slot);
         this.selectTile(x, y);
         this.emit({
           type: "TERRITORY_CLAIMED",
           category: "WORLD",
-          message: `Faction ${this.paintFaction.toUpperCase()} claimed ${x},${y}`,
-          target_code: `${x},${y}`,
+          message: `${org.name} claimed ${x},${y}`,
+          target_id: org.id,
+          target_code: org.name,
         });
         this.notify();
-        return { ok: true, message: `Claimed for ${this.paintFaction.toUpperCase()}` };
+        return { ok: true, message: `Claimed for ${org.name}` };
       }
 
       case "SERVER":
@@ -827,9 +882,13 @@ export class EvolveEngine {
       case "CITY":
       case "RESOURCE": {
         const kind = tool === "RESOURCE" ? "deposit" : tool.toLowerCase();
+        // Assets are claimed for the agent's organization, if they have one.
+        const agent = this.agentById.get(opts.ownerId || "");
+        const org = agent ? this.orgs.find((o) => o.id === agent.organization_id) : null;
         const res = this.world.placeAsset(kind, x, y, {
           ownerId: opts.ownerId || "",
-          faction: opts.faction || this.paintFaction,
+          orgSlot: org?.slot || 0,
+          organizationId: org?.id || "",
         });
         if (!res.ok) return { ok: false, message: res.reason };
         this.selectTile(x, y);
@@ -948,17 +1007,24 @@ export class EvolveEngine {
     return { ok: true, message: `${agent.code} produced a descendant` };
   }
 
-  formOrg(agentId, name) {
+  formOrg(agentId, partnerId, name) {
     const agent = this.agentById.get(agentId);
+    const partner = this.agentById.get(partnerId);
     if (!agent) return { ok: false, message: "Agent not found" };
     if (agent.organization_id) return { ok: false, message: "Agent already belongs to an organization" };
-    const org = createOrganization({ rng: this.rng, name, faction: agent.faction, founderId: agent.id, day: this.world.day });
+    if (!partner) return { ok: false, message: "Need a partner with proven cooperation" };
+    const check = this.relationships.canFormOrg(agent.id, partner.id);
+    if (!check.ok) return { ok: false, message: check.reason };
+    const org = createOrganization({ rng: this.rng, name, founderId: agent.id, day: this.world.day, members: [agent.id, partner.id] });
+    org.color = orgColor(org.id);
+    org.slot = this.world.registerOrg(org.id);
     this.orgs.push(org);
     agent.organization_id = org.id;
+    partner.organization_id = org.id;
     this.emit({
       type: "ORGANIZATION_CREATED",
       category: "ORG",
-      message: `${org.name} founded by ${agent.code}`,
+      message: `${org.name} founded by ${agent.code} and ${partner.code}`,
       actor_id: agent.id,
       actor_code: agent.code,
       target_id: org.id,
@@ -1032,9 +1098,13 @@ export class EvolveEngine {
     const computeCap = 260 + this.world.assets.filter((a) => a.kind === "compute").length * 12;
     const energyCap = 240 + this.world.assets.filter((a) => a.kind === "energy").length * 12;
     const births = active.filter((a) => this.world.day - (a.born_day || 0) < 6).length;
+    const independent = active.filter((a) => !a.organization_id).length;
     return {
       agents: active.length,
       agentsDelta: births,
+      independent,
+      organized: active.length - independent,
+      organizations: this.orgs.length,
       generations: this.maxGeneration(),
       treasury: this.treasury.balance,
       activeJobs: activeJobs.length,
@@ -1051,15 +1121,18 @@ export class EvolveEngine {
   }
 
   factionShare() {
-    return this.world.factionShare();
+    return this.world.orgShare();
   }
 
   snapshot() {
     const active = this.agents.filter((a) => a.status !== "archived");
+    const independent = active.filter((a) => !a.organization_id).length;
     return {
       generation: this.maxGeneration(),
       day: this.world.day,
       population: active.length,
+      independent,
+      organizations: this.orgs.length,
       treasury: this.treasury.balance,
       total_paid: this.treasury.totalPaid,
       jobs_completed: this.jobs.filter((j) => j.status === "PAID").length,
