@@ -40,6 +40,9 @@ import PlayerMove from "./PlayerMove";
 import ActorInspector from "./ActorInspector";
 import PlayerContracts from "./PlayerContracts";
 import PlayerNotifications from "./PlayerNotifications";
+import PaymentStatusOverlay from "./PaymentStatusOverlay";
+import TransactionActivityPanel from "./TransactionActivityPanel";
+import ObserverTransactionInspector from "./ObserverTransactionInspector";
 import "./evolve.css";
 
 /**
@@ -50,7 +53,8 @@ import "./evolve.css";
 export default function EvolveApp() {
   const {
     engine, loading, flash, genesisStage, wallet, player, pendingPayment,
-    confirmPayment, cancelPayment, playerMode, enterObserverMode, enterPlayerMode,
+    confirmPayment, cancelPayment, paymentStatus, setPaymentStatus,
+    playerMode, enterObserverMode, enterPlayerMode,
     selectedCountry, selectCountry, selectedSpawnCell, selectSpawnCell, spawnPlayer,
     movePlayer, postPlayerJob, createTradeOffer, acceptTradeOffer, buildAsset,
     createContract, acceptContract, proposeOrganization, joinOrganization, leaveOrganization,
@@ -64,6 +68,7 @@ export default function EvolveApp() {
   const [actorInspector, setActorInspector] = useState(null); // { id, type }
   const [showHome, setShowHome] = useState(true);
   const [enterFlow, setEnterFlow] = useState(null); // null | "COUNTRY" | "CELL"
+  const [txInspector, setTxInspector] = useState(null); // chain tx for ObserverTransactionInspector
 
   const topAgent = useMemo(() => {
     if (!engine) return null;
@@ -262,6 +267,7 @@ export default function EvolveApp() {
       {sheet?.type === "trade" && <TradePanel simId={sheet.id} onClose={close} />}
       {sheet?.type === "sim" && <SimulationControls onClose={close} />}
       {sheet?.type === "debug" && <DebugPanel onClose={close} />}
+      {sheet?.type === "txs" && <TransactionActivityPanel onClose={close} />}
 
       {!engine.started && <GenesisModal />}
       {genesisStage && engine.started && (
@@ -280,6 +286,20 @@ export default function EvolveApp() {
           intent={pendingPayment}
           onConfirm={confirmPayment}
           onCancel={cancelPayment}
+        />
+      )}
+
+      {paymentStatus && (
+        <PaymentStatusOverlay
+          payment={paymentStatus}
+          onDismiss={() => setPaymentStatus(null)}
+        />
+      )}
+
+      {txInspector && (
+        <ObserverTransactionInspector
+          tx={txInspector}
+          onClose={() => setTxInspector(null)}
         />
       )}
     </div>
