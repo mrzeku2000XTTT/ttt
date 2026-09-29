@@ -2,6 +2,7 @@ import React from "react";
 import { Landmark, Play, Pause } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { fmt, fmtInt } from "@/lib/evolve/constants";
+import ConnectScorpion from "./ConnectScorpion";
 
 const SPEEDS = [1, 2, 5, 10];
 
@@ -48,6 +49,7 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
       </div>
 
       <div className="ev-clock">
+        <ConnectScorpion />
         <button className="ev-btn ev-btn-ghost" style={{ padding: 7 }} onClick={() => engine.togglePause()} title={engine.paused ? "Resume" : "Pause"}>
           {engine.paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
           <span style={{ fontSize: 10 }}>{engine.paused ? "PAUSED" : `${engine.speed}×`}</span>

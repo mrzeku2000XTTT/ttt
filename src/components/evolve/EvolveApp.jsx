@@ -25,7 +25,6 @@ import SimulationControls from "./SimulationControls";
 import DebugPanel from "./DebugPanel";
 import { PaneModeProvider } from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
-import ConnectScorpion from "./ConnectScorpion";
 import PlayerWalletBar from "./PlayerWalletBar";
 import PaymentPreview from "./PaymentPreview";
 import PlayerHome from "./PlayerHome";
@@ -125,13 +124,6 @@ export default function EvolveApp() {
           <PlayerWalletBar onActivity={() => open("chainTx")} />
         )}
       </div>
-
-      {/* Scorpion connect prompt — shown when no wallet connected. */}
-      {wallet.connState !== "CONNECTED_TN10" && engine?.started && (
-        <div style={{ position: "absolute", top: 60, right: 12, zIndex: 40, width: 240 }}>
-          <ConnectScorpion />
-        </div>
-      )}
 
       <div className="ev-mid">
         <LeftNavigation
