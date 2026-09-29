@@ -109,17 +109,16 @@ export function decide(agent, ctx) {
     return { action: "JOIN_ORG", targetId: org.id, reason: "Membership buys shared territory and cheaper resources.", confidence: Number((0.5 + g.cooperation * 0.4).toFixed(2)) };
   }
 
-  const foreign = world.assets.find((a) => a.owner_id && a.owner_id !== agent.id && a.faction !== agent.faction && a.damage < a.value);
-  if (foreign && roll < 0.04 + g.risk * 0.12) {
+  const foreign = foreignPool.length ? foreignPool[Math.floor(rng() * foreignPool.length)] : null;
+  if (foreign && roll < 0.04 + g.risk * 0.10) {
     return { action: "RECON", targetId: foreign.sim_id, reason: "Cheap intelligence before committing resources.", confidence: Number((0.4 + g.information * 0.5).toFixed(2)) };
   }
-  if (foreign && roll < 0.06 + g.risk * 0.14) {
+  if (foreign && roll < 0.06 + g.risk * 0.12) {
     return { action: "ATTACK_SIM_ASSET", targetId: foreign.sim_id, reason: "Expected spoils exceed the cost of the attempt.", confidence: Number((0.3 + g.risk * 0.6).toFixed(2)) };
   }
 
-  const own = world.assets.find((a) => a.owner_id === agent.id && a.defense < 40);
-  if (own && roll < 0.08 + g.saving * 0.14) {
-    return { action: "FORTIFY_SIM_ASSET", targetId: own.sim_id, reason: "Protecting existing assets is cheaper than replacing them.", confidence: Number((0.5 + g.saving * 0.3).toFixed(2)) };
+  if (myAsset && roll < 0.08 + g.saving * 0.14) {
+    return { action: "FORTIFY_SIM_ASSET", targetId: myAsset.sim_id, reason: "Protecting existing assets is cheaper than replacing them.", confidence: Number((0.5 + g.saving * 0.3).toFixed(2)) };
   }
 
   if (roll < 0.30 + g.exploration * 0.2) {

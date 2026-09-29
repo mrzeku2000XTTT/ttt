@@ -1,0 +1,201 @@
+/* EVOLVE — landscape-first simulation console.
+   Near-black navy base, translucent HUD, cyan interactive accent.
+   Everything is scoped under .ev-root so no other app in the store is affected. */
+
+.ev-root {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #05080f;
+  color: #eef3f9;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-size: 12px;
+}
+.ev-root * { box-sizing: border-box; }
+.ev-root button { font-family: inherit; cursor: pointer; }
+
+/* ------------------------------------------------------------- structure */
+.ev-hud { flex: none; }
+.ev-mid { flex: 1; min-height: 0; display: flex; position: relative; }
+.ev-nav { flex: none; width: 64px; }
+.ev-map { flex: 1; min-width: 0; position: relative; background: #04080f; }
+.ev-intel { flex: none; width: 272px; }
+.ev-tools { flex: none; }
+
+/* -------------------------------------------------------------- chrome */
+.ev-panel {
+  background: rgba(9, 14, 24, 0.9);
+  border: 1px solid rgba(120, 160, 200, 0.16);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.ev-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(120, 160, 200, 0.14);
+  flex: none;
+}
+.ev-panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7d90a8;
+}
+.ev-panel-body { overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 0; }
+.ev-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+.ev-scroll::-webkit-scrollbar-track { background: transparent; }
+.ev-scroll::-webkit-scrollbar-thumb { background: rgba(120, 160, 200, 0.22); border-radius: 3px; }
+
+/* ---------------------------------------------------------------- hud */
+.ev-hud-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-bottom: 1px solid rgba(120, 160, 200, 0.16);
+  background: rgba(7, 11, 19, 0.94);
+  min-height: 46px;
+}
+.ev-brand { display: flex; flex-direction: column; justify-content: center; padding: 0 14px; border-right: 1px solid rgba(120,160,200,0.14); }
+.ev-brand-mark { font-size: 15px; font-weight: 800; letter-spacing: 0.22em; color: #eef3f9; line-height: 1; }
+.ev-brand-sub { font-size: 8px; letter-spacing: 0.16em; color: #54657c; margin-top: 3px; text-transform: uppercase; white-space: nowrap; }
+.ev-metrics { display: flex; align-items: stretch; overflow-x: auto; flex: 1; min-width: 0; }
+.ev-metrics::-webkit-scrollbar { display: none; }
+.ev-metric {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 12px; border-right: 1px solid rgba(120,160,200,0.10);
+  min-width: 74px; flex: none;
+}
+.ev-metric-label { font-size: 8px; letter-spacing: 0.13em; color: #54657c; text-transform: uppercase; white-space: nowrap; }
+.ev-metric-value { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; }
+.ev-metric-delta { font-size: 9px; font-weight: 700; margin-left: 5px; }
+.ev-clock { display: flex; align-items: center; gap: 6px; padding: 0 12px; flex: none; }
+
+/* --------------------------------------------------------------- nav */
+.ev-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  width: 100%; padding: 9px 2px; background: none; border: none;
+  color: #54657c; border-left: 2px solid transparent; transition: color .15s, background .15s;
+}
+.ev-nav-item:hover { color: #c9d6e4; background: rgba(255,255,255,0.03); }
+.ev-nav-item.is-active { color: #22d3ee; background: rgba(34,211,238,0.07); border-left-color: #22d3ee; }
+.ev-nav-label { font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ------------------------------------------------------------- toolbar */
+.ev-tools-row {
+  display: flex; gap: 4px; padding: 7px 8px; overflow-x: auto;
+  background: rgba(7, 11, 19, 0.94); border-top: 1px solid rgba(120,160,200,0.16);
+  scrollbar-width: none;
+}
+.ev-tools-row::-webkit-scrollbar { display: none; }
+.ev-tool {
+  flex: none; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 62px; padding: 7px 8px; border-radius: 6px;
+  background: rgba(255,255,255,0.025); border: 1px solid rgba(120,160,200,0.14);
+  color: #7d90a8; transition: all .15s;
+}
+.ev-tool:hover { color: #eef3f9; border-color: rgba(120,160,200,0.34); }
+.ev-tool.is-active { color: #05080f; background: #22d3ee; border-color: #22d3ee; }
+.ev-tool-label { font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+
+/* -------------------------------------------------------------- chips */
+.ev-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;
+  border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(120,160,200,0.18); color: #9fb0c4;
+}
+.ev-chip.is-on { background: rgba(34,211,238,0.14); border-color: rgba(34,211,238,0.5); color: #22d3ee; }
+
+.ev-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 12px; border-radius: 5px; font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.42); color: #22d3ee;
+}
+.ev-btn:hover:not(:disabled) { background: rgba(34,211,238,0.22); }
+.ev-btn:disabled { opacity: .38; cursor: not-allowed; }
+.ev-btn-ghost { background: rgba(255,255,255,0.03); border-color: rgba(120,160,200,0.2); color: #9fb0c4; }
+.ev-btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.07); color: #eef3f9; }
+.ev-btn-danger { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.42); color: #f87171; }
+
+/* ------------------------------------------------------------ sections */
+.ev-section { padding: 9px 10px; border-bottom: 1px solid rgba(120,160,200,0.10); }
+.ev-section:last-child { border-bottom: none; }
+.ev-label { font-size: 8.5px; letter-spacing: 0.13em; text-transform: uppercase; color: #54657c; }
+.ev-value { font-size: 12px; font-variant-numeric: tabular-nums; color: #eef3f9; }
+.ev-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ev-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.ev-bar { height: 4px; border-radius: 2px; background: rgba(120,160,200,0.14); overflow: hidden; }
+.ev-bar > i { display: block; height: 100%; border-radius: 2px; }
+
+.ev-event {
+  display: grid; grid-template-columns: 40px 1fr auto; gap: 7px;
+  padding: 5px 9px; border-bottom: 1px solid rgba(120,160,200,0.07);
+  align-items: baseline;
+}
+.ev-event:hover { background: rgba(255,255,255,0.025); }
+.ev-event-time { font-size: 9px; color: #54657c; font-variant-numeric: tabular-nums; }
+.ev-event-msg { font-size: 10.5px; color: #c9d6e4; line-height: 1.35; }
+.ev-event-amt { font-size: 9.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* --------------------------------------------------------------- map */
+.ev-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.ev-map-overlay { position: absolute; pointer-events: none; }
+.ev-overlay-card {
+  pointer-events: auto;
+  background: rgba(9,14,24,0.9); border: 1px solid rgba(120,160,200,0.2);
+  border-radius: 6px; backdrop-filter: blur(8px);
+}
+.ev-coords {
+  position: absolute; bottom: 8px; left: 8px; font-size: 9px; letter-spacing: 0.1em;
+  color: #7d90a8; background: rgba(5,8,15,0.8); padding: 3px 7px; border-radius: 4px;
+  border: 1px solid rgba(120,160,200,0.16); font-variant-numeric: tabular-nums;
+}
+
+.ev-minimap { width: 100%; aspect-ratio: 3 / 2; background: #04080f; border: 1px solid rgba(120,160,200,0.18); border-radius: 4px; display: block; cursor: crosshair; }
+
+/* ------------------------------------------------------------ overlays */
+.ev-sheet-backdrop { position: absolute; inset: 0; background: rgba(3,6,11,0.6); z-index: 40; }
+.ev-sheet {
+  position: absolute; z-index: 41; background: rgba(7,11,19,0.97);
+  border: 1px solid rgba(120,160,200,0.22); display: flex; flex-direction: column;
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+}
+
+/* ---------------------------------------------------------- responsive */
+@media (max-width: 1180px) {
+  .ev-intel { width: 228px; }
+  .ev-nav { width: 56px; }
+  .ev-metric { min-width: 64px; padding: 0 9px; }
+}
+@media (max-width: 900px) {
+  .ev-nav { width: 48px; }
+  .ev-nav-label { display: none; }
+  .ev-intel { display: none; }
+  .ev-metric { min-width: 58px; padding: 0 8px; }
+  .ev-metric-value { font-size: 12px; }
+  .ev-brand-sub { display: none; }
+}
+@media (max-width: 700px) {
+  .ev-nav { width: 44px; }
+  .ev-brand { padding: 0 10px; }
+  .ev-brand-mark { font-size: 13px; letter-spacing: 0.16em; }
+  .ev-tool { min-width: 54px; padding: 6px; }
+}
+/* Phone on its side: the HUD and toolbar tighten so the world keeps the height. */
+@media (max-height: 520px) {
+  .ev-hud-bar { min-height: 40px; }
+  .ev-brand-mark { font-size: 13px; }
+  .ev-metric-value { font-size: 12px; }
+  .ev-tool { padding: 5px 6px; min-width: 54px; }
+  .ev-tools-row { padding: 5px 6px; }
+}

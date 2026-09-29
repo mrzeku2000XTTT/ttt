@@ -5,6 +5,10 @@
     "experiment_id": {
       "type": "string"
     },
+    "org_key": {
+      "type": "string",
+      "description": "Stable internal id (ORG_003)"
+    },
     "name": {
       "type": "string"
     },

@@ -5,6 +5,10 @@
     "experiment_id": {
       "type": "string"
     },
+    "agent_key": {
+      "type": "string",
+      "description": "Stable internal id (AGT_0134) \u2014 lineage and ownership reference this"
+    },
     "code": {
       "type": "string",
       "description": "Display id, e.g. A#134"
