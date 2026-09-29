@@ -37,10 +37,12 @@ export function drawWorld(canvas, opts) {
     selection,
     hover,
     agents = [],
+    players = [],
     showTerritory = true,
     showAgents = true,
     showGrid = false,
     pendingTarget,
+    followPlayer = null,
   } = opts;
   if (!canvas || !world) return;
   const ctx = canvas.getContext("2d");
@@ -150,6 +152,36 @@ export function drawWorld(canvas, opts) {
         ctx.beginPath();
         ctx.arc((p.x - cam.x) * ts + ts / 2, (p.y - cam.y) * ts + ts / 2, r + 1.5, 0, Math.PI * 2);
         ctx.stroke();
+      }
+    });
+  }
+
+  // Human players — cyan diamonds, larger and distinct from AI dots.
+  if (showAgents && players.length) {
+    const r = Math.max(2, Math.min(5, ts * 0.22));
+    players.forEach((pl) => {
+      const p = pl.position;
+      if (!p || p.x < x0 - 1 || p.x > x1 + 1 || p.y < y0 - 1 || p.y > y1 + 1) return;
+      const cx = (p.x - cam.x) * ts + ts / 2;
+      const cy = (p.y - cam.y) * ts + ts / 2;
+      const org = pl.organization_id;
+      ctx.fillStyle = org ? orgColor(org) : "#22d3ee";
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - r);
+      ctx.lineTo(cx + r, cy);
+      ctx.lineTo(cx, cy + r);
+      ctx.lineTo(cx - r, cy);
+      ctx.closePath();
+      ctx.fill();
+      // White outline so players stand out.
+      ctx.strokeStyle = "#eef3f9";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // Label the followed player.
+      if (followPlayer && pl.id === followPlayer && ts >= 5) {
+        ctx.fillStyle = "rgba(34,211,238,0.9)";
+        ctx.font = "8px -apple-system, sans-serif";
+        ctx.fillText(pl.code, cx - 8, cy - r - 3);
       }
     });
   }

@@ -18,7 +18,7 @@ export const evolveRepo = {
   },
 
   async loadRecords(experimentId) {
-    const [worlds, agents, assets, jobs, orgs, transactions, events] = await Promise.all([
+    const [worlds, agents, assets, jobs, orgs, transactions, events, players, contracts] = await Promise.all([
       base44.entities.EvolveWorld.filter({ experiment_id: experimentId }, "-created_date", 1),
       base44.entities.EvolveAgent.filter({ experiment_id: experimentId }, "code", 400),
       base44.entities.EvolveAsset.filter({ experiment_id: experimentId }, "sim_id", 400),
@@ -26,6 +26,8 @@ export const evolveRepo = {
       base44.entities.EvolveOrganization.filter({ experiment_id: experimentId }, "created_date", 40),
       base44.entities.EvolveTransaction.filter({ experiment_id: experimentId }, "-created_date", 120),
       base44.entities.EvolveEvent.filter({ experiment_id: experimentId }, "-created_date", 200),
+      base44.entities.EvolvePlayer.filter({ experiment_id: experimentId }, "code", 100),
+      base44.entities.EvolveContract.filter({ experiment_id: experimentId }, "created_date", 50),
     ]);
     return {
       world: worlds[0] || null,
@@ -35,6 +37,8 @@ export const evolveRepo = {
       orgs,
       transactions,
       events: [...events].reverse(),
+      players,
+      contracts,
     };
   },
 
@@ -51,6 +55,8 @@ export const evolveRepo = {
       base44.entities.EvolveTransaction.bulkCreate(stamp(records.transactions)),
       base44.entities.EvolveAsset.bulkCreate(stamp(records.assets)),
       base44.entities.EvolveEvent.bulkCreate(stamp(records.events.slice(0, 120))),
+      records.players?.length ? base44.entities.EvolvePlayer.bulkCreate(stamp(records.players)) : Promise.resolve(),
+      records.contracts?.length ? base44.entities.EvolveContract.bulkCreate(stamp(records.contracts)) : Promise.resolve(),
     ]);
     return id;
   },
@@ -85,6 +91,25 @@ export const evolveRepo = {
       treasury_balance: records.experiment.treasury_balance,
       status: records.experiment.status,
     });
+    // Sync players (upsert by player_key).
+    if (records.players?.length) {
+      const existing = await base44.entities.EvolvePlayer.filter({ experiment_id: experimentId }, "code", 100);
+      const byKey = new Map(existing.map((p) => [p.player_key, p]));
+      const toCreate = [];
+      const toUpdate = [];
+      records.players.forEach((p) => {
+        const rec = byKey.get(p.player_key);
+        if (rec) {
+          toUpdate.push({ id: rec.id, ...p, experiment_id: experimentId });
+        } else {
+          toCreate.push({ ...p, experiment_id: experimentId });
+        }
+      });
+      if (toCreate.length) await base44.entities.EvolvePlayer.bulkCreate(toCreate);
+      for (const u of toUpdate) {
+        await base44.entities.EvolvePlayer.update(u.id, u);
+      }
+    }
     return base44.entities.EvolveSnapshot.create({ experiment_id: experimentId, ...records.snapshot });
   },
 
@@ -105,6 +130,8 @@ export const evolveRepo = {
       base44.entities.EvolveEvent.deleteMany({ experiment_id: experimentId }),
       base44.entities.EvolveSnapshot.deleteMany({ experiment_id: experimentId }),
       base44.entities.EvolveWallet.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolvePlayer.deleteMany({ experiment_id: experimentId }),
+      base44.entities.EvolveContract.deleteMany({ experiment_id: experimentId }),
     ]);
     const worlds = await base44.entities.EvolveWorld.filter({ experiment_id: experimentId }, "-created_date", 1);
     if (worlds[0]) await base44.entities.EvolveWorld.delete(worlds[0].id);

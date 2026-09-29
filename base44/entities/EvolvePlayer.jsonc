@@ -1,0 +1,121 @@
+{
+  "name": "EvolvePlayer",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "player_key": {
+      "type": "string",
+      "description": "Stable internal id (PLR_0001)"
+    },
+    "code": {
+      "type": "string",
+      "description": "Display id, e.g. P#001"
+    },
+    "name": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Base44 user id of the human player"
+    },
+    "country": {
+      "type": "string",
+      "description": "Country region where the player spawned"
+    },
+    "generation": {
+      "type": "number",
+      "default": 0
+    },
+    "faction": {
+      "type": "string",
+      "enum": [
+        "blue",
+        "green",
+        "yellow",
+        "red",
+        "purple",
+        "neutral"
+      ],
+      "default": "neutral"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "wallet_id": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string",
+      "description": "Public testnet address only"
+    },
+    "balance": {
+      "type": "number",
+      "default": 0
+    },
+    "lifetime_earnings": {
+      "type": "number",
+      "default": 0
+    },
+    "lifetime_expenses": {
+      "type": "number",
+      "default": 0
+    },
+    "jobs_completed": {
+      "type": "number",
+      "default": 0
+    },
+    "jobs_failed": {
+      "type": "number",
+      "default": 0
+    },
+    "reputation": {
+      "type": "number",
+      "default": 50
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "working",
+        "moving",
+        "trading",
+        "researching",
+        "defending",
+        "insolvent"
+      ],
+      "default": "idle"
+    },
+    "current_job_id": {
+      "type": "string"
+    },
+    "position": {
+      "type": "object",
+      "description": "{ x, y } tile coordinates"
+    },
+    "assets": {
+      "type": "object",
+      "description": "Owned simulated assets: compute, energy, servers, information"
+    },
+    "age_days": {
+      "type": "number",
+      "default": 0
+    },
+    "born_day": {
+      "type": "number",
+      "default": 0
+    },
+    "notifications": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "code",
+    "user_id"
+  ]
+}

@@ -57,9 +57,11 @@ export default function WorldViewport({ cam, setCam, onSize }) {
       hover,
       pendingTarget: engine.pendingTarget,
       agents: engine.agents,
+      players: engine.players || [],
       showTerritory: layers.territory,
       showAgents: layers.agents,
       showGrid: layers.grid,
+      followPlayer: engine._followPlayer || null,
     });
   });
 

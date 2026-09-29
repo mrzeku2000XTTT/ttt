@@ -1,0 +1,91 @@
+{
+  "name": "EvolveContract",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "contract_key": {
+      "type": "string",
+      "description": "Stable internal id (CTR_0001)"
+    },
+    "creator_actor_id": {
+      "type": "string"
+    },
+    "creator_code": {
+      "type": "string"
+    },
+    "creator_type": {
+      "type": "string",
+      "enum": [
+        "player",
+        "agent"
+      ],
+      "default": "player"
+    },
+    "participant_actor_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "participant_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "participant_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "player",
+          "agent"
+        ]
+      },
+      "default": []
+    },
+    "contributions": {
+      "type": "object",
+      "description": "What each participant contributes"
+    },
+    "reward": {
+      "type": "number",
+      "default": 0
+    },
+    "reward_distribution": {
+      "type": "object",
+      "description": "How the reward is split between participants"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PROPOSED",
+        "ACCEPTED",
+        "ACTIVE",
+        "COMPLETED",
+        "FAILED",
+        "CANCELLED"
+      ],
+      "default": "PROPOSED"
+    },
+    "day": {
+      "type": "number",
+      "default": 0
+    },
+    "accepted_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "creator_actor_id",
+    "status"
+  ]
+}

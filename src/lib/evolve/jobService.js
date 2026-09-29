@@ -53,6 +53,41 @@ let seq = 0;
 export const resetJobSeq = (n = 0) => { seq = n; };
 export const nextJobCode = () => `JOB ${++seq}`;
 
+/** A job posted by a human player. The reward is escrowed from the player's balance. */
+export function createPlayerJob({
+  type,
+  title,
+  brief,
+  reward,
+  difficulty = "MEDIUM",
+  verification = "SCHEMA",
+  postedBy = "",
+  posterCode = "",
+  day = 0,
+}) {
+  seq += 1;
+  return {
+    id: `JOB ${seq}`,
+    code: `JOB #${seq}`,
+    type: type || "RESEARCH",
+    title: title || "Custom task",
+    brief: brief || "",
+    reward: Number(Number(reward || 0).toFixed(2)),
+    difficulty,
+    status: "OPEN",
+    verification,
+    claimed_by: "",
+    submission: "",
+    verification_notes: "",
+    progress: 0,
+    created_day: day,
+    posted_by: postedBy,
+    poster_code: posterCode,
+    is_player_job: true,
+    escrow: Number(Number(reward || 0).toFixed(2)),
+  };
+}
+
 export function createJob(rng, day = 0, forcedType) {
   const type = forcedType || JOB_TYPES[Math.floor(rng() * JOB_TYPES.length)];
   const options = JOB_TEMPLATES[type] || JOB_TEMPLATES.RESEARCH;

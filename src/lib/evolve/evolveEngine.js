@@ -20,6 +20,25 @@ import { randomGenome, calculateFitness, meanGenome } from "./genome";
 import { makeRng, clamp01 } from "./rng";
 import { TOOLS, RESOURCE_IDS, WORLD_SIZES, BUILD_STATS, BASE_PRICES, orgColor } from "./constants";
 import { RelationshipService, ORG_FORMATION_REQUIREMENTS } from "./relationshipService";
+import {
+  createPlayer,
+  applyStartingInventory,
+  notifyPlayer,
+  markNotificationsRead,
+  adjustReputation,
+  checkInsolvency,
+  resetPlayerSeq,
+  PLAYER_START,
+} from "./playerService";
+import { createPlayerJob } from "./jobService";
+import { COUNTRIES, countryAt, countryStats, randomCellInCountry, cellStats } from "./countryMap";
+import {
+  PlayerActions,
+  evaluateTradeOffers,
+  evaluateContracts,
+  playerUpkeep,
+  playerAssetIncome,
+} from "./playerActions";
 
 const ACTIONS_PER_TICK = 48;
 const TICKS_PER_DAY = 8;
@@ -72,6 +91,12 @@ export class EvolveEngine {
     this.relationships = new RelationshipService();
     this.treasury = { address: "", balance: 0, totalPaid: 0, pending: 0 };
 
+    this.players = [];
+    this.playerById = new Map();
+    this.playerSeq = 0;
+    this.contracts = [];
+    this.tradeOffers = [];
+
     this.agentSeq = 0;
     this.tickCount = 0;
     this.paused = false;
@@ -86,6 +111,11 @@ export class EvolveEngine {
     this.window = { births: 0, jobs: 0, from: 0 };
     this.listeners = new Set();
     this.dirty = false;
+
+    // Bind player actions to this engine instance.
+    Object.keys(PlayerActions).forEach((k) => {
+      this[k] = PlayerActions[k].bind(this);
+    });
   }
 
   /* ------------------------------------------------------------- plumbing */
@@ -257,6 +287,11 @@ export class EvolveEngine {
     this.world.owner.fill(0);
     this.world.sculpt.fill(-1);
     this.treasury = { address: "", balance: 0, totalPaid: 0, pending: 0 };
+    this.players = [];
+    this.playerById = new Map();
+    this.playerSeq = 0;
+    this.contracts = [];
+    this.tradeOffers = [];
     this.agentSeq = 0;
     this.tickCount = 0;
     this.events = new EventService();
@@ -307,6 +342,12 @@ export class EvolveEngine {
     this.advanceJobs(quiet);
     this.actAgents(quiet);
     this.chargeUpkeep();
+    if (!quiet) {
+      evaluateTradeOffers(this);
+      evaluateContracts(this);
+      playerUpkeep(this);
+      playerAssetIncome(this);
+    }
 
     if (!quiet && this.tickCount % 240 === 0) this.snapshot();
     this.notify(true);
@@ -570,6 +611,17 @@ export class EvolveEngine {
     } else {
       agent.jobs_failed += 1;
       agent.current_job_id = "";
+      // Return escrow to the player if this was a player-posted job.
+      if (job.is_player_job && job.posted_by) {
+        const poster = this.playerById.get(job.posted_by);
+        if (poster) {
+          poster.balance = Number((poster.balance + (job.escrow || job.reward)).toFixed(2));
+          notifyPlayer(poster, {
+            type: "JOB_FAILED",
+            message: `${agent.code} failed ${job.code} — ${job.escrow?.toFixed(2) || job.reward.toFixed(2)} tKAS returned`,
+          });
+        }
+      }
       this.emit(
         { type: "JOB_FAILED", category: "JOB", message: `${job.code} failed verification — no payment`, actor_id: agent.id, actor_code: agent.code, target_id: job.id, target_code: job.code },
         quiet
@@ -581,16 +633,30 @@ export class EvolveEngine {
   /** Verified work is the only thing the treasury pays for. */
   payJob(job, agent, quiet) {
     job.status = "PAYMENT_PENDING";
-    const amount = Math.min(job.reward, this.treasury.balance);
+    // Player-posted jobs pay from escrow; treasury jobs pay from the treasury.
+    const isPlayerJob = !!job.is_player_job;
+    const amount = isPlayerJob ? job.reward : Math.min(job.reward, this.treasury.balance);
+    const fromAddr = isPlayerJob ? "escrow" : this.treasury.address;
     const tx = this.kaspa.sendPayment({
-      from: this.treasury.address,
+      from: fromAddr,
       to: agent.address,
       amount,
       note: job.code,
     });
-    this.treasury.balance = Number((this.treasury.balance - amount).toFixed(2));
-    this.treasury.totalPaid = Number((this.treasury.totalPaid + amount).toFixed(2));
-    this.treasury.pending = Number((this.treasury.pending + amount).toFixed(2));
+    if (isPlayerJob) {
+      // Notify the player who posted the job.
+      const poster = this.playerById.get(job.posted_by);
+      if (poster) {
+        notifyPlayer(poster, {
+          type: "JOB_COMPLETED",
+          message: `${agent.code} completed your ${job.code} · paid ${amount.toFixed(2)} tKAS`,
+        });
+      }
+    } else {
+      this.treasury.balance = Number((this.treasury.balance - amount).toFixed(2));
+      this.treasury.totalPaid = Number((this.treasury.totalPaid + amount).toFixed(2));
+      this.treasury.pending = Number((this.treasury.pending + amount).toFixed(2));
+    }
     agent.balance = Number((agent.balance + amount).toFixed(2));
     agent.lifetime_earnings = Number((agent.lifetime_earnings + amount).toFixed(2));
     agent.current_job_id = "";
@@ -1118,6 +1184,8 @@ export class EvolveEngine {
       assets: this.world.assets.length,
       totalPaid: this.treasury.totalPaid,
       pending: this.treasury.pending,
+      humans: this.players.length,
+      txs: this.transactions.length + this.tradeOffers.length,
     };
   }
 
@@ -1173,7 +1241,7 @@ export class EvolveEngine {
   /* ------------------------------------------------------------- hydrate */
   /** Rebuilds a live engine from stored records so the experiment survives a reload. */
   hydrate(records) {
-    const { experiment, world, agents = [], assets = [], jobs = [], orgs = [], transactions = [], events = [] } = records || {};
+    const { experiment, world, agents = [], assets = [], jobs = [], orgs = [], transactions = [], events = [], players = [], contracts = [] } = records || {};
     if (!experiment) return this;
 
     this.config = {
@@ -1232,6 +1300,27 @@ export class EvolveEngine {
     [...events].reverse().forEach((e) => this.events.push(e));
 
     if (records.relationships) this.relationships.hydrate(records.relationships);
+
+    // Restore human players.
+    this.players = (players || []).map((p, i) => ({
+      decisions: [],
+      children: [],
+      notifications: [],
+      assets: { compute: 0, energy: 0, servers: 0, information: 0 },
+      age_days: 0,
+      is_player: true,
+      ...p,
+      id: p.player_key || `PLR_${String(i + 1).padStart(4, "0")}`,
+    }));
+    this.playerById = new Map(this.players.map((p) => [p.id, p]));
+    this.playerSeq = this.players.length;
+    resetPlayerSeq(this.playerSeq);
+
+    // Restore contracts.
+    this.contracts = (contracts || []).map((c, i) => ({
+      ...c,
+      id: c.contract_key || `CTR_${String(i + 1).padStart(4, "0")}`,
+    }));
 
     this.treasury = {
       address: "kaspatest:treasury",
@@ -1314,6 +1403,35 @@ export class EvolveEngine {
         clock: e.clock,
       })),
       relationships: this.relationships.serialize().slice(0, 200),
+      players: this.players.map((p) => ({
+        player_key: p.id,
+        code: p.code,
+        name: p.name,
+        user_id: p.user_id,
+        country: p.country,
+        generation: p.generation,
+        faction: p.faction,
+        organization_id: p.organization_id,
+        wallet_id: p.wallet_id,
+        address: p.address,
+        balance: p.balance,
+        lifetime_earnings: p.lifetime_earnings,
+        lifetime_expenses: p.lifetime_expenses,
+        jobs_completed: p.jobs_completed,
+        jobs_failed: p.jobs_failed,
+        reputation: p.reputation,
+        status: p.status,
+        current_job_id: p.current_job_id,
+        position: p.position,
+        assets: p.assets,
+        age_days: Number((p.age_days || 0).toFixed(2)),
+        born_day: p.born_day,
+        notifications: (p.notifications || []).slice(0, 20),
+      })),
+      contracts: this.contracts.map((c) => ({
+        ...c,
+        contract_key: c.id,
+      })),
       snapshot: this.snapshot(),
     };
   }
