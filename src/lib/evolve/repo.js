@@ -1,5 +1,12 @@
 import { base44 } from "@/api/base44Client";
 
+/* Engine-side ids are internal keys, never record ids — they are stored in
+   their own fields (agent_key, sim_id, org_key) so the database owns `id`. */
+const strip = (r) => {
+  const { id, ...rest } = r;
+  return rest;
+};
+
 /**
  * Persistence boundary. The engine never talks to the database directly — it
  * hands plain records to this module, so the storage layer can change freely.
@@ -34,7 +41,7 @@ export const evolveRepo = {
   /** Writes the genesis state once, so a reload resumes the same civilization. */
   async saveGenesis(experimentId, records) {
     const id = experimentId;
-    const stamp = (arr) => arr.map((r) => ({ ...r, experiment_id: id }));
+    const stamp = (arr) => arr.map((r) => ({ ...strip(r), experiment_id: id }));
 
     await base44.entities.EvolveWorld.create({ experiment_id: id, ...records.world });
     await Promise.all([
@@ -49,7 +56,7 @@ export const evolveRepo = {
   },
 
   async createExperiment(data) {
-    return base44.entities.EvolveExperiment.create(data);
+    return base44.entities.EvolveExperiment.create(strip(data));
   },
 
   async updateExperiment(id, data) {
@@ -83,6 +90,6 @@ export const evolveRepo = {
 
   async appendEvents(experimentId, events) {
     if (!experimentId || !events.length) return null;
-    return base44.entities.EvolveEvent.bulkCreate(events.map((e) => ({ ...e, experiment_id: experimentId })));
+    return base44.entities.EvolveEvent.bulkCreate(events.map((e) => ({ ...strip(e), experiment_id: experimentId })));
   },
 };
