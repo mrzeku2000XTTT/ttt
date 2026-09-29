@@ -149,6 +149,8 @@
 .ev-label { font-size: 8.5px; letter-spacing: 0.13em; text-transform: uppercase; color: #54657c; }
 .ev-value { font-size: 12px; font-variant-numeric: tabular-nums; color: #eef3f9; }
 .ev-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+/* In a row the value is always the right-hand item — align it so figures line up. */
+.ev-row > .ev-value { text-align: right; }
 .ev-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .ev-bar { height: 4px; border-radius: 2px; background: rgba(120,160,200,0.14); overflow: hidden; }
@@ -218,7 +220,9 @@
 /* ------------------------------------------------------------ overlays */
 .ev-sheet-backdrop { position: absolute; inset: 0; background: rgba(3,6,11,0.6); z-index: 40; }
 .ev-sheet {
-  position: absolute; z-index: 41; background: rgba(7,11,19,0.97);
+  /* Fully opaque — a translucent sheet let the world and the intel log show
+     through the text of every card inside it. */
+  position: absolute; z-index: 41; background: #070b13;
   border: 1px solid rgba(120,160,200,0.22); display: flex; flex-direction: column;
   border-radius: 8px; overflow: hidden;
   box-shadow: 0 24px 60px rgba(0,0,0,0.6);

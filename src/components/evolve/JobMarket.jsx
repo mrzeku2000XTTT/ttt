@@ -52,7 +52,20 @@ export default function JobMarket({ onClose, onSelectJob }) {
         </select>
       </div>
 
-      {jobs.length === 0 && <div style={{ padding: 14, fontSize: 10, color: "#54657c" }}>No jobs in this view.</div>}
+      {jobs.length === 0 && (
+        <div style={{ padding: "18px 14px", textAlign: "center" }}>
+          <div style={{ fontSize: 10.5, color: "#7d90a8", lineHeight: 1.5 }}>
+            {filter === "OPEN"
+              ? "No open jobs right now — every job posted so far has been claimed."
+              : "No jobs in this view."}
+          </div>
+          {engine.jobs.length > 0 && filter !== "ALL" && (
+            <button className="ev-btn ev-btn-ghost" style={{ marginTop: 10 }} onClick={() => setFilter("ALL")}>
+              Show all {engine.jobs.length} jobs
+            </button>
+          )}
+        </div>
+      )}
 
       {jobs.map((job) => (
         <div key={job.id} className="ev-section" style={{ cursor: "pointer" }} onClick={() => onSelectJob(job.id)}>
@@ -64,7 +77,7 @@ export default function JobMarket({ onClose, onSelectJob }) {
           </div>
           <div style={{ fontSize: 10.5, color: "#c9d6e4", marginTop: 4 }}>{job.title}</div>
           <div style={{ fontSize: 10, color: "#7d90a8", marginTop: 3, lineHeight: 1.4 }}>{job.brief}</div>
-          <div style={{ display: "flex", gap: 10, marginTop: 5, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap", minHeight: 26 }}>
             <span className="ev-label">Difficulty {job.difficulty}</span>
             <span className="ev-label">Verification {job.verification}</span>
             {job.status !== "OPEN" && job.progress > 0 && (
@@ -75,7 +88,7 @@ export default function JobMarket({ onClose, onSelectJob }) {
             {job.status === "OPEN" && (
               <button
                 className="ev-btn"
-                style={{ marginLeft: "auto", padding: "5px 9px", fontSize: 9.5 }}
+                style={{ marginLeft: "auto", padding: "5px 9px", fontSize: 9.5, flex: "none" }}
                 onClick={(e) => {
                   e.stopPropagation();
                   const r = engine.claimJob(chosen, job.id);

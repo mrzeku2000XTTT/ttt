@@ -13,7 +13,7 @@ export default function EconomyPanel({ onClose }) {
   const totals = economyTotals(engine.agents);
 
   return (
-    <PanelShell title="Economy" subtitle={`Day ${engine.world.day} · ${fmtInt(totals.population)} active agents`} onClose={onClose} width={344}>
+    <PanelShell title="Economy" subtitle={`Day ${engine.world.day} · ${fmtInt(totals.population)} active agents`} onClose={onClose} width={300}>
       <div className="ev-section">
         <div className="ev-label" style={{ marginBottom: 6 }}>Resource Pools</div>
         {market.map((m) => {
