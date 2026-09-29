@@ -76,7 +76,18 @@ export function useScorpionWallet() {
         setConnState(State.CONNECTED_TN10); // optimistic; corrected by silentRefresh
         await silentRefresh(session.address);
       } else {
-        saveSession(null);
+        // Some KCC20 SDKs don't support silent account enumeration. If the
+        // wallet still responds to getNetwork, keep the saved session and let
+        // silentRefresh verify — only clear if the wallet is truly gone.
+        try {
+          await scorpion.getNetwork();
+          if (cancelled) return;
+          setAddress(session.address);
+          setConnState(State.CONNECTED_TN10);
+          await silentRefresh(session.address);
+        } catch {
+          if (!cancelled) saveSession(null);
+        }
       }
     })();
     return () => {

@@ -999,10 +999,14 @@ export class EvolveEngine {
         // Assets are claimed for the agent's organization, if they have one.
         const agent = this.agentById.get(opts.ownerId || "");
         const org = agent ? this.orgs.find((o) => o.id === agent.organization_id) : null;
+        // When the user clicked a real-world geographic cell that is land,
+        // allow building even if the abstract biome is water.
+        const landOverride = !!(opts.geo && opts.geo.cellId);
         const res = this.world.placeAsset(kind, x, y, {
           ownerId: opts.ownerId || "",
           orgSlot: org?.slot || 0,
           organizationId: org?.id || "",
+          landOverride,
         });
         if (!res.ok) return { ok: false, message: res.reason };
         this.selectTile(x, y, __geo);

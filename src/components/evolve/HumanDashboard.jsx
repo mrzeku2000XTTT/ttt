@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Wallet, Sparkles, RefreshCw, Copy, Check, ExternalLink } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { C } from "@/lib/evolve/constants";
+import { ScorpionConnectionState as State } from "@/lib/evolve/scorpionAdapter";
 
 /**
  * HumanDashboard — the player's own control surface.
@@ -78,6 +79,23 @@ export default function HumanDashboard({ onClose, onInspectAgent }) {
             </span>
             <span style={{ fontSize: 9, color: C.textDim }}>{player.country || "World"}</span>
           </div>
+          {!walletConnected && (
+            <button
+              className="ev-btn"
+              style={{ width: "100%", marginTop: 8, padding: "8px 12px", justifyContent: "center", fontSize: 10 }}
+              onClick={() => {
+                if (wallet.isWrongNetwork) wallet.switchToTN10();
+                else wallet.connect();
+              }}
+              disabled={wallet.busy}
+            >
+              {wallet.busy ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Wallet className="h-3.5 w-3.5" />}
+              <span>{wallet.isWrongNetwork ? "SWITCH TO TN-10" : wallet.busy ? "CONNECTING…" : "CONNECT SCORPION"}</span>
+            </button>
+          )}
+          {wallet.error && !walletConnected && (
+            <div style={{ fontSize: 8.5, color: C.red, marginTop: 5, wordBreak: "break-word" }}>{wallet.error}</div>
+          )}
         </div>
 
         {/* --- AI Agent Generator --- */}

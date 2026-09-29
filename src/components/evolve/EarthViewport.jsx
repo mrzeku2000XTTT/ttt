@@ -203,10 +203,13 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       const ownerSlot = world.owner ? world.owner[i] : 0;
       const orgId = ownerSlot > 0 && world.orgSlots ? world.orgSlots[ownerSlot] : null;
       const biome = world.biome[i];
+      const sculptedIdx = world.sculpt ? world.sculpt[i] : -1;
       const land = isLand(c.centerLat, c.centerLng);
-      const biomeColor = BIOMES[biome] ? BIOMES[biome].color : "#0a121e";
-      // A real-world land cell never renders as ocean, regardless of the abstract biome.
-      const color = orgId ? orgColor(orgId) : land ? LAND_CELL_COLOR : biomeColor;
+      // A sculpted tile shows its painted biome; otherwise a real-world land
+      // cell renders with the land tone so it never reads as ocean.
+      const effectiveBiome = sculptedIdx >= 0 ? sculptedIdx : biome;
+      const biomeColor = BIOMES[effectiveBiome] ? BIOMES[effectiveBiome].color : "#0a121e";
+      const color = orgId ? orgColor(orgId) : land ? (sculptedIdx >= 0 ? biomeColor : LAND_CELL_COLOR) : biomeColor;
       const isSel = sel && sel.geo ? sel.geo.cellId === c.cellId : (sel && sel.x === ep.x && sel.y === ep.y);
       return {
         type: "Feature",
