@@ -33,7 +33,13 @@ export default function TalkStickTransport({ engine, caption, onCaption }) {
       .then(({ file_url }) => base44.integrations.Core.TranscribeAudio({ audio_url: file_url }))
       .then((result) => {
         const spoken = typeof result === "string" ? result : result?.text || "";
-        patch({ text: spoken.replace(/\s+/g, " ").trim().slice(0, 220) });
+        // The whole transcript, so the words still cover the end of a long take —
+        // cutting it short left the caption sitting on its last line while the
+        // voice carried on.
+        // Transcribing means wanting the words to follow the voice, so a caption
+        // still sitting as one block starts moving with the track.
+        const follow = (caption.anim || "off") === "off" ? { anim: "chunk" } : {};
+        patch({ text: spoken.replace(/\s+/g, " ").trim().slice(0, 1500), ...follow });
       })
       .catch(() => setError("That audio could not be transcribed."))
       .finally(() => setBusy(false));

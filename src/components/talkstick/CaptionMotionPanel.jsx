@@ -112,8 +112,8 @@ export default function CaptionMotionPanel({ caption, onChange, engine }) {
             id="ts-motion-offset"
             className="ts-range"
             type="range"
-            min="-1.2"
-            max="1.2"
+            min="-3"
+            max="3"
             step="0.05"
             value={offset}
             onChange={(event) => onChange({ syncOffset: Number(event.target.value) })}

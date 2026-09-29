@@ -44,9 +44,39 @@ export function groupWords(text, mode, chunk) {
   return groups;
 }
 
-// Roughly how long a card takes to say: its letters, with a floor so a short word
-// still gets its moment rather than flashing past.
-const weight = (group) => Math.max(2.4, group.replace(/[^\p{L}\p{N}]/gu, "").length || 1);
+// How long a word takes to say. Syllables track the voice far more closely than
+// letters do, which over-run on long vowel-heavy words and under-run on clipped
+// ones — the drift that puts the words ahead of the voice by the end of a take.
+const VOWELS = /[aeiouy]+/g;
+
+function syllables(word) {
+  const clean = String(word).toLowerCase().replace(/[^a-z]/g, "");
+  if (!clean) return 1;
+  const found = clean.match(VOWELS);
+  let count = found ? found.length : 1;
+  // A trailing silent "e" is not its own beat.
+  if (count > 1 && clean.endsWith("e")) count -= 1;
+  return Math.max(1, count);
+}
+
+// The breath after a card. A full stop holds longer than a comma, so the words do
+// not run ahead of the voice across the pauses in a sentence.
+function breath(group) {
+  if (/[.!?…]["')\]]?$/.test(group)) return 2.4;
+  if (/[,;:—–]["')\]]?$/.test(group)) return 1.2;
+  return 0;
+}
+
+// A card's share of the track: the syllables it takes to say, plus the pause that
+// follows it, with a floor so a short word still gets its moment rather than
+// flashing past.
+const weight = (group) => {
+  const spoken = String(group)
+    .split(/\s+/)
+    .filter(Boolean)
+    .reduce((sum, word) => sum + syllables(word), 0);
+  return Math.max(1.7, spoken + breath(group));
+};
 
 /**
  * The cue sheet: one entry per card, with the moment it starts and ends. Cached,
