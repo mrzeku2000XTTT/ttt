@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Cpu } from "lucide-react";
 import { APPS, KASPA_APPS_ORDER, LIFESTYLE_APP_PATHS } from "@/components/appstore2/appCatalog";
 import PortalAppGrid from "@/components/portal/PortalAppGrid";
 import KaspaMark from "@/components/tttbuilder/landing/KaspaMark";
@@ -62,6 +63,7 @@ function PortalButton({ label, sub, icon, onClick, delay, accent }) {
 export default function PortalPage() {
   const [view, setView] = useState("home"); // home | ai | kaspa
   const { kaspaApps, aiApps } = usePortalCollections();
+  const navigate = useNavigate();
 
   return (
     <div className="relative min-h-screen overflow-hidden flex flex-col" style={{ background: "#000" }}>
@@ -93,6 +95,22 @@ export default function PortalPage() {
             transition={{ duration: 0.4 }}
             className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 py-16"
           >
+            {/* Back to the App Store */}
+            <button
+              onClick={() => navigate("/AppStoreV2")}
+              title="Back to Store"
+              className="absolute top-6 left-5 flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full text-white/70 hover:text-white transition-colors active:scale-95"
+              style={{
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                backdropFilter: "blur(30px) saturate(180%)",
+                WebkitBackdropFilter: "blur(30px) saturate(180%)",
+              }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs font-medium">Store</span>
+            </button>
+
             {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: -18 }}
