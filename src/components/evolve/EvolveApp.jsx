@@ -28,6 +28,18 @@ import { useEvolve } from "@/lib/evolve/useEvolve";
 import ConnectScorpion from "./ConnectScorpion";
 import PlayerWalletBar from "./PlayerWalletBar";
 import PaymentPreview from "./PaymentPreview";
+import PlayerHome from "./PlayerHome";
+import CountrySelect from "./CountrySelect";
+import CellSelect from "./CellSelect";
+import PlayerHUD from "./PlayerHUD";
+import PlayerActionBar from "./PlayerActionBar";
+import PlayerJobs from "./PlayerJobs";
+import PlayerTrade from "./PlayerTrade";
+import PlayerBuild from "./PlayerBuild";
+import PlayerMove from "./PlayerMove";
+import ActorInspector from "./ActorInspector";
+import PlayerContracts from "./PlayerContracts";
+import PlayerNotifications from "./PlayerNotifications";
 import "./evolve.css";
 
 /**
@@ -36,11 +48,22 @@ import "./evolve.css";
  * Desktop and landscape phones get the same console, only the panel widths change.
  */
 export default function EvolveApp() {
-  const { engine, loading, flash, genesisStage, wallet, player, pendingPayment, confirmPayment, cancelPayment } = useEvolve();
+  const {
+    engine, loading, flash, genesisStage, wallet, player, pendingPayment,
+    confirmPayment, cancelPayment, playerMode, enterObserverMode, enterPlayerMode,
+    selectedCountry, selectCountry, selectedSpawnCell, selectSpawnCell, spawnPlayer,
+    movePlayer, postPlayerJob, createTradeOffer, acceptTradeOffer, buildAsset,
+    createContract, acceptContract, proposeOrganization, joinOrganization, leaveOrganization,
+    currentPlayer,
+  } = useEvolve();
   const [view, setView] = useState("WORLD");
   const [cam, setCam] = useState({ x: 0, y: 0, scale: 6 });
   const [mapSize, setMapSize] = useState({ w: 0, h: 0 });
   const [sheet, setSheet] = useState(null);
+  const [playerSheet, setPlayerSheet] = useState(null); // MOVE/JOBS/TRADE/BUILD/CONTRACTS/NOTIFICATIONS
+  const [actorInspector, setActorInspector] = useState(null); // { id, type }
+  const [showHome, setShowHome] = useState(true);
+  const [enterFlow, setEnterFlow] = useState(null); // null | "COUNTRY" | "CELL"
 
   const topAgent = useMemo(() => {
     if (!engine) return null;
@@ -130,6 +153,86 @@ export default function EvolveApp() {
       </div>
 
       <WorldToolbar onOpenJobs={() => open("jobs")} />
+
+      {/* -------------------------------------------------- player overlays */}
+      {engine?.started && showHome && playerMode === "observer" && !enterFlow && (
+        <PlayerHome
+          onObserve={() => setShowHome(false)}
+          onEnterWorld={() => {
+            if (currentPlayer) {
+              enterPlayerMode();
+              setShowHome(false);
+            } else {
+              setEnterFlow("COUNTRY");
+            }
+          }}
+        />
+      )}
+
+      {enterFlow === "COUNTRY" && (
+        <CountrySelect
+          onExplore={(c) => { selectCountry(c.name); setEnterFlow("CELL"); }}
+          onStartHere={(c) => { selectCountry(c.name); setEnterFlow("CELL"); }}
+          onClose={() => setEnterFlow(null)}
+        />
+      )}
+
+      {enterFlow === "CELL" && selectedCountry && (
+        <CellSelect onClose={() => setEnterFlow(null)} />
+      )}
+
+      {playerMode === "player" && currentPlayer && (
+        <PlayerHUD />
+      )}
+
+      {playerMode === "player" && currentPlayer && (
+        <PlayerActionBar
+          active={playerSheet}
+          onAction={(id) => {
+            const map = { MARKET: "TRADE", PEOPLE: "MORE", ORGS: "MORE", RESEARCH: "MORE", DEFEND: "MORE" };
+            const target = map[id] || id;
+            if (target === "MORE") {
+              setPlayerSheet(playerSheet === "MORE" ? null : "MORE");
+            } else {
+              setPlayerSheet(playerSheet === target ? null : target);
+            }
+          }}
+        />
+      )}
+
+      {/* player action bar sheets */}
+      {playerSheet === "MOVE" && <PlayerMove onClose={() => setPlayerSheet(null)} />}
+      {playerSheet === "JOBS" && <PlayerJobs onClose={() => setPlayerSheet(null)} />}
+      {playerSheet === "TRADE" && <PlayerTrade onClose={() => setPlayerSheet(null)} />}
+      {playerSheet === "BUILD" && <PlayerBuild onClose={() => setPlayerSheet(null)} />}
+      {playerSheet === "CONTRACTS" && <PlayerContracts onClose={() => setPlayerSheet(null)} />}
+      {playerSheet === "NOTIFICATIONS" && <PlayerNotifications onClose={() => setPlayerSheet(null)} />}
+      {playerSheet === "MORE" && (
+        <div className="ev-sheet" style={{ bottom: 56, left: 60, right: 12, padding: 12 }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.12em", color: "#54657c", marginBottom: 8 }}>MORE ACTIONS</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button className="ev-btn" onClick={() => { setPlayerSheet("CONTRACTS"); }}>CONTRACTS</button>
+            <button className="ev-btn" onClick={() => { setPlayerSheet("NOTIFICATIONS"); }}>NOTIFICATIONS</button>
+            <button className="ev-btn ev-btn-ghost" onClick={() => { setView("AGENTS"); setPlayerSheet(null); }}>PEOPLE</button>
+            <button className="ev-btn ev-btn-ghost" onClick={() => { setView("FACTIONS"); setPlayerSheet(null); }}>ORGS</button>
+            <button className="ev-btn ev-btn-ghost" onClick={() => { setView("RESEARCH"); setPlayerSheet(null); }}>RESEARCH</button>
+            <button className="ev-btn ev-btn-ghost" onClick={() => { enterObserverMode(); setShowHome(true); setPlayerSheet(null); }}>OBSERVER MODE</button>
+          </div>
+        </div>
+      )}
+
+      {/* actor inspector (clicking AI/human markers) */}
+      {actorInspector && (
+        <ActorInspector
+          actorId={actorInspector.id}
+          actorType={actorInspector.type}
+          onClose={() => setActorInspector(null)}
+          onAction={(action, actor) => {
+            if (action === "TRADE") setPlayerSheet("TRADE");
+            if (action === "CONTRACT" || action === "COOPERATE") setPlayerSheet("CONTRACTS");
+          }}
+        />
+      )}
 
       {/* ------------------------------------------------------------ sheets */}
       {sheet?.type === "agent" && (
