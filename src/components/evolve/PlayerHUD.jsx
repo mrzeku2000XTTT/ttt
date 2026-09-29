@@ -9,16 +9,20 @@ import { C } from "@/lib/evolve/constants";
  * Does not cover significant map area.
  */
 export default function PlayerHUD() {
-  const { currentPlayer, engine } = useEvolve();
+  const { currentPlayer, engine, wallet } = useEvolve();
   if (!currentPlayer) return null;
 
   const p = currentPlayer;
   const org = engine?.orgs.find((o) => o.id === p.organization_id);
   const income = (p.assets?.servers || 0) * 0.02 + 0.01;
 
+  // tKAS is REAL Kaspa testnet money: it comes from the connected Scorpion
+  // wallet, never from the simulation's internal balance.
+  const walletLive = Boolean(wallet?.isTN10 && wallet?.address);
+
   const items = [
     { label: "PLAYER", value: p.code, color: C.cyan },
-    { label: "tKAS", value: p.balance.toFixed(2), color: C.green },
+    { label: "tKAS", value: walletLive ? wallet.balanceKasShort : "—", color: C.green },
     { label: "COMPUTE", value: p.assets?.compute?.toFixed(0) || 0, color: C.blue },
     { label: "ENERGY", value: p.assets?.energy?.toFixed(0) || 0, color: C.yellow },
     { label: "STORAGE", value: p.assets?.storage?.toFixed(0) || 0, color: C.textDim },

@@ -3,6 +3,7 @@ import { Wallet, Sparkles, RefreshCw, Copy, Check, ExternalLink } from "lucide-r
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { C } from "@/lib/evolve/constants";
 import { ScorpionConnectionState as State } from "@/lib/evolve/scorpionAdapter";
+import useTn10Balances from "@/lib/evolve/useTn10Balances";
 
 /**
  * HumanDashboard — the player's own control surface.
@@ -25,6 +26,10 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
       (a) => a.status !== "archived" && (a.owner_player_id === player.id || a.owner_user_id === player.user_id)
     );
   }, [engine, player, engine?.tickCount]);
+
+  // Real Kaspa TN-10 balances for this player's agents, read from the chain.
+  const agentAddresses = useMemo(() => myAgents.map((a) => a.address).filter(Boolean), [myAgents]);
+  const { balances: chainBalances, loading: chainLoading } = useTn10Balances(agentAddresses);
 
   if (!engine || !player) return null;
 
@@ -158,7 +163,9 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {myAgents.map((a) => (
+              {myAgents.map((a) => {
+                const onChain = chainBalances[a.address];
+                return (
                 <div
                   key={a.id}
                   style={{ border: "1px solid rgba(120,160,200,0.16)", borderRadius: 5, padding: 7, cursor: "pointer" }}
@@ -184,11 +191,20 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
                     </button>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 9 }}>
-                    <span style={{ color: C.textFaint }}>BAL</span>
-                    <span style={{ color: C.green, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{Number(a.balance || 0).toFixed(2)} tKAS</span>
+                    <span style={{ color: C.textFaint }}>ON-CHAIN</span>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontVariantNumeric: "tabular-nums",
+                        color: onChain === undefined ? C.textFaint : onChain > 0 ? C.green : C.textDim,
+                      }}
+                    >
+                      {chainLoading ? "…" : onChain === undefined ? "N/A" : `${onChain.toFixed(4)} tKAS`}
+                    </span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -198,7 +214,6 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
           <div style={{ fontSize: 8, letterSpacing: "0.13em", color: C.textFaint, marginBottom: 6 }}>PLAYER</div>
           <Row label="REPUTATION" value={player.reputation?.toFixed(0) || 50} />
           <Row label="JOBS COMPLETED" value={player.jobs_completed || 0} />
-          <Row label="LIFETIME EARN" value={`${Number(player.lifetime_earnings || 0).toFixed(2)} tKAS`} color={C.green} />
           <Row label="POSITION" value={`${player.position?.x},${player.position?.y}`} />
         </div>
       </div>

@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Landmark, Play, Pause, Store } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { fmt, fmtInt } from "@/lib/evolve/constants";
 import ConnectScorpion from "./ConnectScorpion";
+import useTn10Balances from "@/lib/evolve/useTn10Balances";
 
 const SPEEDS = [1, 2, 5, 10];
 
@@ -14,8 +15,19 @@ const SPEEDS = [1, 2, 5, 10];
 export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
   const { engine } = useEvolve();
   const navigate = useNavigate();
+
+  // On-chain tKAS — the real TN-10 balance held by this experiment's AI agents.
+  // Read from the chain; never the simulation's internal treasury counter.
+  const agentCount = engine?.agents?.length || 0;
+  const agentAddresses = useMemo(
+    () => (engine ? engine.agents.filter((a) => a.address).map((a) => a.address) : []),
+    [engine, agentCount]
+  );
+  const { balances: onChain, loading: onChainLoading, ok: onChainOk } = useTn10Balances(agentAddresses);
+
   if (!engine) return null;
   const s = engine.stats();
+  const onChainTotal = Object.values(onChain).reduce((sum, v) => sum + v, 0);
 
   const exitToStore = () => {
     try { localStorage.removeItem("came_from_categories"); } catch {}
@@ -47,7 +59,13 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
       <div className="ev-metrics ev-scroll">
         <Metric label="Agents" value={fmtInt(s.agents)} delta={s.agentsDelta} onClick={() => onView("AGENTS")} title="Open the agent roster" />
         <Metric label="Generations" value={fmtInt(s.generations)} color="#c084fc" onClick={() => onView("RESEARCH")} title="Open research" />
-        <Metric label="Test KAS Treasury" value={fmt(s.treasury)} color="#34d399" onClick={onTreasury} title="Open the treasury" />
+        <Metric
+          label="On-chain tKAS"
+          value={onChainLoading ? "…" : onChainOk ? fmt(onChainTotal) : "N/A"}
+          color="#34d399"
+          onClick={onTreasury}
+          title="Real Kaspa TN-10 balance held by this experiment's AI agents"
+        />
         <Metric label="Active Jobs" value={fmtInt(s.activeJobs)} delta={s.jobsDelta} onClick={() => onView("JOBS")} title="Open the job market" />
         <Metric label="Compute" value={`${s.compute}%`} color="#60a5fa" onClick={() => onView("ECONOMY")} title="Open the economy" />
         <Metric label="Energy" value={`${s.energy}%`} color="#fbbf24" onClick={() => onView("ECONOMY")} title="Open the economy" />
