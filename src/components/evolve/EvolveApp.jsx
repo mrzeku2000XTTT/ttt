@@ -134,7 +134,12 @@ export default function EvolveApp() {
       )}
 
       <div className="ev-mid">
-        <LeftNavigation view={view} onView={setView} onDebug={() => open("debug")} />
+        <LeftNavigation
+          view={view}
+          onView={setView}
+          onDebug={() => open("debug")}
+          onTransactions={() => open("txs")}
+        />
 
         {view === "WORLD" ? (
           <div style={{ flex: 1, minWidth: 0, position: "relative", display: "flex" }}>
