@@ -190,9 +190,13 @@ export function EvolveProvider({ children }) {
     }
   }, [player]);
 
-  const selectCountry = useCallback((countryName) => {
-    const c = countryByName(countryName) || COUNTRIES.find((x) => x.name === countryName);
-    setSelectedCountry(c || null);
+  const selectCountry = useCallback((country) => {
+    if (country && typeof country === "object") {
+      setSelectedCountry(country);
+    } else {
+      const c = countryByName(country) || COUNTRIES.find((x) => x.name === country);
+      setSelectedCountry(c || null);
+    }
     setSelectedSpawnCell(null);
   }, []);
 

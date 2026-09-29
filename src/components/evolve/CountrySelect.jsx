@@ -1,86 +1,154 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
-import { COUNTRIES, countryStats, countryGridBounds } from "@/lib/evolve/countryMap";
+import { searchPlaces, loadCountries, latLngToCountry } from "@/lib/evolve/geoService";
 import { C } from "@/lib/evolve/constants";
 
 /**
- * CountrySelect — user selects a real country from Earth.
- * Shows country inspector with AI/humans/orgs/jobs/economy.
- * Buttons: EXPLORE (zoom) / START HERE (proceed to cell select).
- * Existing players/AI never prevent choosing a country.
+ * CountrySelect — REAL EARTH place search.
+ * Users type any country / state / city / local place and get hierarchical
+ * results (e.g. "Mobile, Alabama, United States"). Selecting a place resolves
+ * its real country + bounding box and proceeds to cell selection.
  */
 export default function CountrySelect({ onExplore, onStartHere, onClose }) {
-  const { engine, selectCountry, selectedCountry } = useEvolve();
+  const { selectCountry, selectedCountry } = useEvolve();
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [picked, setPicked] = useState(null);
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase().trim();
-    if (!q) return COUNTRIES;
-    return COUNTRIES.filter((c) => c.name.toLowerCase().includes(q) || c.iso.toLowerCase().includes(q));
+  useEffect(() => {
+    loadCountries();
+  }, []);
+
+  // Debounced search.
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      return;
+    }
+    setSearching(true);
+    const id = setTimeout(async () => {
+      const r = await searchPlaces(q);
+      setResults(r);
+      setSearching(false);
+    }, 350);
+    return () => clearTimeout(id);
   }, [query]);
 
-  const stats = useMemo(() => {
-    if (!engine || !selectedCountry) return null;
-    return countryStats(engine.world, engine.agents, engine.players, engine.world.assets, selectedCountry);
-  }, [engine, selectedCountry]);
+  const buildCountry = (place) => {
+    const cFeat = latLngToCountry(place.lat, place.lng);
+    const bbox =
+      place.bbox ||
+      (cFeat && { lat0: cFeat.lat0, lat1: cFeat.lat1, lng0: cFeat.lng0, lng1: cFeat.lng1 }) || {
+        lat0: place.lat - 1,
+        lat1: place.lat + 1,
+        lng0: place.lng - 1,
+        lng1: place.lng + 1,
+      };
+    return {
+      iso: cFeat?.iso || "",
+      name: place.country || cFeat?.name || place.name,
+      lat0: bbox.lat0,
+      lat1: bbox.lat1,
+      lng0: bbox.lng0,
+      lng1: bbox.lng1,
+      _place: place,
+    };
+  };
 
-  if (!engine) return null;
+  const pick = (place) => {
+    const country = buildCountry(place);
+    setPicked({ place, country });
+    selectCountry(country);
+  };
+
+  const startHere = () => {
+    if (!picked) return;
+    onStartHere?.(picked.country);
+  };
+
+  const explore = () => {
+    if (!picked) return;
+    onExplore?.(picked.country);
+  };
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 36, display: "flex", background: "rgba(3,6,11,0.95)" }}>
-      <div className="ev-panel" style={{ flex: "1 1 45%", maxWidth: 420, borderRight: `1px solid ${C.line}` }}>
+    <div style={{ position: "absolute", inset: 0, zIndex: 36, display: "flex", background: "rgba(3,6,11,0.96)" }}>
+      <div className="ev-panel" style={{ flex: "1 1 45%", maxWidth: 460, borderRight: `1px solid ${C.line}` }}>
         <div className="ev-panel-head">
-          <span className="ev-panel-title">SELECT COUNTRY · REAL EARTH</span>
+          <span className="ev-panel-title">SEARCH · REAL EARTH</span>
           <button className="ev-btn ev-btn-ghost" style={{ marginLeft: "auto", padding: "4px 10px" }} onClick={onClose}>CLOSE</button>
         </div>
         <div style={{ padding: "8px 10px", borderBottom: `1px solid ${C.line}` }}>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search countries…"
-            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${C.line}`, borderRadius: 5, padding: "7px 10px", color: C.text, fontSize: 12, outline: "none" }}
+            placeholder="Country, state, city or place…  (e.g. Mobile, Alabama)"
+            autoFocus
+            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${C.line}`, borderRadius: 5, padding: "8px 10px", color: C.text, fontSize: 12, outline: "none" }}
           />
+          <div style={{ fontSize: 8.5, color: C.textFaint, marginTop: 5, letterSpacing: "0.08em" }}>
+            Powered by OpenStreetMap · all countries, states & cities
+          </div>
         </div>
         <div className="ev-panel-body ev-scroll">
-          {filtered.map((c) => (
-            <button
-              key={c.iso}
-              onClick={() => selectCountry(c.name)}
-              style={{
-                width: "100%", textAlign: "left", padding: "8px 12px",
-                background: selectedCountry?.iso === c.iso ? "rgba(34,211,238,0.1)" : "transparent",
-                border: "none", borderBottom: `1px solid ${C.line}`,
-                color: selectedCountry?.iso === c.iso ? C.cyan : C.textDim, cursor: "pointer",
-              }}
-            >
-              <span style={{ fontSize: 10, color: C.textFaint, marginRight: 8 }}>{c.iso}</span>
-              {c.name}
-            </button>
-          ))}
+          {searching && (
+            <div style={{ padding: 14, color: C.textFaint, fontSize: 11 }}>Searching the planet…</div>
+          )}
+          {!searching && query && results.length === 0 && (
+            <div style={{ padding: 14, color: C.textFaint, fontSize: 11 }}>No places matched.</div>
+          )}
+          {!searching && !query && (
+            <div style={{ padding: 14, color: C.textFaint, fontSize: 11 }}>
+              Type any place on Earth — country, state/province, city or local area. Results show the full hierarchy so duplicate city names are distinguishable.
+            </div>
+          )}
+          {results.map((r) => {
+            const isSel = picked?.place?.id === r.id;
+            return (
+              <button
+                key={r.id}
+                onClick={() => pick(r)}
+                style={{
+                  width: "100%", textAlign: "left", padding: "9px 12px",
+                  background: isSel ? "rgba(34,211,238,0.1)" : "transparent",
+                  border: "none", borderBottom: `1px solid ${C.line}`,
+                  color: isSel ? C.cyan : C.textDim, cursor: "pointer",
+                }}
+              >
+                <div style={{ fontSize: 12, color: isSel ? C.cyan : C.text, fontWeight: 600 }}>{r.name}</div>
+                <div style={{ fontSize: 9.5, color: C.textFaint, marginTop: 2, letterSpacing: "0.04em" }}>{r.label}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16, overflowY: "auto" }}>
-        {stats ? (
+        {picked ? (
           <>
-            <div style={{ fontSize: 18, fontWeight: 800, color: C.text, marginBottom: 4 }}>{selectedCountry.name}</div>
-            <div style={{ fontSize: 9, color: C.textFaint, letterSpacing: "0.12em", marginBottom: 16 }}>ISO {selectedCountry.iso} · {selectedCountry.lat0}° to {selectedCountry.lat1}° lat</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: C.text, marginBottom: 4 }}>{picked.place.name}</div>
+            <div style={{ fontSize: 9, color: C.textFaint, letterSpacing: "0.12em", marginBottom: 14 }}>{picked.place.label}</div>
             <div className="ev-grid2" style={{ gap: 10, marginBottom: 16 }}>
-              <Metric label="AI AGENTS" value={stats.aiAgents} color={C.cyan} />
-              <Metric label="HUMANS" value={stats.humans} color={C.text} />
-              <Metric label="INDEPENDENTS" value={stats.independent} color={C.green} />
-              <Metric label="ORGANIZATIONS" value={stats.organizations} color={C.purple} />
-              <Metric label="OPEN JOBS" value={stats.openJobs} color={C.yellow} />
-              <Metric label="ECON. ACTIVITY" value={stats.economicActivity} color={C.textDim} />
+              <Metric label="COUNTRY" value={picked.place.country || "—"} color={C.cyan} />
+              <Metric label="STATE / REGION" value={picked.place.state || "—"} color={C.text} />
+              <Metric label="CITY" value={picked.place.city || "—"} color={C.green} />
+              <Metric label="LOCAL" value={picked.place.local || "—"} color={C.purple} />
+              <Metric label="LAT" value={picked.place.lat.toFixed(3)} color={C.textDim} />
+              <Metric label="LNG" value={picked.place.lng.toFixed(3)} color={C.textDim} />
+            </div>
+            <div style={{ fontSize: 9.5, color: C.textFaint, marginBottom: 14, lineHeight: 1.5 }}>
+              Press START HERE to drop into this region. The next screen shows the real map of {picked.country?.name || picked.place.country || "this area"} — zoom in and pick your simulation cell on real land.
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
-              <button className="ev-btn ev-btn-ghost" onClick={() => onExplore(selectedCountry)}>EXPLORE</button>
-              <button className="ev-btn" onClick={() => onStartHere(selectedCountry)}>START HERE</button>
+              <button className="ev-btn ev-btn-ghost" onClick={explore}>EXPLORE</button>
+              <button className="ev-btn" onClick={startHere}>START HERE</button>
             </div>
           </>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, color: C.textFaint, fontSize: 11 }}>
-            Select a country to view its simulation stats.
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, color: C.textFaint, fontSize: 11, textAlign: "center", padding: 24 }}>
+            Search any place on Earth to choose your spawn region.
           </div>
         )}
       </div>
@@ -92,7 +160,7 @@ function Metric({ label, value, color }) {
   return (
     <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.line}`, borderRadius: 6, padding: "10px 12px" }}>
       <div style={{ fontSize: 8, letterSpacing: "0.13em", color: C.textFaint }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color, marginTop: 3 }}>{value}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color, marginTop: 3, wordBreak: "break-word" }}>{value}</div>
     </div>
   );
 }

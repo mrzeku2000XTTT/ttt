@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import TopStatusHUD from "./TopStatusHUD";
 import LeftNavigation from "./LeftNavigation";
-import WorldViewport from "./WorldViewport";
+import EarthViewport from "./EarthViewport";
 import WorldToolbar from "./WorldToolbar";
 import RightIntelPanel from "./RightIntelPanel";
 import SelectedTileInspector from "./SelectedTileInspector";
@@ -143,7 +143,7 @@ export default function EvolveApp() {
 
         {view === "WORLD" ? (
           <div style={{ flex: 1, minWidth: 0, position: "relative", display: "flex" }}>
-            <WorldViewport cam={cam} setCam={setCam} onSize={setMapSize} />
+            <EarthViewport cam={cam} setCam={setCam} onSize={setMapSize} />
             {engine.selection && (
               <div style={{ position: "absolute", left: 8, bottom: 8, zIndex: 20 }}>
                 <SelectedTileInspector
@@ -181,8 +181,8 @@ export default function EvolveApp() {
 
       {enterFlow === "COUNTRY" && (
         <CountrySelect
-          onExplore={(c) => { selectCountry(c.name); setEnterFlow("CELL"); }}
-          onStartHere={(c) => { selectCountry(c.name); setEnterFlow("CELL"); }}
+          onExplore={(c) => { selectCountry(c); setEnterFlow("CELL"); }}
+          onStartHere={(c) => { selectCountry(c); setEnterFlow("CELL"); }}
           onClose={() => setEnterFlow(null)}
         />
       )}
