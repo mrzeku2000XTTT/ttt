@@ -54,7 +54,7 @@ const ASSET_COLOR = {
  * the geography at their real lat/lng positions. Geographic labels are
  * DOM-projected (no external glyph server).
  */
-export default function EarthViewport({ cam, setCam, onSize }) {
+export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   const { engine, say } = useEvolve();
   const wrapRef = useRef(null);
   const mapRef = useRef(null);
@@ -190,7 +190,7 @@ export default function EarthViewport({ cam, setCam, onSize }) {
       const orgId = ownerSlot > 0 && world.orgSlots ? world.orgSlots[ownerSlot] : null;
       const biome = world.biome[i];
       const color = orgId ? orgColor(orgId) : BIOMES[biome] ? BIOMES[biome].color : "#0a121e";
-      const isSel = sel && sel.x === ep.x && sel.y === ep.y;
+      const isSel = sel && sel.geo ? sel.geo.cellId === c.cellId : (sel && sel.x === ep.x && sel.y === ep.y);
       return {
         type: "Feature",
         properties: { color, opacity: orgId ? 0.5 : 0.3, sel: isSel ? 1 : 0, cellId: c.cellId },
@@ -210,19 +210,19 @@ export default function EarthViewport({ cam, setCam, onSize }) {
     for (const a of world.assets) {
       const coords = toLngLat(a);
       if (!coords) continue; // skip invalid asset coordinate
-      feats.push({ type: "Feature", properties: { color: ASSET_COLOR[a.kind] || "#94a3b8", r: 4, kind: "asset", x: a.x, y: a.y }, geometry: { type: "Point", coordinates: coords } });
+      feats.push({ type: "Feature", properties: { color: ASSET_COLOR[a.kind] || "#94a3b8", r: 4, kind: "asset", type: "asset", id: a.sim_id, x: a.x, y: a.y }, geometry: { type: "Point", coordinates: coords } });
     }
     for (const ag of engine.agents.filter((a) => a.status !== "archived" && a.position)) {
       const coords = toLngLat(ag.position);
       if (!coords) continue; // skip invalid agent coordinate
       const org = ag.organization_id;
-      feats.push({ type: "Feature", properties: { color: org ? orgColor(org) : "#e2e8f0", r: 3, kind: "agent", x: ag.position.x, y: ag.position.y }, geometry: { type: "Point", coordinates: coords } });
+      feats.push({ type: "Feature", properties: { color: org ? orgColor(org) : "#e2e8f0", r: 3, kind: "agent", type: "agent", id: ag.id, x: ag.position.x, y: ag.position.y }, geometry: { type: "Point", coordinates: coords } });
     }
     for (const pl of (engine.players || []).filter((p) => p.position)) {
       const coords = toLngLat(pl.position);
       if (!coords) continue; // skip invalid player coordinate
       const org = pl.organization_id;
-      feats.push({ type: "Feature", properties: { color: "#22d3ee", r: 5, kind: "player", x: pl.position.x, y: pl.position.y }, geometry: { type: "Point", coordinates: coords } });
+      feats.push({ type: "Feature", properties: { color: "#22d3ee", r: 5, kind: "player", type: "player", id: pl.id, x: pl.position.x, y: pl.position.y }, geometry: { type: "Point", coordinates: coords } });
     }
     map.getSource("ev-actors").setData({ type: "FeatureCollection", features: feats });
   }
@@ -248,14 +248,23 @@ export default function EarthViewport({ cam, setCam, onSize }) {
   function onClick(e) {
     if (!world) return;
     const map = mapRef.current;
-    // actor hit-test first
-    const hits = map.queryRenderedFeatures(e.point, { layers: ["ev-actors-circle"] });
+    // Actor hit-test first — with a small tolerance box so touch input lands
+    // on the marker, not the ground under it. The actor's authoritative
+    // geographic cell is derived from its OWN engine position (not the click
+    // point), so the highlighted cell always contains the marker.
+    const tol = 7;
+    const hits = map.queryRenderedFeatures(
+      [e.point.x - tol, e.point.y - tol, e.point.x + tol, e.point.y + tol],
+      { layers: ["ev-actors-circle"] }
+    );
     if (hits.length) {
       const p = hits[0].properties || {};
-      if (p.x != null && p.y != null && world.inBounds(p.x, p.y)) {
-        const res = engine.applyTool(p.x, p.y);
-        if (res?.message) say(res.message, res.ok !== false);
-        return;
+      if (p.id && p.type && p.x != null && p.y != null && world.inBounds(p.x, p.y)) {
+        const ll = gridToLatLng((p.x || 0) + 0.5, (p.y || 0) + 0.5, world.width, world.height);
+        const cell = latLngToGeoCell(ll.lat, ll.lng);
+        engine.selectTile(p.x, p.y, cell); // highlight the actor's geographic cell
+        onSelectActor?.({ id: p.id, type: p.type }); // open the AI/player inspector
+        return; // do NOT fall through to the ground-click handler
       }
     }
     const { lat, lng } = e.lngLat;
@@ -264,7 +273,7 @@ export default function EarthViewport({ cam, setCam, onSize }) {
     const cell = latLngToGeoCell(lat, lng);
     const ep = geoCellToEnginePos(cell, world);
     if (!world.inBounds(ep.x, ep.y)) return;
-    const res = engine.applyTool(ep.x, ep.y);
+    const res = engine.applyTool(ep.x, ep.y, { geo: cell });
     if (res?.message) say(res.message, res.ok !== false);
   }
 

@@ -14,16 +14,31 @@ export default function SelectedTileInspector({ onAttack, onTrade, onFortify, on
 
   const ownerColor = tile.ownerColor || orgColor(tile.ownerOrg) || "#94a3b8";
   const asset = tile.assets?.[0];
+  const geo = tile.geo;
+  const title = geo ? geo.cellId : tile.label;
 
   return (
     <div className="ev-overlay-card" style={{ width: 236, maxWidth: "72vw" }}>
       <div className="ev-panel-head" style={{ padding: "6px 9px" }}>
-        <span className="ev-panel-title" style={{ color: tile.color === "#8fa3b8" ? "#c9d6e4" : "#eef3f9" }}>
-          {tile.label}
+        <span className="ev-panel-title" style={{ color: geo ? "#22d3ee" : (tile.color === "#8fa3b8" ? "#c9d6e4" : "#eef3f9"), fontSize: 10, letterSpacing: "0.04em" }}>
+          {title}
         </span>
         <span style={{ marginLeft: "auto", fontSize: 9, color: ownerColor, letterSpacing: "0.1em", textTransform: "uppercase" }}>
           {tile.owner === "neutral" ? "Neutral Territory" : tile.owner}
         </span>
+      </div>
+
+      <div className="ev-section" style={{ padding: "8px 9px" }}>
+        <div className="ev-label" style={{ marginBottom: 5 }}>Geographic Cell</div>
+        {geo ? (
+          <>
+            <Row label="Lat" value={geo.centerLat.toFixed(4)} />
+            <Row label="Lng" value={geo.centerLng.toFixed(4)} />
+            <Row label="Cell" value={geo.cellId} />
+          </>
+        ) : (
+          <Row label="Coordinates" value={`${tile.x},${tile.y}`} />
+        )}
       </div>
 
       <div className="ev-section" style={{ padding: "8px 9px" }}>
@@ -32,7 +47,6 @@ export default function SelectedTileInspector({ onAttack, onTrade, onFortify, on
         <Row label="Energy Potential" value={LEVEL_WORD[tile.energy] || "NONE"} />
         <Row label="Compute Spots" value={LEVEL_WORD[tile.compute] || "NONE"} />
         <Row label="Owner" value={tile.owner === "neutral" ? "NONE" : tile.owner.toUpperCase()} />
-        <Row label="Coordinates" value={`${tile.x},${tile.y}`} />
         {tile.sculpted ? <Row label="Terrain" value="RESHAPED" /> : null}
       </div>
 

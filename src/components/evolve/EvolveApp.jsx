@@ -135,7 +135,12 @@ export default function EvolveApp() {
 
         {view === "WORLD" ? (
           <div style={{ flex: 1, minWidth: 0, position: "relative", display: "flex" }}>
-            <EarthViewport cam={cam} setCam={setCam} onSize={setMapSize} />
+            <EarthViewport
+              cam={cam}
+              setCam={setCam}
+              onSize={setMapSize}
+              onSelectActor={(a) => setActorInspector(a)}
+            />
             {engine.selection && (
               <div style={{ position: "absolute", left: 8, bottom: 8, zIndex: 20 }}>
                 <SelectedTileInspector

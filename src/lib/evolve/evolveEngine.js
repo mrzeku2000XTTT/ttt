@@ -865,8 +865,9 @@ export class EvolveEngine {
   }
 
   /* -------------------------------------------------------- human actions */
-  selectTile(x, y) {
+  selectTile(x, y, geo = null) {
     this.selection = this.world.tile(x, y);
+    if (geo) this.selection.geo = geo;
     this.notify();
     return this.selection;
   }
@@ -908,17 +909,18 @@ export class EvolveEngine {
       MOUNTAIN: "MOUNTAIN",
     };
 
+    const __geo = opts.geo || null;
     switch (tool) {
       case "OBSERVE":
-        this.selectTile(x, y);
-        return { ok: true, message: `Inspecting ${tile.label} at ${x},${y}` };
+        this.selectTile(x, y, opts.geo);
+        return { ok: true, message: opts.geo ? `Inspecting ${opts.geo.cellId}` : `Inspecting ${tile.label} at ${x},${y}` };
 
       case "TERRAIN":
       case "WATER":
       case "FOREST":
       case "MOUNTAIN": {
         this.world.sculptTile(x, y, sculpt[tool]);
-        this.selectTile(x, y);
+        this.selectTile(x, y, __geo);
         this.emit({
           type: "WORLD_SCULPTED",
           category: "WORLD",
@@ -937,7 +939,7 @@ export class EvolveEngine {
           return { ok: false, message: `${tile.label} already held by another organization` };
         }
         this.world.claim(x, y, org.slot);
-        this.selectTile(x, y);
+        this.selectTile(x, y, __geo);
         this.emit({
           type: "TERRITORY_CLAIMED",
           category: "WORLD",
@@ -964,7 +966,7 @@ export class EvolveEngine {
           organizationId: org?.id || "",
         });
         if (!res.ok) return { ok: false, message: res.reason };
-        this.selectTile(x, y);
+        this.selectTile(x, y, __geo);
         this.emit({
           type: "ASSET_BUILT",
           category: "ECONOMY",
@@ -983,13 +985,13 @@ export class EvolveEngine {
         const asset = tile.assets[0];
         if (!asset) return { ok: false, message: "No simulated asset on this tile" };
         this.pendingTarget = { asset, tool };
-        this.selectTile(x, y);
+        this.selectTile(x, y, __geo);
         this.notify();
         return { ok: true, message: `Selected ${asset.sim_id}` };
       }
 
       default:
-        this.selectTile(x, y);
+        this.selectTile(x, y, __geo);
         return { ok: true, message: def.hint };
     }
   }
