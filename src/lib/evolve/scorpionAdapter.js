@@ -48,6 +48,24 @@ export function isTN10Address(addr) {
   return typeof addr === "string" && addr.startsWith(EVOLVE_ADDRESS_PREFIX);
 }
 
+/**
+ * Coerce whatever the SDK returns for "network" into a comparable string.
+ * Some KCC20 wallets return "testnet-10", others "kaspa_testnet_10",
+ * others an object — normalize before comparing.
+ */
+export function normalizeNetwork(net) {
+  if (!net) return "";
+  if (typeof net === "string") return net;
+  if (typeof net === "object") return net.network || net.id || net.name || "";
+  return String(net);
+}
+
+/** True when the wallet is on Kaspa TN-10, regardless of string formatting. */
+export function isTN10Network(net) {
+  const n = normalizeNetwork(net).toLowerCase().replace(/[-_\s]/g, "");
+  return n === "kaspatestnet10" || n === "testnet10" || n === "tn10";
+}
+
 export class ScorpionWalletAdapter {
   constructor() {
     this._kcc = null;

@@ -14,6 +14,7 @@ import {
   ScorpionConnectionState as State,
   EVOLVE_NETWORK,
   isTN10Address,
+  isTN10Network,
   discoverProviders,
 } from "./scorpionAdapter";
 import { sompiToKas, sompiToKasShort } from "./evolveTxBuilder";
@@ -58,7 +59,7 @@ export function useScorpionWallet() {
     try {
       const net = await scorpion.getNetwork();
       setNetwork(net);
-      setConnState(net === EVOLVE_NETWORK ? State.CONNECTED_TN10 : State.CONNECTED_WRONG_NETWORK);
+      setConnState(isTN10Network(net) ? State.CONNECTED_TN10 : State.CONNECTED_WRONG_NETWORK);
     } catch {}
   }, []);
 
@@ -111,7 +112,7 @@ export function useScorpionWallet() {
         return { ok: false, reason: "MAINNET_ADDRESS" };
       }
       let net = await scorpion.getNetwork();
-      if (net !== EVOLVE_NETWORK) {
+      if (!isTN10Network(net)) {
         setConnState(State.CONNECTED_WRONG_NETWORK);
         setNetwork(net);
         setBusy(false);
@@ -138,7 +139,7 @@ export function useScorpionWallet() {
     try {
       const net = await scorpion.switchToTN10();
       setNetwork(net);
-      if (net === EVOLVE_NETWORK) {
+      if (isTN10Network(net)) {
         setConnState(State.CONNECTED_TN10);
         if (address) await silentRefresh(address);
         return { ok: true };
