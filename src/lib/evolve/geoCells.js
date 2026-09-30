@@ -146,6 +146,49 @@ export function geoCellToEnginePos(cell, world) {
   return latLngToGrid(cell.centerLat, cell.centerLng, world.width, world.height);
 }
 
+/** Deterministic lat/lng → cellId string (no bounds object). Same location → same id. */
+export function cellIdFromLatLng(lat, lng) {
+  const cLat = Math.floor(lat / CELL_DEG) * CELL_DEG;
+  const cLng = Math.floor(lng / CELL_DEG) * CELL_DEG;
+  return `G${Math.round(cLat * 1e6)}_${Math.round(cLng * 1e6)}`;
+}
+
+/** Parse a cellId into its bounds + center, or null if malformed. */
+export function parseCellId(cellId) {
+  const m = /^G(-?\d+)_(-?\d+)$/.exec(String(cellId || ""));
+  if (!m) return null;
+  const south = Number(m[1]) / 1e6;
+  const west = Number(m[2]) / 1e6;
+  return {
+    cellId: String(cellId),
+    south,
+    north: south + CELL_DEG,
+    west,
+    east: west + CELL_DEG,
+    centerLat: south + CELL_DEG / 2,
+    centerLng: west + CELL_DEG / 2,
+  };
+}
+
+/**
+ * The 8 geographic neighbors of a cell (Moore neighborhood). Territory
+ * expansion must originate from a cell the actor already controls, so a
+ * claim is only valid against a cell whose id appears here for some owned
+ * cell. Pure math — no DB, no land index.
+ */
+export function getNeighborCellIds(cellId) {
+  const c = parseCellId(cellId);
+  if (!c) return [];
+  const out = [];
+  for (let dy = -1; dy <= 1; dy += 1) {
+    for (let dx = -1; dx <= 1; dx += 1) {
+      if (dx === 0 && dy === 0) continue;
+      out.push(cellIdFromLatLng(c.centerLat + dy * CELL_DEG, c.centerLng + dx * CELL_DEG));
+    }
+  }
+  return out;
+}
+
 /* ------------------------------------------------------- viewport generation
  * Generate ONLY the geographic cells intersecting the visible bounds, filtered
  * to land. Returns [] when the viewport is too wide (LOD cap) so far zooms

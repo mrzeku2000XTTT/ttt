@@ -9,8 +9,9 @@ import { makeIdempotencyKey } from "./paymentIntentService";
 import { useConfirmationWatcher } from "./confirmationWatcher";
 import { TxStatus } from "./txStateMachine";
 import { kasToSompi } from "./evolveTxBuilder";
-import { COUNTRIES, countryByName, latLngToGrid } from "./countryMap";
-import { geoCellToEnginePos } from "./geoCells";
+import { COUNTRIES, countryByName, latLngToGrid, gridToLatLng } from "./countryMap";
+import { geoCellToEnginePos, latLngToGeoCell } from "./geoCells";
+import { backfillTerritory, claimGeoCell } from "./geoTerritoryService";
 import useEvolveChainBalances from '@/lib/evolve/useEvolveChainBalances';
 import useEvolveChainHistory from '@/lib/evolve/useEvolveChainHistory';
 
@@ -146,6 +147,15 @@ export function EvolveProvider({ children }) {
     return () => clearInterval(id);
   }, [engine, experimentId]);
 
+  /* Geographic ownership backfill — give every existing actor a single spawn
+   * cell at their current geographic position. Idempotent (actors that
+   * already own territory are skipped), so it is safe to run on every init.
+   * No fabricated historical expansion. */
+  useEffect(() => {
+    if (!experimentId) return;
+    backfillTerritory({ experimentId }).catch(() => {});
+  }, [experimentId]);
+
   /* Flush the latest state when the tab is hidden or the page is being left. */
   useEffect(() => {
     if (!engine || !experimentId) return undefined;
@@ -258,11 +268,25 @@ export function EvolveProvider({ children }) {
         setSelectedCountry(null);
         setSelectedSpawnCell(null);
         persistNow();
+        // Claim the spawn cell in the authoritative geographic ownership layer.
+        // The legacy grid is NOT claimed — only the exact geographic cell.
+        if (geoCellId && experimentId) {
+          claimGeoCell({
+            experimentId,
+            actorId: res.player.id,
+            actorType: "HUMAN",
+            cellId: geoCellId,
+            centerLat: geoLat,
+            centerLng: geoLng,
+            claimSource: "SPAWN",
+            organizationId: res.player.organization_id || "",
+          }).catch(() => {});
+        }
         say(`${res.player.code} entered ${country}`, true);
       }
       return res;
     },
-    [engine, user, wallet, persistNow]
+    [engine, user, wallet, persistNow, experimentId]
   );
 
   /* --------------------------------------------------- player game actions
@@ -418,6 +442,21 @@ export function EvolveProvider({ children }) {
         });
         if (result?.ok) {
           persistNow();
+          // The agent spawns at the player's position → claim that exact
+          // geographic cell for the agent in the authoritative ownership layer.
+          const agent = result.agent;
+          const ll = gridToLatLng((agent.position.x || 0) + 0.5, (agent.position.y || 0) + 0.5, engine.world.width, engine.world.height);
+          const cell = latLngToGeoCell(ll.lat, ll.lng);
+          claimGeoCell({
+            experimentId,
+            actorId: agent.id,
+            actorType: "AI",
+            cellId: cell.cellId,
+            centerLat: cell.centerLat,
+            centerLng: cell.centerLng,
+            claimSource: "SPAWN",
+            organizationId: agent.organization_id || "",
+          }).catch(() => {});
           say(`${result.agent.code} generated on Kaspa TN-10`, true);
         }
         return result;
@@ -620,6 +659,7 @@ export function EvolveProvider({ children }) {
     joinOrganization,
     leaveOrganization,
     generateAgent,
+    claimGeoCell,
     persistNow,
     // Every view consumes the same TN-10 snapshot; never the SDK's cached total.
     chainBalances,

@@ -1,0 +1,79 @@
+{
+  "name": "EvolveGeoOwnership",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string",
+      "description": "EVOLVE experiment this ownership belongs to"
+    },
+    "cell_id": {
+      "type": "string",
+      "description": "Geographic cell id G{lat*1e6}_{lng*1e6} from geoCells. Deterministic from lat/lng."
+    },
+    "owner_type": {
+      "type": "string",
+      "enum": [
+        "AI",
+        "HUMAN",
+        "ORGANIZATION"
+      ]
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "Stable actor key: agent_key (AGT_0134), player_key (PLR_0001), or org_key. Never the DB record id."
+    },
+    "owner_code": {
+      "type": "string",
+      "description": "Display code for rendering (A#134, P#001, org name). Denormalized for display only."
+    },
+    "organization_id": {
+      "type": "string",
+      "description": "Org id if the owner belongs to an organization. Empty for independent actors."
+    },
+    "claimed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "claim_source": {
+      "type": "string",
+      "enum": [
+        "SPAWN",
+        "CLAIM",
+        "BUILD"
+      ],
+      "default": "SPAWN"
+    },
+    "center_lat": {
+      "type": "number",
+      "description": "Geographic center latitude of the owned cell"
+    },
+    "center_lng": {
+      "type": "number",
+      "description": "Geographic center longitude of the owned cell"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "cell_id",
+    "owner_type",
+    "owner_id"
+  ],
+  "rls": {
+    "read": null,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

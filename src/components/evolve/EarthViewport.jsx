@@ -25,14 +25,17 @@ import {
   ensureCellsLayer,
   ensureActorsLayer,
   ensurePlayersLayer,
+  ensureTerritoryLayer,
 } from "@/lib/evolve/evolveMapStyle";
 import { toValidLngLat } from "@/lib/evolve/geoService";
+import { getTerritoryInBounds } from "@/lib/evolve/geoTerritoryService";
 import {
   CELL_MIN_ZOOM,
   setLandIndex,
   cellsInViewport,
   geoCellToEnginePos,
   latLngToGeoCell,
+  parseCellId,
   isLand,
 } from "@/lib/evolve/geoCells";
 
@@ -48,6 +51,15 @@ const ASSET_COLOR = {
   deposit: "#34d399",
 };
 
+// Territory fill color by controller. Orgs use their org color; independent
+// humans read as cyan (matching their dot), independent AI as violet.
+function territoryColor(ownerType, orgId) {
+  if (orgId) return orgColor(orgId);
+  if (ownerType === "HUMAN") return "#22d3ee";
+  if (ownerType === "AI") return "#a78bfa";
+  return EVOLVE_COLORS.cell;
+}
+
 /**
  * EarthViewport — REAL EARTH map (MapLibre GL) that replaces the canvas/Leaflet
  * viewport. Same props contract: { cam, setCam, onSize }.
@@ -60,13 +72,13 @@ const ASSET_COLOR = {
  * DOM-projected (no external glyph server).
  */
 export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
-  const { engine, say, currentPlayer } = useEvolve();
+  const { engine, say, currentPlayer, experimentId } = useEvolve();
   const wrapRef = useRef(null);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const syncingRef = useRef(false);
   const latestRef = useRef(null);
-  latestRef.current = { engine, size: null, cam, setCam, onSelectActor, currentPlayer };
+  latestRef.current = { engine, size: null, cam, setCam, onSelectActor, currentPlayer, experimentId };
   const places110Ref = useRef(null);
   const places50Ref = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -132,6 +144,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       ensureCellsLayer(map);
       ensureActorsLayer(map);
       ensurePlayersLayer(map);
+      ensureTerritoryLayer(map);
       setMapReady(true);
       // detail tiers
       loadCountries50().then((c50) => { if (!disposed) addCountryBorders(map, c50, { id: 'ev-countries-50', minzoom: 4, color: EVOLVE_COLORS.border, width: 0.6 }); });
@@ -211,6 +224,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     const map = mapRef.current;
     if (!map || !world || !size.w) return;
     updateCells(map, map.getZoom());
+    updateTerritory(map);
     // Keep the engine camera in step with the real map so the minimap and the
     // viewport rectangle always describe what is actually on screen. A move we
     // pushed ourselves is not user navigation — reading it back is what let the
@@ -239,8 +253,19 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     if (!map || !world || !mapReady) return;
     updateCells(map, map.getZoom());
     updateActors(map);
+    updateTerritory(map);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine, mapReady, showCells]);
+
+  /* territory refresh when the experiment id becomes available (after genesis)
+   * or when the map becomes ready — ownership lives server-side, so the first
+   * fetch happens as soon as there's an experiment to query. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !experimentId) return;
+    updateTerritory(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [experimentId, mapReady]);
 
   /* realtime: a player spawning/entering while you watch appears without a reload.
    * The engine notifies on any mutation; we refresh the human layer immediately. */
@@ -288,6 +313,51 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       };
     });
     map.getSource("ev-cells").setData({ type: "FeatureCollection", features: feats });
+  }
+
+  // Territory: controlled geographic cells from the authoritative ownership
+  // layer (EvolveGeoOwnership), never world.owner[]. Only the viewport's cells
+  // are fetched. Adjacent same-controller cells share a color and so read as
+  // one contiguous shape; individual ownership is preserved underneath.
+  async function updateTerritory(map) {
+    if (!map.getSource("ev-territory")) return;
+    const expId = latestRef.current.experimentId;
+    if (!expId) {
+      map.getSource("ev-territory").setData({ type: "FeatureCollection", features: [] });
+      return;
+    }
+    try {
+      const res = await getTerritoryInBounds({ experimentId: expId, bounds: map.getBounds() });
+      const cells = res?.cells || [];
+      const feats = cells
+        .map((c) => {
+          const cell = parseCellId(c.cell_id);
+          if (!cell) return null;
+          const color = territoryColor(c.owner_type, c.organization_id);
+          return {
+            type: "Feature",
+            properties: {
+              color,
+              opacity: 0.32,
+              stroke: color,
+              cellId: c.cell_id,
+              ownerType: c.owner_type,
+              ownerId: c.owner_id,
+              ownerCode: c.owner_code || "",
+              organizationId: c.organization_id || "",
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[cell.west, cell.south], [cell.east, cell.south], [cell.east, cell.north], [cell.west, cell.north], [cell.west, cell.south]]],
+            },
+          };
+        })
+        .filter(Boolean);
+      map.getSource("ev-territory").setData({ type: "FeatureCollection", features: feats });
+    } catch (e) {
+      // Territory is an overlay — a query failure must never break the map.
+      map.getSource("ev-territory").setData({ type: "FeatureCollection", features: [] });
+    }
   }
 
   function updateActors(map) {
@@ -413,6 +483,28 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
         engine.selectTile(p.x, p.y, cell); // highlight the actor's geographic cell
         onSelectActor?.({ id: p.id, type: p.type }); // open the AI/player inspector
         return; // do NOT fall through to the ground-click handler
+      }
+    }
+    // Territory hit-test — clicking a controlled cell resolves its controller
+    // and opens the appropriate public inspector. Uses the authoritative
+    // geographic cell id, so it never desyncs from the ownership layer.
+    const tHits = map.queryRenderedFeatures(e.point, { layers: ["ev-territory-fill"] });
+    if (tHits.length) {
+      const p = tHits[0].properties || {};
+      if (p.ownerId && p.ownerType) {
+        const cell = parseCellId(p.cellId);
+        if (cell) {
+          const ep = geoCellToEnginePos(cell, world);
+          if (world.inBounds(ep.x, ep.y)) engine.selectTile(ep.x, ep.y, cell);
+        }
+        if (p.ownerType === "AI") {
+          onSelectActor?.({ id: p.ownerId, type: "agent" });
+        } else if (p.ownerType === "HUMAN") {
+          onSelectActor?.({ id: p.ownerId, type: "player" });
+        } else if (p.ownerType === "ORGANIZATION") {
+          say(`${p.ownerCode || p.ownerId} controls this territory`, true);
+        }
+        return; // do not fall through to the ground-click handler
       }
     }
     const { lat, lng } = e.lngLat;

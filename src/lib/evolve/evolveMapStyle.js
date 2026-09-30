@@ -246,3 +246,38 @@ export function ensurePlayersLayer(map) {
     },
   });
 }
+
+/**
+ * Territory overlay — controlled geographic cells from the authoritative
+ * EvolveGeoOwnership layer (NOT world.owner[]). Each owned cell renders as a
+ * translucent fill in its controller's color with a thin outline. Adjacent
+ * same-controller cells share a color and so read as one contiguous shape;
+ * individual cell ownership is preserved underneath. Sits above the cell
+ * grid and below the actor dots.
+ */
+export function ensureTerritoryLayer(map) {
+  if (hasLayer(map, "ev-territory-fill")) return;
+  map.addSource("ev-territory", {
+    type: "geojson",
+    data: { type: "FeatureCollection", features: [] },
+  });
+  map.addLayer({
+    id: "ev-territory-fill",
+    type: "fill",
+    source: "ev-territory",
+    paint: {
+      "fill-color": ["coalesce", ["get", "color"], EVOLVE_COLORS.cell],
+      "fill-opacity": ["coalesce", ["get", "opacity"], 0.32],
+    },
+  });
+  map.addLayer({
+    id: "ev-territory-line",
+    type: "line",
+    source: "ev-territory",
+    paint: {
+      "line-color": ["coalesce", ["get", "stroke"], ["get", "color"]],
+      "line-width": 1,
+      "line-opacity": 0.85,
+    },
+  });
+}
