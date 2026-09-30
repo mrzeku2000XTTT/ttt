@@ -25,10 +25,15 @@ export function validateDecision(raw, actions) {
     return reject('APP_ACTION_MISMATCH', action_type + ' cannot run in ' + String(app_id) + '; allowed apps: ' + catalog_entry.allowed_app_ids.join(', '));
   }
 
-  const rawArgs = raw.args;
+  let rawArgs = null;
+  const argsText = raw.args_json;
+  if (typeof argsText === 'string' && argsText.trim()) {
+    try { rawArgs = JSON.parse(argsText); }
+    catch { return reject('INVALID_ARGS', 'Action arguments were not valid JSON'); }
+  }
   const args = {};
   if (rawArgs != null) {
-    if (typeof rawArgs !== 'object' || Array.isArray(rawArgs)) return reject('INVALID_ARGS', 'Action arguments must be an object');
+    if (typeof rawArgs !== 'object' || Array.isArray(rawArgs)) return reject('INVALID_ARGS', 'Action arguments must be a JSON object');
     const allowed = FIELDS[action_type] || [];
     for (const [key, value] of Object.entries(rawArgs)) {
       if (!allowed.includes(key)) return reject('INVALID_ARGS', 'Unsupported parameter for ' + action_type + ': ' + key);

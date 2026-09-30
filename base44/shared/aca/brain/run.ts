@@ -72,6 +72,7 @@ async function finish(ctx, run, stepNumber, { failed, compute, signature, goal_r
     last_action_signature: signature || latest.last_action_signature || '',
     elapsed_ms: Date.now() - Date.parse(latest.started_at),
     status: held ? latest.status : 'RUNNING',
+    lock_request: '', lock_expires: '',
   };
   if (goal_result) patch.goal_result = goal_result;
   return { run: await ctx.sr.entities.ACABrainRun.update(run.id, patch), steps: await recentSteps(ctx, run.id) };
@@ -129,9 +130,10 @@ async function step(base, ctx, run) {
     const afterThinking = await ctx.sr.entities.ACABrainRun.get(run.id);
     if (afterThinking.status !== 'THINKING') {
       const paused = afterThinking.status === 'PAUSED';
-      return abortStep(ctx, run, stepNumber, { observation_id: obs.id }, paused,
+      const aborted = await abortStep(ctx, run, stepNumber, { observation_id: obs.id }, paused,
         paused ? 'PAUSED_DURING_THINKING' : 'STOPPED_DURING_THINKING',
         'The model returned after the operator took control; nothing was executed.');
+      return aborted;
     }
 
     // Validate independently of the model before anything can execute.
@@ -155,7 +157,8 @@ async function step(base, ctx, run) {
         error_code: modelError ? 'MODEL_ERROR' : validation.code,
         error_message: String(modelError || validation.message || '').slice(0, MAX_ERROR_CHARS),
       });
-      return finish(ctx, run, stepNumber, { failed: true, compute: 0, signature: '' });
+      const outcome = await finish(ctx, run, stepNumber, { failed: true, compute: 0, signature: '' });
+      return outcome;
     }
 
     const d = validation.decision;
@@ -164,7 +167,7 @@ async function step(base, ctx, run) {
       await record(ctx, run, stepNumber, 'COMPLETED', { observation_id: obs.id, decision_id: decision.id, intent_summary: d.intent_summary });
       const stopped = await ctx.sr.entities.ACABrainRun.update(run.id, {
         steps_used: stepNumber, status: 'FAILED', stop_reason: 'MODEL_DECLINED', ended_at: iso(),
-        elapsed_ms: Date.now() - Date.parse(run.started_at),
+        elapsed_ms: Date.now() - Date.parse(run.started_at), lock_request: '', lock_expires: '',
       });
       return { run: stopped, steps: await recentSteps(ctx, run.id) };
     }
@@ -185,18 +188,20 @@ async function step(base, ctx, run) {
         });
         return { run: done, steps: await recentSteps(ctx, run.id) };
       }
-      return finish(ctx, run, stepNumber, { failed: true, compute: 0, signature: '', goal_result });
+      const outcome = await finish(ctx, run, stepNumber, { failed: true, compute: 0, signature: '', goal_result });
+      return outcome;
     }
 
     // ACTION — re-check once more immediately before crossing the dispatch boundary.
     const beforeAct = await ctx.sr.entities.ACABrainRun.get(run.id);
     if (beforeAct.status !== 'THINKING') {
       const paused = beforeAct.status === 'PAUSED';
-      return abortStep(ctx, run, stepNumber, {
+      const aborted = await abortStep(ctx, run, stepNumber, {
         observation_id: obs.id, decision_id: decision.id,
         action_type: d.action.action_type, app_id: d.action.app_id, intent_summary: d.intent_summary,
       }, paused, paused ? 'PAUSED_BEFORE_DISPATCH' : 'STOPPED_BEFORE_DISPATCH',
         'Operator control was taken before the action reached the dispatcher; nothing was executed.');
+      return aborted;
     }
 
     await ctx.sr.entities.ACABrainRun.update(run.id, { status: 'ACTING' });
@@ -226,7 +231,8 @@ async function step(base, ctx, run) {
       started_at: new Date(startedAt).toISOString(), completed_at: iso(), duration_ms: Date.now() - startedAt,
     });
 
-    return finish(ctx, run, stepNumber, { failed: !ok, compute: ok ? 1 : 0, signature });
+    const outcome = await finish(ctx, run, stepNumber, { failed: !ok, compute: ok ? 1 : 0, signature });
+    return outcome;
   } finally {
     await ctx.sr.entities.ACABrainRun.updateMany({ id: run.id, lock_request: token }, { $set: { lock_request: '', lock_expires: '' } });
   }
