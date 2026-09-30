@@ -18,10 +18,10 @@ async function invokeUntilVisible(payload, tries = 4) {
 }
 
 /**
- * useAiFactory — Factory births. Two Scorpion-signed TN-10 payments:
- *  1. generation cost → Factory wallet (verified server-side, then the agent's wallet is minted)
- *  2. starting capital → the new agent's own wallet (verified, then the agent spawns)
- * A birth whose fee is paid but capital isn't stays "pending" and can be resumed.
+ * useAiFactory — Factory births with ONE wallet approval.
+ * The buyer signs a single TN-10 payment of the full total to the Factory.
+ * The Factory mints the agent's own wallet and forwards its starting capital
+ * server-side, so no second signature is ever needed.
  */
 export default function useAiFactory() {
   const { engine, currentPlayer: player, wallet, experimentId, say, persistNow } = useEvolve();
@@ -37,17 +37,6 @@ export default function useAiFactory() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const fundAndSpawn = useCallback(async ({ agentId, address, feeTxid }, capitalKas) => {
-    setStep("Approve starting capital in Scorpion…");
-    const { txId: capitalTxid } = await wallet.adapter.sendKaspa({ to: address, amountSompi: kasToSompi(capitalKas) });
-    setStep("Verifying capital on TN-10…");
-    const data = await invokeUntilVisible({ action: "spawn", experimentId, agentId, capitalTxid });
-    if (!data?.ok) throw new Error(data?.error || "Capital verification failed");
-    const result = engine.createAgentForPlayer({ player, address, agentId, origin: "FACTORY", feeTxid, capitalTxid });
-    persistNow?.();
-    say(`${result.agent.code} created at the AI Factory`, true);
-  }, [wallet, experimentId, engine, player, persistNow, say]);
-
   const run = useCallback(async (fn) => {
     setError("");
     try {
@@ -60,21 +49,35 @@ export default function useAiFactory() {
     }
   }, [refresh]);
 
-  const createAgent = useCallback((capitalKas) => run(async () => {
-    const p = info.params;
+  /** Bring a paid birth into the world (engine side) once its wallet exists. */
+  const spawnInEngine = useCallback(({ agentId, address, feeTxid, capitalTxid }) => {
+    const result = engine.createAgentForPlayer({ player, address, agentId, origin: "FACTORY", feeTxid, capitalTxid });
+    persistNow?.();
+    say(`${result.agent.code} created at the AI Factory`, true);
+  }, [engine, player, persistNow, say]);
+
+  /** Create an agent: ONE signature, then the Factory does the rest. */
+  const createAgent = useCallback(() => run(async () => {
     const seq = engine.agentSeq + 1 + (info.pending?.length || 0);
     const agentId = `AGT_${String(seq).padStart(4, "0")}`;
-    setStep("Approve generation cost in Scorpion…");
-    const { txId: feeTxid } = await wallet.adapter.sendKaspa({ to: info.factoryAddress, amountSompi: kasToSompi(p.generation_cost_kas) });
-    setStep("Verifying Factory payment on TN-10…");
-    const birth = await invokeUntilVisible({
-      action: "birth", experimentId, agentId, agentCode: engine.code(seq), feeTxid, senderAddress: wallet.address,
+    setStep(`Approve ${info.totalKas} tKAS in your wallet…`);
+    const { txId } = await wallet.adapter.sendKaspa({ to: info.factoryAddress, amountSompi: kasToSompi(info.totalKas) });
+    setStep("Verifying payment and creating the agent…");
+    const data = await invokeUntilVisible({
+      action: "birth", experimentId, agentId, agentCode: engine.code(seq), txid: txId, senderAddress: wallet.address,
     });
-    if (!birth?.ok) throw new Error(birth?.error || "Factory payment verification failed");
-    await fundAndSpawn({ agentId, address: birth.address, feeTxid }, capitalKas);
-  }), [run, info, engine, wallet, experimentId, fundAndSpawn]);
+    if (!data?.ok) throw new Error(data?.error || "Factory payment verification failed");
+    spawnInEngine({ agentId, address: data.address, feeTxid: txId, capitalTxid: data.capitalTxid });
+    if (data.capitalPending) setError(`Agent created, but its starting capital could not be sent yet: ${data.error}`);
+  }), [run, info, engine, wallet, experimentId, spawnInEngine]);
 
-  const resume = useCallback((pending, capitalKas) => run(() => fundAndSpawn(pending, capitalKas)), [run, fundAndSpawn]);
+  /** Retry ONLY the capital forward for a birth that already paid — no new payment. */
+  const resume = useCallback((pending) => run(async () => {
+    setStep("Funding the new agent's wallet…");
+    const data = await invokeUntilVisible({ action: "fund", experimentId, agentId: pending.agentId }, 2);
+    if (!data?.ok) throw new Error(data?.error || "Funding failed");
+    spawnInEngine({ agentId: pending.agentId, address: data.address, capitalTxid: data.capitalTxid });
+  }), [run, experimentId, spawnInEngine]);
 
   return { info, step, error, busy: !!step, createAgent, resume };
 }

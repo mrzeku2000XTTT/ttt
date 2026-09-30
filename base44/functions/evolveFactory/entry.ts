@@ -1,17 +1,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { generateTestnetWallet } from '../../shared/kaspaAddress.ts';
 import { FACTORY_PARAMS, FACTORY_AGENT_ID, SOMPI, paidToAddress } from '../../shared/evolveFactory.ts';
+import { sendTn10 } from '../../shared/tn10Send.ts';
 
 /**
- * evolveFactory — the AI Factory. After Genesis, no agent appears for free:
- * every Factory birth is backed by a verified TN-10 payment.
+ * evolveFactory — the AI Factory. After Genesis, no agent appears for free.
+ *
+ * ONE human signature: the buyer pays the FULL total (generation cost +
+ * starting capital) to the Factory in a single TN-10 transaction. The Factory
+ * then mints the agent's own wallet and forwards the starting capital into it
+ * from its own key — the human never signs a second time.
  *
  * actions:
- *  info    → params, factory address, capacity used today, caller's active count, paid-but-unspawned births
- *  birth   → verify generation-cost tx paid to the factory, mint the agent's own TN-10 wallet
- *  spawn   → verify starting-capital tx paid to the agent's wallet, mark SPAWNED
+ *  info   → params, factory address, total, capacity used today, caller's active count, births awaiting funding
+ *  birth  → verify the total paid to the factory, mint the agent wallet, forward its capital
+ *  fund   → retry ONLY the capital forward for a birth that already paid (no new payment)
  */
-export default async function(req) {
+export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -36,6 +41,9 @@ export default async function(req) {
       });
     }
 
+    const totalKas = FACTORY_PARAMS.generation_cost_kas + FACTORY_PARAMS.starting_capital_min_kas;
+    const capitalSompi = BigInt(FACTORY_PARAMS.starting_capital_min_kas * SOMPI);
+
     const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0);
     const births = await svc.entities.EvolveAgentWallet.filter({ experiment_id: experimentId, origin: 'FACTORY' }, '-created_date', 500);
     const birthsToday = births.filter((b) => new Date(b.created_date) >= dayStart).length;
@@ -46,6 +54,7 @@ export default async function(req) {
         ok: true,
         params: FACTORY_PARAMS,
         factoryAddress: factory.address,
+        totalKas,
         birthsToday,
         activeCount: mine.length,
         pending: mine.filter((b) => b.birth_status === 'FEE_PAID')
@@ -53,22 +62,42 @@ export default async function(req) {
       });
     }
 
+    /** Forward the starting capital from the Factory wallet into the agent's wallet. */
+    const forwardCapital = async (rec) => {
+      const key = (await svc.entities.EvolveAgentKey.filter({ agent_id: FACTORY_AGENT_ID }))[0];
+      if (!key?.mnemonic) throw new Error('Factory signing key is unavailable');
+      const { txId: capitalTxid } = await sendTn10({
+        mnemonic: key.mnemonic,
+        fromAddress: factory.address,
+        toAddress: rec.address,
+        amountSompi: capitalSompi,
+      });
+      await svc.entities.EvolveAgentWallet.update(rec.id, {
+        birth_status: 'SPAWNED', capital_txid: capitalTxid, capital_sompi: Number(capitalSompi),
+        status: 'funded', last_known_balance_sompi: Number(capitalSompi),
+        last_balance_check: new Date().toISOString(),
+      });
+      return capitalTxid;
+    };
+
     if (action === 'birth') {
-      const { agentId, agentCode, feeTxid, senderAddress } = body;
-      if (!agentId || !feeTxid) return Response.json({ error: 'MISSING_PARAMS: agentId, feeTxid' }, { status: 400 });
+      const { agentId, agentCode, txid, senderAddress } = body;
+      if (!agentId || !txid) return Response.json({ error: 'MISSING_PARAMS: agentId, txid' }, { status: 400 });
       if (mine.length >= FACTORY_PARAMS.max_active_per_human) {
         return Response.json({ ok: false, error: `Active agent limit reached (${FACTORY_PARAMS.max_active_per_human})` });
       }
       if (birthsToday >= FACTORY_PARAMS.daily_capacity) {
         return Response.json({ ok: false, error: 'Factory is at full capacity for today' });
       }
-      const reused = await svc.entities.EvolveAgentWallet.filter({ factory_fee_txid: feeTxid });
+      const reused = await svc.entities.EvolveAgentWallet.filter({ factory_fee_txid: txid });
       if (reused.length) return Response.json({ ok: false, error: 'This payment was already used for a birth' });
 
-      const tx = await paidToAddress(feeTxid, factory.address);
+      const tx = await paidToAddress(txid, factory.address);
       if (!tx.found) return Response.json({ ok: false, pending: true, error: 'Payment not visible on TN-10 yet — try again in a moment' });
-      const needed = FACTORY_PARAMS.generation_cost_kas * SOMPI;
-      if (tx.paidSompi < needed) return Response.json({ ok: false, error: 'Payment to the Factory is below the generation cost' });
+      const needed = totalKas * SOMPI;
+      if (tx.paidSompi < needed) {
+        return Response.json({ ok: false, error: `Payment is below the Factory total (${totalKas} tKAS)` });
+      }
       if (senderAddress && tx.inputAddresses.length && !tx.inputAddresses.includes(senderAddress)) {
         return Response.json({ ok: false, error: 'Payment was not sent from your connected wallet' });
       }
@@ -78,30 +107,35 @@ export default async function(req) {
         agent_id: agentId, label: agentCode || agentId, network: 'kaspa_testnet_10',
         address, mnemonic, derivation_path: "m/44'/111111'/0'/0/0",
       });
-      await svc.entities.EvolveAgentWallet.create({
+      const rec = await svc.entities.EvolveAgentWallet.create({
         experiment_id: experimentId, agent_id: agentId, agent_code: agentCode || '',
         wallet_id: `W${Date.now().toString(36).toUpperCase()}`, network: 'kaspa_testnet_10',
         address, status: 'active', owner_user_id: user.id, origin: 'FACTORY',
-        birth_status: 'FEE_PAID', factory_fee_txid: feeTxid, created_at: new Date().toISOString(),
+        birth_status: 'FEE_PAID', factory_fee_txid: txid, created_at: new Date().toISOString(),
       });
-      return Response.json({ ok: true, agentId, address });
+
+      // Forward the capital. If the Factory can't send right now, the birth is
+      // already paid — the caller can retry funding without paying again.
+      try {
+        const capitalTxid = await forwardCapital(rec);
+        return Response.json({ ok: true, agentId, address, feeTxid: txid, capitalTxid });
+      } catch (e) {
+        console.error('[evolveFactory] capital forward failed:', e.message);
+        return Response.json({ ok: true, agentId, address, feeTxid: txid, capitalPending: true, error: e.message });
+      }
     }
 
-    if (action === 'spawn') {
-      const { agentId, capitalTxid } = body;
+    if (action === 'fund') {
+      const { agentId } = body;
       const rec = mine.find((b) => b.agent_id === agentId);
       if (!rec) return Response.json({ ok: false, error: 'No paid birth found for this agent' });
       if (rec.birth_status === 'SPAWNED') return Response.json({ ok: true, address: rec.address, already: true });
-      const tx = await paidToAddress(capitalTxid, rec.address);
-      if (!tx.found) return Response.json({ ok: false, pending: true, error: 'Capital payment not visible on TN-10 yet — try again in a moment' });
-      if (tx.paidSompi < FACTORY_PARAMS.starting_capital_min_kas * SOMPI) {
-        return Response.json({ ok: false, error: 'Starting capital is below the minimum' });
+      try {
+        const capitalTxid = await forwardCapital(rec);
+        return Response.json({ ok: true, agentId, address: rec.address, capitalTxid });
+      } catch (e) {
+        return Response.json({ ok: false, error: e.message });
       }
-      await svc.entities.EvolveAgentWallet.update(rec.id, {
-        birth_status: 'SPAWNED', capital_txid: capitalTxid, capital_sompi: tx.paidSompi, status: 'funded',
-        last_known_balance_sompi: tx.paidSompi, last_balance_check: new Date().toISOString(),
-      });
-      return Response.json({ ok: true, address: rec.address, capitalSompi: tx.paidSompi });
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });
