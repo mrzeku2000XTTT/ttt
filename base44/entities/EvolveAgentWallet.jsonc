@@ -56,6 +56,41 @@
       "type": "boolean",
       "default": false,
       "description": "True if this is an experiment or org treasury wallet"
+    },
+    "owner_user_id": {
+      "type": "string",
+      "description": "Base44 user id of the human who paid for this agent (Factory births)"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "GENESIS",
+        "FACTORY",
+        "REPRODUCTION",
+        "LEGACY"
+      ],
+      "default": "LEGACY",
+      "description": "Economic origin of the agent. After Genesis, no agent appears for free."
+    },
+    "birth_status": {
+      "type": "string",
+      "enum": [
+        "FEE_PAID",
+        "SPAWNED"
+      ],
+      "description": "Factory birth progress: fee verified on TN-10, then starting capital verified"
+    },
+    "factory_fee_txid": {
+      "type": "string",
+      "description": "TN-10 txid that paid the Factory generation cost"
+    },
+    "capital_txid": {
+      "type": "string",
+      "description": "TN-10 txid that funded the agent's starting capital"
+    },
+    "capital_sompi": {
+      "type": "number",
+      "default": 0
     }
   },
   "required": [

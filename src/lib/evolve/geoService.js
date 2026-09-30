@@ -236,13 +236,15 @@ export function toValidLngLat(lng, lat) {
  * wider than the world (at low zoom) cannot push the center past ±180/±90
  * and crash MapLibre's LngLat constructor.
  */
-const MIN_SCALE = 1.6;
-const MAX_SCALE = 26;
+// Camera zoom range matches the MapLibre map (minZoom 2 / maxZoom 13). Scale
+// is derived per world from zoom, so map -> cam -> map is lossless and a zoom
+// never gets snapped back out.
 const MIN_ZOOM = 2;
-const MAX_ZOOM = 11;
+const MAX_ZOOM = 13;
+const scaleForZoom = (z, world) => (256 * Math.pow(2, z)) / world.width;
 
 export function camToView(cam, world, size) {
-  const scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, cam.scale || MIN_SCALE));
+  const scale = cam.scale > 0 ? cam.scale : scaleForZoom(MIN_ZOOM, world);
   const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.log2((scale * world.width) / 256)));
   const vw = size && size.w ? size.w / scale : world.width / 2;
   const vh = size && size.h ? size.h / scale : world.height / 2;
@@ -261,20 +263,16 @@ export function camToView(cam, world, size) {
 
 export function viewToCam(center, zoom, world, size) {
   const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
-  const scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, (256 * Math.pow(2, z)) / world.width));
+  const scale = scaleForZoom(z, world);
   const vw = size && size.w ? size.w / scale : world.width / 2;
   const vh = size && size.h ? size.h / scale : world.height / 2;
   const lat = center[0];
   const lng = center[1];
   const cx = ((lng + 180) / 360) * world.width;
   const cy = ((90 - lat) / 180) * world.height;
-  const maxX = Math.max(0, world.width - vw);
-  const maxY = Math.max(0, world.height - vh);
-  return {
-    scale,
-    x: Math.max(0, Math.min(maxX, cx - vw / 2)),
-    y: Math.max(0, Math.min(maxY, cy - vh / 2)),
-  };
+  // No grid clamping — the map owns its bounds. Clamping here is what pulled
+  // the view back toward the centre after zooming into a location.
+  return { scale, x: cx - vw / 2, y: cy - vh / 2 };
 }
 
 /* ------------------------------------------------- viewport bbox -> grid range

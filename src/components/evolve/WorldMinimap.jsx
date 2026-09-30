@@ -95,7 +95,7 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
 
     const src = map.getSource("ev-mini-view");
     if (!src) return;
-    const scale = Math.max(1.6, Math.min(26, cam.scale || 6));
+    const scale = cam.scale > 0 ? cam.scale : 6;
     const vw = mapSize.w / scale;
     const vh = mapSize.h / scale;
     const nw = gridToLatLng(cam.x, cam.y, world.width, world.height);
@@ -139,10 +139,10 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
       <div className="ev-row" style={{ marginBottom: 6 }}>
         <span className="ev-label">Minimap</span>
         <div style={{ display: "flex", gap: 3 }}>
-          <button className="ev-btn ev-btn-ghost" style={{ padding: 4 }} onClick={() => setCam((p) => ({ ...p, scale: Math.min(26, p.scale * 1.3) }))} title="Zoom in">
+          <button className="ev-btn ev-btn-ghost" style={{ padding: 4 }} onClick={() => setCam((p) => ({ ...p, scale: Math.min(world.width > 0 ? (256 * 8192) / world.width : p.scale, p.scale * 1.6) }))} title="Zoom in">
             <Plus className="h-3 w-3" />
           </button>
-          <button className="ev-btn ev-btn-ghost" style={{ padding: 4 }} onClick={() => setCam((p) => ({ ...p, scale: Math.max(1.6, p.scale / 1.3) }))} title="Zoom out">
+          <button className="ev-btn ev-btn-ghost" style={{ padding: 4 }} onClick={() => setCam((p) => ({ ...p, scale: Math.max((256 * 4) / world.width, p.scale / 1.6) }))} title="Zoom out">
             <Minus className="h-3 w-3" />
           </button>
           <button

@@ -198,6 +198,7 @@ export class EvolveEngine {
     this.snapshot();
     this.started = true;
     this.events.push({
+      source: "live",
       type: "WORLD_ONLINE",
       category: "WORLD",
       message: `World online — ${this.agents.length} independent agents, 0 organizations, 0 territories`,
@@ -255,12 +256,17 @@ export class EvolveEngine {
    * with zero balance — the player funds it on TN10. It can sign its own
    * transactions autonomously via the stored server-side key.
    */
-  createAgentForPlayer({ player, address, name }) {
-    this.agentSeq += 1;
-    const id = `AGT_${String(this.agentSeq).padStart(4, "0")}`;
+  createAgentForPlayer({ player, address, name, agentId, origin, feeTxid, capitalTxid }) {
+    // Factory births reserve their id before payment; honour it so the engine
+    // agent matches its TN-10 wallet record.
+    const seqFromId = agentId ? Number(String(agentId).replace(/\D/g, "")) : 0;
+    this.agentSeq = Math.max(this.agentSeq + (seqFromId ? 0 : 1), seqFromId || 0);
+    const seq = seqFromId || this.agentSeq;
+    const id = agentId || `AGT_${String(seq).padStart(4, "0")}`;
+    if (this.agentById.has(id)) return { ok: true, agent: this.agentById.get(id) };
     const agent = createAgent({
       id,
-      code: this.code(this.agentSeq),
+      code: this.code(seq),
       name: name || agentName(this.rng),
       generation: 0,
       genome: randomGenome(this.rng),
@@ -273,12 +279,15 @@ export class EvolveEngine {
     agent.owner_user_id = player.user_id;
     agent.owner_player_id = player.id;
     agent.address = address;
+    agent.origin = origin || "FACTORY";
     this.agents.push(agent);
     this.agentById.set(id, agent);
     this.emit({
-      type: "AGENT_CREATED",
+      type: origin === "FACTORY" || !origin ? "FACTORY_BIRTH" : "AGENT_CREATED",
       category: "EVOLUTION",
-      message: `${player.code} generated AI agent ${agent.code} · Kaspa TN-10`,
+      message: feeTxid
+        ? `${player.code} created ${agent.code} at the AI Factory · fee ${feeTxid.slice(0, 10)}… · capital ${String(capitalTxid || "").slice(0, 10)}…`
+        : `${player.code} created AI agent ${agent.code} · Kaspa TN-10`,
       actor_id: player.id,
       actor_code: player.code,
       target_id: id,
@@ -346,6 +355,15 @@ export class EvolveEngine {
   /* ------------------------------------------------------------ main tick */
   tick(quiet = false) {
     if (!isolatedMockEnabled) return;
+    this.simDepth = (this.simDepth || 0) + 1;
+    try {
+      this.tickBody(quiet);
+    } finally {
+      this.simDepth -= 1;
+    }
+  }
+
+  tickBody(quiet) {
     this.tickCount += 1;
     const rng = this.rng;
     const dayBefore = this.world.day;
@@ -901,8 +919,12 @@ export class EvolveEngine {
   }
 
   emit(partial, quiet) {
+    // Events produced by the autonomous simulation tick are not real activity
+    // and never reach the live feed. Only human actions, Factory births and
+    // chain-backed payments are recorded.
+    if (this.simDepth > 0) return;
     if (quiet && this.events.events.length > 320) return;
-    this.events.push({ day: this.world.day, clock: this.clockLabel(), ...partial });
+    this.events.push({ day: this.world.day, clock: this.clockLabel(), source: "live", ...partial });
   }
 
   /* -------------------------------------------------------- human actions */
@@ -1371,8 +1393,10 @@ export class EvolveEngine {
     this.events = new EventService();
     // Drop legacy treasury-grant rows: a restored checkpoint would otherwise
     // keep re-showing the old wall of identical "Research grant received" lines.
+    // Only restore real (live) events — older checkpoints are full of
+    // simulation-tick rows that must not come back into the feed.
     [...events]
-      .filter((e) => e.type !== "TREASURY_GRANT")
+      .filter((e) => e.type !== "TREASURY_GRANT" && e.source === "live")
       .reverse()
       .forEach((e) => this.events.push(e));
 
@@ -1480,6 +1504,7 @@ export class EvolveEngine {
         amount: e.amount,
         day: e.day,
         clock: e.clock,
+        source: e.source,
       })),
       relationships: this.relationships.serialize().slice(0, 200),
       players: this.players.map((p) => ({

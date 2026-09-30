@@ -175,8 +175,6 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     // Keep the engine camera in step with the real map so the minimap and the
     // viewport rectangle always describe what is actually on screen. Skipped
     // when the whole world is already visible — there is nothing to sync.
-    const b = map.getBounds();
-    if (b.getEast() - b.getWest() >= 350) return;
     const c = map.getCenter();
     const next = viewToCam([c.lat, c.lng], map.getZoom(), world, size);
     setCam((prev) =>

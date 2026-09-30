@@ -615,6 +615,7 @@ export function EvolveProvider({ children }) {
     joinOrganization,
     leaveOrganization,
     generateAgent,
+    persistNow,
     // wallet / payment
     wallet,
     preparePayment,

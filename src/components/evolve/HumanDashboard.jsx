@@ -4,6 +4,7 @@ import { useEvolve } from "@/lib/evolve/useEvolve";
 import { C } from "@/lib/evolve/constants";
 import { ScorpionConnectionState as State } from "@/lib/evolve/scorpionAdapter";
 import useTn10Balances from "@/lib/evolve/useTn10Balances";
+import AIFactoryPanel from "./AIFactoryPanel";
 
 /**
  * HumanDashboard — the player's own control surface.
@@ -16,8 +17,7 @@ import useTn10Balances from "@/lib/evolve/useTn10Balances";
  *    kaspatest: address as evidence of TN-10 connection
  */
 export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) {
-  const { engine, currentPlayer: player, wallet, generateAgent, pendingTxCount } = useEvolve();
-  const [busy, setBusy] = useState(false);
+  const { engine, currentPlayer: player, wallet, pendingTxCount } = useEvolve();
   const [copied, setCopied] = useState("");
 
   const myAgents = useMemo(() => {
@@ -32,16 +32,6 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
   const { balances: chainBalances, loading: chainLoading } = useTn10Balances(agentAddresses);
 
   if (!engine || !player) return null;
-
-  const handleGenerate = async () => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await generateAgent({});
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const copy = (addr) => {
     try {
@@ -131,26 +121,8 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
           )}
         </div>
 
-        {/* --- AI Agent Generator --- */}
-        <div className="ev-section">
-          <div style={{ fontSize: 8, letterSpacing: "0.13em", color: C.textFaint, marginBottom: 6 }}>AI AGENT GENERATOR</div>
-          <div style={{ fontSize: 10, color: C.textDim, marginBottom: 8, lineHeight: 1.4 }}>
-            Mints a fresh autonomous AI agent with its own Kaspa testnet wallet. The agent signs its own transactions and competes in the economy.
-          </div>
-          <button
-            className="ev-btn"
-            style={{ width: "100%", padding: "9px 12px", justifyContent: "center" }}
-            onClick={handleGenerate}
-            disabled={busy || !walletConnected}
-            title={walletConnected ? "Generate a new AI agent on Kaspa TN-10" : "Connect Scorpion first"}
-          >
-            {busy ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-            <span>{busy ? "MINTING…" : "GENERATE AI AGENT"}</span>
-          </button>
-          {!walletConnected && (
-            <div style={{ fontSize: 8.5, color: C.red, marginTop: 5 }}>Connect Scorpion to generate agents.</div>
-          )}
-        </div>
+        {/* --- AI Factory: after Genesis, no agent appears for free --- */}
+        <AIFactoryPanel />
 
         {/* --- My AI agents --- */}
         <div className="ev-section">
