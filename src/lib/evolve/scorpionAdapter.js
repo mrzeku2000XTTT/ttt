@@ -49,6 +49,21 @@ export function isTN10Address(addr) {
 }
 
 /**
+ * Exact sompi → KAS string, no floating point (3500000000n → "35").
+ *
+ * The wallet's Sign sheet is denominated in KAS — its SDK documents
+ * `sendKaspa({ amount: '1' })` as KAS. Handing it sompi showed the user
+ * 3500000000 KAS for what EVOLVE called a 35 tKAS payment.
+ */
+export function sompiToKas(sompi) {
+  const s = BigInt(String(sompi ?? 0));
+  const whole = s / 100000000n;
+  const frac = s % 100000000n;
+  if (frac === 0n) return whole.toString();
+  return `${whole}.${frac.toString().padStart(8, "0").replace(/0+$/, "")}`;
+}
+
+/**
  * Coerce whatever the SDK returns for "network" into a comparable string.
  * Some KCC20 wallets return "testnet-10", others "kaspa_testnet_10",
  * others an object — normalize before comparing.
@@ -163,10 +178,14 @@ export class ScorpionWalletAdapter {
    * Simple user-confirmed KAS payment. Scorpion opens its approval sheet,
    * the user PIN-signs, and Scorpion broadcasts. EVOLVE never bypasses this.
    * Returns { txId, ... } — we read result.txId, never assume a bare string.
+   *
+   * The wallet takes the amount in KAS, so sompi is converted at this one
+   * boundary — every EVOLVE payment (Factory births, jobs, trades) goes
+   * through here and none of them may show the raw sompi figure.
    */
   async sendKaspa({ to, amountSompi }) {
     const kcc = await this._sdk();
-    const result = await kcc.sendKaspa({ to, amount: String(amountSompi.toString()) });
+    const result = await kcc.sendKaspa({ to, amount: sompiToKas(amountSompi) });
     const txId = result?.txId || result?.txid || result?.tx_id || null;
     if (!txId) {
       const err = new Error("Scorpion did not return a transaction id");
