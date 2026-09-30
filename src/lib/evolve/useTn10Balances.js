@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 
 /**
@@ -8,28 +8,27 @@ import { base44 } from "@/api/base44Client";
  * Returns { balances, loading, ok } where balances maps address -> tKAS.
  * An address MISSING from balances means the chain did not answer for it.
  * We never substitute a simulation number for a missing chain answer.
+ *
+ * The chain is polled, not read once: a wallet balance changes the moment a
+ * payment lands, and a cached figure would keep showing the pre-payment amount.
  */
-export default function useTn10Balances(addresses) {
+export default function useTn10Balances(addresses, { pollMs = 15000 } = {}) {
   const [state, setState] = useState({ balances: {}, loading: false, ok: true });
-  const lastKey = useRef("");
 
   const key = (addresses || []).filter(Boolean).sort().join(",");
 
   useEffect(() => {
     if (!key) {
-      lastKey.current = "";
       setState({ balances: {}, loading: false, ok: true });
-      return;
+      return undefined;
     }
-    if (lastKey.current === key) return;
-    lastKey.current = key;
 
     let alive = true;
-    setState((s) => ({ ...s, loading: true }));
 
-    base44.functions
-      .invoke("evolveTn10Balances", { addresses: key.split(",") })
-      .then((res) => {
+    const load = async (first) => {
+      if (first) setState((s) => ({ ...s, loading: true }));
+      try {
+        const res = await base44.functions.invoke("evolveTn10Balances", { addresses: key.split(",") });
         if (!alive) return;
         const data = res?.data || {};
         const balances = {};
@@ -37,17 +36,21 @@ export default function useTn10Balances(addresses) {
           balances[addr] = Number(sompi) / 1e8;
         }
         setState({ balances, loading: false, ok: data.ok !== false });
-      })
-      .catch(() => {
+      } catch {
         if (!alive) return;
-        lastKey.current = "";
-        setState({ balances: {}, loading: false, ok: false });
-      });
+        // Keep the last real chain answer rather than blanking the display.
+        setState((s) => ({ ...s, loading: false, ok: false }));
+      }
+    };
+
+    load(true);
+    const timer = pollMs ? setInterval(() => load(false), pollMs) : null;
 
     return () => {
       alive = false;
+      if (timer) clearInterval(timer);
     };
-  }, [key]);
+  }, [key, pollMs]);
 
   return state;
 }

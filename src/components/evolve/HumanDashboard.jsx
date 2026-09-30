@@ -27,9 +27,15 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
     );
   }, [engine, player, engine?.tickCount]);
 
-  // Real Kaspa TN-10 balances for this player's agents, read from the chain.
+  // Real Kaspa TN-10 balances, read from the chain: this player's agents AND
+  // their own Scorpion wallet — the wallet's own reported figure goes stale
+  // the moment a payment leaves it.
   const agentAddresses = useMemo(() => myAgents.map((a) => a.address).filter(Boolean), [myAgents]);
-  const { balances: chainBalances, loading: chainLoading } = useTn10Balances(agentAddresses);
+  const chainAddresses = useMemo(
+    () => [...agentAddresses, wallet?.address].filter(Boolean),
+    [agentAddresses, wallet?.address]
+  );
+  const { balances: chainBalances, loading: chainLoading } = useTn10Balances(chainAddresses);
 
   if (!engine || !player) return null;
 
@@ -42,8 +48,17 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
   };
 
   const walletConnected = wallet?.isTN10 && wallet?.address;
-  const balSompi = wallet?.balance?.confirmed ?? 0n;
-  const balanceLabel = walletConnected ? `${(Number(balSompi) / 1e8).toFixed(4)} KAS` : "—";
+  // The chain is authoritative for the balance; the wallet's own figure is only
+  // a fallback for the moment before (or if) TN-10 answers for the address.
+  const walletOnChain = walletConnected ? chainBalances[wallet.address] : undefined;
+  const walletSompi = wallet?.balance?.confirmed ?? 0n;
+  const balanceLabel = !walletConnected
+    ? "—"
+    : walletOnChain !== undefined
+      ? `${walletOnChain.toFixed(4)} KAS`
+      : chainLoading
+        ? "…"
+        : `${(Number(walletSompi) / 1e8).toFixed(4)} KAS`;
 
   return (
     <div className="ev-sheet ev-sheet-sm" style={{ bottom: 56, left: 64, width: 320, maxHeight: "78vh" }}>
