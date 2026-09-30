@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { generateTestnetWallet } from '../../shared/kaspaAddress.ts';
-import { FACTORY_PARAMS, FACTORY_AGENT_ID, SOMPI, paidToAddress } from '../../shared/evolveFactory.ts';
+import { FACTORY_PARAMS, FACTORY_AGENT_ID, SOMPI, paidToAddress, unclaimedPayment } from '../../shared/evolveFactory.ts';
 import { sendTn10 } from '../../shared/tn10Send.ts';
 
 /**
@@ -48,6 +48,7 @@ export default async function (req) {
     const births = await svc.entities.EvolveAgentWallet.filter({ experiment_id: experimentId, origin: 'FACTORY' }, '-created_date', 500);
     const birthsToday = births.filter((b) => new Date(b.created_date) >= dayStart).length;
     const mine = births.filter((b) => b.owner_user_id === user.id && b.status !== 'archived');
+    const spentTxids = births.map((b) => b.factory_fee_txid).filter(Boolean);
 
     if (action === 'info') {
       return Response.json({
@@ -59,6 +60,7 @@ export default async function (req) {
         activeCount: mine.length,
         pending: mine.filter((b) => b.birth_status === 'FEE_PAID')
           .map((b) => ({ agentId: b.agent_id, agentCode: b.agent_code, address: b.address })),
+        unclaimedTxid: await unclaimedPayment(factory.address, totalKas * SOMPI, spentTxids),
       });
     }
 
@@ -82,17 +84,25 @@ export default async function (req) {
 
     if (action === 'birth') {
       const { agentId, agentCode, txid, senderAddress } = body;
-      if (!agentId || !txid) return Response.json({ error: 'MISSING_PARAMS: agentId, txid' }, { status: 400 });
+      if (!agentId) return Response.json({ error: 'MISSING_PARAMS: agentId' }, { status: 400 });
       if (mine.length >= FACTORY_PARAMS.max_active_per_human) {
         return Response.json({ ok: false, error: `Active agent limit reached (${FACTORY_PARAMS.max_active_per_human})` });
       }
       if (birthsToday >= FACTORY_PARAMS.daily_capacity) {
         return Response.json({ ok: false, error: 'Factory is at full capacity for today' });
       }
-      const reused = await svc.entities.EvolveAgentWallet.filter({ factory_fee_txid: txid });
+
+      // A payment may already be at the Factory: an earlier attempt whose
+      // confirmation never came back (TN-10's index lags) is claimed here
+      // rather than charging the buyer a second time.
+      const paidTxid = txid || await unclaimedPayment(factory.address, totalKas * SOMPI, spentTxids);
+      if (!paidTxid) {
+        return Response.json({ ok: false, error: 'No Factory payment found — nothing to create' });
+      }
+      const reused = await svc.entities.EvolveAgentWallet.filter({ factory_fee_txid: paidTxid });
       if (reused.length) return Response.json({ ok: false, error: 'This payment was already used for a birth' });
 
-      const tx = await paidToAddress(txid, factory.address);
+      const tx = await paidToAddress(paidTxid, factory.address);
       if (!tx.found) return Response.json({ ok: false, pending: true, error: 'Payment not visible on TN-10 yet — try again in a moment' });
       const needed = totalKas * SOMPI;
       if (tx.paidSompi < needed) {
@@ -111,17 +121,17 @@ export default async function (req) {
         experiment_id: experimentId, agent_id: agentId, agent_code: agentCode || '',
         wallet_id: `W${Date.now().toString(36).toUpperCase()}`, network: 'kaspa_testnet_10',
         address, status: 'active', owner_user_id: user.id, origin: 'FACTORY',
-        birth_status: 'FEE_PAID', factory_fee_txid: txid, created_at: new Date().toISOString(),
+        birth_status: 'FEE_PAID', factory_fee_txid: paidTxid, created_at: new Date().toISOString(),
       });
 
       // Forward the capital. If the Factory can't send right now, the birth is
       // already paid — the caller can retry funding without paying again.
       try {
         const capitalTxid = await forwardCapital(rec);
-        return Response.json({ ok: true, agentId, address, feeTxid: txid, capitalTxid });
+        return Response.json({ ok: true, agentId, address, feeTxid: paidTxid, capitalTxid });
       } catch (e) {
         console.error('[evolveFactory] capital forward failed:', e.message);
-        return Response.json({ ok: true, agentId, address, feeTxid: txid, capitalPending: true, error: e.message });
+        return Response.json({ ok: true, agentId, address, feeTxid: paidTxid, capitalPending: true, error: e.message });
       }
     }
 

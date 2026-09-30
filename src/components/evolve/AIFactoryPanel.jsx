@@ -41,9 +41,15 @@ export default function AIFactoryPanel() {
         </button>
       ))}
 
+      {info.unclaimedTxid && !busy && (
+        <div style={{ fontSize: 8.5, color: C.cyan, marginTop: 6, lineHeight: 1.4 }}>
+          You already have an unclaimed {info.totalKas} tKAS Factory payment — creating your agent uses it, no new signature.
+        </div>
+      )}
+
       <button className="ev-btn" style={{ width: "100%", marginTop: 8, padding: "9px 12px", justifyContent: "center" }} disabled={blocked} onClick={createAgent}>
         {busy ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Factory className="h-3.5 w-3.5" />}
-        <span>{busy ? "WORKING…" : `CREATE AGENT — ${info.totalKas} tKAS`}</span>
+        <span>{busy ? "WORKING…" : info.unclaimedTxid ? "CLAIM PAID AGENT" : `CREATE AGENT — ${info.totalKas} tKAS`}</span>
       </button>
       {step && <div style={{ fontSize: 9, color: C.cyan, marginTop: 5 }}>{step}</div>}
       {error && <div style={{ fontSize: 8.5, color: C.red, marginTop: 5, wordBreak: "break-word" }}>{error}</div>}

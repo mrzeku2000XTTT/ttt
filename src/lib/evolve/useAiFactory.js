@@ -60,8 +60,15 @@ export default function useAiFactory() {
   const createAgent = useCallback(() => run(async () => {
     const seq = engine.agentSeq + 1 + (info.pending?.length || 0);
     const agentId = `AGT_${String(seq).padStart(4, "0")}`;
-    setStep(`Approve ${info.totalKas} tKAS in your wallet…`);
-    const { txId } = await wallet.adapter.sendKaspa({ to: info.factoryAddress, amountSompi: kasToSompi(info.totalKas) });
+    // A payment already sitting at the Factory — an earlier attempt TN-10's
+    // index could not confirm — is claimed instead of charging a second time.
+    let txId = info?.unclaimedTxid || null;
+    if (txId) {
+      setStep("Finishing your paid birth…");
+    } else {
+      setStep(`Approve ${info.totalKas} tKAS in your wallet…`);
+      ({ txId } = await wallet.adapter.sendKaspa({ to: info.factoryAddress, amountSompi: kasToSompi(info.totalKas) }));
+    }
     setStep("Verifying payment and creating the agent…");
     const data = await invokeUntilVisible({
       action: "birth", experimentId, agentId, agentCode: engine.code(seq), txid: txId, senderAddress: wallet.address,
