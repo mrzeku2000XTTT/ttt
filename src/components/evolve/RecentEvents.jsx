@@ -36,7 +36,9 @@ export default function RecentEvents({ limit = 40, onPick, compact = false }) {
             onClick={() => onPick?.(e)}
             title={e.type}
           >
-            <span className="ev-event-time">{e.clock || "—"}</span>
+            <span className="ev-event-time">
+              {e.day != null ? `D${e.day} · ${e.clock || "—"}` : e.clock || "—"}
+            </span>
             <span className="ev-event-msg">
               <span style={{ color: e.color, fontWeight: 700, marginRight: 5 }}>●</span>
               {e.message}

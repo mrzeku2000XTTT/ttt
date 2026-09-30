@@ -353,15 +353,12 @@ export class EvolveEngine {
     if (this.world.day !== dayBefore) {
       this.treasury.balance = Number((this.treasury.balance + TREASURY_GRANT_PER_DAY).toFixed(2));
       this.kaspa.credit(this.treasury.address, TREASURY_GRANT_PER_DAY);
-      if (!quiet) {
-        this.emit({
-          type: "TREASURY_GRANT",
-          category: "ECONOMY",
-          message: `Research grant received · +${TREASURY_GRANT_PER_DAY} tKAS`,
-          amount: TREASURY_GRANT_PER_DAY,
-        });
-        this.maybePostJob();
-      }
+      // The daily grant is treasury bookkeeping, not world activity. It used to be
+      // pushed to the live feed, which fired it every 8 ticks with an identical
+      // message and the same midnight stamp — filling the feed with one repeated
+      // row and hiding every real event behind it. The balance still moves; the
+      // feed now only carries things that actually happened.
+      if (!quiet) this.maybePostJob();
     }
 
     // Ledger confirmations are wall-clock driven and never accelerated.
@@ -1372,7 +1369,12 @@ export class EvolveEngine {
     this.transactions = transactions.map((t) => ({ ...t }));
 
     this.events = new EventService();
-    [...events].reverse().forEach((e) => this.events.push(e));
+    // Drop legacy treasury-grant rows: a restored checkpoint would otherwise
+    // keep re-showing the old wall of identical "Research grant received" lines.
+    [...events]
+      .filter((e) => e.type !== "TREASURY_GRANT")
+      .reverse()
+      .forEach((e) => this.events.push(e));
 
     if (records.relationships) this.relationships.hydrate(records.relationships);
 
