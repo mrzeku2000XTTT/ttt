@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Plus, Minus, Locate } from "lucide-react";
@@ -25,9 +25,10 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
   const { engine } = useEvolve();
   const ref = useRef(null);
   const mapRef = useRef(null);
-  // True while we are pushing the main camera INTO the minimap. Move events
-  // raised by our own jumpTo must not be read back as user navigation.
-  const syncingRef = useRef(false);
+  // The view we last pushed INTO the minimap. A move we caused ourselves must
+  // not be read back as user navigation — that ping-pong dragged the main
+  // camera around (and upward) on its own.
+  const pushedRef = useRef(null);
   const world = engine?.world;
 
   /* build the mini map once */
@@ -41,6 +42,7 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
       zoom: 1,
       minZoom: 0,
       maxZoom: MINI_MAX_ZOOM,
+      maxBounds: [[-180, -85], [180, 85]],
       attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
@@ -87,9 +89,8 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
     if (center) {
       const cur = map.getCenter();
       if (Math.abs(cur.lng - center[0]) > 0.01 || Math.abs(cur.lat - center[1]) > 0.01 || Math.abs(map.getZoom() - zoom) > 0.05) {
-        syncingRef.current = true;
+        pushedRef.current = { lng: center[0], lat: center[1], zoom };
         map.jumpTo({ center, zoom });
-        requestAnimationFrame(() => { syncingRef.current = false; });
       }
     }
 
@@ -122,8 +123,18 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
 
   /* user panned/zoomed the minimap → move the main camera */
   function onMiniMoveEnd(map) {
-    if (syncingRef.current || !world || !mapSize?.w || !mapSize?.h) return;
+    if (!world || !mapSize?.w || !mapSize?.h) return;
     const c = map.getCenter();
+    const pushed = pushedRef.current;
+    pushedRef.current = null;
+    if (
+      pushed &&
+      Math.abs(pushed.lng - c.lng) < 0.02 &&
+      Math.abs(pushed.lat - c.lat) < 0.02 &&
+      Math.abs(pushed.zoom - map.getZoom()) < 0.05
+    ) {
+      return; // our own push, not the user moving the minimap
+    }
     const next = viewToCam([c.lat, c.lng], map.getZoom() + MINI_ZOOM_OFFSET, world, mapSize);
     // Bail out when the camera already matches, so mirroring the main map back
     // into the minimap can never ping-pong between the two.

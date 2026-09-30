@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { ZoomIn, ZoomOut, Maximize2, Layers } from "lucide-react";
@@ -69,6 +69,9 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   const [labels, setLabels] = useState([]);
   const [showCells, setShowCells] = useState(true);
   const didFitRef = useRef(false);
+  // The view we last PUSHED into the map. Reading a view back that we caused
+  // ourselves would bounce cam → map → cam forever.
+  const pushedViewRef = useRef(null);
 
   /* measure container */
   useEffect(() => {
@@ -102,6 +105,9 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       zoom: view.zoom,
       minZoom: 2,
       maxZoom: 13,
+      // The world IS the bounds — the view can never be dragged off the top of
+      // it, which is what left the map stuck against the north edge.
+      maxBounds: [[-180, -85], [180, 85]],
       attributionControl: false,
       antialias: true,
     });
@@ -154,6 +160,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     if (Math.abs(view.center[0] - cur.lat) < 0.01 && Math.abs(view.center[1] - cur.lng) < 0.01 && Math.abs(view.zoom - curZ) < 0.05) return;
     const valid = toValidLngLat(view.center[1], view.center[0]);
     if (!valid) return; // skip invalid camera coordinate rather than crash
+    pushedViewRef.current = { lng: valid[0], lat: valid[1], zoom: view.zoom };
     map.jumpTo({ center: valid, zoom: view.zoom });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cam, mapReady, size.w]);
@@ -173,9 +180,20 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     if (!map || !world || !size.w) return;
     updateCells(map, map.getZoom());
     // Keep the engine camera in step with the real map so the minimap and the
-    // viewport rectangle always describe what is actually on screen. Skipped
-    // when the whole world is already visible — there is nothing to sync.
+    // viewport rectangle always describe what is actually on screen. A move we
+    // pushed ourselves is not user navigation — reading it back is what let the
+    // two cameras drift the view upward in a loop.
     const c = map.getCenter();
+    const pushed = pushedViewRef.current;
+    pushedViewRef.current = null;
+    if (
+      pushed &&
+      Math.abs(pushed.lng - c.lng) < 0.02 &&
+      Math.abs(pushed.lat - c.lat) < 0.02 &&
+      Math.abs(pushed.zoom - map.getZoom()) < 0.05
+    ) {
+      return;
+    }
     const next = viewToCam([c.lat, c.lng], map.getZoom(), world, size);
     setCam((prev) =>
       Math.abs(prev.x - next.x) < 0.6 && Math.abs(prev.y - next.y) < 0.6 && Math.abs(prev.scale - next.scale) < 0.05 ? prev : next

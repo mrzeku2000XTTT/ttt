@@ -241,6 +241,12 @@ export function toValidLngLat(lng, lat) {
 // never gets snapped back out.
 const MIN_ZOOM = 2;
 const MAX_ZOOM = 13;
+// MapLibre clamps its centre latitude to the Web-Mercator limit. Requesting a
+// centre beyond it meant the map silently returned a DIFFERENT centre than the
+// one asked for, so the engine camera and the map kept correcting each other —
+// each round trip nudging the view further north until it pinned to the top
+// edge of the world. Clamping to the same limit makes cam → map → cam lossless.
+const MERCATOR_LAT = 85.051129;
 const scaleForZoom = (z, world) => (256 * Math.pow(2, z)) / world.width;
 
 export function camToView(cam, world, size) {
@@ -257,7 +263,7 @@ export function camToView(cam, world, size) {
   if (!Number.isFinite(lng)) lng = 0;
   if (!Number.isFinite(lat)) lat = 0;
   lng = Math.max(-180, Math.min(180, lng));
-  lat = Math.max(-90, Math.min(90, lat));
+  lat = Math.max(-MERCATOR_LAT, Math.min(MERCATOR_LAT, lat));
   return { center: [lat, lng], zoom };
 }
 
