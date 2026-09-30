@@ -211,6 +211,67 @@ Network, no E2B, no reproduction.
 Runtime non-admin authorization probe: NOT RUN (the session is admin); enforcement is
 code-level in the authorization layer.
 
+## Repair pass (post-acceptance)
+
+Three defects found during verification were repaired surgically. No features added.
+
+### Repair 1 — error mapping
+
+Missing identifiers no longer collapse into INTERNAL_ERROR. A bounded lookup helper
+(`find`) turns an expected miss into an explicit domain error:
+
+| Case | Before | After |
+|---|---|---|
+| nonexistent computer | INTERNAL_ERROR | COMPUTER_NOT_FOUND |
+| nonexistent workspace file (by id or path) | INTERNAL_ERROR / WORKSPACE_FORBIDDEN | FILE_NOT_FOUND |
+| nonexistent revision | INTERNAL_ERROR | REVISION_NOT_FOUND |
+| nonexistent artifact | INTERNAL_ERROR | ARTIFACT_NOT_FOUND |
+| nonexistent session | INTERNAL_ERROR | SESSION_NOT_FOUND |
+
+A foreign-but-existing session now returns SESSION_FORBIDDEN rather than being reported
+as missing. INTERNAL_ERROR remains reserved for genuine faults. No database detail,
+storage path, stack trace or credential is returned; URLs are still masked.
+
+### Repair 2 — explicit app/action contract
+
+`ACTION_CONTRACTS` now declares, per action, `action_type`, `allowed_app_ids`,
+`required_capabilities` and `args`. It is derived from the two existing sources of truth
+(app manifests and the action argument schema) so it cannot drift from the runtime.
+
+A request from the wrong app is refused deterministically, without rerouting and without
+auto-opening another app:
+
+```
+TERMINAL cannot run in aca.files; allowed apps: aca.terminal
+OPEN_FILE cannot run in aca.wallet; allowed apps: aca.files, aca.editor, aca.data, aca.code, aca.documents
+```
+
+### Repair 3 — failed action sequencing
+
+The session is now resolved **before** validation, so every rejection is attributed to
+real session history with a monotonic sequence. Verified on two new sessions:
+
+| Session | Recorded history |
+|---|---|
+| ACA_SESSION_7fb0e3ca-7c24-400f-80e5-5cc33f1361dc | 1 START_SESSION · 2 NOT_A_REAL_ACTION FAILED · 3 OPEN_FILE FAILED · 4 READ_WALLET · 5 OPEN_APP · 6 SAVE_NOTE · 7 END_SESSION |
+| 6abcb1f20fcf6bdcccf000ef | 1 START_SESSION · 2 OPEN_APP · 3 OPEN_FILE FAILED · 4 TERMINAL FAILED · 5 OPEN_ARTIFACT FAILED · 6 TERMINAL FAILED · 7 OPEN_APP · 8 END_SESSION |
+
+Strictly monotonic in both. The only event holding sequence 1 is a legitimate
+START_SESSION — the previous "1 FAILED, 1 FAILED" pattern is gone. Counters match exactly:
+7 attempts → actions 7 / events 7; 8 attempts → actions 8 / events 8. No attempt is
+recorded twice. Failed events persist with status FAILED and still cannot move the cursor.
+
+Replay remains read-only: two history loads left executions and events unchanged
+(89 → 89). The original 500 → 423 session still replays with its nine actions, all
+COMPLETED, compute 9.
+
+Build passes with only the two pre-existing warnings.
+
+Files changed: `base44/shared/aca/authorization.ts`, `base44/shared/aca/actions.ts` (new),
+`base44/shared/aca/validation.ts`, `base44/shared/aca/workspace.ts`,
+`base44/shared/aca/history.ts`, `base44/shared/aca/operations.ts`,
+`base44/shared/aca/runtime.ts`, `base44/functions/acaWorkspace/entry.ts`.
+
 ## Not yet proven
 
 Forced ACA render failure at runtime, and the non-admin authorization probe at runtime.
