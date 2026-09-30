@@ -1,0 +1,111 @@
+{
+  "name": "ACABrainStep",
+  "type": "object",
+  "properties": {
+    "brain_run_id": {
+      "type": "string"
+    },
+    "computer_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "step_number": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OBSERVING",
+        "THINKING",
+        "VALIDATING",
+        "ACTING",
+        "COMPLETED",
+        "REJECTED",
+        "FAILED",
+        "ABORTED",
+        "BUDGET_EXCEEDED"
+      ],
+      "default": "OBSERVING"
+    },
+    "observation_id": {
+      "type": "string"
+    },
+    "decision_id": {
+      "type": "string"
+    },
+    "action_type": {
+      "type": "string"
+    },
+    "app_id": {
+      "type": "string"
+    },
+    "aca_execution_id": {
+      "type": "string"
+    },
+    "aca_event_id": {
+      "type": "string"
+    },
+    "intent_summary": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "result_preview": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "error_code": {
+      "type": "string"
+    },
+    "error_message": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "compute_cost": {
+      "type": "number",
+      "default": 0
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "duration_ms": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "brain_run_id",
+    "computer_id",
+    "step_number",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

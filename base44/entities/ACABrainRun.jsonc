@@ -1,0 +1,141 @@
+{
+  "name": "ACABrainRun",
+  "type": "object",
+  "properties": {
+    "brain_run_id": {
+      "type": "string"
+    },
+    "computer_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "experiment_id": {
+      "type": "string"
+    },
+    "controller_user_id": {
+      "type": "string"
+    },
+    "goal": {
+      "type": "string",
+      "maxLength": 600
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "STARTING",
+        "RUNNING",
+        "THINKING",
+        "ACTING",
+        "PAUSED",
+        "STOPPING",
+        "COMPLETED",
+        "FAILED",
+        "CANCELLED",
+        "BUDGET_EXCEEDED"
+      ],
+      "default": "STARTING"
+    },
+    "stop_reason": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "ended_at": {
+      "type": "string"
+    },
+    "elapsed_ms": {
+      "type": "number",
+      "default": 0
+    },
+    "steps_used": {
+      "type": "number",
+      "default": 0
+    },
+    "max_steps": {
+      "type": "number",
+      "default": 15
+    },
+    "max_duration_ms": {
+      "type": "number",
+      "default": 120000
+    },
+    "max_consecutive_failures": {
+      "type": "number",
+      "default": 3
+    },
+    "max_identical_retries": {
+      "type": "number",
+      "default": 2
+    },
+    "sim_compute_budget": {
+      "type": "number",
+      "default": 40
+    },
+    "sim_compute_used": {
+      "type": "number",
+      "default": 0
+    },
+    "consecutive_failures": {
+      "type": "number",
+      "default": 0
+    },
+    "last_action_signature": {
+      "type": "string"
+    },
+    "identical_retries": {
+      "type": "number",
+      "default": 0
+    },
+    "model_configuration": {
+      "type": "string",
+      "default": "automatic"
+    },
+    "model_identifier": {
+      "type": "string"
+    },
+    "goal_result": {
+      "type": "object"
+    },
+    "lock_request": {
+      "type": "string"
+    },
+    "lock_expires": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "brain_run_id",
+    "computer_id",
+    "agent_id",
+    "goal",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

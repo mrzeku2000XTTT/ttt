@@ -10,6 +10,10 @@ export async function dispatch(base, body) {
   const ctx = await scoped(base,body.computer_id);
   const type = body.action_type; const a = body.args || {};
   if (typeof type !== 'string' || typeof body.request_id !== 'string' || body.request_id.length > 100 || typeof a !== 'object' || Array.isArray(a)) fail('INVALID_REQUEST');
+  // V0.2 guard: while an autonomous run owns this computer, only that run may drive it.
+  // Inert whenever no run is active, so V0.1 behaviour is unchanged.
+  const controller = (await ctx.sr.entities.ACABrainRun.filter({computer_id:ctx.c.id,status:{$in:['STARTING','RUNNING','THINKING','ACTING','PAUSED','STOPPING']}},'created_date',1))[0];
+  if (controller && body.brain_run_id !== controller.id) fail('BRAIN_CONTROLLED','An autonomous run controls this computer');
   const prior = (await ctx.sr.entities.ACAActionExecution.filter({computer_id:ctx.c.id,request_id:body.request_id},'created_date',1))[0];
   if (prior) return {execution:prior,computer:ctx.c,result:prior.output_reference || {},duplicate:true};
   const lock = await ctx.sr.entities.AgentComputer.updateMany({id:ctx.c.id,$or:[{lock_request:''},{lock_expires:{$lt:iso()}}]},{$set:{lock_request:body.request_id,lock_expires:new Date(Date.now()+120000).toISOString()}});

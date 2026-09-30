@@ -1,0 +1,56 @@
+{
+  "name": "ACABrainObservation",
+  "type": "object",
+  "properties": {
+    "brain_run_id": {
+      "type": "string"
+    },
+    "computer_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "step_number": {
+      "type": "number"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "byte_size": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "brain_run_id",
+    "computer_id",
+    "step_number",
+    "payload"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

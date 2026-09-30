@@ -1,0 +1,88 @@
+{
+  "name": "ACABrainDecision",
+  "type": "object",
+  "properties": {
+    "brain_run_id": {
+      "type": "string"
+    },
+    "computer_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "step_number": {
+      "type": "number"
+    },
+    "decision_type": {
+      "type": "string",
+      "enum": [
+        "ACTION",
+        "GOAL_COMPLETE",
+        "CANNOT_CONTINUE"
+      ],
+      "default": "ACTION"
+    },
+    "intent_summary": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "proposed_action": {
+      "type": "object"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "VALID",
+        "REJECTED"
+      ],
+      "default": "VALID"
+    },
+    "rejection_code": {
+      "type": "string"
+    },
+    "rejection_message": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "model_configuration": {
+      "type": "string",
+      "default": "automatic"
+    },
+    "model_identifier": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "brain_run_id",
+    "computer_id",
+    "step_number",
+    "decision_type",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
