@@ -227,22 +227,4 @@ export function ensurePlayersLayer(map) {
       "circle-stroke-width": 1.5,
     },
   });
-  // Text labels use the built-in sans-serif stack — no external glyph server.
-  map.addLayer({
-    id: "ev-players-label",
-    type: "symbol",
-    source: "ev-players",
-    layout: {
-      "text-field": ["get", "code"],
-      "text-size": 11,
-      "text-offset": [0, -1.6],
-      "text-anchor": "bottom",
-      "text-allow-overlap": true,
-    },
-    paint: {
-      "text-color": "#e0fbff",
-      "text-halo-color": "#03070d",
-      "text-halo-width": 2,
-    },
-  });
 }
