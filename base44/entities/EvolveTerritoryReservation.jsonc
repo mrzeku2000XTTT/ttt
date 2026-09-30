@@ -1,0 +1,76 @@
+{
+  "name": "EvolveTerritoryReservation",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "reservation_key": {
+      "type": "string",
+      "description": "Stable key (TRES_{claim_action_id}) \u2014 uniqueness enforced at the persistent layer"
+    },
+    "claim_id": {
+      "type": "string",
+      "description": "EvolveTerritoryClaim record id that owns this reservation"
+    },
+    "claim_action_id": {
+      "type": "string"
+    },
+    "actor_id": {
+      "type": "string"
+    },
+    "cell_id": {
+      "type": "string",
+      "description": "Geographic cell this reservation locks"
+    },
+    "resources": {
+      "type": "object",
+      "description": "Reserved world-resource bundle (existing resource ids only)"
+    },
+    "resource_units": {
+      "type": "number",
+      "default": 0,
+      "description": "Total reserved units, used for capacity accounting"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "RESERVED",
+        "CONSUMED",
+        "RELEASED"
+      ],
+      "default": "RESERVED"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "settled_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "reservation_key",
+    "actor_id",
+    "cell_id",
+    "status"
+  ],
+  "rls": {
+    "read": null,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

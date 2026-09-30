@@ -1,0 +1,154 @@
+{
+  "name": "EvolveTerritoryClaim",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "claim_action_id": {
+      "type": "string",
+      "description": "Idempotency key \u2014 unique per intended claim. Resubmitting the same key returns the existing claim."
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "Stable actor key (agent_key AGT_0011, player_key PLR_0001)"
+    },
+    "actor_type": {
+      "type": "string",
+      "enum": [
+        "AI",
+        "HUMAN",
+        "ORGANIZATION"
+      ],
+      "default": "AI"
+    },
+    "actor_code": {
+      "type": "string",
+      "description": "Display code (A#011)"
+    },
+    "controller_id": {
+      "type": "string",
+      "description": "Effective controller \u2014 the organization when the actor belongs to one, otherwise the actor itself"
+    },
+    "target_cell_id": {
+      "type": "string",
+      "description": "Geographic cell G{lat*1e6}_{lng*1e6} the claim expands into"
+    },
+    "from_cell_id": {
+      "type": "string",
+      "description": "The adjacent cell already controlled that this expansion grows from"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "REQUESTED",
+        "VALIDATING",
+        "RESOURCES_RESERVED",
+        "PAYMENT_BUILDING",
+        "PAYMENT_BROADCAST",
+        "PAYMENT_CONFIRMING",
+        "PAYMENT_CONFIRMED",
+        "OWNERSHIP_COMMITTING",
+        "OWNERSHIP_COMMITTED",
+        "VALIDATION_FAILED",
+        "INSUFFICIENT_RESOURCES",
+        "POLICY_REJECTED",
+        "INSUFFICIENT_TKAS",
+        "PAYMENT_FAILED",
+        "PAYMENT_TIMEOUT",
+        "OWNERSHIP_FAILED"
+      ],
+      "default": "REQUESTED"
+    },
+    "resource_cost": {
+      "type": "object",
+      "description": "World-resource cost of this expansion (existing resource ids only)"
+    },
+    "resource_reservation_id": {
+      "type": "string",
+      "description": "EvolveTerritoryReservation record id holding the resource lock"
+    },
+    "sender_address": {
+      "type": "string",
+      "description": "Public kaspatest: address of the paying actor wallet"
+    },
+    "treasury_address": {
+      "type": "string",
+      "description": "Public kaspatest: address of the EVOLVE Territory Treasury"
+    },
+    "amount_sompi": {
+      "type": "number",
+      "default": 0
+    },
+    "tx_id": {
+      "type": "string",
+      "description": "TN-10 txid once broadcast \u2014 broadcast is NOT confirmation"
+    },
+    "confirmation_evidence": {
+      "type": "object",
+      "description": "What the chain actually proved: paidSompi, inputAddresses, txid"
+    },
+    "previous_owner_id": {
+      "type": "string",
+      "description": "Controller before the commit \u2014 null/empty for a neutral cell"
+    },
+    "utility": {
+      "type": "number",
+      "description": "The frontier utility that justified this claim"
+    },
+    "requested_at": {
+      "type": "string"
+    },
+    "validated_at": {
+      "type": "string"
+    },
+    "reserved_at": {
+      "type": "string"
+    },
+    "broadcast_at": {
+      "type": "string"
+    },
+    "confirmed_at": {
+      "type": "string"
+    },
+    "ownership_committed_at": {
+      "type": "string"
+    },
+    "failure_code": {
+      "type": "string"
+    },
+    "failure_detail": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "day": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "experiment_id",
+    "claim_action_id",
+    "actor_id",
+    "target_cell_id",
+    "status"
+  ],
+  "rls": {
+    "read": null,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

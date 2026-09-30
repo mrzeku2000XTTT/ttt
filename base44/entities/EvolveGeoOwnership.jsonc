@@ -39,9 +39,23 @@
       "enum": [
         "SPAWN",
         "CLAIM",
-        "BUILD"
+        "BUILD",
+        "ECONOMIC_EXPANSION"
       ],
       "default": "SPAWN"
+    },
+    "claim_id": {
+      "type": "string",
+      "description": "EvolveTerritoryClaim record id when this cell was acquired through an economic expansion. Empty for SPAWN/CLAIM."
+    },
+    "claim_tx_id": {
+      "type": "string",
+      "description": "TN-10 txid of the verified settlement that acquired this cell"
+    },
+    "claim_amount_sompi": {
+      "type": "number",
+      "default": 0,
+      "description": "Verified settlement amount for this cell, in sompi"
     },
     "center_lat": {
       "type": "number",
