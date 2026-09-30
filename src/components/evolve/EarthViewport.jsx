@@ -24,6 +24,7 @@ import {
   addStateBorders,
   ensureCellsLayer,
   ensureActorsLayer,
+  ensurePlayersLayer,
 } from "@/lib/evolve/evolveMapStyle";
 import { toValidLngLat } from "@/lib/evolve/geoService";
 import {
@@ -129,6 +130,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       addCountryBorders(map, c110, { id: "ev-countries-110", minzoom: 0, maxzoom: 4, color: EVOLVE_COLORS.borderStrong, width: 0.8 });
       ensureCellsLayer(map);
       ensureActorsLayer(map);
+      ensurePlayersLayer(map);
       setMapReady(true);
       // detail tiers
       loadCountries50().then((c50) => { if (!disposed) addCountryBorders(map, c50, { id: 'ev-countries-50', minzoom: 4, color: EVOLVE_COLORS.border, width: 0.6 }); });
@@ -303,6 +305,20 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       feats.push({ type: "Feature", properties: { color: "#22d3ee", r: 5, kind: "player", type: "player", id: pl.id, x: pl.position.x, y: pl.position.y }, geometry: { type: "Point", coordinates: coords } });
     }
     map.getSource("ev-actors").setData({ type: "FeatureCollection", features: feats });
+
+    // Players also render on their own non-clustered layer so every human is
+    // individually visible with a code label, even when sharing a cell.
+    if (map.getSource("ev-players")) {
+      const pfeats = (engine.players || [])
+        .filter((p) => p.position)
+        .map((pl) => {
+          const coords = toLngLat(pl.position);
+          if (!coords) return null;
+          return { type: "Feature", properties: { code: pl.code || "P", id: pl.id }, geometry: { type: "Point", coordinates: coords } };
+        })
+        .filter(Boolean);
+      map.getSource("ev-players").setData({ type: "FeatureCollection", features: pfeats });
+    }
   }
 
   function updateLabels(map, z) {
@@ -333,7 +349,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     const tol = 7;
     const hits = map.queryRenderedFeatures(
       [[e.point.x - tol, e.point.y - tol], [e.point.x + tol, e.point.y + tol]],
-      { layers: ["ev-actors-circle"] }
+      { layers: ["ev-actors-circle", "ev-players-circle"] }
     );
     if (hits.length) {
       const p = hits[0].properties || {};

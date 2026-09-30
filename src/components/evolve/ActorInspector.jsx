@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import LiveBalance from '@/components/evolve/LiveBalance';
 import ChainAmount from '@/components/evolve/ChainAmount';
+import PlayerMailModal from '@/components/evolve/PlayerMailModal';
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { C, orgColor } from "@/lib/evolve/constants";
 
@@ -13,7 +14,8 @@ import { C, orgColor } from "@/lib/evolve/constants";
  * Never exposes private user information.
  */
 export default function ActorInspector({ actorId, actorType, onClose, onAction, onComputer }) {
-  const { engine, user } = useEvolve();
+  const { engine, user, currentPlayer } = useEvolve();
+  const [mailOpen, setMailOpen] = useState(false);
   if (!engine) return null;
 
   const actor = actorType === "agent"
@@ -78,11 +80,18 @@ export default function ActorInspector({ actorId, actorType, onClose, onAction, 
                 <ActBtn label="COOPERATE" onClick={() => onAction?.("COOPERATE", actor)} />
                 <ActBtn label="ORG INVITE" onClick={() => onAction?.("ORG_INVITE", actor)} />
                 <ActBtn label="FOLLOW" onClick={() => onAction?.("FOLLOW", actor)} />
+                <ActBtn label="SEND MAIL" onClick={() => setMailOpen(true)} />
               </>
             )}
           </div>
         </div>
       </div>
+      {mailOpen && !isAI && (
+        <PlayerMailModal
+          recipient={{ ...actor, senderName: currentPlayer?.code || "EVOLVE Player" }}
+          onClose={() => setMailOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -202,3 +202,47 @@ export function ensureActorsLayer(map) {
     },
   });
 }
+
+/**
+ * Players get their own NON-clustered source + circle + text label, so every
+ * human player is always individually visible on the map with their code — even
+ * when several share the same cell (the actors layer would cluster them into one
+ * anonymous dot). The label is the player's display code (P#001).
+ */
+export function ensurePlayersLayer(map) {
+  if (hasLayer(map, "ev-players-circle")) return;
+  map.addSource("ev-players", {
+    type: "geojson",
+    data: { type: "FeatureCollection", features: [] },
+  });
+  map.addLayer({
+    id: "ev-players-circle",
+    type: "circle",
+    source: "ev-players",
+    paint: {
+      "circle-color": "#22d3ee",
+      "circle-radius": 6,
+      "circle-opacity": 0.95,
+      "circle-stroke-color": "#03070d",
+      "circle-stroke-width": 1.5,
+    },
+  });
+  // Text labels use the built-in sans-serif stack — no external glyph server.
+  map.addLayer({
+    id: "ev-players-label",
+    type: "symbol",
+    source: "ev-players",
+    layout: {
+      "text-field": ["get", "code"],
+      "text-size": 11,
+      "text-offset": [0, -1.6],
+      "text-anchor": "bottom",
+      "text-allow-overlap": true,
+    },
+    paint: {
+      "text-color": "#e0fbff",
+      "text-halo-color": "#03070d",
+      "text-halo-width": 2,
+    },
+  });
+}
