@@ -16,14 +16,19 @@
 import maplibregl from "maplibre-gl";
 import { Protocol as PmtilesProtocol } from "pmtiles";
 
+/**
+ * Basemap tones. Land, coastlines and borders MUST sit clearly above the ocean
+ * in brightness: at the old values (#0d1418 land on #03070d ocean) the whole
+ * planet rendered as a flat black void and the map read as "nothing there".
+ */
 export const EVOLVE_COLORS = {
-  ocean: "#03070d",
-  land: "#0d1418",
-  landLine: "#16242c",
-  coast: "#1d3038",
-  border: "#2a3a4a",
-  borderStrong: "#34506a",
-  stateBorder: "#1f2d3a",
+  ocean: "#050a12",
+  land: "#16232d",
+  landLine: "#2c4655",
+  coast: "#2c4655",
+  border: "#3a5670",
+  borderStrong: "#4d7395",
+  stateBorder: "#26384a",
   cell: "#22d3ee",
   actor: "#e2e8f0",
 };

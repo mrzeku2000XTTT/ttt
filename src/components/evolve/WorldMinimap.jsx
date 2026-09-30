@@ -3,45 +3,47 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Plus, Minus, Locate } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
-import { camToView, viewToCam, gridToLatLng, toValidLngLat, loadLand50, loadCountries110 } from "@/lib/evolve/geoService";
+import { camToView, viewToCam, gridToLatLng, loadLand50, loadCountries110 } from "@/lib/evolve/geoService";
 import { initialStyle, EVOLVE_COLORS, registerPmtilesProtocol, addLandLayer, addCountryBorders } from "@/lib/evolve/evolveMapStyle";
 
 /**
- * The minimap shows a WIDER slice of the same Earth than the main viewport, so
- * its own zoom sits this many levels below the main map's.
- */
-const MINI_ZOOM_OFFSET = 2.5;
-const MINI_MAX_ZOOM = 11 - MINI_ZOOM_OFFSET;
-
-/**
- * WorldMinimap — the main map in miniature.
+ * The minimap is a world OVERVIEW: it always shows the whole planet, so the
+ * viewport rectangle always means something and you can never lose the camera.
  *
- * It renders the SAME self-hosted Earth basemap the main viewport uses (land +
- * country borders), draws the current viewport rectangle on top, and is fully
- * interactive: dragging or zooming the minimap moves the main camera. It is a
- * navigation control, not a picture of a different world.
+ * It is deliberately NOT a second copy of the main camera. Mirroring the main
+ * camera into it at a fixed zoom offset meant that at high zoom the "minimap"
+ * showed a few degrees of ocean, and because MapLibre clamps a camera against
+ * its bounds, every mirrored move could be misread as the user navigating the
+ * minimap — which dragged the main camera outward until both views sat on an
+ * empty corner of the world.
  */
+const WORLD_ZOOM = -0.9;
+
 export default function WorldMinimap({ cam, setCam, mapSize }) {
   const { engine } = useEvolve();
   const ref = useRef(null);
   const mapRef = useRef(null);
-  // The view we last pushed INTO the minimap. A move we caused ourselves must
-  // not be read back as user navigation — that ping-pong dragged the main
-  // camera around (and upward) on its own.
-  const pushedRef = useRef(null);
   const world = engine?.world;
 
-  /* build the mini map once */
+  // Read by the map's event handlers, which outlive any single render.
+  const camRef = useRef(cam);
+  const sizeRef = useRef(mapSize);
+  const worldRef = useRef(world);
+  camRef.current = cam;
+  sizeRef.current = mapSize;
+  worldRef.current = world;
+
+  /* build the world overview once */
   useEffect(() => {
     if (!world || !ref.current || mapRef.current) return undefined;
     registerPmtilesProtocol();
     const map = new maplibregl.Map({
       container: ref.current,
       style: initialStyle(),
-      center: [0, 20],
-      zoom: 1,
-      minZoom: 0,
-      maxZoom: MINI_MAX_ZOOM,
+      center: [0, 0],
+      zoom: WORLD_ZOOM,
+      minZoom: WORLD_ZOOM,
+      maxZoom: 5,
       maxBounds: [[-180, -85], [180, 85]],
       attributionControl: false,
       dragRotate: false,
@@ -58,7 +60,7 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
         id: "ev-mini-view-fill",
         type: "fill",
         source: "ev-mini-view",
-        paint: { "fill-color": EVOLVE_COLORS.cell, "fill-opacity": 0.1 },
+        paint: { "fill-color": EVOLVE_COLORS.cell, "fill-opacity": 0.12 },
       });
       map.addLayer({
         id: "ev-mini-view-line",
@@ -66,10 +68,19 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
         source: "ev-mini-view",
         paint: { "line-color": EVOLVE_COLORS.cell, "line-width": 1.4 },
       });
+      map.resize();
     });
 
-    map.on("moveend", () => onMiniMoveEnd(map));
-    map.on("zoomend", () => onMiniMoveEnd(map));
+    // Clicking a place on the overview moves the main camera there and keeps the
+    // main zoom. This is the ONLY way the minimap writes to the camera, so the
+    // two can never chase each other.
+    map.on("click", (e) => {
+      const w = worldRef.current;
+      const size = sizeRef.current;
+      if (!w || !size?.w || !size?.h) return;
+      const zoom = camToView(camRef.current, w, size).zoom;
+      setCam(viewToCam([e.lngLat.lat, e.lngLat.lng], zoom, w, size));
+    });
 
     return () => {
       map.remove();
@@ -78,22 +89,10 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [world]);
 
-  /* mirror the main camera and redraw the viewport rectangle */
+  /* draw where the main camera is looking */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !world || !mapSize?.w || !mapSize?.h) return;
-
-    const view = camToView(cam, world, mapSize);
-    const zoom = Math.max(0, Math.min(MINI_MAX_ZOOM, view.zoom - MINI_ZOOM_OFFSET));
-    const center = toValidLngLat(view.center[1], view.center[0]);
-    if (center) {
-      const cur = map.getCenter();
-      if (Math.abs(cur.lng - center[0]) > 0.01 || Math.abs(cur.lat - center[1]) > 0.01 || Math.abs(map.getZoom() - zoom) > 0.05) {
-        pushedRef.current = { lng: center[0], lat: center[1], zoom };
-        map.jumpTo({ center, zoom });
-      }
-    }
-
     const src = map.getSource("ev-mini-view");
     if (!src) return;
     const scale = cam.scale > 0 ? cam.scale : 6;
@@ -121,36 +120,14 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cam, world, mapSize]);
 
-  /* user panned/zoomed the minimap → move the main camera */
-  function onMiniMoveEnd(map) {
-    if (!world || !mapSize?.w || !mapSize?.h) return;
-    const c = map.getCenter();
-    const pushed = pushedRef.current;
-    pushedRef.current = null;
-    if (
-      pushed &&
-      Math.abs(pushed.lng - c.lng) < 0.02 &&
-      Math.abs(pushed.lat - c.lat) < 0.02 &&
-      Math.abs(pushed.zoom - map.getZoom()) < 0.05
-    ) {
-      return; // our own push, not the user moving the minimap
-    }
-    const next = viewToCam([c.lat, c.lng], map.getZoom() + MINI_ZOOM_OFFSET, world, mapSize);
-    // Bail out when the camera already matches, so mirroring the main map back
-    // into the minimap can never ping-pong between the two.
-    setCam((prev) =>
-      Math.abs(prev.x - next.x) < 0.6 && Math.abs(prev.y - next.y) < 0.6 && Math.abs(prev.scale - next.scale) < 0.05 ? prev : next
-    );
-  }
-
   if (!engine || !world) return null;
 
   return (
     <div className="ev-section">
       <div className="ev-row" style={{ marginBottom: 6 }}>
-        <span className="ev-label">Minimap</span>
+        <span className="ev-label">Minimap · tap to jump</span>
         <div style={{ display: "flex", gap: 3 }}>
-          <button className="ev-btn ev-btn-ghost" style={{ padding: 4 }} onClick={() => setCam((p) => ({ ...p, scale: Math.min(world.width > 0 ? (256 * 8192) / world.width : p.scale, p.scale * 1.6) }))} title="Zoom in">
+          <button className="ev-btn ev-btn-ghost" style={{ padding: 4 }} onClick={() => setCam((p) => ({ ...p, scale: Math.min((256 * 8192) / world.width, p.scale * 1.6) }))} title="Zoom in">
             <Plus className="h-3 w-3" />
           </button>
           <button className="ev-btn ev-btn-ghost" style={{ padding: 4 }} onClick={() => setCam((p) => ({ ...p, scale: Math.max((256 * 4) / world.width, p.scale / 1.6) }))} title="Zoom out">
@@ -161,7 +138,7 @@ export default function WorldMinimap({ cam, setCam, mapSize }) {
             style={{ padding: 4 }}
             title="Centre the world"
             onClick={() =>
-              setCam({ scale: 6, x: engine.world.width / 2 - (mapSize?.w || 400) / 12, y: engine.world.height / 2 - (mapSize?.h || 300) / 12 })
+              setCam({ scale: 6, x: world.width / 2 - (mapSize?.w || 400) / 12, y: world.height / 2 - (mapSize?.h || 300) / 12 })
             }
           >
             <Locate className="h-3 w-3" />

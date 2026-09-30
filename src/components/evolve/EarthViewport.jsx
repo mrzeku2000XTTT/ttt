@@ -160,8 +160,14 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     if (Math.abs(view.center[0] - cur.lat) < 0.01 && Math.abs(view.center[1] - cur.lng) < 0.01 && Math.abs(view.zoom - curZ) < 0.05) return;
     const valid = toValidLngLat(view.center[1], view.center[0]);
     if (!valid) return; // skip invalid camera coordinate rather than crash
-    pushedViewRef.current = { lng: valid[0], lat: valid[1], zoom: view.zoom };
     map.jumpTo({ center: valid, zoom: view.zoom });
+    // Record what the map ACTUALLY ended up at, not what we asked for.
+    // MapLibre clamps the centre against maxBounds, and a clamped move is still
+    // OUR move — comparing against the requested view let the clamp read as
+    // user navigation, which walked the camera to the world edge one round trip
+    // at a time until it sat over open ocean.
+    const after = map.getCenter();
+    pushedViewRef.current = { lng: after.lng, lat: after.lat, zoom: map.getZoom() };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cam, mapReady, size.w]);
 
