@@ -170,8 +170,18 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   /* cell overlay refresh on moveend/zoomend (LOD + land-filtered) */
   function onMoveEnd() {
     const map = mapRef.current;
-    if (!map || !world) return;
+    if (!map || !world || !size.w) return;
     updateCells(map, map.getZoom());
+    // Keep the engine camera in step with the real map so the minimap and the
+    // viewport rectangle always describe what is actually on screen. Skipped
+    // when the whole world is already visible — there is nothing to sync.
+    const b = map.getBounds();
+    if (b.getEast() - b.getWest() >= 350) return;
+    const c = map.getCenter();
+    const next = viewToCam([c.lat, c.lng], map.getZoom(), world, size);
+    setCam((prev) =>
+      Math.abs(prev.x - next.x) < 0.6 && Math.abs(prev.y - next.y) < 0.6 && Math.abs(prev.scale - next.scale) < 0.05 ? prev : next
+    );
   }
 
   /* overlay refresh when engine state changes */

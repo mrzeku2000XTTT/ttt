@@ -193,13 +193,8 @@ export default function EvolveApp() {
         <PlayerActionBar
           active={playerSheet}
           onAction={(id) => {
-            const map = { MARKET: "TRADE", PEOPLE: "MORE", ORGS: "MORE", RESEARCH: "MORE", DEFEND: "MORE" };
-            const target = map[id] || id;
-            if (target === "MORE") {
-              setPlayerSheet(playerSheet === "MORE" ? null : "MORE");
-            } else {
-              setPlayerSheet(playerSheet === target ? null : target);
-            }
+            const target = id === "MARKET" ? "TRADE" : id === "PEOPLE" ? "MORE" : id;
+            setPlayerSheet(playerSheet === target ? null : target);
           }}
         />
       )}
@@ -214,12 +209,10 @@ export default function EvolveApp() {
       {playerSheet === "MORE" && (
         <div className="ev-sheet" style={{ bottom: 56, left: 60, right: 12, padding: 12 }}>
           <div style={{ fontSize: 9, letterSpacing: "0.12em", color: "#54657c", marginBottom: 8 }}>MORE ACTIONS</div>
+          {/* Only actions that are NOT already on the left navigation. */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="ev-btn" onClick={() => { setPlayerSheet("CONTRACTS"); }}>CONTRACTS</button>
             <button className="ev-btn" onClick={() => { setPlayerSheet("NOTIFICATIONS"); }}>NOTIFICATIONS</button>
-            <button className="ev-btn ev-btn-ghost" onClick={() => { setView("AGENTS"); setPlayerSheet(null); }}>PEOPLE</button>
-            <button className="ev-btn ev-btn-ghost" onClick={() => { setView("FACTIONS"); setPlayerSheet(null); }}>ORGS</button>
-            <button className="ev-btn ev-btn-ghost" onClick={() => { setView("RESEARCH"); setPlayerSheet(null); }}>RESEARCH</button>
             <button className="ev-btn ev-btn-ghost" onClick={() => { enterObserverMode(); setShowHome(true); setPlayerSheet(null); }}>OBSERVER MODE</button>
           </div>
         </div>

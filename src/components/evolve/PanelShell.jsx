@@ -13,15 +13,19 @@ export const usePaneMode = () => useContext(PaneMode);
 export default function PanelShell({ title, subtitle, onClose, children, side = "right", width = 340 }) {
   const mode = usePaneMode();
 
-  const style =
-    mode === "center"
-      ? { flex: 1, minWidth: 0, minHeight: 0 }
-      : side === "right"
-      ? { position: "absolute", top: 0, right: 0, bottom: 0, width, maxWidth: "94%", zIndex: 30 }
-      : { position: "absolute", top: 0, left: 0, bottom: 0, width, maxWidth: "94%", zIndex: 30 };
+  // Centre mode is a real page in the middle column — the same shape the Agents
+  // roster uses. It must stay in normal flow: applying the floating `.ev-sheet`
+  // chrome there took the panel out of layout and let it overlap its neighbours.
+  const center = mode === "center";
+
+  const style = center
+    ? { flex: 1, minWidth: 0, minHeight: 0, border: "none" }
+    : side === "right"
+    ? { position: "absolute", top: 0, right: 0, bottom: 0, width, maxWidth: "94%", zIndex: 30 }
+    : { position: "absolute", top: 0, left: 0, bottom: 0, width, maxWidth: "94%", zIndex: 30 };
 
   return (
-    <div className={`ev-sheet ev-scroll ${mode === "center" ? "ev-panel" : ""}`} style={style}>
+    <div className={`ev-scroll ${center ? "ev-panel" : "ev-sheet"}`} style={style}>
       <div className="ev-panel-head">
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="ev-panel-title" style={{ color: "#eef3f9", fontSize: 11, letterSpacing: "0.1em" }}>{title}</div>

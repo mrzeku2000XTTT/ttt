@@ -1,11 +1,15 @@
 import React from "react";
-import { Move, Briefcase, ArrowLeftRight, Hammer, Store, Users, Building2, FlaskConical, Shield, MoreHorizontal } from "lucide-react";
+import { Move, Briefcase, ArrowLeftRight, Hammer, Store, Users, MoreHorizontal } from "lucide-react";
 import { C } from "@/lib/evolve/constants";
 
 /**
- * PlayerActionBar — bottom action bar for landscape phones.
- * MOVE · JOBS · TRADE · BUILD · MARKET · PEOPLE · ORGS · RESEARCH · DEFEND · MORE
- * Horizontal scroll, touch targets >= 44px.
+ * PlayerActionBar — the bottom action bar.
+ * MOVE · JOBS · TRADE · BUILD · MARKET · PEOPLE · MORE
+ *
+ * Only player actions live here. Everything that is already a destination on
+ * the left navigation (Organizations, Research, Agents) is NOT repeated — those
+ * are reached from the nav or from MORE. The bar sits in normal layout flow so
+ * it can never be covered by a panel.
  */
 const ACTIONS = [
   { id: "MOVE", icon: Move, label: "MOVE" },
@@ -14,16 +18,13 @@ const ACTIONS = [
   { id: "BUILD", icon: Hammer, label: "BUILD" },
   { id: "MARKET", icon: Store, label: "MARKET" },
   { id: "PEOPLE", icon: Users, label: "PEOPLE" },
-  { id: "ORGS", icon: Building2, label: "ORGS" },
-  { id: "RESEARCH", icon: FlaskConical, label: "RESEARCH" },
-  { id: "DEFEND", icon: Shield, label: "DEFEND" },
   { id: "MORE", icon: MoreHorizontal, label: "MORE" },
 ];
 
 export default function PlayerActionBar({ onAction, active }) {
   return (
-    <div style={{
-      position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 20,
+    <div className="ev-action-bar" style={{
+      flex: "none", position: "relative", zIndex: 20,
       display: "flex", gap: 4, padding: "6px 8px",
       background: "rgba(7,11,19,0.95)", borderTop: `1px solid ${C.line}`,
       overflowX: "auto", scrollbarWidth: "none",

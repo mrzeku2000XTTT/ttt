@@ -68,7 +68,7 @@ export default function JobMarket({ onClose, onSelectJob }) {
       )}
 
       {jobs.map((job) => (
-        <div key={job.id} className="ev-section" style={{ cursor: "pointer" }} onClick={() => onSelectJob(job.id)}>
+        <div key={job.id} className="ev-section" style={{ cursor: "pointer", padding: "7px 10px" }} onClick={() => onSelectJob(job.id)}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#eef3f9" }}>{job.code}</span>
             <span className="ev-chip" style={{ borderColor: STATUS_COLOR[job.status], color: STATUS_COLOR[job.status] }}>{job.status}</span>
@@ -76,8 +76,8 @@ export default function JobMarket({ onClose, onSelectJob }) {
             <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: "#34d399" }}>{fmt(job.reward)} tKAS</span>
           </div>
           <div style={{ fontSize: 10.5, color: "#c9d6e4", marginTop: 4 }}>{job.title}</div>
-          <div style={{ fontSize: 10, color: "#7d90a8", marginTop: 3, lineHeight: 1.4 }}>{job.brief}</div>
-          <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap", minHeight: 26 }}>
+          <div style={{ fontSize: 9.5, color: "#7d90a8", marginTop: 2, lineHeight: 1.35 }}>{job.brief}</div>
+          <div style={{ display: "flex", gap: 10, marginTop: 6, alignItems: "center", flexWrap: "wrap", minHeight: 22 }}>
             <span className="ev-label">Difficulty {job.difficulty}</span>
             <span className="ev-label">Verification {job.verification}</span>
             {job.status !== "OPEN" && job.progress > 0 && (
