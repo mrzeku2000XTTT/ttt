@@ -1,0 +1,92 @@
+{
+  "name": "EvolveAgentListing",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "listing_key": {
+      "type": "string",
+      "description": "Stable internal id (LST_0001)"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "EvolveAgent agent_key being sold"
+    },
+    "agent_code": {
+      "type": "string"
+    },
+    "agent_name": {
+      "type": "string"
+    },
+    "seller_user_id": {
+      "type": "string",
+      "description": "Base44 user id of the owner selling the agent"
+    },
+    "seller_code": {
+      "type": "string"
+    },
+    "seller_address": {
+      "type": "string",
+      "description": "kaspatest: payout address the buyer pays directly"
+    },
+    "price_sompi": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "RESERVED",
+        "SOLD",
+        "CANCELLED"
+      ],
+      "default": "OPEN"
+    },
+    "buyer_user_id": {
+      "type": "string",
+      "description": "Set when a buyer reserves the listing"
+    },
+    "buyer_code": {
+      "type": "string"
+    },
+    "reserved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payment_txid": {
+      "type": "string",
+      "description": "TN-10 txid of the buyer's payment to the seller"
+    },
+    "sold_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "listing_key",
+    "agent_id",
+    "seller_user_id",
+    "price_sompi",
+    "status"
+  ],
+  "rls": {
+    "read": null,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

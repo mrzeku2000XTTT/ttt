@@ -297,6 +297,27 @@ export class EvolveEngine {
     return { ok: true, agent };
   }
 
+  /**
+   * Hand an agent to a new owner after a verified market sale. The server has
+   * already moved the authoritative record; this only brings the running world
+   * in line so control follows the new owner without a reload.
+   */
+  transferAgentOwnership(agentId, { userId, playerId } = {}) {
+    const agent = this.agentById.get(agentId);
+    if (!agent) return { ok: false, reason: "UNKNOWN_AGENT" };
+    agent.owner_user_id = userId || "";
+    agent.owner_player_id = playerId || "";
+    this.emit({
+      type: "AGENT_SOLD",
+      category: "ECONOMY",
+      message: `${agent.code} changed hands on the agent market`,
+      target_id: agent.id,
+      target_code: agent.code,
+    });
+    this.notify();
+    return { ok: true, agent };
+  }
+
   /* ----------------------------------------------------------- clock/label */
   clockLabel() {
     const minutes = Math.floor((this.world.dayTicks / TICKS_PER_DAY) * 24 * 60);

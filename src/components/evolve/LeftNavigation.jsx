@@ -1,11 +1,12 @@
 import React from "react";
-import { Globe2, Users, Briefcase, Coins, Flag, FlaskConical, Radio, GitBranch, Terminal, Receipt } from "lucide-react";
+import { Globe2, Users, Briefcase, Coins, Flag, FlaskConical, Radio, GitBranch, Terminal, Receipt, Store } from "lucide-react";
 
 export const NAV_ITEMS = [
   { id: "WORLD", label: "World", icon: Globe2 },
   { id: "AGENTS", label: "Agents", icon: Users },
   { id: "JOBS", label: "Jobs", icon: Briefcase },
   { id: "ECONOMY", label: "Economy", icon: Coins },
+  { id: "MARKET", label: "Market", icon: Store },
   { id: "FACTIONS", label: "Factions", icon: Flag },
   { id: "RESEARCH", label: "Research", icon: FlaskConical },
   { id: "LINEAGE", label: "Lineage", icon: GitBranch },

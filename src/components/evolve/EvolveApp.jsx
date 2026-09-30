@@ -12,6 +12,7 @@ import AssetInspector from "./AssetInspector";
 import JobMarket from "./JobMarket";
 import JobInspector from "./JobInspector";
 import EconomyPanel from "./EconomyPanel";
+import AgentMarketPanel from "./AgentMarketPanel";
 import TreasuryPanel from "./TreasuryPanel";
 import FactionsGrid from "./FactionsGrid";
 import FactionPanel from "./FactionPanel";
@@ -98,6 +99,8 @@ export default function EvolveApp() {
         return <JobMarket onClose={() => setView("WORLD")} onSelectJob={(id) => open("job", id)} />;
       case "ECONOMY":
         return <EconomyPanel onClose={() => setView("WORLD")} />;
+      case "MARKET":
+        return <AgentMarketPanel onClose={() => setView("WORLD")} />;
       case "FACTIONS":
         return <FactionsGrid onClose={() => setView("WORLD")} onSelect={(id) => open("faction", id)} onSelectOrg={(id) => open("org", id)} />;
       case "RESEARCH":

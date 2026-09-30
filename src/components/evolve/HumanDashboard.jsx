@@ -4,6 +4,7 @@ import { useEvolve } from "@/lib/evolve/useEvolve";
 import { C } from "@/lib/evolve/constants";
 import { ScorpionConnectionState as State } from "@/lib/evolve/scorpionAdapter";
 import useTn10Balances from "@/lib/evolve/useTn10Balances";
+import useAgentOwnership from "@/lib/evolve/useAgentOwnership";
 import AIFactoryPanel from "./AIFactoryPanel";
 
 /**
@@ -17,15 +18,22 @@ import AIFactoryPanel from "./AIFactoryPanel";
  *    kaspatest: address as evidence of TN-10 connection
  */
 export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) {
-  const { engine, currentPlayer: player, wallet, pendingTxCount } = useEvolve();
+  const { engine, currentPlayer: player, wallet, pendingTxCount, experimentId } = useEvolve();
   const [copied, setCopied] = useState("");
+
+  // Ownership comes from the server-side ledger (written only by backend
+  // functions), so an agent bought or sold on the market is controlled by its
+  // real owner rather than by whichever browser tab happens to be open.
+  const { mine: ownedIds, loading: ownLoading } = useAgentOwnership(experimentId);
 
   const myAgents = useMemo(() => {
     if (!engine || !player) return [];
-    return engine.agents.filter(
-      (a) => a.status !== "archived" && (a.owner_player_id === player.id || a.owner_user_id === player.user_id)
-    );
-  }, [engine, player, engine?.tickCount]);
+    return engine.agents.filter((a) => {
+      if (a.status === "archived") return false;
+      if (!ownLoading) return ownedIds.has(a.id);
+      return a.owner_player_id === player.id || a.owner_user_id === player.user_id;
+    });
+  }, [engine, player, engine?.tickCount, ownedIds, ownLoading]);
 
   // Real Kaspa TN-10 balances, read from the chain: this player's agents AND
   // their own Scorpion wallet — the wallet's own reported figure goes stale

@@ -109,6 +109,25 @@
     "reproductions": {
       "type": "number",
       "default": 0
+    },
+    "owner_user_id": {
+      "type": "string",
+      "description": "Base44 user id of the human who controls this agent. Authoritative copy lives on EvolveAgentWallet, which only the server writes."
+    },
+    "owner_player_id": {
+      "type": "string",
+      "description": "EvolvePlayer id of the controlling human"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "GENESIS",
+        "FACTORY",
+        "REPRODUCTION",
+        "MARKET",
+        "LEGACY"
+      ],
+      "default": "LEGACY"
     }
   },
   "required": [
