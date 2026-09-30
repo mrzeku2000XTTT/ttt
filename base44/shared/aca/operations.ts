@@ -1,6 +1,6 @@
 import { fail, iso, pathOf, textOf } from './contracts.ts';
 import { readFile, writeFile, entries, entry, mkdir } from './workspace.ts';
-import { assertScope } from './authorization.ts';
+import { assertScope, find } from './authorization.ts';
 import { appOf } from './manifests.ts';
 import { inventoryFixture } from './demoFixture.ts';
 import { cleanInventory } from './dataTransforms.ts';
@@ -51,7 +51,7 @@ export async function operate(ctx, action, a, ex) {
   }
   else if (action === 'CREATE_ARTIFACT' || action === 'OPEN_ARTIFACT') {
     let artifact;
-    if (action === 'OPEN_ARTIFACT') artifact = assertScope(await ctx.sr.entities.AgentArtifact.get(a.artifact_id),ctx.c);
+    if (action === 'OPEN_ARTIFACT') { artifact = await find(ctx.sr,'AgentArtifact',a.artifact_id,'ARTIFACT_NOT_FOUND'); assertScope(artifact,ctx.c,'ARTIFACT_NOT_FOUND'); }
     else { const file = await readFile(ctx,a); const previous = (await ctx.sr.entities.AgentArtifact.filter({computer_id:ctx.c.id,revision_id:file.revision.id},'created_date',1))[0]; artifact = previous || await ctx.sr.entities.AgentArtifact.create({computer_id:ctx.c.id,agent_id:ctx.c.agent_id,session_id:ctx.session.id,execution_id:ex.id,file_id:file.file.id,revision_id:file.revision.id,filename:file.revision.filename,mime_type:file.revision.mime_type,type:file.file.path.endsWith('.csv') ? 'CSV' : file.file.path.endsWith('.json') ? 'JSON' : file.file.path.endsWith('.md') ? 'REPORT' : /\.(js|ts|jsx|tsx|py)$/.test(file.file.path) ? 'CODE' : 'TEXT',size_bytes:file.revision.size_bytes,sha256:file.revision.sha256,metadata:{verification_id:view.verificationId || ''}}); }
     await opened({file_id:artifact.file_id,revision_id:artifact.revision_id},'aca.artifacts'); view.artifactId = artifact.id; result = {artifact_id:artifact.id,file_id:artifact.file_id,revision_id:artifact.revision_id,sha256:artifact.sha256}; target = 'artifact:' + artifact.id;
   }

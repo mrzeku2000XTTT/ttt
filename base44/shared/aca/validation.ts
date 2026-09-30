@@ -1,7 +1,7 @@
 import {fail} from './contracts.ts';
 const COMMON=['app_id'];
 const FILE=['file_id','path','revision_id',...COMMON];
-const FIELDS={
+export const FIELDS={
   START_SESSION:[],END_SESSION:[],OPEN_APP:COMMON,CLOSE_APP:COMMON,CREATE_FIXTURE:[],
   OPEN_FILE:FILE,CREATE_FILE:['path','text',...COMMON],SAVE_AS:['path','text',...COMMON],
   EDIT_FILE:['file_id','text','expected_revision_id',...COMMON],SAVE_FILE:['file_id','text','expected_revision_id',...COMMON],

@@ -1,5 +1,5 @@
 import { fail, pathOf, textOf, MAX_BYTES, ROOTS } from './contracts.ts';
-import { assertScope } from './authorization.ts';
+import { assertScope, find } from './authorization.ts';
 export async function hashBytes(bytes) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(b => b.toString(16).padStart(2,'0')).join(''); }
 export async function entries(ctx) {
   const list = await ctx.sr.entities.ACAWorkspaceEntry.filter({computer_id:ctx.c.id,deleted:false},'path',501);
@@ -10,12 +10,15 @@ export async function entries(ctx) {
 }
 export function publicRevision(r) { if (!r) return null; const {storage_reference, ...safe} = r; return safe; }
 export async function entry(ctx, args) {
-  const e = args.file_id ? await ctx.sr.entities.ACAWorkspaceEntry.get(args.file_id) : (await ctx.sr.entities.ACAWorkspaceEntry.filter({computer_id:ctx.c.id,path:pathOf(args.path),deleted:false},'created_date',1))[0];
-  assertScope(e, ctx.c); if ((e.deleted && !args.revision_id) || e.kind !== 'FILE') fail('FILE_NOT_FOUND'); return e;
+  const e = args.file_id ? await find(ctx.sr,'ACAWorkspaceEntry',args.file_id,'FILE_NOT_FOUND') : (await ctx.sr.entities.ACAWorkspaceEntry.filter({computer_id:ctx.c.id,path:pathOf(args.path),deleted:false},'created_date',1))[0];
+  if (!e) fail('FILE_NOT_FOUND');
+  assertScope(e, ctx.c, 'FILE_NOT_FOUND');
+  if ((e.deleted && !args.revision_id) || e.kind !== 'FILE') fail('FILE_NOT_FOUND'); return e;
 }
 export async function readFile(ctx, args) {
   const e = await entry(ctx,args);
-  const r = assertScope(await ctx.sr.entities.ACAFileRevision.get(args.revision_id || e.revision_id),ctx.c);
+  const r = await find(ctx.sr,'ACAFileRevision',args.revision_id || e.revision_id,'REVISION_NOT_FOUND');
+  assertScope(r, ctx.c, 'REVISION_NOT_FOUND');
   if (r.file_id !== e.id || r.size_bytes > MAX_BYTES) fail('REVISION_FORBIDDEN');
   const {signed_url} = await ctx.sr.integrations.Core.CreateFileSignedUrl({file_uri:r.storage_reference,expires_in:60});
   const response = await fetch(signed_url); if (!response.ok) fail('FILE_READ_FAILED');

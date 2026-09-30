@@ -1,7 +1,8 @@
 import { fail, iso } from './contracts.ts';
-import { scoped, assertScope } from './authorization.ts';
+import { scoped, find } from './authorization.ts';
 import { operate } from './operations.ts';
 import { appOf } from './manifests.ts';
+import { contractOf, mismatchMessage } from './actions.ts';
 import { entries } from './workspace.ts';
 import { validateAction } from './validation.ts';
 const SPECIAL = ['START_SESSION','END_SESSION','CREATE_FIXTURE','OPEN_APP','CLOSE_APP','BROWSER_HISTORY','INSPECT_TOOLS'];
@@ -18,21 +19,33 @@ export async function dispatch(base, body) {
     ctx.c = await ctx.sr.entities.AgentComputer.get(ctx.c.id);
     ex = await ctx.sr.entities.ACAActionExecution.create({computer_id:ctx.c.id,agent_id:ctx.c.agent_id,session_id:body.session_id || '',request_id:body.request_id,requested_by_user_id:ctx.user.id,action_type:type,app_id:a.app_id || ctx.c.current_app_id || '',status:'REQUESTED',requested_at:iso(),cost_sompi:0,input_reference:{file_id:a.file_id || '',revision_id:a.revision_id || '',path:a.path || '',artifact_id:a.artifact_id || '',text_bytes:typeof a.text==='string' ? new TextEncoder().encode(a.text).length : 0}});
     await ctx.sr.entities.ACAActionExecution.update(ex.id,{status:'VALIDATING'});
-    validateAction(type,a);
+    // Resolve the session BEFORE validating: a rejected request must still be attributed to
+    // real session history with a monotonic sequence. Failed attempts are part of the record.
     if (type === 'START_SESSION') {
-      if (ctx.c.current_session_id) fail('SESSION_ALREADY_ACTIVE');
-      session = await ctx.sr.entities.AgentComputerSession.create({session_id:'ACA_SESSION_' + crypto.randomUUID(),computer_id:ctx.c.id,agent_id:ctx.c.agent_id,controller_user_id:ctx.user.id,started_at:iso(),status:'IDLE',trigger:'MANUAL_TEST',actions_count:0,events_count:0,artifacts_created:[],compute_used:0,tool_cost:0,initial_view:{windows:[],activeApp:''}});
-      ctx.c = await ctx.sr.entities.AgentComputer.update(ctx.c.id,{current_session_id:session.id,view_state:{windows:[],activeApp:''}});
+      if (ctx.c.current_session_id) { session = await find(ctx.sr,'AgentComputerSession',ctx.c.current_session_id,'SESSION_NOT_FOUND'); ctx.session = session; fail('SESSION_ALREADY_ACTIVE'); }
     } else {
-      session = assertScope(await ctx.sr.entities.AgentComputerSession.get(body.session_id || ''),ctx.c);
+      const candidate = await find(ctx.sr,'AgentComputerSession',body.session_id || '','SESSION_NOT_FOUND');
+      if (candidate.computer_id !== ctx.c.id || (candidate.agent_id && candidate.agent_id !== ctx.c.agent_id)) fail('SESSION_FORBIDDEN');
+      session = candidate; ctx.session = session;
       if (ctx.c.current_session_id !== session.id || session.controller_user_id !== ctx.user.id || !['IDLE','ACTIVE'].includes(session.status)) fail('SESSION_FORBIDDEN');
       if (session.actions_count >= 180) fail('SESSION_ACTION_LIMIT');
     }
-    ctx.session=session;
+    validateAction(type,a);
+    if (type === 'START_SESSION') {
+      session = await ctx.sr.entities.AgentComputerSession.create({session_id:'ACA_SESSION_' + crypto.randomUUID(),computer_id:ctx.c.id,agent_id:ctx.c.agent_id,controller_user_id:ctx.user.id,started_at:iso(),status:'IDLE',trigger:'MANUAL_TEST',actions_count:0,events_count:0,artifacts_created:[],compute_used:0,tool_cost:0,initial_view:{windows:[],activeApp:''}});
+      ctx.c = await ctx.sr.entities.AgentComputer.update(ctx.c.id,{current_session_id:session.id,view_state:{windows:[],activeApp:''}});
+      ctx.session = session;
+    }
     if (ctx.c.compute_remaining < 1) fail('INSUFFICIENT_SIM_COMPUTE');
+    // Explicit app/action contract: the requesting app must be allowed to request this action.
     if (!SPECIAL.includes(type)) {
-      const app=appOf(a.app_id || ctx.c.current_app_id || 'aca.files');
-      if (!app || !ctx.c.installed_app_ids.includes(app.app_id) || !app.capabilities.includes(type)) fail('ACTION_UNAVAILABLE');
+      const contract=contractOf(type);
+      if (!contract || !contract.allowed_app_ids.length) fail('ACTION_UNAVAILABLE','No ACA app can request ' + type);
+      const requestedApp=a.app_id || ctx.c.current_app_id || '';
+      if (!contract.allowed_app_ids.includes(requestedApp)) fail('APP_ACTION_MISMATCH',mismatchMessage(type,requestedApp));
+      const app=appOf(requestedApp);
+      if (!app || !ctx.c.installed_app_ids.includes(app.app_id)) fail('APP_NOT_INSTALLED',requestedApp + ' is not installed on this computer');
+      if (!contract.required_capabilities.every(cap=>app.capabilities.includes(cap))) fail('APP_CAPABILITY_MISSING',mismatchMessage(type,requestedApp));
     }
     await ctx.sr.entities.AgentComputerSession.update(session.id,{status:'ACTIVE'});
     await ctx.sr.entities.ACAActionExecution.update(ex.id,{status:'RUNNING',session_id:session.id,started_at:iso()});
