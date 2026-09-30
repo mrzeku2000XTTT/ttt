@@ -52,7 +52,11 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
   return (
     <div className="ev-hud-bar">
       <div className="ev-brand">
-        <span className="ev-brand-mark">EVOLVE</span>
+        <img
+          className="ev-brand-logo"
+          src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ae6c9ff91_image.png"
+          alt="EVOLVE"
+        />
         <span className="ev-brand-sub">AI Civilization Sim · Kaspa TN-10</span>
       </div>
 

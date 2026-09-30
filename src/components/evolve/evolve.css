@@ -66,6 +66,10 @@
 }
 .ev-brand { display: flex; flex-direction: column; justify-content: center; padding: 0 14px; border-right: 1px solid rgba(120,160,200,0.14); }
 .ev-brand-mark { font-size: 15px; font-weight: 800; letter-spacing: 0.22em; color: #eef3f9; line-height: 1; }
+/* Supplied artwork is a transparent PNG (dark letters + cyan robot "O"), so it
+   sits directly on the HUD with no plate and no blend mode — blending would
+   wash the charcoal letterforms out against the dark bar. */
+.ev-brand-logo { display: block; height: 22px; width: auto; }
 .ev-brand-sub { font-size: 8px; letter-spacing: 0.16em; color: #54657c; margin-top: 3px; text-transform: uppercase; white-space: nowrap; }
 .ev-metrics { display: flex; align-items: stretch; overflow-x: auto; flex: 1; min-width: 0; }
 .ev-metrics::-webkit-scrollbar { display: none; }
@@ -251,6 +255,7 @@
   .ev-nav { width: 44px; }
   .ev-brand { padding: 0 10px; }
   .ev-brand-mark { font-size: 13px; letter-spacing: 0.16em; }
+  .ev-brand-logo { height: 18px; }
   .ev-tool { min-width: 54px; padding: 6px; min-height: 46px; }
   .ev-clock { padding: 0 8px; }
   /* Secondary clock controls drop so the bar never clips on a phone. */
@@ -287,6 +292,7 @@
 @media (max-height: 520px) {
   .ev-hud-bar { min-height: 40px; }
   .ev-brand-mark { font-size: 13px; }
+  .ev-brand-logo { height: 18px; }
   .ev-metric-value { font-size: 12px; }
   .ev-tool { padding: 5px 6px; min-width: 54px; }
   .ev-tools-row { padding: 5px 6px; }
