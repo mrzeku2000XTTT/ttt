@@ -4,6 +4,7 @@ import {
   getNeighborCellIds,
   cellIdFromLatLng,
   cellIdFromEnginePos,
+  WORLD_SIZES,
 } from '../../shared/evolve/geoCell.ts';
 import { isLand } from '../../shared/evolve/geoLand.ts';
 
@@ -40,13 +41,20 @@ export default async function (req: Request) {
 
     /* ------------------------------------------------------------- backfill */
     if (action === 'backfill') {
-      const [players, agents, existing, worlds] = await Promise.all([
+      const [players, agents, existing, worlds, exp] = await Promise.all([
         svc.entities.EvolvePlayer.filter({ experiment_id: experimentId }, 'code', 500),
         svc.entities.EvolveAgent.filter({ experiment_id: experimentId }, 'code', 500),
         svc.entities.EvolveGeoOwnership.filter({ experiment_id: experimentId }, '-claimed_at', 5000),
         svc.entities.EvolveWorld.filter({ experiment_id: experimentId }, '-created_date', 1),
+        svc.entities.EvolveExperiment.get(experimentId).catch(() => null),
       ]);
       const world = worlds[0];
+      // Fall back to the experiment's declared world size when no EvolveWorld
+      // checkpoint exists yet (e.g. a fresh test experiment). Never invented —
+      // resolves to the same authoritative 104×68 for "medium".
+      const dims = (world && world.width && world.height)
+        ? { width: world.width, height: world.height }
+        : (WORLD_SIZES[exp?.world_size] || WORLD_SIZES.medium);
       const hasTerritory = new Set(existing.map((o: any) => `${o.owner_type}:${o.owner_id}`));
       const cellTaken = new Map(existing.map((o: any) => [o.cell_id, o]));
       let created = 0;
@@ -93,8 +101,8 @@ export default async function (req: Request) {
         if (Number.isFinite(p.geo_lat) && Number.isFinite(p.geo_lng)) {
           lat = p.geo_lat;
           lng = p.geo_lng;
-        } else if (world && p.position && Number.isFinite(p.position.x)) {
-          const d = cellIdFromEnginePos(p.position.x, p.position.y, world.width, world.height);
+        } else if (p.position && Number.isFinite(p.position.x)) {
+          const d = cellIdFromEnginePos(p.position.x, p.position.y, dims.width, dims.height);
           lat = d.centerLat;
           lng = d.centerLng;
         }
@@ -108,8 +116,8 @@ export default async function (req: Request) {
         if (Number.isFinite(a.geo_lat) && Number.isFinite(a.geo_lng)) {
           lat = a.geo_lat;
           lng = a.geo_lng;
-        } else if (world && a.position && Number.isFinite(a.position.x)) {
-          const d = cellIdFromEnginePos(a.position.x, a.position.y, world.width, world.height);
+        } else if (a.position && Number.isFinite(a.position.x)) {
+          const d = cellIdFromEnginePos(a.position.x, a.position.y, dims.width, dims.height);
           lat = d.centerLat;
           lng = d.centerLng;
         }

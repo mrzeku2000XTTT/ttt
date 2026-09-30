@@ -142,9 +142,10 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       setLandIndex(land); // geographic land index for cell spawnability
       addCountryBorders(map, c110, { id: "ev-countries-110", minzoom: 0, maxzoom: 4, color: EVOLVE_COLORS.borderStrong, width: 0.8 });
       ensureCellsLayer(map);
+      // Territory sits BELOW actors/players so markers stay visible above it.
+      ensureTerritoryLayer(map);
       ensureActorsLayer(map);
       ensurePlayersLayer(map);
-      ensureTerritoryLayer(map);
       setMapReady(true);
       // detail tiers
       loadCountries50().then((c50) => { if (!disposed) addCountryBorders(map, c50, { id: 'ev-countries-50', minzoom: 4, color: EVOLVE_COLORS.border, width: 0.6 }); });

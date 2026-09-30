@@ -14,6 +14,13 @@
 
 export const CELL_DEG = 0.02;
 
+/** Legacy simulation grid dimensions by size key (matches constants.js). */
+export const WORLD_SIZES: Record<string, { width: number; height: number }> = {
+  small: { width: 72, height: 48 },
+  medium: { width: 104, height: 68 },
+  large: { width: 144, height: 92 },
+};
+
 /** Parse a cellId `G{latInt}_{lngInt}` into its bounds + center. Null if malformed. */
 export function parseCellId(cellId: string): {
   cellId: string;

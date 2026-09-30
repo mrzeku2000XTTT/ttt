@@ -21,6 +21,14 @@ interface LandFeature {
 let landFeatures: LandFeature[] | null = null;
 let landLoading: Promise<LandFeature[]> | null = null;
 
+/**
+ * The app's public origin, where the self-hosted Natural Earth GeoJSON lives.
+ * Backend requests arrive with the dispatcher worker as their origin, which
+ * does NOT serve app static assets — so the land index is fetched from the
+ * published app host instead. Falls back to the request origin if needed.
+ */
+const APP_ORIGIN = 'https://tttxyz.base44.app';
+
 function computeBounds(coords: any): { lat0: number; lat1: number; lng0: number; lng1: number } {
   let lat0 = 90, lat1 = -90, lng0 = 180, lng1 = -180;
   const walk = (arr: any) => {
@@ -77,18 +85,30 @@ async function loadLand(origin: string): Promise<LandFeature[]> {
   if (landFeatures) return landFeatures;
   if (landLoading) return landLoading;
   landLoading = (async () => {
-    const url = `${origin}/evolve-earth/ne_50m_land.geojson`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`land geojson fetch failed: ${res.status}`);
-    const geo = await res.json();
-    const out: LandFeature[] = [];
-    for (const f of geo.features || []) {
-      if (!f.geometry) continue;
-      const b = computeBounds(f.geometry.coordinates);
-      out.push({ coords: f.geometry.coordinates, ...b });
+    const bases = [APP_ORIGIN, origin].filter(Boolean);
+    let lastErr: any = null;
+    for (const base of bases) {
+      try {
+        const res = await fetch(`${base}/evolve-earth/ne_50m_land.geojson`);
+        if (!res.ok) {
+          lastErr = new Error(`land geojson fetch failed: ${res.status} (${base})`);
+          continue;
+        }
+        const geo = await res.json();
+        const out: LandFeature[] = [];
+        for (const f of geo.features || []) {
+          if (!f.geometry) continue;
+          const b = computeBounds(f.geometry.coordinates);
+          out.push({ coords: f.geometry.coordinates, ...b });
+        }
+        landFeatures = out;
+        return out;
+      } catch (e) {
+        lastErr = e;
+      }
     }
-    landFeatures = out;
-    return out;
+    landLoading = null; // allow a later retry instead of caching the failure
+    throw lastErr || new Error('land index unavailable');
   })();
   return landLoading;
 }
