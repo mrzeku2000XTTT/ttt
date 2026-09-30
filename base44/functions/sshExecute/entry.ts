@@ -1,201 +1,107 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { Socket } from 'node:net';
+
+/**
+ * SSH reachability / execution endpoint.
+ *
+ * History: this used Deno.Command to shell out to the `ssh` binary. Backend
+ * functions cannot spawn processes, so it never bundled and blocked deployment.
+ * The pure-JS `ssh2` client was tried as a replacement and also cannot bundle
+ * here — it ships native bindings (sshcrypto.node, cpufeatures.node) that do
+ * not exist for this platform.
+ *
+ * So `test` performs a real TCP reachability check on host:port, and the
+ * command-running actions report that execution is unavailable instead of
+ * taking the whole deployment down with them.
+ */
+function checkReachable(host, port, timeoutMs = 8000) {
+  return new Promise((resolve) => {
+    const socket = new Socket();
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      resolve(result);
+    };
+
+    socket.setTimeout(timeoutMs);
+    socket.once('connect', () => finish({ reachable: true }));
+    socket.once('timeout', () => finish({ reachable: false, error: `Timed out after ${timeoutMs}ms` }));
+    socket.once('error', (err) => finish({ reachable: false, error: err.message }));
+
+    socket.connect(port, host);
+  });
+}
+
+const EXEC_UNAVAILABLE =
+  'Remote command execution is unavailable: this runtime cannot spawn processes, and no pure-JS SSH client can be bundled. The connection itself can still be tested.';
 
 Deno.serve(async (req) => {
-    try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
 
-        if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { action, connection_id, command } = await req.json();
-
-        console.log('🔧 SSH Action:', action);
-        console.log('👤 User:', user.email);
-
-        switch (action) {
-            case 'test': {
-                // Test SSH connection
-                const connections = await base44.asServiceRole.entities.SSHConnection.filter({
-                    id: connection_id,
-                    created_by: user.email
-                });
-
-                if (connections.length === 0) {
-                    return Response.json({ error: 'Connection not found' }, { status: 404 });
-                }
-
-                const conn = connections[0];
-
-                try {
-                    // Use Deno's Command API to test SSH
-                    const testCommand = new Deno.Command('ssh', {
-                        args: [
-                            '-p', String(conn.port),
-                            '-o', 'StrictHostKeyChecking=no',
-                            '-o', 'ConnectTimeout=5',
-                            `${conn.username}@${conn.host}`,
-                            'echo "SSH_TEST_SUCCESS"'
-                        ],
-                        stdin: 'piped',
-                        stdout: 'piped',
-                        stderr: 'piped'
-                    });
-
-                    const process = testCommand.spawn();
-
-                    // If password auth, write password to stdin
-                    if (conn.connection_type === 'password' && conn.password) {
-                        const writer = process.stdin.getWriter();
-                        await writer.write(new TextEncoder().encode(conn.password + '\n'));
-                        await writer.close();
-                    }
-
-                    const { code, stdout, stderr } = await process.output();
-
-                    if (code === 0) {
-                        // Update last connected time
-                        await base44.asServiceRole.entities.SSHConnection.update(connection_id, {
-                            status: 'connected',
-                            last_connected: new Date().toISOString()
-                        });
-
-                        return Response.json({
-                            success: true,
-                            message: 'SSH connection successful',
-                            output: new TextDecoder().decode(stdout)
-                        });
-                    } else {
-                        return Response.json({
-                            success: false,
-                            error: new TextDecoder().decode(stderr),
-                            code: code
-                        });
-                    }
-                } catch (err) {
-                    console.error('SSH test failed:', err);
-                    return Response.json({
-                        success: false,
-                        error: err.message
-                    });
-                }
-            }
-
-            case 'execute': {
-                // Execute command via SSH
-                const connections = await base44.asServiceRole.entities.SSHConnection.filter({
-                    id: connection_id,
-                    created_by: user.email
-                });
-
-                if (connections.length === 0) {
-                    return Response.json({ error: 'Connection not found' }, { status: 404 });
-                }
-
-                const conn = connections[0];
-
-                if (!command) {
-                    return Response.json({ error: 'Command is required' }, { status: 400 });
-                }
-
-                try {
-                    const sshCommand = new Deno.Command('ssh', {
-                        args: [
-                            '-p', String(conn.port),
-                            '-o', 'StrictHostKeyChecking=no',
-                            `${conn.username}@${conn.host}`,
-                            command
-                        ],
-                        stdin: 'piped',
-                        stdout: 'piped',
-                        stderr: 'piped'
-                    });
-
-                    const process = sshCommand.spawn();
-
-                    if (conn.connection_type === 'password' && conn.password) {
-                        const writer = process.stdin.getWriter();
-                        await writer.write(new TextEncoder().encode(conn.password + '\n'));
-                        await writer.close();
-                    }
-
-                    const { code, stdout, stderr } = await process.output();
-
-                    return Response.json({
-                        success: code === 0,
-                        output: new TextDecoder().decode(stdout),
-                        error: code !== 0 ? new TextDecoder().decode(stderr) : null,
-                        code: code
-                    });
-                } catch (err) {
-                    console.error('SSH command failed:', err);
-                    return Response.json({
-                        success: false,
-                        error: err.message
-                    });
-                }
-            }
-
-            case 'listFiles': {
-                // List files in project directory
-                const connections = await base44.asServiceRole.entities.SSHConnection.filter({
-                    id: connection_id,
-                    created_by: user.email
-                });
-
-                if (connections.length === 0) {
-                    return Response.json({ error: 'Connection not found' }, { status: 404 });
-                }
-
-                const conn = connections[0];
-                const path = conn.project_path || '~';
-
-                try {
-                    const lsCommand = new Deno.Command('ssh', {
-                        args: [
-                            '-p', String(conn.port),
-                            '-o', 'StrictHostKeyChecking=no',
-                            `${conn.username}@${conn.host}`,
-                            `ls -la ${path}`
-                        ],
-                        stdin: 'piped',
-                        stdout: 'piped',
-                        stderr: 'piped'
-                    });
-
-                    const process = lsCommand.spawn();
-
-                    if (conn.connection_type === 'password' && conn.password) {
-                        const writer = process.stdin.getWriter();
-                        await writer.write(new TextEncoder().encode(conn.password + '\n'));
-                        await writer.close();
-                    }
-
-                    const { code, stdout, stderr } = await process.output();
-
-                    return Response.json({
-                        success: code === 0,
-                        files: new TextDecoder().decode(stdout),
-                        error: code !== 0 ? new TextDecoder().decode(stderr) : null
-                    });
-                } catch (err) {
-                    console.error('List files failed:', err);
-                    return Response.json({
-                        success: false,
-                        error: err.message
-                    });
-                }
-            }
-
-            default:
-                return Response.json({ error: 'Invalid action' }, { status: 400 });
-        }
-
-    } catch (error) {
-        console.error('❌ SSH operation failed:', error);
-        return Response.json({ 
-            error: error.message || 'SSH operation failed' 
-        }, { status: 500 });
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { action, connection_id, command } = await req.json();
+
+    console.log('🔧 SSH Action:', action);
+    console.log('👤 User:', user.email);
+
+    const connections = await base44.asServiceRole.entities.SSHConnection.filter({
+      id: connection_id,
+      created_by: user.email,
+    });
+
+    if (connections.length === 0) {
+      return Response.json({ error: 'Connection not found' }, { status: 404 });
+    }
+
+    const conn = connections[0];
+
+    switch (action) {
+      case 'test': {
+        const result = await checkReachable(conn.host, conn.port || 22);
+
+        if (!result.reachable) {
+          await base44.asServiceRole.entities.SSHConnection.update(connection_id, {
+            status: 'disconnected',
+          });
+          return Response.json({ success: false, error: result.error });
+        }
+
+        await base44.asServiceRole.entities.SSHConnection.update(connection_id, {
+          status: 'connected',
+          last_connected: new Date().toISOString(),
+        });
+
+        return Response.json({
+          success: true,
+          message: `Host ${conn.host}:${conn.port || 22} is reachable`,
+        });
+      }
+
+      case 'execute': {
+        if (!command) {
+          return Response.json({ error: 'Command is required' }, { status: 400 });
+        }
+        return Response.json({ success: false, error: EXEC_UNAVAILABLE }, { status: 501 });
+      }
+
+      case 'listFiles': {
+        return Response.json({ success: false, error: EXEC_UNAVAILABLE }, { status: 501 });
+      }
+
+      default:
+        return Response.json({ error: 'Invalid action' }, { status: 400 });
+    }
+  } catch (error) {
+    console.error('❌ SSH operation failed:', error);
+    return Response.json({
+      error: error.message || 'SSH operation failed',
+    }, { status: 500 });
+  }
 });

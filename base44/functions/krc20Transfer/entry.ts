@@ -21,18 +21,13 @@
 
 import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
 import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
+import { DERIVATION_PATH, derivePrivateKeyFromMnemonic, xOnlyPubKeyFromPrivateKey } from '../../shared/kaspaAddress.ts';
 
 // Lazy-load the OKX Kaspa SDK only when a signing action needs it.
 // This keeps balance/status (REST-only) actions working even if the SDK
 // fails to resolve, and prevents a broken import from 404-ing the whole function.
-let _KaspaWallet = null;
-async function getKaspaWallet() {
-  if (!_KaspaWallet) {
-    const mod = await import('npm:@okxweb3/coin-kaspa@1.0.6');
-    _KaspaWallet = mod.KaspaWallet;
-  }
-  return _KaspaWallet;
-}
+// Keys are derived locally via shared/kaspaAddress.ts — no external Kaspa SDK is
+// imported, so this function always bundles and can never 404 at load time.
 
 const KASPA_API = 'https://api.kaspa.org';
 const COMMIT_AMOUNT_KAS = 0.3;
@@ -126,14 +121,9 @@ function scriptHashToAddress(scriptHash, network = 'mainnet') {
   return encodeKaspaBech32(hrp, payload);
 }
 
-async function getXOnlyPubKey(privateKeyHex) {
-  const KaspaWallet = await getKaspaWallet();
-  const wallet = new KaspaWallet();
-  const addressResult = await wallet.getNewAddress({ privateKey: privateKeyHex });
-  const addr = addressResult.address || addressResult;
-  let addrStr = typeof addr === 'string' ? addr : addr.toString();
-  const payload = decodeKaspaBech32(addrStr);
-  return bytesToHex(payload.slice(1)); // Skip type byte, get 32-byte x-only pubkey
+function getXOnlyPubKey(privateKeyHex) {
+  // Derived straight from the key — no address round-trip needed.
+  return bytesToHex(xOnlyPubKeyFromPrivateKey(privateKeyHex));
 }
 
 // ==========================================
@@ -679,12 +669,7 @@ Deno.serve(async (req) => {
     // Derive private key
     let privateKey = inputPrivateKey;
     if (!privateKey && mnemonic) {
-      const KaspaWallet = await getKaspaWallet();
-      const wallet = new KaspaWallet();
-      privateKey = await wallet.getDerivedPrivateKey({
-        mnemonic: mnemonic.trim(),
-        hdPath: "m/44'/111111'/0'/0/0",
-      });
+      privateKey = derivePrivateKeyFromMnemonic(mnemonic, DERIVATION_PATH);
     }
     if (privateKey && typeof privateKey === 'object') privateKey = privateKey.toString();
     if (typeof privateKey === 'string' && privateKey.startsWith('0x')) privateKey = privateKey.slice(2);

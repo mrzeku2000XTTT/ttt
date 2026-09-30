@@ -1,4 +1,7 @@
-{
+// Knowledge document served to Zeku AI. The object below was previously pasted
+// as a bare JSON literal with no declaration and no handler, which failed to
+// parse. It is now assigned and served.
+const KNOWLEDGE = {
   "platform_name": "TTT (The Trinity Token)",
   "platform_description": "Comprehensive Web3 energy trading platform built on Kaspa blockchain with AI assistants, social features, and professional networking",
   
@@ -244,4 +247,6 @@
     "api_docs": "Admin-only at /APIDocumentation",
     "test_endpoints": "Multiple test pages for debugging"
   }
-}
+};
+
+Deno.serve(() => Response.json(KNOWLEDGE));

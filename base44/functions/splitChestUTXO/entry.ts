@@ -9,6 +9,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
 import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
+import { DERIVATION_PATH, derivePrivateKeyFromMnemonic } from '../../shared/kaspaAddress.ts';
 
 const KASPA_API = 'https://api.kaspa.org';
 // Empirically derived mass formula from Kaspa node rejections:
@@ -178,9 +179,7 @@ Deno.serve(async (req) => {
     // Derive private key
     let privateKey;
     try {
-      const { KaspaWallet } = await import('npm:@okxweb3/coin-kaspa@1.0.6');
-      const wallet = new KaspaWallet();
-      privateKey = await wallet.getDerivedPrivateKey({ mnemonic: chest.seed_phrase.trim(), hdPath: "m/44'/111111'/0'/0/0" });
+      privateKey = derivePrivateKeyFromMnemonic(chest.seed_phrase, DERIVATION_PATH);
     } catch (e) {
       return Response.json({ error: 'Signing module unavailable: ' + e.message }, { status: 500 });
     }

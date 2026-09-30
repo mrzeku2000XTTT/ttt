@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import * as bip39 from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
+import { DERIVATION_PATH, derivePrivateKeyFromMnemonic, addressFromPrivateKey } from '../../shared/kaspaAddress.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -22,14 +23,8 @@ Deno.serve(async (req) => {
 
     // Generate new 24-word wallet
     const mnemonic = bip39.generateMnemonic(wordlist, 256);
-    const { KaspaWallet } = await import('npm:@okxweb3/coin-kaspa@1.0.6');
-    const wallet = new KaspaWallet();
-    const privateKey = await wallet.getDerivedPrivateKey({
-      mnemonic,
-      hdPath: "m/44'/111111'/0'/0/0",
-    });
-    const { address } = await wallet.getNewAddress({ privateKey });
-    const cleanAddress = address.startsWith('kaspa:') ? address : `kaspa:${address}`;
+    const privateKey = derivePrivateKeyFromMnemonic(mnemonic, DERIVATION_PATH);
+    const cleanAddress = addressFromPrivateKey(privateKey, 'kaspa');
 
     await base44.asServiceRole.entities.ChestWallet.create({
       kaspa_address: cleanAddress,

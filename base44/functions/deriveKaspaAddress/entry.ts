@@ -1,24 +1,16 @@
-import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@1.0.6';
+import { derivePrivateKeyFromMnemonic, addressFromPrivateKey } from '../../shared/kaspaAddress.ts';
 
 Deno.serve(async (req) => {
   try {
     const { mnemonic, addressIndex } = await req.json();
     if (!mnemonic) return Response.json({ error: 'mnemonic required' }, { status: 400 });
 
-    const wallet = new KaspaWallet();
     const idx = addressIndex ?? 0;
 
     // Derive address at the requested index (receive path)
-    const privateKey = await wallet.getDerivedPrivateKey({
-      mnemonic: mnemonic.trim(),
-      hdPath: `m/44'/111111'/0'/0/${idx}`,
-    });
-    const result = await wallet.getNewAddress({ privateKey });
-    const rawAddress = result.address || result;
-    
-    // Always return full kaspa: address
-    const address = rawAddress.startsWith('kaspa:') ? rawAddress : `kaspa:${rawAddress}`;
-    
+    const privateKey = derivePrivateKeyFromMnemonic(mnemonic, `m/44'/111111'/0'/0/${idx}`);
+    const address = addressFromPrivateKey(privateKey, 'kaspa');
+
     // Validate address format
     if (!/^kaspa:[a-z0-9]{61,63}$/.test(address)) {
       console.error(`[deriveKaspaAddress] Invalid address generated: ${address} (len=${address.length})`);

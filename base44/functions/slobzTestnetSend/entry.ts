@@ -6,6 +6,7 @@ import {
   writeU8, canonicalDataPush, decodeAnyKaspaAddress, encodeKaspaAddress,
   p2pkScriptFromAddress, computeSigHash
 } from '../../shared/kaspaTx.ts';
+import { DERIVATION_PATH, derivePrivateKeyFromMnemonic } from '../../shared/kaspaAddress.ts';
 
 const TESTNET_API = 'https://api-tn10.kaspa.org';
 const TESTNET_HRP = 'kaspatest';
@@ -51,9 +52,7 @@ Deno.serve(async (req) => {
 
     let privateKey = inputPrivateKey;
     if (!privateKey) {
-      const { KaspaWallet } = await import('npm:@okxweb3/coin-kaspa@1.0.6');
-      const wallet = new KaspaWallet();
-      privateKey = await wallet.getDerivedPrivateKey({ mnemonic: mnemonic.trim(), hdPath: "m/44'/111111'/0'/0/0" });
+      privateKey = derivePrivateKeyFromMnemonic(mnemonic, DERIVATION_PATH);
     }
     if (typeof privateKey === 'object') privateKey = privateKey.toString();
     if (typeof privateKey === 'string' && privateKey.startsWith('0x')) privateKey = privateKey.slice(2);

@@ -54,7 +54,7 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
       <div className="ev-brand">
         <img
           className="ev-brand-logo"
-          src="https://media.base44.com/images/public/6901295fa9bcfaa0f5ba2c2a/ae6c9ff91_image.png"
+          src="/evolve-logo.png"
           alt="EVOLVE"
         />
         <span className="ev-brand-sub">AI Civilization Sim · Kaspa TN-10</span>

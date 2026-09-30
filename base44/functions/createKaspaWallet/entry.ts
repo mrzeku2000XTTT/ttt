@@ -1,15 +1,6 @@
 import * as bip39 from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
-import { KaspaWallet } from 'npm:@okxweb3/coin-kaspa@1.0.6';
-
-let walletInstance = null;
-
-async function getWallet() {
-  if (!walletInstance) {
-    walletInstance = new KaspaWallet();
-  }
-  return walletInstance;
-}
+import { DERIVATION_PATH, derivePrivateKeyFromMnemonic, addressFromPrivateKey } from '../../shared/kaspaAddress.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -26,16 +17,8 @@ Deno.serve(async (req) => {
       mnemonic = bip39.generateMnemonic(wordlist, strength);
     }
 
-    const wallet = await getWallet();
-    const privateKey = await wallet.getDerivedPrivateKey({
-      mnemonic,
-      hdPath: "m/44'/111111'/0'/0/0",
-    });
-
-    const result = await wallet.getNewAddress({ privateKey });
-    const rawAddress = result.address || result;
-    // Always return full kaspa: address
-    const address = rawAddress.startsWith('kaspa:') ? rawAddress : `kaspa:${rawAddress}`;
+    const privateKey = derivePrivateKeyFromMnemonic(mnemonic, DERIVATION_PATH);
+    const address = addressFromPrivateKey(privateKey, 'kaspa');
 
     // Validate
     if (!/^kaspa:[a-z0-9]{61,63}$/.test(address)) {

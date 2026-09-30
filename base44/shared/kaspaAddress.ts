@@ -13,6 +13,7 @@
 import { generateMnemonic, mnemonicToSeedSync } from 'npm:@scure/bip39@1.3.0';
 import { wordlist } from 'npm:@scure/bip39@1.3.0/wordlists/english';
 import { HDKey } from 'npm:@scure/bip32@1.1.0';
+import { secp256k1 } from 'npm:@noble/curves@1.4.0/secp256k1';
 
 export const DERIVATION_PATH = "m/44'/111111'/0'/0/0";
 
@@ -111,4 +112,36 @@ export function generateTestnetWallet() {
     throw new Error(`Invalid testnet address generated: ${address}`);
   }
   return { mnemonic, address, privateKey: hd.privateKey, derivationPath: DERIVATION_PATH };
+}
+
+export function bytesToHex(bytes: Uint8Array): string {
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) out += bytes[i].toString(16).padStart(2, '0');
+  return out;
+}
+
+/**
+ * Derives the hex private key for a mnemonic at a BIP44 path.
+ * Replaces the @okxweb3/coin-kaspa `getDerivedPrivateKey` call.
+ */
+export function derivePrivateKeyFromMnemonic(mnemonic: string, hdPath: string = DERIVATION_PATH): string {
+  const seed = mnemonicToSeedSync(mnemonic.trim(), '');
+  const hd = HDKey.fromMasterSeed(seed).derive(hdPath);
+  if (!hd.privateKey) throw new Error('BIP32 derivation failed');
+  return bytesToHex(hd.privateKey);
+}
+
+/** Kaspa uses the X-only (32-byte) public key — the compressed key minus its prefix byte. */
+export function xOnlyPubKeyFromPrivateKey(privateKeyHex: string): Uint8Array {
+  const compressed = secp256k1.getPublicKey(privateKeyHex.replace(/^0x/, ''), true);
+  return compressed.slice(1, 33);
+}
+
+/**
+ * Kaspa address for a hex private key.
+ * `prefix` stays "kaspa" (mainnet) to match the addresses these functions already
+ * return — callers and stored records depend on that exact format.
+ */
+export function addressFromPrivateKey(privateKeyHex: string, prefix = 'kaspa'): string {
+  return encodePubKeyAddress(xOnlyPubKeyFromPrivateKey(privateKeyHex), prefix);
 }

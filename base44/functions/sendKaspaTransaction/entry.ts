@@ -1,6 +1,7 @@
 // Real Kaspa transaction: fetch UTXOs → manually sign P2PK inputs → submit to Kaspa REST API
 import { blake2b } from 'npm:@noble/hashes@1.4.0/blake2b';
 import { schnorr } from 'npm:@noble/curves@1.4.0/secp256k1';
+import { DERIVATION_PATH, derivePrivateKeyFromMnemonic } from '../../shared/kaspaAddress.ts';
 
 const KASPA_API = 'https://api.kaspa.org';
 const FEE_SOMPI = 50000n; // 0.0005 KAS (minimum floor, raised for safety)
@@ -170,17 +171,9 @@ Deno.serve(async (req) => {
 
     let privateKey = inputPrivateKey;
 
-    // Only load the OKX SDK when we must derive a key from a mnemonic.
-    // Match the SAME version used by the working krc20Transfer function (@1.0.6).
+    // Only needed when we must derive a key from a mnemonic.
     if (!privateKey) {
-      let KaspaWallet;
-      try {
-        ({ KaspaWallet } = await import('npm:@okxweb3/coin-kaspa@1.0.6'));
-      } catch (e) {
-        throw new Error('Signing module unavailable on server. Please re-import your wallet using its private key, or try again shortly.');
-      }
-      const wallet = new KaspaWallet();
-      privateKey = await wallet.getDerivedPrivateKey({ mnemonic: mnemonic.trim(), hdPath: "m/44'/111111'/0'/0/0" });
+      privateKey = derivePrivateKeyFromMnemonic(mnemonic, DERIVATION_PATH);
     }
     if (typeof privateKey === 'object') privateKey = privateKey.toString();
     if (typeof privateKey === 'string' && privateKey.startsWith('0x')) privateKey = privateKey.slice(2);
