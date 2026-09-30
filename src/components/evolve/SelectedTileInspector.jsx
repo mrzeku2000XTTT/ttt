@@ -2,6 +2,7 @@ import React from "react";
 import { Crosshair, Wrench, Shield, ArrowLeftRight, Eye } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { LEVEL_WORD, orgColor } from "@/lib/evolve/constants";
+import TerritoryInspectorSection from "./TerritoryInspectorSection";
 
 /**
  * SelectedTileInspector — what the tapped tile actually is, its survey, its owner
@@ -40,6 +41,8 @@ export default function SelectedTileInspector({ onAttack, onTrade, onFortify, on
           <Row label="Coordinates" value={`${tile.x},${tile.y}`} />
         )}
       </div>
+
+      {geo ? <TerritoryInspectorSection cellId={geo.cellId} /> : null}
 
       <div className="ev-section" style={{ padding: "8px 9px" }}>
         <div className="ev-label" style={{ marginBottom: 5 }}>Resources</div>

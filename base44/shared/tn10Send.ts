@@ -121,13 +121,6 @@ export async function sendTn10({ mnemonic, fromAddress, toAddress, amountSompi }
       currentFee = BigInt(requiredMatch[1]) + BigInt(requiredMatch[1]) / 10n;
       continue;
     }
-    // Kaspad also rejects on the storage-mass cap: the fee is too small for the
-    // transaction's serialized size. A larger fee lowers storage mass, so retry
-    // once with a bigger fee rather than failing the payment.
-    if (/storage mass/i.test(submitText) && attempt === 0) {
-      currentFee = currentFee * 3n + 2000n;
-      continue;
-    }
     break;
   }
 

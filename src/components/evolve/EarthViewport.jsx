@@ -38,6 +38,12 @@ import {
   parseCellId,
   isLand,
 } from "@/lib/evolve/geoCells";
+import {
+  boundarySegments,
+  wipePolygon,
+  territoryFeature,
+} from "@/lib/evolve/territoryRender";
+import { base44 } from "@/api/base44Client";
 
 // Land cells render with a land tone so they never read as ocean.
 const LAND_CELL_COLOR = "#1a2e22";
@@ -92,6 +98,10 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   // The view we last PUSHED into the map. Reading a view back that we caused
   // ourselves would bounce cam → map → cam forever.
   const pushedViewRef = useRef(null);
+  // The cells currently drawn from the authoritative layer — the frontier wipe
+  // and the border pass both need the same set the fill used.
+  const territoryCellsRef = useRef([]);
+  const frontierRafRef = useRef(null);
 
   /* measure container */
   useEffect(() => {
@@ -279,6 +289,40 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine, mapReady]);
 
+  /* realtime territory: when a claim is committed, update the affected cells in
+   * place. No page reload and no whole-Earth poll — the ownership layer pushes
+   * the new record and only the visible territory is re-read. A cell that lands
+   * inside the current view animates as a frontier wipe; one outside it is
+   * simply part of the next refresh. */
+  useEffect(() => {
+    if (!mapReady) return undefined;
+    const unsubscribe = base44.entities.EvolveGeoOwnership.subscribe((event) => {
+      const map = mapRef.current;
+      if (!map || !latestRef.current.experimentId) return;
+      const rec = event?.data;
+      if (event?.type === "create" && rec?.cell_id) {
+        const b = map.getBounds();
+        const lat = Number(rec.center_lat);
+        const lng = Number(rec.center_lng);
+        const inView =
+          Number.isFinite(lat) &&
+          Number.isFinite(lng) &&
+          lat <= b.getNorth() &&
+          lat >= b.getSouth() &&
+          lng <= b.getEast() &&
+          lng >= b.getWest();
+        updateTerritory(map, inView ? { animateCellId: rec.cell_id } : {});
+        return;
+      }
+      updateTerritory(map);
+    });
+    return () => {
+      if (frontierRafRef.current) cancelAnimationFrame(frontierRafRef.current);
+      unsubscribe?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady]);
+
   // Geographic cells: deterministic from lat/lng, land-only, LOD-gated.
   // No giant grid — cells only appear at city zoom and conform to real land.
   function updateCells(map, z) {
@@ -320,45 +364,107 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   // layer (EvolveGeoOwnership), never world.owner[]. Only the viewport's cells
   // are fetched. Adjacent same-controller cells share a color and so read as
   // one contiguous shape; individual ownership is preserved underneath.
-  async function updateTerritory(map) {
+  async function updateTerritory(map, opts = {}) {
     if (!map.getSource("ev-territory")) return;
     const expId = latestRef.current.experimentId;
     if (!expId) {
       map.getSource("ev-territory").setData({ type: "FeatureCollection", features: [] });
+      map.getSource("ev-territory-border")?.setData({ type: "FeatureCollection", features: [] });
       return;
     }
     try {
       const res = await getTerritoryInBounds({ experimentId: expId, bounds: map.getBounds() });
-      const cells = res?.cells || [];
-      const feats = cells
+      const cells = (res?.cells || [])
         .map((c) => {
-          const cell = parseCellId(c.cell_id);
-          if (!cell) return null;
-          const color = territoryColor(c.owner_type, c.organization_id);
+          const parsed = parseCellId(c.cell_id);
+          if (!parsed) return null;
           return {
-            type: "Feature",
-            properties: {
-              color,
-              opacity: 0.32,
-              stroke: color,
-              cellId: c.cell_id,
-              ownerType: c.owner_type,
-              ownerId: c.owner_id,
-              ownerCode: c.owner_code || "",
-              organizationId: c.organization_id || "",
-            },
-            geometry: {
-              type: "Polygon",
-              coordinates: [[[cell.west, cell.south], [cell.east, cell.south], [cell.east, cell.north], [cell.west, cell.north], [cell.west, cell.south]]],
-            },
+            ...c,
+            center_lat: Number.isFinite(c.center_lat) ? c.center_lat : parsed.centerLat,
+            center_lng: Number.isFinite(c.center_lng) ? c.center_lng : parsed.centerLng,
+            color: territoryColor(c.owner_type, c.organization_id),
           };
         })
         .filter(Boolean);
+      territoryCellsRef.current = cells;
+
+      // The animating cell is withheld from the settled layer so the wipe is
+      // actually visible; it is drawn in full once the wipe completes.
+      const animating = opts.animateCellId;
+      const feats = cells
+        .filter((c) => c.cell_id !== animating)
+        .map((c) => territoryFeature(c, c.color, 0.32));
       map.getSource("ev-territory").setData({ type: "FeatureCollection", features: feats });
+
+      // Contiguous borders: only edges facing a DIFFERENT controller are drawn.
+      const borderSrc = map.getSource("ev-territory-border");
+      if (borderSrc) {
+        borderSrc.setData({
+          type: "FeatureCollection",
+          features: boundarySegments(cells.filter((c) => c.cell_id !== animating)),
+        });
+      }
+
+      if (animating) animateFrontier(map, animating);
     } catch (e) {
       // Territory is an overlay — a query failure must never break the map.
       map.getSource("ev-territory").setData({ type: "FeatureCollection", features: [] });
+      map.getSource("ev-territory-border")?.setData({ type: "FeatureCollection", features: [] });
     }
+  }
+
+  /**
+   * Frontier wipe for ONE newly committed cell. The fill starts as a sliver on
+   * the edge shared with the actor's existing territory and grows outward:
+   *   ██████│░░░░  →  ████████▒░░  →  ████████████
+   * Historical cells are drawn immediately and never animate — this only runs
+   * for a cell that arrived over realtime while the map was open.
+   */
+  function animateFrontier(map, cellId) {
+    const src = map.getSource("ev-territory-frontier");
+    if (!src) return;
+    const cells = territoryCellsRef.current || [];
+    const cell = cells.find((c) => c.cell_id === cellId);
+    if (!cell) return;
+    // The neighbour the expansion grew from: same controller, one cell away.
+    const fromCell = cells.find(
+      (c) =>
+        c.cell_id !== cell.cell_id &&
+        c.owner_id === cell.owner_id &&
+        Math.abs(c.center_lat - cell.center_lat) <= 0.021 &&
+        Math.abs(c.center_lng - cell.center_lng) <= 0.021
+    );
+
+    if (frontierRafRef.current) cancelAnimationFrame(frontierRafRef.current);
+    const started = performance.now();
+    const DURATION = 700;
+
+    const step = (now) => {
+      const t = Math.min(1, (now - started) / DURATION);
+      const ring = wipePolygon(cell, fromCell, t);
+      src.setData({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: { color: cell.color, opacity: 0.55 },
+            geometry: { type: "Polygon", coordinates: [ring] },
+          },
+        ],
+      });
+      if (t < 1) {
+        frontierRafRef.current = requestAnimationFrame(step);
+      } else {
+        frontierRafRef.current = null;
+        // Settle: the cell joins the authoritative layer, the wipe clears.
+        setTimeout(() => {
+          src.setData({ type: "FeatureCollection", features: [] });
+          const m = mapRef.current;
+          if (m) updateTerritory(m);
+        }, 320);
+      }
+    };
+    frontierRafRef.current = requestAnimationFrame(step);
   }
 
   function updateActors(map) {

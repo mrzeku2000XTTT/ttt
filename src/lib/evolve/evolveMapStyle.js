@@ -270,14 +270,47 @@ export function ensureTerritoryLayer(map) {
       "fill-opacity": ["coalesce", ["get", "opacity"], 0.32],
     },
   });
+  // Outer frontier only. The border source carries just the cell edges whose
+  // neighbour belongs to a DIFFERENT controller, so a group of same-controller
+  // cells reads as one contiguous shape instead of a grid of outlined squares.
+  // Ownership records are untouched — this is a display rule.
+  map.addSource("ev-territory-border", {
+    type: "geojson",
+    data: { type: "FeatureCollection", features: [] },
+  });
   map.addLayer({
     id: "ev-territory-line",
     type: "line",
-    source: "ev-territory",
+    source: "ev-territory-border",
     paint: {
-      "line-color": ["coalesce", ["get", "stroke"], ["get", "color"]],
-      "line-width": 1,
-      "line-opacity": 0.85,
+      "line-color": ["coalesce", ["get", "color"], EVOLVE_COLORS.cell],
+      "line-width": 1.2,
+      "line-opacity": 0.9,
+    },
+  });
+  // Frontier wipe — the single newly committed cell, clipped to the fraction
+  // that has filled so far. Driven by EarthViewport on TERRITORY_CLAIMED.
+  map.addSource("ev-territory-frontier", {
+    type: "geojson",
+    data: { type: "FeatureCollection", features: [] },
+  });
+  map.addLayer({
+    id: "ev-territory-frontier-fill",
+    type: "fill",
+    source: "ev-territory-frontier",
+    paint: {
+      "fill-color": ["coalesce", ["get", "color"], EVOLVE_COLORS.cell],
+      "fill-opacity": ["coalesce", ["get", "opacity"], 0.5],
+    },
+  });
+  map.addLayer({
+    id: "ev-territory-frontier-line",
+    type: "line",
+    source: "ev-territory-frontier",
+    paint: {
+      "line-color": ["coalesce", ["get", "color"], EVOLVE_COLORS.cell],
+      "line-width": 1.6,
+      "line-opacity": 0.95,
     },
   });
 }
