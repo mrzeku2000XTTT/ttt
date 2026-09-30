@@ -1,0 +1,46 @@
+{
+  "name": "ACASessionCheckpoint",
+  "type": "object",
+  "properties": {
+    "computer_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "sequence": {
+      "type": "number"
+    },
+    "view_state": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "computer_id",
+    "session_id",
+    "sequence",
+    "view_state"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+import React from 'react';
+export default function ACAReplayControls({aca}) {
+  if(!aca.replayId)return null;
+  return <div className="aca-replay"><strong className="aca-cyan">READ-ONLY REPLAY</strong><button className="aca-btn" onClick={()=>aca.setPlaying(!aca.playing)}>{aca.playing?'PAUSE':'PLAY'}</button><select className="aca-input" style={{width:65}} value={aca.speed} onChange={e=>aca.setSpeed(Number(e.target.value))}>{[1,2,4].map(n=><option key={n} value={n}>{n}X</option>)}</select><input type="range" aria-label="Replay position" className="flex-1" min={0} max={Math.max(0,aca.history.events.length-1)} value={aca.index} onChange={e=>{aca.setPlaying(false);aca.setIndex(Number(e.target.value));}}/><span>{aca.index+1}/{aca.history.events.length}</span><button className="aca-btn" onClick={aca.live}>LIVE</button></div>;
+}

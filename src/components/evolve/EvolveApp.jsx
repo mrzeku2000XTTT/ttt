@@ -45,6 +45,7 @@ import PaymentStatusOverlay from "./PaymentStatusOverlay";
 import TransactionActivityPanel from "./TransactionActivityPanel";
 import ObserverTransactionInspector from "./ObserverTransactionInspector";
 import "./evolve.css";
+const ACAComputer = React.lazy(() => import('@/components/evolve/aca/ACAComputerLaunch'));
 
 /**
  * EVOLVE — AppShell.
@@ -62,6 +63,7 @@ export default function EvolveApp() {
     currentPlayer,
   } = useEvolve();
   const [view, setView] = useState("WORLD");
+  const [computerAgentId, setComputerAgentId] = useState(null);
   const [cam, setCam] = useState({ x: 0, y: 0, scale: 6 });
   const [mapSize, setMapSize] = useState({ w: 0, h: 0 });
   const [sheet, setSheet] = useState(null);
@@ -233,6 +235,7 @@ export default function EvolveApp() {
         <ActorInspector
           actorId={actorInspector.id}
           actorType={actorInspector.type}
+          onComputer={setComputerAgentId}
           onClose={() => setActorInspector(null)}
           onAction={(action, actor) => {
             if (action === "TRADE") setPlayerSheet("TRADE");
@@ -243,7 +246,7 @@ export default function EvolveApp() {
 
       {/* ------------------------------------------------------------ sheets */}
       {sheet?.type === "agent" && (
-        <AgentInspector agentId={sheet.id} onClose={close} onLineage={(id) => open("lineage", id)} />
+        <AgentInspector agentId={sheet.id} onClose={close} onLineage={(id) => open("lineage", id)} onComputer={setComputerAgentId} />
       )}
       {sheet?.type === "lineage" && (
         <LineageViewer agentId={sheet.id} onClose={close} onSelect={(id) => open("agent", id)} />
@@ -298,6 +301,7 @@ export default function EvolveApp() {
         />
       )}
 
+      {computerAgentId && <React.Suspense fallback={<div className="ev-sheet" style={{zIndex:130,padding:20}}>Opening ACA…</div>}><ACAComputer agentId={computerAgentId} onClose={() => setComputerAgentId(null)} /></React.Suspense>}
       {txInspector && (
         <ObserverTransactionInspector
           tx={txInspector}

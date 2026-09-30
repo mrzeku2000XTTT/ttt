@@ -1,0 +1,2 @@
+import React from 'react';
+export default function ACATools(){return <div className="aca-idle"><h2 className="aca-cyan">NO TOOL NETWORK CONNECTED</h2><p className="aca-dim">No registered services exist. Local ACA Data is a computer capability, not a network tool.</p><button className="aca-btn" disabled>TOOL INVOCATION UNAVAILABLE</button></div>;}

@@ -12,8 +12,8 @@ import { C, orgColor } from "@/lib/evolve/constants";
  *          TRADE, CONTRACT, COOPERATE, ORG INVITE, FOLLOW (HUMAN)
  * Never exposes private user information.
  */
-export default function ActorInspector({ actorId, actorType, onClose, onAction }) {
-  const { engine } = useEvolve();
+export default function ActorInspector({ actorId, actorType, onClose, onAction, onComputer }) {
+  const { engine, user } = useEvolve();
   if (!engine) return null;
 
   const actor = actorType === "agent"
@@ -69,6 +69,7 @@ export default function ActorInspector({ actorId, actorType, onClose, onAction }
                 <ActBtn label="COOPERATE" onClick={() => onAction?.("COOPERATE", actor)} />
                 <ActBtn label="LINEAGE" onClick={() => onAction?.("LINEAGE", actor)} />
                 <ActBtn label="FOLLOW" onClick={() => onAction?.("FOLLOW", actor)} />
+                {user?.role === 'admin' && actor.id === 'AGT_0011' && <ActBtn label="COMPUTER" onClick={() => onComputer?.(actor.id)} />}
               </>
             ) : (
               <>

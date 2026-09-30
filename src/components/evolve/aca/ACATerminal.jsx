@@ -1,0 +1,5 @@
+import React,{useState} from 'react';
+export default function ACATerminal({aca}) {
+  const [command,setCommand]=useState('ls /workspace');
+  return <div className="aca-stack"><p className="aca-dim">Logical workspace dispatcher — not a host shell. Commands: pwd, ls, cat, head, wc, find, mkdir, cp, mv. Absolute ACA paths only. No flags, pipes or scripts.</p><form className="aca-row" onSubmit={e=>{e.preventDefault();aca.action('TERMINAL',{command,app_id:'aca.terminal'});}}><span className="aca-cyan">A#011 $</span><input className="aca-input flex-1" aria-label="Terminal command" value={command} onChange={e=>setCommand(e.target.value)}/><button data-aca-target="control:terminal" className="aca-btn" disabled={aca.disabled || !aca.computer.current_session_id}>EXECUTE</button></form>{aca.view.terminal && <pre className="aca-pre">$ {aca.view.terminal.command}{'\n'}{aca.view.terminal.result}</pre>}<p className="aca-dim">Only actual dispatcher output appears here.</p></div>;
+}

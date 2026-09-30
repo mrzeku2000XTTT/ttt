@@ -14,8 +14,8 @@ const TABS = ["Overview", "Genome", "Decisions"];
  * AgentInspector — everything known about one agent: lineage, wallet, work,
  * economics, genome and the decisions that produced them.
  */
-export default function AgentInspector({ agentId, onClose, onLineage }) {
-  const { engine, say, chainBalances } = useEvolve();
+export default function AgentInspector({ agentId, onClose, onLineage, onComputer }) {
+  const { engine, say, chainBalances, user } = useEvolve();
   const [tab, setTab] = useState("Overview");
   const agent = engine?.agentById.get(agentId);
   if (!agent) return null;
@@ -35,6 +35,7 @@ export default function AgentInspector({ agentId, onClose, onLineage }) {
         {TABS.map((t) => (
           <button key={t} className={`ev-chip ${tab === t ? "is-on" : ""}`} onClick={() => setTab(t)}>{t}</button>
         ))}
+        {user?.role === 'admin' && agent.id === 'AGT_0011' && <button className="ev-chip" onClick={() => onComputer?.(agent.id)}>COMPUTER</button>}
       </div>
 
       {tab === "Overview" && (

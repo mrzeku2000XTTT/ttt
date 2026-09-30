@@ -1,0 +1,3 @@
+import React from 'react';
+import ACAEditor from '@/components/evolve/aca/ACAEditor';
+export default function ACADocuments({aca}) {return <div className="aca-stack"><p className="aca-dim">Real TXT / Markdown / JSON documents. Save creates a private file revision. PDF and DOCX export unavailable.</p><ACAEditor aca={aca} documents/><button className="aca-btn" disabled={aca.disabled || !aca.workspace.file || !aca.computer.current_session_id} onClick={()=>aca.action('CREATE_ARTIFACT',{file_id:aca.workspace.file.file.id,revision_id:aca.workspace.file.revision.id,app_id:'aca.artifacts'})}>EXPORT DOCUMENT ARTIFACT</button></div>;}

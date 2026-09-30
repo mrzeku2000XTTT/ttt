@@ -1,0 +1,100 @@
+{
+  "name": "AgentComputer",
+  "type": "object",
+  "properties": {
+    "computer_id": {
+      "type": "string"
+    },
+    "experiment_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "agent_record_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "installed_app_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "skill_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "current_session_id": {
+      "type": "string"
+    },
+    "current_app_id": {
+      "type": "string"
+    },
+    "view_state": {
+      "type": "object"
+    },
+    "compute_tier": {
+      "type": "string"
+    },
+    "memory_limit": {
+      "type": "number"
+    },
+    "storage_limit": {
+      "type": "number"
+    },
+    "compute_remaining": {
+      "type": "number"
+    },
+    "total_execution_cost": {
+      "type": "number"
+    },
+    "last_active_at": {
+      "type": "string"
+    },
+    "lock_request": {
+      "type": "string"
+    },
+    "lock_expires": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "computer_id",
+    "experiment_id",
+    "agent_id",
+    "workspace_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

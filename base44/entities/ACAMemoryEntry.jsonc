@@ -1,0 +1,56 @@
+{
+  "name": "ACAMemoryEntry",
+  "type": "object",
+  "properties": {
+    "computer_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "source_execution_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "computer_id",
+    "agent_id",
+    "title",
+    "text"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

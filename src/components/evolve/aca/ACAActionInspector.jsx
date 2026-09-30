@@ -1,0 +1,5 @@
+import React from 'react';
+export default function ACAActionInspector({aca}) {
+  const event=aca.event;
+  return <div className="aca-stack mt-5"><div className="aca-tag aca-dim">CURRENT ACTION</div><div className={event?.status==='FAILED'?'aca-danger':'aca-cyan'}>{aca.busy?'RUNNING':event?.action_type || 'NONE'}</div><div className="aca-dim">{event?.status || 'IDLE'}</div><div className="aca-tag aca-dim">APP</div><div>{aca.view.activeApp || 'NONE'}</div><div className="aca-tag aca-dim">FILE</div><div className="break-all">{aca.view.path || 'NONE'}</div><div className="aca-tag aca-dim">COST</div><div>FREE · 0.00 tKAS</div><div className="aca-tag aca-dim">SIM COMPUTE</div><div>{aca.replayId?'Historical playback — no debit':aca.computer?.compute_remaining}</div><div className="aca-dim text-[10px]">Configured simulated credits. Not CPU/RAM usage.</div></div>;
+}

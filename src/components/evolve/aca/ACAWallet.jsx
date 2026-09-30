@@ -1,0 +1,10 @@
+import React from 'react';
+import {useQuery} from '@tanstack/react-query';
+import {useEvolve} from '@/lib/evolve/useEvolve';
+import acaClient from '@/lib/aca/client';
+export default function ACAWallet({aca,agent}) {
+  const {chainBalances}=useEvolve(); const balance=aca.replayId ? (aca.view.walletSnapshot?.balance_sompi == null ? undefined : aca.view.walletSnapshot.balance_sompi/1e8) : chainBalances.balanceFor(agent);
+  const query=useQuery({queryKey:['aca-wallet',aca.computer.id],enabled:!aca.replayId,queryFn:()=>acaClient('acaResource',{computer_id:aca.computer.id,mode:'wallet'}),refetchInterval:aca.replayId?false:15000});
+  const data=aca.replayId?aca.view.walletSnapshot:query.data,error=query.error,isLoading=query.isLoading && !aca.replayId;
+  return <div className="aca-stack"><h3>PUBLIC TN10 IDENTITY · READ ONLY</h3><div className="aca-meta"><span>ADDRESS</span><span>{data?.address || chainBalances.addressFor(agent) || 'N/A'}</span><span>NETWORK</span><span>Kaspa Testnet 10</span><span>BALANCE</span><span className="aca-cyan">{balance===undefined?'N/A':balance.toFixed(4)+' tKAS'}</span></div><p className="aca-dim">{aca.replayId?'Historical public wallet snapshot — '+(aca.view.walletSnapshot?.observed_at || 'not recorded'):'Same live balance snapshot as EVOLVE.'} No signing material is available to ACA.</p>{isLoading && <p>Loading recorded transactions…</p>}{error && <p className="aca-danger">{error.message}</p>}<h4>RECORDED CONFIRMED EVOLVE TRANSACTIONS</h4>{data?.transactions.map(t=><div key={t.txid} className="aca-notice"><span>{(t.amount_sompi/1e8).toFixed(4)} tKAS · {t.status}</span><div className="break-all aca-dim">{t.txid}</div></div>)}{data && !data.transactions.length && <p>No confirmed EVOLVE transactions recorded.</p>}<button className="aca-btn" disabled>PAYMENTS / TRANSFERS UNAVAILABLE</button></div>;
+}

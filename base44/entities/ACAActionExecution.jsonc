@@ -1,0 +1,93 @@
+{
+  "name": "ACAActionExecution",
+  "type": "object",
+  "properties": {
+    "computer_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "requested_by_user_id": {
+      "type": "string"
+    },
+    "action_type": {
+      "type": "string"
+    },
+    "app_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "REQUESTED",
+        "VALIDATING",
+        "RUNNING",
+        "COMPLETED",
+        "FAILED"
+      ]
+    },
+    "requested_at": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "duration_ms": {
+      "type": "number"
+    },
+    "input_reference": {
+      "type": "object"
+    },
+    "output_reference": {
+      "type": "object"
+    },
+    "error_code": {
+      "type": "string"
+    },
+    "error_message": {
+      "type": "string"
+    },
+    "cost_sompi": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "computer_id",
+    "agent_id",
+    "request_id",
+    "action_type",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

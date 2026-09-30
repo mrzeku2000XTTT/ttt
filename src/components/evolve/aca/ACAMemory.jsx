@@ -1,0 +1,6 @@
+import React,{useState} from 'react';
+export default function ACAMemory({aca}) {
+  const [title,setTitle]=useState('Task note'),[text,setText]=useState('');
+  const notes=aca.workspace.data.notes.filter(n=>!aca.replayId || Date.parse(n.created_date)<=Date.parse(aca.event?.timestamp));
+  return <div className="aca-stack"><h3>EXPLICIT PERSISTED MEMORY</h3><p className="aca-dim">No hidden chain-of-thought or fabricated learning. Skills below were manually assigned.</p><input className="aca-input" value={title} onChange={e=>setTitle(e.target.value)}/><textarea className="aca-input" value={text} onChange={e=>setText(e.target.value)} placeholder="Explicit task note"/><button className="aca-btn" disabled={aca.disabled || !text || !aca.computer.current_session_id} onClick={()=>aca.action('SAVE_NOTE',{title,text,app_id:'aca.memory'})}>SAVE NOTE</button>{notes.map(n=><div className="aca-notice" key={n.id}><strong>{n.title}</strong><pre className="aca-pre">{n.text}</pre><small className="aca-dim">{n.created_date} · {n.source_execution_id}</small></div>)}<h4>ASSIGNED SKILLS · PROCEDURES, NOT EXECUTIONS</h4>{aca.workspace.data.skills.map(s=><div className="aca-notice" key={s.id}><strong>{s.name}</strong><p>{s.description}</p><small>{s.source} · v{s.version}</small></div>)}<button className="aca-btn" disabled>SKILL LEARNING UNAVAILABLE</button></div>;
+}

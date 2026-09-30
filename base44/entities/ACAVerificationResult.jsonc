@@ -1,0 +1,69 @@
+{
+  "name": "ACAVerificationResult",
+  "type": "object",
+  "properties": {
+    "computer_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "execution_id": {
+      "type": "string"
+    },
+    "input_revision_id": {
+      "type": "string"
+    },
+    "output_revision_id": {
+      "type": "string"
+    },
+    "output_sha256": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "checks": {
+      "type": "object"
+    },
+    "summary": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "computer_id",
+    "execution_id",
+    "output_revision_id",
+    "output_sha256",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

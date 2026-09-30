@@ -1,0 +1,5 @@
+import React from 'react';
+export default function ACAActivity({aca}) {
+  const events=aca.replayId?aca.history.events.slice(0,aca.index+1):aca.history.events;
+  return <div className="aca-stack"><h3>PERSISTED ACTION HISTORY</h3><p className="aca-dim">{aca.history.session?.session_id || 'No session selected'} · {events.length} events · replay never calls actions</p>{aca.history.error && <p className="aca-danger">{aca.history.error}</p>}{events.map(e=><details className="aca-notice" key={e.id}><summary className={e.status==='FAILED'?'aca-danger':'aca-cyan'}>{new Date(e.timestamp).toLocaleTimeString()} · {e.action_type} · {e.status} · {e.duration_ms} ms</summary><pre className="aca-pre">{JSON.stringify({execution_id:e.execution_id,metadata:e.metadata},null,2)}</pre></details>)}{!events.length && <p>IDLE — no recorded actions.</p>}</div>;
+}

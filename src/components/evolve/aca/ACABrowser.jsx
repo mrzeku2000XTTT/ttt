@@ -1,0 +1,10 @@
+import React,{useState,useEffect} from 'react';
+import {useQuery} from '@tanstack/react-query';
+import acaClient from '@/lib/aca/client';
+export default function ACABrowser({aca}) {
+  const tabs=aca.view.browserTabs || [],tab=tabs.find(t=>t.id===aca.view.browserTabId),[address,setAddress]=useState('aca://home');
+  useEffect(()=>{if(tab)setAddress(tab.address);},[tab?.address]);
+  const {data,error,isLoading}=useQuery({queryKey:['aca-browser',aca.computer.id,tab?.snapshot?.revision_id],enabled:!!tab?.snapshot,queryFn:async()=>{const r=await acaClient('acaWorkspace',{computer_id:aca.computer.id,mode:'read',...tab.snapshot});return {text:r.text,title:tab.snapshot.title};}});
+  const blocked=aca.disabled || !aca.computer.current_session_id;
+  return <div className="aca-stack"><p className="aca-dim">INTERNAL ACA RESOURCES ONLY · GENERAL INTERNET UNAVAILABLE</p><div className="aca-row">{tabs.map(t=><button className="aca-btn" key={t.id} disabled={blocked} onClick={()=>aca.action('NAVIGATE',{address:t.address,tab_id:t.id,app_id:'aca.browser'})}>{t.address}</button>)}<button className="aca-btn" disabled={blocked} onClick={()=>aca.action('NAVIGATE',{address:'aca://home',app_id:'aca.browser'})}>NEW TAB</button></div><form className="aca-row" onSubmit={e=>{e.preventDefault();aca.action('NAVIGATE',{address,tab_id:tab?.id,app_id:'aca.browser'});}}>{['back','forward','reload'].map(direction=><button type="button" className="aca-btn" key={direction} disabled={blocked || !tab} onClick={()=>aca.action('BROWSER_HISTORY',{direction,tab_id:tab.id,app_id:'aca.browser'})}>{direction.toUpperCase()}</button>)}<input data-aca-target="control:address" className="aca-input flex-1" value={address} onChange={e=>setAddress(e.target.value)}/><button className="aca-btn" disabled={blocked}>GO</button></form>{isLoading && <p>Resolving actual resource…</p>}{error && <p className="aca-danger">{error.message}</p>}{data && <article className="aca-notice"><h3>{data.title}</h3><pre className="aca-pre">{data.text}</pre></article>}{!tab && <p>No resource opened yet.</p>}</div>;
+}

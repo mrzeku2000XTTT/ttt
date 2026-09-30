@@ -1,0 +1,1 @@
+export function toolNetwork() { return {status:'UNAVAILABLE',message:'NO TOOL NETWORK CONNECTED',tools:[]}; }
