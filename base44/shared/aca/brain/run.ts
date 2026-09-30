@@ -90,6 +90,13 @@ async function abortStep(ctx, run, stepNumber, fields, paused, code, message) {
 
 // STEP — at most one OBSERVE → DECIDE → VALIDATE → EXECUTE → RECORD iteration.
 async function step(base, ctx, run) {
+  // THINKING/ACTING are transient step phases, not ownership states. If a step is
+  // interrupted (function timeout, tab closed) the run would otherwise stay stuck in a
+  // transient phase forever with no way to continue. Recover only when no step holds the
+  // lock, so a genuinely in-flight step is never displaced.
+  if (['THINKING', 'ACTING'].includes(run.status) && !run.lock_request) {
+    run = await ctx.sr.entities.ACABrainRun.update(run.id, { status: 'RUNNING' });
+  }
   if (run.status !== 'RUNNING') return { run, steps: await recentSteps(ctx, run.id) };
 
   // One step at a time per run, enforced server-side by the same atomic

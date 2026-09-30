@@ -6,8 +6,23 @@ import { DATASET_PATH, SUMMARY_PATH } from './contracts.ts';
 // persisted output and the real dataset through the authorized server-side ACA
 // read path (the same mechanism V0.1's verification.ts uses) and checks the
 // claim against actual evidence. It cannot modify anything.
+// A goal verdict is always produced, never thrown: a validator failure must not be able to
+// crash a step or strand the run in a transient phase. The cause is surfaced in the summary.
 export async function validateGoal(ctx) {
-  const checks = { fileExists: false, revisionPersisted: false, nonEmpty: false, mentionsDataset: false, datasetPresent: false, columnsMentioned: false, rowCountStated: false, noContradiction: false };
+  try { return await runChecks(ctx); }
+  catch (e) {
+    return {
+      passed: false,
+      checks: blankChecks(),
+      summary: { message: 'Goal verification could not complete: ' + String(e?.code || e?.message || 'UNKNOWN') },
+    };
+  }
+}
+function blankChecks() {
+  return { fileExists: false, revisionPersisted: false, nonEmpty: false, mentionsDataset: false, datasetPresent: false, columnsMentioned: false, rowCountStated: false, noContradiction: false };
+}
+async function runChecks(ctx) {
+  const checks = blankChecks();
   const list = await entries(ctx);
 
   const summaryEntry = list.find(e => e.path === SUMMARY_PATH && e.kind === 'FILE');
@@ -25,12 +40,23 @@ export async function validateGoal(ctx) {
   if (!datasetEntry) return { passed: false, checks, summary: { message: 'Dataset not found at ' + DATASET_PATH } };
 
   const dataset = await readFile(ctx, { file_id: datasetEntry.id });
-  const table = parseTable(dataset.text, dataset.path);
-  const dataRows = table.rows.length;
-  const skuIndex = table.columns.indexOf('sku');
-  const uniqueSkus = skuIndex >= 0 ? new Set(table.rows.map(r => r[skuIndex])).size : null;
+  // The dataset is deliberately messy, so a strict table parse may legitimately fail. A parse
+  // failure must not crash verification or permanently block completion: fall back to a
+  // lenient header read and a line-based row count, and still judge the stated count.
+  let dataRows = 0, columns = null, uniqueSkus = null;
+  try {
+    const table = parseTable(dataset.text, dataset.path);
+    dataRows = table.rows.length;
+    columns = table.columns;
+    const skuIndex = columns.indexOf('sku');
+    uniqueSkus = skuIndex >= 0 ? new Set(table.rows.map(r => r[skuIndex])).size : null;
+  } catch {
+    const lines = dataset.text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim().length);
+    dataRows = Math.max(0, lines.length - 1);
+    columns = (lines[0] || '').split(',').map(c => c.trim()).filter(Boolean);
+  }
 
-  checks.columnsMentioned = table.columns.every(c => text.includes(c));
+  checks.columnsMentioned = columns.length > 0 && columns.every(c => text.includes(c));
   checks.rowCountStated = new RegExp('(^|\\D)' + dataRows + '(\\D|$)').test(text);
 
   // Any stated count must agree with the real dataset. "lines" may include the header row.
@@ -50,7 +76,7 @@ export async function validateGoal(ctx) {
       sha256: summary.revision?.sha256 || '',
       dataset_path: dataset.path,
       dataset_rows: dataRows,
-      dataset_columns: table.columns,
+      dataset_columns: columns,
       unique_skus: uniqueSkus,
       message: passed ? 'Persisted summary verified against the real dataset' : 'The persisted summary did not agree with the real dataset',
     },
