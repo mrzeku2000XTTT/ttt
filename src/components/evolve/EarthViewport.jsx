@@ -60,13 +60,13 @@ const ASSET_COLOR = {
  * DOM-projected (no external glyph server).
  */
 export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
-  const { engine, say } = useEvolve();
+  const { engine, say, currentPlayer } = useEvolve();
   const wrapRef = useRef(null);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const syncingRef = useRef(false);
   const latestRef = useRef(null);
-  latestRef.current = { engine, size: null, cam, setCam, onSelectActor };
+  latestRef.current = { engine, size: null, cam, setCam, onSelectActor, currentPlayer };
   const places110Ref = useRef(null);
   const places50Ref = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -74,6 +74,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   const [mapError, setMapError] = useState('');
   latestRef.current.size = size;
   const [labels, setLabels] = useState([]);
+  const [playerLabels, setPlayerLabels] = useState([]);
   const [showCells, setShowCells] = useState(true);
   const didFitRef = useRef(false);
   // The view we last PUSHED into the map. Reading a view back that we caused
@@ -241,6 +242,17 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine, mapReady, showCells]);
 
+  /* realtime: a player spawning/entering while you watch appears without a reload.
+   * The engine notifies on any mutation; we refresh the human layer immediately. */
+  useEffect(() => {
+    if (!engine || !mapReady) return undefined;
+    return engine.subscribe(() => {
+      const map = mapRef.current;
+      if (map) updateActors(map);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine, mapReady]);
+
   // Geographic cells: deterministic from lat/lng, land-only, LOD-gated.
   // No giant grid — cells only appear at city zoom and conform to real land.
   function updateCells(map, z) {
@@ -298,26 +310,68 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       const org = ag.organization_id;
       feats.push({ type: "Feature", properties: { color: org ? orgColor(org) : "#e2e8f0", r: 3, kind: "agent", type: "agent", id: ag.id, x: ag.position.x, y: ag.position.y }, geometry: { type: "Point", coordinates: coords } });
     }
-    for (const pl of (engine.players || []).filter((p) => p.position)) {
-      const coords = toLngLat(pl.position);
-      if (!coords) continue; // skip invalid player coordinate
-      const org = pl.organization_id;
-      feats.push({ type: "Feature", properties: { color: "#22d3ee", r: 5, kind: "player", type: "player", id: pl.id, x: pl.position.x, y: pl.position.y }, geometry: { type: "Point", coordinates: coords } });
-    }
+    // HUMANS are NOT AI agents — they live only on the dedicated ev-players
+    // layer. The ev-actors source carries agents + assets only.
     map.getSource("ev-actors").setData({ type: "FeatureCollection", features: feats });
 
-    // Players also render on their own non-clustered layer so every human is
-    // individually visible with a code label, even when sharing a cell.
+    // ---- HUMAN PLAYERS (non-clustered, always individually visible) ----
+    // Co-located players (same engine cell) are offset in a small ring so each
+    // one renders as its own dot instead of overlapping into a single point.
     if (map.getSource("ev-players")) {
-      const pfeats = (engine.players || [])
-        .filter((p) => p.position)
-        .map((pl) => {
-          const coords = toLngLat(pl.position);
-          if (!coords) return null;
-          return { type: "Feature", properties: { code: pl.code || "P", id: pl.id }, geometry: { type: "Point", coordinates: coords } };
-        })
-        .filter(Boolean);
+      const meId = latestRef.current.currentPlayer?.id;
+      const positioned = (engine.players || []).filter((p) => p.position);
+      // group by rounded coordinate so players sharing a cell get offset
+      const groups = new Map();
+      for (const pl of positioned) {
+        const coords = toLngLat(pl.position);
+        if (!coords) continue;
+        const key = `${coords[0].toFixed(3)},${coords[1].toFixed(3)}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push({ pl, coords });
+      }
+      const pfeats = [];
+      for (const [, group] of groups) {
+        const n = group.length;
+        group.forEach(({ pl, coords }, i) => {
+          let lng = coords[0];
+          let lat = coords[1];
+          if (n > 1) {
+            const angle = (i * 2 * Math.PI) / n;
+            const step = 0.35; // degrees — visible separation at world/city zoom
+            lng += step * Math.cos(angle);
+            lat += step * Math.sin(angle);
+          }
+          const isYou = meId && pl.id === meId;
+          pfeats.push({
+            type: "Feature",
+            properties: {
+              code: pl.code || "P",
+              id: pl.id,
+              type: "player",
+              x: pl.position.x,
+              y: pl.position.y,
+              is_you: isYou ? 1 : 0,
+              color: isYou ? "#a5f3fc" : "#22d3ee",
+              r: isYou ? 7 : 6,
+            },
+            geometry: { type: "Point", coordinates: [lng, lat] },
+          });
+        });
+      }
       map.getSource("ev-players").setData({ type: "FeatureCollection", features: pfeats });
+
+      // DOM-projected code labels (no glyph server) — "P#001", "P#002 YOU".
+      const out = [];
+      for (const f of pfeats) {
+        const pp = map.project(f.geometry.coordinates);
+        out.push({
+          x: pp.x,
+          y: pp.y,
+          code: f.properties.code,
+          isYou: f.properties.is_you === 1,
+        });
+      }
+      setPlayerLabels(out);
     }
   }
 
@@ -395,6 +449,28 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
           }}
         >
           {l.name}
+        </span>
+      ))}
+
+      {/* human player labels — every player's code, the current player marked YOU */}
+      {mapReady && playerLabels.map((l, i) => (
+        <span
+          key={`pl-${i}`}
+          style={{
+            position: "absolute",
+            left: l.x, top: l.y,
+            transform: "translate(-50%, -150%)",
+            pointerEvents: "none",
+            fontSize: 10,
+            fontWeight: 700,
+            color: l.isYou ? "#a5f3fc" : "#e0fbff",
+            textShadow: "0 0 4px #03070d, 0 0 2px #03070d",
+            letterSpacing: "0.04em",
+            whiteSpace: "nowrap",
+            zIndex: 6,
+          }}
+        >
+          {l.code}{l.isYou ? " · YOU" : ""}
         </span>
       ))}
 

@@ -215,16 +215,34 @@ export function ensurePlayersLayer(map) {
     type: "geojson",
     data: { type: "FeatureCollection", features: [] },
   });
+  // Every human player — a cyan dot. Co-located players are offset by the
+  // viewport so each one is individually visible even when sharing a cell.
   map.addLayer({
     id: "ev-players-circle",
     type: "circle",
     source: "ev-players",
     paint: {
-      "circle-color": "#22d3ee",
-      "circle-radius": 6,
+      "circle-color": ["coalesce", ["get", "color"], "#22d3ee"],
+      "circle-radius": ["coalesce", ["get", "r"], 6],
       "circle-opacity": 0.95,
       "circle-stroke-color": "#03070d",
       "circle-stroke-width": 1.5,
+    },
+  });
+  // The currently logged-in player gets a brighter, larger ring + "YOU" label
+  // (DOM-projected in EarthViewport — no glyph server).
+  map.addLayer({
+    id: "ev-players-you",
+    type: "circle",
+    source: "ev-players",
+    filter: ["==", ["get", "is_you"], 1],
+    paint: {
+      "circle-color": "#a5f3fc",
+      "circle-radius": 9,
+      "circle-opacity": 0.25,
+      "circle-stroke-color": "#a5f3fc",
+      "circle-stroke-width": 2,
+      "circle-stroke-opacity": 0.9,
     },
   });
 }
