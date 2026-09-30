@@ -124,7 +124,7 @@ export default function EvolveApp() {
   }
 
   // The Human Dashboard is a left-docked sheet; the cell card steps aside when it is open.
-  const dashOpen = actorInspector?.type !== "agent" && (showDash || actorInspector?.type === "player");
+  const dashOpen = showDash;
 
   return (
     <div className="ev-root">
@@ -226,15 +226,16 @@ export default function EvolveApp() {
         </div>
       )}
 
-      {/* actor inspector (clicking AI/human markers) */}
-      {actorInspector?.type !== "agent" && (showDash || actorInspector?.type === "player") && (
+      {/* your own dashboard — toggled by the wallet button */}
+      {showDash && (
         <HumanDashboard
-          onClose={() => { setShowDash(false); if (actorInspector?.type === "player") setActorInspector(null); }}
-          onInspectAgent={(id) => { setShowDash(false); setActorInspector(null); open("agent", id); }}
+          onClose={() => setShowDash(false)}
+          onInspectAgent={(id) => { setShowDash(false); open("agent", id); }}
           onActivity={() => open("chainTx")}
         />
       )}
-      {actorInspector && actorInspector.type === "agent" && (
+      {/* actor inspector (clicking AI or human markers) */}
+      {actorInspector && (
         <ActorInspector
           actorId={actorInspector.id}
           actorType={actorInspector.type}
