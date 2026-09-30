@@ -123,6 +123,9 @@ export default function EvolveApp() {
     if (e.target_id && engine.world.findAsset(e.target_id)) return open("asset", e.target_id);
   }
 
+  // The Human Dashboard is a left-docked sheet; the cell card steps aside when it is open.
+  const dashOpen = actorInspector?.type !== "agent" && (showDash || actorInspector?.type === "player");
+
   return (
     <div className="ev-root">
       <div className="ev-hud">
@@ -148,7 +151,7 @@ export default function EvolveApp() {
               onSelectActor={(a) => setActorInspector(a)}
             />
             {engine.selection && (
-              <div style={{ position: "absolute", left: 8, bottom: 8, zIndex: 20 }}>
+              <div className={`ev-tile-dock${dashOpen ? " is-clear-of-dash" : ""}`}>
                 <SelectedTileInspector
                   onAttack={(asset) => open("attack", asset.sim_id)}
                   onTrade={(asset) => open("trade", asset.sim_id)}

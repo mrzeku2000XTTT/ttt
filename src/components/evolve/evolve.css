@@ -184,6 +184,19 @@
   border: 1px solid rgba(120,160,200,0.16); font-variant-numeric: tabular-nums;
 }
 
+/* Cell details card. When the Human Dashboard is open the card moves clear of
+   the panel's right edge instead of sitting behind it. The offsets track the
+   dashboard's fixed left edge plus the navigation width at each breakpoint. */
+.ev-tile-dock { position: absolute; left: 8px; bottom: 8px; z-index: 20; }
+.ev-tile-dock.is-clear-of-dash { left: 328px; }
+@media (max-width: 1180px) { .ev-tile-dock.is-clear-of-dash { left: 336px; } }
+@media (max-width: 900px) { .ev-tile-dock.is-clear-of-dash { left: 344px; } }
+@media (max-width: 760px) {
+  /* The dashboard spans the full width here, so the card stacks above it
+     rather than disappearing behind it. */
+  .ev-tile-dock.is-clear-of-dash { left: 8px; z-index: 42; }
+}
+
 /* MapLibre container — a real, interactive miniature of the main map. */
 .ev-minimap { width: 100%; height: 140px; background: #04080f; border: 1px solid rgba(120,160,200,0.18); border-radius: 4px; overflow: hidden; }
 
