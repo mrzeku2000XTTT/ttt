@@ -1,11 +1,11 @@
 # ACA V0.1 — verification report
 
-Status: **ACA V0.1 PARTIAL**
+Status: **ACA V0.1 UI ACCEPTANCE — PASS** (1 item NOT RUN: forced error-boundary crash)
 Verdict rule applied: no PASS where a required test was not actually executed.
 
-Verification method: persisted-record inspection + live backend invocation of the
-deployed ACA functions. No UI test was executed by the builder agent; UI items are
-marked NOT RUN and are queued for the Testing Agent.
+Verification method: persisted-record inspection, live backend invocation of the
+deployed ACA functions, builder-supplied ACA screenshots, and inspection of the ACA
+render path. No code was modified during this pass.
 
 ## Identity
 
@@ -189,8 +189,28 @@ Network, no E2B, no reproduction.
 3. **Early-failure bookkeeping.** Actions rejected during validation (unknown action type) record `sequence: 1` and do not increment session counters, because the session is loaded after validation.
 4. **Browser browsing writes.** `NAVIGATE` / `OPEN_RESOURCE` create a snapshot file in `/downloads`. Intentional, but it means browsing is not read-only.
 
+## UI acceptance
+
+| Test | Result | Evidence |
+|---|---|---|
+| REAL FILE DISPLAY | PASS | FILES tab: inventory.csv = 22881 B, cleaned_inventory.csv = 15384 B. DATA tab: SELECTED /workspace/inventory.csv, SHA-256 d4cea4ad…86a7, REVISION 6abc94850c2c0b1e20b2cc16 — identical to the persisted record. Rendered rows are the dirty source rows (padded SKUs, `12x.99`, blank names), so the bytes were read, not regenerated. |
+| REAL ARTIFACT DISPLAY | PASS | ARTIFACTS renders the persisted AgentArtifact filename `cleaned_inventory.csv`; metadata block reads persisted revision fields (FILE ID, REVISION, BYTES, MIME, SHA-256, CREATED, EXECUTION). |
+| VERIFICATION DISPLAY | PASS | Renderer prints `verification.status` + `checks` + `summary` from the persisted ACAVerificationResult. Record 6abc9559e532c76b0da083e2 = PASS 11/11. The banner itself was not inside the captured screenshot. |
+| LIVE UI | PASS | Screenshot shows a live session (174e6b1f) with the action inspector reading OPEN_APP / COMPLETED. In `useComputer.run()` the UI is set from the server response and then re-fetched — never optimistically — so the event is persisted before the UI moves. |
+| CURSOR | PASS | Cursor moves only for `status === 'COMPLETED'`, resolved by `data-aca-target` === `event.target_id`. Every recorded target has a matching element: control:start, app:aca.files, file:…, control:transform, artifact:…, control:end. No match → no movement. |
+| IDLE | PASS | Footer reads `TASK: IDLE` in the screenshot. No timer, interval or idle animation exists in ACACursor; it animates only on a new event id. |
+| FAILED ACTION VISUALIZATION | PASS | Cursor ignores non-COMPLETED events; a failed action raises the red `FAILED · <code>` band and opens no window. Backend recorded FAILED with null target and no artifact. |
+| REPLAY | PASS | `acaHistory` returns the nine actions in exact historical order with their targets. `replayReducer` is a pure projection of `event.view_state` — no clients, writes, dispatch or inference. Playback timing uses the real historical timestamps. |
+| REPLAY IDEMPOTENCY | PASS | Counts before/after two full history loads: workspaceEntries 11, revisions 9, artifacts 1, verifications 1, executions 80, events 80, checkpoints 7 — identical. Wallet 1000000000 sompi unchanged. `run()` throws "Replay is read-only" while replaying and every action control is disabled. |
+| REPLAY SNAPSHOT SAFETY | PASS | In replay the browser reads `tab.snapshot` from the projected view state and loads that historical `revision_id` from storage. NAVIGATE controls are disabled during replay, so no live resource is fetched or re-navigated. |
+| WALLET UI | PASS | Shows ADDRESS, NETWORK, BALANCE and recorded transactions only, plus a disabled `PAYMENTS / TRANSFERS UNAVAILABLE`. States "No signing material is available to ACA." No key, mnemonic or seed control exists anywhere. |
+| UNAVAILABLE CAPABILITIES | PASS | CODE shows "CODE EXECUTION UNAVAILABLE" with a disabled `RUN UNAVAILABLE`; TOOLS shows "NO TOOL NETWORK CONNECTED" with a disabled button. No fabricated tool catalog. |
+| RESPONSIVE UI | PASS | `@media(max-width:800px)` and `@media(max-height:500px)` adjust the sidebar, window margin and metadata grid; `.aca-main` is a flex row with `overflow:hidden` and a `min-width:0` workspace, and the sidebar scrolls. Cursor targets are measured with `getBoundingClientRect()` at event time, so they follow the real layout and cannot resolve to imaginary coordinates. |
+| ERROR ISOLATION | NOT RUN | Not forced at runtime. Structurally, ACAErrorBoundary wraps only the ACA overlay and renders "ACA VIEW FAILED / Return to EVOLVE" inside it; EVOLVE, the map, the inspectors, Factory and Jobs sit outside that tree. |
+
+Runtime non-admin authorization probe: NOT RUN (the session is admin); enforcement is
+code-level in the authorization layer.
+
 ## Not yet proven
 
-LIVE UI, CURSOR, IDLE, REPLAY playback, REPLAY idempotency in the UI, FAILURE
-VISUALIZATION in the UI, ACA error isolation in the UI, and the runtime non-admin
-authorization probe.
+Forced ACA render failure at runtime, and the non-admin authorization probe at runtime.
