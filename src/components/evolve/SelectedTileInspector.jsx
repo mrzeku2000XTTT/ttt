@@ -2,13 +2,13 @@ import React from "react";
 import { Crosshair, Wrench, Shield, ArrowLeftRight, Eye } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { LEVEL_WORD, orgColor } from "@/lib/evolve/constants";
-import TerritoryInspectorSection from "./TerritoryInspectorSection";
+import CellInspectorSection from "./CellInspectorSection";
 
 /**
  * SelectedTileInspector — what the tapped tile actually is, its survey, its owner
  * and the action that makes sense for it.
  */
-export default function SelectedTileInspector({ onAttack, onTrade, onFortify, onInspectAsset }) {
+export default function SelectedTileInspector({ onAttack, onTrade, onFortify, onInspectAsset, onViewAgent }) {
   const { engine } = useEvolve();
   const tile = engine?.selection;
   if (!tile) return null;
@@ -42,7 +42,7 @@ export default function SelectedTileInspector({ onAttack, onTrade, onFortify, on
         )}
       </div>
 
-      {geo ? <TerritoryInspectorSection cellId={geo.cellId} /> : null}
+      {geo ? <CellInspectorSection cellId={geo.cellId} onViewAgent={onViewAgent} /> : null}
 
       <div className="ev-section" style={{ padding: "8px 9px" }}>
         <div className="ev-label" style={{ marginBottom: 5 }}>Resources</div>

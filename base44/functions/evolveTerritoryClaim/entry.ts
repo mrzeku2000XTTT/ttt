@@ -3,7 +3,7 @@ import { parseCellId, getNeighborCellIds } from '../../shared/evolve/geoCell.ts'
 import { isLand } from '../../shared/evolve/geoLand.ts';
 import { generateTestnetWallet } from '../../shared/kaspaAddress.ts';
 import { sendTn10, tn10BalanceSompi } from '../../shared/tn10Send.ts';
-import { paidToAddress } from '../../shared/evolveFactory.ts';
+import { verifyTn10Settlement } from '../../shared/evolve/tn10Verify.ts';
 import {
   TERRITORY_POLICY,
   ACTIVE_STATUSES,
@@ -162,6 +162,59 @@ export default async function (req: Request) {
       });
     };
 
+    /**
+     * Append ONE immutable ownership transition to the provenance ledger.
+     *
+     * History is only ever ADDED TO — nothing here updates or deletes a prior
+     * event. The event key makes a replayed commit (or a repeated backfill) a
+     * no-op instead of a duplicate. Current ownership (EvolveGeoOwnership) is
+     * the present tense; this ledger is the record of how it got there.
+     */
+    const appendOwnershipEvent = async ({
+      cellId,
+      eventType,
+      previousOwner,
+      newOwner,
+      claim = null,
+      verification = null,
+      controllerId = '',
+      eventKey = '',
+    }: any) => {
+      const key = eventKey || `OWN_${cellId}_${newOwner.id}_${eventType}`;
+      const [existing] = await svc.entities.EvolveGeoOwnershipEvent.filter(
+        { experiment_id: experimentId, event_key: key },
+        '-created_date',
+        1
+      );
+      if (existing) return existing;
+      return await svc.entities.EvolveGeoOwnershipEvent.create({
+        experiment_id: experimentId,
+        event_key: key,
+        cell_id: cellId,
+        event_type: eventType,
+        previous_owner_type: previousOwner?.owner_type || '',
+        previous_owner_id: previousOwner?.owner_id || '',
+        new_owner_type: newOwner.type || 'AI',
+        new_owner_id: newOwner.id,
+        new_owner_code: newOwner.code || '',
+        actor_id: claim?.actor_id || newOwner.id,
+        controller_id: controllerId || newOwner.id,
+        claim_id: claim?.id || '',
+        settlement_tx_id: verification?.txid || '',
+        settlement_sender_address: claim?.sender_address || '',
+        settlement_recipient_address: claim?.treasury_address || '',
+        settlement_amount_sompi: Number(claim?.amount_sompi || 0),
+        sender_verified: !!verification?.senderVerified,
+        recipient_verified: !!verification?.recipientVerified,
+        amount_verified: !!verification?.amountVerified,
+        sender_binding: verification?.senderBinding || null,
+        verification_level: verification?.verificationLevel || 'NOT_REQUIRED',
+        verification_timestamp: verification?.verificationTimestamp || new Date().toISOString(),
+        evidence_source: verification?.evidenceSource || 'none',
+        created_at: new Date().toISOString(),
+      });
+    };
+
     /* ------------------------------------------------------------- develop */
     // Establish the smallest legitimate infrastructure foothold using the
     // EXISTING build model (BUILD_COST / BUILD_STATS / EvolveAsset), recorded
@@ -261,6 +314,110 @@ export default async function (req: Request) {
         territoryCells: territory.length,
         ...evaluation,
       });
+    }
+
+    /* ----------------------------------------------------------- backfill */
+    /**
+     * Idempotent provenance backfill. Every existing ownership record that has
+     * no event gets exactly one: SPAWN_CLAIM for spawn territory (no payment was
+     * required) and ECONOMIC_CLAIM for the already-settled expansion, using its
+     * REAL claim, txid, amount, treasury and re-verified chain evidence.
+     *
+     * Nothing is invented. Where the chain never exposed sender evidence, the
+     * event records the honest verification level rather than a fabricated
+     * sender. Running this twice creates 0 duplicates.
+     */
+    if (action === 'backfill') {
+      const ownership = await svc.entities.EvolveGeoOwnership.filter({ experiment_id: experimentId }, 'claimed_at', 5000);
+      const existingEvents = await svc.entities.EvolveGeoOwnershipEvent.filter(
+        { experiment_id: experimentId },
+        '-created_date',
+        5000
+      );
+      const seen = new Set(existingEvents.map((e: any) => e.event_key));
+      let created = 0;
+      let skipped = 0;
+
+      for (const own of ownership) {
+        const isEconomic = own.claim_source === 'ECONOMIC_EXPANSION';
+        const key = isEconomic ? `OWN_CLAIM_${own.claim_id}` : `OWN_SPAWN_${own.cell_id}_${own.owner_id}`;
+        if (seen.has(key)) {
+          skipped += 1;
+          continue;
+        }
+
+        let claim: any = null;
+        let verification: any = null;
+        if (isEconomic && own.claim_id) {
+          claim = await svc.entities.EvolveTerritoryClaim.get(own.claim_id).catch(() => null);
+          // Re-verify with the STRONGER verifier — attach the best evidence the
+          // chain actually supports today, never more than that.
+          if (claim?.tx_id) {
+            const v = await verifyTn10Settlement({
+              txId: claim.tx_id,
+              expectedSenderAddress: claim.sender_address,
+              expectedRecipientAddress: claim.treasury_address,
+              expectedAmountSompi: Number(claim.amount_sompi),
+              attempts: 2,
+              intervalMs: 1500,
+            });
+            verification = {
+              txid: v.txId,
+              paidSompi: v.paidSompi,
+              inputAddresses: v.inputAddresses,
+              senderVerified: v.senderVerified,
+              recipientVerified: v.recipientVerified,
+              amountVerified: v.amountVerified,
+              senderBinding: v.senderBinding,
+              verificationLevel: v.verificationLevel,
+              evidenceSource: v.evidenceSource,
+              verificationTimestamp: v.verificationTimestamp,
+            };
+          }
+        }
+
+        const ev = await appendOwnershipEvent({
+          cellId: own.cell_id,
+          eventType: isEconomic ? 'ECONOMIC_CLAIM' : 'SPAWN_CLAIM',
+          previousOwner: null,
+          newOwner: { type: own.owner_type, id: own.owner_id, code: own.owner_code || '' },
+          claim,
+          verification,
+          controllerId: own.organization_id || own.owner_id,
+          eventKey: key,
+        });
+        seen.add(key);
+        created += 1;
+
+        if (!own.current_ownership_event_id && ev?.id) {
+          await svc.entities.EvolveGeoOwnership.update(own.id, { current_ownership_event_id: ev.id });
+        }
+      }
+      return Response.json({ ok: true, scanned: ownership.length, created, skipped });
+    }
+
+    /* ---------------------------------------------------------- reverify */
+    /**
+     * READ-ONLY re-verification of one claim's existing txid with the stronger
+     * verifier. It never mutates the claim, the event ledger or ownership — it
+     * reports what the chain proves right now, so partial verification can never
+     * be collapsed into full verification.
+     */
+    if (action === 'reverify') {
+      const { claimId, txId } = body;
+      let claim: any = null;
+      if (claimId) claim = await svc.entities.EvolveTerritoryClaim.get(claimId).catch(() => null);
+      const targetTx = txId || claim?.tx_id;
+      if (!targetTx) return Response.json({ ok: false, reason: 'NO_TXID' });
+      const v = await verifyTn10Settlement({
+        txId: targetTx,
+        expectedSenderAddress: claim?.sender_address || body.senderAddress || '',
+        expectedRecipientAddress: claim?.treasury_address || body.recipientAddress || '',
+        expectedAmountSompi: Number(claim?.amount_sompi ?? body.amountSompi ?? 0),
+        attempts: 3,
+        intervalMs: 2000,
+      });
+      return Response.json({ ok: true, verification: v, claimStatus: claim?.status || null });
     }
 
     /* -------------------------------------------------------------- resume */
@@ -457,6 +614,7 @@ export default async function (req: Request) {
     /* ------------------------------------- 5. REAL AUTONOMOUS TN10 PAYMENT -- */
     claim = await svc.entities.EvolveTerritoryClaim.update(claim.id, { status: 'PAYMENT_BUILDING' });
     let txId = '';
+    let senderProvenance: any = null;
     try {
       const sent = await sendTn10({
         mnemonic: key.mnemonic,
@@ -465,6 +623,13 @@ export default async function (req: Request) {
         amountSompi: BigInt(amount),
       });
       txId = String(sent.txId || '');
+      // The outpoints the signer consumed, read from THIS address's UTXO set.
+      // Server-side, first-party provenance — the browser cannot set it.
+      senderProvenance = {
+        fromAddress: sent.fromAddress || wallet.address,
+        spentOutpoints: sent.spentOutpoints || [],
+        capturedAt: new Date().toISOString(),
+      };
     } catch (e: any) {
       return Response.json({ ok: true, claim: publicClaim(await fail(claim, 'PAYMENT_FAILED', 'BROADCAST_FAILED', e.message)) });
     }
@@ -476,6 +641,7 @@ export default async function (req: Request) {
       status: 'PAYMENT_BROADCAST',
       tx_id: txId,
       broadcast_at: new Date().toISOString(),
+      confirmation_evidence: { senderProvenance },
     });
 
     /* ------------------------------- 6. CHAIN VERIFICATION → OWNERSHIP ------ */
@@ -493,10 +659,15 @@ export default async function (req: Request) {
         if (!claim.tx_id) {
           return await fail(claim, 'PAYMENT_FAILED', 'NO_TXID', 'No txid recorded for this claim');
         }
-        const tx = await paidToAddress(claim.tx_id, claim.treasury_address, {
+        const v = await verifyTn10Settlement({
+          txId: claim.tx_id,
+          expectedSenderAddress: claim.sender_address,
+          expectedRecipientAddress: claim.treasury_address,
+          expectedAmountSompi: Number(claim.amount_sompi),
           attempts: policy.confirmation_attempts,
+          intervalMs: policy.confirmation_interval_ms,
         });
-        if (!tx.found) {
+        if (v.verificationLevel === 'NOT_FOUND') {
           // Delayed, not failed. Ownership is NOT granted.
           return await svc.entities.EvolveTerritoryClaim.update(claim.id, {
             status: 'PAYMENT_CONFIRMING',
@@ -504,16 +675,44 @@ export default async function (req: Request) {
             failure_detail: 'Payment not visible on TN-10 yet — will resume, never re-pay',
           });
         }
-        if (Number(tx.paidSompi) < Number(claim.amount_sompi)) {
-          return await fail(claim, 'PAYMENT_FAILED', 'UNDERPAID', `Chain shows ${tx.paidSompi} < ${claim.amount_sompi}`);
+        if (!v.recipientVerified || !v.amountVerified) {
+          return await fail(
+            claim,
+            'PAYMENT_FAILED',
+            v.failureReason || 'UNDERPAID',
+            `recipientVerified=${v.recipientVerified} amountVerified=${v.amountVerified} paid=${v.paidSompi}`
+          );
+        }
+        // FAIL CLOSED. A settlement that cannot be bound to the requesting
+        // actor's own wallet must NEVER grant ownership. `senderVerified` is
+        // only true when the chain resolved inputs containing that wallet;
+        // where the node does not publish inputs, the change-output binding is
+        // the strongest available chain evidence and is accepted as the binding
+        // — but it is recorded as a BINDING, never promoted to senderVerified.
+        const bound = v.senderVerified || !!v.senderBinding;
+        if (!bound) {
+          return await fail(
+            claim,
+            'SETTLEMENT_UNVERIFIED',
+            'SETTLEMENT_UNVERIFIED',
+            'Settlement could not be bound to the requesting wallet'
+          );
         }
         claim = await svc.entities.EvolveTerritoryClaim.update(claim.id, {
           status: 'PAYMENT_CONFIRMED',
           confirmed_at: new Date().toISOString(),
           confirmation_evidence: {
-            txid: tx.txid,
-            paidSompi: tx.paidSompi,
-            inputAddresses: tx.inputAddresses,
+            txid: v.txId,
+            paidSompi: v.paidSompi,
+            inputAddresses: v.inputAddresses,
+            senderVerified: v.senderVerified,
+            recipientVerified: v.recipientVerified,
+            amountVerified: v.amountVerified,
+            senderBinding: v.senderBinding,
+            verificationLevel: v.verificationLevel,
+            evidenceSource: v.evidenceSource,
+            verificationTimestamp: v.verificationTimestamp,
+            senderProvenance: claim.confirmation_evidence?.senderProvenance || null,
           },
         });
       }
@@ -534,6 +733,20 @@ export default async function (req: Request) {
           failure_detail: `${existing.owner_code || existing.owner_id} acquired the cell before commit`,
         });
       }
+      // PART 11 — the provenance event is appended FIRST, then current ownership
+      // publishes the new state pointing at it. Never the other way round: we do
+      // not update current ownership and invent the history afterwards.
+      const event = await appendOwnershipEvent({
+        cellId: claim.target_cell_id,
+        eventType: 'ECONOMIC_CLAIM',
+        previousOwner: existing || null,
+        newOwner: { type: claim.actor_type, id: claim.actor_id, code: claim.actor_code || '' },
+        claim,
+        verification: claim.confirmation_evidence || null,
+        controllerId: claim.controller_id || claim.actor_id,
+        eventKey: `OWN_CLAIM_${claim.id}`,
+      });
+
       if (!existing) {
         await svc.entities.EvolveGeoOwnership.create({
           experiment_id: experimentId,
@@ -549,6 +762,12 @@ export default async function (req: Request) {
           claim_id: claim.id,
           claim_tx_id: claim.tx_id,
           claim_amount_sompi: claim.amount_sompi,
+          current_ownership_event_id: event.id,
+        });
+      } else {
+        // Same controller re-committing — record the link, never rewrite history.
+        await svc.entities.EvolveGeoOwnership.update(existing.id, {
+          current_ownership_event_id: event.id,
         });
       }
       claim = await svc.entities.EvolveTerritoryClaim.update(claim.id, {

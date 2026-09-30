@@ -56,6 +56,7 @@
         "INSUFFICIENT_TKAS",
         "PAYMENT_FAILED",
         "PAYMENT_TIMEOUT",
+        "SETTLEMENT_UNVERIFIED",
         "OWNERSHIP_FAILED"
       ],
       "default": "REQUESTED"
@@ -86,7 +87,7 @@
     },
     "confirmation_evidence": {
       "type": "object",
-      "description": "What the chain actually proved: paidSompi, inputAddresses, txid"
+      "description": "What the chain actually proved: paidSompi, inputAddresses, verification level, sender binding, and the outpoint provenance the signer consumed"
     },
     "previous_owner_id": {
       "type": "string",

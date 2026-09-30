@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import TopStatusHUD from "./TopStatusHUD";
 import LeftNavigation from "./LeftNavigation";
 import EarthViewport from "./EarthViewport";
+import { parseCellId, geoCellToEnginePos } from "@/lib/evolve/geoCells";
 import WorldToolbar from "./WorldToolbar";
 
 import SelectedTileInspector from "./SelectedTileInspector";
@@ -116,6 +117,24 @@ export default function EvolveApp() {
     }
   };
 
+  /**
+   * Clicking a cell in an actor's territory list selects it — which opens the
+   * Cell Inspector — and centres the map on it. Selection is presentation: it
+   * never changes who controls the cell.
+   */
+  function handleSelectCell(cell) {
+    const parsed = parseCellId(cell?.cell_id);
+    if (!parsed || !engine?.world) return;
+    const ep = geoCellToEnginePos(parsed, engine.world);
+    engine.selectTile(ep.x, ep.y, parsed);
+    setCam((c) => {
+      const scale = Math.max(c.scale || 1, 16);
+      const vw = mapSize?.w ? mapSize.w / scale : engine.world.width / 2;
+      const vh = mapSize?.h ? mapSize.h / scale : engine.world.height / 2;
+      return { ...c, scale, x: ep.x - vw / 2, y: ep.y - vh / 2 };
+    });
+  }
+
   function handleEvent(e) {
     if (!e) return;
     const agent = engine.agents.find((a) => a.code === e.actor_code);
@@ -149,6 +168,7 @@ export default function EvolveApp() {
               setCam={setCam}
               onSize={setMapSize}
               onSelectActor={(a) => setActorInspector(a)}
+              selectedActorId={actorInspector?.id || null}
             />
             {engine.selection && (
               <div className={`ev-tile-dock${dashOpen ? " is-clear-of-dash" : ""}`}>
@@ -157,6 +177,7 @@ export default function EvolveApp() {
                   onTrade={(asset) => open("trade", asset.sim_id)}
                   onFortify={(asset) => engine.fortify(asset.sim_id, engine.agentById.get(asset.owner_id)?.id || "")}
                   onInspectAsset={(asset) => open("asset", asset.sim_id)}
+                  onViewAgent={(id, type) => setActorInspector({ id, type: type === "HUMAN" ? "player" : "agent" })}
                 />
               </div>
             )}
@@ -239,6 +260,7 @@ export default function EvolveApp() {
         <ActorInspector
           actorId={actorInspector.id}
           actorType={actorInspector.type}
+          onSelectCell={handleSelectCell}
           onComputer={setComputerAgentId}
           onClose={() => setActorInspector(null)}
           onAction={(action, actor) => {

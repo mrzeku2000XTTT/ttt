@@ -313,4 +313,21 @@ export function ensureTerritoryLayer(map) {
       "line-opacity": 0.95,
     },
   });
+  // Selection emphasis — the SELECTED controller's outer frontier, drawn thicker
+  // in that controller's own identity colour. Selection state only: it never
+  // changes ownership and never replaces the resting territory colours.
+  map.addSource("ev-territory-selected", {
+    type: "geojson",
+    data: { type: "FeatureCollection", features: [] },
+  });
+  map.addLayer({
+    id: "ev-territory-selected",
+    type: "line",
+    source: "ev-territory-selected",
+    paint: {
+      "line-color": ["coalesce", ["get", "color"], EVOLVE_COLORS.cell],
+      "line-width": 2.6,
+      "line-opacity": 1,
+    },
+  });
 }

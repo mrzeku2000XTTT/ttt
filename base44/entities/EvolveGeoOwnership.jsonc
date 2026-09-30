@@ -57,6 +57,10 @@
       "default": 0,
       "description": "Verified settlement amount for this cell, in sompi"
     },
+    "current_ownership_event_id": {
+      "type": "string",
+      "description": "EvolveGeoOwnershipEvent that produced the CURRENT control of this cell. This record is present-state only; the event ledger is the history."
+    },
     "center_lat": {
       "type": "number",
       "description": "Geographic center latitude of the owned cell"

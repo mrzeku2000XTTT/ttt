@@ -43,6 +43,7 @@ import {
   wipePolygon,
   territoryFeature,
 } from "@/lib/evolve/territoryRender";
+import { getControllerColor, controllerKeyOf } from "@/lib/evolve/controllerColor";
 import { base44 } from "@/api/base44Client";
 
 // Land cells render with a land tone so they never read as ocean.
@@ -57,14 +58,10 @@ const ASSET_COLOR = {
   deposit: "#34d399",
 };
 
-// Territory fill color by controller. Orgs use their org color; independent
-// humans read as cyan (matching their dot), independent AI as violet.
-function territoryColor(ownerType, orgId) {
-  if (orgId) return orgColor(orgId);
-  if (ownerType === "HUMAN") return "#22d3ee";
-  if (ownerType === "AI") return "#a78bfa";
-  return EVOLVE_COLORS.cell;
-}
+// Territory colour resolves from the SAME identity function as the actor's map
+// dot (getControllerColor), so a controller's land always matches its dot.
+// Colour is presentation only — ownership is decided by
+// EvolveGeoOwnership.owner_id, never by comparing colours.
 
 /**
  * EarthViewport — REAL EARTH map (MapLibre GL) that replaces the canvas/Leaflet
@@ -77,14 +74,14 @@ function territoryColor(ownerType, orgId) {
  * the geography at their real lat/lng positions. Geographic labels are
  * DOM-projected (no external glyph server).
  */
-export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
+export default function EarthViewport({ cam, setCam, onSize, onSelectActor, selectedActorId }) {
   const { engine, say, currentPlayer, experimentId } = useEvolve();
   const wrapRef = useRef(null);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const syncingRef = useRef(false);
   const latestRef = useRef(null);
-  latestRef.current = { engine, size: null, cam, setCam, onSelectActor, currentPlayer, experimentId };
+  latestRef.current = { engine, size: null, cam, setCam, onSelectActor, currentPlayer, experimentId, selectedActorId };
   const places110Ref = useRef(null);
   const places50Ref = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -102,6 +99,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   // and the border pass both need the same set the fill used.
   const territoryCellsRef = useRef([]);
   const frontierRafRef = useRef(null);
+  const labelPopupRef = useRef(null);
 
   /* measure container */
   useEffect(() => {
@@ -382,7 +380,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
             ...c,
             center_lat: Number.isFinite(c.center_lat) ? c.center_lat : parsed.centerLat,
             center_lng: Number.isFinite(c.center_lng) ? c.center_lng : parsed.centerLng,
-            color: territoryColor(c.owner_type, c.organization_id),
+            color: getControllerColor(controllerKeyOf(c)),
           };
         })
         .filter(Boolean);
@@ -391,17 +389,27 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       // The animating cell is withheld from the settled layer so the wipe is
       // actually visible; it is drawn in full once the wipe completes.
       const animating = opts.animateCellId;
-      const feats = cells
-        .filter((c) => c.cell_id !== animating)
-        .map((c) => territoryFeature(c, c.color, 0.32));
+      const drawn = cells.filter((c) => c.cell_id !== animating);
+
+      // Selection state: the selected controller's cells are emphasised in its
+      // own identity colour while unrelated territory stays visible but quiet.
+      // Presentation only — ownership never changes here.
+      const focus = latestRef.current.selectedActorId || "";
+      const opacityFor = (c) => (focus ? (c.owner_id === focus ? 0.58 : 0.14) : 0.32);
+      const feats = drawn.map((c) => territoryFeature(c, c.color, opacityFor(c)));
       map.getSource("ev-territory").setData({ type: "FeatureCollection", features: feats });
 
       // Contiguous borders: only edges facing a DIFFERENT controller are drawn.
+      const segments = boundarySegments(drawn);
       const borderSrc = map.getSource("ev-territory-border");
       if (borderSrc) {
-        borderSrc.setData({
+        borderSrc.setData({ type: "FeatureCollection", features: segments });
+      }
+      const selSrc = map.getSource("ev-territory-selected");
+      if (selSrc) {
+        selSrc.setData({
           type: "FeatureCollection",
-          features: boundarySegments(cells.filter((c) => c.cell_id !== animating)),
+          features: focus ? segments.filter((f) => f.properties.ownerId === focus) : [],
         });
       }
 
@@ -484,8 +492,8 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     for (const ag of engine.agents.filter((a) => a.status !== "archived" && a.position)) {
       const coords = toLngLat(ag.position);
       if (!coords) continue; // skip invalid agent coordinate
-      const org = ag.organization_id;
-      feats.push({ type: "Feature", properties: { color: org ? orgColor(org) : "#e2e8f0", r: 3, kind: "agent", type: "agent", id: ag.id, x: ag.position.x, y: ag.position.y }, geometry: { type: "Point", coordinates: coords } });
+      // The dot uses the SAME identity colour as this agent's territory.
+      feats.push({ type: "Feature", properties: { color: getControllerColor(ag.organization_id || ag.id), r: 3, kind: "agent", type: "agent", id: ag.id, x: ag.position.x, y: ag.position.y }, geometry: { type: "Point", coordinates: coords } });
     }
     // HUMANS are NOT AI agents — they live only on the dedicated ev-players
     // layer. The ev-actors source carries agents + assets only.
@@ -528,7 +536,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
               x: pl.position.x,
               y: pl.position.y,
               is_you: isYou ? 1 : 0,
-              color: isYou ? "#a5f3fc" : "#22d3ee",
+              color: isYou ? "#a5f3fc" : getControllerColor(pl.organization_id || pl.id),
               r: isYou ? 7 : 6,
             },
             geometry: { type: "Point", coordinates: [lng, lat] },
@@ -623,6 +631,48 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     const res = engine.applyTool(ep.x, ep.y, { geo: cell });
     if (res?.message) say(res.message, res.ok !== false);
   }
+
+  /* Controller identity label over the selected cell — "whose land am I looking
+   * at?" answered before any provenance detail. A MapLibre Popup is DOM based,
+   * so it needs no glyph server. The accent uses the SAME identity colour as the
+   * controller's map dot. Labels appear contextually (on selection), never
+   * permanently inside every cell. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return undefined;
+    const geo = engine?.selection?.geo;
+    if (!geo) {
+      labelPopupRef.current?.remove();
+      labelPopupRef.current = null;
+      return undefined;
+    }
+    const cell = parseCellId(geo.cellId);
+    if (!cell) return undefined;
+    const owned = (territoryCellsRef.current || []).find((c) => c.cell_id === geo.cellId);
+    const color = owned ? owned.color : "#94a3b8";
+    const code = owned ? owned.owner_code || owned.owner_id : "UNCLAIMED";
+    const name = owned ? engine?.agentById?.get(owned.owner_id)?.name || "" : "";
+    const html =
+      `<div style="display:flex;align-items:center;gap:6px;font:600 10px/1.25 system-ui,sans-serif;color:#eef3f9">` +
+      `<span style="width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:${color};box-shadow:0 0 6px ${color}"></span>` +
+      `<span>${code}${name ? `<br><span style="font-weight:400;opacity:.75">${name}</span>` : ""}</span></div>` +
+      `<div style="font:600 8px/1.4 system-ui,sans-serif;letter-spacing:.1em;color:${color};margin-top:3px">` +
+      `${owned ? "CONTROLLED" : "NEUTRAL"}</div>`;
+    if (!labelPopupRef.current) {
+      labelPopupRef.current = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 16,
+        className: "ev-cell-label",
+      })
+        .setLngLat([cell.centerLng, cell.centerLat])
+        .setHTML(html)
+        .addTo(map);
+    } else {
+      labelPopupRef.current.setLngLat([cell.centerLng, cell.centerLat]).setHTML(html);
+    }
+    return undefined;
+  }, [engine?.selection?.geo?.cellId, mapReady, engine?.agentById]);
 
   const view = useMemo(() => (world && size.w ? camToView(cam, world, size) : null), [cam, world, size]);
 

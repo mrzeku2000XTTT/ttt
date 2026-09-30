@@ -4,6 +4,8 @@ import ChainAmount from '@/components/evolve/ChainAmount';
 import PlayerMailModal from '@/components/evolve/PlayerMailModal';
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { C, orgColor } from "@/lib/evolve/constants";
+import { getControllerColor } from "@/lib/evolve/controllerColor";
+import ActorTerritorySection from "./ActorTerritorySection";
 
 /**
  * ActorInspector — supports both AI and HUMAN actors.
@@ -13,7 +15,7 @@ import { C, orgColor } from "@/lib/evolve/constants";
  *          TRADE, CONTRACT, COOPERATE, ORG INVITE, FOLLOW (HUMAN)
  * Never exposes private user information.
  */
-export default function ActorInspector({ actorId, actorType, onClose, onAction, onComputer }) {
+export default function ActorInspector({ actorId, actorType, onClose, onAction, onComputer, onSelectCell }) {
   const { engine, user, currentPlayer } = useEvolve();
   const [mailOpen, setMailOpen] = useState(false);
   if (!engine) return null;
@@ -35,7 +37,19 @@ export default function ActorInspector({ actorId, actorType, onClose, onAction, 
       </div>
       <div className="ev-panel-body ev-scroll">
         <div className="ev-section">
-          <div style={{ fontSize: 14, fontWeight: 800, color: isAI ? C.cyan : C.text }}>{actor.code}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                flex: "0 0 auto",
+                background: getControllerColor(actor.organization_id || actor.id),
+                boxShadow: `0 0 8px ${getControllerColor(actor.organization_id || actor.id)}`,
+              }}
+            />
+            <span style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{actor.code}</span>
+          </div>
           <div style={{ fontSize: 10, color: C.textDim, marginTop: 2 }}>{actor.name || (isAI ? "AI Agent" : "Human Player")}</div>
           {org && <div style={{ fontSize: 9, color: orgClr, marginTop: 4 }}>● {org.name}</div>}
         </div>
@@ -54,6 +68,7 @@ export default function ActorInspector({ actorId, actorType, onClose, onAction, 
             <Row key={r} label={r.toUpperCase()} value={actor.assets?.[r]?.toFixed(0) || 0} />
           ))}
         </div>
+        {isAI && <ActorTerritorySection actorId={actor.id} onSelectCell={onSelectCell} />}
         <div className="ev-section">
           <div style={{ fontSize: 8, letterSpacing: "0.12em", color: C.textFaint, marginBottom: 6 }}>ECONOMIC HISTORY</div>
           <Row label="CONFIRMED INFLOW" value={<ChainAmount actor={actor} unit />} color={C.green} />

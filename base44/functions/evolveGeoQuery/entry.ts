@@ -83,6 +83,31 @@ export default async function (req: Request) {
       return Response.json({ ok: true, cells: inBounds });
     }
 
+    if (mode === 'history') {
+      // Provenance for ONE cell. Scoped to that cell — global history is never
+      // shipped to the browser.
+      const { cellId } = body;
+      if (!cellId) return Response.json({ error: 'MISSING_PARAMS: cellId' }, { status: 400 });
+      const events = await svc.entities.EvolveGeoOwnershipEvent.filter(
+        { experiment_id: experimentId, cell_id: cellId },
+        'created_at',
+        100
+      );
+      return Response.json({ ok: true, events });
+    }
+
+    if (mode === 'actorEvents') {
+      // Provenance for ONE actor — used by the actor inspector, never a planet dump.
+      const { actorId } = body;
+      if (!actorId) return Response.json({ error: 'MISSING_PARAMS: actorId' }, { status: 400 });
+      const events = await svc.entities.EvolveGeoOwnershipEvent.filter(
+        { experiment_id: experimentId, new_owner_id: actorId },
+        '-created_at',
+        200
+      );
+      return Response.json({ ok: true, events });
+    }
+
     return Response.json({ error: 'INVALID_MODE' }, { status: 400 });
   } catch (error: any) {
     console.error('[evolveGeoQuery]', error.message);

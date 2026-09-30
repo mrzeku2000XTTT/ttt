@@ -1,0 +1,146 @@
+{
+  "name": "EvolveGeoOwnershipEvent",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string",
+      "description": "EVOLVE experiment this ownership transition belongs to"
+    },
+    "event_key": {
+      "type": "string",
+      "description": "Idempotency key for this ONE ownership transition. Uniqueness is enforced by the writer, so replaying a commit or running a backfill twice never duplicates history."
+    },
+    "cell_id": {
+      "type": "string",
+      "description": "Geographic cell G{lat*1e6}_{lng*1e6} \u2014 EVOLVE world state, never a Kaspa block"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "SPAWN_CLAIM",
+        "ECONOMIC_CLAIM",
+        "SALE",
+        "TRANSFER",
+        "ORGANIZATION_TRANSFER"
+      ],
+      "default": "SPAWN_CLAIM",
+      "description": "How control changed. SALE/TRANSFER/ORGANIZATION_TRANSFER are reserved for the future sale model and are not produced yet."
+    },
+    "previous_owner_type": {
+      "type": "string",
+      "description": "Controller before the transition; empty for a neutral cell"
+    },
+    "previous_owner_id": {
+      "type": "string",
+      "description": "Stable actor key of the previous controller; empty for neutral"
+    },
+    "new_owner_type": {
+      "type": "string",
+      "enum": [
+        "AI",
+        "HUMAN",
+        "ORGANIZATION",
+        "NEUTRAL"
+      ]
+    },
+    "new_owner_id": {
+      "type": "string",
+      "description": "Stable actor key of the new controller (AGT_0011, PLR_0001)"
+    },
+    "new_owner_code": {
+      "type": "string",
+      "description": "Display code for rendering (A#011)"
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "The actor that initiated this transition"
+    },
+    "controller_id": {
+      "type": "string",
+      "description": "Effective controller \u2014 the organization when the actor belongs to one, otherwise the actor itself"
+    },
+    "claim_id": {
+      "type": "string",
+      "description": "EvolveTerritoryClaim that produced this event, when it came from the economic claim path"
+    },
+    "settlement_tx_id": {
+      "type": "string",
+      "description": "TN-10 txid of the settlement that caused this transition. Empty for SPAWN_CLAIM \u2014 a spawn required no payment."
+    },
+    "settlement_sender_address": {
+      "type": "string",
+      "description": "Public kaspatest: address the settlement was expected to originate from"
+    },
+    "settlement_recipient_address": {
+      "type": "string",
+      "description": "Public kaspatest: address that received the settlement (the EVOLVE Territory Treasury)"
+    },
+    "settlement_amount_sompi": {
+      "type": "number",
+      "default": 0
+    },
+    "sender_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "True only when chain inputs were resolved and contained the expected sender. Never inferred from a balance change."
+    },
+    "recipient_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "amount_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "sender_binding": {
+      "type": "object",
+      "description": "Chain evidence binding the settlement to the sender's own key (e.g. the change output). Distinct from sender_verified and never collapsed into it."
+    },
+    "verification_level": {
+      "type": "string",
+      "enum": [
+        "FULL_SETTLEMENT_VERIFIED",
+        "RECIPIENT_AMOUNT_VERIFIED",
+        "SENDER_UNVERIFIED",
+        "NOT_FOUND",
+        "NOT_REQUIRED"
+      ],
+      "default": "NOT_REQUIRED"
+    },
+    "verification_timestamp": {
+      "type": "string"
+    },
+    "evidence_source": {
+      "type": "string",
+      "description": "Which chain view proved this: transaction_endpoint, recipient_utxo_set, or none"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "event_key",
+    "cell_id",
+    "event_type",
+    "new_owner_id"
+  ],
+  "rls": {
+    "read": null,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

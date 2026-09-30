@@ -129,5 +129,14 @@ export async function sendTn10({ mnemonic, fromAddress, toAddress, amountSompi }
   let submitData;
   try { submitData = JSON.parse(submitText); } catch { submitData = submitText; }
   const txId = submitData?.transactionId || submitData?.txid || submitData;
-  return { txId, feeSompi: currentFee };
+  // `spentOutpoints` is the provenance the signer actually consumed. They were
+  // read from THIS address's UTXO set, so recording them binds the broadcast to
+  // the sender without inferring anything. Additive — existing callers that
+  // destructure only { txId, feeSompi } are unaffected.
+  const spentOutpoints = selectedUtxos.map((u: any) => ({
+    transactionId: u.outpoint.transactionId,
+    index: u.outpoint.index,
+    amountSompi: Number(u.utxoEntry.amount),
+  }));
+  return { txId, feeSompi: currentFee, spentOutpoints, fromAddress: from };
 }

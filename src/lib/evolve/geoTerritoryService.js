@@ -68,6 +68,19 @@ export async function getOrganizationTerritory({ experimentId, orgId }) {
 }
 
 /**
+ * Ownership provenance for ONE cell — the immutable events that produced its
+ * current control. Scoped to that cell; global history never reaches the browser.
+ */
+export async function getCellHistory({ experimentId, cellId }) {
+  return invoke("evolveGeoQuery", { mode: "history", experimentId, cellId });
+}
+
+/** Ownership provenance for ONE actor. */
+export async function getActorOwnershipEvents({ experimentId, actorId }) {
+  return invoke("evolveGeoQuery", { mode: "actorEvents", experimentId, actorId });
+}
+
+/**
  * Territory intersecting a map viewport. The browser only receives the cells
  * it can see — not the whole planet.
  * bounds: { north, south, east, west } (MapLibre LngLatBounds or plain object).
