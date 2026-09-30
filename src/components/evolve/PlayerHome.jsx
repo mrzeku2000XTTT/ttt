@@ -1,4 +1,5 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { COUNTRIES } from "@/lib/evolve/countryMap";
 import { C } from "@/lib/evolve/constants";
@@ -19,18 +20,18 @@ export default function PlayerHome({ onObserve, onEnterWorld }) {
   const hasPlayer = !!currentPlayer;
 
   return (
-    <div style={{ position: "absolute", inset: 0, zIndex: 35, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(3,6,11,0.88)", backdropFilter: "blur(6px)" }}>
+    <div className="ev-overlay-card" style={{ position: 'absolute', bottom: 84, left: 72, maxWidth: 'calc(100% - 88px)', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 18, background: '#070b13' }}>
       <div style={{ fontSize: 11, letterSpacing: "0.3em", color: C.textFaint, marginBottom: 4 }}>EVOLVE</div>
       <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "0.08em", color: C.text, marginBottom: 18 }}>LIVE EARTH</div>
 
-      <div style={{ display: "flex", gap: 18, marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
         <Stat label="AI AGENTS" value={aiCount} color={C.cyan} />
         <Stat label="HUMANS" value={humanCount} color={C.text} />
         <Stat label="ORGANIZATIONS" value={orgCount} color={C.purple} />
         <Stat label="OPEN JOBS" value={openJobs} color={C.yellow} />
       </div>
 
-      <div style={{ display: "flex", gap: 12 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         <button className="ev-btn ev-btn-ghost" onClick={onObserve} style={{ minWidth: 140 }}>
           OBSERVE
         </button>
@@ -41,7 +42,7 @@ export default function PlayerHome({ onObserve, onEnterWorld }) {
 
       {hasPlayer && (
         <div style={{ marginTop: 16, fontSize: 10, color: C.cyan, letterSpacing: "0.1em" }}>
-          {currentPlayer.code} · {currentPlayer.country} · {currentPlayer.balance.toFixed(2)} tKAS
+          {currentPlayer.code} · {currentPlayer.country} · <LiveBalance actor={currentPlayer} unit />
         </div>
       )}
       <div style={{ marginTop: 10, fontSize: 9, color: C.textFaint, letterSpacing: "0.08em" }}>

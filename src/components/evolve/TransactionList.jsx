@@ -4,10 +4,11 @@ import { fmt } from "@/lib/evolve/constants";
 
 /** Every settlement the treasury has made, with its ledger status. */
 export default function TransactionList({ limit = 40 }) {
-  const { engine } = useEvolve();
+  const { engine, chainHistory } = useEvolve();
   if (!engine) return null;
 
-  const rows = engine.transactions.slice(0, limit);
+  const rows = chainHistory.rows.filter(row => ['CONFIRMED', 'SETTLED'].includes(row.status)).slice(0, limit).map(row => ({ ...row, job_code: row.purpose, agent_code: row.recipient_code, amount: Number(row.amount_sompi) / 1e8 }));
+  if (!chainHistory.ready) return <div className="ev-section">Confirmed transaction history unavailable.</div>;
   if (!rows.length) {
     return <div style={{ padding: 12, fontSize: 10, color: "#54657c" }}>No settlements yet.</div>;
   }

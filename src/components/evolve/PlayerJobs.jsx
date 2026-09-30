@@ -8,7 +8,7 @@ import { JOB_TYPES, VERIFICATION_METHODS, C } from "@/lib/evolve/constants";
  * POST JOB creates an actual Job record and escrows development funds.
  */
 export default function PlayerJobs({ onClose }) {
-  const { engine, currentPlayer, postPlayerJob } = useEvolve();
+  const { engine, currentPlayer, postPlayerJob, chainBalances } = useEvolve();
   const [tab, setTab] = useState("AVAILABLE");
 
   if (!engine || !currentPlayer) return null;
@@ -30,7 +30,7 @@ export default function PlayerJobs({ onClose }) {
       <div className="ev-panel-body ev-scroll">
         {tab === "AVAILABLE" && <JobList jobs={openJobs} />}
         {tab === "MY JOBS" && <JobList jobs={myJobs} emptyMsg="You have no jobs yet." />}
-        {tab === "POST JOB" && <PostJobForm onPost={(d) => postPlayerJob(d)} balance={currentPlayer.balance} />}
+        {tab === "POST JOB" && <PostJobForm onPost={(d) => postPlayerJob(d)} balance={chainBalances.balanceFor(currentPlayer)} />}
       </div>
     </div>
   );
@@ -74,8 +74,8 @@ function PostJobForm({ onPost, balance }) {
         <Field label="DIFFICULTY"><select className="ev-input" value={form.difficulty} onChange={(e) => set("difficulty", e.target.value)}><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></Field>
         <Field label="ACCESS"><select className="ev-input" value={form.access} onChange={(e) => set("access", e.target.value)}><option>GLOBAL</option><option>REGIONAL</option><option>LOCAL</option></select></Field>
       </div>
-      <div style={{ fontSize: 9, color: C.textFaint }}>Balance: {balance.toFixed(2)} tKAS · Reward is escrowed on post.</div>
-      <button className="ev-btn" onClick={submit} disabled={form.reward > balance} style={{ alignSelf: "flex-start" }}>POST JOB</button>
+      <div style={{ fontSize: 9, color: C.textFaint }}>Balance: {balance === undefined ? 'N/A' : `${balance.toFixed(4)} tKAS`} · Reward is escrowed on post.</div>
+      <button className="ev-btn" onClick={submit} disabled={balance === undefined || form.reward > balance} style={{ alignSelf: "flex-start" }}>POST JOB</button>
     </div>
   );
 }

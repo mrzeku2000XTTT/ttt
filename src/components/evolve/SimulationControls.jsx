@@ -1,4 +1,5 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { Pause, Play, Save, StepForward } from "lucide-react";
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
@@ -53,7 +54,7 @@ export default function SimulationControls({ onClose }) {
             {engine.kaspa.ledger === "mock" ? "DEVELOPMENT LEDGER" : "KASPA TN-10"}
           </span>
         </div>
-        <div className="ev-row"><span className="ev-label">Treasury</span><span className="ev-value">{fmt(engine.treasury.balance)} tKAS</span></div>
+        <div className="ev-row"><span className="ev-label">Treasury</span><span className="ev-value"><LiveBalance actor={engine.treasury} unit /></span></div>
         <div className="ev-row"><span className="ev-label">Settlements</span><span className="ev-value">{engine.transactions.length}</span></div>
       </div>
 

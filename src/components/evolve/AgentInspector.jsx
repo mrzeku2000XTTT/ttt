@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
+import ChainAmount from '@/components/evolve/ChainAmount';
 import { GitBranch, Baby, Building2, Coins } from "lucide-react";
 import PanelShell from "./PanelShell";
 import GenomePanel from "./GenomePanel";
@@ -13,7 +15,7 @@ const TABS = ["Overview", "Genome", "Decisions"];
  * economics, genome and the decisions that produced them.
  */
 export default function AgentInspector({ agentId, onClose, onLineage }) {
-  const { engine, say } = useEvolve();
+  const { engine, say, chainBalances } = useEvolve();
   const [tab, setTab] = useState("Overview");
   const agent = engine?.agentById.get(agentId);
   if (!agent) return null;
@@ -51,7 +53,7 @@ export default function AgentInspector({ agentId, onClose, onLineage }) {
             <div style={{ fontSize: 9.5, color: "#7d90a8", wordBreak: "break-all", lineHeight: 1.4 }}>{agent.address || "—"}</div>
             <div className="ev-row" style={{ marginTop: 6 }}>
               <span className="ev-label">Wallet Balance</span>
-              <span className="ev-value" style={{ color: "#34d399", fontWeight: 700 }}>{fmt(agent.balance)} tKAS</span>
+              <span className="ev-value" style={{ color: "#34d399", fontWeight: 700 }}><LiveBalance actor={agent} unit /></span>
             </div>
           </div>
 
@@ -86,9 +88,9 @@ export default function AgentInspector({ agentId, onClose, onLineage }) {
 
           <div className="ev-section">
             <div className="ev-label" style={{ marginBottom: 5 }}>Economics</div>
-            <div className="ev-row"><span className="ev-label">Lifetime earnings</span><span className="ev-value" style={{ color: "#34d399" }}>{fmt(agent.lifetime_earnings)}</span></div>
-            <div className="ev-row"><span className="ev-label">Expenses</span><span className="ev-value" style={{ color: "#f87171" }}>{fmt(agent.lifetime_expenses)}</span></div>
-            <div className="ev-row"><span className="ev-label">Profit</span><span className="ev-value" style={{ color: profit >= 0 ? "#34d399" : "#f87171" }}>{fmt(profit)}</span></div>
+            <div className="ev-row"><span className="ev-label">Confirmed EVOLVE inflow</span><span className="ev-value" style={{ color: "#34d399" }}><ChainAmount actor={agent} /></span></div>
+            <div className="ev-row"><span className="ev-label">Expenses</span><span className="ev-value" style={{ color: "#f87171" }}><ChainAmount actor={agent} direction="out" /></span></div>
+            <div className="ev-row"><span className="ev-label">Profit</span><span className="ev-value" style={{ color: profit >= 0 ? "#34d399" : "#f87171" }}><ChainAmount actor={agent} direction="net" /></span></div>
             <div className="ev-row"><span className="ev-label">Jobs completed</span><span className="ev-value">{agent.jobs_completed} · failed {agent.jobs_failed}</span></div>
           </div>
 
@@ -106,7 +108,7 @@ export default function AgentInspector({ agentId, onClose, onLineage }) {
             <div className="ev-section">
               <div className="ev-label" style={{ marginBottom: 4 }}>Organization</div>
               <div className="ev-value">{org.name}</div>
-              <div className="ev-label" style={{ marginTop: 2 }}>Treasury {fmt(org.treasury)} · Reputation {org.reputation.toFixed(0)}</div>
+              <div className="ev-label" style={{ marginTop: 2 }}>Treasury <LiveBalance actor={org} /> · Reputation {org.reputation.toFixed(0)}</div>
             </div>
           )}
 
@@ -135,7 +137,7 @@ export default function AgentInspector({ agentId, onClose, onLineage }) {
               className="ev-btn ev-btn-ghost"
               style={{ padding: "6px 9px", fontSize: 9.5 }}
               onClick={() => {
-                const r = engine.contributeToOrg(agent.id, Math.min(5, Math.max(0, agent.balance / 4)));
+                const r = engine.contributeToOrg(agent.id, Math.min(5, Math.max(0, (chainBalances.balanceFor(agent) ?? 0) / 4)));
                 say(r.message, r.ok);
               }}
             >

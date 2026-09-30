@@ -1,4 +1,5 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { Shield, Crosshair } from "lucide-react";
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
@@ -39,7 +40,7 @@ export default function AssetInspector({ simId, onClose, onAttack, onFortify }) 
       <div className="ev-section">
         <div className="ev-label" style={{ marginBottom: 4 }}>Owner</div>
         <div className="ev-value">{owner ? `${owner.code} · ${owner.name}` : "UNCLAIMED"}</div>
-        {owner ? <div className="ev-label" style={{ marginTop: 3 }}>Balance {fmt(owner.balance)} tKAS · Gen {owner.generation}</div> : null}
+        {owner ? <div className="ev-label" style={{ marginTop: 3 }}>Balance <LiveBalance actor={owner} unit /> · Gen {owner.generation}</div> : null}
         <div className="ev-label" style={{ marginTop: 3 }}>Coordinates {asset.x},{asset.y}</div>
       </div>
 

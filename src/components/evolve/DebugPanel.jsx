@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { StepForward, RotateCcw, AlertTriangle, Activity } from "lucide-react";
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
@@ -12,14 +13,14 @@ import { priceOf } from "@/lib/evolve/economyService";
  * Includes STEP 1 TICK and RESET EXPERIMENT for debugging.
  */
 export default function DebugPanel({ onClose }) {
-  const { engine, experimentId, say } = useEvolve();
+  const { engine, experimentId, say, chainBalances } = useEvolve();
   const [confirmReset, setConfirmReset] = useState(false);
   if (!engine) return null;
 
   const s = engine.stats();
   const activeAgents = engine.agents.filter((a) => a.status !== "archived");
   const archived = engine.agents.length - activeAgents.length;
-  const insolvent = activeAgents.filter((a) => a.balance < 0).length;
+  const insolvent = activeAgents.filter(a => chainBalances.balanceFor(a) === 0).length;
   const decisions = activeAgents.reduce((sum, a) => sum + (a.decisions?.length || 0), 0);
   const errorCount = engine.events.recent(200).filter((e) => /FAIL|REJECT|ARCHIVED|SHORT/.test(e.type)).length;
 
@@ -77,7 +78,7 @@ export default function DebugPanel({ onClose }) {
         <div className="ev-row"><span className="ev-label">Transactions</span><span className="ev-value">{fmtInt(engine.transactions.length)}</span></div>
         <div className="ev-row"><span className="ev-label">Events generated</span><span className="ev-value">{fmtInt(engine.events.count())}</span></div>
         <div className="ev-row"><span className="ev-label">Recent errors</span><span className="ev-value" style={{ color: errorCount ? "#f87171" : "#7d90a8" }}>{fmtInt(errorCount)}</span></div>
-        <div className="ev-row"><span className="ev-label">Treasury</span><span className="ev-value">{fmt(engine.treasury.balance)} tKAS</span></div>
+        <div className="ev-row"><span className="ev-label">Treasury</span><span className="ev-value"><LiveBalance actor={engine.treasury} unit /></span></div>
         <div className="ev-row"><span className="ev-label">Ledger</span><span className="ev-value" style={{ color: engine.kaspa.ledger === "mock" ? "#fbbf24" : "#34d399" }}>{engine.kaspa.ledger === "mock" ? "DEVELOPMENT" : "TN-10"}</span></div>
       </div>
 

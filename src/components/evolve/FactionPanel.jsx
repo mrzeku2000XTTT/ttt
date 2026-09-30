@@ -1,4 +1,5 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { FACTIONS, fmt } from "@/lib/evolve/constants";
@@ -13,7 +14,7 @@ export default function FactionPanel({ factionId, onClose, onSelectAgent }) {
   const members = engine.agents.filter((a) => a.faction === factionId && a.status !== "archived");
   const assets = engine.world.assets.filter((a) => a.faction === factionId);
   const orgs = engine.orgs.filter((o) => o.faction === factionId);
-  const wealth = members.reduce((s, a) => s + a.balance, 0);
+
 
   return (
     <PanelShell title={`Faction ${faction.label}`} subtitle={`${members.length} agents · ${assets.length} assets`} onClose={onClose} width={330}>
@@ -30,7 +31,7 @@ export default function FactionPanel({ factionId, onClose, onSelectAgent }) {
           <Stat label="Agents" value={members.length} />
           <Stat label="Assets" value={assets.length} />
           <Stat label="Organizations" value={orgs.length} />
-          <Stat label="Combined wealth" value={`${fmt(wealth)} tKAS`} color="#34d399" />
+          <Stat label="Combined wealth" value={<LiveBalance actors={members} unit />} color="#34d399" />
           <Stat label="Servers" value={assets.filter((a) => a.kind === "server").length} />
           <Stat label="Cities" value={assets.filter((a) => a.kind === "city").length} />
         </div>
@@ -58,7 +59,7 @@ export default function FactionPanel({ factionId, onClose, onSelectAgent }) {
             onClick={() => onSelectAgent(a.id)}
           >
             <span>{a.code} · {a.name}</span>
-            <span style={{ color: "#34d399" }}>{fmt(a.balance)}</span>
+            <span style={{ color: "#34d399" }}><LiveBalance actor={a} /></span>
           </button>
         ))}
       </div>

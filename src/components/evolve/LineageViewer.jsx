@@ -1,4 +1,5 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
@@ -25,7 +26,7 @@ export default function LineageViewer({ agentId, onClose, onSelect }) {
               className="ev-btn ev-btn-ghost"
               style={{ justifyContent: "flex-start", padding: "5px 8px", fontSize: 10 }}
             >
-              <ChevronRight className="h-3 w-3" /> {a.code} · gen {a.generation} · {a.balance.toFixed(1)} tKAS
+              <ChevronRight className="h-3 w-3" /> {a.code} · gen {a.generation} · <LiveBalance actor={a} unit />
             </button>
           ))}
           <div className="ev-chip is-on" style={{ alignSelf: "flex-start" }}>

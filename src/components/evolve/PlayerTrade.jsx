@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { RESOURCES, C } from "@/lib/evolve/constants";
 import { priceOf } from "@/lib/evolve/economyService";
@@ -57,7 +58,7 @@ export default function PlayerTrade({ onClose }) {
               <button className="ev-btn" onClick={buy}>BUY</button>
               <button className="ev-btn ev-btn-ghost" onClick={sell}>SELL</button>
             </div>
-            <div style={{ marginTop: 12, fontSize: 9, color: C.textFaint }}>BALANCE: {currentPlayer.balance.toFixed(2)} tKAS · {resource.toUpperCase()}: {currentPlayer.assets[resource]?.toFixed(0) || 0}</div>
+            <div style={{ marginTop: 12, fontSize: 9, color: C.textFaint }}>BALANCE: <LiveBalance actor={currentPlayer} unit /> · {resource.toUpperCase()}: {currentPlayer.assets[resource]?.toFixed(0) || 0}</div>
           </div>
         )}
         {tab === "OFFERS" && (

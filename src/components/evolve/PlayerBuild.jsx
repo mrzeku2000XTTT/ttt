@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { C } from "@/lib/evolve/constants";
 
@@ -14,7 +15,7 @@ const BUILDINGS = [
 ];
 
 export default function PlayerBuild({ onClose }) {
-  const { engine, currentPlayer, buildAsset, selectedSpawnCell } = useEvolve();
+  const { engine, currentPlayer, buildAsset, selectedSpawnCell, chainBalances } = useEvolve();
   const [sel, setSel] = useState(null);
 
   if (!engine || !currentPlayer) return null;
@@ -31,7 +32,7 @@ export default function PlayerBuild({ onClose }) {
       <div className="ev-panel-body ev-scroll" style={{ padding: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           {BUILDINGS.map((b) => {
-            const canAfford = currentPlayer.balance >= b.cost;
+            const canAfford = (chainBalances.balanceFor(currentPlayer) ?? -1) >= b.cost;
             const isSel = sel === b.kind;
             return (
               <button
@@ -52,7 +53,7 @@ export default function PlayerBuild({ onClose }) {
           })}
         </div>
         <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 9, color: C.textFaint }}>BALANCE: {currentPlayer.balance.toFixed(2)} tKAS</span>
+          <span style={{ fontSize: 9, color: C.textFaint }}>BALANCE: <LiveBalance actor={currentPlayer} unit /></span>
           <button className="ev-btn" disabled={!sel} onClick={() => { const r = buildAsset({ kind: sel, x: cell.x, y: cell.y, geoLat, geoLng }); if (r?.ok) setSel(null); }}>BUILD</button>
         </div>
       </div>

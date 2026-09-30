@@ -15,7 +15,7 @@ import { base44 } from "@/api/base44Client";
 export default function useTn10Balances(addresses, { pollMs = 15000 } = {}) {
   const [state, setState] = useState({ balances: {}, loading: false, ok: true });
 
-  const key = (addresses || []).filter(Boolean).sort().join(",");
+  const key = [...new Set((addresses || []).filter(address => typeof address === 'string' && address.startsWith('kaspatest:')))].sort().join(',');
 
   useEffect(() => {
     if (!key) {
@@ -28,29 +28,39 @@ export default function useTn10Balances(addresses, { pollMs = 15000 } = {}) {
     const load = async (first) => {
       if (first) setState((s) => ({ ...s, loading: true }));
       try {
-        const res = await base44.functions.invoke("evolveTn10Balances", { addresses: key.split(",") });
-        if (!alive) return;
-        const data = res?.data || {};
-        const balances = {};
-        for (const [addr, sompi] of Object.entries(data.balances || {})) {
-          balances[addr] = Number(sompi) / 1e8;
+        const addresses = key.split(',');
+        const responses = [];
+        for (let i = 0; i < addresses.length; i += 40) {
+          responses.push((await base44.functions.invoke('evolveTn10Balances', { addresses: addresses.slice(i, i + 40) })).data);
         }
-        setState({ balances, loading: false, ok: data.ok !== false });
+        if (!alive) return;
+        const balances = {};
+        for (const data of responses) {
+          for (const [addr, sompi] of Object.entries(data?.balances || {})) {
+            if (sompi !== null && Number.isSafeInteger(Number(sompi)) && Number(sompi) >= 0) balances[addr] = Number(sompi) / 1e8;
+          }
+        }
+        setState({ balances, loading: false, ok: responses.every(data => data?.ok === true), key });
       } catch {
         if (!alive) return;
-        // Keep the last real chain answer rather than blanking the display.
-        setState((s) => ({ ...s, loading: false, ok: false }));
+        // A failed refresh is unknown, not zero or an unlabelled stale balance.
+        setState({ balances: {}, loading: false, ok: false, key });
       }
     };
 
     load(true);
+    const refresh = () => { if (!document.hidden) load(false); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
     const timer = pollMs ? setInterval(() => load(false), pollMs) : null;
 
     return () => {
       alive = false;
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
       if (timer) clearInterval(timer);
     };
   }, [key, pollMs]);
 
-  return state;
+  return state.key === key ? state : { balances: {}, loading: !!key, ok: !key };
 }

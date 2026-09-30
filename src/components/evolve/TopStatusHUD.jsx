@@ -4,7 +4,7 @@ import { Landmark, Play, Pause, Store } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { fmt, fmtInt } from "@/lib/evolve/constants";
 import ConnectScorpion from "./ConnectScorpion";
-import useTn10Balances from "@/lib/evolve/useTn10Balances";
+import LiveBalance from '@/components/evolve/LiveBalance';
 
 const SPEEDS = [1, 2, 5, 10];
 
@@ -16,18 +16,8 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
   const { engine } = useEvolve();
   const navigate = useNavigate();
 
-  // On-chain tKAS — the real TN-10 balance held by this experiment's AI agents.
-  // Read from the chain; never the simulation's internal treasury counter.
-  const agentCount = engine?.agents?.length || 0;
-  const agentAddresses = useMemo(
-    () => (engine ? engine.agents.filter((a) => a.address).map((a) => a.address) : []),
-    [engine, agentCount]
-  );
-  const { balances: onChain, loading: onChainLoading, ok: onChainOk } = useTn10Balances(agentAddresses);
-
   if (!engine) return null;
   const s = engine.stats();
-  const onChainTotal = Object.values(onChain).reduce((sum, v) => sum + v, 0);
 
   const exitToStore = () => {
     try { localStorage.removeItem("came_from_categories"); } catch {}
@@ -65,7 +55,7 @@ export default function TopStatusHUD({ onMenu, onView, onTreasury }) {
         <Metric label="Generations" value={fmtInt(s.generations)} color="#c084fc" onClick={() => onView("RESEARCH")} title="Open research" />
         <Metric
           label="On-chain tKAS"
-          value={onChainLoading ? "…" : onChainOk ? fmt(onChainTotal) : "N/A"}
+          value={<LiveBalance actors={engine.agents.filter(a => a.status !== 'archived')} />}
           color="#34d399"
           onClick={onTreasury}
           title="Real Kaspa TN-10 balance held by this experiment's AI agents"

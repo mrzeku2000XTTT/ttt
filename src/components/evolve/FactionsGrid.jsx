@@ -1,4 +1,5 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { X } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { orgColor, fmt, fmtInt } from "@/lib/evolve/constants";
@@ -59,7 +60,7 @@ export default function FactionsGrid({ onSelect, onSelectOrg, onClose }) {
         {engine.orgs.map((org) => {
           const members = active.filter((a) => org.members.includes(a.id));
           const assets = engine.world.assets.filter((a) => a.org_slot === org.slot);
-          const wealth = members.reduce((s, a) => s + a.balance, 0);
+
           const s = share[org.id] || 0;
           const color = org.color || orgColor(org.id);
 
@@ -75,8 +76,8 @@ export default function FactionsGrid({ onSelect, onSelectOrg, onClose }) {
                 <div className="ev-grid2" style={{ marginTop: 10 }}>
                   <Cell label="Members" value={fmtInt(members.length)} />
                   <Cell label="Assets" value={fmtInt(assets.length)} />
-                  <Cell label="Treasury" value={fmt(org.treasury)} />
-                  <Cell label="Wealth" value={fmt(wealth)} />
+                  <Cell label="Treasury" value={<LiveBalance actor={org} />} />
+                  <Cell label="Wealth" value={<LiveBalance actors={members} />} />
                 </div>
 
                 <button className="ev-btn ev-btn-ghost" style={{ width: "100%", marginTop: 10, padding: "6px" }} onClick={() => onSelectOrg(org.id)}>

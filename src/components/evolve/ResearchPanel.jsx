@@ -1,4 +1,5 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import PanelShell from "./PanelShell";
 import GenomePanel from "./GenomePanel";
 import { useEvolve } from "@/lib/evolve/useEvolve";
@@ -83,7 +84,7 @@ export default function ResearchPanel({ onClose, onSelectAgent }) {
         </div>
         <div className="ev-row" style={{ marginTop: 7 }}>
           <span className="ev-label">Treasury</span>
-          <span className="ev-value" style={{ color: "#34d399" }}>{fmt(engine.treasury.balance)} tKAS</span>
+          <span className="ev-value" style={{ color: "#34d399" }}><LiveBalance actor={engine.treasury} unit /></span>
         </div>
       </div>
     </PanelShell>

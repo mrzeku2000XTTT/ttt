@@ -40,8 +40,8 @@ export default async function (req: Request): Promise<Response> {
           );
           if (!res.ok) return [address, null] as const;
           const data = await res.json();
-          const sompi = Number(data?.balance ?? 0);
-          return [address, Number.isFinite(sompi) ? sompi : null] as const;
+          const sompi = data?.balance == null ? null : Number(data.balance);
+          return [address, sompi !== null && Number.isSafeInteger(sompi) && sompi >= 0 ? sompi : null] as const;
         } catch {
           return [address, null] as const;
         }

@@ -43,7 +43,13 @@ async function loadGeo(key) {
   if (cache[key]) return cache[key];
   if (pending[key]) return pending[key];
   pending[key] = fetch(BASE + FILES[key])
-    .then((r) => (r.ok ? r.json() : null))
+    .then(async (r) => {
+      const geo = r.ok ? await r.json().catch(() => null) : null;
+      if (geo?.type === 'FeatureCollection') return geo;
+      // Builder preview and published app both use this app's own geography.
+      const published = await fetch('https://tttxyz.base44.app/evolve-earth/' + FILES[key]);
+      return published.ok ? published.json() : null;
+    })
     .then((g) => {
       cache[key] = g;
       pending[key] = null;
@@ -239,7 +245,7 @@ export function toValidLngLat(lng, lat) {
 // Camera zoom range matches the MapLibre map (minZoom 2 / maxZoom 13). Scale
 // is derived per world from zoom, so map -> cam -> map is lossless and a zoom
 // never gets snapped back out.
-const MIN_ZOOM = 2;
+const MIN_ZOOM = 0;
 const MAX_ZOOM = 13;
 // MapLibre clamps its centre latitude to the Web-Mercator limit. Requesting a
 // centre beyond it meant the map silently returned a DIFFERENT centre than the

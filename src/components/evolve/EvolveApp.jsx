@@ -3,7 +3,7 @@ import TopStatusHUD from "./TopStatusHUD";
 import LeftNavigation from "./LeftNavigation";
 import EarthViewport from "./EarthViewport";
 import WorldToolbar from "./WorldToolbar";
-import RightIntelPanel from "./RightIntelPanel";
+
 import SelectedTileInspector from "./SelectedTileInspector";
 import AgentList from "./AgentList";
 import AgentInspector from "./AgentInspector";
@@ -160,7 +160,7 @@ export default function EvolveApp() {
           <PaneModeProvider value="center">{centre()}</PaneModeProvider>
         )}
 
-        <RightIntelPanel cam={cam} setCam={setCam} mapSize={mapSize} onPickEvent={handleEvent} />
+
       </div>
 
       {playerMode !== "player" && <WorldToolbar onOpenJobs={() => open("jobs")} />}

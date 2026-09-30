@@ -11,6 +11,8 @@ import { TxStatus } from "./txStateMachine";
 import { kasToSompi } from "./evolveTxBuilder";
 import { COUNTRIES, countryByName, latLngToGrid } from "./countryMap";
 import { geoCellToEnginePos } from "./geoCells";
+import useEvolveChainBalances from '@/lib/evolve/useEvolveChainBalances';
+import useEvolveChainHistory from '@/lib/evolve/useEvolveChainHistory';
 
 const EvolveContext = createContext(null);
 
@@ -46,6 +48,9 @@ export function EvolveProvider({ children }) {
   const [pendingTxCount, setPendingTxCount] = useState(0);
 
   const wallet = useScorpionWallet();
+  const chainBalances = useEvolveChainBalances(engine, experimentId, wallet, player);
+  const walletChainValue = wallet.isTN10 ? chainBalances.balances[wallet.address] : undefined;
+  const chainHistory = useEvolveChainHistory(experimentId);
 
   const say = useCallback((message, ok = true) => {
     setFlash({ message, ok, id: Date.now() });
@@ -616,8 +621,10 @@ export function EvolveProvider({ children }) {
     leaveOrganization,
     generateAgent,
     persistNow,
-    // wallet / payment
-    wallet,
+    // Every view consumes the same TN-10 snapshot; never the SDK's cached total.
+    chainBalances,
+    chainHistory,
+    wallet: { ...wallet, balanceKas: walletChainValue, balanceKasShort: walletChainValue === undefined ? (chainBalances.loading ? '…' : 'N/A') : walletChainValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }) },
     preparePayment,
     confirmPayment,
     cancelPayment,

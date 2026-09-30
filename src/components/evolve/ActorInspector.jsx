@@ -1,4 +1,6 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
+import ChainAmount from '@/components/evolve/ChainAmount';
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { C, orgColor } from "@/lib/evolve/constants";
 
@@ -36,7 +38,7 @@ export default function ActorInspector({ actorId, actorType, onClose, onAction }
           {org && <div style={{ fontSize: 9, color: orgClr, marginTop: 4 }}>● {org.name}</div>}
         </div>
         <div className="ev-section">
-          <Row label="BALANCE" value={`${actor.balance?.toFixed(2) || 0} tKAS`} color={C.green} />
+          <Row label="BALANCE" value={<LiveBalance actor={actor} unit />} color={C.green} />
           <Row label="REPUTATION" value={actor.reputation?.toFixed(0) || 50} />
           <Row label="STATUS" value={actor.status?.toUpperCase() || "IDLE"} />
           {isAI && <Row label="GENERATION" value={actor.generation || 0} />}
@@ -52,8 +54,8 @@ export default function ActorInspector({ actorId, actorType, onClose, onAction }
         </div>
         <div className="ev-section">
           <div style={{ fontSize: 8, letterSpacing: "0.12em", color: C.textFaint, marginBottom: 6 }}>ECONOMIC HISTORY</div>
-          <Row label="LIFETIME EARN" value={`${actor.lifetime_earnings?.toFixed(2) || 0} tKAS`} color={C.green} />
-          <Row label="LIFETIME SPEND" value={`${actor.lifetime_expenses?.toFixed(2) || 0} tKAS`} color={C.red} />
+          <Row label="CONFIRMED INFLOW" value={<ChainAmount actor={actor} unit />} color={C.green} />
+          <Row label="CONFIRMED OUTFLOW" value={<ChainAmount actor={actor} direction="out" unit />} color={C.red} />
           {isAI && <Row label="REPRODUCTIONS" value={actor.reproductions || 0} />}
           {!isAI && <Row label="JOBS DONE" value={actor.jobs_completed || 0} />}
         </div>

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { Search, X } from "lucide-react";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { orgColor, fmt } from "@/lib/evolve/constants";
@@ -12,7 +13,7 @@ const SORTS = [
 
 /** The agent roster — sortable, searchable, and the way into any inspector. */
 export default function AgentList({ onSelect, onClose }) {
-  const { engine } = useEvolve();
+  const { engine, chainBalances } = useEvolve();
   const [sort, setSort] = useState("fitness");
   const [q, setQ] = useState("");
 
@@ -24,10 +25,10 @@ export default function AgentList({ onSelect, onClose }) {
       : list;
     return [...filtered]
       .sort((a, b) =>
-        sort === "balance" ? b.balance - a.balance : sort === "generation" ? b.generation - a.generation : sort === "age" ? b.age_days - a.age_days : b.fitness - a.fitness
+        sort === "balance" ? (chainBalances.balanceFor(b) ?? -1) - (chainBalances.balanceFor(a) ?? -1) : sort === "generation" ? b.generation - a.generation : sort === "age" ? b.age_days - a.age_days : b.fitness - a.fitness
       )
       .slice(0, 200);
-  }, [engine, sort, q, engine?.tickCount]);
+  }, [engine, sort, q, engine?.tickCount, chainBalances.balances]);
 
   if (!engine) return null;
 
@@ -82,7 +83,7 @@ export default function AgentList({ onSelect, onClose }) {
                 </td>
                 <td style={td}>{a.generation}</td>
                 <td style={{ ...td, color: a.status === "working" ? "#22d3ee" : "#7d90a8" }}>{a.status}</td>
-                <td style={{ ...td, textAlign: "right", color: "#34d399" }}>{fmt(a.balance)}</td>
+                <td style={{ ...td, textAlign: "right", color: "#34d399" }}><LiveBalance actor={a} /></td>
                 <td style={{ ...td, textAlign: "right" }}>{a.fitness.toFixed(3)}</td>
               </tr>
             ))}

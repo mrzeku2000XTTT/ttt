@@ -1,4 +1,6 @@
 import React from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
+import ChainAmount from '@/components/evolve/ChainAmount';
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
 import { marketSnapshot, economyTotals } from "@/lib/evolve/economyService";
@@ -36,12 +38,11 @@ export default function EconomyPanel({ onClose }) {
 
       <div className="ev-section">
         <div className="ev-label" style={{ marginBottom: 6 }}>Agent Economics</div>
-        <Row label="Total wealth" value={`${fmt(totals.wealth)} tKAS`} />
-        <Row label="Lifetime earned" value={`${fmt(totals.earned)} tKAS`} color="#34d399" />
-        <Row label="Lifetime spent" value={`${fmt(totals.spent)} tKAS`} color="#f87171" />
-        <Row label="Net profit" value={`${fmt(totals.profit)} tKAS`} color={totals.profit >= 0 ? "#34d399" : "#f87171"} />
-        <Row label="Profitable agents" value={`${totals.profitable} / ${totals.population}`} />
-        <Row label="Median balance" value={`${fmt(totals.median)} tKAS`} />
+        <Row label="Total wealth" value={<LiveBalance actors={engine.agents.filter(a => a.status !== 'archived')} unit />} />
+        <Row label="Confirmed EVOLVE inflow" value={<ChainAmount actors={engine.agents.filter(a => a.status !== 'archived')} unit />} color="#34d399" />
+        <Row label="Confirmed EVOLVE outflow" value={<ChainAmount actors={engine.agents.filter(a => a.status !== 'archived')} direction="out" unit />} color="#f87171" />
+        <Row label="Net recorded transfers" value={<ChainAmount actors={engine.agents.filter(a => a.status !== 'archived')} direction="net" unit />} />
+        <Row label="Median balance" value={<LiveBalance actors={engine.agents.filter(a => a.status !== 'archived')} median unit />} />
       </div>
 
       <div className="ev-section">

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import LiveBalance from '@/components/evolve/LiveBalance';
 import { Handshake, Swords } from "lucide-react";
 import PanelShell from "./PanelShell";
 import { useEvolve } from "@/lib/evolve/useEvolve";
@@ -22,8 +23,8 @@ export default function OrganizationInspector({ orgId, onClose, onSelectAgent })
           <Stat label="Color" value={org.name} color={org.color || orgColor(org.id)} />
           <Stat label="Standing" value={standing.standing.toFixed(1)} />
           <Stat label="Members" value={standing.memberCount} />
-          <Stat label="Member wealth" value={`${fmt(standing.wealth)}`} color="#34d399" />
-          <Stat label="Treasury" value={`${fmt(org.treasury)} tKAS`} color="#34d399" />
+          <Stat label="Member wealth" value={<LiveBalance actors={engine.agents.filter(a => org.members.includes(a.id) && a.status !== 'archived')} />} color="#34d399" />
+          <Stat label="Treasury" value={<LiveBalance actor={org} unit />} color="#34d399" />
           <Stat label="Reputation" value={org.reputation.toFixed(0)} />
           <Stat label="Jobs completed" value={org.jobs_completed} />
           <Stat label="Territory" value={org.territory} />
@@ -41,7 +42,7 @@ export default function OrganizationInspector({ orgId, onClose, onSelectAgent })
             onClick={() => onSelectAgent(a.id)}
           >
             <span>{a.code} · {a.name}</span>
-            <span style={{ color: "#34d399" }}>{fmt(a.balance)}</span>
+            <span style={{ color: "#34d399" }}><LiveBalance actor={a} /></span>
           </button>
         ))}
       </div>

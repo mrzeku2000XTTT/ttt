@@ -61,11 +61,17 @@ const ASSET_COLOR = {
 export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
   const { engine, say } = useEvolve();
   const wrapRef = useRef(null);
+  const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+  const syncingRef = useRef(false);
+  const latestRef = useRef(null);
+  latestRef.current = { engine, size: null, cam, setCam, onSelectActor };
   const places110Ref = useRef(null);
   const places50Ref = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState('');
+  latestRef.current.size = size;
   const [labels, setLabels] = useState([]);
   const [showCells, setShowCells] = useState(true);
   const didFitRef = useRef(false);
@@ -94,27 +100,30 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     if (!engine || !size.w || mapRef.current) return undefined;
     registerPmtilesProtocol();
     const world = engine.world;
-    const view = camToView(cam, world, size);
-    // Validate the initial center through the boundary; fall back to a safe
-    // world center if the projected coordinate is invalid rather than crashing.
-    const initialCenter = toValidLngLat(view.center[1], view.center[0]) || [0, 20];
+
     const map = new maplibregl.Map({
-      container: wrapRef.current,
+      container: mapContainerRef.current,
       style: initialStyle(),
-      center: initialCenter,
-      zoom: view.zoom,
-      minZoom: 2,
+      center: [0, 20],
+      zoom: 0,
+      minZoom: 0,
+      renderWorldCopies: false,
       maxZoom: 13,
       // The world IS the bounds — the view can never be dragged off the top of
       // it, which is what left the map stuck against the north edge.
-      maxBounds: [[-180, -85], [180, 85]],
+
       attributionControl: false,
       antialias: true,
     });
     mapRef.current = map;
+    let disposed = false;
+    map.on('error', event => setMapError(event.error?.message || 'Earth map could not load'));
     map.on("load", async () => {
+      try {
       // progressive self-hosted basemap
       const [land, c110] = await Promise.all([loadLand50(), loadCountries110()]);
+      if (disposed) return;
+      if (!land?.features?.length || !c110?.features?.length) throw new Error('Earth geography could not load. Please reload EVOLVE.');
       addLandLayer(map, land);
       setLandIndex(land); // geographic land index for cell spawnability
       addCountryBorders(map, c110, { id: "ev-countries-110", minzoom: 0, maxzoom: 4, color: EVOLVE_COLORS.borderStrong, width: 0.8 });
@@ -122,17 +131,23 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
       ensureActorsLayer(map);
       setMapReady(true);
       // detail tiers
-      loadCountries50().then((c50) => addCountryBorders(map, c50, { id: "ev-countries-50", minzoom: 4, color: EVOLVE_COLORS.border, width: 0.6 }));
-      loadStates50().then((s50) => addStateBorders(map, s50, { minzoom: 5 }));
+      loadCountries50().then((c50) => { if (!disposed) addCountryBorders(map, c50, { id: 'ev-countries-50', minzoom: 4, color: EVOLVE_COLORS.border, width: 0.6 }); });
+      loadStates50().then((s50) => { if (!disposed) addStateBorders(map, s50, { minzoom: 5 }); });
       loadPlaces110().then((p) => { places110Ref.current = p; });
       // On first load / restore, frame the ENTIRE world so the player starts
       // with a global view, not a clamped corner. Sync the engine cam to match
       // so the minimap and cam→map effect agree with the fitted view.
       if (!didFitRef.current) {
         didFitRef.current = true;
-        map.fitBounds([[-180, -72], [180, 80]], { animate: false });
+        syncingRef.current = true;
+        map.fitBounds([[-180, -72], [180, 80]], { animate: false, padding: 20 });
         const c = map.getCenter();
-        setCam(viewToCam([c.lat, c.lng], map.getZoom(), world, size));
+        setCam(viewToCam([c.lat, c.lng], map.getZoom(), world, latestRef.current.size));
+        syncingRef.current = false;
+      }
+      updateActors(map);
+      } catch (error) {
+        if (!disposed) setMapError(error.message);
       }
     });
     map.on("move", onMove);
@@ -141,26 +156,34 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     map.on("zoomend", onMoveEnd);
     map.on("click", onClick);
     return () => {
+      disposed = true;
+      didFitRef.current = false;
       map.remove();
       mapRef.current = null;
       setMapReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [engine, size.w]);
+  }, [engine, !!size.w]);
+
+  useEffect(() => { mapRef.current?.resize(); }, [size.w, size.h]);
 
   const world = engine?.world;
 
   /* cam (external) -> map */
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !world || !size.w) return;
+    if (!map || !world || !size.w || !mapReady) return;
     const view = camToView(cam, world, size);
     const cur = map.getCenter();
     const curZ = map.getZoom();
     if (Math.abs(view.center[0] - cur.lat) < 0.01 && Math.abs(view.center[1] - cur.lng) < 0.01 && Math.abs(view.zoom - curZ) < 0.05) return;
+    // The fitted world owns the initial view; never push the old {0,0,6} camera.
+    if (!didFitRef.current) return;
     const valid = toValidLngLat(view.center[1], view.center[0]);
     if (!valid) return; // skip invalid camera coordinate rather than crash
+    syncingRef.current = true;
     map.jumpTo({ center: valid, zoom: view.zoom });
+    syncingRef.current = false;
     // Record what the map ACTUALLY ended up at, not what we asked for.
     // MapLibre clamps the centre against maxBounds, and a clamped move is still
     // OUR move — comparing against the requested view let the clamp read as
@@ -200,7 +223,8 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     ) {
       return;
     }
-    const next = viewToCam([c.lat, c.lng], map.getZoom(), world, size);
+    if (syncingRef.current) return;
+    const next = viewToCam([c.lat, c.lng], map.getZoom(), world, latestRef.current.size);
     setCam((prev) =>
       Math.abs(prev.x - next.x) < 0.6 && Math.abs(prev.y - next.y) < 0.6 && Math.abs(prev.scale - next.scale) < 0.05 ? prev : next
     );
@@ -254,6 +278,8 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
 
   function updateActors(map) {
     if (!map.getSource("ev-actors")) return;
+    const engine = latestRef.current.engine;
+    const world = engine.world;
     const toLngLat = (p) => {
       const ll = gridToLatLng((p.x || 0) + 0.5, (p.y || 0) + 0.5, world.width, world.height);
       return toValidLngLat(ll.lng, ll.lat);
@@ -306,7 +332,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
     // point), so the highlighted cell always contains the marker.
     const tol = 7;
     const hits = map.queryRenderedFeatures(
-      [e.point.x - tol, e.point.y - tol, e.point.x + tol, e.point.y + tol],
+      [[e.point.x - tol, e.point.y - tol], [e.point.x + tol, e.point.y + tol]],
       { layers: ["ev-actors-circle"] }
     );
     if (hits.length) {
@@ -333,6 +359,8 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor }) {
 
   return (
     <div className="ev-map" ref={wrapRef}>
+      <div ref={mapContainerRef} style={{ position: 'absolute', inset: 0 }} />
+      {(!mapReady || mapError) && <div className="ev-overlay-card" role="status" style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, padding: 12 }}>{mapError || 'Loading Earth geography…'}{mapError && <button className="ev-btn" onClick={() => window.location.reload()}>RELOAD</button>}</div>}
       {/* geographic labels (DOM-projected, no glyph server) */}
       {mapReady && labels.map((l, i) => (
         <span

@@ -18,7 +18,7 @@ import AIFactoryPanel from "./AIFactoryPanel";
  *    kaspatest: address as evidence of TN-10 connection
  */
 export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) {
-  const { engine, currentPlayer: player, wallet, pendingTxCount, experimentId } = useEvolve();
+  const { engine, currentPlayer: player, wallet, pendingTxCount, experimentId, chainBalances: chain } = useEvolve();
   const [copied, setCopied] = useState("");
 
   // Ownership comes from the server-side ledger (written only by backend
@@ -35,15 +35,8 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
     });
   }, [engine, player, engine?.tickCount, ownedIds, ownLoading]);
 
-  // Real Kaspa TN-10 balances, read from the chain: this player's agents AND
-  // their own Scorpion wallet — the wallet's own reported figure goes stale
-  // the moment a payment leaves it.
-  const agentAddresses = useMemo(() => myAgents.map((a) => a.address).filter(Boolean), [myAgents]);
-  const chainAddresses = useMemo(
-    () => [...agentAddresses, wallet?.address].filter(Boolean),
-    [agentAddresses, wallet?.address]
-  );
-  const { balances: chainBalances, loading: chainLoading } = useTn10Balances(chainAddresses);
+  const chainBalances = chain.balances;
+  const chainLoading = chain.loading;
 
   if (!engine || !player) return null;
 
@@ -59,14 +52,14 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
   // The chain is authoritative for the balance; the wallet's own figure is only
   // a fallback for the moment before (or if) TN-10 answers for the address.
   const walletOnChain = walletConnected ? chainBalances[wallet.address] : undefined;
-  const walletSompi = wallet?.balance?.confirmed ?? 0n;
+
   const balanceLabel = !walletConnected
     ? "—"
     : walletOnChain !== undefined
-      ? `${walletOnChain.toFixed(4)} KAS`
+      ? `${walletOnChain.toFixed(4)} tKAS`
       : chainLoading
         ? "…"
-        : `${(Number(walletSompi) / 1e8).toFixed(4)} KAS`;
+        : 'N/A';
 
   return (
     <div className="ev-sheet ev-sheet-sm" style={{ bottom: 56, left: 64, width: 320, maxHeight: "78vh" }}>
@@ -159,7 +152,7 @@ export default function HumanDashboard({ onClose, onInspectAgent, onActivity }) 
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {myAgents.map((a) => {
-                const onChain = chainBalances[a.address];
+                const onChain = chain.balanceFor(a);
                 return (
                 <div
                   key={a.id}
