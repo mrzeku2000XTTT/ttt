@@ -667,20 +667,41 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor, sele
       `<span>${code}${name ? `<br><span style="font-weight:400;opacity:.75">${name}</span>` : ""}</span></div>` +
       `<div style="font:600 8px/1.4 system-ui,sans-serif;letter-spacing:.1em;color:${color};margin-top:3px">` +
       `${owned ? "CONTROLLED" : "NEUTRAL"}</div>`;
-    if (!labelPopupRef.current) {
-      labelPopupRef.current = new maplibregl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: 16,
-        className: "ev-cell-label",
-      })
-        .setLngLat([cell.centerLng, cell.centerLat])
-        .setHTML(html)
-        .addTo(map);
-    } else {
-      labelPopupRef.current.setLngLat([cell.centerLng, cell.centerLat]).setHTML(html);
-    }
-    return undefined;
+    /* The label must never slide under the status HUD at the top of the map. When
+     * the cell sits near the top edge, the card is anchored BELOW its pin instead
+     * of above it, so it always stays inside the visible map area. The flip is
+     * re-evaluated on every pan/zoom, because it depends on where the cell
+     * currently sits on screen — not on where it was when it was selected. */
+    const place = () => {
+      const anchor = map.project([cell.centerLng, cell.centerLat]).y < 120 ? "top" : "bottom";
+      if (!labelPopupRef.current || labelPopupRef.current.__anchor !== anchor) {
+        labelPopupRef.current?.remove();
+        const popup = new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: 16,
+          className: "ev-cell-label",
+          anchor,
+        });
+        popup.__anchor = anchor;
+        popup.setHTML(html);
+        popup.__html = html;
+        popup.setLngLat([cell.centerLng, cell.centerLat]).addTo(map);
+        labelPopupRef.current = popup;
+        return;
+      }
+      const popup = labelPopupRef.current;
+      // HTML is only rebuilt when it actually changed — a move handler runs every frame.
+      if (popup.__html !== html) {
+        popup.setHTML(html);
+        popup.__html = html;
+      }
+      popup.setLngLat([cell.centerLng, cell.centerLat]);
+    };
+
+    place();
+    map.on("move", place);
+    return () => map.off("move", place);
   }, [engine?.selection?.geo?.cellId, mapReady, engine?.agentById]);
 
   const view = useMemo(() => (world && size.w ? camToView(cam, world, size) : null), [cam, world, size]);
