@@ -57,6 +57,7 @@
         "PAYMENT_FAILED",
         "PAYMENT_TIMEOUT",
         "SETTLEMENT_UNVERIFIED",
+        "SETTLEMENT_ALREADY_USED",
         "OWNERSHIP_FAILED"
       ],
       "default": "REQUESTED"
@@ -83,11 +84,11 @@
     },
     "tx_id": {
       "type": "string",
-      "description": "TN-10 txid once broadcast \u2014 broadcast is NOT confirmation"
+      "description": "TN-10 txid once broadcast \u2014 broadcast is NOT confirmation. Written only by the trusted server settlement path, immediately after a successful broadcast, so its presence means real funds were spent. A txid may authorize at most ONE economic claim."
     },
     "confirmation_evidence": {
       "type": "object",
-      "description": "What the chain actually proved: paidSompi, inputAddresses, verification level, sender binding, and the outpoint provenance the signer consumed"
+      "description": "What the chain actually proved: paidSompi, inputAddresses, verification level, sender binding, the outpoint provenance the signer consumed, and whether that server provenance was validated"
     },
     "previous_owner_id": {
       "type": "string",

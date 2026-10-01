@@ -683,6 +683,33 @@ export default async function (req: Request) {
             `recipientVerified=${v.recipientVerified} amountVerified=${v.amountVerified} paid=${v.paidSompi}`
           );
         }
+        // ---- SINGLE USE. One settlement txid authorizes AT MOST ONE claim. ----
+        //
+        // A real broadcast payment exists on chain whether or not its ownership
+        // commit later succeeded, so the txid stays bound to the claim that
+        // produced it. `tx_id` is written in exactly one place — immediately
+        // after a successful server-side broadcast — so a claim carrying a txid
+        // is, by construction, a claim that spent real funds, whatever status it
+        // later reached. That is the whole consumption rule: no status list to
+        // drift, and no failed claim quietly returning its payment to the pool.
+        //
+        // Idempotent replay is untouched: a claim always excludes itself, so
+        // finalizeClaim(CLAIM_ABC) may keep re-reading TX_123 forever.
+        const holders = await svc.entities.EvolveTerritoryClaim.filter(
+          { experiment_id: experimentId, tx_id: claim.tx_id },
+          '-created_date',
+          10
+        );
+        const otherConsumer = (holders || []).find((c: any) => c.id !== claim.id) || null;
+        if (otherConsumer) {
+          return await fail(
+            claim,
+            'SETTLEMENT_ALREADY_USED',
+            'SETTLEMENT_ALREADY_USED',
+            `Settlement ${claim.tx_id} already authorizes claim ${otherConsumer.claim_action_id} (${otherConsumer.status})`
+          );
+        }
+
         // FAIL CLOSED. A settlement that cannot be bound to the requesting
         // actor's own wallet must NEVER grant ownership.
         //
