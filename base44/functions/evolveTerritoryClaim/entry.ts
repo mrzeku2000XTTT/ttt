@@ -684,18 +684,45 @@ export default async function (req: Request) {
           );
         }
         // FAIL CLOSED. A settlement that cannot be bound to the requesting
-        // actor's own wallet must NEVER grant ownership. `senderVerified` is
-        // only true when the chain resolved inputs containing that wallet;
-        // where the node does not publish inputs, the change-output binding is
-        // the strongest available chain evidence and is accepted as the binding
-        // — but it is recorded as a BINDING, never promoted to senderVerified.
-        const bound = v.senderVerified || !!v.senderBinding;
+        // actor's own wallet must NEVER grant ownership.
+        //
+        // Two DIFFERENT properties can satisfy the sender side. They are never
+        // collapsed into one another:
+        //
+        //   CHAIN SENDER PROOF   v.senderVerified — the chain resolved the
+        //                        inputs and the actor's wallet is among them.
+        //                        Unreachable on TN-10 today; nothing here ever
+        //                        infers it from a balance change, from the fact
+        //                        EVOLVE built the tx, or from a change output.
+        //
+        //   SERVER PROVENANCE    EVOLVE's own settlement path read UTXOs from
+        //                        the actor's wallet and consumed them to
+        //                        produce THIS exact txid. It is first-party
+        //                        evidence, not chain evidence, and is validated
+        //                        explicitly below.
+        //
+        // A change output ALONE proves only that the transaction contains an
+        // output to the expected wallet — it does NOT prove that wallet funded
+        // it. It therefore can never authorize ownership by itself.
+        const provenance = claim.confirmation_evidence?.senderProvenance || null;
+        const validServerProvenance =
+          !!provenance &&
+          provenance.fromAddress === claim.sender_address &&
+          Array.isArray(provenance.spentOutpoints) &&
+          provenance.spentOutpoints.length > 0 &&
+          provenance.spentOutpoints.every(
+            (o: any) => o && typeof o.transactionId === 'string' && o.transactionId.length > 0
+          );
+
+        const bound = v.senderVerified || (validServerProvenance && !!v.senderBinding);
         if (!bound) {
           return await fail(
             claim,
             'SETTLEMENT_UNVERIFIED',
             'SETTLEMENT_UNVERIFIED',
-            'Settlement could not be bound to the requesting wallet'
+            v.senderVerified
+              ? 'Settlement could not be bound to the requesting wallet'
+              : `Server provenance did not bind the settlement to the requesting wallet (provenance=${!!provenance} outpoints=${provenance?.spentOutpoints?.length ?? 0} chainBinding=${!!v.senderBinding})`
           );
         }
         claim = await svc.entities.EvolveTerritoryClaim.update(claim.id, {
@@ -709,10 +736,11 @@ export default async function (req: Request) {
             recipientVerified: v.recipientVerified,
             amountVerified: v.amountVerified,
             senderBinding: v.senderBinding,
+            serverProvenanceVerified: validServerProvenance,
             verificationLevel: v.verificationLevel,
             evidenceSource: v.evidenceSource,
             verificationTimestamp: v.verificationTimestamp,
-            senderProvenance: claim.confirmation_evidence?.senderProvenance || null,
+            senderProvenance: provenance,
           },
         });
       }
