@@ -187,7 +187,26 @@
 /* Cell details card. When the Human Dashboard is open the card moves clear of
    the panel's right edge instead of sitting behind it. The offsets track the
    dashboard's fixed left edge plus the navigation width at each breakpoint. */
-.ev-tile-dock { position: absolute; left: 8px; bottom: 8px; z-index: 20; }
+/* The dock is pinned to the map area on all four sides so a tall cell card can
+   never grow up past the map and slide under the HUD. The card sits on the
+   bottom edge and scrolls internally once it reaches the top. */
+.ev-tile-dock {
+  position: absolute; left: 8px; right: 8px; top: 8px; bottom: 8px;
+  z-index: 20;
+  display: flex; align-items: flex-end; justify-content: flex-start;
+  pointer-events: none;
+}
+.ev-tile-dock > * {
+  pointer-events: auto;
+  width: 236px;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.ev-tile-dock > *::-webkit-scrollbar { width: 5px; }
+.ev-tile-dock > *::-webkit-scrollbar-track { background: transparent; }
+.ev-tile-dock > *::-webkit-scrollbar-thumb { background: rgba(120, 160, 200, 0.25); border-radius: 3px; }
 .ev-tile-dock.is-clear-of-dash { left: 328px; }
 @media (max-width: 1180px) { .ev-tile-dock.is-clear-of-dash { left: 336px; } }
 @media (max-width: 900px) { .ev-tile-dock.is-clear-of-dash { left: 344px; } }
