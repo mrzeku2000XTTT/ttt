@@ -284,8 +284,8 @@ export function ensureTerritoryLayer(map) {
     source: "ev-territory-border",
     paint: {
       "line-color": ["coalesce", ["get", "color"], EVOLVE_COLORS.cell],
-      "line-width": 1.2,
-      "line-opacity": 0.9,
+      "line-width": 1.5,
+      "line-opacity": 0.95,
     },
   });
   // Frontier wipe — the single newly committed cell, clipped to the fraction

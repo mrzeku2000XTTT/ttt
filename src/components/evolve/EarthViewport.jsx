@@ -351,7 +351,7 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor, sele
       const isSel = sel && sel.geo ? sel.geo.cellId === c.cellId : (sel && sel.x === ep.x && sel.y === ep.y);
       return {
         type: "Feature",
-        properties: { color, opacity: orgId ? 0.5 : 0.3, sel: isSel ? 1 : 0, cellId: c.cellId },
+        properties: { color, opacity: orgId ? 0.4 : 0.14, sel: isSel ? 1 : 0, cellId: c.cellId },
         geometry: { type: "Polygon", coordinates: [[[c.west, c.south], [c.east, c.south], [c.east, c.north], [c.west, c.north], [c.west, c.south]]] },
       };
     });
@@ -395,7 +395,11 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor, sele
       // own identity colour while unrelated territory stays visible but quiet.
       // Presentation only — ownership never changes here.
       const focus = latestRef.current.selectedActorId || "";
-      const opacityFor = (c) => (focus ? (c.owner_id === focus ? 0.58 : 0.14) : 0.32);
+      // Owned land must read clearly ON TOP of the neutral cell grid. With both
+      // near 0.3 the grid and the territory muddied into one grey mass and
+      // ownership was invisible; the grid is now a faint underlay and territory
+      // carries the weight.
+      const opacityFor = (c) => (focus ? (c.owner_id === focus ? 0.62 : 0.1) : 0.5);
       const feats = drawn.map((c) => territoryFeature(c, c.color, opacityFor(c)));
       map.getSource("ev-territory").setData({ type: "FeatureCollection", features: feats });
 
@@ -521,10 +525,15 @@ export default function EarthViewport({ cam, setCam, onSize, onSelectActor, sele
           let lng = coords[0];
           let lat = coords[1];
           if (n > 1) {
+            // Separate co-located players by a constant SCREEN distance so each
+            // dot stays individually readable at every zoom. Offsetting in
+            // DEGREES pushed markers tens of kilometres off their own cell at
+            // city zoom, which read as dots detached from their territory.
             const angle = (i * 2 * Math.PI) / n;
-            const step = 0.35; // degrees — visible separation at world/city zoom
-            lng += step * Math.cos(angle);
-            lat += step * Math.sin(angle);
+            const pt = map.project(coords);
+            const shifted = map.unproject([pt.x + 13 * Math.cos(angle), pt.y + 13 * Math.sin(angle)]);
+            lng = shifted.lng;
+            lat = shifted.lat;
           }
           const isYou = meId && pl.id === meId;
           pfeats.push({
